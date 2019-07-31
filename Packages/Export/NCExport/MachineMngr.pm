@@ -338,10 +338,9 @@ sub __SetStaticPropertyTable {
 	my %t = ();
 	$self->{"propTable"} = \%t;
 
-	my $camera = 0;
-	my $isFlex = JobHelper->GetIsFlex( $self->{"jobId"});
+	my $camera  = 0;
+	my $isFlex  = JobHelper->GetIsFlex( $self->{"jobId"} );
 	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
-	 
 
 	# Header is:
 	# 1) DRILL
@@ -352,7 +351,7 @@ sub __SetStaticPropertyTable {
 	# 6) CAMERAS
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, ($isFlex || $viaFill) ];  
+	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, ( $isFlex || $viaFill ) ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
@@ -426,6 +425,18 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }{"ml"} = [ 0, 0, 0, 1, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
+
+	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
+
+	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
+
+	$t{ EnumsGeneral->LAYERTYPE_nplt_soldcMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_soldcMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
+
+	$t{ EnumsGeneral->LAYERTYPE_nplt_soldsMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_soldsMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
 
 }
 

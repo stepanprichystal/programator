@@ -388,7 +388,8 @@ sub AddCoverlayRegisterHoles {
 												  $inCAM, $jobId,
 												  [
 													 EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
-													 EnumsGeneral->LAYERTYPE_nplt_lcMill,     EnumsGeneral->LAYERTYPE_nplt_lsMill
+													 EnumsGeneral->LAYERTYPE_nplt_soldcMill,EnumsGeneral->LAYERTYPE_nplt_soldsMill,
+													EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill
 												  ]
 	);
 
@@ -401,7 +402,7 @@ sub AddCoverlayRegisterHoles {
 		my $polarity = "positive";
 		my $sym      = "r3300";
 
-		if ( $layer =~ /^[cs]$/ || $layer =~ /^v[2-]$/ ) {
+		if ( $layer =~ /^[cs]$/ || $layer =~ /^v[2-]$/) {
 
 			$sym = "r4200";
 
@@ -429,7 +430,7 @@ sub AddCoverlayRegisterHoles {
 		my $w = $lim{"xMax"} - $lim{"xMin"};
 
 		# Temporary add 850 hole in order insert drilled number
-		if ( $layer =~ /^fl[cs]$/ ) {
+		if ( $layer =~ /^fstiff[cs]\d?$/ || $layer =~ /^fsold[cs]\d?$/ ) {
 			CamSymbol->AddPad( $inCAM, "r850", { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
 		}
 

@@ -149,7 +149,6 @@ sub CheckNCLayers {
 			$result = 0;
 		}
 
-
 		# 10) Checkdifference between drill and finish diameter
 		unless ( $self->CheckDiamterDiff( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
@@ -221,6 +220,10 @@ sub CheckAttributes {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
@@ -405,7 +408,7 @@ sub CheckDirTop2Bot {
 			$$mess .= "Blind layer: $lName, can not end in matrix in layer: \"s\"\n";
 		}
 	}
-	
+
 	# Check for filled layers from top, if start in first layer
 	my @layers3 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ] );
 
@@ -415,28 +418,28 @@ sub CheckDirTop2Bot {
 
 		if ( $l->{"gROWdrl_start"} != 1 ) {
 			$result = 0;
-			$$mess .= "Filled blind layer from top: $lName, has to start in layer \"c\" (now start in: ".$l->{"gROWdrl_name"}.")\n";
+			$$mess .= "Filled blind layer from top: $lName, has to start in layer \"c\" (now start in: " . $l->{"gROWdrl_name"} . ")\n";
 		}
 	}
-	
+
 	# Check plated through blind layer if start and end not in c/s layer
-	my @layers4 = grep { $_->{"gROWname"} =~ /\d/ } $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill] );
- 
+	my @layers4 = grep { $_->{"gROWname"} =~ /\d/ } $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
+
 	foreach my $l (@layers4) {
 
 		my $lName = $l->{"gROWname"};
 
 		if ( $l->{"gROWdrl_start_name"} eq "c" ) {
 			$result = 0;
-			$$mess .= "Blind through plated NC layer \"".$lName."\" can not to start in layer \"c\"\n";
+			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to start in layer \"c\"\n";
 		}
-		
+
 		if ( $l->{"gROWdrl_end_name"} eq "s" ) {
 			$result = 0;
-			$$mess .= "Blind through plated NC layer \"".$lName."\" can not to end in layer \"s\"\n";
+			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to end in layer \"s\"\n";
 		}
 	}
- 
+
 	return $result;
 
 }
@@ -496,7 +499,7 @@ sub CheckDirBot2Top {
 			$$mess .= "Blind layer: $lName, can not end in matrix in layer: \"c\"\n";
 		}
 	}
-	
+
 	# Check for filled layers from bot, if start in last layer
 	my @layers3 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ] );
 
@@ -506,7 +509,7 @@ sub CheckDirBot2Top {
 
 		if ( $l->{"gROWdrl_start_name"} ne "s" ) {
 			$result = 0;
-			$$mess .= "Filled blind layer from bot: $lName, has to start in layer \"s\" (now start in: ".$l->{"gROWdrl_start_name"}.")\n";
+			$$mess .= "Filled blind layer from bot: $lName, has to start in layer \"s\" (now start in: " . $l->{"gROWdrl_start_name"} . ")\n";
 		}
 	}
 
@@ -795,7 +798,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113609"; 
+	my $jobId = "d113609";
 
 	my $mess = "";
 

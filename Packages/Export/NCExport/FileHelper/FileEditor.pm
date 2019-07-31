@@ -162,7 +162,11 @@ sub EditAfterOpen {
 
 	if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
-		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill  )
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill  
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldcMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldsMill )
 	{
 
 		# get tool number of r850 tool
@@ -200,10 +204,15 @@ sub EditAfterOpen {
 					$dn = $pre . $pNum . $suf . "\n";
 				}
 
-				# COVERLAY - Add coverlay signal layer name
-				if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
+				# COVERLAY and STIFFENER - Add coverlay/stiffener signal layer name
+				if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
+					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
+					)
+				{
 
-					$dn .= " " . $layer->{"gROWdrl_start_name"};
+					my ( $pre, $suf ) = $dn =~ m/^(.*M97,\w\d{6})(.*)$/;
+					my $sigLayer = " " . $layer->{"gROWdrl_start_name"};
+					$dn = $pre . $sigLayer . $suf . "\n";
 				}
 
 				my ($xVal) = $dn =~ /X(\d+\.\d+)Y/;

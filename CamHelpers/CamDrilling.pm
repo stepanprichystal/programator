@@ -26,12 +26,12 @@ use aliased 'Enums::EnumsDrill';
 # Type EnumsGeneral->LAYERTYPE
 sub GetMinHoleTool {
 
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $stepName  = shift;
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
+	my $stepName   = shift;
 	my $layertypes = shift;
-	my $fromLayer = shift;    #tell, only drill layers starts from <$fromLayer> will be considered
+	my $fromLayer  = shift;    #tell, only drill layers starts from <$fromLayer> will be considered
 
 	my @layers = $self->GetNCLayersByTypes( $inCAM, $jobId, $layertypes );
 	$self->AddLayerStartStop( $inCAM, $jobId, \@layers );
@@ -366,6 +366,30 @@ sub AddNCLayerType {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_prepregMill;
 			$l->{"plated"} = 0;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fstiffc\d?/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_stiffcMill;
+			$l->{"plated"} = 0;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fstiffs\d?/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_stiffsMill;
+			$l->{"plated"} = 0;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fsoldc\d?/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_soldcMill;
+			$l->{"plated"} = 0;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fsolds\d?/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_soldsMill;
+			$l->{"plated"} = 0;
 		}
 
 	}
@@ -375,13 +399,13 @@ sub AddNCLayerType {
 
 # Return if NC layer is known for scripts
 # If "type" is find bz AddNCLayerType method, NC layer is known
-sub GetNCLayerIsKnown{
-	my $self = shift;
+sub GetNCLayerIsKnown {
+	my $self      = shift;
 	my $layerName = shift;
-	
+
 	my %lInfo = ( "gROWname" => $layerName );
 	$self->AddNCLayerType( [ \%lInfo ] );
-	
+
 	defined $lInfo{"type"} ? return 1 : return 0;
 }
 
@@ -408,7 +432,7 @@ sub GetNCLayerInfo {
 
 	if ($ncType) {
 		$self->AddNCLayerType( [ \%lInfo ] );
- 
+
 		die "Key: \"type\" was not set at layer: $layer"   unless ( defined $lInfo{"type"} );
 		die "Key: \"plated\" was not set at layer: $layer" unless ( defined $lInfo{"plated"} );
 	}
@@ -494,7 +518,6 @@ sub AddLayerStartStop {
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gROWname} } ) ; $i++ ) {
 		my $name = ${ $inCAM->{doinfo}{gROWname} }[$i];
 
-		$order{$name} = $signalOrder;
 
 		#start signal counting. "c" = 1, "v2" = 2, ...
 		if ( $name eq "c" || ( $signalOrder > 1 && $signalOrder < $layerCnt ) ) {
@@ -506,10 +529,13 @@ sub AddLayerStartStop {
 			$signalAlias = $name;
 			$iterate     = 1;
 		}
-		if ( $name eq "s" ) {
+		
+		if ($iterate && $name !~ /^s|(v\d+)$/ ) {
+			$signalOrder--;
 			$iterate = 0;
 		}
 
+		$order{$name} = $signalOrder;
 		$alias{$name} = $signalAlias;
 	}
 
@@ -526,6 +552,19 @@ sub AddLayerStartStop {
 
 		my $start = ${ $inCAM->{doinfo}{gROWdrl_start} }[$idx];
 		my $end   = ${ $inCAM->{doinfo}{gROWdrl_end} }[$idx];
+
+		# if coverlay or stiffener layer, set start/end according special layer
+		if ( $layer->{"gROWname"} =~ /fcoverlay[cs]\d?/  ) {
+			
+			$start =~ s/(coverlay)//;
+			$end =~ s/(coverlay)//;
+		}
+		
+		if ( $layer->{"gROWname"} =~ /fstiff[cs]\d?/ ) {
+			
+			$start = "c" ;
+			$start = "c" ;
+		}
 
 		$layer->{"gROWdrl_start_name"} = $alias{$start};
 		$layer->{"gROWdrl_end_name"}   = $alias{$end};
@@ -786,9 +825,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId     = "d222775";
+	my $jobId     = "d252642";
 	my $stepName  = "o+1";
-	my $layerName = "fzs";
+	my $layerName = "fstiffs";
 
 	my @layers = CamDrilling->GetNPltNCLayers( $inCAM, $jobId );
 

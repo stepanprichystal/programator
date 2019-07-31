@@ -88,7 +88,11 @@ use constant {
 	# new tmp for flexi
 	LAYERTYPE_nplt_cvrlycMill  => "nplt_cvrlycMill",       # top coverlay mill
 	LAYERTYPE_nplt_cvrlysMill  => "nplt_cvrlysMill",       # bot coverlay mill
-	LAYERTYPE_nplt_prepregMill => "nplt_prepregMill"       # prepreg mill
+	LAYERTYPE_nplt_prepregMill => "nplt_prepregMill",      # prepreg mill
+	LAYERTYPE_nplt_stiffcMill  => "nplt_stiffcMill",       # milling for stiffener from side c
+	LAYERTYPE_nplt_stiffsMill  => "nplt_stiffsMill",       # milling for stiffener from side s
+	LAYERTYPE_nplt_soldcMill   => "nplt_soldfcMill",       # milling of template for soldering coverlay from side c
+	LAYERTYPE_nplt_soldsMill   => "nplt_soldfsMill",       # milling of template for soldering coverlay from side s
 
 };
 

@@ -88,10 +88,10 @@ sub __PrepareTemplate {
 		$errMess = "";
 	}
 
-	my $lName    = "flc";
+	my $lName    = "fsoldc";
 	my $recreate = 0;
 
-	if ( CamHelper->LayerExists( $inCAM, $jobId, "flc" ) ) {
+	if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
 
 		$messMngr->ShowModal( -1,
 							  EnumsGeneral->MessageType_ERROR,
