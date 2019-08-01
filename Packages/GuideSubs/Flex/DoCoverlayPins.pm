@@ -33,6 +33,11 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums'                     => 'EnumsFiltr';
 use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::Enums' => 'PinEnums';
+use aliased 'Packages::Polygon::Features::Features::Features';
+use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
+use aliased 'Packages::CAM::SymbolDrawing::Point';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -134,12 +139,6 @@ sub CreateCoverlayPins {
 		CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "bend_area", "positive", 1 );
 
 		CamLayer->WorkLayer( $inCAM, "bend" );
-
-		use aliased 'Packages::Polygon::Features::Features::Features';
-		use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
-		use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
-		use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
-		use aliased 'Packages::CAM::SymbolDrawing::Point';
 
 		my $f = Features->new();
 		$f->Parse( $inCAM, $jobId, $step, "bend" );

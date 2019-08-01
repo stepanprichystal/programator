@@ -24,11 +24,15 @@ sub new {
  
 	# Type, which contain tools in standard DTM
 	$self->{"typeTool"} = undef;    # TypeTool_HOLE/TypeTool_SLOT
+	
+	$self->{"toolNumber"} = undef; # Order of num, resp tool D-Code
 
 	# Types based on purpose
 	$self->{"typeUse"} = undef;     # plate/nplate/pressfit/via
 
 	$self->{"finishSize"} = undef;  # finish size of tool
+	
+
  
 	return $self;
 }
@@ -84,6 +88,19 @@ sub SetFinishSize {
 	my $self = shift;
 
 	$self->{"finishSize"} = shift;
+}
+
+
+sub GetToolNum {
+	my $self = shift;
+
+	return $self->{"toolNumber"};
+}
+
+sub SetToolNum {
+	my $self = shift;
+
+	$self->{"toolNumber"} = shift;
 }
 
 

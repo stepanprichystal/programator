@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamFilter';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::Stackup::StackupOperation';
@@ -543,9 +544,9 @@ sub PrepareRoutPrepreg {
 
 			$inCAM->COM("sel_all_feat");
 			$inCAM->COM("chain_list_reset");
-			 
-			$inCAM->COM("chain_list_add", "chain" => 1);
-			$inCAM->COM( "chain_cancel", "layer" => $lTmp, "keep_surface" => "no" );
+
+			$inCAM->COM( "chain_list_add", "chain"  => 1 );
+			$inCAM->COM( "chain_cancel",   "layer"  => $lTmp, "keep_surface" => "no" );
 			$inCAM->COM( "sel_change_sym", "symbol" => "r0" );
 			CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
 			CamLayer->WorkLayer( $inCAM, $lTmp );
@@ -709,7 +710,7 @@ sub PrepareRoutTransitionZone {
 
 		# Draw transition features
 		CamLayer->WorkLayer( $inCAM, $routName );
-
+		my $featIdx = 0;
 		foreach my $transZone ( map { $_->GetTransitionZones() } $parser->GetBendAreas() ) {
 
 			# transition
@@ -717,22 +718,33 @@ sub PrepareRoutTransitionZone {
 			my %endP   = $transZone->GetEndPoint();
 
 			CamSymbol->AddLine( $inCAM, \%startP, \%endP, "r200" );
+			$featIdx++;
+
+			if ( CamFilter->SelectByFeatureIndexes( $inCAM, $jobId, [$featIdx] ) ) {
+
+				# Add chain
+				$inCAM->COM(
+					'chain_add',
+					"layer" => $routName,
+					"chain" => $featIdx,
+					"size"  => $toolSize,
+					"comp"  => $toolComp,
+					"first" => 0,
+				);
+			}
+			else {
+				die "No rout line selected";
+			}
+
 		}
+
+		 $inCAM->COM("chain_list_reset");
+		 $inCAM->COM("chain_list_add","chain"=> join("\;",  (1..$featIdx)) );
+		 $inCAM->COM("chain_merge", "layer" => $routName);
 
 		if ($extendZone) {
 			$inCAM->COM( "sel_extend_slots", "mode" => "ext_by", "size" => ( 2 * $extendZone * 1000 ), "from" => "center" );
 		}
-
-		# Add chain
-		$inCAM->COM(
-			'chain_add',
-			"layer" => $routName,
-			"chain" => 1,
-			"size"  => $toolSize,
-			"comp"  => $toolComp,
-			"first" => 0,
-
-		);
 
 		# Set tool magazine info
 		my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $routName );
@@ -768,10 +780,9 @@ sub PrepareRoutTransitionZone {
 		$DTMTools[0]->{"userColumns"}->{ EnumsDrill->DTMclmn_MAGINFO } = $toolMagazineInfo if ( defined $toolMagazineInfo );
 
 		CamDTM->SetDTMTools( $inCAM, $jobId, $step, $routName, \@DTMTools );
-		
-		push(@routLayers, $routName);
-	}
 
+		push( @routLayers, $routName );
+	}
 
 	return @routLayers;
 

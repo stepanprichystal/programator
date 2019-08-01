@@ -124,13 +124,25 @@ sub GetTextParameter {
 	return $self->__GetParameter(Enums->ParameterType_TEXT, $title, $value);
 }
 
-# Prepare text message parameter structure
+# Prepare number message parameter structure
 sub GetNumberParameter {
 	my $self  = shift;
 	my $title = shift;
 	my $value = shift;
 
 	return $self->__GetParameter(Enums->ParameterType_NUMBER, $title, $value);
+}
+
+# Prepare option message parameter structure
+sub GetOptionParameter {
+	my $self  = shift;
+	my $title = shift;
+	my $value = shift;
+	my $options = shift;
+	
+	die "Parameter option is not defined" unless ( defined $options );
+
+	return $self->__GetParameter(Enums->ParameterType_OPTION, $title, $value, $options);
 }
 
 
@@ -140,12 +152,13 @@ sub __GetParameter {
 	my $type  = shift;
 	my $title = shift;
 	my $value = shift;
+	my $options = shift;
 
 	die "Parameter type is not defined"  unless ( defined $type );
 	die "Parameter title is not defined" unless ( defined $title );
 	die "Parameter value is not defined" unless ( defined $value );
 
-	my $par = MessageParameter->new( $type, $title, $value );
+	my $par = MessageParameter->new( $type, $title, $value, $options );
 	
 	return $par;
 }

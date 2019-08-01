@@ -92,6 +92,32 @@ sub GetPolygonsFeatures {
 	return @polygons;
 }
 
+# Return if features are cyclic in layer
+sub GetPolygonsAreCyclic {
+	my $self        = shift;
+	my $preselected = shift;    # if is request parse only some features
+
+	my $cyclic = 1;
+
+	my @features = @{ $self->{"features"} };
+
+	@features = @{$preselected} if ($preselected);
+
+	my @lines = grep { $_->{"type"} eq "L" || $_->{"type"} eq "A" } @features;
+
+	foreach my $seq ( RoutCyclic->GetRoutSequences( \@lines ) ) {
+
+		my %result = RoutCyclic->GetSortedRout($seq);
+
+		unless ( $result{"result"} ) {
+			$cyclic = 0;
+			last;
+		}
+	}
+
+	return $cyclic;
+}
+
 sub GetPolygonsPoints {
 	my $self = shift;
 

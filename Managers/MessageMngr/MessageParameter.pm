@@ -22,9 +22,13 @@ sub new {
 	my $self  = {};
 	bless($self);
 
-	$self->{"type"}        = shift;
-	$self->{"title"}       = shift;
-	$self->{"oriValue"}    = shift;
+	$self->{"type"}     = shift;
+	$self->{"title"}    = shift;
+	$self->{"oriValue"} = shift;
+	$self->{"options"}  = shift;
+
+	# PROPERTIES
+
 	$self->{"resultValue"} = undef;
 
 	return $self;
@@ -45,11 +49,10 @@ sub GetOrigValue {
 
 sub GetResultValue {
 	my $self       = shift;
-	my $notChanged = shift; # if ori value was not changed, return ori value
+	my $notChanged = shift;    # if ori value was not changed, return ori value
 
+	if ( !$self->GetValueChanged() && $notChanged ) {
 
-	if(!$self->GetValueChanged() && $notChanged ){
-		
 		return $self->{"oriValue"};
 	}
 
@@ -64,11 +67,10 @@ sub GetTitle {
 
 }
 
-sub GetParameterNum {
+sub GetOptions {
 	my $self = shift;
 
-	return $self->{"type"};
-
+	return @{$self->{"options"}};
 }
 
 sub SetResultValue {

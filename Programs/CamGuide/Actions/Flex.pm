@@ -1,4 +1,3 @@
-
 package Programs::CamGuide::Actions::Flex;
 
 
@@ -10,6 +9,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::CamGuide::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
+
+use aliased 'Packages::GuideSubs::Flex::DoBendArea';
 use aliased 'Packages::GuideSubs::Flex::DoCoverlayPins';
 use aliased 'Packages::GuideSubs::Flex::DoCoverlayLayers';
 use aliased 'Packages::GuideSubs::Flex::DoPrepregLayers';
@@ -22,6 +23,30 @@ use aliased 'Packages::GuideSubs::Flex::DoPrepareBendAreaOther';
 our %n;
 our %d;
 
+
+$n{"ActionDoBendArea"} = "Bend area";
+$d{"ActionDoBendArea"} = "Vytvoří vrstvu (bend) s hranicemi pružných částí DPS";
+
+sub ActionDoBendArea {
+
+	#Veskere potrebne komponenty a informace nam vzdy poskytne samotny Guide, ktery je predan jako prvni parametr
+
+	my $guide    = shift;
+	my $inCAM    = $guide->GetCAM();		#napojena InCAM knihovna na editor, uz nevytvarime znovu
+	my $messMngr = $guide->GetMessMngr();	#spravce chybovych/informacnich oken, take uz nevztvarime ynovu
+	my %pcbInfo  = $guide->GetPcbInfo();	#hash obsahujici veskere potrebne info o dps nejen z norrisu
+	my $stepO  	 = $guide->GetStepO();		#vrati "aktualni nazev stepu O", podle toho na keterm stepu je Guide spusten
+	my $stepO1   = $guide->GetStepO1();		#vrati "aktualni nazev stepu O+1", podle toho na keterm stepu je Guide spusten
+	
+	#priklad dotazeni jmena dps z %pcbInfo
+	my $jobId  = $pcbInfo{"pcbId"};
+	
+	#tady se bude zapisovat kod akce
+	#kod bude co nejstrucnejsi a bude volat prislusne pomocne balicky ze slozkz Packages, popr CamHelper
+	
+	DoBendArea->CreateBendArea( $inCAM, $jobId, $stepO1 );
+	
+} 
  
 $n{"ActionDoCoverlayPins"} = "Coverlay piny";
 $d{"ActionDoCoverlayPins"} = "Vytvoří coverlay piny pro připájení pájkou";

@@ -257,7 +257,12 @@ sub __SetLayoutParameters {
 		}
 		elsif ( $messPar->GetParameterType() eq Enums->ParameterType_OPTION ) {
 
-			die "Parameter of type: option is not implemented";
+			my @opt = $messPar->GetOptions();
+			$parVal = Wx::ComboBox->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition,   &Wx::wxDefaultSize, \@opt );
+			$parVal->SetValue( $messPar->GetOrigValue() );
+
+			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
+			Wx::Event::EVT_BUTTON( $btnReset, -1, sub { $parVal->SetValue( $messPar->GetOrigValue() ) } );
 		}
 
 		$szClTitle->Add( $parTitleTxt, 0, &Wx::wxALL, 3 );

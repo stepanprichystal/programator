@@ -232,7 +232,8 @@ sub __InitUniDTM {
 		$uniT->SetTypeTool( $t->{"gTOOLtype"} );
 		$uniT->SetTypeUse( $t->{"gTOOLtype2"} );
 		$uniT->SetFinishSize( $t->{"gTOOLfinish_size"} );
-
+		$uniT->SetToolNum( $t->{"gTOOLnum"} );
+		
 		push( @{ $self->{"tools"} }, $uniT );
 
 	}

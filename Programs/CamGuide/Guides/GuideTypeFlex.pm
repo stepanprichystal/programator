@@ -49,6 +49,8 @@ sub __SetGuideActions {
 
 	$self->_SetStep( Enums->ActualStep_STEPOPLUS1 );
 
+
+	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoBendArea,   Enums->ActionType_DO );
 	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoCoverlayPins,   Enums->ActionType_DO );
 	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoCoverlayLayers, Enums->ActionType_DO );
 	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoCoverlayTemplateLayers, Enums->ActionType_DO );

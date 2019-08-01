@@ -32,6 +32,8 @@ use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
 use aliased 'Packages::ETesting::BasicHelper::Helper';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAM::UniDTM::Enums' => 'UniDTMEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -449,14 +451,53 @@ sub __CleanLayers {
 	CamLayer->AffectLayers( $inCAM, \@lNames );
 	$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => ".drill\;.rout_plated\;.smd", "attr_vals" => "plated\;\;\;" );
 	CamLayer->ClearLayers($inCAM);
-	
+
 	# Clean Rout before plating
-	my @pltMill = map {$_->{"gROWname"}} CamDrilling->GetNCLayersByType($inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill);
-	
-	if(@pltMill){
-		
+	my @pltMill = map { $_->{"gROWname"} } CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
+
+	if (@pltMill) {
+
 		CamLayer->AffectLayers( $inCAM, \@pltMill );
-		CamLayer->DeleteFeatures($inCAM) if(CamFilter->SelectBySingleAtt($inCAM, $jobId, ".pilot_hole"));
+		CamLayer->DeleteFeatures($inCAM) if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pilot_hole" ) );
+	}
+
+	# Clean NPTH depth routing with angel
+	my @depthMill = map { $_->{"gROWname"} }
+	  CamDrilling->GetNCLayersByTypes(
+									   $inCAM, $jobId,
+									   [
+										  EnumsGeneral->LAYERTYPE_nplt_bMillTop,  EnumsGeneral->LAYERTYPE_nplt_bMillBot,
+										  EnumsGeneral->LAYERTYPE_nplt_cbMillTop, EnumsGeneral->LAYERTYPE_nplt_cbMillBot
+									   ]
+	  );
+
+	foreach my $l (@depthMill) {
+
+		my $unitDTM = UniDTM->new( $inCAM, $jobId, $etStep, $l );
+		my @tools = grep { $_->GetSpecial() && $_->GetAngle() } $unitDTM->GetTools();
+
+		if (@tools) {
+			CamLayer->WorkLayer( $inCAM, $l );
+			foreach my $t (@tools) {
+
+				if ( $t->GetSource() eq UniDTMEnums->Source_DTM ) {
+
+					if ( CamFilter->ByDCodes( $inCAM, [ $t->GetToolNum() ] ) ) {
+
+						CamLayer->DeleteFeatures($inCAM);
+					}
+
+				}
+				elsif ( $t->GetSource() eq UniDTMEnums->Source_DTMSURF ) {
+
+					my @idxs = $t->GetSurfacesId();
+					if ( CamFilter->SelectByFeatureIndexes( $inCAM, $jobId, \@idxs ) ) {
+						CamLayer->DeleteFeatures($inCAM);
+					}
+				}
+			}
+		}
+
 	}
 
 	return 1;
@@ -565,13 +606,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d248323";
+	my $jobId = "d251561";
 	my $inCAM = InCAM->new();
 
 	my $step = "panel";
 
 	my $max = ExportIPC->new( $inCAM, $jobId, $step, 1, );
-	$max->Export( undef, 0 );
+	$max->Export( undef, 1 );
 
 	print "area exceeded=" . $max . "---\n";
 

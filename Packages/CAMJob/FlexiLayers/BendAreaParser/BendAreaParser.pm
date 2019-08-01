@@ -23,11 +23,11 @@ use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'Packages::CAMJob::FlexiLayers::BendAreaParser::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
-my $TRANSITIONZONEATT = "transition_zone";
 
 sub new {
 	my $self = shift;
@@ -174,7 +174,7 @@ sub __LoadBendArea {
 		
 		my @tranZones = ();
 
-		foreach my $feat ( grep { defined $_->{"att"}->{$TRANSITIONZONEATT} } @feats ) {
+		foreach my $feat ( grep { defined $_->{"att"}->{Enums->BendArea_TRANZONEATT} } @feats ) {
 
 			my $tZone = TransitionZone->new($feat);
 
