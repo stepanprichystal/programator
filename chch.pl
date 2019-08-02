@@ -7,17 +7,14 @@ use Tk::LabFrame;
 use Tk::BrowseEntry;
 use Genesis;
 
-use LoadLibrary;
 
-#local library
-use Enums;
-use FileHelper;
-use GeneralHelper;
-use DrillHelper;
-use StackupHelper;
-use MessageForm;
-use SimpleInputForm;
-use RoutHelper;
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+
+use aliased 'Packages::InCAM::InCAM';
 
 
 unless ($ENV{JOB}) {
@@ -27,7 +24,8 @@ unless ($ENV{JOB}) {
 
 }		
 
-$genesis = new Genesis;
+
+my $genesis    = InCAM->new();
 
 
 
