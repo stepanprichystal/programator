@@ -160,8 +160,8 @@ sub _viewChain {
 		$genesis->COM ('zoom_home');
 		
 	
-	
-	my @sortedCh = RouteHelper->SortChains(\@data, 10);
+	my @sortedCh = @data;
+	#my @sortedCh = RouteHelper->SortChains(\@data, 10);
 	
 	my @removedElements = grep !/s/, @sortedCh;
 	my @sortField = sort ({$b<=>$a} @removedElements);
