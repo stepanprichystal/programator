@@ -517,7 +517,7 @@ sub OnCheckGroupData {
 			my @inner = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^v\d+$/i } $defaultInfo->GetBoardBaseLayers();
 			my @outer = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^[cs]$/i } $defaultInfo->GetBoardBaseLayers();
 
-			foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId ) ) {
+			foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [EnumsGeneral->Coupon_IMPEDANCE] ) ) {
 
 				unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $s, $checklistName ) ) {
 

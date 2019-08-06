@@ -183,8 +183,9 @@ sub __MoveToRoutLayer {
 					 "size"  => $routTool,
 					 "comp"  => "right"
 		);
-
 		$inCAM->COM("sel_all_feat");
+
+		$inCAM->COM("chain_list_reset");
 
 		$inCAM->COM(
 					 "chain_pocket",
@@ -220,8 +221,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152456";
- 
+	my $jobId = "d252332+1";
 
 	my $typDTM = EnumsDrill->DTM_VRTANE;    # EnumsDrill->DTM_VRTANE/ EnumsDrill->DTM_VYSLEDNE
 

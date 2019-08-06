@@ -35,11 +35,11 @@ countourMech = 1               # 1/0
 
 [t = Horizontal contour type]
 [h = Type of horizontal contour processing.  None - without mechanical processing; Rout - 2mm left rout; Score - standard scoring ]
-countourTypeX = score # none/rout/score
+countourTypeX = rout # none/rout/score
 
 [t = Horizontal rout bridges count]
 [h = Bridges are placed equally on coupon horizontal edge ]
-countourBridgesCntX = 0 #  
+countourBridgesCntX = 5 #  
 
 [t = Vertical contour type]
 [h = Type of horizontal contour processing. None - without mechanical processing; Rout - 2mm left rout; Score - standard scoring ]
@@ -47,7 +47,7 @@ countourTypeY = rout # none/rout/score
 
 [t = Vertical rout bridges count]
 [h = Bridges are placed equally on coupon vertical edge ]
-countourBridgesCntY  = 0 #  
+countourBridgesCntY  = 1 #  
  
 [t = Rout bridges width ]
 [h = Size of bridges rout gap in um]
