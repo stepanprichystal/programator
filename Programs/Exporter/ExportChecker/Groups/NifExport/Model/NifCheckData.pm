@@ -34,7 +34,7 @@ use aliased 'Packages::CAMJob::Marking::Marking';
 use aliased 'Packages::CAMJob::Technology::CuLayer';
 use aliased 'Packages::CAMJob::PCBConnector::InLayersClearanceCheck';
 use aliased 'Packages::CAMJob::PCBConnector::PCBConnectorCheck';
-use aliased 'Packages::CAM::Checklist::Action';
+use aliased 'Packages::CAMJob::Checklist::PCBClassCheck';
 use aliased 'Enums::EnumsChecklist';
 
 #-------------------------------------------------------------------------------------------#
@@ -514,112 +514,84 @@ sub OnCheckGroupData {
 		}
 		else {
 
-			my @inner = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^v\d+$/i } $defaultInfo->GetBoardBaseLayers();
-			my @outer = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^[cs]$/i } $defaultInfo->GetBoardBaseLayers();
+			foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] ) ) {
 
-			foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [EnumsGeneral->Coupon_IMPEDANCE] ) ) {
+				# Check outer layers
 
-				unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $s, $checklistName ) ) {
+				my @verifyOutResults = ();
+				my $verifyOutErrMess;
 
-					CamChecklist->CopyChecklistToStep( $inCAM, $s, $checklistName );
+				if ( PCBClassCheck->VerifyMinIsolOuterLayers( $inCAM, $jobId, $s, \@verifyOutResults, undef, undef, \$verifyOutErrMess ) ) {
+
+					foreach my $r (@verifyOutResults) {
+
+						print "Layer: " . $r->{"layer"} . "\n";
+						print "Problem category: " . $r->{"cat"} . "\n";
+						print "Problem value: " . $r->{"value"} . "\n";
+						print "\n\n";
+
+						my $class = $defaultInfo->GetPcbClass();
+
+						$dataMngr->_AddWarningResult(
+													  "Konstrukční třída vrstvy \"" . $r->{"layer"} . "\"",
+													  "V reportu cheklistu: \"$checklistName\", kategorii: \""
+														. $r->{"cat"}
+														. "\" pro step: \"$s\", vrstvu: \""
+														. $r->{"layer"}
+														. "\" byly nalezeny izolace: \""
+														. $r->{"val"}
+														. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
+						);
+
+					}
+				}
+				else {
+
+					$dataMngr->_AddErrorResult(
+												"Checklist - $checklistName",
+												"Chyba při pokusu o spuštění checklistu (název:$checklistName) pro step: \"$s\""
+												  . "Detail chyby: \"$verifyOutErrMess\""
+					);
 				}
 
-				if ( scalar(@inner) ) {
+				# Check inner layers
+				if ( $defaultInfo->GetSignalLayers() > 2 ) {
+					my @verifyInnResults = ();
+					my $verifyInnErrMess;
 
-					my $class = $defaultInfo->GetPcbClassInner();
-					my $isol  = JobHelper->GetIsolationByClass($class);
+					if ( PCBClassCheck->VerifyMinIsolInnerLayers( $inCAM, $jobId, $s, \@verifyInnResults, undef, undef, \$verifyInnErrMess ) ) {
 
-					my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 1 );    # action number = 1;
+						foreach my $r (@verifyInnResults) {
 
-					my $actionStatus = $a->Run();
+							print "Layer: " . $r->{"layer"} . "\n";
+							print "Problem category: " . $r->{"cat"} . "\n";
+							print "Problem value: " . $r->{"val"} . "\n";
+							print "\n\n";
 
-					unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
+							my $class = $defaultInfo->GetPcbClassInner();
+
+							$dataMngr->_AddWarningResult(
+														  "Konstrukční třída vrstvy \"" . $r->{"layer"} . "\"",
+														  "V reportu cheklistu: \"$checklistName\", kategorii: \""
+															. $r->{"cat"}
+															. "\" pro step: \"$s\", vrstvu: \""
+															. $r->{"layer"}
+															. "\" byly nalezeny izolace: \""
+															. $r->{"value"}
+															. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
+							);
+						}
+					}
+					else {
 
 						$dataMngr->_AddErrorResult(
 													"Checklist - $checklistName",
-													"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. "
-													  . "Status checklistu: \"$actionStatus\""
-													  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
+													"Chyba při pokusu o spuštění checklistu (název:$checklistName) pro step: \"$s\""
+													  . "Detail chyby: \"$verifyInnErrMess\""
 						);
-
-						next;
-					}
-
-					my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED ] );
-
-					foreach my $l (@inner) {
-
-						foreach my $catName ( ( EnumsChecklist->Cat_PAD2PAD, EnumsChecklist->Cat_PAD2CIRCUIT, EnumsChecklist->Cat_CIRCUIT2CIRCUIT ) )
-						{
-
-							my $cat = $r->GetCategory($catName);
-							next unless ( defined $cat );
-
-							my @catVal = $cat->GetCatValues($l);
-
-							if ( @catVal && $catVal[0]->GetValue() < $isol * ( 1 - $isolTol ) ) {
-
-								$dataMngr->_AddWarningResult(
-															  "Konstrukční třída vrstvy \"$l\"",
-															  "V reportu cheklistu: \"$checklistName\", kategorii: \""
-																. $cat->GetCatTitle()
-																. "\" pro step: \"$s\", vrstvu: \"$l\" byly nalezeny izolace: \""
-																. $catVal[0]->GetValue()
-																. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
-								);
-							}
-						}
-					}
-				}
-
-				if ( scalar(@outer) ) {
-					my $class = $defaultInfo->GetPcbClass();
-					my $isol  = JobHelper->GetIsolationByClass($class);
-
-					my $a = Action->new( $inCAM, $jobId, $s, $checklistName, 2 );    # action number = 2;
-
-					my $actionStatus = $a->Run();
-
-					unless ( $actionStatus eq EnumsChecklist->Status_DONE ) {
-
-						$dataMngr->_AddErrorResult(
-													"Checklist - $checklistName",
-													"Spuštění checklistu (název:$checklistName) pro step: \"$s\" skončilo neúspěšně. "
-													  . "Status checklistu: \"$actionStatus\""
-													  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
-						);
-
-						next;
-					}
-
-					my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED ] );
-
-					foreach my $l (@outer) {
-
-						foreach my $catName ( ( EnumsChecklist->Cat_PAD2PAD, EnumsChecklist->Cat_PAD2CIRCUIT, EnumsChecklist->Cat_CIRCUIT2CIRCUIT ) )
-						{
-
-							my $cat = $r->GetCategory($catName);
-							next unless ( defined $cat );
-
-							my @catVal = $cat->GetCatValues($l);
-
-							if ( @catVal && $catVal[0]->GetValue() < $isol * ( 1 - $isolTol ) ) {
-
-								$dataMngr->_AddWarningResult(
-															  "Konstrukční třída vrstvy \"$l\"",
-															  "V reportu cheklistu: \"$checklistName\", kategorii: \""
-																. $cat->GetCatTitle()
-																. "\" pro step: \"$s\", vrstvu: \"$l\" byly nalezeny izolace: \""
-																. $catVal[0]->GetValue()
-																. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
-								);
-							}
-						}
 					}
 				}
 			}
-
 		}
 	}
 }
