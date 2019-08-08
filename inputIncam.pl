@@ -933,11 +933,11 @@ sub _MoveNonPlateHoles {
    						if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
   								$inCAM->COM ('sel_move_other',target_layer=>'f',invert=>'no',dx=>'0',dy=>'0',size=>'0',x_anchor=>'0',y_anchor=>'0',rotation=>'0',mirror=>'none');
 								$inCAM->COM ('affected_layer',name=>"",mode=>"all",affected=>"no");
-								__npth_correct_set($pcbId, $npthLayer);
+								#__npth_correct_set($pcbId, $npthLayer);
 						}else {
 										$inCAM->COM('create_layer',layer=>'f',context=>'board',type=>'rout',polarity=>'positive',ins_layer=>'m');
 										$inCAM->COM ('sel_move_other',target_layer=>'f',invert=>'no',dx=>'0',dy=>'0',size=>'0',x_anchor=>'0',y_anchor=>'0',rotation=>'0',mirror=>'none');
-									__npth_correct_set($pcbId, $npthLayer);
+									#__npth_correct_set($pcbId, $npthLayer);
 						}
 			}
 			
@@ -950,7 +950,7 @@ sub _MoveNonPlateHoles {
    				if ($inCAM->{doinfo}{gEXISTS} eq "yes") {
    						$inCAM->COM('display_layer',name=>'d',display=>'yes',number=>'1');
 						$inCAM->COM('work_layer',name=>'d');
-						$inCAM->COM ('sel_move_other',target_layer=>'f',invert=>'no',dx=>'0',dy=>'0',size=>'0',x_anchor=>'0',y_anchor=>'0',rotation=>'0',mirror=>'none');
+						$inCAM->COM ('sel_move_other',target_layer=>'f',invert=>'no',dx=>'0',dy=>'0',size=>'0',"x_anchor"=>'0',"y_anchor"=>'0',rotation=>'0',mirror=>'none');
 						$inCAM->COM('display_layer',name=>'d',display=>'no',number=>'1');
 						$inCAM->COM('delete_layer',layer=>'d');
 						__npth_correct_set($pcbId, $npthLayer);
@@ -983,7 +983,9 @@ sub __npth_correct_set {
 						$type[$countDrill] = "nplate";
 					}
 			
-				$drill_size = $inCAM -> COM('drill_size_hook',layer=>"$npthLayer",thickness=>'0',user_params=>'vrtane',finish_size=>"$finishSize[$countDrill]",bit=>'Drill Des',type=>"$type[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]");
+				$inCAM -> COM('drill_size_hook',layer=>"$npthLayer",thickness=>'0',user_params=>'vrtane',finish_size=>"$finishSize[$countDrill]",bit=>'Drill Des',type=>"$type[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]");
+				
+				my $drill_size = $inCAM->GetReply();
 				@drill_size_bit = split /\s+/,$drill_size;
 				$inCAM -> COM('tools_tab_add',num=>"$numVrtaku[$countDrill]",type=>"$type[$countDrill]",min_tol=>"$min_tools[$countDrill]",max_tol=>"$max_tools[$countDrill]",bit=>"$drill_size_bit[1]",finish_size=>"$finishSize[$countDrill]",drill_size=>"$drill_size_bit[0]");
 				#,shape=>'hole'

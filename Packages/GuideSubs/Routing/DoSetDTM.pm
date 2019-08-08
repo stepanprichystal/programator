@@ -78,6 +78,8 @@ sub MoveHoles2RoutBeforeDTMRecalc {
 	}
 
 	if (@moveTools) {
+		
+		CamLayer->WorkLayer($inCAM, $layer);
 
 		my $mess = "V DTM ve vrstvě: \"$layer\" byly nalezeny velké otvory, pro které nemáme nástroj na skladě:\n";
 
