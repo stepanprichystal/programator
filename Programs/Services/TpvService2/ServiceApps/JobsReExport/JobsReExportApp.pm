@@ -246,7 +246,13 @@ sub __ProcessJob {
 
 	# 2) Check before export
 	my $errMess = "";
-	if ( $self->__CheckBeforeExport( $jobId, \$errMess ) ) {
+ 
+	my $check = $self->__CheckBeforeExport( $jobId, \$errMess );
+	
+	# Save and close job
+	$self->_CloseJob($jobId);
+	
+	if ($check) {
 
 		$self->__PrepareExportFile($jobId);
 		$self->__RemoveFromJoblist($jobId);
@@ -261,8 +267,7 @@ sub __ProcessJob {
 
 	$self->{"logger"}->debug("Job is done: $jobId");
 
-	# 3) save job
-	$self->_CloseJob($jobId);
+	
 
 	# If error during export, send err log to db
 
