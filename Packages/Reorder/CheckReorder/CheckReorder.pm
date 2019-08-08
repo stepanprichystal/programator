@@ -158,8 +158,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM   = InCAM->new();
-	my $jobId   = "d152457";
-	my $orderId = "d152457-03";
+	my $jobId   = "d152456";
+	my $orderId = "d152456-01";
 
 	my $ch = CheckReorder->new( $inCAM, $jobId, $orderId );
 	my @arr = $ch->RunChecks();

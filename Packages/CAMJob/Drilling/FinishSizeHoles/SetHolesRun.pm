@@ -76,8 +76,9 @@ sub _Gui {
 			my $bottom = $main->Frame(-width=>100, -height=>50)->pack(-side=>'bottom', -fill=>'both');
 						$bottom->Button(-height => "3", -text => "Pokracovat",-command=> sub {_SetDrill($inCAM, $adjust, $jobId); $main->destroy},-bg=>'grey',-relief=>'raise',-bd=>'3')->pack(-padx => 5, -pady => 5,-side=>'bottom', -fill=>'both');
 			
-			
-		MainLoop ();
+		$main->waitWindow;	
+		#MainLoop ();
+		
 		
 }
 
@@ -105,8 +106,7 @@ sub _SetDrill {
       
       CamDTM->RecalcDTMTools( $inCAM, $jobId, "o+1", $layerMill, EnumsDrill->DTM_VRTANE, $holes, $slots );
 
-       
-   
+ 
        
 
 }

@@ -17,6 +17,7 @@ use warnings;
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::CAMJob::Marking::Marking';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 
@@ -58,6 +59,22 @@ sub Run {
 	unless ( LayerErrorInfo->CheckNCLayers( $inCAM, $jobId, $step, undef, \$mess ) ) {
 		
 		$self->_AddChange($mess, 1);
+	}
+	
+	
+	# 2) Check if job viafill layer  are prepared if viafill in IS
+	my $viaFillType = HegMethods->GetBasePcbInfo($jobId)->{"zaplneni_otvoru"};
+ 
+	# A - viafill in gatema
+	# B - viafill in cooperation - all holes
+	# C - viafill in cooperation - specified holes
+	if ( defined $viaFillType && $viaFillType =~ /[abc]/i ) {
+
+		unless ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
+
+			$self->_AddChange( "V IS je požadavek na zaplnění otvorů, v jobu ale nejsou připravené NC vrstvy (mfill; scfill; ssfill)", 1);
+
+		}
 	}
 	 
 }
