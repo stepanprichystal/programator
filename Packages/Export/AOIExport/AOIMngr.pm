@@ -448,11 +448,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobName   = "d229010";
+	my $jobName   = "d253194";
 	my $stepName  = "panel";
 	my $layerName = "c";
 
-	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, ["c"] );
+	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, ["c", "s"] );
 	$mngr->Run();
 }
 

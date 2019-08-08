@@ -490,6 +490,11 @@ sub GetNPltNCLayers {
 # {"gROWdrl_end_name"} - which layer drilling end in (we consider only signal layers)
 # {"gROWdrl_start"}  - layer number
 # {"gROWdrl_end"}   - layer number
+# Add  to every hash in array new value:
+# {"gROWdrl_start_name"}  - which lazer drilling start from (we consider only signal layers)
+# {"gROWdrl_end_name"} - which layer drilling end in (we consider only signal layers)
+# {"gROWdrl_start"}  - layer number
+# {"gROWdrl_end"}   - layer number
 sub AddLayerStartStop {
 	my $self   = shift;
 	my $inCAM  = shift;
@@ -518,6 +523,7 @@ sub AddLayerStartStop {
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gROWname} } ) ; $i++ ) {
 		my $name = ${ $inCAM->{doinfo}{gROWname} }[$i];
 
+		$order{$name} = $signalOrder;
 
 		#start signal counting. "c" = 1, "v2" = 2, ...
 		if ( $name eq "c" || ( $signalOrder > 1 && $signalOrder < $layerCnt ) ) {
@@ -529,13 +535,10 @@ sub AddLayerStartStop {
 			$signalAlias = $name;
 			$iterate     = 1;
 		}
-		
-		if ($iterate && $name !~ /^s|(v\d+)$/ ) {
-			$signalOrder--;
+		if ( $name eq "s" ) {
 			$iterate = 0;
 		}
 
-		$order{$name} = $signalOrder;
 		$alias{$name} = $signalAlias;
 	}
 
@@ -552,19 +555,6 @@ sub AddLayerStartStop {
 
 		my $start = ${ $inCAM->{doinfo}{gROWdrl_start} }[$idx];
 		my $end   = ${ $inCAM->{doinfo}{gROWdrl_end} }[$idx];
-
-		# if coverlay or stiffener layer, set start/end according special layer
-		if ( $layer->{"gROWname"} =~ /fcoverlay[cs]\d?/  ) {
-			
-			$start =~ s/(coverlay)//;
-			$end =~ s/(coverlay)//;
-		}
-		
-		if ( $layer->{"gROWname"} =~ /fstiff[cs]\d?/ ) {
-			
-			$start = "c" ;
-			$start = "c" ;
-		}
 
 		$layer->{"gROWdrl_start_name"} = $alias{$start};
 		$layer->{"gROWdrl_end_name"}   = $alias{$end};
@@ -825,11 +815,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId     = "d252642";
+	my $jobId     = "d253194";
 	my $stepName  = "o+1";
-	my $layerName = "fstiffs";
+	#my $layerName = "fstiffs";
 
-	my @layers = CamDrilling->GetNPltNCLayers( $inCAM, $jobId );
+	my @layers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
 
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
 
