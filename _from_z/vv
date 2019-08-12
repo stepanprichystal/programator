@@ -84,5 +84,5 @@ sub _SetDrill {
       CamDTM->SetDTMTools( $inCAM, $jobId, "o+1", "m", \@tools, $adjustDrill, $recalc );
 
 
-exit;
+#exit;
 }
