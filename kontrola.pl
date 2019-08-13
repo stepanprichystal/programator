@@ -9,10 +9,10 @@ use Tk::LabEntry;
 use Tk::LabFrame;
 use XML::Simple;
 use Data::Dumper;
+use File::Find;
 
 
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
-
 
 #necessary for load pall packages
 use FindBin;
@@ -194,6 +194,19 @@ $main->MainLoop;
 					}
 	}
 	closedir BOARDS;
+	
+	
+	# Check csv file and write to send control data to HEG if it is Q-Print
+	if (HegMethods->GetIdcustomer($jobName) eq '06815') {
+			my $importPath = _SearchCSV($jobName);
+
+				if ( $importPath ) {
+						if (_SendGerber($importPath)) {
+								HegMethods->UpdateOrderNotes($jobName, 'Odeslat data CONTROL na odsouhlaseni.');
+						}
+				}
+	}
+	
 	
 
 
@@ -1003,6 +1016,37 @@ sub _CompareDimPcbXml {
 	return($res, $res);
 }
 
+sub _SearchCSV {
+		my $jobId = shift;
+		my $localPath = 'c:/pcb';
+		my @listFiles = ();
+		my $res = 0;
+		
+					find({wanted => sub {push @listFiles, $File::Find::name},no_chdir => 1}, $localPath . '/' . $jobId);
+
+					my @tgzArr = grep /\.csv$/, @listFiles;
+
+					if (scalar @tgzArr == 1) {
+							$res = $tgzArr[0];
+					}
+	return($res);
+}
+
+
+sub _SendGerber {
+	my $path = shift;
+	my $res = 0;
+	
+	open (CSV,"$path");
+				while (<CSV>) {
+					if ($_ =~ /[Ww][Oo][Rr][Kk][Ii][Nn][Gg]\s[Gg][Ee][Rr][Bb][Ee][Rr]/) {
+						$res = 1;
+						last;
+					}
+				}
+	close CSV;
+	return($res);
+}
 
 
 
