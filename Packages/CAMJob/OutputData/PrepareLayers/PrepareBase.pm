@@ -221,7 +221,7 @@ sub __PrepareFILLEDHOLES {
 	} @lFilled;
 
 	my %lFilledMatrix = ();
-	push( @{ $lFilledMatrix{ $_->{"gROWdrl_start"} . "_" . $_->{"gROWdrl_end"} . "_" . $_->{"gROWdrl_dir"} } }, $_ ) foreach (@lFilled);
+	push( @{ $lFilledMatrix{ $_->{"NCSigStartOrder"} . "_" . $_->{"NCSigEndOrder"} . "_" . $_->{"gROWdrl_dir"} } }, $_ ) foreach (@lFilled);
 
 	foreach my $k ( keys %lFilledMatrix ) {
 

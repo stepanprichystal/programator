@@ -1,1 +1,1 @@
-sr_fill
+print 5..1;

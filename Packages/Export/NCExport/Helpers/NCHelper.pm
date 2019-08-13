@@ -530,7 +530,7 @@ sub StoreOperationInfoTif {
 		}
 		else {
 			my $stackup = Stackup->new($jobId);
-			$matThick = $stackup->GetThickByLayerName( $layers[0]->{"gROWdrl_start_name"} );
+			$matThick = $stackup->GetThickByLayerName( $layers[0]->{"NCSigStart"} );
 		}
 
 		# Set material thickness during operation

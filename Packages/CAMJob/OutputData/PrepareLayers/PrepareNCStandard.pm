@@ -108,7 +108,7 @@ sub __PrepareNCDRILL {
 	  } @layers;
 
 	my %layersBlindMatrix = ();
-	push( @{ $layersBlindMatrix{ $_->{"gROWdrl_start"} . "_" . $_->{"gROWdrl_end"} . "_" . $_->{"gROWdrl_dir"} } }, $_ ) foreach (@layersBlind);
+	push( @{ $layersBlindMatrix{ $_->{"NCSigStartOrder"} . "_" . $_->{"NCSigEndOrder"} . "_" . $_->{"gROWdrl_dir"} } }, $_ ) foreach (@layersBlind);
 
 	foreach my $k ( keys %layersBlindMatrix ) {
 

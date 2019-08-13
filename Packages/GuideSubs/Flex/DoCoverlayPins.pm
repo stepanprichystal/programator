@@ -43,12 +43,12 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
-my $OPTIMALPINLENGTH = 10;      # 10mm
+my $OPTIMALPINLENGTH = 11;      # 11mm
 my $OPTIMALPINWIDTH  = 2.5;     # 2.5mm
-my $PINREGISTERDIST  = 2;       # 2mm from flex part
+my $PINREGISTERDIST  = 3.25;    # 3.25mm from flex part
 my $PINSOLDDIST1     = 0.5;     # 0.5mm from flex part
 my $PINCUTDIST2      = 6;       # 6mm from flex part
-my $CUREGPADSIZE     = 3.25;    # 3.25mm pad in signal flex layers
+my $CUREGPADSIZE     = 1.2;    # 1.2mm pad in signal flex layers
 
 #	PinString_REGISTER   => "pin_register",      # pad which is used for register coverlay with flex core
 #	PinString_SOLDERLINE => "pin_solderline",    # between PinString_SOLDERPIN and PinString_CUTPIN lines is place for soldering

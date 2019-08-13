@@ -162,7 +162,7 @@ sub EditAfterOpen {
 
 	if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
-		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill  
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldcMill
@@ -207,12 +207,29 @@ sub EditAfterOpen {
 				# COVERLAY and STIFFENER - Add coverlay/stiffener signal layer name
 				if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
 					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
-					)
+					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill )
 				{
 
 					my ( $pre, $suf ) = $dn =~ m/^(.*M97,\w\d{6})(.*)$/;
-					my $sigLayer = " " . $layer->{"gROWdrl_start_name"};
-					$dn = $pre . $sigLayer . $suf . "\n";
+					my $ncStart = $layer->{"gROWdrl_start"};
+					my $sigLayer;
+					if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
+						 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill )
+					{
+
+						($sigLayer) = $ncStart =~ /^coverlay(.*)/;
+					}
+					elsif (
+							$layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+							|| $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+					  )
+					{
+
+						($sigLayer) = $ncStart =~ /^stiff(.*)/;
+					}
+
+					$dn = $pre . " " . $sigLayer . $suf . "\n";
 				}
 
 				my ($xVal) = $dn =~ /X(\d+\.\d+)Y/;

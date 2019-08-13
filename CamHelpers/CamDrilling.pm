@@ -8,6 +8,8 @@ package CamHelpers::CamDrilling;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min];
+use Array::Utils qw(:all);
 
 #loading of locale modules
 
@@ -40,7 +42,7 @@ sub GetMinHoleTool {
 
 	#filter layer, which go from <$fromLayer>
 	if ($fromLayer) {
-		@layers = grep { $_->{"gROWdrl_start_name"} eq $fromLayer } @layers;
+		@layers = grep { $_->{"NCSigStart"} eq $fromLayer } @layers;
 	}
 
 	foreach my $layer (@layers) {
@@ -443,11 +445,19 @@ sub GetNCLayerInfo {
 
 	if ($startStop) {
 		$self->AddLayerStartStop( $inCAM, $jobId, [ \%lInfo ] );
-		die "Key: \"gROWdrl_start_name\"  was not set at layer: $layer" unless ( defined $lInfo{"gROWdrl_start_name"} );
-		die "Key: \"gROWdrl_end_name\"  was not set at layer: $layer"   unless ( defined $lInfo{"gROWdrl_end_name"} );
-		die "Key: \"gROWdrl_start\"  was not set at layer: $layer"      unless ( defined $lInfo{"gROWdrl_start"} );
-		die "Key: \"gROWdrl_end\"  was not set at layer: $layer"        unless ( defined $lInfo{"gROWdrl_end"} );
-		die "Key: \"gROWdrl_dir\"  was not set at layer: $layer"        unless ( defined $lInfo{"gROWdrl_dir"} );
+		die "Key: \"gROWdrl_start\"  was not set at layer: $layer" unless ( defined $lInfo{"gROWdrl_start"} );
+		die "Key: \"gROWdrl_end\"  was not set at layer: $layer"   unless ( defined $lInfo{"gROWdrl_end"} );
+		die "Key: \"NCStartOrder\"  was not set at layer: $layer"  unless ( defined $lInfo{"NCStartOrder"} );
+		die "Key: \"NCEndOrder\"  was not set at layer: $layer"    unless ( defined $lInfo{"NCEndOrder"} );
+		die "Key: \"gROWdrl_dir\"  was not set at layer: $layer"   unless ( defined $lInfo{"gROWdrl_dir"} );
+
+		if ( $lInfo{"NCThroughSig"} ) {
+
+			die "Key: \"NCSigStart\"  was not set at layer: $layer"      unless ( defined $lInfo{"NCSigStart"} );
+			die "Key: \"NCSigEnd\"  was not set at layer: $layer"        unless ( defined $lInfo{"NCSigEnd"} );
+			die "Key: \"NCSigStartOrder\"  was not set at layer: $layer" unless ( defined $lInfo{"NCSigStartOrder"} );
+			die "Key: \"NCSigEndOrder\"  was not set at layer: $layer"   unless ( defined $lInfo{"NCSigEndOrder"} );
+		}
 	}
 
 	return %lInfo;
@@ -485,25 +495,24 @@ sub GetNPltNCLayers {
 
 }
 
-# Add  to every hash in array new value:
-# {"gROWdrl_start_name"}  - which lazer drilling start from (we consider only signal layers)
-# {"gROWdrl_end_name"} - which layer drilling end in (we consider only signal layers)
-# {"gROWdrl_start"}  - layer number
-# {"gROWdrl_end"}   - layer number
-# Add  to every hash in array new value:
-# {"gROWdrl_start_name"}  - which lazer drilling start from (we consider only signal layers)
-# {"gROWdrl_end_name"} - which layer drilling end in (we consider only signal layers)
-# {"gROWdrl_start"}  - layer number
-# {"gROWdrl_end"}   - layer number
+# Add  to every hash (layer) in array new keys:
+# - {"gROWdrl_start"} - layer name where NC layer starts ( start layer type does not matter )
+# - {"gROWdrl_end"}   -  layer name where NC layer starts ( end layer type does not matter )
+# - {"NCStartOrder"}  - layer name where NC layer starts ( start layer type does not matter )
+# - {"NCEndOrder"}    - layer name where NC layer starts ( end layer type does not matter )
+# - {"gROWdrl_dir"}   - direction of NC layer in matrix
+# - {"NCThroughSig"} - 0/1 indicate if NC layer start/end/go through at least one signal layer
+#
+# If NC layer which start/end/go through at least one signal layer add extra keys:
+# - {"NCSigStart"}   - signal layer name where NC layer starts (if NC layer start/end/go through at least one signal layer)
+# - {"NCSigEnd"}     - signal layer name where NC layer end (if NC layer start/end/go through at least one signal layer)
+# - {"NCSigStartOrder"}  - signal layer order (c = 1) where NC layer starts (if NC layer start/end/go through at least one signal layer)
+# - {"NCSigEndOrder"}    - signal layer order (c = 1) where NC layer end (if NC layer start/end/go through at least one signal layer)
 sub AddLayerStartStop {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
-	my $layers = shift;    #specify layers
-
-	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
-
-	my @arr = ();
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $NCLayers = shift;    #specify layers
 
 	$inCAM->INFO(
 				  units           => 'mm',
@@ -511,81 +520,107 @@ sub AddLayerStartStop {
 				  entity_type     => 'matrix',
 				  entity_path     => "$jobId/matrix",
 				  data_type       => 'ROW',
-				  parameters      => "drl_end+drl_start+name+drl_dir"
+				  parameters      => "drl_end+drl_start+name+drl_dir+layer_type"
 	);
 
-	my %order       = ();
-	my %alias       = ();
-	my $signalOrder = 1;
-	my $signalAlias = "c";
-	my $iterate     = 0;
+	my @arr = ( 1, 2 );
+	my $arrRef = [ 1, 2 ];
+
+	my %matrixLayerOrder = ();
 
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gROWname} } ) ; $i++ ) {
-		my $name = ${ $inCAM->{doinfo}{gROWname} }[$i];
 
-		$order{$name} = $signalOrder;
-
-		#start signal counting. "c" = 1, "v2" = 2, ...
-		if ( $name eq "c" || ( $signalOrder > 1 && $signalOrder < $layerCnt ) ) {
-			$signalOrder++;
-		}
-
-		#start signal counting. "c" = 1, "v2" = 2, ...
-		if ( $name eq "c" || $iterate ) {
-			$signalAlias = $name;
-			$iterate     = 1;
-		}
-		if ( $name eq "s" ) {
-			$iterate = 0;
-		}
-
-		$alias{$name} = $signalAlias;
+		$matrixLayerOrder{ $inCAM->{"doinfo"}{"gROWname"}->[$i] } = $i + 1;
 	}
 
-	for ( my $i = 0 ; $i < scalar( @{$layers} ) ; $i++ ) {
+	# 1) Add base info for all NC layers
+	foreach my $NCl ( @{$NCLayers} ) {
+		my $idx = ( grep { $inCAM->{doinfo}{gROWname}->[$_] eq $NCl->{"gROWname"} } 0 .. $#{ $inCAM->{doinfo}{gROWname} } )[0];
 
-		my $layer = ${$layers}[$i];
+		# start/stop info
+		$NCl->{"gROWdrl_start"} = $inCAM->{"doinfo"}{"gROWdrl_start"}->[$idx];    # start layer name
+		$NCl->{"gROWdrl_end"}   = $inCAM->{"doinfo"}{"gROWdrl_end"}->[$idx];      # end layer name
+		$NCl->{"gROWdrl_dir"}   = $inCAM->{"doinfo"}{"gROWdrl_dir"}->[$idx];      # layer matrix direction
+		     # "not_def" value is set when drill direction not was set manually in InCAM (default direction from top to bot)
+		     # from this point gROWdrl_dir has only 2 values: top2bot/bot2top
+		$NCl->{"gROWdrl_dir"} = "top2bot" if ( $NCl->{"gROWdrl_dir"} eq "not_def" );
 
-		my @lInfos = @{ $inCAM->{doinfo}{gROWname} };
-		my $idx = ( grep { $layer->{"gROWname"} eq ${ $inCAM->{doinfo}{gROWname} }[$_] } 0 .. $#lInfos )[0];
+		$NCl->{"NCStartOrder"} = $matrixLayerOrder{ $NCl->{"gROWdrl_start"} };    # start layer order in matrix
+		$NCl->{"NCEndOrder"}   = $matrixLayerOrder{ $NCl->{"gROWdrl_end"} };      # end layer order in matrix
+	}
 
-		unless ( defined $idx ) {
+	# 2) Add extra info for NC layers which start/end/go through at least one signal layer
+
+	my @sigLayerMatrixOrder = ();
+	my %sigLayerOrder       = ();
+
+	my $sigLayerIdx = 1;
+	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gROWname} } ) ; $i++ ) {
+
+		my $lName = $inCAM->{doinfo}{gROWname}->[$i];
+		my $lType = $inCAM->{doinfo}{gROWlayer_type}->[$i];
+
+		if ( ( $lType eq "signal" || $lType eq "power_ground" || $lType eq "mixed" ) && $lName =~ /(^v\d+$)|^[cs]$/ ) {
+
+			push( @sigLayerMatrixOrder, $i + 1 );
+			$sigLayerOrder{$lName} = $sigLayerIdx;
+			$sigLayerIdx++;
+		}
+	}
+
+	foreach my $NCl ( @{$NCLayers} ) {
+
+		$NCl->{"NCThroughSig"} = 1;
+
+		my @goThroughLayers = ();
+
+		if ( $NCl->{"gROWdrl_dir"} eq "bot2top" ) {
+			@goThroughLayers = reverse( $NCl->{"NCEndOrder"} .. $NCl->{"NCStartOrder"} );
+		}
+		else {
+			@goThroughLayers = $NCl->{"NCStartOrder"} .. $NCl->{"NCEndOrder"};
+		}
+
+		# Check if NC layer start/end/go through at least one signal layer
+		my @sigLIsect = intersect( @sigLayerMatrixOrder, @goThroughLayers );
+
+		unless (@sigLIsect) {
+
+			$NCl->{"NCThroughSig"} = 0;
 			next;
 		}
 
-		my $start = ${ $inCAM->{doinfo}{gROWdrl_start} }[$idx];
-		my $end   = ${ $inCAM->{doinfo}{gROWdrl_end} }[$idx];
+		my $sigMatrixStart;
+		my $sigMatrixEnd;
 
-		$layer->{"gROWdrl_start_name"} = $alias{$start};
-		$layer->{"gROWdrl_end_name"}   = $alias{$end};
-		$layer->{"gROWdrl_start"}      = $order{$start};
-		$layer->{"gROWdrl_end"}        = $order{$end};
+		if ( $NCl->{"gROWdrl_dir"} eq "top2bot" ) {
 
-		$layer->{"gROWname"} = ${ $inCAM->{doinfo}{gROWname} }[$idx];
+			$sigMatrixStart = max( min(@sigLayerMatrixOrder), $NCl->{"NCStartOrder"} );
+			$sigMatrixEnd = min( max(@sigLayerMatrixOrder), $NCl->{"NCEndOrder"} );
 
-		# not_def value is set when drill direction not was set manually in InCAM (default direction from top to bot)
-		#drill direction top2bot/bot2top/not_def
-		$layer->{"gROWdrl_dir"} = ${ $inCAM->{doinfo}{gROWdrl_dir} }[$idx];
+		}
+		elsif ( $NCl->{"gROWdrl_dir"} eq "bot2top" ) {
 
-		# "not_def" value is set when drill direction not was set manually in InCAM (default direction from top to bot)
-		# from this point gROWdrl_dir has only 2 values: top2bot/bot2top
-		$layer->{"gROWdrl_dir"} = "top2bot" if ( $layer->{"gROWdrl_dir"} eq "not_def" );
+			$sigMatrixStart = min( max(@sigLayerMatrixOrder), $NCl->{"NCStartOrder"} );
+			$sigMatrixEnd = max( min(@sigLayerMatrixOrder), $NCl->{"NCEndOrder"} );
+		}
 
-		#Necessary, for old genesis bot drilling. Because all drilling direction
-		#were from TOP to BOT. But InCAM allows make Bot blind with direction
-		#from Bot to TOP
-		if ( ${ $inCAM->{doinfo}{gROWname} }[$idx] =~ /s[0-9]+s/ ) {    #if blind BOT drilling, check
+		# Get signal layer name and signal layer order by start/end layer order in matrix
+		foreach my $lName ( keys %matrixLayerOrder ) {
 
-			if ( $order{$start} < $order{$end} ) {
-				$layer->{"gROWdrl_start_name"} = $alias{$end};
-				$layer->{"gROWdrl_end_name"}   = $alias{$start};
-				$layer->{"gROWdrl_start"}      = $order{$end};
-				$layer->{"gROWdrl_end"}        = $order{$start};
-				$layer->{"gROWdrl_dir"}        = "bot2top";
+			if ( $sigMatrixStart == $matrixLayerOrder{$lName} ) {
+
+				$NCl->{"NCSigStart"}      = $lName;
+				$NCl->{"NCSigStartOrder"} = $sigLayerOrder{$lName};
+			}
+
+			if ( $sigMatrixEnd == $matrixLayerOrder{$lName} ) {
+
+				$NCl->{"NCSigEnd"}      = $lName;
+				$NCl->{"NCSigEndOrder"} = $sigLayerOrder{$lName};
 			}
 		}
 
-		#push( @arr, \%info );
 	}
 
 }
@@ -815,11 +850,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId     = "d253194";
-	my $stepName  = "o+1";
+	my $jobId    = "d152456";
+	my $stepName = "o+1";
+
 	#my $layerName = "fstiffs";
 
-	my @layers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
+	my @layers = ( CamDrilling->GetPltNCLayers( $inCAM, $jobId ), CamDrilling->GetNPltNCLayers( $inCAM, $jobId ) );
 
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
 

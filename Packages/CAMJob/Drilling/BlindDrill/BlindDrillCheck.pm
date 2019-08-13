@@ -82,7 +82,7 @@ sub CheckDrillIsolation {
 	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 		my $l = $layers[$i];
 
-		if ( $l->GetType() eq StackEnums->MaterialType_COPPER && $l->GetCopperNumber() eq $ncLayer->{"gROWdrl_end"} ) {
+		if ( $l->GetType() eq StackEnums->MaterialType_COPPER && $l->GetCopperNumber() eq $ncLayer->{"NCSigEndOrder"} ) {
  
 			$realIsol      = $layers[ $i + 1 ]->GetThick();
 			$reqIsolFromCu = $layers[ $i + 2 ]->GetCopperName();
@@ -94,7 +94,7 @@ sub CheckDrillIsolation {
 	my $peakLen = ( $drillSize / 2 ) / tan( deg2rad( Enums->DRILL_TOOL_ANGLE / 2 ) );
 
 	# End half cu
-	my $endCuThick = $stackup->GetCuLayer( $ncLayer->{"gROWdrl_end_name"} )->GetThick();
+	my $endCuThick = $stackup->GetCuLayer( $ncLayer->{"NCSigEnd"} )->GetThick();
 
 	if ( $drillType eq Enums->BLINDTYPE_STANDARD ) {
 

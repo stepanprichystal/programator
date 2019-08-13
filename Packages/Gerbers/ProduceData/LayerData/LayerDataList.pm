@@ -165,14 +165,14 @@ sub __GetFileNameByLayer {
 			|| ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop && $outputType eq EnumsOut->Type_NCLAYERS ) )
 	{
 
-		$name = "pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+		$name = "pth_blind_" . $l->{"NCSigStartOrder"} . "-" . $l->{"NCSigEndOrder"};
 
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
 			|| ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot && $outputType eq EnumsOut->Type_NCLAYERS ) )
 	{
 
-		$name = "pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+		$name = "pth_blind_" . $l->{"NCSigStartOrder"} . "-" . $l->{"NCSigEndOrder"};
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $outputType eq EnumsOut->Type_FILLEDHOLES ) {
 
@@ -180,14 +180,14 @@ sub __GetFileNameByLayer {
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop && $outputType eq EnumsOut->Type_FILLEDHOLES ) {
 
-		$name = "filled_pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+		$name = "filled_pth_blind_" . $l->{"NCSigStartOrder"} . "-" . $l->{"NCSigEndOrder"};
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot && $outputType eq EnumsOut->Type_FILLEDHOLES ) {
 
-		$name = "filled_pth_blind_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+		$name = "filled_pth_blind_" . $l->{"NCSigStartOrder"} . "-" . $l->{"NCSigEndOrder"};
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
-		$name = "pth_core_" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+		$name = "pth_core_" . $l->{"NCSigStartOrder"} . "-" . $l->{"NCSigEndOrder"};
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
 		$name = "mill_pth";

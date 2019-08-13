@@ -286,8 +286,8 @@ sub GetJobLayerInfo {
 
 		# get start/stop layer
 
-		my $from = ValueConvertor->GetNifCodeValue( $l->{"gROWdrl_start_name"} );
-		my $to   = ValueConvertor->GetNifCodeValue( $l->{"gROWdrl_end_name"} );
+		my $from = ValueConvertor->GetNifCodeValue( $l->{"NCSigStart"} );
+		my $to   = ValueConvertor->GetNifCodeValue( $l->{"NCSigEnd"} );
 
 		my $startStop = "From: " . $from . " to: " . $to;
 		if ($cz) {

@@ -51,9 +51,9 @@ sub SetStage {
 	@drillLayer = grep { $_->{"gROWlayer_type"} eq "drill" } @pltLayer;
 
 	@drillLayer = grep {
-		$_->{"gROWdrl_start_name"} eq $layerName
+		$_->{"NCSigStart"} eq $layerName
 		  || (
-			   $_->{"gROWdrl_end_name"} eq $layerName
+			   $_->{"NCSigEnd"} eq $layerName
 			&& $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillTop
 			&& $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillBot
 		  )
@@ -64,7 +64,7 @@ sub SetStage {
 	# get plated rout, which goes from <$layerName>
 
 	@routLayer = grep { $_->{"gROWlayer_type"} eq "rout" } @pltLayer;
-	@routLayer = grep { $_->{"gROWdrl_start_name"} eq $layerName || $_->{"gROWdrl_end_name"} eq $layerName } @routLayer;
+	@routLayer = grep { $_->{"NCSigStart"} eq $layerName || $_->{"NCSigEnd"} eq $layerName } @routLayer;
 
 	if ( scalar(@routLayer) ) {
 

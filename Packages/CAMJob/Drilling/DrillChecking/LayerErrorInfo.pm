@@ -376,8 +376,8 @@ sub CheckDirTop2Bot {
 			$$mess .= "Layer $lName has wrong direction of drilling/routing. Direction must be: TOP-to-BOT. \n";
 		}
 
-		my $startL = $l->{"gROWdrl_start"};
-		my $endL   = $l->{"gROWdrl_end"};
+		my $startL = $l->{"NCSigStartOrder"};
+		my $endL   = $l->{"NCSigEndOrder"};
 
 		if ( $startL >= $endL ) {
 
@@ -403,7 +403,7 @@ sub CheckDirTop2Bot {
 
 		my $lName = $l->{"gROWname"};
 
-		if ( $l->{"gROWdrl_end_name"} eq "s" ) {
+		if ( $l->{"NCSigEnd"} eq "s" ) {
 			$result = 0;
 			$$mess .= "Blind layer: $lName, can not end in matrix in layer: \"s\"\n";
 		}
@@ -416,7 +416,7 @@ sub CheckDirTop2Bot {
 
 		my $lName = $l->{"gROWname"};
 
-		if ( $l->{"gROWdrl_start"} != 1 ) {
+		if ( $l->{"NCSigStartOrder"} != 1 ) {
 			$result = 0;
 			$$mess .= "Filled blind layer from top: $lName, has to start in layer \"c\" (now start in: " . $l->{"gROWdrl_name"} . ")\n";
 		}
@@ -429,12 +429,12 @@ sub CheckDirTop2Bot {
 
 		my $lName = $l->{"gROWname"};
 
-		if ( $l->{"gROWdrl_start_name"} eq "c" ) {
+		if ( $l->{"NCSigStart"} eq "c" ) {
 			$result = 0;
 			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to start in layer \"c\"\n";
 		}
 
-		if ( $l->{"gROWdrl_end_name"} eq "s" ) {
+		if ( $l->{"NCSigEnd"} eq "s" ) {
 			$result = 0;
 			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to end in layer \"s\"\n";
 		}
@@ -474,8 +474,8 @@ sub CheckDirBot2Top {
 			$$mess .= "Layer $lName has wrong direction of drilling/routing. Direction must be: BOT-to-TOP. \n";
 		}
 
-		my $startL = $l->{"gROWdrl_start"};
-		my $endL   = $l->{"gROWdrl_end"};
+		my $startL = $l->{"NCSigStartOrder"};
+		my $endL   = $l->{"NCSigEndOrder"};
 
 		# check for core driling, if doesn wrong direction
 
@@ -494,7 +494,7 @@ sub CheckDirBot2Top {
 
 		my $lName = $l->{"gROWname"};
 
-		if ( $l->{"gROWdrl_end_name"} eq "c" ) {
+		if ( $l->{"NCSigEnd"} eq "c" ) {
 			$result = 0;
 			$$mess .= "Blind layer: $lName, can not end in matrix in layer: \"c\"\n";
 		}
@@ -507,9 +507,9 @@ sub CheckDirBot2Top {
 
 		my $lName = $l->{"gROWname"};
 
-		if ( $l->{"gROWdrl_start_name"} ne "s" ) {
+		if ( $l->{"NCSigStart"} ne "s" ) {
 			$result = 0;
-			$$mess .= "Filled blind layer from bot: $lName, has to start in layer \"s\" (now start in: " . $l->{"gROWdrl_start_name"} . ")\n";
+			$$mess .= "Filled blind layer from bot: $lName, has to start in layer \"s\" (now start in: " . $l->{"NCSigStart"} . ")\n";
 		}
 	}
 

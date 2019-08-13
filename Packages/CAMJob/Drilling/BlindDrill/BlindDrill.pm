@@ -89,8 +89,8 @@ sub ComputeDrillDepth {
 
 	my $depth = 0;
 
-	my $drillS   = $ncLayer->{"gROWdrl_start"};
-	my $drillE   = $ncLayer->{"gROWdrl_end"};
+	my $drillS   = $ncLayer->{"NCSigStartOrder"};
+	my $drillE   = $ncLayer->{"NCSigEndOrder"};
 	my $drillDir = $ncLayer->{"gROWdrl_dir"} ;
 
 	# Stackup thick from start to end Cu of drilling (end cu - compute only half thick of Cu)

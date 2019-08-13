@@ -77,7 +77,7 @@ sub GetToolsARatio {
 
 				if ( $layerCnt > 2 ) {
 
-					$thickReal = $stackup->GetThickByLayerName( $l->{"gROWdrl_start_name"} ) * 1000;
+					$thickReal = $stackup->GetThickByLayerName( $l->{"NCSigStart"} ) * 1000;
 				}
 				else {
 

@@ -355,7 +355,7 @@ sub __CreateTmpRoutLayer {
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@pltLayer );
 
 	# get plated rout, which goes from <$layerName>
-	my @routLayer = grep { $_->{"gROWdrl_start_name"} eq $layerName && $_->{"gROWlayer_type"} eq "rout" } @pltLayer;
+	my @routLayer = grep { $_->{"NCSigStart"} eq $layerName && $_->{"gROWlayer_type"} eq "rout" } @pltLayer;
 
 	if ( scalar(@routLayer) ) {
 

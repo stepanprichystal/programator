@@ -103,7 +103,7 @@ sub GetNCLayers {
 	if ( defined $NCStartSide ) {
 		my $startLayer = $NCStartSide eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
 		if ($startLayer) {
-			@drillLayers = grep { $_->{"gROWdrl_start_name"} eq $startLayer->GetName() } @drillLayers;
+			@drillLayers = grep { $_->{"NCSigStart"} eq $startLayer->GetName() } @drillLayers;
 		}
 	}
 
@@ -111,7 +111,7 @@ sub GetNCLayers {
 	if ( defined $NCEndSide ) {
 		my $endLayer = $NCEndSide eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
 		if ($endLayer) {
-			@drillLayers = grep { $_->{"gROWdrl_end_name"} eq $endLayer->GetName() } @drillLayers;
+			@drillLayers = grep { $_->{"NCSigEnd"} eq $endLayer->GetName() } @drillLayers;
 		}
 	}
 

@@ -60,8 +60,8 @@ sub GetMissingPads {
 
 		$wrongPads{$lName} = [];
 
-		my @start = $self->__MissingPadsExsit( $inCAM, $jobId, $step, $l->{"gROWdrl_start_name"}, $l->{"gROWname"} );    # start
-		my @end   = $self->__MissingPadsExsit( $inCAM, $jobId, $step, $l->{"gROWdrl_end_name"}, $l->{"gROWname"} );    # end
+		my @start = $self->__MissingPadsExsit( $inCAM, $jobId, $step, $l->{"NCSigStart"}, $l->{"gROWname"} );    # start
+		my @end   = $self->__MissingPadsExsit( $inCAM, $jobId, $step, $l->{"NCSigEnd"}, $l->{"gROWname"} );    # end
 
 		my @feats = ();
 
@@ -75,11 +75,11 @@ sub GetMissingPads {
 		foreach my $fInfo ( @{ $wrongPads{$lName} } ) {
 
 			if ( grep { $_->{"id"} eq $fInfo->{"featId"} } @start ) {
-				push( @{ $fInfo->{"missing"} }, $l->{"gROWdrl_start_name"} );
+				push( @{ $fInfo->{"missing"} }, $l->{"NCSigStart"} );
 			}
 
 			if ( grep { $_->{"id"} eq $fInfo->{"featId"} } @end ) {
-				push( @{ $fInfo->{"missing"} }, $l->{"gROWdrl_end_name"} );
+				push( @{ $fInfo->{"missing"} }, $l->{"NCSigEnd"} );
 			}
 		}
 	}

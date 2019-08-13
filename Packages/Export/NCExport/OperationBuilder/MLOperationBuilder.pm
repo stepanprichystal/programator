@@ -235,11 +235,11 @@ sub __DefinePlatedOperations {
 		my $startTopName = $topSignal->GetName();
 
 		# plated normal drilling "m" start from top in layer <$drillStartTop>
-		my @normalTop = grep { $_->{"gROWdrl_start"} == $startTop } @plt_nDrill;
+		my @normalTop = grep { $_->{"NCSigStartOrder"} == $startTop } @plt_nDrill;
 		push( @layers, @normalTop );
 
 		# blind drilling start from top in layer <$drillStartTop>
-		my @blindTop = grep { $_->{"gROWdrl_start"} == $startTop } @plt_bDrillTop;
+		my @blindTop = grep { $_->{"NCSigStartOrder"} == $startTop } @plt_bDrillTop;
 		push( @layers, @blindTop );
 
 		#when it is last pressing, we don't add V1 frame
@@ -275,7 +275,7 @@ sub __DefinePlatedOperations {
 		my $startBotName = $press->{"bot"};
 
 		#blind drilling start from bot in layer <$drillStartTop>
-		my @blindBot = grep { $_->{"gROWdrl_start"} == $startBot } @plt_bDrillBot;
+		my @blindBot = grep { $_->{"NCSigStartOrder"} == $startBot } @plt_bDrillBot;
 		push( @layers, @blindBot );
 
 		my $oDef = $opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
@@ -301,10 +301,10 @@ sub __DefinePlatedOperations {
 		push( @layers, $plt_fDrill[0] );
 
 		#normal filled drilling start from top
-		push( @layers, grep { $_->{"gROWdrl_start"} == $startTop } @plt_nFillDrill );
+		push( @layers, grep { $_->{"NCSigStartOrder"} == $startTop } @plt_nFillDrill );
 
 		#filled blind drilling start from top
-		push( @layers, grep { $_->{"gROWdrl_start"} == $startTop } @plt_bFillDrillTop );
+		push( @layers, grep { $_->{"NCSigStartOrder"} == $startTop } @plt_bFillDrillTop );
 
 		my $oDef = $opManager->AddOperationDef( $outFile, \@layers, $stackup->GetPressCount() );
 	}
@@ -324,7 +324,7 @@ sub __DefinePlatedOperations {
 		my $startBotName = $press->{"bot"};
 
 		#filled blind drilling start from top
-		push( @layers, grep { $_->{"gROWdrl_start"} == $startBot } @plt_bFillDrillBot );
+		push( @layers, grep { $_->{"NCSigStartOrder"} == $startBot } @plt_bFillDrillBot );
 
 		my $oDef = $opManager->AddOperationDef( $outFile, \@layers, $stackup->GetPressCount() );
 	}
@@ -465,7 +465,7 @@ sub __DefineNPlatedOperations {
 		my $startTopName = $press->{"top"};
 
 		#blind milling start from top in layer <$drillStartTop>
-		my @blindTop = grep { $_->{"gROWdrl_start"} == $startTop } @nplt_bMillTop;
+		my @blindTop = grep { $_->{"NCSigStartOrder"} == $startTop } @nplt_bMillTop;
 		push( @layers, @blindTop );
 
 		$opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
@@ -485,11 +485,11 @@ sub __DefineNPlatedOperations {
 		my $startBotName = $press->{"bot"};
 
 		#blind milling start from top in layer <$drillStartTop>
-		my @blindBot = grep { $_->{"gROWdrl_start"} == $startBot } @nplt_bMillBot;
+		my @blindBot = grep { $_->{"NCSigStartOrder"} == $startBot } @nplt_bMillBot;
 		push( @layers, @blindBot );
 
 		# add all @nplt_nDrill which has dir from bot2top
-		my @nplt_nDrill_b2t = grep { $_->{"gROWdrl_dir"} eq "bot2top" && $_->{"gROWdrl_start"} == $startBot } @nplt_nDrill;
+		my @nplt_nDrill_b2t = grep { $_->{"gROWdrl_dir"} eq "bot2top" && $_->{"NCSigStartOrder"} == $startBot } @nplt_nDrill;
 
 		# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
 		# fsch_d contain nplt drills from layer fsch
@@ -509,7 +509,7 @@ sub __DefineNPlatedOperations {
 
 		my $core = $stackup->GetCore( $i + 1 );
 
-		my @jLayers = grep { $_->{"gROWdrl_start"} == $core->GetTopCopperLayer()->GetCopperNumber() } @nplt_cbMillTop;
+		my @jLayers = grep { $_->{"NCSigStartOrder"} == $core->GetTopCopperLayer()->GetCopperNumber() } @nplt_cbMillTop;
 
 		$opManager->AddOperationDef( "j" . $core->GetCoreNumber() . "fzc", \@jLayers, 0 );
 	}
@@ -519,7 +519,7 @@ sub __DefineNPlatedOperations {
 
 		my $core = $stackup->GetCore( $i + 1 );
 
-		my @jLayers = grep { $_->{"gROWdrl_start"} == $core->GetBotCopperLayer()->GetCopperNumber() } @nplt_cbMillBot;
+		my @jLayers = grep { $_->{"NCSigStartOrder"} == $core->GetBotCopperLayer()->GetCopperNumber() } @nplt_cbMillBot;
 
 		$opManager->AddOperationDef( "j" . $core->GetCoreNumber() . "fzs", \@jLayers, 0 );
 	}

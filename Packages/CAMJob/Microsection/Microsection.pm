@@ -226,7 +226,7 @@ sub __GetGroups {
 			$inf{"layer"}     = $l->{"gROWname"};
 			$inf{"tool"}      = $minTool;
 			$inf{"toolDepth"} = $minToolDepth;
-			$inf{"text"}      = "L" . $l->{"gROWdrl_start"} . "-" . $l->{"gROWdrl_end"};
+			$inf{"text"}      = "L" . $l->{"NCSigStartOrder"} . "-" . $l->{"NCSigEndOrder"};
 			$inf{"text2"}     = "D" . sprintf( "%.2f", $minTool / 1000 );
 
 			push( @groups, \%inf );
