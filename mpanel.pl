@@ -62,8 +62,9 @@ my $customer = getValueNoris($jobName, 'customer');
 		$znacky = "BMR";
 }elsif ($customer =~ /[Ss][Aa][Ff][Ii][Rr]/) {
 		$znacky = "SAFIRAL";
+}elsif ($customer =~ /[Tt][Rr][Aa][Nn][Ss]/) {
+		$znacky = "TRANSCON";
 }
-
 
 
 $frame1 = $main->Frame(-width=>100, -height=>80)->pack(-side=>'top',-fill=>'x');
@@ -238,6 +239,8 @@ if ($okoli == 5) {
 			$fid_schema = 'mpanel_bez_fid';
 	} elsif ($znacky eq "SAFIRAL") {
 			$fid_schema = 'cust_safiral_5';
+	} elsif ($znacky eq "TRANSCON") {
+			$fid_schema = 'cust_transcon_5';
 #	} elsif ($znacky eq "PRINCITEC_5x8") {
 #			$fid_schema = 'cust_princitec_5x8';
 	} else {
@@ -282,6 +285,8 @@ elsif ($okoli == 10) {
 			$fid_schema = 'mpanel_bez_fid';
 	} elsif ($znacky eq "SAFIRAL") {
 			$fid_schema = 'cust_safiral_10';
+	} elsif ($znacky eq "TRANSCON") {
+			$fid_schema = 'cust_transcon_10';
 	} else {
 		$fid_schema = 0;
 	}
@@ -310,6 +315,8 @@ elsif ($okoli == 7) {
 			$fid_schema = 'mpanel_bez_fid';
 	} elsif ($znacky eq "SAFIRAL") {
 			$fid_schema = 'cust_safiral_7';
+	} elsif ($znacky eq "TRANSCON") {
+			$fid_schema = 'cust_transcon_7';
 	} else {
 		$fid_schema = 0;
 	}
@@ -434,6 +441,15 @@ unless ($znacky eq 'ATM' or $znacky eq 'RACOM') {
 
 				$genesis -> COM('script_run',name=>"y:/server/site_data/scripts/flatten_pool.pl",dirmode=>'global',params=>"$jobName mpanel");
 		}
+
+if ($znacky eq "TRANSCON") {
+		if ($panelXX > $panelYY) {
+					$statusLabel = sprintf "!!!POZOR SPATNE!!! Prirez TRANSCON musis panelizovat na vysku!";
+					$status->configure(-fg=>"red");
+					$status->update;		
+		}		
+}	
+		
 }
  
 #########################################################################################################
@@ -442,7 +458,7 @@ unless ($znacky eq 'ATM' or $znacky eq 'RACOM') {
 ##########################################################################################################
 sub fill_znacky {
     $construct_znacky->delete(0,'end');
-    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL); 
+    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL TRANSCON); 
     foreach my $className (sort @customerList) {
         $construct_znacky->insert('end',"$className");
     }
