@@ -22,7 +22,7 @@ use aliased 'Packages::GuideSubs::Flex::DoCoverlayPins';
 use aliased 'Packages::GuideSubs::Flex::DoCoverlayLayers';
 use aliased 'Packages::GuideSubs::Flex::DoPrepregLayers';
 use aliased 'Packages::GuideSubs::Flex::DoRoutTransitionLayers';
-use aliased 'Packages::GuideSubs::Flex::DoCoverlayTemplateLayers';
+use aliased 'Packages::GuideSubs::Flex::DoSolderTemplateLayers';
 use aliased 'Packages::GuideSubs::Flex::DoFlexiMaskLayer';
 use aliased 'Packages::GuideSubs::Flex::DoPrepareBendAreaOther';
 
@@ -51,7 +51,7 @@ sub PrepareLayers {
 
 		DoCoverlayPins->CreateCoverlayPins( $inCAM, $jobId, $step );
 		DoCoverlayLayers->PrepareCoverlayLayers( $inCAM, $jobId, $step );
-		DoCoverlayTemplateLayers->PrepareTemplateLayers( $inCAM, $jobId, $step );
+		DoSolderTemplateLayers->PrepareTemplateLayers( $inCAM, $jobId, $step );
 		DoPrepregLayers->PreparePrepregLayers( $inCAM, $jobId, $step );
 		DoRoutTransitionLayers->PrepareRoutLayers( $inCAM, $jobId, $step );
 		DoFlexiMaskLayer->PrepareFlexiMaskLayers( $inCAM, $jobId, $step );

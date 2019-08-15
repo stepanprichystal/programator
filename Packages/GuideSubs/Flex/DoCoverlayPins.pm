@@ -568,11 +568,7 @@ sub __PutPinMarks {
 
 		# Delete old pin marks
 		my $f = FeatureFilter->new( $inCAM, $jobId, undef, \@layers );
-		$f->SetProfile( EnumsFiltr->ProfileMode_OUTSIDE );
-		$f->AddIncludeAtt( ".string", PinEnums->PinString_REGISTER );
-		$f->AddIncludeAtt( ".string", PinEnums->PinString_CUTLINE );
-		$f->AddIncludeAtt( ".string", PinEnums->PinString_SOLDERLINE );
-		$f->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
+		$f->AddIncludeAtt( ".string", PinEnums->PinString_SIGLAYERMARKS );
 
 		if ( $f->Select() ) {
 			CamLayer->DeleteFeatures($inCAM);

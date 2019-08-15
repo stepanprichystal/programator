@@ -627,6 +627,12 @@ sub __PrepareNPLTTHROUGHNC {
 
 		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"}, 0, 0, 1 );
 
+		my @t1 = $unitRTM->GetMultiChainSeqList();
+		
+		grep { $_->GetChains() } @t1;
+
+		my @t = grep { $_->GetCyclic() } @t1;
+
 		my @outFeatsId = map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() } $unitRTM->GetMultiChainSeqList();
 
 		#my @outline = $unitRTM->GetOutlineChains();

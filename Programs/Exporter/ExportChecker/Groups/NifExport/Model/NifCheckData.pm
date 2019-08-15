@@ -577,7 +577,7 @@ sub OnCheckGroupData {
 															. "\" pro step: \"$s\", vrstvu: \""
 															. $r->{"layer"}
 															. "\" byly nalezeny izolace: \""
-															. $r->{"value"}
+															. $r->{"val"}
 															. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
 							);
 						}

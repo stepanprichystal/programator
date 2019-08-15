@@ -251,7 +251,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d241421";
+	my $jobId = "d152456";
 
 	my $mess = ""; 
 
@@ -259,10 +259,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	$control->Create();
 
 	#$control->CreateStackup(\$mess);
-	#$control->CreatePreviewTop( \$mess );
+	$control->CreatePreviewTop( \$mess );
 
 	#$control->CreatePreviewBot(\$mess);
-	$control->CreatePreviewSingle( \$mess );
+	#$control->CreatePreviewSingle( \$mess );
 	#$control->GeneratePdf();
 
 	#$control->GetOutputPath();

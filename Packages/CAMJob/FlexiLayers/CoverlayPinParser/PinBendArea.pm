@@ -40,16 +40,12 @@ sub GetFeatures {
 # Features of specific pin has same value of grou_feat_id attribute
 sub GetPinsFeatures {
 	my $self = shift;
-
-	my @feature = grep { defined $_->{"att"}->{"feat_group_id"} } @{ $self->{"features"} };
-
-	my @featGroupId = uniq( map { $_->{"att"}->{"feat_group_id"} } @feature );
-
+ 	 
 	my @pinsFeats = ();
 
-	foreach my $featGroupId (@featGroupId) {
+	foreach my $featGroupId ($self->GetPinsGUID()) {
 
-		my @feats = grep { $_->{"att"}->{"feat_group_id"} eq $featGroupId } @feature;
+		my @feats = grep { $_->{"att"}->{"feat_group_id"} eq $featGroupId } @{ $self->{"features"} };
 
 		push( @pinsFeats, \@feats );
 	}

@@ -15,7 +15,7 @@ use aliased 'Packages::GuideSubs::Flex::DoCoverlayPins';
 use aliased 'Packages::GuideSubs::Flex::DoCoverlayLayers';
 use aliased 'Packages::GuideSubs::Flex::DoPrepregLayers';
 use aliased 'Packages::GuideSubs::Flex::DoRoutTransitionLayers';
-use aliased 'Packages::GuideSubs::Flex::DoCoverlayTemplateLayers';
+use aliased 'Packages::GuideSubs::Flex::DoSolderTemplateLayers';
 use aliased 'Packages::GuideSubs::Flex::DoFlexiMaskLayer';
 use aliased 'Packages::GuideSubs::Flex::DoPrepareBendAreaOther';
 
@@ -96,10 +96,10 @@ sub ActionDoCoverlayLayers {
 }
 
 
-$n{"ActionDoCoverlayTemplateLayers"} = "Šablonu pro pro pájení coverlay";
-$d{"ActionDoCoverlayTemplateLayers"} = "Vytvoří šablonu pro pro pájení coverlay";
+$n{"ActionDoSolderTemplateLayers"} = "Šablonu pro pro pájení coverlay";
+$d{"ActionDoSolderTemplateLayers"} = "Vytvoří šablonu pro pro pájení coverlay";
 
-sub ActionDoCoverlayTemplateLayers {
+sub ActionDoSolderTemplateLayers {
 
 	#Veskere potrebne komponenty a informace nam vzdy poskytne samotny Guide, ktery je predan jako prvni parametr
 
@@ -116,7 +116,7 @@ sub ActionDoCoverlayTemplateLayers {
 	#tady se bude zapisovat kod akce
 	#kod bude co nejstrucnejsi a bude volat prislusne pomocne balicky ze slozkz Packages, popr CamHelper
  
-	DoCoverlayTemplateLayers->PrepareTemplateLayers( $inCAM, $jobId, $stepO1 );
+	DoSolderTemplateLayers->PrepareTemplateLayers( $inCAM, $jobId, $stepO1 );
 }
 
 

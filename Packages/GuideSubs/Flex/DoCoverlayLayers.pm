@@ -127,8 +127,7 @@ sub __PrepareCoverlay {
 	if ($createMaskL) {
 
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $coverMaskL );
-		CamMatrix->CreateLayer( $inCAM, $jobId, $coverMaskL, "coverlay", "positive", 1,
-								( $side eq "top" ? "c"      : "s" ),
+		CamMatrix->CreateLayer( $inCAM, $jobId, $coverMaskL, "coverlay", "positive", 1, $sigLayer,
 								( $side eq "top" ? "before" : "after" ) );
 
 		FlexiBendArea->UnmaskCoverlayMaskByBendArea( $inCAM, $jobId, $step, $coverMaskL );

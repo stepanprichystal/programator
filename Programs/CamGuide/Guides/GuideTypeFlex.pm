@@ -53,7 +53,7 @@ sub __SetGuideActions {
 	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoBendArea,   Enums->ActionType_DO );
 	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoCoverlayPins,   Enums->ActionType_DO );
 	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoCoverlayLayers, Enums->ActionType_DO );
-	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoCoverlayTemplateLayers, Enums->ActionType_DO );
+	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoSolderTemplateLayers, Enums->ActionType_DO );
 	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoPrepregLayers, Enums->ActionType_DO );
 	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoRoutTransitionLayers, Enums->ActionType_DO );
 	$self->_AddAction( \&Programs::CamGuide::Actions::Flex::ActionDoFlexiMaskLayer, Enums->ActionType_DO );

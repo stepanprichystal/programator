@@ -2,7 +2,7 @@
 # Description: Prepare coverlay layers for RigidFlex
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::GuideSubs::Flex::DoCoverlayTemplateLayers;
+package Packages::GuideSubs::Flex::DoSolderTemplateLayers;
 
 #3th party library
 use utf8;
@@ -130,7 +130,7 @@ sub __PrepareTemplate {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::GuideSubs::Flex::DoCoverlayTemplateLayers';
+	use aliased 'Packages::GuideSubs::Flex::DoSolderTemplateLayers';
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'Managers::MessageMngr::MessageMngr';
 
@@ -140,7 +140,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $notClose = 0;
 
-	my $res = DoCoverlayTemplateLayers->PrepareTemplateLayers( $inCAM, $jobId, "o+1" );
+	my $res = DoSolderTemplateLayers->PrepareTemplateLayers( $inCAM, $jobId, "o+1" );
 
 }
 

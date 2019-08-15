@@ -793,7 +793,7 @@ sub PrepareCoverlayTemplate {
 	my $inCAM     = shift;
 	my $jobId     = shift;
 	my $step      = shift;
-	my $routName  = shift // "flc";
+	my $routName  = shift // "fsoldc";
 	my $toolSize  = shift // 2;       # 2mm tool size
 	my $clearance = shift // 5;       # 5mm clarance around coverlaz pin area
 
@@ -827,6 +827,7 @@ sub PrepareCoverlayTemplate {
 		foreach my $pin ( $bendArea->GetPinsFeatures() ) {
 
 			my @lines = grep { $_->{"att"}->{".string"} eq EnumsPins->PinString_SIDELINE2 } @{$pin};
+
 
 			my @points = ();
 
