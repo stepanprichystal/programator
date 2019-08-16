@@ -185,10 +185,10 @@ sub __CreateRoutTransitionPart2 {
 		my $botPckgs = $joinPackgs->{"packageBot"};
 
 		if ( $topPckgs->{"coreType"} eq StackEnums->CoreType_RIGID ) {
-			push( @routLayers, "fzs" );
+			push( @routLayers, "fzc" );
 		}
 		else {
-			push( @routLayers, "fzc" );
+			push( @routLayers, "fzs" );
 		}
 	}
 
@@ -266,7 +266,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d251561";
+	my $jobId = "d251321";
 
 	my $notClose = 0;
 

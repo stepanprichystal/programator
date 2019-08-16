@@ -211,6 +211,6 @@ sub ActionDoPrepareBendAreaOther {
 	#tady se bude zapisovat kod akce
 	#kod bude co nejstrucnejsi a bude volat prislusne pomocne balicky ze slozkz Packages, popr CamHelper
  
-	DoPrepareBendAreaOther->PrepareBendAreaOthers( $inCAM, $jobId, $stepO1 );
+	DoPrepareBendAreaOther->PrepareBendAreaOther( $inCAM, $jobId, $stepO1 );
 }
 1;

@@ -338,8 +338,8 @@ sub ReplacePatternFillFlexiCore {
 							 "predefined_pattern_type" => "cross_hatch",
 							 "indentation"             => "even",
 							 "cross_hatch_angle"       => "45",
-							 "cross_hatch_witdh"       => "300",
-							 "cross_hatch_dist"        => "1500",
+							 "cross_hatch_witdh"       => "500",
+							 "cross_hatch_dist"        => "2000",
 							 "step_margin_x"           => "8",
 							 "step_margin_y"           => "27",
 							 "step_max_dist_x"         => "555",
@@ -475,7 +475,7 @@ sub AddCoverlayRegisterMarks {
 
 	my $result = 1;
 
-	return 0 if ( $stepName ne "panel" );
+	return 0 if ( $stepName ne "panel" &&  $stepName ne "mpanel" );
 
 	my $flexType = JobHelper->GetPcbFlexType($jobId);
 

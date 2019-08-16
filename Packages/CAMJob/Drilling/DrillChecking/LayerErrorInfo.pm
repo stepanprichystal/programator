@@ -587,11 +587,24 @@ sub CheckContainDepth {
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
+	# 1) Check if layers contain depth in DTM table
 	foreach my $l (@layers) {
 
 		unless ( $l->{"uniDTM"}->GetChecks()->CheckToolDepthSet($mess) ) {
 			$result = 0;
 		}
+	}
+
+	# 2) Check if layer start/stop/go through signal layer
+	foreach my $l (@layers) {
+
+		unless ( $l->{"NCThroughSig"} ) {
+
+			$result = 0;
+			$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
+			$$mess .= "Thist type of NC layer has to START or END or GO THROUGH at least one signal layer.\n";
+		}
+
 	}
 
 	return $result;

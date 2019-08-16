@@ -62,7 +62,10 @@ my $customer = getValueNoris($jobName, 'customer');
 		$znacky = "BMR";
 }elsif ($customer =~ /[Ss][Aa][Ff][Ii][Rr]/) {
 		$znacky = "SAFIRAL";
+}elsif ($customer =~ /zebra/i) {
+		$znacky = "ZEBRA";
 }
+
 
 
 
@@ -222,7 +225,7 @@ if ($okoli == 5) {
 			$fid_schema = 'gatema_old_5';
 	} elsif ($znacky eq "ATM") {
 			$fid_schema = 'cust_atm_5';
-	} elsif ($znacky eq "RACOM") {
+	} elsif ($znacky eq "RACOM" || $znacky eq "ZEBRA" ) {
 			$fid_schema = 'cust_racom_5';
 	} elsif ($znacky eq "APPLIED") {
 			$fid_schema = 'cust_applied_okoli_5';
@@ -254,7 +257,7 @@ elsif ($okoli == 10) {
 			$fid_schema = 'cust_atm_10';
 	} elsif ($znacky eq "AZITECH_10") {
 			$fid_schema = 'cust_azitech_10';
-	} elsif ($znacky eq "RACOM") {
+	} elsif ($znacky eq "RACOM" || $znacky eq "ZEBRA") {
 			$fid_schema = 'cust_racom_10';
 	} elsif ($znacky eq "WENDEL") {
 			$fid_schema = 'cust_wendel_10';
@@ -294,7 +297,7 @@ elsif ($okoli == 7) {
 			$fid_schema = 'mpanel_7';
 	} elsif ($znacky eq "ATM") {
 			$fid_schema = 'cust_atm_7';
-	} elsif ($znacky eq "RACOM") {
+	} elsif ($znacky eq "RACOM" || $znacky eq "ZEBRA") {
 			$fid_schema = 'cust_racom_7';
 	} elsif ($znacky eq "APPLIED") {
 			$fid_schema = 'cust_applied_okoli_7';

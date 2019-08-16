@@ -27,7 +27,6 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -91,7 +90,7 @@ sub Build {
 
 	my $tlFlexCu = JobHelper->GetBaseCuThick( $jobId, "c" );
 
-	if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI ||  $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO) {
+	if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI || $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) {
 
 		my @cores = $stackup->GetAllCores();
 		$tlFlexCu = $cores[ int( scalar(@cores) / 2 ) ]->GetTopCopperLayer()->GetThick();
@@ -109,8 +108,7 @@ sub Build {
 	$section->AddRow( "pocet_prirezu", $pocet );
 	$section->AddRow( "plocha", sprintf( "%0.1f dm2", $w * $h * $pocet / 10000 ) );
 
-	if (    $layerCnt > 2)	  
-	{
+	if ( $layerCnt > 2 ) {
 		my %frDim = CamRouting->GetFrDimension( $inCAM, $jobId, "panel" );
 		$section->AddRow( "tenting_plocha", sprintf( "%0.1f cm2", $frDim{"xSize"} * $frDim{"ySize"} / 100 ) );
 
@@ -118,11 +116,11 @@ sub Build {
 	else {
 		$section->AddRow( "tenting_plocha", sprintf( "%0.1f cm2", $w * $h / 100 ) );
 	}
-	
-#	#exception for Outer rigid flex with coverlay on top
-#	if($pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO &&  CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" )){
-#		$section->AddRow( "tenting_plocha", sprintf( "%0.1f cm2", $w * $h / 100 ) );
-#	}
+
+	#	#exception for Outer rigid flex with coverlay on top
+	#	if($pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO &&  CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" )){
+	#		$section->AddRow( "tenting_plocha", sprintf( "%0.1f cm2", $w * $h / 100 ) );
+	#	}
 
 	# postup  operace Flexi -------------
 
@@ -164,13 +162,13 @@ sub Build {
 
 	# postup operace Rigid -------------
 
-	if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI ||  $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO  ) {
+	if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI || $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) {
 
 		# program na zakryti
-		if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI  ) {
-			$section->AddRow( "expozice_zakryti_top", $jobId."_v1_mdi.xml" );
+		if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI ) {
+			$section->AddRow( "expozice_zakryti_top", $jobId . "_v1_mdi.xml" );
 		}
-		$section->AddRow( "expozice_zakryti_bot", $jobId."_v".$layerCnt."_mdi.xml" );
+		$section->AddRow( "expozice_zakryti_bot", $jobId . "_v" . $layerCnt . "_mdi.xml" );
 
 		my @rigidCores = grep { $_->GetQId() != 10 && $_->GetQId() != 13 } $stackup->GetAllCores();
 
@@ -218,14 +216,14 @@ sub Build {
 
 		if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI ) {
 
-			$section->AddRow( "program_vrtani_rigid_jadro_top", $ncArchiv . "\\nc\\" . $jobId . "_v1" );
-			$section->AddRow( "program_hl_freza_rigid_top_1",   $ncArchiv . "\\nc\\" . $jobId . "_j" . $rigidCores[0]->GetCoreNumber() . "fzs" );
-			$section->AddRow( "program_hl_freza_rigid_top_2",   $ncArchiv . "\\nc\\" . $jobId . ")_fc" . $stackup->GetPressCount() );
+			$section->AddRow( "program_vrtani_rigid_jadro_bot", $ncArchiv . "\\nc\\" . $jobId . "_v1" );
+			$section->AddRow( "program_hl_freza_rigid_bot_1",   $ncArchiv . "\\nc\\" . $jobId . "_j" . $rigidCores[-1]->GetCoreNumber() . "fzc" );
+			$section->AddRow( "program_hl_freza_rigid_bot_2",   $ncArchiv . "\\nc\\" . $jobId . "_fzs" . $stackup->GetPressCount() );
 		}
 
-		$section->AddRow( "program_vrtani_rigid_jadro_bot", $ncArchiv . "\\nc\\" . $jobId . "_v1" );
-		$section->AddRow( "program_hl_freza_rigid_bot_1",   $ncArchiv . "\\nc\\" . $jobId . "_j" . $rigidCores[-1]->GetCoreNumber() . "fzc" );
-		$section->AddRow( "program_hl_freza_rigid_bot_2",   $ncArchiv . "\\nc\\" . $jobId . "_fzs" . $stackup->GetPressCount() );
+		$section->AddRow( "program_vrtani_rigid_jadro_top", $ncArchiv . "\\nc\\" . $jobId . "_v1" );
+		$section->AddRow( "program_hl_freza_rigid_top_1",   $ncArchiv . "\\nc\\" . $jobId . "_j" . $rigidCores[0]->GetCoreNumber() . "fzs" );
+		$section->AddRow( "program_hl_freza_rigid_top_2", $ncArchiv . "\\nc\\" . $jobId . ")_fc" . $stackup->GetPressCount() );
 
 		$section->AddRow( "program_prokovene_vrtani", $ncArchiv . "\\nc\\" . $jobId . "_c1" );
 
@@ -234,7 +232,7 @@ sub Build {
 		@noflowPrepreg = grep { $_->GetQId() == 10 || $_->GetQId() == 13 } @noflowPrepreg;
 
 		my @noflowPrepregMat =
-		  HegMethods->GetPrepregStoreInfo( $noflowPrepreg[0]->GetQId(), $noflowPrepreg[0]->GetId(), undef, undef, 1);
+		  HegMethods->GetPrepregStoreInfo( $noflowPrepreg[0]->GetQId(), $noflowPrepreg[0]->GetId(), undef, undef, 1 );
 
 		$section->AddRow( "material_prepreg", $noflowPrepregMat[0]{"nazev_mat"} );
 
@@ -245,14 +243,13 @@ sub Build {
 									grep { $_->GetQId() == 10 || $_->GetQId() == 13 }
 									map { $_->GetAllPrepregs() } grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stackup->GetAllLayers()
 		);
-		
- 
-		my $prepregPerPanel1 =  2;
-		
+
+		my $prepregPerPanel1 = 2;
+
 		if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) {
 			$prepregPerPanel1 = 1;
 		}
-		
+
 		$prepregPerPanel2 -= $prepregPerPanel1;
 
 		$section->AddRow( "pocet_prepregu_na_prirez1", $prepregPerPanel1 );
@@ -267,14 +264,14 @@ sub Build {
 	$section->AddRow( "expozice_c", $jobId . "c_mdi.xml" );
 	$section->AddRow( "expozice_s", $jobId . "s_mdi.xml" );
 
-	if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI ||  $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO  ) {
+	if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI || $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) {
 
 		my $flexCore = ( grep { $_->GetQId() == 10 || $_->GetQId() == 13 } $stackup->GetAllCores() )[0];    # predpokladam jen 1 flex jadro
 
 		$section->AddRow( "expozice_flex_c", $jobId . $flexCore->GetTopCopperLayer()->GetCopperName() . "_mdi.xml" );
 		$section->AddRow( "expozice_flex_s", $jobId . $flexCore->GetBotCopperLayer()->GetCopperName() . "_mdi.xml" );
 
-		if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI  ) {
+		if ( $pcbFlexType eq EnumsGeneral->PcbFlexType_RIGIDFLEXI ) {
 			foreach my $core ( $stackup->GetAllCores() ) {
 
 				if ( $core->GetCoreNumber() == $flexCore->GetCoreNumber() - 1 ) {
@@ -300,10 +297,9 @@ sub Build {
 	else {
 		$section->AddRow( "program_freza_po_prokovu", $ncArchiv . "\\nc\\" . $jobId . "_fc" );
 	}
-	
-	
+
 	# Vrtani po prokovu
-	 $section->AddRow( "program_sablona_flc", $ncArchiv . "\\nc\\" . $jobId . "_flc" );
+	$section->AddRow( "program_sablona_flc", $ncArchiv . "\\nc\\" . $jobId . "_flc" );
 
 }
 

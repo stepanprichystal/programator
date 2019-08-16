@@ -93,7 +93,8 @@ sub __PreparePreregNo1 {
 	my $pins = 1;
 
 	# When only top coverlay on outer RigidFlex (without pins)
-	if ( $coverlayType{"top"} && !$coverlayType{"bot"} && $type eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) {
+	if ( !CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" )) 
+	{
 		$pins = 0;
 	}
 
@@ -130,7 +131,7 @@ sub __PreparePreregNo1 {
 
 		if ($pins) {
 
-			my $clearance = $CLEARANCEP2;
+			my $clearance = $CLEARANCEP1;
 			my $bendParser = CoverlayPinParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, 2 * $clearance );
 
 			my @mess = (@messHead);
@@ -155,8 +156,8 @@ sub __PreparePreregNo1 {
 		}
 		else {
 
-			my $clearance = $CLEARANCEP1;
-			my $bendParser = CoverlayPinParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, 2 * $clearance );
+			my $clearance = $CLEARANCEP2;
+			my $bendParser = BendAreaParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, 2 * $clearance );
 
 			my @mess = (@messHead);
 			push( @mess, "Vytvoření frézovací vrstvy: $prereglName" );
@@ -278,7 +279,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152456";
+	my $jobId = "d222769";
 
 	my $notClose = 0;
 

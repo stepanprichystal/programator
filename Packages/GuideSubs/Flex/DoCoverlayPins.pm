@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::CAMJob::FlexiLayers::BendAreaParser::BendAreaParser';
@@ -48,7 +49,7 @@ my $OPTIMALPINWIDTH  = 2.5;     # 2.5mm
 my $PINREGISTERDIST  = 3.25;    # 3.25mm from flex part
 my $PINSOLDDIST1     = 0.5;     # 0.5mm from flex part
 my $PINCUTDIST2      = 6;       # 6mm from flex part
-my $CUREGPADSIZE     = 1.2;    # 1.2mm pad in signal flex layers
+my $CUREGPADSIZE     = 1.2;     # 1.2mm pad in signal flex layers
 
 #	PinString_REGISTER   => "pin_register",      # pad which is used for register coverlay with flex core
 #	PinString_SOLDERLINE => "pin_solderline",    # between PinString_SOLDERPIN and PinString_CUTPIN lines is place for soldering
@@ -78,17 +79,12 @@ sub CreateCoverlayPins {
 	my $type = JobHelper->GetPcbFlexType($jobId);
 	return 0 if ( $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXI && $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXO );
 
-	#	while(!scalar(grep { $_ =~ /^v\d$/ } JobHelper->GetCoverlaySigLayers($jobId))) {
-	#
-	#		my @mess = (@messHead);
-	#		push( @mess,
-	#			      "DPS nemá coverlay ve vnitřních vrstvách stackupu, vrstva \"$lName\" nebude vztvořena."
-	#				. " Pokud to není pravda, nastav pole: \"Coverlay\" v atributech desky v HEG" );
-	#
-	#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Je to správně", "Opravil jsem coverlay v IS" ] );
-	#
-	#		return $result if ( $messMngr->Result() == 0 );
-	#	}
+	my %coverlayType = HegMethods->GetCoverlayType($jobId);
+
+	# When only top coverlay on outer RigidFlex (without pins)
+	if ( !$coverlayType{"top"} && !$coverlayType{"bot"} ) {
+		return 0;
+	}
 
 	CamHelper->SetStep( $inCAM, $step );
 
@@ -665,7 +661,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152457";
+	my $jobId = "d222769";
 
 	my $notClose = 0;
 

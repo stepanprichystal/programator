@@ -336,46 +336,32 @@ sub GetCoverlaySigLayers {
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
+	my $sigLayer;
+
 	if ( $coverlayType{"top"} ) {
 
-		my $sigLayer;
+		my $stackup = Stackup->new($jobId);
 
-		if ( $type eq EnumsGeneral->PcbFlexType_FLEX || $type eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) {
-
-			$sigLayer = "c";
-		}
-		else {
-
-			my $stackup = Stackup->new($jobId);
-
-			# find flexible inner layers
-			my $core = ( $stackup->GetAllCores(1) )[0];
-			$sigLayer = $core->GetTopCopperLayer()->GetCopperName();
-		}
+		# find flexible inner layers
+		my $core = ( $stackup->GetAllCores(1) )[0];
+		$sigLayer = $core->GetTopCopperLayer()->GetCopperName();
 
 		push( @sigLayers, $sigLayer );
 	}
 
 	if ( $coverlayType{"bot"} ) {
 
-		my $sigLayer;
+		my $stackup = Stackup->new($jobId);
 
-		if ( $type eq EnumsGeneral->PcbFlexType_FLEX ) {
-
-			$sigLayer = "s";
-		}
-		else {
-
-			my $stackup = Stackup->new($jobId);
-
-			# find flexible inner layers
-			my $core = ( $stackup->GetAllCores(1) )[0];
-			$sigLayer = $core->GetBotCopperLayer()->GetCopperName();
-		}
-
+		# find flexible inner layers
+		my $core = ( $stackup->GetAllCores(1) )[0];
+		$sigLayer = $core->GetBotCopperLayer()->GetCopperName();
+		
 		push( @sigLayers, $sigLayer );
 	}
 
+	
+	
 	return @sigLayers;
 }
 
