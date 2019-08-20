@@ -181,7 +181,7 @@ sub CheckMasterJob {
 
 	# all alowed master steps
 	my @allowed =
-	  ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), "o+1", "o+1_single", "o+1_panel", CamNetlist->GetNetlistSteps( $inCAM, $masterjob ) );
+	  ( CamStep->GetReferenceStep( $inCAM, $masterjob, "o+1" ), "o+1", "o+1_single", "o+1_panel", "input_ori", CamNetlist->GetNetlistSteps( $inCAM, $masterjob ) );
 
 	my %tmp;
 	@tmp{@allowed} = ();

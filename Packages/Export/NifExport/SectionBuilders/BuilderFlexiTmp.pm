@@ -299,8 +299,17 @@ sub Build {
 	}
 
 	# Vrtani po prokovu
-	$section->AddRow( "program_sablona_flc", $ncArchiv . "\\nc\\" . $jobId . "_flc" );
-
+	$section->AddRow( "program_sablona_fsoldc", $ncArchiv . "\\nc\\" . $jobId . "_fsoldc" );
+	
+	
+	# Stiffener top
+	$section->AddRow( "material_stiffener", "DE104ML 18/18 0,2 mm 307 x 407" );
+	
+	# Stiffener top
+	$section->AddRow( "program_stiffc", $ncArchiv . "\\nc\\" . $jobId . "_stiffc" );
+	
+	# Stiffener bot
+	$section->AddRow( "program_stiffs", $ncArchiv . "\\nc\\" . $jobId . "_stiffs" );
 }
 
 sub __GetFrDimemsion {

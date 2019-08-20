@@ -294,7 +294,7 @@ sub __ExportAOI {
 
 	# Set steps and repeat
 
-	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest );
+	my @steps = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepToTest );
 	CamStepRepeat->RemoveCouponSteps(\@steps, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
 
 	@steps = map { $_->{"stepName"} } @steps;
@@ -448,7 +448,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobName   = "d253194";
+	my $jobName   = "d152457";
 	my $stepName  = "panel";
 	my $layerName = "c";
 

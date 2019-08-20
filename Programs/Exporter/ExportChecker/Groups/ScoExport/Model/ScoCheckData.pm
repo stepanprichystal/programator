@@ -7,6 +7,7 @@
 package Programs::Exporter::ExportChecker::Groups::ScoExport::Model::ScoCheckData;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use File::Copy;
@@ -41,7 +42,7 @@ sub OnCheckGroupData {
 	my $jobId     = $dataMngr->{"jobId"};
 	my $groupData = $dataMngr->GetGroupData();
 
-	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	my $defaultInfo  = $dataMngr->GetDefaultInfo();
 	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	# 1) Check of core thick
@@ -58,9 +59,24 @@ sub OnCheckGroupData {
 	# Check if core thick match with customer request
 	my $custScoreCoreThick = $customerNote->ScoreCoreThick();
 
-	if ( defined $custScoreCoreThick && $custScoreCoreThick !=  $thick) {
-	
-		$dataMngr->_AddErrorResult( "Tloušťka zůstatku", "Tloušťka zůstatku dps po drážkování (".$thick."mm) neodpovídá požadavku zákazníka (".$custScoreCoreThick."mm)." );
+	if ( defined $custScoreCoreThick && $custScoreCoreThick != $thick ) {
+
+		$dataMngr->_AddErrorResult( "Tloušťka zůstatku",
+			   "Tloušťka zůstatku dps po drážkování (" . $thick . "mm) neodpovídá požadavku zákazníka (" . $custScoreCoreThick . "mm)." );
+	}
+
+	# Check small rest of material after scoring
+	my $minScoreDepth = 100;                                                      # 100µm minimal score depth fro mone side
+	my $scoringDepth = ( ( $defaultInfo->GetPcbThick() - $thick * 1000 ) / 2 );
+	if ( ( ( $defaultInfo->GetPcbThick() - $thick * 1000 ) / 2 ) <= $minScoreDepth ) {
+
+		$dataMngr->_AddWarningResult(
+			"Malá hloubka drážkování",
+			"Hloubka drážkování z každé strany bude: "
+			  . $scoringDepth
+			  . "µm. (tloušťka DPS: "
+			  . $defaultInfo->GetPcbThick()
+			  . "µm). Zmenši zůstatek materiálu po drážkování." );
 	}
 
 	my $opt = $groupData->GetOptimize();
@@ -87,7 +103,6 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Score data", $errMess );
 	}
 
-
 	# 4) check if mpanel exist, if some nested steps in panel contain score
 
 	if ( $defaultInfo->LayerExist("score") && $defaultInfo->StepExist("mpanel") ) {
@@ -111,7 +126,8 @@ sub OnCheckGroupData {
 			my $strSteps = join( ", ", uniq(@scoreSteps) );
 
 			$dataMngr->_AddErrorResult(
-				"Score data", "Step 'mpanel' obsahuje stepy ($strSteps), které obsahují drážku. Přesuň tuto drážku do stepu 'mpanel'. Použij script: FlattenScoreScript.pl"
+				"Score data",
+"Step 'mpanel' obsahuje stepy ($strSteps), které obsahují drážku. Přesuň tuto drážku do stepu 'mpanel'. Použij script: FlattenScoreScript.pl"
 			);
 		}
 
