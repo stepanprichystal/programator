@@ -714,6 +714,7 @@ sub GetUserInfoHelios {
 
 	my $cmd = "select top 1
 				 c.nazev_subjektu Zakaznik,
+				 d.konstr_trida Kontr_trida,
 				 lcs.nf_edit_style('ddlb_22_hal', d.hal) Povrchova_uprava,
 				 d.material_tloustka Tloustka,
 				 d.material_tloustka_medi Tloustka_medi,
