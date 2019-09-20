@@ -749,19 +749,19 @@ sub _PutHeliosInfo {
 													}
 													if($maska2{'top'}){
 															$u++;	
-															$tmpFrameH[$i]->Label(-text=>'Maska2 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska2{'top'}),-fg=>_Transf_FG(ValueConvertor->GetSilkCodeToColor($maska2{'top'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+															$tmpFrameH[$i]->Label(-text=>'Maska2 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska2{'top'}),-fg=>_Transf_FG(ValueConvertor->GetMaskCodeToColor($maska2{'top'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
 													}
 													if($maska1{'top'}){
 															$u++;
-															$tmpFrameH[$i]->Label(-text=>'Maska1 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska1{'top'}),-fg=>_Transf_FG(ValueConvertor->GetSilkCodeToColor($maska1{'top'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+															$tmpFrameH[$i]->Label(-text=>'Maska1 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska1{'top'}),-fg=>_Transf_FG(ValueConvertor->GetMaskCodeToColor($maska1{'top'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
 													}
 													if($maska1{'bot'}){
 															$u++;
-															$tmpFrameH[$i]->Label(-text=>'Maska1 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska1{'bot'}),-fg=>_Transf_FG(ValueConvertor->GetSilkCodeToColor($maska1{'bot'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+															$tmpFrameH[$i]->Label(-text=>'Maska1 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska1{'bot'}),-fg=>_Transf_FG(ValueConvertor->GetMaskCodeToColor($maska1{'bot'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
 													}
 													if($maska2{'bot'}){
 															$u++;
-															$tmpFrameH[$i]->Label(-text=>'Maska2 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska2{'bot'}),-fg=>_Transf_FG(ValueConvertor->GetSilkCodeToColor($maska2{'bot'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+															$tmpFrameH[$i]->Label(-text=>'Maska2 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska2{'bot'}),-fg=>_Transf_FG(ValueConvertor->GetMaskCodeToColor($maska2{'bot'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
 													}
 													if($potisk1{'bot'}){
 															$u++;	
