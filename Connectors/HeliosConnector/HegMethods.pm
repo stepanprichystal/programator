@@ -714,6 +714,7 @@ sub GetUserInfoHelios {
 
 	my $cmd = "select top 1
 				 c.nazev_subjektu Zakaznik,
+				 d.konstr_trida Kontr_trida,
 				 lcs.nf_edit_style('ddlb_22_hal', d.hal) Povrchova_uprava,
 				 d.material_tloustka Tloustka,
 				 d.material_tloustka_medi Tloustka_medi,
@@ -723,7 +724,8 @@ sub GetUserInfoHelios {
 				 z.pooling POOLing,
 				 d.material_druh Material,
 				 lcs.nf_edit_style('typ_desky_22', d.material_typ) Typ_desky,
-				 z.termin Termin
+				 z.termin Termin,
+				 lcs.nf_edit_style('ddlb_22_vysledne_formatovani', d.strihani) Vysledne_formatovani
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
 				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material

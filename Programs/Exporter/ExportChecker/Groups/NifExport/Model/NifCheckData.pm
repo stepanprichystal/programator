@@ -500,100 +500,100 @@ sub OnCheckGroupData {
 	}
 
 	# 22) Check if set construction class match with real pcb data by layers
-	if ( !$defaultInfo->IsPool() ) {
-		my $checklistName = "control";
-		my $isolTol       = 0.1;         # tolerance of isolation from set construction class is 10%
-
-		unless ( CamChecklist->ChecklistLibExists( $inCAM, $checklistName ) ) {
-
-			$dataMngr->_AddErrorResult(
-						"Checklist - $checklistName",
-						"Checklist (název:$checklistName) pro kontrolu minimálních izolací v signálových vrstvách neexistuje v Global library."
-						  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
-			);
-		}
-		else {
-
-			foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] ) ) {
-
-				# Check outer layers
-
-				my @verifyOutResults = ();
-				my $verifyOutErrMess;
-
-				if ( PCBClassCheck->VerifyMinIsolOuterLayers( $inCAM, $jobId, $s, \@verifyOutResults, undef, undef, \$verifyOutErrMess ) ) {
-
-					foreach my $r (@verifyOutResults) {
-
-						print "Layer: " . $r->{"layer"} . "\n";
-						print "Problem category: " . $r->{"cat"} . "\n";
-						print "Problem value: " . $r->{"value"} . "\n";
-						print "\n\n";
-
-						my $class = $defaultInfo->GetPcbClass();
-
-						$dataMngr->_AddWarningResult(
-													  "Konstrukční třída vrstvy \"" . $r->{"layer"} . "\"",
-													  "V reportu cheklistu: \"$checklistName\", kategorii: \""
-														. $r->{"cat"}
-														. "\" pro step: \"$s\", vrstvu: \""
-														. $r->{"layer"}
-														. "\" byly nalezeny izolace: \""
-														. $r->{"val"}
-														. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
-						);
-
-					}
-				}
-				else {
-
-					$dataMngr->_AddErrorResult(
-												"Checklist - $checklistName",
-												"Chyba při pokusu o spuštění checklistu (název:$checklistName) pro step: \"$s\""
-												  . "Detail chyby: \"$verifyOutErrMess\""
-					);
-				}
-
-				# Check inner layers
-				if ( $defaultInfo->GetSignalLayers() > 2 ) {
-					my @verifyInnResults = ();
-					my $verifyInnErrMess;
-
-					if ( PCBClassCheck->VerifyMinIsolInnerLayers( $inCAM, $jobId, $s, \@verifyInnResults, undef, undef, \$verifyInnErrMess ) ) {
-
-						foreach my $r (@verifyInnResults) {
-
-							print "Layer: " . $r->{"layer"} . "\n";
-							print "Problem category: " . $r->{"cat"} . "\n";
-							print "Problem value: " . $r->{"val"} . "\n";
-							print "\n\n";
-
-							my $class = $defaultInfo->GetPcbClassInner();
-
-							$dataMngr->_AddWarningResult(
-														  "Konstrukční třída vrstvy \"" . $r->{"layer"} . "\"",
-														  "V reportu cheklistu: \"$checklistName\", kategorii: \""
-															. $r->{"cat"}
-															. "\" pro step: \"$s\", vrstvu: \""
-															. $r->{"layer"}
-															. "\" byly nalezeny izolace: \""
-															. $r->{"val"}
-															. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
-							);
-						}
-					}
-					else {
-
-						$dataMngr->_AddErrorResult(
-													"Checklist - $checklistName",
-													"Chyba při pokusu o spuštění checklistu (název:$checklistName) pro step: \"$s\""
-													  . "Detail chyby: \"$verifyInnErrMess\""
-						);
-					}
-				}
-			}
-		}
-	}
+#	if ( !$defaultInfo->IsPool() ) {
+#		my $checklistName = "control";
+#		my $isolTol       = 0.1;         # tolerance of isolation from set construction class is 10%
+#
+#		unless ( CamChecklist->ChecklistLibExists( $inCAM, $checklistName ) ) {
+#
+#			$dataMngr->_AddErrorResult(
+#						"Checklist - $checklistName",
+#						"Checklist (název:$checklistName) pro kontrolu minimálních izolací v signálových vrstvách neexistuje v Global library."
+#						  . " Kontrola na správné nastavení konstrukčních tříd nebude provedena."
+#			);
+#		}
+#		else {
+#
+#			foreach my $s ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] ) ) {
+#
+#				# Check outer layers
+#
+#				my @verifyOutResults = ();
+#				my $verifyOutErrMess;
+#
+#				if ( PCBClassCheck->VerifyMinIsolOuterLayers( $inCAM, $jobId, $s, \@verifyOutResults, undef, undef, \$verifyOutErrMess ) ) {
+#
+#					foreach my $r (@verifyOutResults) {
+#
+#						print "Layer: " . $r->{"layer"} . "\n";
+#						print "Problem category: " . $r->{"cat"} . "\n";
+#						print "Problem value: " . $r->{"value"} . "\n";
+#						print "\n\n";
+#
+#						my $class = $defaultInfo->GetPcbClass();
+#
+#						$dataMngr->_AddWarningResult(
+#													  "Konstrukční třída vrstvy \"" . $r->{"layer"} . "\"",
+#													  "V reportu cheklistu: \"$checklistName\", kategorii: \""
+#														. $r->{"cat"}
+#														. "\" pro step: \"$s\", vrstvu: \""
+#														. $r->{"layer"}
+#														. "\" byly nalezeny izolace: \""
+#														. $r->{"val"}
+#														. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
+#						);
+#
+#					}
+#				}
+#				else {
+#
+#					$dataMngr->_AddErrorResult(
+#												"Checklist - $checklistName",
+#												"Chyba při pokusu o spuštění checklistu (název:$checklistName) pro step: \"$s\""
+#												  . "Detail chyby: \"$verifyOutErrMess\""
+#					);
+#				}
+#
+#				# Check inner layers
+#				if ( $defaultInfo->GetSignalLayers() > 2 ) {
+#					my @verifyInnResults = ();
+#					my $verifyInnErrMess;
+#
+#					if ( PCBClassCheck->VerifyMinIsolInnerLayers( $inCAM, $jobId, $s, \@verifyInnResults, undef, undef, \$verifyInnErrMess ) ) {
+#
+#						foreach my $r (@verifyInnResults) {
+#
+#							print "Layer: " . $r->{"layer"} . "\n";
+#							print "Problem category: " . $r->{"cat"} . "\n";
+#							print "Problem value: " . $r->{"val"} . "\n";
+#							print "\n\n";
+#
+#							my $class = $defaultInfo->GetPcbClassInner();
+#
+#							$dataMngr->_AddWarningResult(
+#														  "Konstrukční třída vrstvy \"" . $r->{"layer"} . "\"",
+#														  "V reportu cheklistu: \"$checklistName\", kategorii: \""
+#															. $r->{"cat"}
+#															. "\" pro step: \"$s\", vrstvu: \""
+#															. $r->{"layer"}
+#															. "\" byly nalezeny izolace: \""
+#															. $r->{"val"}
+#															. "\"µm, které jsou menši než povoluje nastavená kontsrukční třída: \"$class\"\n"
+#							);
+#						}
+#					}
+#					else {
+#
+#						$dataMngr->_AddErrorResult(
+#													"Checklist - $checklistName",
+#													"Chyba při pokusu o spuštění checklistu (název:$checklistName) pro step: \"$s\""
+#													  . "Detail chyby: \"$verifyInnErrMess\""
+#						);
+#					}
+#				}
+#			}
+#		}
+#	}
 }
 
 # check if datacode exist

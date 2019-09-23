@@ -27,6 +27,7 @@ use aliased 'Packages::Routing::PlatedRoutAtt';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::InCAM::InCAM';
+use aliased 'Helpers::ValueConvertor';
 
 use aliased 'Packages::CAMJob::Marking::Marking';
 
@@ -671,7 +672,6 @@ sub _PutHeliosInfo {
 													}
 													if ($item =~ /Poznamka/) {
 														if ($putTextInfo2) {
-																$colorText1 = 'red';
 																$colorText2 = 'red';
 														}
 													}
@@ -688,6 +688,12 @@ sub _PutHeliosInfo {
 																$colorText2 = 'red';
 														}
 													}
+													
+													if ($item =~ /Vysledne_formatovani/) {
+														$colorText2 = 'red';
+													}
+													
+													
 													
 													my @tmpFrameH = ();
 													$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
@@ -722,6 +728,49 @@ sub _PutHeliosInfo {
 													my $pole = $tmpFrameH[$i]->Text(-width=>30, -height=>"$heightTest")->grid(-column=>0,-row=>"$u",-columnspan=>2,-sticky=>"w",-padx=>1);
 													$pole->insert("end", "$poznamkaTpv");
 													
+													$i++;
+													$u++;
+													my %maska1 = HegMethods->GetSolderMaskColor($jobName);
+													my %maska2 = HegMethods->GetSolderMaskColor2($jobName);
+													my %potisk1 = HegMethods->GetSilkScreenColor($jobName);
+													my %potisk2 = HegMethods->GetSilkScreenColor2($jobName);
+													
+													#ValueConvertor->GetMaskCodeToColor($mask{'top');
+													
+													$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
+													
+													if($potisk2{'top'}){
+															$u++;
+															$tmpFrameH[$i]->Label(-text=>'Potisk2 ', -width=>30, -bg=>ValueConvertor->GetSilkCodeToColor($potisk2{'top'}),-fg=>_Transf_FG(ValueConvertor->GetSilkCodeToColor($potisk2{'top'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+													}
+													if($potisk1{'top'}){
+															$u++;	
+															$tmpFrameH[$i]->Label(-text=>'Potisk1 ', -width=>30, -bg=>ValueConvertor->GetSilkCodeToColor($potisk1{'top'}),-fg=>_Transf_FG(ValueConvertor->GetSilkCodeToColor($potisk1{'top'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+													}
+													if($maska2{'top'}){
+															$u++;	
+															$tmpFrameH[$i]->Label(-text=>'Maska2 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska2{'top'}),-fg=>_Transf_FG(ValueConvertor->GetMaskCodeToColor($maska2{'top'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+													}
+													if($maska1{'top'}){
+															$u++;
+															$tmpFrameH[$i]->Label(-text=>'Maska1 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska1{'top'}),-fg=>_Transf_FG(ValueConvertor->GetMaskCodeToColor($maska1{'top'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+													}
+													if($maska1{'bot'}){
+															$u++;
+															$tmpFrameH[$i]->Label(-text=>'Maska1 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska1{'bot'}),-fg=>_Transf_FG(ValueConvertor->GetMaskCodeToColor($maska1{'bot'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+													}
+													if($maska2{'bot'}){
+															$u++;
+															$tmpFrameH[$i]->Label(-text=>'Maska2 ', -width=>30, -bg=>ValueConvertor->GetMaskCodeToColor($maska2{'bot'}),-fg=>_Transf_FG(ValueConvertor->GetMaskCodeToColor($maska2{'bot'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+													}
+													if($potisk1{'bot'}){
+															$u++;	
+															$tmpFrameH[$i]->Label(-text=>'Potisk1 ', -width=>30, -bg=>ValueConvertor->GetSilkCodeToColor($potisk1{'bot'}),-fg=>_Transf_FG(ValueConvertor->GetSilkCodeToColor($potisk1{'bot'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+													}
+													if($potisk2{'bot'}){
+															$u++;	
+															$tmpFrameH[$i]->Label(-text=>'Potisk2 ', -width=>30, -bg=>ValueConvertor->GetSilkCodeToColor($potisk2{'bot'}),-fg=>_Transf_FG(ValueConvertor->GetSilkCodeToColor($potisk2{'bot'})),-borderwidth=>1, -relie=>'sunken')->grid(-column=>0,-row=>"$u",-columnspan=>10,-sticky=>"w",-padx=>2);
+													}
 }
 
 sub _PutOfferToGui {
@@ -1049,6 +1098,14 @@ sub _SendGerber {
 }
 
 
-
-
+sub _Transf_FG{
+	my $color = shift;
+	my $res = 'Black';
+	
+		if( $color eq 'Black') {
+				$res = 'White';
+		}
+	
+	return($res);
+}
 

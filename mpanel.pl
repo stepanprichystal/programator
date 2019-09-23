@@ -63,7 +63,7 @@ my $customer = getValueNoris($jobName, 'customer');
 }elsif ($customer =~ /[Ss][Aa][Ff][Ii][Rr]/) {
 		$znacky = "SAFIRAL";
 }elsif ($customer =~ /zebra/i) {
-		$znacky = "ZEBRA";
+		$znacky = "RACOM";
 }elsif ($customer =~ /[Tt][Rr][Aa][Nn][Ss]/) {
 		$znacky = "TRANSCON";
 }

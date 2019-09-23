@@ -471,7 +471,7 @@ sub _Process {
 
       		}
 			
- 			
+ 			$inCAM -> COM ('save_job',job=>"$pcbId",override=>'no',skip_upgrade=>'no');
  			
  			# Here run clean-up.
  			$inCAM -> COM('chklist_from_lib',chklist=>'clean_up',profile=>'none',customer=>'');
@@ -481,6 +481,9 @@ sub _Process {
  			
  			
  			$inCAM -> PAUSE('ZKONTROLUJ CLEAN-UP');
+ 			
+ 			$inCAM -> COM ('save_job',job=>"$pcbId",override=>'no',skip_upgrade=>'no');
+ 			
  			
  			# Here is check if there is result of 'Surface analyzer' in the green color.
  			while () {
