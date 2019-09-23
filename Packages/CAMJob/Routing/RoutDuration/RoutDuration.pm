@@ -73,9 +73,15 @@ sub GetRoutDuration {
 			CamHelper->SetStep($inCAM, $s->{"stepName"});
 			
 			CamLayer->WorkLayer( $inCAM, $layer );
-			$workLayer = CamLayer->RoutCompensation( $inCAM, $layer, "rout" );
-
-			#			# Remove circle surfaces (error in incame - wrong rout compensation, features has length 0)
+			
+			# Copy rout to new lazer (avoid compensate SR data)
+			my $tmp =  GeneralHelper->GetNumUID();
+			$inCAM->COM( "merge_layers", "source_layer" => $layer, "dest_layer" => $tmp );
+			CamLayer->WorkLayer( $inCAM, $tmp );
+			$workLayer = CamLayer->RoutCompensation( $inCAM, $tmp, "rout" );
+ 			CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
+ 
+			# Remove circle surfaces (error in incame - wrong rout compensation, features has length 0)
 			CamLayer->WorkLayer( $inCAM, $workLayer );
 
 			my $featFilter = FeatureFilter->new( $inCAM, $jobId, $workLayer );
@@ -287,10 +293,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d246583";
+	my $jobId = "d152456";
 	my $step  = "panel";
 	my $layer = "f";
-	sleep();
+ 
 	my $result = RoutDuration->GetRoutDuration( $inCAM, $jobId, $step, $layer );
 
 	print STDERR "Result is: " . int( $result / 60 ) . ":" . sprintf( "%02s", $result % 60 ) . " error \n";

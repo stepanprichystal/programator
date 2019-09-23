@@ -34,7 +34,6 @@ use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -48,11 +47,13 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"stepToTest"}   = shift;      # step, which will be tested
-	$self->{"layerNames"}   = shift;      # step, which will be tested
-	$self->{"sendToServer"} = shift;      # if AOI data shoul be send to server from ot folder
-	$self->{"attemptCnt"}   = 50;         # max count of attempt
-	$self->{"machineName"}  = "fusion";
+	$self->{"stepToTest"}      = shift;         # step, which will be tested
+	$self->{"layerNames"}      = shift;         # step, which will be tested
+	$self->{"sendToServer"}    = shift;         # if AOI data shoul be send to server from ot folder
+	$self->{"incldMpanelFrm"} = shift // 1;    # if pcb step is placed in SR panel, test optically panel frame
+
+	$self->{"attemptCnt"}  = 50;                # max count of attempt
+	$self->{"machineName"} = "fusion";
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -150,17 +151,19 @@ sub Run {
 
 	# Set solder mask layer as non board and document
 	# It gives better result on AOI 19.1.2018
- 	my $mc = ( grep { $_->{"gROWname"} eq "mc" } CamJob->GetBoardBaseLayers( $inCAM, $jobId ) )[0];
+	my $mc = ( grep { $_->{"gROWname"} eq "mc" } CamJob->GetBoardBaseLayers( $inCAM, $jobId ) )[0];
 	if ($mc) {
 
 		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, "mc", "document" );
+
 		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "mc", "misc" );
 	}
-	
+
 	my $ms = ( grep { $_->{"gROWname"} eq "ms" } CamJob->GetBoardBaseLayers( $inCAM, $jobId ) )[0];
 	if ($ms) {
 
 		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, "ms", "document" );
+
 		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "ms", "misc" );
 	}
 
@@ -170,19 +173,20 @@ sub Run {
 		# For each layer export AOI
 		$self->__ExportAOI( $layer, $setName );
 	}
- 
+
 	if ($mc) {
 
 		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, "mc", "solder_mask" );
+
 		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "mc", "board" );
 	}
-	
+
 	if ($ms) {
 
 		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, "ms", "solder_mask" );
+
 		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "ms", "board" );
 	}
-	
 
 	# send to server
 	if ( $self->{"sendToServer"} ) {
@@ -292,10 +296,37 @@ sub __ExportAOI {
 	$inCAM->COM( "cdr_line_width", "nom_width" => $isolation, "min_width" => "0" );
 	$inCAM->COM( "cdr_spacing",    "nom_space" => $isolation, "min_space" => "0" );
 
-	# Set steps and repeat
+	# Set step to test
+	my @steps = ();
+	
+	if ( $stepToTest eq "mpanel" ) {
 
-	my @steps = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepToTest );
-	CamStepRepeat->RemoveCouponSteps(\@steps, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
+		if ( $self->{"incldMpanelFrm"} ) {
+			@steps = ( {"stepName" => $stepToTest} );
+		}
+		else {
+			@steps = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepToTest );
+		}
+	}
+	elsif ( $stepToTest eq "panel" ) {
+
+		my $mPanelExist = CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepToTest, "mpanel" );
+
+		if ( $mPanelExist && $self->{"incldMpanelFrm"} ) {
+
+			@steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest );
+		}
+		else {
+
+			@steps = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepToTest );
+		}
+	}
+	else {
+
+		@steps = ({"stepName" => $stepToTest} );
+	}
+	
+	CamStepRepeat->RemoveCouponSteps( \@steps, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
 
 	@steps = map { $_->{"stepName"} } @steps;
 
@@ -366,7 +397,14 @@ sub __CreateTmpRoutLayer {
 			$inCAM->COM( 'delete_layer', "layer" => $lTmpName );
 		}
 
-		$inCAM->COM( 'create_layer', "layer" => $lTmpName, "context" => 'board', "type" => 'drill', "polarity" => 'positive', "ins_layer" => '' );
+		$inCAM->COM(
+					 'create_layer',
+					 "layer"     => $lTmpName,
+					 "context"   => 'board',
+					 "type"      => 'drill',
+					 "polarity"  => 'positive',
+					 "ins_layer" => ''
+		);
 
 		my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest );
 
@@ -378,7 +416,12 @@ sub __CreateTmpRoutLayer {
 
 				my $lName = GeneralHelper->GetGUID();
 
-				$inCAM->COM( "compensate_layer", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName, "dest_layer_type" => "document" );
+				$inCAM->COM(
+							 "compensate_layer",
+							 "source_layer"    => $l->{"gROWname"},
+							 "dest_layer"      => $lName,
+							 "dest_layer_type" => "document"
+				);
 				$inCAM->COM(
 					"copy_layer",
 					"dest"         => "layer_name",
@@ -448,11 +491,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobName   = "d152457";
-	my $stepName  = "panel";
+	my $jobName   = "d092494";
+	my $stepName  = "o+1";
 	my $layerName = "c";
 
-	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, ["c", "s"] );
+	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, [ "c", "s" ],  0, 1);
 	$mngr->Run();
 }
 

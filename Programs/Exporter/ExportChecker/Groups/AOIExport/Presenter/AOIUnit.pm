@@ -86,7 +86,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetStepToTest( $groupData->GetStepToTest() );
 	$self->{"form"}->SetLayers( $groupData->GetLayers() );
 	$self->{"form"}->SetSendToServer( $groupData->GetSendToServer() );
-	
+	$self->{"form"}->SetIncldMpanelFrm( $groupData->GetIncldMpanelFrm() );
 
 	#refresh wrapper
 	$self->_RefreshWrapper();
@@ -109,6 +109,7 @@ sub GetGroupData {
 		$groupData->SetStepToTest( $frm->GetStepToTest() );
 		$groupData->SetLayers( $frm->GetLayers() );
 		$groupData->SetSendToServer( $frm->GetSendToServer() );
+		$groupData->SetIncldMpanelFrm( $frm->GetIncldMpanelFrm() );
 	
 	}
 	else {

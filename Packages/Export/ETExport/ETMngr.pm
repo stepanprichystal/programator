@@ -197,9 +197,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d229010";
+	my $jobId = "d222769";
 
-	my $et = ETMngr->new( $inCAM, $jobId, "panel", 1 );
+	my $et = ETMngr->new( $inCAM, $jobId, "panel", 1, 1,1 );
 
 	$et->Run()
 

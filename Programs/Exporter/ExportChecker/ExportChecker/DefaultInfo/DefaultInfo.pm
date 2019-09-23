@@ -73,6 +73,7 @@ sub new {
 	$self->{"pcbThick"}      = undef;    # total thick of pcb
 	$self->{"pcbClass"}      = undef;    # pcb class of outer layer
 	$self->{"pcbClassInner"} = undef;    # pcb class of inner layer
+	$self->{"pcbIsFlex"}     = undef;    # pcb is flex
 
 	$self->__InitDefault();
 
@@ -127,7 +128,7 @@ sub GetEtchType {
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {
 
-		if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+		if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} ) {
 			$etchType = EnumsGeneral->Etching_PATTERN;
 		}
 		else {
@@ -377,8 +378,8 @@ sub GetBaseCuThick {
 	my $layerName = shift;
 
 	my $cuThick;
-	if ( HegMethods->GetBasePcbInfo($self->{"jobId"})->{"pocet_vrstev"} > 2 ) {
- 
+	if ( HegMethods->GetBasePcbInfo( $self->{"jobId"} )->{"pocet_vrstev"} > 2 ) {
+
 		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
 
 		my $cuLayer = $self->{"stackup"}->GetCuLayer($layerName);
@@ -694,6 +695,14 @@ sub GetPcbThick {
 	return $self->{"pcbThick"};
 }
 
+
+# Return 1 if PCB is flex 
+sub GetIsFlex {
+	my $self = shift;
+
+	return $self->{"pcbIsFlex"};
+}
+
 sub __InitDefault {
 	my $self = shift;
 
@@ -755,6 +764,8 @@ sub __InitDefault {
 	$self->{"pcbSurface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
 
 	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} );
+	
+	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} )
 }
 
 #-------------------------------------------------------------------------------------------#

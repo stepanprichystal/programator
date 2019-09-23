@@ -64,6 +64,17 @@ sub GetSendToServer {
 	my $self  = shift;
 	return $self->{"data"}->{"sendToServer"};
 } 
+
+# Include panel frame to testing
+sub SetIncldMpanelFrm {
+	my $self  = shift;
+	$self->{"data"}->{"incldMpanelFrm"} = shift;
+}
+
+sub GetIncldMpanelFrm {
+	my $self  = shift;
+	return $self->{"data"}->{"incldMpanelFrm"};
+} 
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

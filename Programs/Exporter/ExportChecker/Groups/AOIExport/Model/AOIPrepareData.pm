@@ -15,6 +15,7 @@ use warnings;
 use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Model::AOIGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
@@ -51,17 +52,23 @@ sub OnPrepareGroupData {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
 
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+
 	my $groupData = AOIGroupData->new();
 
-	my $inCAM = $dataMngr->{"inCAM"};
-	my $jobId = $dataMngr->{"jobId"};
+	my $inCAM      = $dataMngr->{"inCAM"};
+	my $jobId      = $dataMngr->{"jobId"};
+	my $stepToTest = "panel";
 
 	my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
-	$groupData->SetStepToTest("panel");
+	# 1) Set step to test
+	$groupData->SetStepToTest($stepToTest);
+
+	# 2) Set test layers
 	$groupData->SetLayers( \@layers );
 
-	# 18) If pcb is in production (as master if pool) send AOI to server
+	# 3) Set send to server
 	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
 	if ( scalar(@orders) > 1 ) {
 
@@ -75,6 +82,20 @@ sub OnPrepareGroupData {
 	}
 
 	$groupData->SetSendToServer(1) if ( scalar(@orders) );
+
+	# 4) Set test panel frame
+	my $testFrame = 0;
+	if (
+		CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepToTest )
+		&& ( $stepToTest eq "mpanel"
+			 || grep { $_->{"stepName"} =~ /^mpanel\d*/ } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest ) )
+		&& !$defaultInfo->GetIsFlex()
+	  )
+	{
+		$testFrame = 1;
+	}
+
+	$groupData->SetIncldMpanelFrm($testFrame);
 
 	return $groupData;
 }

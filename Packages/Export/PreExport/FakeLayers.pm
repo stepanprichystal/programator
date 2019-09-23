@@ -24,7 +24,11 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamFilter';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => 'EnumsFiltr';
 use aliased 'Helpers::JobHelper';
+use aliased 'Packages::Polygon::PolygonFeatures';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,6 +46,7 @@ sub CreateFakeLayers {
 
 	my @smFake = $self->__CreateFakeSMLayers( $inCAM, $jobId, $step );
 	my @outerFake = $self->__CreateFakeOuterCoreLayers( $inCAM, $jobId, $step );
+	#my @smOLECFake = $self->__CreateFakeSMOLECLayers( $inCAM, $jobId, $step );
 
 	my @fake = ();
 	push( @fake, @smFake )    if (@smFake);
@@ -75,7 +80,7 @@ sub RemoveFakeLayers {
 	return 0;
 }
 
-# Create special step, which IPC will be exported from
+# Create fake layers for PCB where is second mask
 sub __CreateFakeSMLayers {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -118,6 +123,107 @@ sub __CreateFakeSMLayers {
 	return @fake;
 }
 
+# Fake layers, where soldermask is only from one side.
+# But OLEC machine need films from both side in order register films
+# For Multilayer PCB only (rest of PCB is exposed without cameras??)
+sub __CreateFakeSMOLECLayers {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+
+	my @fakeLayers = ();
+
+	my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
+
+	my $mcExist = scalar( grep { $_->{"gROWname"} eq "mc" } @layers ) ? 1 : 0;
+	my $msExist = scalar( grep { $_->{"gROWname"} eq "ms" } @layers ) ? 1 : 0;
+
+	my $fakeSM = ();
+	my $sourceL;
+
+	if ( $mcExist && !$msExist ) {
+
+		$fakeSM  = "msolec";
+		$sourceL = "mc";
+
+	}
+	elsif ( !$mcExist && $msExist ) {
+
+		$fakeSM  = "mcolec";
+		$sourceL = "ms";
+
+	}
+	else {
+
+		return @fakeLayers;
+	}
+
+	return @fakeLayers unless ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 );
+
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $fakeSM );
+	CamMatrix->CreateLayer( $inCAM, $jobId, $fakeSM, "solder_mask", "positive", 1 );
+
+	$inCAM->COM( "merge_layers", "source_layer" => $sourceL, "dest_layer" => $fakeSM );
+	CamLayer->WorkLayer( $inCAM, $sourceL );
+
+	# Rotate OLEC marks
+
+	CamLayer->WorkLayer( $inCAM, $fakeSM );
+	if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".geometry", "OLEC*" ) == 4 ) {
+		$inCAM->COM( "sel_change_sym", "symbol" => ( $sourceL eq "mc" ? "cross_mask" : "cross_mask_x" ) );
+	}
+	else {
+		die "All OLEC crosees (four, symbol name: cross_mask) were not found in layer: $sourceL";
+	}
+
+	# Move centre moire
+	my $f = FeatureFilter->new( $inCAM, $jobId, $fakeSM );
+	$f->AddIncludeSymbols( ["s5000"] );
+	$f->AddIncludeAtt( ".geometry", "centre-moire*" );
+	$f->SetPolarity( EnumsFiltr->Polarity_NEGATIVE );
+	if ( $f->Select() ) {
+		$inCAM->COM("sel_delete");
+	}
+
+	$f->Reset();
+	my $sign = ( $sourceL eq "mc" ) ? -1 : 1;
+	$f->AddIncludeSymbols( ["center-moire"] );
+	$f->AddIncludeAtt( ".pnl_place", "*right-top*" );
+	if ( $f->Select() ) {
+		$inCAM->COM( "sel_move", "dx" => 0, "dy" => $sign * 6 );
+	}
+
+	$f->Reset();
+	$f->AddIncludeSymbols( ["center-moire"] );
+	$f->AddIncludeAtt( ".pnl_place", "*right-bot*" );
+	$f->AddIncludeAtt( ".pnl_place", "*left-bot*" );
+	$f->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
+	if ( $f->Select() ) {
+		$inCAM->COM( "sel_move", "dx" => 0, "dy" => $sign * -6 );
+	}
+
+	# Remove film description and put new
+	$f->Reset();
+	$f->AddIncludeAtt( ".pnl_place", "T-*" );
+	if ( $f->Select() ) {
+		$inCAM->COM("sel_delete");
+	}
+
+	my $xPos = 205;
+	my $yPos = 6;
+	$yPos += 20 if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 );
+
+	$self->__PutInfoText( $inCAM, $jobId, $fakeSM, ( $sourceL eq "mc" ? "bot" : "top" ),
+						  $xPos, $yPos, ( $sourceL eq "mc" ? "Spoje MASKA" : "Soucastky MASKA" ) );
+	
+	push(@fakeLayers, $fakeSM);
+			  
+	return @fakeLayers;
+
+}
+
+# Outer layers for PCB with outer core at stackup
 sub __CreateFakeOuterCoreLayers {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -130,7 +236,7 @@ sub __CreateFakeOuterCoreLayers {
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	return @fakeLayers if ( $layerCnt <= 2 );
- 
+
 	my $side;    # top/bot/both
 	if ( StackupOperation->OuterCore( $inCAM, $jobId, \$side ) ) {
 
@@ -167,7 +273,7 @@ sub __CreateFakeOuterCoreLayers {
 
 		# Put schmoll crosses
 		if ( JobHelper->GetIsFlex($jobId) ) {
-			
+
 			my $f = Features->new();
 			$f->Parse( $inCAM, $jobId, $step, "v2" );    # layer v2 should already exist in multilayer pcb
 
@@ -182,38 +288,19 @@ sub __CreateFakeOuterCoreLayers {
 			}
 		}
 
+		# Put info text
+		CamLayer->WorkLayer( $inCAM, $botL );
+
+		my $xPos = 205;
+		my $yPos = 6;
+
 		if ( $side eq "both" || $side eq "top" ) {
 
-			# Put info text
-			CamLayer->WorkLayer( $inCAM, $topL );
-
-			my $x = 205;
-			my $y = 6;
-
-			CamSymbol->AddPad( $inCAM, "inner-bg-nomenclat", { "x" => $x + 27, "y" => $y + 5 }, 0, "negative" );
-			CamSymbol->AddText( $inCAM, '$$JOB V1 (C) TOP', { "x" => $x + 1.5, "y" => $y + 1.8 }, 2.5, 2.5, 1 );
-
-			CamSymbol->AddText( $inCAM, '$$user_name', { "x" => $x + 1.5, "y" => $y + 5.5 }, 2.5, 2.5, 1 );
-			CamSymbol->AddText( $inCAM, 'TIME',        { "x" => $x + 10,  "y" => $y + 5.5 }, 2.5, 2.5, 1 );
-			CamSymbol->AddText( $inCAM, 'DATE-DDMMYY', { "x" => $x + 24,  "y" => $y + 5.5 }, 2.5, 2.5, 1 );
-			#CamSymbol->AddText( $inCAM, 'DDD',         { "x" => $x + 46,  "y" => $y + 5.5 }, 2.5, 2.5, 1 );
+			$self->__PutInfoText( $inCAM, $jobId, $topL, "bot", $xPos, $yPos, "V1 (C) TOP" );
 		}
 
 		if ( $side eq "both" || $side eq "bot" ) {
-
-			# Put info text
-			CamLayer->WorkLayer( $inCAM, $botL );
-
-			my $x = 205;
-			my $y = 6;
-
-			CamSymbol->AddPad( $inCAM, "inner-bg-nomenclat", { "x" => $x + 27, "y" => $y + 5 }, 0, "negative" );
-			CamSymbol->AddText( $inCAM, '$$JOB V' . $layerCnt . ' (S) BOT', { "x" => $x + 52, "y" => $y + 1.8 }, 2.5, 2.5, 1, 1 );
-
-			CamSymbol->AddText( $inCAM, '$$user_name', { "x" => $x + 52, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
-			CamSymbol->AddText( $inCAM, 'TIME',        { "x" => $x + 43, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
-			CamSymbol->AddText( $inCAM, 'DATE-DDMMYY', { "x" => $x + 29, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
-			#CamSymbol->AddText( $inCAM, 'DDD',         { "x" => $x + 8,  "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
+			$self->__PutInfoText( $inCAM, $jobId, $botL, "bot", $xPos, $yPos, "V$layerCnt (S) BOT" );
 		}
 
 	}
@@ -222,6 +309,47 @@ sub __CreateFakeOuterCoreLayers {
 
 	return @fakeLayers;
 
+}
+
+sub __PutInfoText {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
+	my $side  = shift;    # top/bot
+	my $x     = shift;    # left down corner of info text in panel
+	my $y     = shift;
+	my $text  = shift;
+
+	# Put info text
+	CamLayer->WorkLayer( $inCAM, $layer );
+
+	my $xPos = 205;
+	my $yPos = 6;
+
+	if ( $side eq "top" ) {
+
+		CamSymbol->AddPad( $inCAM, "inner-bg-nomenclat", { "x" => $x + 27, "y" => $y + 5 }, 0, "negative" );
+
+		CamSymbol->AddText( $inCAM, '$$user_name', { "x" => $x + 1.5, "y" => $y + 1.8 }, 2.5, 2.5, 1 );
+		CamSymbol->AddText( $inCAM, 'HH:MM',       { "x" => $x + 10,  "y" => $y + 1.8 }, 2.5, 2.5, 1 );
+		CamSymbol->AddText( $inCAM, 'DD/MM/YY',    { "x" => $x + 24,  "y" => $y + 1.8 }, 2.5, 2.5, 1 );
+		CamSymbol->AddText( $inCAM, 'DDD',         { "x" => $x + 46,  "y" => $y + 1.8 }, 2.5, 2.5, 1 );
+
+		CamSymbol->AddText( $inCAM, '$$JOB ' . $text, { "x" => $x + 1.5, "y" => $y + 5.5 }, 2.5, 2.5, 1 );
+
+	}
+	else {
+
+		CamSymbol->AddPad( $inCAM, "inner-bg-nomenclat", { "x" => $x + 27, "y" => $y + 5 }, 0, "negative" );
+
+		CamSymbol->AddText( $inCAM, '$$user_name', { "x" => $x + 52, "y" => $y + 1.8 }, 2.5, 2.5, 1, 1 );
+		CamSymbol->AddText( $inCAM, 'HH:MM',       { "x" => $x + 43, "y" => $y + 1.8 }, 2.5, 2.5, 1, 1 );
+		CamSymbol->AddText( $inCAM, 'DD/MM/YY',    { "x" => $x + 29, "y" => $y + 1.8 }, 2.5, 2.5, 1, 1 );
+		CamSymbol->AddText( $inCAM, 'DDD',         { "x" => $x + 8,  "y" => $y + 1.8 }, 2.5, 2.5, 1, 1 );
+
+		CamSymbol->AddText( $inCAM, '$$JOB ' . $text, { "x" => $x + 52, "y" => $y + 5.5 }, 2.5, 2.5, 1, 1 );
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
