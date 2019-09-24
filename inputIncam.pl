@@ -480,9 +480,10 @@ sub _Process {
  			$inCAM -> COM('chklist_run',chklist=>'clean_up',nact=>'a',area=>'profile',async_run=>'no');
  			
  			
+ 			$inCAM -> COM ('save_job',job=>"$pcbId",override=>'no',skip_upgrade=>'no');
+ 			
  			$inCAM -> PAUSE('ZKONTROLUJ CLEAN-UP');
  			
- 			$inCAM -> COM ('save_job',job=>"$pcbId",override=>'no',skip_upgrade=>'no');
  			
  			
  			# Here is check if there is result of 'Surface analyzer' in the green color.
