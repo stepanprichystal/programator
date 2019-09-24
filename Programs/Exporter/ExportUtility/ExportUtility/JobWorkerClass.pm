@@ -24,7 +24,7 @@ use aliased 'Managers::AbstractQueue::Enums';
 use aliased 'Managers::AsyncJobMngr::Enums' => 'EnumsJobMngr';
 use aliased 'Packages::Exceptions::BaseException';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
-
+use aliased 'Packages::Export::PreExport::FakeLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -76,8 +76,6 @@ sub __RunTask {
 	# Open job
 	if ( CamJob->IsJobOpen( $self->{"inCAM"}, ${ $self->{"pcbId"} } ) ) {
 
-		
-
 		# 1) Init groups
 
 		for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
@@ -110,8 +108,10 @@ sub __RunTask {
 			};
 			if ( my $e = $@ ) {
 
-				my $baseE =
-				  BaseException->new( "Processing of group: " . UnitEnums->GetTitle($unitId) . " was unexpectedly aborted", $e );
+				# Some groups create "Fake layers" which should be removed after group finish, remove if exception
+				FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
+
+				my $baseE = BaseException->new( "Processing of group: " . UnitEnums->GetTitle($unitId) . " was unexpectedly aborted", $e );
 
 				$self->_GroupResultEvent( $unitId, ResultEnums->ItemResult_Fail, $baseE->Error() );
 
@@ -121,7 +121,6 @@ sub __RunTask {
 			$self->_GroupTaskEvent( Enums->EventType_GROUP_END, $unitId );
 
 		}
-
 
 		# 3) Close job
 

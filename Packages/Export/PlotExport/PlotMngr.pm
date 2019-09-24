@@ -55,6 +55,7 @@ sub Run {
 
 	#  1) Create fake layers which will be exported, but are created automatically
 	FakeLayers->CreateFakeLayers($inCAM, $jobId );
+ 
 
 	# 2) Delete old format opfx files
 	$self->__DeleteOldFiles();

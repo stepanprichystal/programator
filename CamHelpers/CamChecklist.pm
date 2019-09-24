@@ -230,7 +230,7 @@ sub GetChecklistActionTime {
 				  "Jun"  => 6,
 				  "Jul"  => 7,
 				  "Aug"  => 8,
-				  "Sept" => 9,
+				  "Sep" => 9,
 				  "Oct"  => 10,
 				  "Nov"  => 11,
 				  "Dec"  => 12
@@ -267,14 +267,18 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $system1 = CamChecklist->ChecklistLibExists( $inCAM,"control1" );
 
-	my $outfile = 'c:/Export/Test/reportFull.txt';
-	CamChecklist->OutputActionFullReport( $inCAM, $jobId, "o+1", "control", "2", $outfile, EnumsChecklist->Cat_PAD2CIRCUIT,
-										  "c", [ EnumsChecklist->Sev_GREEN, EnumsChecklist->Sev_RED ] );
+#	my $outfile = 'c:/Export/Test/reportFull.txt';
+#	CamChecklist->OutputActionFullReport( $inCAM, $jobId, "o+1", "control", "2", $outfile, EnumsChecklist->Cat_PAD2CIRCUIT,
+#										  "c", [ EnumsChecklist->Sev_GREEN, EnumsChecklist->Sev_RED ] );
+
+
+ 	my $time = CamChecklist->GetChecklistActionTime($inCAM,"d240710", "o+1", "control", 2);
+
+	print $time;
 
 	die;
 
 }
-
-1;
+ 
 
 1;

@@ -46,11 +46,12 @@ sub CreateFakeLayers {
 
 	my @smFake = $self->__CreateFakeSMLayers( $inCAM, $jobId, $step );
 	my @outerFake = $self->__CreateFakeOuterCoreLayers( $inCAM, $jobId, $step );
-	#my @smOLECFake = $self->__CreateFakeSMOLECLayers( $inCAM, $jobId, $step );
+	my @smOLECFake = $self->__CreateFakeSMOLECLayers( $inCAM, $jobId, $step );
 
 	my @fake = ();
 	push( @fake, @smFake )    if (@smFake);
 	push( @fake, @outerFake ) if (@outerFake);
+	push( @fake, @smOLECFake ) if (@smOLECFake);
 
 	foreach my $l (@fake) {
 
