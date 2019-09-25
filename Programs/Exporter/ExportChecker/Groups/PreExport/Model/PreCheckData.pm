@@ -12,6 +12,7 @@ use strict;
 use warnings;
 use File::Copy;
 use DateTime;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'CamHelpers::CamLayer';
@@ -151,10 +152,19 @@ sub OnCheckGroupData {
 		}
 
 	}
+	
+	# 4) Check if onesided flex layer has always two signal layer in matrix
+	if($defaultInfo->GetIsFlex() &&  HegMethods->GetTypeOfPcb( $jobId, 1 ) =~ /^F$/i && $layerCnt != 2){
+		
+		$dataMngr->_AddErrorResult(
+											"Špatný počet signálových vrstev",
+											"Pokud je typ DPS jednostranný flex, v matrixu musí být vždy dvě signálové vrstvy: c + s");
+	}
+	 
 
 	# 4) Check if material and pcb thickness and base cuthickness is set
-	my $materialKind = $defaultInfo->GetMaterialKind();
-	$materialKind =~ s/[\s\t]//g;
+	my $materialKindIS = $defaultInfo->GetMaterialKind();
+	$materialKindIS =~ s/[\s\t]//g;
 
 	my $pcbType = $defaultInfo->GetTypeOfPcb();
 
@@ -176,28 +186,84 @@ sub OnCheckGroupData {
 	}
 
 	# 6) Check if helios contain material kind
-	unless ( defined $materialKind ) {
+	unless ( defined $materialKindIS ) {
 
 		$dataMngr->_AddErrorResult( "Material", "Material kind (Fr4, IS400, etc..) is not defined in Helios." );
 	}
 
-	# If multilayer
-	if ( $layerCnt > 2 && $materialKind && $pcbThickHelios ) {
+	if ( defined $materialKindIS && $layerCnt <= 2 && $defaultInfo->GetIsFlex() ) {
 
-		# a) test id material in helios, match material in stackup
-		my $stackKind = $defaultInfo->GetStackup()->GetStackupType();
+		# single layer + double layer flex PCB
+		# Only PYRALUX material is possible
 
-		#exception DE 104 eq FR4
-		if ( $stackKind =~ /DE 104/i ) {
-			$stackKind = "FR4";
+		my @flexMats = ("PYRALUX");
+
+		unless( grep { $_ =~ /$materialKindIS/i } @flexMats ) {
+
+			$dataMngr->_AddErrorResult(
+										"PCB material",
+										"Jednostranné a oboustranné flexi DPS musí mít v IS zadaný jeden z následujících materiálů: "
+										  . join( ";", @flexMats ) . "."
+										  . "Aktuálně zadaný materiál v IS: "
+										  . $materialKindIS
+			);
 		}
 
-		$stackKind =~ s/[\s\t]//g;
+	}
 
-		unless ( $materialKind =~ /$stackKind/i || $stackKind =~ /$materialKind/i ) {
+	if ( $layerCnt > 2 && $materialKindIS && $pcbThickHelios ) {
 
-			$dataMngr->_AddErrorResult( "Stackup material",
-							"Stackup material doesn't match with material in Helios. Stackup material: $stackKind, Helios material: $materialKind." );
+		# Multilayer PCB
+
+		# a) test id material in helios, match material in stackup
+
+		my $stackKindStr = $defaultInfo->GetStackup()->GetStackupType();
+		$stackKindStr =~ s/[\s\t]//g;
+		$stackKindStr = uc($stackKindStr);
+		my @allStackKind = split( /\+/, $stackKindStr );
+
+		for ( my $i = 0 ; $i < scalar(@allStackKind) ; $i++ ) {
+
+			$allStackKind[$i] =~ s/.*DE104.*/FR4/g;    #exception DE 104 and IS400 eq FR4
+			                                           #$allStackKind[$i] =~ s/.*PYRALUX.*/PYRALUX/g; #exception PYRALUXCG and PYRALUXAP eq PYRALUX
+
+			if ( $allStackKind[$i] =~ /.*IS400.*/ && $stackKindStr =~ /PYRALUX/ ) {
+				$allStackKind[$i] = "FR4";
+			}
+
+		}
+
+		my @allMaterialKindIS = split( /\-/, $materialKindIS );
+
+		my %counts;
+		$counts{$_}++ for @allStackKind;
+
+		foreach my $nameIS (@allMaterialKindIS) {
+
+			my $n = ( grep { $_ =~ /$nameIS/ } @allStackKind )[0];
+
+			if ( defined $n ) {
+				$counts{$n}++;
+			}
+			else {
+
+				$counts{$nameIS} = 1;
+			}
+		}
+
+		foreach my $name ( keys %counts ) {
+
+			if ( $counts{$name} != 2 ) {
+
+				$dataMngr->_AddErrorResult(
+											"Stackup material",
+											"Stackup material doesn't match with material in Helios. Stackup material: "
+											  . join( "+", @allStackKind )
+											  . ", Helios material: "
+											  . join( "+", @allMaterialKindIS ) . "."
+				);
+				last;
+			}
 		}
 
 		# b) test if created stackup match thickness in helios +-5%
@@ -212,7 +278,6 @@ sub OnCheckGroupData {
 										"Stackup thickness ($stackThick) isn't match witch thickness in Helios ($pcbThickHelios) +-10%." );
 
 		}
-
 	}
 
 	# 7) Check if contain negative layers, if powerground type is set and vice versa
@@ -466,7 +531,7 @@ sub OnCheckGroupData {
 	}
 
 	# 18) Check if more same jobid is in production, if so add warning
-	# Exclude job orders which are in production as slave 
+	# Exclude job orders which are in production as slave
 	# (slave steps are copied to mother job, thus slave job data can't be infloenced)
 	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
 	if ( scalar(@orders) > 1 ) {

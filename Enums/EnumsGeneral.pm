@@ -99,7 +99,7 @@ use constant {
 use constant {
 			   Etching_PATTERN => 'pattern',
 			   Etching_TENTING => 'tenting',
-			   Etching_NO      => 'noEtching',
+			   Etching_ONLY      => 'etching',
 };
 
 use constant {

@@ -10,6 +10,7 @@ use base('Packages::Stackup::StackupBase::StackupBase');
 use strict;
 use warnings;
 use Cache::MemoryCache;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -169,11 +170,18 @@ sub GetAllCores {
 # Assume, all layers are same type, so take type from first core
 sub GetStackupType {
 	my $self = shift;
+ 
+	return join("+", uniq( map($_->GetTextType(), $self->GetAllCores() ) ) );
+}
 
-	my @cores = $self->GetAllCores();
-
-	return $cores[0]->GetTextType();
-
+# Return if stackup is hybrid
+# Stackup is hybrid if there are cores with different material type (eg.: IS400 + DUROID)
+sub GetStackupIsHybrid{
+	my $self = shift;
+	
+	my @types = uniq( map($_->GetTextType(), $self->GetAllCores() ) );
+	
+	return  scalar(@types) > 1 ? 1 : 0 ;
 }
 
 #-------------------------------------------------------------------------------------------#

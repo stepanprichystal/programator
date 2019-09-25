@@ -74,6 +74,7 @@ sub new {
 	$self->{"pcbClass"}      = undef;    # pcb class of outer layer
 	$self->{"pcbClassInner"} = undef;    # pcb class of inner layer
 	$self->{"pcbIsFlex"}     = undef;    # pcb is flex
+	$self->{"pcbFlexType"}   = undef;    # pcb flex type
 
 	$self->__InitDefault();
 
@@ -119,11 +120,11 @@ sub GetEtchType {
 	my $self      = shift;
 	my $layerName = shift;
 
-	my $etchType = EnumsGeneral->Etching_NO;
+	my $etchType = EnumsGeneral->Etching_ONLY;
 
-	if ( $self->{"layerCnt"} <= 1 ) {
+	if ( $self->{"layerCnt"} <= 1 || ($self->{"layerCnt"} == 2 && $self->GetIsFlex() )) {
 
-		$etchType = EnumsGeneral->Etching_NO;
+		$etchType = EnumsGeneral->Etching_ONLY;
 
 	}
 	elsif ( $self->{"layerCnt"} == 2 ) {
@@ -427,7 +428,7 @@ sub SetDefaultLayersSettings {
 			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
 				$l->{"polarity"} = "positive";
 			}
-			elsif ( $etching eq EnumsGeneral->Etching_TENTING || $etching eq EnumsGeneral->Etching_NO ) {
+			elsif ( $etching eq EnumsGeneral->Etching_TENTING || $etching eq EnumsGeneral->Etching_ONLY ) {
 				$l->{"polarity"} = "negative";
 			}
 
@@ -703,6 +704,15 @@ sub GetIsFlex {
 	return $self->{"pcbIsFlex"};
 }
 
+# Return type of flexible PCB
+sub GetFlexType {
+	my $self = shift;
+
+	return $self->{"pcbFlexType"};
+}
+
+
+
 sub __InitDefault {
 	my $self = shift;
 
@@ -765,7 +775,9 @@ sub __InitDefault {
 
 	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} );
 	
-	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} )
+	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
+	
+	$self->{"pcbFlexType"} = JobHelper->GetPcbFlexType( $self->{"jobId"} );
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -17,6 +17,8 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Enums::EnumsIS';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::JobHelper';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -140,8 +142,8 @@ sub OuterCore {
 	my $side  = shift;    # scalar referenc with positions of outer cores: top/bot/both
 
 	my $result = 0;
-  
-	if ( CamJob->GetSignalLayerCnt($inCAM, $pcbId) > 2 ) {
+
+	if ( CamJob->GetSignalLayerCnt( $inCAM, $pcbId ) > 2 ) {
 
 		my $stackup = Stackup->new($pcbId);
 		my @cores   = $stackup->GetAllCores();
@@ -188,8 +190,19 @@ sub StackupMatInStock {
 		# abs - because copper id can be negative (plated core)
 		my @mat = HegMethods->GetCoreStoreInfo( $m->GetQId(), $m->GetId(), abs( $m->GetTopCopperLayer()->GetId() ) );
 
-		# Check if material dimension are in tolerance +-2mm
-		@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 2 && abs( $_->{"hloubka"} - $pnl->H() ) <= 2 } @mat;
+		if ( $m->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
+
+			# Flex material is always cut from dimension 305*456mm, test if panel height is smaller than 456mm 
+			# (tolerance +-3mm)
+			@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 3 && $pnl->H() <= $_->{"hloubka"} } @mat;
+
+		}
+		else {
+
+			# Check if material dimension are in tolerance +-2mm
+			@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 2 && abs( $_->{"hloubka"} - $pnl->H() ) <= 2 } @mat;
+
+		}
 
 		if ( scalar(@mat) == 0 ) {
 
@@ -222,15 +235,31 @@ sub StackupMatInStock {
 		my $prepregW = undef;
 		my $prepregH = undef;
 
-		my @mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId() );
+		my @mat = ();
 
 		if ( $pnl->IsStandard() ) {
 
 			$prepregW = $pnl->GetStandard()->PrepregW();
 			$prepregH = $pnl->GetStandard()->PrepregH();
 
-			# Check if material dimension are in tolerance +-2mm
-			@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 2 } @mat;
+			if ( $m->GetTextType() =~ /49np|no.*flow/i ) {
+
+				@mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId(), undef, undef, 1 );
+
+				# Flex prepreg material is always cut from dimension 305*456mm, test if panel height is smaller than 456mm
+				# (tolerance +-3mm)
+				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 3 &&  $prepregH <= $_->{"hloubka"} } @mat;
+
+			}
+			else {
+
+				@mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId() );
+
+				# Check if material dimension are in tolerance +-2mm
+				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 2 } @mat;
+
+			}
+
 		}
 
 		if ( scalar(@mat) == 0 ) {
@@ -409,12 +438,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $mes   = "";
 
-	my $side;
-	my @package = StackupOperation->GetJoinedFlexRigidPackages("d222775");
+	#	my $side;
+	#	my @package = StackupOperation->GetJoinedFlexRigidPackages("d222775");
+	#
+	#	my @package2 = StackupOperation->GetJoinedFlexRigidPackages2("d222777");
 
-	my @package2 = StackupOperation->GetJoinedFlexRigidPackages2("d222777");
+	print StackupOperation->StackupMatInStock( $inCAM, "d251561", undef, \$mes );
 
-	print @package;
+	#print @package;
 
 }
 

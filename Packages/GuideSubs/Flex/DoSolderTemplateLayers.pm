@@ -31,7 +31,7 @@ push( @messHead, "<g>=====================================</g>" );
 push( @messHead, "<g>Průvodce vytvořením šablony pro registraci inner coverlay</g>" );
 push( @messHead, "<g>=====================================</g>\n" );
 
-my $OPENINGCLEARANCE = 2500;    # Ovelrap of coverlay to rigid area
+my $HOLEDIAMETER = 9;    # Size of final routed hole in template
 
 # Set impedance lines
 sub PrepareTemplateLayers {
@@ -118,7 +118,7 @@ sub __PrepareTemplate {
 	}
 
 	# Prepare coverlay rout
-	FlexiBendArea->PrepareCoverlayTemplate( $inCAM, $jobId, $step, $lName, 2, $OPENINGCLEARANCE / 1000 );
+	FlexiBendArea->PrepareCoverlayTemplate( $inCAM, $jobId, $step, $lName, 2, $HOLEDIAMETER );
 	CamLayer->WorkLayer( $inCAM, $lName );
 	$inCAM->PAUSE("Zkontroluj pripravenou vrstvu sablony a uprav co je treba.");
 

@@ -57,6 +57,10 @@ sub Build {
  
 	my $logo = PrimitivePad->new( $layout->GetLogoSymbol(), $layout->GetLogoPosition(),
 								  0, DrawEnums->Polar_POSITIVE, $angle, 0, $scaleX, $scaleX );
+	
+	$logo->AddAttribute(".nomenclature");
+	$logo->AddAttribute(".n_electric");
+	
 	$self->{"drawing"}->AddPrimitive($logo);
 
 	# Draw job id

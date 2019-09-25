@@ -592,7 +592,7 @@ sub PrepareRoutTransitionZone {
 	my $recreate          = shift // 1;       # recreate rout layer with used name
 	my $roolOverlap       = shift // 0.25;    # 0,25mm # define depth  overlap of rout tool in transition zone
 	my $extendZone        = shift // 0.5;     # 0,5mm transition rout slots will be exteneded on both ends
-	my $defDepthRoutPart1 = shift // 0.27;    # Default depth for first routing (part 1). If package is to thin, rout to half of package
+	my $defDepthRoutPart1 = shift // 0.23;    # Default depth for first routing (part 1). If package is to thin, rout to half of package
 	my $minMatRest        = shift // 0.15;    # 150µm is minimal material thickness after routing
 
 	die "Rout part is not defined" if ( $routPart != 1 && $routPart != 2 );
@@ -724,12 +724,12 @@ sub PrepareRoutTransitionZone {
 
 				# Add chain
 				$inCAM->COM(
-					'chain_add',
-					"layer" => $routName,
-					"chain" => $featIdx,
-					"size"  => $toolSize,
-					"comp"  => $toolComp,
-					"first" => 0,
+							 'chain_add',
+							 "layer" => $routName,
+							 "chain" => $featIdx,
+							 "size"  => $toolSize,
+							 "comp"  => $toolComp,
+							 "first" => 0,
 				);
 			}
 			else {
@@ -738,9 +738,9 @@ sub PrepareRoutTransitionZone {
 
 		}
 
-		 $inCAM->COM("chain_list_reset");
-		 $inCAM->COM("chain_list_add","chain"=> join("\;",  (1..$featIdx)) );
-		 $inCAM->COM("chain_merge", "layer" => $routName);
+		$inCAM->COM("chain_list_reset");
+		$inCAM->COM( "chain_list_add", "chain" => join( "\;", ( 1 .. $featIdx ) ) );
+		$inCAM->COM( "chain_merge", "layer" => $routName );
 
 		if ($extendZone) {
 			$inCAM->COM( "sel_extend_slots", "mode" => "ext_by", "size" => ( 2 * $extendZone * 1000 ), "from" => "center" );
@@ -789,13 +789,13 @@ sub PrepareRoutTransitionZone {
 }
 
 sub PrepareCoverlayTemplate {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $step      = shift;
-	my $routName  = shift // "fsoldc";
-	my $toolSize  = shift // 2;       # 2mm tool size
-	my $clearance = shift // 5;       # 5mm clarance around coverlaz pin area
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $step     = shift;
+	my $routName = shift // "fsoldc";
+	my $toolSize = shift // 2;          # 2mm tool size
+	my $diameter = shift // 9;          # 9mm size of final routed hole
 
 	my $pinParser = CoverlayPinParser->new( $inCAM, $jobId, $step, "CCW" );
 	my $errMess = "";
@@ -821,29 +821,19 @@ sub PrepareCoverlayTemplate {
 	CamMatrix->CreateLayer( $inCAM, $jobId, $lTmp, "rout", "positive", 0 );
 	CamLayer->WorkLayer( $inCAM, $lTmp );
 
-	foreach my $bendArea ( $pinParser->GetBendAreas() ) {
-
-		# Draw surface from pin areas
-		foreach my $pin ( $bendArea->GetPinsFeatures() ) {
-
-			my @lines = grep { $_->{"att"}->{".string"} eq EnumsPins->PinString_SIDELINE2 } @{$pin};
-
-
-			my @points = ();
-
-			push( @points, { "x" => $lines[0]->{"x1"}, "y" => $lines[0]->{"y1"} } );
-			push( @points, { "x" => $lines[0]->{"x2"}, "y" => $lines[0]->{"y2"} } );
-			push( @points, { "x" => $lines[1]->{"x1"}, "y" => $lines[1]->{"y1"} } );
-			push( @points, { "x" => $lines[1]->{"x2"}, "y" => $lines[1]->{"y2"} } );
-
-			CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points );
-
-		}
+ 
+	foreach my $reg ( $pinParser->GetRegisterPads() ) {
+		
+		CamSymbol->AddPad($inCAM, "r" . ( $diameter * 1000 ), { "x" => $reg->{"x1"}, "y" => $reg->{"y1"} } );
 	}
 
-	$inCAM->COM( "sel_resize", "size" => $clearance * 2 * 1000, "corner_ctl" => "no" );
-
+	CamLayer->Contourize( $inCAM, $lTmp );
 	CamLayer->WorkLayer( $inCAM, $lTmp );
+	
+	
+			$inCAM->COM("sel_all_feat");
+			$inCAM->COM("chain_list_reset");
+	
 	$inCAM->COM(
 				 'chain_add',
 				 "layer" => $lTmp,
@@ -859,7 +849,7 @@ sub PrepareCoverlayTemplate {
 				 "mode"       => "concentric",
 				 "size"       => $toolSize,
 				 "feed"       => "0",
-				 "overlap"    => 0,
+				 "overlap"    => $toolSize/4,
 				 "pocket_dir" => "standard"
 	);
 	CamLayer->CopySelOtherLayer( $inCAM, [$routName] );
@@ -880,7 +870,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d222775";
+	my $jobId = "d251561";
 
 	my $mess = "";
 

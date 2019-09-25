@@ -123,11 +123,12 @@ sub __SetLayoutSettings {
 
 	my $thickTxt = Wx::StaticText->new( $statBox, -1, "Thickness [mm]", &Wx::wxDefaultPosition, [ 120, 20 ] );
  
-	my @thick = ( 0.10, 0.120, 0.125, 0.150, 0.175, 2.0, 2.5 );
+	my @thick = ( 0.100, 0.120, 0.125, 0.150, 0.175, 0.200, 0.250 );
 	
 	if( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_LASER){
-		@thick =  ( 0.10, 0.120, 0.130, 0.150, 0.180, 2.0, 2.50 );
+		@thick =  ( 0.100, 0.120, 0.130, 0.150, 0.180, 0.200, 0.250 );
 	}
+ 
 	
 	my $thickValCb = Wx::ComboBox->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 120, 22 ], \@thick, &Wx::wxCB_READONLY );
 

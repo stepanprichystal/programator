@@ -414,7 +414,7 @@ sub AddCoverlayRegisterHoles {
 		# Six holes
 
 		my $holePitchX = 265 + 10;
-		my $holePitchY = 324 + 8;
+		my $holePitchY = 324 + 10;
 
 		CamLayer->WorkLayer( $inCAM, $layer );
 		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "coverlay_register_holes" ) ) {
@@ -452,11 +452,17 @@ sub AddCoverlayRegisterHoles {
 		#RCenter
 		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 }, undef, $polarity );
 
-		#TCenter
-		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
+		#T 1/3of Width
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w/2 - 46, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
+		
+		#T 2/3of Width
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w/2 + 46, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
 
-		#BCenter
-		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
+		#B 1/3of Width
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w/2 - 46, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
+		
+		#B 2/3of Width
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w/2 + 46, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
 
 		CamSymbol->ResetCurAttributes($inCAM);
 
