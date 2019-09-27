@@ -74,7 +74,6 @@ sub new {
 	$self->{"pcbClass"}      = undef;    # pcb class of outer layer
 	$self->{"pcbClassInner"} = undef;    # pcb class of inner layer
 	$self->{"pcbIsFlex"}     = undef;    # pcb is flex
-	$self->{"pcbFlexType"}   = undef;    # pcb flex type
 
 	$self->__InitDefault();
 
@@ -704,13 +703,7 @@ sub GetIsFlex {
 	return $self->{"pcbIsFlex"};
 }
 
-# Return type of flexible PCB
-sub GetFlexType {
-	my $self = shift;
-
-	return $self->{"pcbFlexType"};
-}
-
+ 
 
 
 sub __InitDefault {
@@ -776,8 +769,7 @@ sub __InitDefault {
 	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} );
 	
 	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
-	
-	$self->{"pcbFlexType"} = JobHelper->GetPcbFlexType( $self->{"jobId"} );
+ 
 }
 
 #-------------------------------------------------------------------------------------------#

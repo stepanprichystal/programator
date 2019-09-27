@@ -23,6 +23,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums';
 use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::Enums' => 'PrevEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::JobHelpers';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -43,6 +44,7 @@ sub new {
 	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"viewType"}, $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
 	$self->{"outputPdf"}     = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
 	$self->{"outputPath"}    = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
+
 
 	return $self;
 }
@@ -115,6 +117,8 @@ sub __PrepareColors {
 
 	# final surface of pcb
 	my $surface = HegMethods->GetPcbSurface( $self->{"jobId"} );
+	my $flex = JobHelper->GetIsFlex($self->{"jobId"});
+	my $flexType = JobHelper->GetPcbType($self->{"jobId"});
 
 	# Pcb material
 
@@ -140,7 +144,7 @@ sub __PrepareColors {
 		$pcbMatClr->SetType(PrevEnums->Surface_TEXTURE );
 		$pcbMatClr->SetTexture( Enums->Texture_CU );
 
-	}
+	}elsif($flex && $flexType eq EnumsGeneral-> )
 	
 	# Via fill
 	my $viaFillClr = LayerColor->new(PrevEnums->Surface_COLOR, "97,47,4" );

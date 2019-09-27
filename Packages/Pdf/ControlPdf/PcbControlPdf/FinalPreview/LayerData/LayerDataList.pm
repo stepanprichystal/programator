@@ -41,12 +41,15 @@ sub __InitLayers {
 	# layer data are sorted by final order of printing
 
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PCBMAT ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_FLEXCORE ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_VIAFILL ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_OUTERCU ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_OUTERSURFACE ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTDEPTHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_NPLTDEPTHNC ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_MASK ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_FLEXMASK ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_COVERLAY ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_SILK ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_SILK2 ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PLTTHROUGHNC ) );
@@ -54,6 +57,7 @@ sub __InitLayers {
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_GOLDFINGER ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_PEELABLE ) );
 	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_GRAFIT ) );
+	push( @{ $self->{"layers"} }, LayerData->new( Enums->Type_STIFFENER ) );
 }
 
 sub SetLayers {

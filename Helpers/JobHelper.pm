@@ -259,26 +259,57 @@ sub GetPcbType {
 
 	my $jobId = shift;
 
-	my $isType = HegMethods->GetTypeOfPcb($jobId);
+	my $isType = HegMethods->GetTypeOfPcb( $jobId, 1 );
 	my $type;
 
-	if ( $isType eq 'Neplatovany' ) {
+	if ( $isType eq '0' ) {
 
-		$type = EnumsGeneral->PcbTyp_NOCOPPER;
+		$type = EnumsGeneral->PcbType_NOCOPPER;
 	}
-	elsif ( $isType eq 'Jednostranny' ) {
+	elsif ( $isType eq '1' ) {
 
-		$type = EnumsGeneral->PcbTyp_ONELAYER;
+		$type = EnumsGeneral->PcbType_1V;
 
 	}
-	elsif ( $isType eq 'Oboustranny' ) {
+	elsif ( $isType eq '2' ) {
 
-		$type = EnumsGeneral->PcbTyp_TWOLAYER;
+		$type = EnumsGeneral->PcbType_2V;
 
+	}
+	elsif ( $isType eq 'N' ) {
+
+		$type = EnumsGeneral->PcbType_MULTI;
+
+	}
+	elsif ( $isType eq "F" ) {
+
+		$type = EnumsGeneral->PcbType_1VFLEX;
+	}
+	elsif ( $isType eq "G" ) {
+
+		$type = EnumsGeneral->PcbType_2VFLEX;
+
+	}
+	elsif ( $isType eq "H" ) {
+
+		$type = EnumsGeneral->PcbType_MULTIFLEX;
+	}
+	elsif ( $isType eq "Q" ) {
+
+		$type = EnumsGeneral->PcbType_RIGIDFLEXO;
+	}
+	elsif ( $isType eq "R" ) {
+
+		$type = EnumsGeneral->PcbType_RIGIDFLEXI;
+
+	}
+	elsif ( $isType eq "T" ) {
+
+		$type = EnumsGeneral->PcbType_STENCIL;
 	}
 	else {
 
-		$type = EnumsGeneral->PcbTyp_MULTILAYER;
+		die "Unknow type of IS PCB type: $isType";
 	}
 
 	return $type;
@@ -298,32 +329,7 @@ sub GetIsFlex {
 	return $isFlex;
 }
 
-#
-sub GetPcbFlexType {
-	my $self = shift;
-
-	my $jobId = shift;
-
-	my $type;
-
-	my $ISType = HegMethods->GetTypeOfPcb( $jobId, 1 );
-
-	if ( $ISType eq "F" || $ISType eq "G" ) {
-
-		$type = EnumsGeneral->PcbFlexType_FLEX;
-	}
-	elsif ( $ISType eq "Q" ) {
-
-		$type = EnumsGeneral->PcbFlexType_RIGIDFLEXO;
-
-	}
-	elsif ( $ISType eq "R" ) {
-
-		$type = EnumsGeneral->PcbFlexType_RIGIDFLEXI;
-	}
-
-	return $type;
-}
+ 
 
 # Return signal layers which are covered by coverlay (source is IS)
 sub GetCoverlaySigLayers {
@@ -331,8 +337,6 @@ sub GetCoverlaySigLayers {
 	my $jobId = shift;
 
 	my @sigLayers = ();
-
-	my $type = $self->GetPcbFlexType($jobId);
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
@@ -356,12 +360,10 @@ sub GetCoverlaySigLayers {
 		# find flexible inner layers
 		my $core = ( $stackup->GetAllCores(1) )[0];
 		$sigLayer = $core->GetBotCopperLayer()->GetCopperName();
-		
+
 		push( @sigLayers, $sigLayer );
 	}
 
-	
-	
 	return @sigLayers;
 }
 

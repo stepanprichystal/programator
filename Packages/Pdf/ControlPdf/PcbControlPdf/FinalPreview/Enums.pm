@@ -3,9 +3,12 @@ package Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums;
 
 use constant {
 	Type_PCBMAT => "typePcbMat",
+	Type_FLEXCORE => "typeFlexCore",
 	Type_OUTERCU => "typeOuterCu",
 	Type_OUTERSURFACE => "typeOuterSurface",
 	Type_MASK => "typeMask",
+	Type_FLEXMASK => "typeFlexMask",
+	Type_COVERLAY => "typeCoverlay",
 	Type_SILK => "typeSilk",
 	Type_SILK2 => "typeSilk2",
 	Type_PLTDEPTHNC => "typePltDepthNc",
@@ -15,7 +18,8 @@ use constant {
 	Type_GOLDFINGER => "typeGoldFinger",
 	Type_PEELABLE => "typePeelableMask",
 	Type_GRAFIT => "typeGrafitPaste",
-	Type_VIAFILL => "typeViaFill"
+	Type_VIAFILL => "typeViaFill",
+	Type_STIFFENER => "typeStiffener"
 };
 
  

@@ -44,8 +44,8 @@ sub PrepareTemplateLayers {
 
 	my $messMngr = MessageMngr->new($jobId);
 
-	my $type = JobHelper->GetPcbFlexType($jobId);
-	return 0 if ( $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXI && $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXO );
+	my $type = JobHelper->GetPcbType($jobId);
+	return 0 if ( $type ne EnumsGeneral->PcbType_RIGIDFLEXI && $type ne EnumsGeneral->PcbType_RIGIDFLEXO );
 
 	CamHelper->SetStep( $inCAM, $step );
 
@@ -53,7 +53,7 @@ sub PrepareTemplateLayers {
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
-	if ( ( $coverlayType{"top"} && $type eq EnumsGeneral->PcbFlexType_RIGIDFLEXO ) || $coverlayType{"bot"} ) {
+	if ( ( $coverlayType{"top"} && $type eq EnumsGeneral->PcbType_RIGIDFLEXO ) || $coverlayType{"bot"} ) {
 
 		$self->__PrepareTemplate( $inCAM, $jobId, $step, $messMngr );
 	}
