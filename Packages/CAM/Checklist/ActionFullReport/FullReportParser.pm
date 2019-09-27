@@ -64,8 +64,10 @@ sub ParseReport {
 	unlink($file) or die $_;
 
 	my $dt = CamChecklist->GetChecklistActionTime( $inCAM, $jobId, $step, $checklist, $action );
+	my $ERF = CamChecklist->GetChecklistActionERF( $inCAM, $jobId, $step, $checklist, $action ); 
+	
 
-	my $report = ActionFullReport->new( $checklist, $action, $dt );
+	my $report = ActionFullReport->new( $checklist, $action, $dt, $ERF );
 
 	my $curCategory = undef;
 

@@ -27,6 +27,7 @@ sub new {
 	$self->{"checklist"} = shift;    # Checklist name
 	$self->{"action"}    = shift;    # action order in checklsit
 	$self->{"datetime"}  = shift;    # date and time from last action run
+	$self->{"ERFModel"}  = shift;    # ERF model of action
 
 	$self->{"categories"} = {};
 
@@ -53,6 +54,12 @@ sub AddCategory {
 	$self->{"categories"}->{$catCode} = $cat;
 
 	return $cat;
+}
+
+sub GetERFModel{
+	my $self = shift;
+	
+	return $self->{"ERFModel"};
 }
 
 #-------------------------------------------------------------------------------------------#

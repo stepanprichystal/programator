@@ -252,6 +252,28 @@ sub GetChecklistActionTime {
 	return $dt;
 }
 
+# Return name of action ERF model
+sub GetChecklistActionERF {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $checklist = shift;
+	my $action    = shift;
+
+	$inCAM->INFO(
+		"units"       => 'mm',
+		"entity_type" => 'check',
+		"entity_path" => "$jobId/$step/$checklist",
+		"data_type"   => "ERF_MODEL",
+		"options"     => "action=$action"
+
+	);
+
+	return $inCAM->{doinfo}{gERF_MODEL};
+}
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -272,7 +294,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #										  "c", [ EnumsChecklist->Sev_GREEN, EnumsChecklist->Sev_RED ] );
 
 
- 	my $time = CamChecklist->GetChecklistActionTime($inCAM,"d240710", "o+1", "control", 2);
+ 	my $time = CamChecklist->GetChecklistActionERF($inCAM,"d256822", "o+1", "checks", 3);
 
 	print $time;
 

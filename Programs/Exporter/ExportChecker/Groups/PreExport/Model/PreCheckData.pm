@@ -148,9 +148,7 @@ sub OnCheckGroupData {
 											  . "). Ve stackupu je vstva vedená jako: \"$side\". Uprav atribut a znovu vlož schéma do panelu!"
 				);
 			}
-
 		}
-
 	}
 	
 	# 4) Check if onesided flex layer has always two signal layer in matrix
@@ -182,6 +180,20 @@ sub OnCheckGroupData {
 		unless ( defined $pcbThickHelios ) {
 
 			$dataMngr->_AddErrorResult( "Pcb thickness", "Pcb thickness is not defined in Helios." );
+		}
+	}
+	
+	
+	# 5) Check if stackup outer base Cu thickness and IS base Cu thickness match
+	if( defined $baseCuThickHelios && $defaultInfo->GetLayerCnt() > 2 ){
+		
+		my $stackupCu = $defaultInfo->GetStackup()->GetCuLayer("c")->GetThick();
+		$stackupCu = 18 if($defaultInfo->GetPcbClass() >= 8 && $stackupCu <= 9 ); # we use 9µm Cu if 8class in order easier pcb production
+		
+		if($stackupCu != $baseCuThickHelios){
+			
+	 			$dataMngr->_AddErrorResult( "Tloušťka Cu",
+											"Nesouhlasí tloušťka základní Cu vnějších vrstev ve složení (".$stackupCu."µm) a v IS (".$baseCuThickHelios."µm)");
 		}
 	}
 

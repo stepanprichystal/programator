@@ -594,6 +594,75 @@ sub OnCheckGroupData {
 			}
 		}
 	}
+
+	# xx) Check if construction class of inner and auter layer is match with last run ERF models od chacklist action for signal layers
+	my $chcklstCheckName = "checks";
+
+	# Find ERF with height construction class
+	my ( $maxERFOuter, $maxERFOuterNum, $maxERFOuterNumStep ) = undef;
+	my ( $maxERFInner, $maxERFInnerNum, $maxERFInnerNumStep ) = undef;
+
+	foreach my $step ( map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId ) ) {
+
+		next unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $chcklstCheckName ) );
+
+		# action number outer layer = 1 for 1v + 2v;
+		# action number outer layer = 3 for multilayer;
+		my $aOuterNum = $defaultInfo->GetLayerCnt() <= 2 ? 1 : 3;
+
+		my $ERF = CamChecklist->GetChecklistActionERF( $inCAM, $jobId, $step, $chcklstCheckName, $aOuterNum );
+		my $ERFNum = ( $ERF =~ /_(\d+)_/ )[0];
+
+		if ( defined $ERFNum && $ERFNum > 0 ) {
+
+			if ( !defined $maxERFOuterNum || ( defined $maxERFOuterNum && $maxERFOuterNum < $ERFNum ) ) {
+
+				$maxERFOuter        = $ERF;
+				$maxERFOuterNum     = $ERFNum;
+				$maxERFOuterNumStep = $step;
+			}
+		}
+
+		if ( $defaultInfo->GetLayerCnt() > 2 ) {
+
+			# action number 3 for inner layers
+			my $ERFIn = CamChecklist->GetChecklistActionERF( $inCAM, $jobId, $step, $chcklstCheckName, 2 );
+			my $ERFInNum = ( $ERFIn =~ /_(\d+)_/ )[0];
+
+			if ( defined $ERFInNum && $ERFInNum > 0 ) {
+
+				if ( !defined $maxERFInnerNum || ( defined $maxERFInnerNum && $maxERFInnerNum < $ERFInNum ) ) {
+
+					$maxERFInner        = $ERFIn;
+					$maxERFInnerNum     = $ERFInNum;
+					$maxERFInnerNumStep = $step;
+				}
+			}
+		}
+	}
+
+	# outer layers
+	if ( defined $maxERFOuterNum && $maxERFOuterNum != $defaultInfo->GetPcbClass() ) {
+
+		$dataMngr->_AddWarningResult(
+									  "Konstukční třída ",
+									  "V jobu je nastavená jiná konstrukční třída pro vnější vrstvy (job attribut: Pcbclass = "
+										. $defaultInfo->GetPcbClass()
+										. ") než poslední ERF model ($maxERFOuter, pro step: $maxERFOuterNumStep), který byl spuštěn v checklistu: \"$chcklstCheckName\". "
+										. "Je to správně?"
+		);
+	}
+
+	if ( defined $maxERFInnerNum && $maxERFInnerNum != $defaultInfo->GetPcbClass() ) {
+
+		$dataMngr->_AddWarningResult(
+									  "Konstukční třída vnitřní vrstvy",
+									  "V jobu je nastavená jiná konstrukční třída pro vnitřní vrstvy (job attribut: PcbclassInner = "
+										. $defaultInfo->GetPcbClassInner()
+										. ") než poslední ERF model ($maxERFInner, pro step: $maxERFInnerNumStep), který byl spuštěn v checklistu: \"$chcklstCheckName\". "
+										. "Je to správně?"
+		);
+	}
 }
 
 # check if datacode exist
