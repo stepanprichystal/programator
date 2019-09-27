@@ -188,10 +188,10 @@ sub OnCheckGroupData {
 	if( defined $baseCuThickHelios && $defaultInfo->GetLayerCnt() > 2 ){
 		
 		my $stackupCu = $defaultInfo->GetStackup()->GetCuLayer("c")->GetThick();
-		$stackupCu = 18 if($defaultInfo->GetPcbClass() >= 8 && $stackupCu <= 9 ); # we use 9µm Cu if 8class in order easier pcb production
+		$stackupCu = 18 if($defaultInfo->GetPcbClass() >= 8 && $stackupCu == 9 && $baseCuThickHelios != 9); # we use 9µm Cu if 8class in order easier pcb production
 		
 		if($stackupCu != $baseCuThickHelios){
-			
+				
 	 			$dataMngr->_AddErrorResult( "Tloušťka Cu",
 											"Nesouhlasí tloušťka základní Cu vnějších vrstev ve složení (".$stackupCu."µm) a v IS (".$baseCuThickHelios."µm)");
 		}

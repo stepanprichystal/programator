@@ -653,7 +653,7 @@ sub OnCheckGroupData {
 		);
 	}
 
-	if ( defined $maxERFInnerNum && $maxERFInnerNum != $defaultInfo->GetPcbClass() ) {
+	if ( defined $maxERFInnerNum && $maxERFInnerNum != $defaultInfo->GetPcbClassInner() ) {
 
 		$dataMngr->_AddWarningResult(
 									  "Konstukční třída vnitřní vrstvy",
