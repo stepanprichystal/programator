@@ -40,7 +40,7 @@ sub new {
 
 	$self->{"viewType"} = shift;    # TOP/BOT
 
-	$self->{"layerList"}     = LayerDataList->new( $self->{"viewType"} );
+	$self->{"layerList"}     = LayerDataList->new( $self->{"viewType"}, $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"viewType"}, $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
 	$self->{"outputPdf"}     = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
 	$self->{"outputPath"}    = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";

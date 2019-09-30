@@ -22,15 +22,20 @@ use constant {
 	Type_STIFFENER => "typeStiffener"
 };
 
+use constant {
+	Visible_FROMTOP => "visible_fromTop",
+	Visible_FROMBOT => "visible_fromBot",
+	Visible_FROMTOPBOT => "visible_fromTopBot"
+ 
+}; 
  
 use constant {
 	View_FROMTOP => "viewFromTop",
 	View_FROMBOT => "viewFromBot"
-	 
-
+ 
 };
  
- 
+
  
 use constant {
 	Texture_GOLD => "gold",

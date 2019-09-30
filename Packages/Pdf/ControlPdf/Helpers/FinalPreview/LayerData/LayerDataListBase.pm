@@ -25,7 +25,9 @@ sub new {
 	$self = {};
 	bless $self;
  
-
+ 	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	
 	$self->{"layers"} = [];
  
 

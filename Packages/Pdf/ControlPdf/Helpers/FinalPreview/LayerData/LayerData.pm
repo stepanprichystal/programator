@@ -21,10 +21,18 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"type"}         = shift;
-	$self->{"order"}        = undef;
-	$self->{"surface"}      = undef;
-	$self->{"output"}       = undef;
+	$self->{"type"} = shift;    # Typye of layer like mask, signal, rout
+
+	# Which side is pysical layer visible from (seen from TOP)
+	# Enums->Visible_FROMTOP
+	# Enums->Visible_FROMBOT
+	# Enums->Visible_FROMTOPBOT
+	$self->{"visibleFrom"} = shift;
+
+	$self->{"active"}  = 1;       # indicate if layer will be consider in final pcb image
+	$self->{"order"}   = undef;
+	$self->{"surface"} = undef;
+	$self->{"output"}  = undef;
 
 	my @l = ();
 	$self->{"singleLayers"} = \@l;
@@ -44,6 +52,18 @@ sub PrintLayer {
 		return 0;
 	}
 
+}
+
+sub GetSide {
+	my $self = shift;
+
+	return $self->{"sursideface"};
+}
+
+sub GetIsActive {
+	my $self = shift;
+
+	return $self->{"active"};
 }
 
 sub GetSurface {
@@ -77,11 +97,18 @@ sub SetOutputLayer {
 	$self->{"output"} = $lName;
 }
 
-sub AddSingleLayer {
+sub AddLayer {
 	my $self    = shift;
 	my $singleL = shift;
 
 	push( @{ $self->{"singleLayers"} }, $singleL );
+}
+
+sub AddLayers {
+	my $self    = shift;
+	my $singleLayers = shift;
+
+	push( @{ $self->{"singleLayers"} }, @{$singleLayers} );
 }
 
 sub GetSingleLayers {

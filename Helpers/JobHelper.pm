@@ -322,14 +322,19 @@ sub GetIsFlex {
 
 	my $isFlex = 0;
 
-	if ( defined $self->GetPcbFlexType($jobId) ) {
+	my $type = $self->GetPcbType($jobId);
+	
+	if (    $type eq EnumsGeneral->PcbType_1VFLEX
+		 || $type eq EnumsGeneral->PcbType_2VFLEX
+		 || $type eq EnumsGeneral->PcbType_MULTIFLEX
+		 || $type eq EnumsGeneral->PcbType_RIGIDFLEXO
+		 || $type eq EnumsGeneral->PcbType_RIGIDFLEXI )
+	{
 		$isFlex = 1;
 	}
 
 	return $isFlex;
 }
-
- 
 
 # Return signal layers which are covered by coverlay (source is IS)
 sub GetCoverlaySigLayers {
