@@ -38,10 +38,10 @@ sub new {
 
 	$self->{"viewType"} = shift;    # TOP/BOT
 
-	$self->{"layerList"}     = LayerDataList->new( $self->{"viewType"} );
-	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"viewType"}, $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
-	$self->{"outputPdf"}     = OutputPdf->new(  $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
-	$self->{"outputPath"}    = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
+	$self->{"layerList"} = LayerDataList->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"} );
+	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"} );
+	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
+	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
 
 	return $self;
 }
@@ -53,10 +53,10 @@ sub Create {
 
 	# get all board layers
 	my @layers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
- 
+
 	# set layer list
-	$self->{"layerList"}->SetLayers( \@layers );
-	$self->{"layerList"}->SetColors( $self->__PrepareColors() );
+	$self->{"layerList"}->InitLayers( \@layers );
+	$self->{"layerList"}->InitColors( $self->__DefineSurfaces() );
 
 	$self->{"outputPrepare"}->PrepareLayers( $self->{"layerList"} );
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
@@ -100,7 +100,7 @@ sub __ConvertPdfToPng {
 
 # Each pcb layer is represent bz color/texture
 # this method is responsible for choose this color/texture, transparency, 3d effects, etc..
-sub __PrepareColors {
+sub __DefineSurfaces {
 	my $self = shift;
 	my %clrs = ();
 
@@ -108,44 +108,42 @@ sub __PrepareColors {
 	my $surface = HegMethods->GetPcbSurface( $self->{"jobId"} );
 
 	# Pcb material
-	my $pcbMatClr = LayerColor->new(PrevEnums->Surface_TEXTURE, Enums->Texture_METAL );
+	my $pcbMatClr = LayerColor->new( PrevEnums->Surface_TEXTURE, Enums->Texture_METAL );
 	$clrs{ Enums->Type_STNCLMAT } = $pcbMatClr;
-	
+
 	# Cover
 	my $pcbCoverClr = LayerColor->new( PrevEnums->Surface_COLOR, "250,250,250" );
 	$pcbCoverClr->SetOpaque(45);
-	$clrs{ Enums->Type_COVER } = $pcbCoverClr;	
-	
+	$clrs{ Enums->Type_COVER } = $pcbCoverClr;
+
 	# Holes
-	my $holesClr = LayerColor->new(PrevEnums->Surface_COLOR, "0,0,0" );
+	my $holesClr = LayerColor->new( PrevEnums->Surface_COLOR, "0,0,0" );
 	$clrs{ Enums->Type_HOLES } = $holesClr;
 	$holesClr->Set3DEdges(1);
-	
+
 	# Codes
-	my $codesClr = LayerColor->new(PrevEnums->Surface_COLOR, "0,0,0" );
+	my $codesClr = LayerColor->new( PrevEnums->Surface_COLOR, "0,0,0" );
 	$clrs{ Enums->Type_CODES } = $codesClr;
-	
+
 	# Profile
-	my $profileClr = LayerColor->new(PrevEnums->Surface_COLOR, "230,0,0" );
+	my $profileClr = LayerColor->new( PrevEnums->Surface_COLOR, "230,0,0" );
 	$clrs{ Enums->Type_PROFILE } = $profileClr;
-	
+
 	# Data profile
-	my $dataProfileClr = LayerColor->new(PrevEnums->Surface_COLOR, "230,0,0" );
+	my $dataProfileClr = LayerColor->new( PrevEnums->Surface_COLOR, "230,0,0" );
 	$clrs{ Enums->Type_DATAPROFILE } = $dataProfileClr;
-	
- 	# Half lasered fiduc
-	my $halfFiducClr = LayerColor->new(PrevEnums->Surface_COLOR, "125,125,125" );
+
+	# Half lasered fiduc
+	my $halfFiducClr = LayerColor->new( PrevEnums->Surface_COLOR, "125,125,125" );
 	$clrs{ Enums->Type_HALFFIDUC } = $halfFiducClr;
-	
- 	# Fiduc positions
-	my $fiducPosClr = LayerColor->new(PrevEnums->Surface_COLOR, "39,214,62" );
+
+	# Fiduc positions
+	my $fiducPosClr = LayerColor->new( PrevEnums->Surface_COLOR, "39,214,62" );
 	$clrs{ Enums->Type_FIDUCPOS } = $fiducPosClr;
 
-	 
 	return \%clrs;
 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -153,8 +151,7 @@ sub __PrepareColors {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-
-		use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::FinalPreview';
+	use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::FinalPreview';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -169,12 +166,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#$control->CreateStackup(\$mess);
 	#$control->CreatePreviewTop( \$mess );
 
-	$control->CreatePreviewBot(\$mess);
+	$control->CreatePreviewBot( \$mess );
+
 	#$control->CreatePreviewSingle(\$mess);
 	#$control->GeneratePdf();
 
 	#$control->GetOutputPath();
-	
 
 }
 

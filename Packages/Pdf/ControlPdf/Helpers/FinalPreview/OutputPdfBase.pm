@@ -55,14 +55,14 @@ sub _Output {
 
 	my $inCAM = $self->{"inCAM"};
 
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	# folder, where are putted temporary layer pdf and layer png
 	my $dirPath = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
 	mkdir($dirPath) or die "Can't create dir: " . $dirPath . $_;
 
 	# 1) output all layers together
-	my @layerStr = map { $_->GetOutputLayer() } @layers;
+	my @layerStr =  map { $_->GetOutputLayer() } @layers;
 	my $layerStr = join( "\\;", @layerStr );
 
 	my $multiPdf = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
@@ -133,7 +133,7 @@ sub __SplitMultiPdf {
 	my $pdfOutput = shift;
 	my $dirPath   = shift;
 
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	my $pdf_in = PDF::API2->open($pdfOutput);
 
@@ -230,7 +230,7 @@ sub __CreatePng {
 	my $dirPath    = shift;
 	my $resolution = shift;
 
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	my @allCmds = ();
 
@@ -378,7 +378,7 @@ sub __MergePng {
 	my $layerList = shift;
 	my $dirPath   = shift;
 
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	my @layerStr2 = map { $dirPath . $_->GetOutputLayer() . ".png" } @layers;
 	my $layerStr2 = join( " ", @layerStr2 );

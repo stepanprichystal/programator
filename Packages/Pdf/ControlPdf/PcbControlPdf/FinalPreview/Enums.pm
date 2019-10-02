@@ -2,10 +2,13 @@
 package Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums;
 
 use constant {
-	Type_PCBMAT => "typePcbMat",
-	Type_FLEXCORE => "typeFlexCore",
+	Type_RIGIDMATOUTER => "typeRigidMatOuter",
+	Type_RIGIDMATINNER => "typeRigidMatInner",
+	Type_FLEXMATOUTER => "typeFlexMatOuter",
+	Type_FLEXMATINNER => "typeFlexMatInner",
 	Type_OUTERCU => "typeOuterCu",
 	Type_OUTERSURFACE => "typeOuterSurface",
+	Type_INNERCU => "typeInnerCu",
 	Type_MASK => "typeMask",
 	Type_FLEXMASK => "typeFlexMask",
 	Type_COVERLAY => "typeCoverlay",

@@ -28,16 +28,15 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
-
-	$self->{"viewType"} = shift;
-
-	$self->__InitLayers();
+ 
 
 	return $self;
 }
 
-sub __InitLayers {
+sub InitLayers {
 	my $self = shift;
+	
+	die "Doimplementovat sablonu ponovu!";
 
 	# layer data are sorted by final order of printing
 

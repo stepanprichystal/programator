@@ -45,12 +45,13 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"viewType"} = shift;
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
+	$self->{"viewType"} = shift;
 	$self->{"pdfStep"}  = shift;
 
-	$self->{"profileLim"} = undef;    # limits of pdf step
+	$self->{"profileLim"} = undef;                                          # limits of pdf step
+	$self->{"pcbType"}    = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 
 	return $self;
 }
@@ -75,25 +76,79 @@ sub __PrepareLayers {
 	my $self      = shift;
 	my $layerList = shift;
 
-	$self->__PreparePCBMAT( $layerList->GetLayerByType( Enums->Type_PCBMAT ) );
-	$self->__PrepareVIAFILL( $layerList->GetLayerByType( Enums->Type_VIAFILL ) );
-	$self->__PrepareOUTERCU( $layerList->GetLayerByType( Enums->Type_OUTERCU ) );
-	$self->__PrepareOUTERSURFACE( $layerList->GetLayerByType( Enums->Type_OUTERSURFACE ) );
-	$self->__PrepareGOLDFINGER( $layerList->GetLayerByType( Enums->Type_GOLDFINGER ) );
-	$self->__PrepareGRAFIT( $layerList->GetLayerByType( Enums->Type_GRAFIT ) );
-	$self->__PreparePEELABLE( $layerList->GetLayerByType( Enums->Type_PEELABLE ) );
-	$self->__PrepareMASK( $layerList->GetLayerByType( Enums->Type_MASK ) );
-	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK ) );
-	$self->__PrepareSILK( $layerList->GetLayerByType( Enums->Type_SILK2 ) );
-	$self->__PreparePLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_PLTDEPTHNC ) );
-	$self->__PrepareNPLTDEPTHNC( $layerList->GetLayerByType( Enums->Type_NPLTDEPTHNC ) );
-	$self->__PreparePLTTHROUGHNC( $layerList->GetLayerByType( Enums->Type_PLTTHROUGHNC ) );
-	$self->__PrepareNPLTTHROUGHNC( $layerList->GetLayerByType( Enums->Type_NPLTTHROUGHNC ) );
+	 
+	foreach my $l ( $layerList->GetLayers()) {
+
+		$self->__PrepareRIGIDMAT($l)      if ( $l->GetType() eq Enums->Type_RIGIDMATOUTER );
+		$self->__PrepareRIGIDMAT($l)      if ( $l->GetType() eq Enums->Type_RIGIDMATINNER );
+		$self->__PrepareFLEXMAT($l)       if ( $l->GetType() eq Enums->Type_FLEXMATOUTER );
+		$self->__PrepareFLEXMAT($l)       if ( $l->GetType() eq Enums->Type_FLEXMATINNER );
+		$self->__PrepareVIAFILL($l)       if ( $l->GetType() eq Enums->Type_VIAFILL );
+		$self->__PrepareOUTERCU($l)       if ( $l->GetType() eq Enums->Type_OUTERCU );
+		$self->__PrepareOUTERSURFACE($l)  if ( $l->GetType() eq Enums->Type_OUTERSURFACE );
+		$self->__PrepareINNERCU($l)       if ( $l->GetType() eq Enums->Type_INNERCU );
+		$self->__PrepareGOLDFINGER($l)    if ( $l->GetType() eq Enums->Type_GOLDFINGER );
+		$self->__PrepareGRAFIT($l)        if ( $l->GetType() eq Enums->Type_GRAFIT );
+		$self->__PreparePEELABLE($l)      if ( $l->GetType() eq Enums->Type_PEELABLE );
+		$self->__PrepareMASK($l)          if ( $l->GetType() eq Enums->Type_MASK );
+		$self->__PrepareMASK($l)          if ( $l->GetType() eq Enums->Type_FLEXMASK );
+		$self->__PrepareCOVERLAY($l)      if ( $l->GetType() eq Enums->Type_COVERLAY );
+		$self->__PrepareSILK($l)          if ( $l->GetType() eq Enums->Type_SILK );
+		$self->__PrepareSILK($l)          if ( $l->GetType() eq Enums->Type_SILK2 );
+		$self->__PreparePLTDEPTHNC($l)    if ( $l->GetType() eq Enums->Type_PLTDEPTHNC );
+		$self->__PrepareNPLTDEPTHNC($l)   if ( $l->GetType() eq Enums->Type_NPLTDEPTHNC );
+		$self->__PreparePLTTHROUGHNC($l)  if ( $l->GetType() eq Enums->Type_PLTTHROUGHNC );
+		$self->__PrepareNPLTTHROUGHNC($l) if ( $l->GetType() eq Enums->Type_NPLTTHROUGHNC );
+		$self->__PrepareSTIFFENER($l)     if ( $l->GetType() eq Enums->Type_STIFFENER );
+
+	}
 
 }
 
 # Create layer and fill profile - simulate pcb material
-sub __PreparePCBMAT {
+sub __PrepareRIGIDMAT {
+	my $self  = shift;
+	my $layer = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $lName = GeneralHelper->GetGUID();
+
+	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+	$inCAM->COM(
+		"sr_fill",
+		"type"          => "solid",
+		"solid_type"    => "surface",
+		"min_brush"     => "25.4",
+		"cut_prims"     => "no",
+		"polarity"      => "positive",
+		"consider_rout" => "no",
+		"dest"          => "layer_name",
+		"layer"         => $lName,
+		"stop_at_steps" => "",
+		"step_margin_x" => -1,
+		"step_margin_y" => -1
+	);
+
+	if ( $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXO || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
+
+		my $bend = GeneralHelper->GetGUID();
+
+		$inCAM->COM( "merge_layers", "source_layer" => "bend", "dest_layer" => $bend );
+		CamLayer->WorkLayer( $inCAM, $bend );
+		$inCAM->COM( "sel_change_sym", "symbol" => "r0", "reset_angle" => "no" );
+		CamLayer->Contourize( $inCAM, $bend, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		CamLayer->CopySelOtherLayer( $inCAM, [$lName], 1 );
+		CamLayer->WorkLayer( $inCAM, $lName );
+		CamLayer->Contourize( $inCAM, $lName, "x_or_y", "0" );
+
+	}
+
+	$layer->SetOutputLayer($lName);
+}
+
+# Create layer and fill profile - simulate pcb material
+sub __PrepareFLEXMAT {
 	my $self  = shift;
 	my $layer = shift;
 
@@ -112,7 +167,9 @@ sub __PreparePCBMAT {
 				 "consider_rout" => "no",
 				 "dest"          => "layer_name",
 				 "layer"         => $lName,
-				 "stop_at_steps" => ""
+				 "stop_at_steps" => "",
+				 "step_margin_x" => -1,
+				 "step_margin_y" => -1
 	);
 
 	$layer->SetOutputLayer($lName);
@@ -120,6 +177,28 @@ sub __PreparePCBMAT {
 
 # Dont do nothing and export cu layer as is
 sub __PrepareOUTERCU {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	my $inCAM  = $self->{"inCAM"};
+	my @layers = $layer->GetSingleLayers();
+
+	if ( $layers[0] ) {
+
+		my $lName = GeneralHelper->GetGUID();
+
+		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
+
+		$layer->SetOutputLayer($lName);
+	}
+}
+
+# Dont do nothing and export cu layer as is
+sub __PrepareINNERCU {
 	my $self  = shift;
 	my $layer = shift;
 
@@ -628,7 +707,7 @@ sub __PrepareNPLTTHROUGHNC {
 		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"}, 0, 0, 1 );
 
 		my @t1 = $unitRTM->GetMultiChainSeqList();
-		
+
 		grep { $_->GetChains() } @t1;
 
 		my @t = grep { $_->GetCyclic() } @t1;
@@ -779,6 +858,17 @@ sub __PrepareVIAFILL {
 
 }
 
+sub __PrepareSTIFFENER {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	die "";
+}
+
 sub __CountersinkCheck {
 	my $self      = shift;
 	my $layer     = shift;
@@ -840,7 +930,7 @@ sub __OptimizeLayers {
 	my $layerList = shift;
 
 	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	# 1) Clip area behind profile
 
@@ -850,6 +940,11 @@ sub __OptimizeLayers {
 
 		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
 	}
+	
+	$inCAM->COM(
+				 "sel_contourize",
+				 "accuracy"         => "0",
+				 "break_to_islands" => "yes");
 
 	# clip area around profile
 	$inCAM->COM(
@@ -861,7 +956,7 @@ sub __OptimizeLayers {
 		#"area_type"   => "rectangle",
 		"inout"       => "outside",
 		"contour_cut" => "yes",
-		"margin"      => "-2",        # cut 2µm inside of pcb, because cut exactly on border can coause ilegal surfaces, in nplt mill example
+		"margin"      => "1000",        
 		"feat_types" => "line\;pad;surface;arc;text",
 		"pol_types"  => "positive\;negative"
 	);

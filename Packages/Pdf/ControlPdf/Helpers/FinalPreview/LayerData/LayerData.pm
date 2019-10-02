@@ -40,7 +40,7 @@ sub new {
 	return $self;
 }
 
-sub PrintLayer {
+sub OutputLayer {
 	my $self = shift;
 
 	if ( $self->{"output"} ) {
@@ -53,11 +53,19 @@ sub PrintLayer {
 	}
 
 }
+ 
 
-sub GetSide {
+sub GetVisibleFrom {
 	my $self = shift;
 
-	return $self->{"sursideface"};
+	return $self->{"visibleFrom"};
+}
+
+
+sub SetIsActive {
+	my $self = shift;
+
+	 $self->{"active"} = shift;
 }
 
 sub GetIsActive {
@@ -96,19 +104,13 @@ sub SetOutputLayer {
 
 	$self->{"output"} = $lName;
 }
+ 
 
-sub AddLayer {
+sub AddSingleLayers {
 	my $self    = shift;
-	my $singleL = shift;
+	my @singleLayers = @_;
 
-	push( @{ $self->{"singleLayers"} }, $singleL );
-}
-
-sub AddLayers {
-	my $self    = shift;
-	my $singleLayers = shift;
-
-	push( @{ $self->{"singleLayers"} }, @{$singleLayers} );
+	push( @{ $self->{"singleLayers"} }, @singleLayers );
 }
 
 sub GetSingleLayers {

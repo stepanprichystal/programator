@@ -46,9 +46,9 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"viewType"} = shift;
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
+	$self->{"viewType"} = shift;
 	$self->{"pdfStep"}  = shift;
 
 	$self->{"profileLim"} = undef;    # limts of pdf step
@@ -698,7 +698,7 @@ sub __OptimizeLayers {
 	my $layerList = shift;
 
 	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	# 1) Clip area behind profile
 
