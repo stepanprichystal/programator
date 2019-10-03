@@ -577,10 +577,13 @@ sub GetJobList {
 			last;
 		}
 	}
+	
+	my $jobListRef = $inCAM->{doinfo}{gJOBS_LIST};
 
-	my @jobs = @{ $inCAM->{doinfo}{gJOBS_LIST} };
+	die "InCAM error, unable to read database jobs from joblist.xml" if(!defined $jobListRef);
 
-	return @jobs;
+	return @{$jobListRef};
+ 
 }
 
 # Return if job is imported and exit in incamdb
@@ -650,9 +653,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId = "d152456";
 
-	my $lim = CamJob->GetLimJobPcbClass( $inCAM, $jobId, "max" );
+	my @lim = CamJob->GetJobList( $inCAM );
 
-	print $lim
+	print @lim
 
 }
 

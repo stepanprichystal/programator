@@ -290,8 +290,7 @@ sub __CreateFakeOuterCoreLayers {
 		}
 
 		# Put info text
-		CamLayer->WorkLayer( $inCAM, $botL );
-
+		 
 		my $xPos = 205;
 		my $yPos = 6;
 
@@ -364,7 +363,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d251561";
+	my $jobId    = "d246713";
 	my $stepName = "panel";
 
 	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
