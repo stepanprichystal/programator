@@ -296,7 +296,7 @@ sub __CreateFakeOuterCoreLayers {
 
 		if ( $side eq "both" || $side eq "top" ) {
 
-			$self->__PutInfoText( $inCAM, $jobId, $topL, "bot", $xPos, $yPos, "V1 (C) TOP" );
+			$self->__PutInfoText( $inCAM, $jobId, $topL, "top", $xPos, $yPos, "V1 (C) TOP" );
 		}
 
 		if ( $side eq "both" || $side eq "bot" ) {
@@ -363,7 +363,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d246713";
+	my $jobId    = "d251321";
 	my $stepName = "panel";
 
 	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
