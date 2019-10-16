@@ -68,14 +68,14 @@ sub Export {
 	my $polarity = undef;
 	my $etching  = undef;
 
-	if ( $l->{"gROWname"} =~ /^[cs]$/ || $l->{"gROWname"} =~ /^v\d$/ ) {
+	if ( $l->{"gROWname"} =~ /^[cs]$/ || $l->{"gROWname"} =~ /^v\d+$/ ) {
 
 		my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
 		$mirror   = $sigLayers{ $l->{"gROWname"} }->{'mirror'};
 		$polarity = $sigLayers{ $l->{"gROWname"} }->{'polarity'};
 		$etching  = $sigLayers{ $l->{"gROWname"} }->{'etchingType'};
 	}
-	elsif ( $l->{"gROWname"} =~ /^v\douter$/ ) {
+	elsif ( $l->{"gROWname"} =~ /^v\d+outer$/ ) {
 
 		# fake outer core signal layers
 		$mirror   = ( $l->{"gROWname"} =~ /^v1outer$/ ? 0 : 1 );
@@ -353,7 +353,7 @@ sub __GetThickByLayer {
 
 	my $thick = 0;                  #total thick
 
-	if ( $layer =~ /^[cs]$/ || $layer =~ /^v\d(outer)?$/ ) {
+	if ( $layer =~ /^[cs]$/ || $layer =~ /^v\d+(outer)?$/ ) {
 
 		# Signal layer, plug layers
 
@@ -376,12 +376,12 @@ sub __GetThickByLayer {
 				$thick += 2 * $PLTTHICKNESS if ( $etchingType eq EnumsGeneral->Etching_TENTING );
 
 			}
-			elsif ( $layer =~ /^v\d(outer)?$/ ) {
+			elsif ( $layer =~ /^v\d+(outer)?$/ ) {
 
 				# Inner signal layers
 
 				# This method consider progressive lamiantion
-				if ( $layer =~ /^v\douter$/ ) {
+				if ( $layer =~ /^v\d+outer$/ ) {
 
 					# find existing layer which has same core as this fake layer and
 					# compute thickness by existing layer
@@ -396,7 +396,7 @@ sub __GetThickByLayer {
 
 						# Bot outer layer
 
-						$thick = $stackup->GetThickByLayerName( "v" . ( ( $layer =~ /v(\d)outer/ )[0] - 1 ) );
+						$thick = $stackup->GetThickByLayerName( "v" . ( ( $layer =~ /v(\d+)outer/ )[0] - 1 ) );
 
 					}
 

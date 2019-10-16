@@ -346,7 +346,7 @@ sub __GetFiducials {
 
 	my $drillLayer = undef;
 
-	if ( $layerName =~ /^v\d(outer)?$/ ) {
+	if ( $layerName =~ /^v\d+(outer)?$/ ) {
 
 		$drillLayer = "v1";
 
@@ -474,7 +474,7 @@ sub __OptimizeLayer {
 	}
 
 	# 2) Optimize data
-	if ( $layerName =~ /^(plg)?[cs]$/ || $layerName =~ /^v\d$/ ) {
+	if ( $layerName =~ /^(plg)?[cs]$/ || $layerName =~ /^v\d+$/ ) {
 
 		if ( $l->{"gROWpolarity"} eq "negative" ) {
 			CamLayer->Contourize( $self->{"inCAM"}, $layerName );
@@ -498,7 +498,7 @@ sub __CompensateLayer {
 
 	my $comp = 0;
 
-	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d(outer)?$/ ) {
+	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d+(outer)?$/ ) {
 
 		#		# read comp from tif file
 		#		if ( $self->{"tifFile"}->TifFileExist() ) {
@@ -599,16 +599,16 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d241421";
+	my $jobId    = "d259477";
 	my $stepName = "panel";
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
-				 Enums->Type_SIGNAL => "0",
-				 Enums->Type_MASK   => "1",
-				 Enums->Type_PLUG   => "1",
-				 Enums->Type_GOLD   => "1"
+				 Enums->Type_SIGNAL => "1",
+				 Enums->Type_MASK   => "0",
+				 Enums->Type_PLUG   => "0",
+				 Enums->Type_GOLD   => "0"
 	);
 
 	$export->Run( \%type );

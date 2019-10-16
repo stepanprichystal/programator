@@ -226,7 +226,7 @@ sub __AddLayerTypes {
 			$l->{"plotType"} = Enums->LType_SIGOUTER;
 
 		}
-		elsif ( $l->{"name"} =~ /^v\d(outer)?$/ ) {
+		elsif ( $l->{"name"} =~ /^v\d+(outer)?$/ ) {
 
 			$l->{"plotType"} = Enums->LType_SIGINNER;
 
