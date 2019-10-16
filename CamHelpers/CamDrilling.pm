@@ -769,6 +769,7 @@ sub GetViaFillExists {
 
 	return scalar(@ncLayers) ? 1 : 0;
 }
+ 
 
 # Return NC operation name
 # Operation name is used for getting tool parameters, tool feed rate, etc..

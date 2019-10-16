@@ -352,7 +352,7 @@ sub __GetInfoDrill {
 
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
-	my $pcbThick = JobHelper->GetFinalPcbThick($jobId);
+	my $pcbThick = CamJob->GetFinalPcbThick($inCAM, $jobId);
 
 	my @holeTypes = ();    # all holes type of layers
 

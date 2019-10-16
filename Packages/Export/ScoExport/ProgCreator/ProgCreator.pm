@@ -42,7 +42,7 @@ sub new {
 	$self->{"frLim"}     = shift;
 	$self->{"step"}      = "panel";
 
-	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;
+	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $self->{"inCAM"}, $self->{"jobId"} ) / 1000;
 
 	# get information about panel dimension
 	my %lim = CamJob->GetProfileLimits( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );

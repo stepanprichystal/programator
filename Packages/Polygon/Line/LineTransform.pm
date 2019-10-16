@@ -152,6 +152,39 @@ sub GetVerticalSegmentLine {
 
 }
 
+# Extend line in line direction by given distance
+# Line input line can be arbitrary rotated
+# Return only computed point
+sub ExtendSegmentLine {
+	my $self   = shift;
+	my $startP = shift;
+	my $endP   = shift;
+	my $dist   = shift;
+
+	# A-----------B------------C
+	#(Xa,Ya)     (Xb,Yb)      (Xc,Yc)
+	#Now the distances:
+
+	my $Xa = $startP->{"x"};
+	my $Ya = $startP->{"y"};
+
+	my $Xb = $endP->{"x"};
+	my $Yb = $endP->{"y"};
+
+	my $AB = sqrt( ( $Xb - $Xa ) * ( $Xb - $Xa ) + ( $Yb - $Ya ) * ( $Yb - $Ya ) );
+	my $AC = -$dist;
+
+	#Cross-multiply to get Xc:
+
+	#AB -> Xb - Xa
+	#AC -> Xc - Xa
+ 
+	my $Xc = $Xa + ( $AC * ( $Xb - $Xa ) / $AB );
+	my $Yc = $Ya + ( $AC * ( $Yb - $Ya ) / $AB );
+
+	return {"x" => $Xc, "y" => $Yc };
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

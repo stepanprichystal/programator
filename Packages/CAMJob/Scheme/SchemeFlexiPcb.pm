@@ -221,10 +221,11 @@ sub AddFlexiCoreFrame {
 	my $schemeFrame = SchemeFrame->new( $inCAM, $jobId );
 
 	my $type = JobHelper->GetPcbType($jobId);
-	
-	if ( !( JobHelper->GetIsFlex($jobId) && ( $type eq EnumsGeneral->PcbType_RIGIDFLEXO || $type eq EnumsGeneral->PcbType_RIGIDFLEXI ) ) ) )
-	  {
-		  return 0;
+
+	if ( !( JobHelper->GetIsFlex($jobId) && ( $type eq EnumsGeneral->PcbType_RIGIDFLEXO || $type eq EnumsGeneral->PcbType_RIGIDFLEXI ) )
+	  )
+	{
+		return 0;
 	}
 
 	my $stackup = Stackup->new($jobId);
@@ -232,49 +233,49 @@ sub AddFlexiCoreFrame {
 
 	foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
 
-		  push( @layers, $c->GetTopCopperLayer()->GetCopperName() );
-		  push( @layers, $c->GetBotCopperLayer()->GetCopperName() );
+		push( @layers, $c->GetTopCopperLayer()->GetCopperName() );
+		push( @layers, $c->GetBotCopperLayer()->GetCopperName() );
 	}
 
 	foreach my $l (@layers) {
 
-		  # look for
+		# look for
 
-		  my $polarity = CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l );
+		my $polarity = CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l );
 
-		  $inCAM->COM(
-					   "sr_fill",
-					   "type"            => "solid",
-					   "solid_type"      => "surface",
-					   "polarity"        => $polarity,
-					   "step_max_dist_x" => $frameWidthLR,
-					   "step_max_dist_y" => $frameWidthTB,
-					   "consider_feat"   => "yes",
-					   "feat_margin"     => "0",
-					   "dest"            => "layer_name",
-					   "layer"           => $l,
-					   "attributes"      => "yes"
-		  );
+		$inCAM->COM(
+					 "sr_fill",
+					 "type"            => "solid",
+					 "solid_type"      => "surface",
+					 "polarity"        => $polarity,
+					 "step_max_dist_x" => $frameWidthLR,
+					 "step_max_dist_y" => $frameWidthTB,
+					 "consider_feat"   => "yes",
+					 "feat_margin"     => "0",
+					 "dest"            => "layer_name",
+					 "layer"           => $l,
+					 "attributes"      => "yes"
+		);
 
-		  CamLayer->WorkLayer( $inCAM, $l );
+		CamLayer->WorkLayer( $inCAM, $l );
 
-		  # Set core frame attribute
-		  # surface area has about 20000mm2
-		  if ( CamFilter->BySurfaceArea( $inCAM, 1000, 30000 ) ) {
+		# Set core frame attribute
+		# surface area has about 20000mm2
+		if ( CamFilter->BySurfaceArea( $inCAM, 1000, 30000 ) ) {
 
-			  CamAttributes->SetFeatuesAttribute( $inCAM, $frameAttr, "" );
+			CamAttributes->SetFeatuesAttribute( $inCAM, $frameAttr, "" );
 
-		  }
-		  else {
-			  die "Copper frame for flex core was not detected for layer:$l";
-		  }
+		}
+		else {
+			die "Copper frame for flex core was not detected for layer:$l";
+		}
 
-		  # look for place for drilled pcb without copper and add coper
+		# look for place for drilled pcb without copper and add coper
 
-		  if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "negativ_for_drilled_pcbId_v2" ) ) {
+		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "negativ_for_drilled_pcbId_v2" ) ) {
 
-			  $inCAM->COM("sel_invert");
-		  }
+			$inCAM->COM("sel_invert");
+		}
 
 	}
 
@@ -284,242 +285,242 @@ sub AddFlexiCoreFrame {
 
 # If any flex inner layer contain coverlay, remove pattern fill from copper layer
 sub ReplacePatternFillFlexiCore {
-	  my $self  = shift;
-	  my $inCAM = shift;
-	  my $jobId = shift;
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 
-	  my $result = 1;
- 
-	  return 0 unless (JobHelper->GetIsFlex($jobId));
-	  
-	   my $flexType = JobHelper->GetPcbType($jobId);
+	my $result = 1;
 
-	  return 0 if ( !( $flexType eq EnumsGeneral->PcbType_RIGIDFLEXO || $flexType eq EnumsGeneral->PcbType_RIGIDFLEXI ) );
+	return 0 unless ( JobHelper->GetIsFlex($jobId) );
 
-	  CamHelper->SetStep( $inCAM, "panel" );
+	my $flexType = JobHelper->GetPcbType($jobId);
 
-	  my @nestStep = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+	return 0 if ( !( $flexType eq EnumsGeneral->PcbType_RIGIDFLEXO || $flexType eq EnumsGeneral->PcbType_RIGIDFLEXI ) );
 
-	  my $stackup = Stackup->new($jobId);
-	  my @layers  = ();
+	CamHelper->SetStep( $inCAM, "panel" );
 
-	  foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
+	my @nestStep = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
 
-		  push( @layers, $c->GetTopCopperLayer()->GetCopperName() );
-		  push( @layers, $c->GetBotCopperLayer()->GetCopperName() );
-	  }
+	my $stackup = Stackup->new($jobId);
+	my @layers  = ();
 
-	  foreach my $l (@layers) {
+	foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
 
-		  # Inner layer with coverlay
-		  if ( $l =~ /^v\d$/ && CamHelper->LayerExists( $inCAM, $jobId, "coverlay" . $l ) ) {
+		push( @layers, $c->GetTopCopperLayer()->GetCopperName() );
+		push( @layers, $c->GetBotCopperLayer()->GetCopperName() );
+	}
 
-			  CamLayer->WorkLayer( $inCAM, $l );
+	foreach my $l (@layers) {
 
-			  my $f = FeatureFilter->new( $inCAM, $jobId, $l );
+		# Inner layer with coverlay
+		if ( $l =~ /^v\d$/ && CamHelper->LayerExists( $inCAM, $jobId, "coverlay" . $l ) ) {
 
-			  $f->AddIncludeAtt(".pattern_fill");
-			  $f->AddExcludeAtt("flexicore_frame");    # there is fcopper core at flexi cores - do not delete it
+			CamLayer->WorkLayer( $inCAM, $l );
 
-			  if ( CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l ) eq "positive" ) {
-				  $f->SetPolarity( FilterEnums->Polarity_POSITIVE );
-			  }
-			  else {
-				  $f->SetPolarity( FilterEnums->Polarity_NEGATIVE );
-			  }
+			my $f = FeatureFilter->new( $inCAM, $jobId, $l );
 
-			  if ( $f->Select() ) {
-				  $inCAM->COM("sel_delete");
+			$f->AddIncludeAtt(".pattern_fill");
+			$f->AddExcludeAtt("flexicore_frame");    # there is fcopper core at flexi cores - do not delete it
 
-				  # Put new special schema "Cross hatch" for flex layer
-				  $inCAM->COM(
-							   "sr_fill",
-							   "type"                    => "predefined_pattern",
-							   "predefined_pattern_type" => "cross_hatch",
-							   "indentation"             => "even",
-							   "cross_hatch_angle"       => "45",
-							   "cross_hatch_witdh"       => "500",
-							   "cross_hatch_dist"        => "2000",
-							   "step_margin_x"           => "8",
-							   "step_margin_y"           => "27",
-							   "step_max_dist_x"         => "555",
-							   "step_max_dist_y"         => "555",
-							   "sr_margin_x"             => "2.5",
-							   "sr_margin_y"             => "2.5",
-							   "sr_max_dist_x"           => "555",
-							   "sr_max_dist_y"           => "555",
-							   "consider_feat"           => "yes",
-							   "feat_margin"             => "1",
-							   "consider_drill"          => "yes",
-							   "drill_margin"            => "1",
-							   "consider_rout"           => "no",
-							   "dest"                    => "layer_name",
-							   "layer"                   => $l,
-							   "stop_at_steps"           => join( ";", @nestStep )
-				  );
-			  }
-			  else {
+			if ( CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l ) eq "positive" ) {
+				$f->SetPolarity( FilterEnums->Polarity_POSITIVE );
+			}
+			else {
+				$f->SetPolarity( FilterEnums->Polarity_NEGATIVE );
+			}
 
-				  die "No pattern fill was found in inner layer:$l, step panel: panel";
-			  }
+			if ( $f->Select() ) {
+				$inCAM->COM("sel_delete");
 
-		  }
-	  }
+				# Put new special schema "Cross hatch" for flex layer
+				$inCAM->COM(
+							 "sr_fill",
+							 "type"                    => "predefined_pattern",
+							 "predefined_pattern_type" => "cross_hatch",
+							 "indentation"             => "even",
+							 "cross_hatch_angle"       => "45",
+							 "cross_hatch_witdh"       => "500",
+							 "cross_hatch_dist"        => "2000",
+							 "step_margin_x"           => "8",
+							 "step_margin_y"           => "27",
+							 "step_max_dist_x"         => "555",
+							 "step_max_dist_y"         => "555",
+							 "sr_margin_x"             => "2.5",
+							 "sr_margin_y"             => "2.5",
+							 "sr_max_dist_x"           => "555",
+							 "sr_max_dist_y"           => "555",
+							 "consider_feat"           => "yes",
+							 "feat_margin"             => "1",
+							 "consider_drill"          => "yes",
+							 "drill_margin"            => "1",
+							 "consider_rout"           => "no",
+							 "dest"                    => "layer_name",
+							 "layer"                   => $l,
+							 "stop_at_steps"           => join( ";", @nestStep )
+				);
+			}
+			else {
+
+				die "No pattern fill was found in inner layer:$l, step panel: panel";
+			}
+
+		}
+	}
 
 }
 
 sub AddCoverlayRegisterHoles {
-	  my $self  = shift;
-	  my $inCAM = shift;
-	  my $jobId = shift;
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 
-	  my $result = 1;
+	my $result = 1;
 
-	  my $flexType = JobHelper->GetPcbFlexType($jobId);
+	my $flexType = JobHelper->GetPcbType($jobId);
 
-	  return unless ($flexType);
+	return unless ($flexType);
 
-	  my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
 
-	  my @layers = ("v");
-	  push( @layers, "v1" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "v1" ) );
+	my @layers = ("v");
+	push( @layers, "v1" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "v1" ) );
 
-	  my @lOther = CamDrilling->GetNCLayersByTypes(
-													$inCAM, $jobId,
-													[
-													   EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
-													   EnumsGeneral->LAYERTYPE_nplt_soldcMill,  EnumsGeneral->LAYERTYPE_nplt_soldsMill,
-													   EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill
-													]
-	  );
+	my @lOther = CamDrilling->GetNCLayersByTypes(
+												  $inCAM, $jobId,
+												  [
+													 EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
+													 EnumsGeneral->LAYERTYPE_nplt_soldcMill,  EnumsGeneral->LAYERTYPE_nplt_soldsMill,
+													 EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+												  ]
+	);
 
-	  push( @layers, map { $_->{"gROWname"} } @lOther ) if (@lOther);
+	push( @layers, map { $_->{"gROWname"} } @lOther ) if (@lOther);
 
-	  my @sigLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
+	my @sigLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
-	  foreach my $layer ( ( @layers, @sigLayers ) ) {
+	foreach my $layer ( ( @layers, @sigLayers ) ) {
 
-		  my $polarity = "positive";
-		  my $sym      = "r3300";
+		my $polarity = "positive";
+		my $sym      = "r3300";
 
-		  if ( $layer =~ /^[cs]$/ || $layer =~ /^v[2-]$/ ) {
+		if ( $layer =~ /^[cs]$/ || $layer =~ /^v[2-]$/ ) {
 
-			  $sym = "r4200";
+			$sym = "r4200";
 
-			  if ( CamMatrix->GetLayerPolarity( $inCAM, $jobId, $layer ) eq "positive" ) {
-				  $polarity = "negative";
-			  }
-		  }
+			if ( CamMatrix->GetLayerPolarity( $inCAM, $jobId, $layer ) eq "positive" ) {
+				$polarity = "negative";
+			}
+		}
 
-		  # Six holes
+		# Six holes
 
-		  my $holePitchX = 265 + 10;
-		  my $holePitchY = 324 + 10;
+		my $holePitchX = 265 + 10;
+		my $holePitchY = 324 + 10;
 
-		  CamLayer->WorkLayer( $inCAM, $layer );
-		  if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "coverlay_register_holes" ) ) {
-			  $inCAM->COM("sel_delete");
-		  }
+		CamLayer->WorkLayer( $inCAM, $layer );
+		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pnl_place", "coverlay_register_holes" ) ) {
+			$inCAM->COM("sel_delete");
+		}
 
-		  CamSymbol->AddCurAttribute( $inCAM, $jobId, ".pnl_place", "coverlay_register_holes" );
+		CamSymbol->AddCurAttribute( $inCAM, $jobId, ".pnl_place", "coverlay_register_holes" );
 
-		  CamHelper->SetStep( $inCAM, "panel" );
-		  CamLayer->WorkLayer( $inCAM, $layer );
+		CamHelper->SetStep( $inCAM, "panel" );
+		CamLayer->WorkLayer( $inCAM, $layer );
 
-		  my $h = $lim{"yMax"};
-		  my $w = $lim{"xMax"} - $lim{"xMin"};
+		my $h = $lim{"yMax"};
+		my $w = $lim{"xMax"} - $lim{"xMin"};
 
-		  # Temporary add 850 hole in order insert drilled number
-		  if ( $layer =~ /^fstiff[cs]\d?$/ || $layer =~ /^fsold[cs]\d?$/ ) {
-			  CamSymbol->AddPad( $inCAM, "r850", { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
-		  }
+		# Temporary add 850 hole in order insert drilled number
+		if ( $layer =~ /^fstiff[cs]\d?$/ || $layer =~ /^fsold[cs]\d?$/ ) {
+			CamSymbol->AddPad( $inCAM, "r850", { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
+		}
 
-		  # LT
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
+		# LT
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
 
-		  # RT
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
+		# RT
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
 
-		  # RB
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
+		# RB
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
 
-		  # LB
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
+		# LB
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
 
-		  #LCenter
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 }, undef, $polarity );
+		#LCenter
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - $holePitchX / 2, "y" => $h / 2 }, undef, $polarity );
 
-		  #RCenter
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 }, undef, $polarity );
+		#RCenter
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w - ( $w / 2 - $holePitchX / 2 ), "y" => $h / 2 }, undef, $polarity );
 
-		  #T 1/3of Width
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - 46, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
+		#T 1/3of Width
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - 46, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
 
-		  #T 2/3of Width
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 + 46, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
+		#T 2/3of Width
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 + 46, "y" => $h / 2 + $holePitchY / 2 }, undef, $polarity );
 
-		  #B 1/3of Width
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - 46, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
+		#B 1/3of Width
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 - 46, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
 
-		  #B 2/3of Width
-		  CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 + 46, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
+		#B 2/3of Width
+		CamSymbol->AddPad( $inCAM, $sym, { "x" => $w / 2 + 46, "y" => $h / 2 - $holePitchY / 2 }, undef, $polarity );
 
-		  CamSymbol->ResetCurAttributes($inCAM);
+		CamSymbol->ResetCurAttributes($inCAM);
 
-	  }
+	}
 
-	  return $result;
+	return $result;
 }
 
 # Move coverlaz register marks from nested steps to panel step
 # In order fill not cover theses marks in signal layers
 sub AddCoverlayRegisterMarks {
-	  my $self     = shift;
-	  my $inCAM    = shift;
-	  my $jobId    = shift;
-	  my $stepName = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
 
-	  my $result = 1;
+	my $result = 1;
 
-	  return 0 if ( $stepName ne "panel" && $stepName ne "mpanel" );
+	return 0 if ( $stepName ne "panel" && $stepName ne "mpanel" );
 
-	  my $flexType = JobHelper->GetPcbFlexType($jobId);
+	my $flexType = JobHelper->GetPcbType($jobId);
 
-	  return 0 if ( $flexType ne EnumsGeneral->PcbType_RIGIDFLEXI && $flexType ne EnumsGeneral->PcbType_RIGIDFLEXO );
+	return 0 if ( $flexType ne EnumsGeneral->PcbType_RIGIDFLEXI && $flexType ne EnumsGeneral->PcbType_RIGIDFLEXO );
 
-	  my @coverLay =
-		grep { $_->{"gROWname"} =~ /^coverlay([cs])$/ || $_->{"gROWname"} =~ /^coverlay(v\d+)$/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	my @coverLay =
+	  grep { $_->{"gROWname"} =~ /^coverlay([cs])$/ || $_->{"gROWname"} =~ /^coverlay(v\d+)$/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-	  return 0 unless (@coverLay);
+	return 0 unless (@coverLay);
 
-	  CamHelper->SetStep( $inCAM, $stepName );
+	CamHelper->SetStep( $inCAM, $stepName );
 
-	  foreach my $cvrLayer (@coverLay) {
+	foreach my $cvrLayer (@coverLay) {
 
-		  my ($sigLayer) = $cvrLayer->{"gROWname"} =~ m/^coverlay(.*)$/;
+		my ($sigLayer) = $cvrLayer->{"gROWname"} =~ m/^coverlay(.*)$/;
 
-		  my $tmp = GeneralHelper->GetGUID();
+		my $tmp = GeneralHelper->GetGUID();
 
-		  $inCAM->COM( 'flatten_layer', "source_layer" => $sigLayer, "target_layer" => $tmp );
-		  CamLayer->WorkLayer( $inCAM, $tmp );
+		$inCAM->COM( 'flatten_layer', "source_layer" => $sigLayer, "target_layer" => $tmp );
+		CamLayer->WorkLayer( $inCAM, $tmp );
 
-		  my $f = FeatureFilter->new( $inCAM, $jobId, $tmp );
+		my $f = FeatureFilter->new( $inCAM, $jobId, $tmp );
 
-		  $f->AddIncludeAtt( ".string", EnumsPins->PinString_SIGLAYERMARKS );
+		$f->AddIncludeAtt( ".string", EnumsPins->PinString_SIGLAYERMARKS );
 
-		  if ( $f->Select() ) {
-			  $inCAM->COM('sel_reverse');
-			  $inCAM->COM("sel_delete");
+		if ( $f->Select() ) {
+			$inCAM->COM('sel_reverse');
+			$inCAM->COM("sel_delete");
 
-			  # Set pnl_place in order action "delete schema" remove theses features too
-			  CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".pnl_place", "" );
+			# Set pnl_place in order action "delete schema" remove theses features too
+			CamAttributes->SetFeaturesAttribute( $inCAM, $jobId, ".pnl_place", "" );
 
-			  CamLayer->CopySelOtherLayer( $inCAM, [$sigLayer] );
-		  }
+			CamLayer->CopySelOtherLayer( $inCAM, [$sigLayer] );
+		}
 
-		  CamLayer->ClearLayers($inCAM);
-		  CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
-	  }
+		CamLayer->ClearLayers($inCAM);
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -529,17 +530,17 @@ sub AddCoverlayRegisterMarks {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	  use aliased 'Packages::CAMJob::Scheme::SchemeFlexiPcb';
-	  use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::CAMJob::Scheme::SchemeFlexiPcb';
+	use aliased 'Packages::InCAM::InCAM';
 
-	  my $inCAM = InCAM->new();
-	  my $jobId = "d152456";
+	my $inCAM = InCAM->new();
+	my $jobId = "d152456";
 
-	  my $mess = "";
+	my $mess = "";
 
-	  my $result = SchemeFlexiPcb->AddCoverlayRegisterMarks( $inCAM, $jobId, "panel" );
+	my $result = SchemeFlexiPcb->AddCoverlayRegisterMarks( $inCAM, $jobId, "panel" );
 
-	  print STDERR "Result is: $result, error message: $mess\n";
+	print STDERR "Result is: $result, error message: $mess\n";
 
 }
 

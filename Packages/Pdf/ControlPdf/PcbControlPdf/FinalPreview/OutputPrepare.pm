@@ -25,6 +25,7 @@ use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
@@ -34,7 +35,12 @@ use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutParse
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
+use aliased 'Packages::CAMJob::FlexiLayers::BendAreaParser::BendAreaParser';
+use aliased 'Packages::Polygon::Line::LineTransform';
+use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -50,8 +56,8 @@ sub new {
 	$self->{"viewType"} = shift;
 	$self->{"pdfStep"}  = shift;
 
-	$self->{"profileLim"} = undef;                                          # limits of pdf step
-	$self->{"pcbType"}    = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+	$self->{"profileLim"} = undef;                                       # limits of pdf step
+	$self->{"pcbType"}    = JobHelper->GetPcbType( $self->{"jobId"} );
 
 	return $self;
 }
@@ -60,14 +66,24 @@ sub PrepareLayers {
 	my $self      = shift;
 	my $layerList = shift;
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	# get limits of step
-	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, 1 );
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"pdfStep"}, 1 );
 	$self->{"profileLim"} = \%lim;
 
-	# prepare layers
+	# 1) Create special overlays which are used more than once
+	$self->{"bendAreaL"}  = $self->__GetOverlayBendArea($layerList);
+	$self->{"coverlaysL"} = $self->__GetOverlayCoverlays($layerList);
+
+	# 2) Prepare PDF layers
 	$self->__PrepareLayers($layerList);
 	$self->__OptimizeLayers($layerList);
 
+	# 3) Remove special overlays
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"bendAreaL"} ) if ( defined $self->{"bendAreaL"} );    # bend area
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"coverlaysL"}->{$_} ) foreach ( keys %{ $self->{"coverlaysL"} } );    # coverlays
 }
 
 # MEthod do necessary stuff for each layer by type
@@ -76,8 +92,7 @@ sub __PrepareLayers {
 	my $self      = shift;
 	my $layerList = shift;
 
-	 
-	foreach my $l ( $layerList->GetLayers()) {
+	foreach my $l ( $layerList->GetLayers() ) {
 
 		$self->__PrepareRIGIDMAT($l)      if ( $l->GetType() eq Enums->Type_RIGIDMATOUTER );
 		$self->__PrepareRIGIDMAT($l)      if ( $l->GetType() eq Enums->Type_RIGIDMATINNER );
@@ -91,7 +106,7 @@ sub __PrepareLayers {
 		$self->__PrepareGRAFIT($l)        if ( $l->GetType() eq Enums->Type_GRAFIT );
 		$self->__PreparePEELABLE($l)      if ( $l->GetType() eq Enums->Type_PEELABLE );
 		$self->__PrepareMASK($l)          if ( $l->GetType() eq Enums->Type_MASK );
-		$self->__PrepareMASK($l)          if ( $l->GetType() eq Enums->Type_FLEXMASK );
+		$self->__PrepareFLEXMASK($l)      if ( $l->GetType() eq Enums->Type_FLEXMASK );
 		$self->__PrepareCOVERLAY($l)      if ( $l->GetType() eq Enums->Type_COVERLAY );
 		$self->__PrepareSILK($l)          if ( $l->GetType() eq Enums->Type_SILK );
 		$self->__PrepareSILK($l)          if ( $l->GetType() eq Enums->Type_SILK2 );
@@ -100,7 +115,6 @@ sub __PrepareLayers {
 		$self->__PreparePLTTHROUGHNC($l)  if ( $l->GetType() eq Enums->Type_PLTTHROUGHNC );
 		$self->__PrepareNPLTTHROUGHNC($l) if ( $l->GetType() eq Enums->Type_NPLTTHROUGHNC );
 		$self->__PrepareSTIFFENER($l)     if ( $l->GetType() eq Enums->Type_STIFFENER );
-
 	}
 
 }
@@ -116,32 +130,24 @@ sub __PrepareRIGIDMAT {
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
 	$inCAM->COM(
-		"sr_fill",
-		"type"          => "solid",
-		"solid_type"    => "surface",
-		"min_brush"     => "25.4",
-		"cut_prims"     => "no",
-		"polarity"      => "positive",
-		"consider_rout" => "no",
-		"dest"          => "layer_name",
-		"layer"         => $lName,
-		"stop_at_steps" => "",
-		"step_margin_x" => -1,
-		"step_margin_y" => -1
+				 "sr_fill",
+				 "type"          => "solid",
+				 "solid_type"    => "surface",
+				 "min_brush"     => "25.4",
+				 "cut_prims"     => "no",
+				 "polarity"      => "positive",
+				 "consider_rout" => "no",
+				 "dest"          => "layer_name",
+				 "layer"         => $lName,
+				 "stop_at_steps" => "",
+				 "step_margin_x" => -1,
+				 "step_margin_y" => -1
 	);
 
-	if ( $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXO || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
+	if ( defined $self->{"bendAreaL"} ) {
 
-		my $bend = GeneralHelper->GetGUID();
-
-		$inCAM->COM( "merge_layers", "source_layer" => "bend", "dest_layer" => $bend );
-		CamLayer->WorkLayer( $inCAM, $bend );
-		$inCAM->COM( "sel_change_sym", "symbol" => "r0", "reset_angle" => "no" );
-		CamLayer->Contourize( $inCAM, $bend, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
-		CamLayer->CopySelOtherLayer( $inCAM, [$lName], 1 );
-		CamLayer->WorkLayer( $inCAM, $lName );
-		CamLayer->Contourize( $inCAM, $lName, "x_or_y", "0" );
-
+		CamLayer->WorkLayer( $inCAM, $self->{"bendAreaL"} );
+		$inCAM->COM( "merge_layers", "source_layer" => $self->{"bendAreaL"}, "dest_layer" => $lName );
 	}
 
 	$layer->SetOutputLayer($lName);
@@ -238,22 +244,30 @@ sub __PrepareOUTERSURFACE {
 		my $lName = GeneralHelper->GetGUID();
 		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
 
-		my $mask = "m" . $layers[0]->{"gROWname"};
+		foreach my $maskL ( ( "m" . $layers[0]->{"gROWname"}, "m" . $layers[0]->{"gROWname"} . "flex" ) ) {
 
-		# If mask exist,
-		# 1) copy to help layer, 2) do negative and conturize
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $mask ) ) {
+			# If mask exist,
+			# 1) copy to help layer, 2) do negative and conturize
+			if ( CamHelper->LayerExists( $inCAM, $jobId, $maskL ) ) {
 
-			my $lNameMask = GeneralHelper->GetGUID();
-			$inCAM->COM( "merge_layers", "source_layer" => $mask, "dest_layer" => $lNameMask );
+				my $lNameMask = GeneralHelper->GetGUID();
+				$inCAM->COM( "merge_layers", "source_layer" => $maskL, "dest_layer" => $lNameMask );
 
-			CamLayer->WorkLayer( $inCAM, $lNameMask );
-			CamLayer->NegativeLayerData( $inCAM, $lNameMask, $self->{"profileLim"} );
-			CamLayer->Contourize( $inCAM, $lNameMask );
-			$inCAM->COM( "merge_layers", "source_layer" => $lNameMask, "dest_layer" => $lName, "invert" => "yes" );
-			$inCAM->COM( "delete_layer", "layer" => $lNameMask );
+				CamLayer->WorkLayer( $inCAM, $lNameMask );
+				CamLayer->NegativeLayerData( $inCAM, $lNameMask, $self->{"profileLim"} );
+				CamLayer->Contourize( $inCAM, $lNameMask );
+				$inCAM->COM( "merge_layers", "source_layer" => $lNameMask, "dest_layer" => $lName, "invert" => "yes" );
+				$inCAM->COM( "delete_layer", "layer" => $lNameMask );
 
-			#CamLayer->Contourize( $inCAM, $lName );
+				#CamLayer->Contourize( $inCAM, $lName );
+			}
+		}
+
+		# 2) Use coverlay overlay
+
+		my $cvrL = "coverlay" . $layers[0]->{"gROWname"};
+		if ( defined $self->{"coverlaysL"}->{$cvrL} ) {
+			$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{$cvrL}, "dest_layer" => $lName, "invert" => "yes" );
 		}
 
 		$layer->SetOutputLayer($lName);
@@ -353,7 +367,7 @@ sub __PreparePEELABLE {
 		# Prepare layer by layer type (rout vs standard)
 		my $lName = GeneralHelper->GetGUID();
 
-		if ( $layers[0]->{"gROWname"} =~ /^f/ ) {
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "f" . $layers[0]->{"gROWname"} ) ) {
 
 			my $lTmp = CamLayer->RoutCompensation( $inCAM, $layers[0]->{"gROWname"}, "document" );
 			CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
@@ -416,7 +430,65 @@ sub __PrepareMASK {
 
 		$layer->SetOutputLayer($lName);
 
+		if ( defined $self->{"bendAreaL"} ) {
+
+			CamLayer->WorkLayer( $inCAM, $self->{"bendAreaL"} );
+			$inCAM->COM( "merge_layers", "source_layer" => $self->{"bendAreaL"}, "dest_layer" => $lName );
+		}
+
 	}
+}
+
+sub __PrepareFLEXMASK {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	my $inCAM  = $self->{"inCAM"};
+	my @layers = $layer->GetSingleLayers();
+
+	if ( $layers[0] ) {
+		my $lName = GeneralHelper->GetGUID();
+
+		my $maskLayer = $layers[0]->{"gROWname"};
+
+		# Select layer as work
+
+		CamLayer->WorkLayer( $inCAM, $maskLayer );
+
+		$inCAM->COM( "merge_layers", "source_layer" => $maskLayer, "dest_layer" => $lName );
+
+		CamLayer->WorkLayer( $inCAM, $lName );
+
+		CamLayer->NegativeLayerData( $self->{"inCAM"}, $lName, $self->{"profileLim"} );
+
+		$layer->SetOutputLayer($lName);
+
+	}
+}
+
+sub __PrepareCOVERLAY {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @layers = $layer->GetSingleLayers();
+	my $lName  = GeneralHelper->GetGUID();
+
+	my $cvrL = ( grep { $_->{"gROWname"} =~ /^coverlay/ } $layer->GetSingleLayers() )[0];
+
+	$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{ $cvrL->{"gROWname"} }, "dest_layer" => $lName );
+	$layer->SetOutputLayer($lName);
+
 }
 
 # Dont do nothing and export silk as is
@@ -558,6 +630,12 @@ sub __PrepareNPLTDEPTHNC {
 		$outputParser->Clear();
 	}
 
+	if ( defined $self->{"bendAreaL"} ) {
+
+		CamLayer->WorkLayer( $inCAM, $self->{"bendAreaL"} );
+		$inCAM->COM( "merge_layers", "source_layer" => $self->{"bendAreaL"}, "dest_layer" => $lName );
+	}
+
 	$layer->SetOutputLayer($lName);
 
 }
@@ -578,7 +656,7 @@ sub __PreparePLTTHROUGHNC {
 
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
-	my $pcbThick = JobHelper->GetFinalPcbThick($jobId);
+	my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
 
 	# compensate
 	foreach my $l (@layers) {
@@ -652,7 +730,7 @@ sub __PrepareNPLTTHROUGHNC {
 
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
-	my $pcbThick = JobHelper->GetFinalPcbThick($jobId);
+	my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
 
 	foreach my $l (@layers) {
 
@@ -700,6 +778,9 @@ sub __PrepareNPLTTHROUGHNC {
 		# There can by small remains of pcb material, which is not milled
 		# We don't want see this pieces in pdf, so delete tem from layer $lName
 		# (pieces larger than 20% of total step area will be keepd)
+
+		next unless ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill );
+
 		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 
 		#$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
@@ -712,7 +793,7 @@ sub __PrepareNPLTTHROUGHNC {
 
 		my @t = grep { $_->GetCyclic() } @t1;
 
-		my @outFeatsId = map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() } $unitRTM->GetMultiChainSeqList();
+		my @outFeatsId = map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() && !$_->GetIsInside() } $unitRTM->GetMultiChainSeqList();
 
 		#my @outline = $unitRTM->GetOutlineChains();
 		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
@@ -748,7 +829,7 @@ sub __PrepareNPLTTHROUGHNC {
 		my $maxArea = $profileArea / 2;    # pieces smaller than 10% of totalaarea will be keeped in pictore
 
 		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
-			CamLayer->CopySelOtherLayer( $inCAM, [$lName], 0, 0 );
+			CamLayer->CopySelOtherLayer( $inCAM, [$lName], 0, 2 );    # Resize features prevent ilegal surface after copy
 		}
 
 		$inCAM->COM( 'delete_layer', "layer" => $lTmp );
@@ -827,6 +908,13 @@ sub __PrepareNPLTTHROUGHNC {
 	#		$inCAM->COM( 'delete_layer', "layer" => $lTmp );
 	#	}
 
+#	CamLayer->WorkLayer( $inCAM, $lName );
+#	$inCAM->COM(
+#				 "sel_contourize",
+#				 "accuracy"         => "0",
+#				 "break_to_islands" => "yes"
+#	);
+
 	$layer->SetOutputLayer($lName);
 }
 
@@ -866,7 +954,209 @@ sub __PrepareSTIFFENER {
 		return 0;
 	}
 
-	die "";
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $lName = GeneralHelper->GetGUID();
+
+	# 1) Create full surface by profile
+	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+	my @pointsLim = ();
+	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMin"} } );
+	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMax"} } );
+	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMax"} } );
+	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMin"} } );
+
+	CamLayer->WorkLayer( $inCAM, $lName );
+	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
+	CamLayer->ResizeFeatures( $inCAM, 7000 );
+
+	# 2) Copy negative of stiffener rout
+	my $stiffL = ( grep { $_->{"gROWlayer_type"} eq "stiffener" } $layer->GetSingleLayers() )[0];
+	my @stiffRoutLs =
+	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill ] );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
+
+	my $stiffRoutL = ( grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs )[0];
+	my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
+	CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+	$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $lName, "invert" => "yes" );
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+ 
+	$layer->SetOutputLayer($lName);
+
+}
+
+sub __GetOverlayBendArea {
+	my $self      = shift;
+	my $layerList = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $bendNegL = undef;
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "bend" )
+		 && ( $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXO || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI ) )
+	{
+
+		$bendNegL = GeneralHelper->GetGUID();
+
+		# 1) Create negative full surface from pure bend area
+
+		$inCAM->COM( "merge_layers", "source_layer" => "bend", "dest_layer" => $bendNegL, "invert" => "yes" );
+		CamLayer->WorkLayer( $inCAM, $bendNegL );
+
+		# remove everythink (there could be text from schema) beyond active area if panel
+		if ( $self->{"pdfStep"} eq "pdf_panel" ) {
+
+			my $aa = ActiveArea->new( $inCAM, $jobId );
+
+			my %pnlLim = ();
+			$pnlLim{"xMin"} = 0 + $aa->BorderL();
+			$pnlLim{"yMin"} = 0 + $aa->BorderB();
+			$pnlLim{"xMax"} = $self->{"profileLim"}->{"xMax"} - $aa->BorderR();
+			$pnlLim{"yMax"} = $self->{"profileLim"}->{"yMax"} - $aa->BorderT();
+
+			CamLayer->ClipLayerData( $self->{"inCAM"}, $bendNegL, \%pnlLim );
+			CamLayer->WorkLayer( $inCAM, $bendNegL );
+		}
+
+		$inCAM->COM( "sel_change_sym", "symbol" => "r0", "reset_angle" => "no" );
+		CamLayer->Contourize( $inCAM, $bendNegL, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		CamLayer->WorkLayer( $inCAM, $bendNegL );
+
+		# 2) Add depth nplt milling (which is responsible for milling bend area) as negative surface
+
+		my @layers = $layerList->GetLayers( Enums->Type_NPLTDEPTHNC,
+											( $self->{"viewType"} eq Enums->View_FROMTOP ? Enums->Visible_FROMTOP : Enums->Visible_FROMBOT ) );
+
+		# compensate
+		foreach my $l ( map { $_->GetSingleLayers() } @layers ) {
+
+			my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
+
+			my $result = $outputParser->Prepare($l);
+
+			next unless ( $result->GetResult() );
+
+			foreach my $classResult ( $result->GetClassResults(1) ) {
+
+				foreach my $classL ( $classResult->GetLayers() ) {
+
+					# When angle tool, resize final tool dieameter by tool depth
+					if (    $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKSURF
+						 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKARC
+						 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKPAD
+						 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSURFCHAMFER
+						 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSLOTCHAMFER )
+					{
+
+						my $DTMTool     = $classL->GetDataVal("DTMTool");
+						my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * $DTMTool->GetDepth() * 2;
+
+						my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter * 1000 );
+
+						CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+						CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+
+					}
+
+					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+					if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, "transition_zone", "" ) ) {
+						$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $bendNegL, "invert" => "yes" );
+					}
+				}
+			}
+
+			$outputParser->Clear();
+		}
+	}
+
+	return $bendNegL;
+
+}
+
+sub __GetOverlayCoverlays {
+	my $self      = shift;
+	my $layerlist = shift;
+
+	my %coverLayers = ();
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @covelays = $layerlist->GetLayers( Enums->Type_COVERLAY );
+
+	return \%coverLayers if ( !scalar(@covelays) );
+
+	foreach my $layer (@covelays) {
+
+		next unless ( $layer->HasLayers() );
+
+		my @layers = $layer->GetSingleLayers();
+		my $lName  = GeneralHelper->GetGUID();
+
+		# 1) Create full surface by profile
+		$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+		my @pointsLim = ();
+		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMin"} } );
+		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMax"} } );
+		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMax"} } );
+		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMin"} } );
+
+		CamLayer->WorkLayer( $inCAM, $lName );
+		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
+		CamLayer->ResizeFeatures( $inCAM, 7000 );
+
+		# 2) Copy coverlay milling
+		my $cvrL = ( grep { $_->{"gROWname"} =~ /^coverlay/ } $layer->GetSingleLayers() )[0];
+		my @cvrRoutLs =
+		  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
+		CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@cvrRoutLs );
+
+		my $cvrRoutL = ( grep { $_->{"gROWdrl_start"} eq $cvrL->{"gROWname"} && $_->{"gROWdrl_end"} eq $cvrL->{"gROWname"} } @cvrRoutLs )[0];
+		my $lTmp = CamLayer->RoutCompensation( $inCAM, $cvrRoutL->{"gROWname"}, "document" );
+		CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $lName, "invert" => "yes" );
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+
+		# 3) If exist coverlay pins, final shape of coverlay depands on NPLT rout layers
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" ) ) {
+
+			my @NPLTNClayers = grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill } $layer->GetSingleLayers();
+
+			foreach my $npltL (@NPLTNClayers) {
+
+				my $routL = CamLayer->RoutCompensation( $inCAM, $npltL->{"gROWname"}, "document" );
+				$inCAM->COM( "merge_layers", "source_layer" => $routL, "dest_layer" => $lName, "invert" => "yes" );
+				CamMatrix->DeleteLayer( $inCAM, $jobId, $routL );
+			}
+
+			# Countourize whole layers and keep surfaces in bend area only
+			CamLayer->Contourize( $inCAM, $lName, "x_or_y", "0" );
+			CamLayer->WorkLayer( $inCAM, $lName );
+
+			if ( CamFilter->SelectByReferenece( $inCAM, $jobId, "touch", $lName, undef, undef, undef, "bend" ) ) {
+
+				$inCAM->COM('sel_reverse');
+				if ( CamLayer->GetSelFeaturesCnt($inCAM) ) {
+					CamLayer->DeleteFeatures($inCAM);
+				}
+			}
+		}
+
+		CamLayer->WorkLayer( $inCAM, $lName );
+		CamLayer->Contourize( $inCAM, $lName, "x_or_y", "0" );
+		
+
+		$coverLayers{ $cvrL->{"gROWname"} } = $lName;
+	}
+
+	return \%coverLayers;
+
 }
 
 sub __CountersinkCheck {
@@ -936,15 +1226,18 @@ sub __OptimizeLayers {
 
 	CamLayer->ClearLayers($inCAM);
 
-	foreach my $l (@layers) {
+	foreach my $l ( grep { $_->GetType() ne Enums->Type_NPLTTHROUGHNC } @layers ) {
 
 		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
 	}
-	
-	$inCAM->COM(
-				 "sel_contourize",
-				 "accuracy"         => "0",
-				 "break_to_islands" => "yes");
+
+	#	$inCAM->COM(
+	#				 "sel_contourize",
+	#				 "accuracy"         => "0",
+	#				 "break_to_islands" => "yes"
+	#	);
+	#	$inCAM->COM(
+	#				 "curve2segs", "curve_seg_tol"=>100);
 
 	# clip area around profile
 	$inCAM->COM(
@@ -956,9 +1249,9 @@ sub __OptimizeLayers {
 		#"area_type"   => "rectangle",
 		"inout"       => "outside",
 		"contour_cut" => "yes",
-		"margin"      => "1000",        
-		"feat_types" => "line\;pad;surface;arc;text",
-		"pol_types"  => "positive\;negative"
+		"margin"      => ( $self->{"pdfStep"} eq "pdf_panel" ? "0" : "1000" ),    # keep panel dimension, else add extra margin 1mm
+		"feat_types"  => "line\;pad;surface;arc;text",
+		"pol_types"   => "positive\;negative"
 	);
 	$inCAM->COM( "affected_layer", "mode" => "all", "affected" => "no" );
 

@@ -12,40 +12,11 @@ use warnings;
 #loading of locale modules
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::Stackup::StackupOperation';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
-
-# Return all layers from matrix as array of hash, which are layer_type == board
-# which contain info:
-# - gROWname
-# - gROWlayer_type
-# - gROWcontext
-sub AddSideType {
-	my $self   = shift;
-	my $layers = shift;
-
-	foreach my $l ( @{$layers} ) {
-
-		if ( $l->{"gROWname"} =~ /^[mpl]*c$/ ) {
-
-			$l->{"side"} = "top";
-
-		}
-		elsif ( $l->{"gROWname"} =~ /^[mpl]*s$/ ) {
-
-			$l->{"side"} = "bot";
-
-		}
-		elsif ( $l->{"gROWname"} =~ /v\d/ ) {
-
-			#not implmented, we have to read from stackup
-			$l->{"side"} = undef;
-		}
-
-	}
-}
 
 # Duplicate layer
 sub CopyLayer {
@@ -57,7 +28,7 @@ sub CopyLayer {
 	my $targetLayer = shift;
 	my $targetStep  = shift;
 	my $invert      = shift // 0;
-	my $mode        = shift // "replace";    # replace / append / duplicate 
+	my $mode        = shift // "replace";    # replace / append / duplicate
 
 	$invert = defined $invert && $invert == 1 ? "yes" : "no";
 
@@ -206,22 +177,58 @@ sub SetNCLayerStartEnd {
 
 }
 
+# Return which phzsic side is special non signal layer oriented
+# if wee look through form top to bot
+# Layer name must be in format: <layer name><signal layer name> E.g.: coverlays; stiffc etc..
+# Return value: top/bot
+sub GetNonSignalLayerSide {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $layerName = shift;
+	my $stackup   = shift;
+	my $sigRef = shift;
+	
+	my $sigL = ( $layerName =~ /^\w+([csv]\d*)$/ )[0];
+
+	die "reference signal layer was not recognized from non signal layer: $layerName" if ( !defined $sigL );
+
+	my $side = undef;
+
+	if ( $sigL eq "c" ) {
+		$side = "top";
+	}
+	elsif ( $sigL eq "s" ) {
+
+		$side = "bot";
+	}
+	else {
+
+		$side = StackupOperation->GetSideByLayer( $jobId, $sigL, $stackup );
+	
+	}
+	
+	$$sigRef = $sigL;
+	
+	return $side;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'CamHelpers::CamMatrix';
-	use aliased 'Packages::InCAM::InCAM';
+	  use aliased 'CamHelpers::CamMatrix';
+	  use aliased 'Packages::InCAM::InCAM';
 
-	my $inCAM = InCAM->new();
+	  my $inCAM = InCAM->new();
 
-	my $jobId    = "f13608";
-	my $stepName = "panel";
+	  my $jobId    = "f13608";
+	  my $stepName = "panel";
 
-	my $workLayer = CamMatrix->GetWorkLayer($inCAM);
-	die;
+	  my $workLayer = CamMatrix->GetWorkLayer($inCAM);
+	  die;
 
 }
 

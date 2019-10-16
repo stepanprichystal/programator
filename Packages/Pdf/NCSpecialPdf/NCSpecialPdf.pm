@@ -52,7 +52,7 @@ sub new {
 
 	$self->{"step"}     = $step;
 	$self->{"stepFlat"} = $step . "_ncpdf";
-	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;    # in mm
+	$self->{"pcbThick"} = CamJob->GetFinalPcbThick($self->{"inCAM"}, $self->{"jobId"} ) / 1000;    # in mm
 	
 	$self->{"drawingCnt"} = 0; # total drawing count prepared from data
 

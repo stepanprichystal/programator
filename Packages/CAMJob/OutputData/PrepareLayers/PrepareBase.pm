@@ -65,6 +65,7 @@ sub __PrepareLayers {
 	$self->__PrepareOUTLINE( $layers, Enums->Type_OUTLINE );
 	$self->__PrepareSPECIALSURF( $layers, Enums->Type_SPECIALSURF );
 	$self->__PrepareFILLEDHOLES( $layers, Enums->Type_FILLEDHOLES );
+	$self->__PrepareFLEXLAYERS( $layers, Enums->Type_FLEXLAYERS );
 
 }
 
@@ -78,6 +79,7 @@ sub __PrepareBASEBOARD {
 
 	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "drill" && $_->{"gROWlayer_type"} ne "rout" } @layers;
 	@layers = grep { $_->{"gROWname"} !~ /^(plg|[lg]|gold)[cs]$/i } @layers;    # special surfaces (goldc, gc, lc, plgc,  etc)
+	@layers = grep { $_->{"gROWname"} !~ /^(coverlay|stiff)[csv]\d*$/i } @layers;    # special flex layers (coverlayc, coverlays, stiffc,  etc)
 
 	foreach my $l (@layers) {
 
@@ -260,6 +262,50 @@ sub __PrepareFILLEDHOLES {
 		}
 
 		my $lData = LayerData->new( $type, $lMain, $enTit, $czTit, $enInf, $czInf, $lName );
+
+		$self->{"layerList"}->AddLayer($lData);
+
+	}
+}
+
+# Special layers connected with flexible PCB: coverlay; stiffener
+sub __PrepareFLEXLAYERS {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+	my $type   = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+
+	my @lFLexROut = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "rout" } @layers;
+
+	CamDrilling->AddNCLayerType( \@lFLexROut );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@lFLexROut );
+
+	# 1) Define coverlays
+
+	my @lCoverlay = grep {
+		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
+	} @lFLexROut;
+ 
+	foreach my $l ( @lCoverlay) {
+
+  
+		my $lName = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
+		CamLayer->Contourize( $inCAM, $lName, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		CamLayer->WorkLayer( $inCAM, $lName );
+		CamLayer->ClipAreaByProf( $inCAM, $lName, 0 );
+ 	
+		my $lRef = (grep { $_->{"gROWname"} eq  $l->{"gROWdrl_start"}} @layers)[0];
+ 
+		my $enTit = Helper->GetJobLayerTitle( $lRef, $type );
+		my $czTit = Helper->GetJobLayerTitle( $lRef, $type, 1 );
+		my $enInf = Helper->GetJobLayerInfo($lRef);
+		my $czInf = Helper->GetJobLayerInfo( $lRef, 1 );
+		 
+		my $lData = LayerData->new( $type, $lRef, $enTit, $czTit, $enInf, $czInf, $lName );
 
 		$self->{"layerList"}->AddLayer($lData);
 

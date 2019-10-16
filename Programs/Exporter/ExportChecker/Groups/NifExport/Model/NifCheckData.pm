@@ -21,6 +21,7 @@ use aliased 'Helpers::ValueConvertor';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamGoldArea';
@@ -248,7 +249,7 @@ sub OnCheckGroupData {
 		if ( ( $goldCExist || $goldSExist ) && $refLayerExist ) {
 
 			my $cuThickness = $defaultInfo->GetBaseCuThick("c");
-			my $pcbThick    = JobHelper->GetFinalPcbThick($jobId);
+			my $pcbThick    = CamJob->GetFinalPcbThick($inCAM, $jobId);
 
 			my %result = CamGoldArea->GetGoldFingerArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel" );
 

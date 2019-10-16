@@ -50,7 +50,7 @@ sub Build {
 	my $stepName = "panel";
 
 	my $cuThickness = JobHelper->GetBaseCuThick( $jobId, "c" );
-	my $pcbThick    = JobHelper->GetFinalPcbThick($jobId);
+	my $pcbThick    = CamJob->GetFinalPcbThick($inCAM, $jobId);
 	my $surface     = HegMethods->GetPcbSurface($jobId);
 	my $pcbClass    = CamJob->GetJobPcbClass( $inCAM, $jobId );
 

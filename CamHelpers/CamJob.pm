@@ -22,6 +22,8 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #my $genesis = new Genesis;
 
@@ -635,6 +637,29 @@ sub CopyJob {
 				 "dest_database"  => $dbName,
 				 "remove_from_sr" => "yes"
 	);
+}
+
+#return final thick of pcb in µm
+sub GetFinalPcbThick {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	my $thick;
+
+	if ( $self->GetSignalLayerCnt($inCAM, $jobId) > 2 ) {
+
+		my $stackup = Stackup->new($jobId);
+
+		$thick = $stackup->GetFinalThick();
+	}
+	else {
+
+		$thick = HegMethods->GetPcbMaterialThick($jobId);
+		$thick = $thick * 1000;
+	}
+
+	return $thick;
 }
 
 #-------------------------------------------------------------------------------------------#

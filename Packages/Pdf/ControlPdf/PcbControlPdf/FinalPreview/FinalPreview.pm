@@ -81,32 +81,32 @@ sub GetOutput {
 	return $self->{"outputPdf"}->GetOutput();
 }
 
-sub __ConvertPdfToPng {
-	my $self       = shift;
-	my $outputPath = shift;
-
-	my $result = 1;
-
-	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
-	push( @cmd, "-density 200" );
-	push( @cmd, $outputPath );
-	push( @cmd, "-shave 20x20 -trim -shave 2x2" );
-	push( @cmd, "--alpha off" );
-
-	push( @cmd, $self->{"outputPath"} );
-
-	my $cmdStr = join( " ", @cmd );
-
-	my $systeMres = system($cmdStr);
-
-	unlink($outputPath);
-
-	if ( $systeMres > 0 ) {
-		$result = 0;
-	}
-
-	return;
-}
+#sub __ConvertPdfToPng {
+#	my $self       = shift;
+#	my $outputPath = shift;
+#
+#	my $result = 1;
+#
+#	my @cmd = ( EnumsPaths->InCAM_3rdScripts . "im\\convert.exe" );
+#	push( @cmd, "-density 200" );
+#	push( @cmd, $outputPath );
+#	push( @cmd, "-shave 20x20 -trim -shave 5x5" );
+#	push( @cmd, "--alpha off" );
+#
+#	push( @cmd, $self->{"outputPath"} );
+#
+#	my $cmdStr = join( " ", @cmd );
+#
+#	my $systeMres = system($cmdStr);
+#
+#	unlink($outputPath);
+#
+#	if ( $systeMres > 0 ) {
+#		$result = 0;
+#	}
+#
+#	return;
+#}
 
 # Each pcb layer is represent bz color/texture
 # this method is responsible for choose this color/texture, transparency, 3d effects, etc..
@@ -118,65 +118,61 @@ sub __DefineSurfaces {
 	my $surface  = HegMethods->GetPcbSurface( $self->{"jobId"} );
 	my $flex     = JobHelper->GetIsFlex( $self->{"jobId"} );
 	my $flexType = JobHelper->GetPcbType( $self->{"jobId"} );
+	my $layerCnt = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# Pcb Rigid material
 
-	my $rigidMatClr = LayerColor->new( PrevEnums->Surface_COLOR, "226,235,150" );
+	my $rigidMatClr = LayerColor->new( PrevEnums->Surface_COLOR, ( $layerCnt > 2 ? "193,201,128" : "212,220,140" ) );
 	$clrs{ Enums->Type_RIGIDMATOUTER } = $rigidMatClr;
 	$clrs{ Enums->Type_RIGIDMATINNER } = $rigidMatClr;
 
 	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
-	if ( $mat =~ /^al/i ) {
-
-		$rigidMatClr->SetType( PrevEnums->Surface_TEXTURE );
+	if ( $mat =~ /al_core/i ) {
 
 		if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
-
-			$rigidMatClr->SetTexture( Enums->Texture_CU );
+			$rigidMatClr->SetType( PrevEnums->Surface_COLOR );
+			$rigidMatClr->SetColor("240, 240, 240");
 		}
 		elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
 
+			$rigidMatClr->SetType( PrevEnums->Surface_TEXTURE );
 			$rigidMatClr->SetTexture( Enums->Texture_CHEMTINALU );
 		}
 	}
-	elsif ( $mat =~ /^cu/i ) {
+	elsif ( $mat =~ /cu_core/i ) {
 
-		$rigidMatClr->SetType( PrevEnums->Surface_TEXTURE );
-		$rigidMatClr->SetTexture( Enums->Texture_CU );
+		if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
+			$rigidMatClr->SetType( PrevEnums->Surface_COLOR );
+			$rigidMatClr->SetColor("240, 240, 240");
+		}
+		elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
 
+			$rigidMatClr->SetType( PrevEnums->Surface_TEXTURE );
+			$rigidMatClr->SetTexture( Enums->Texture_CU );
+		}
 	}
 
 	# Pcb Flex material
 
-	my $flexMatClr = LayerColor->new( PrevEnums->Surface_COLOR, "228,228,0" );
+	my $flexMatClr = LayerColor->new( PrevEnums->Surface_COLOR, "220,191,0" );
 	$clrs{ Enums->Type_FLEXMATOUTER } = $flexMatClr;
 	$clrs{ Enums->Type_FLEXMATINNER } = $flexMatClr;
 
-	$flexMatClr->SetOpaque(70);
+	$flexMatClr->SetOpaque(60);
 
 	# Via fill
 	my $viaFillClr = LayerColor->new( PrevEnums->Surface_COLOR, "97,47,4" );
 	$clrs{ Enums->Type_VIAFILL } = $viaFillClr;
 
 	# Outer cu
-	my $outerCuClr = undef;
-
-	if ( $surface eq "" || $surface =~ /^n$/i ) {
-
-		$outerCuClr = LayerColor->new( PrevEnums->Surface_TEXTURE, Enums->Texture_CU );
-	}
-	else {
-
-		$outerCuClr = LayerColor->new( PrevEnums->Surface_COLOR, "232,141,77" );
-	}
+	my $outerCuClr = LayerColor->new( PrevEnums->Surface_COLOR, "232,141,77" );
+  
 
 	$clrs{ Enums->Type_OUTERCU } = $outerCuClr;
-
 
 	# Inner cu
 	my $innerCuClr = LayerColor->new( PrevEnums->Surface_COLOR, "232,141,77" );
 	$clrs{ Enums->Type_INNERCU } = $innerCuClr;
-
 
 	# Outer surface
 
@@ -197,6 +193,11 @@ sub __DefineSurfaces {
 
 		# Chemical gold + hard gold
 		$outerSurfaceClr->SetTexture( Enums->Texture_GOLD );
+
+	}
+	else {
+
+		$outerSurfaceClr->SetTexture( Enums->Texture_CU );
 	}
 
 	# Gold fingers
@@ -209,7 +210,6 @@ sub __DefineSurfaces {
 	my $peelableClr = LayerColor->new( PrevEnums->Surface_TEXTURE, Enums->Texture_PEELABLE );
 	$clrs{ Enums->Type_PEELABLE } = $peelableClr;
 
-
 	# Grafit paste
 
 	my $grafitClr = LayerColor->new( PrevEnums->Surface_TEXTURE, Enums->Texture_GRAFIT );
@@ -219,20 +219,36 @@ sub __DefineSurfaces {
 	my $clrRGB = $self->__GetMaskColor();
 	my $maskClr = LayerColor->new( PrevEnums->Surface_COLOR, $clrRGB );
 
-	# if white mask, do smaller opaque
+	# Set opaque for different color
 	if ( $clrRGB eq "250,250,250" ) {
 
-		$maskClr->SetOpaque(90);
+		# White
+
+		$maskClr->SetOpaque(92);
+	}
+	elsif ( $clrRGB eq "59,59,59" ) {
+
+		# Blask
+
+		$maskClr->SetOpaque(89);
+	}
+	elsif ( $clrRGB eq "0,70,113" ) {
+
+		# Blue
+
+		$maskClr->SetOpaque(85);
 	}
 	else {
-		$maskClr->SetOpaque(80);
+		# other
+
+		$maskClr->SetOpaque(70);
 	}
 
 	$clrs{ Enums->Type_MASK } = $maskClr;
 
 	# Pcb Flex Mask color
 
-	my $flexMaskClr = LayerColor->new( PrevEnums->Surface_COLOR, "0,102,0" );
+	my $flexMaskClr = LayerColor->new( PrevEnums->Surface_COLOR, "0,132,0" );
 	$clrs{ Enums->Type_FLEXMASK } = $flexMaskClr;
 	$clrs{ Enums->Type_FLEXMASK } = $flexMaskClr;
 
@@ -240,10 +256,12 @@ sub __DefineSurfaces {
 
 	# Coverlay color
 
-	my $coverlayClr = LayerColor->new( PrevEnums->Surface_COLOR, "255,204,0" );
+	my $coverlayClr = LayerColor->new( PrevEnums->Surface_COLOR, "212,113,0" );
 	$clrs{ Enums->Type_COVERLAY } = $coverlayClr;
 
-	$coverlayClr->SetOpaque(70);
+	$coverlayClr->SetOpaque(45);
+
+	#$coverlayClr->Set3DEdges(2);
 
 	# Silk color
 
@@ -261,7 +279,7 @@ sub __DefineSurfaces {
 	$clrs{ Enums->Type_PLTDEPTHNC } = $pltDepthClr;
 
 	$pltDepthClr->SetType( $outerSurfaceClr->GetType() );
-	$pltDepthClr->SetBrightness( $outerSurfaceClr->GetBrightness() - 15 );
+	$pltDepthClr->SetBrightness( $outerSurfaceClr->GetBrightness() + 10 );
 
 	if ( $outerSurfaceClr->GetType() eq PrevEnums->Surface_COLOR ) {
 		$pltDepthClr->SetColor( $outerSurfaceClr->GetColor() );
@@ -276,14 +294,28 @@ sub __DefineSurfaces {
 	$clrs{ Enums->Type_NPLTDEPTHNC } = $npltDepthClr;
 
 	$npltDepthClr->SetType( $rigidMatClr->GetType() );
-	$npltDepthClr->SetBrightness( $rigidMatClr->GetBrightness() - 15 );
+	$npltDepthClr->SetBrightness( $rigidMatClr->GetBrightness() + 5 );
 
 	if ( $rigidMatClr->GetType() eq PrevEnums->Surface_COLOR ) {
+
 		$npltDepthClr->SetColor( $rigidMatClr->GetColor() );
+		$npltDepthClr->SetOverlayTexture( Enums->TextureOverlay_MILLING );
 	}
 	else {
+
 		$npltDepthClr->SetTexture( $rigidMatClr->GetTexture() );
 	}
+
+	# Al if Al core and depth milling from top, set AL texture
+	if ( $mat =~ /al_core/i && $self->{"viewType"} eq Enums->View_FROMTOP ) {
+
+		$npltDepthClr->SetType( PrevEnums->Surface_TEXTURE );
+		$npltDepthClr->SetTexture( Enums->Texture_CHEMTINALU );
+	}
+
+	# Stiffener
+	my $stiffClr = LayerColor->new( PrevEnums->Surface_COLOR, "185,193,123" );
+	$clrs{ Enums->Type_STIFFENER } = $stiffClr;
 
 	# PLT Through NC
 
@@ -325,9 +357,9 @@ sub __GetMaskColor {
 	$colorMap{"Z"} = "0,115,42";       # green
 	$colorMap{"B"} = "59,59,59";       # black
 	$colorMap{"W"} = "250,250,250";    #white
-	$colorMap{"M"} = "0,48,153";       #blue
+	$colorMap{"M"} = "0,70,113";       #blue
 	$colorMap{"T"} = "255,255,255";    # ??
-	$colorMap{"R"} = "196,0,0";        # red
+	$colorMap{"R"} = "196,0,28";       # red
 
 	die "Not defined mask color: $pcbMaskVal" unless ( defined $colorMap{$pcbMaskVal} );
 

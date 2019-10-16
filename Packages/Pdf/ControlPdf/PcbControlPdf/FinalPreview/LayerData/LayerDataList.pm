@@ -40,13 +40,10 @@ sub InitLayers {
 	my $self = shift;
 
 	my @pdfLayers = $self->__InitLayers(@_);
-	
+
 	$self->__DisableLayer( \@pdfLayers );
-	
-	@pdfLayers = reverse(@pdfLayers);
 
-	$self->{"layers"} = \@pdfLayers;
-
+	$self->_SetLayers( \@pdfLayers );
 }
 
 # Set surfaces + set special surface effect by layer type
@@ -68,28 +65,55 @@ sub InitSurfaces {
 
 	# 2) Set 3D edge for Cu visible from top side
 	my @CuLayers3D = ();
-	
+
 	if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
-		
-		push(@CuLayers3D, $self->GetLayers( Enums->Type_OUTERCU, Enums->Visible_FROMTOP ));
-		push(@CuLayers3D, $self->GetLayers( Enums->Type_INNERCU, Enums->Visible_FROMTOP ));
-  
+
+		push( @CuLayers3D, $self->GetLayers( Enums->Type_OUTERCU, Enums->Visible_FROMTOP ) );
+		push( @CuLayers3D, $self->GetLayers( Enums->Type_INNERCU, Enums->Visible_FROMTOP ) );
+
 	}
 	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
-		
-		push(@CuLayers3D, $self->GetLayers( Enums->Type_OUTERCU, Enums->Visible_FROMBOT ));
-		push(@CuLayers3D, $self->GetLayers( Enums->Type_INNERCU, Enums->Visible_FROMBOT ));
+
+		push( @CuLayers3D, $self->GetLayers( Enums->Type_OUTERCU, Enums->Visible_FROMBOT ) );
+		push( @CuLayers3D, $self->GetLayers( Enums->Type_INNERCU, Enums->Visible_FROMBOT ) );
 	}
 
 	$_->GetSurface()->Set3DEdges(1) foreach (@CuLayers3D);
-	
-	
+
+	# Set Cu visible through flex core little darker
+	my @CuFromBack = ();
+	if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
+
+		push( @CuFromBack, $self->GetLayers( Enums->Type_OUTERCU, Enums->Visible_FROMBOT ) );
+		push( @CuFromBack, $self->GetLayers( Enums->Type_INNERCU, Enums->Visible_FROMBOT ) );
+
+	}
+	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
+
+		push( @CuFromBack, $self->GetLayers( Enums->Type_OUTERCU, Enums->Visible_FROMTOP ) );
+		push( @CuFromBack, $self->GetLayers( Enums->Type_INNERCU, Enums->Visible_FROMTOP ) );
+	}
+
+	$_->GetSurface()->SetBrightness( $_->GetSurface()->GetBrightness() - 40 ) foreach (@CuFromBack);
+
 	# 3)  Set 3D edge for peealble
-	$_->GetSurface()->Set3DEdges(5)	foreach ($self->GetLayers( Enums->Type_PEELABLE));
+	$_->GetSurface()->Set3DEdges(5) foreach ( $self->GetLayers( Enums->Type_PEELABLE ) );
+
+	# 4) Set 3d Edges for Flexible mask
+	my @flex3D = ();
+	if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
+
+		push( @flex3D, $self->GetLayers( Enums->Type_FLEXMASK, Enums->Visible_FROMTOP ) );
+
+	}
+	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
+
+		push( @flex3D, $self->GetLayers( Enums->Type_FLEXMASK, Enums->Visible_FROMBOT ) );
+	}
+
+	$_->GetSurface()->Set3DEdges(4) foreach (@flex3D);
+
 }
-
-
-
 
 # Return background color of final image
 # if image has white mask, background will be pink
@@ -98,6 +122,7 @@ sub GetBackground {
 
 	my $backg = "255,255,255";    # white
 
+	# 1) If white solder mask, set light blue background
 	my @l =
 	  $self->GetLayers( Enums->Type_MASK, ( $self->{"viewType"} eq Enums->View_FROMTOP ? Enums->Visible_FROMTOP : Enums->Visible_FROMBOT ) );
 
@@ -106,7 +131,20 @@ sub GetBackground {
 
 		if ( $surf->GetType() eq PrevEnums->Surface_COLOR && $surf->GetColor() eq "250,250,250" ) {
 
-			$backg = "153,217,234";    # pink
+			$backg = "153,217,234";    # light blue
+		}
+
+	}
+
+	# 1) If Al core or Cu core from TOP set light blue
+	my @lMat = $self->GetLayers( Enums->Type_RIGIDMATOUTER, Enums->Visible_FROMTOPBOT );
+
+	if ( defined $lMat[0] ) {
+		my $surf = $lMat[0]->GetSurface();
+
+		if ( $surf->GetType() eq PrevEnums->Surface_COLOR && $surf->GetColor() eq "240, 240, 240" ) {
+
+			$backg = "153,217,234";    # light blue
 		}
 
 	}
@@ -142,11 +180,12 @@ sub __InitLayers {
 	my $LDNPltThrough = LayerData->new( Enums->Type_NPLTTHROUGHNC, Enums->Visible_FROMTOPBOT );
 	$LDNPltThrough->AddSingleLayers(
 		grep {
-			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
+			defined $_->{"type"}
+			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_rsMill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot )
 		} @boardL
 	);
 	push( @NCThroughLayers, $LDNPltThrough );
@@ -155,10 +194,11 @@ sub __InitLayers {
 	my $LDPltThrough = LayerData->new( Enums->Type_PLTTHROUGHNC, Enums->Visible_FROMTOPBOT );
 	$LDPltThrough->AddSingleLayers(
 		grep {
-			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
+			defined $_->{"type"}
+			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot )
 		} @boardL
 	);
 	push( @NCThroughLayers, $LDPltThrough );
@@ -166,6 +206,16 @@ sub __InitLayers {
 	@NCThroughLayers = reverse(@NCThroughLayers) if ( $self->{"viewType"} eq Enums->View_FROMBOT );
 
 	# 2) Prepare layers which are visible either from BOT or from TOP
+
+	# POS 8: Type_NPLTDEPTHNC from TOP
+	my $LDNPltDepthTOP = LayerData->new( Enums->Type_NPLTDEPTHNC, Enums->Visible_FROMTOP );
+	$LDNPltDepthTOP->AddSingleLayers(
+		grep {
+			$_->{"type"}
+			  && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score )
+		} @boardL
+	);
+	push( @pdfLayers, $LDNPltDepthTOP );
 
 	# POS 1: Type_STIFFENER from TOP
 	my $LDStiffenerTOP = LayerData->new( Enums->Type_STIFFENER, Enums->Visible_FROMTOP );
@@ -207,35 +257,16 @@ sub __InitLayers {
 	$LDMaskTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^mc$/ } @boardL );
 	push( @pdfLayers, $LDMaskTOP );
 
-	# POS 8: Type_NPLTDEPTHNC from TOP
-	my $LDNPltDepthTOP = LayerData->new( Enums->Type_NPLTDEPTHNC, Enums->Visible_FROMTOP );
-	$LDNPltDepthTOP->AddSingleLayers(
-		grep {
-			$_->{"type"}
-			  && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score )
-		} @boardL
-	);
-	push( @pdfLayers, $LDNPltDepthTOP );
-
 	# POS 8: Type_PLTDEPTHNC from TOP
 	my $LDPltDepthTOP = LayerData->new( Enums->Type_PLTDEPTHNC, Enums->Visible_FROMTOP );
 	$LDPltDepthTOP->AddSingleLayers(
 		grep {
-			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+			defined $_->{"type"}
+			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop )
 		} @boardL
 	);
 	push( @pdfLayers, $LDPltDepthTOP );
-
-	# POS 17: Type_VIAFILL from TOP
-	my $LDViaFillTOP = LayerData->new( Enums->Type_VIAFILL, Enums->Visible_FROMTOP );
-	$LDViaFillTOP->AddSingleLayers(
-		grep {
-			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
-		} @boardL
-	);
-	push( @pdfLayers, $LDViaFillTOP );
 
 	# POS 9.b: Type_OUTERSURFACE from TOP
 	my $LDOuterSurfaceTOP = LayerData->new( Enums->Type_OUTERSURFACE, Enums->Visible_FROMTOP );
@@ -248,11 +279,22 @@ sub __InitLayers {
 	$LDOuterCuTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^c$/ } @boardL );
 	push( @pdfLayers, $LDOuterCuTOP );
 
+	# POS 17: Type_VIAFILL from TOP
+	my $LDViaFillTOP = LayerData->new( Enums->Type_VIAFILL, Enums->Visible_FROMTOP );
+	$LDViaFillTOP->AddSingleLayers(
+		grep {
+			defined $_->{"type"}
+			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop )
+		} @boardL
+	);
+	push( @pdfLayers, $LDViaFillTOP );
+
 	if ( $layerCnt <= 2 ) {
 
 		# For 1v + 2v add one pcb material (flex or rigid)
 
-		my $LDMatOuterTOP = LayerData->new( ( $isFlex ? Enums->Type_RIGIDMATOUTER : Enums->Type_FLEXMATOUTER ), Enums->Visible_FROMTOPBOT );
+		my $LDMatOuterTOP = LayerData->new( ( $isFlex ? Enums->Type_FLEXMATOUTER : Enums->Type_RIGIDMATOUTER ), Enums->Visible_FROMTOPBOT );
 		push( @pdfLayers, $LDMatOuterTOP );
 
 	}
@@ -306,6 +348,17 @@ sub __InitLayers {
 		}
 	}
 
+	# POS 17: Type_VIAFILL from TOP
+	my $LDViaFillBOT = LayerData->new( Enums->Type_VIAFILL, Enums->Visible_FROMBOT );
+	$LDViaFillBOT->AddSingleLayers(
+		grep {
+			defined $_->{"type"}
+			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot )
+		} @boardL
+	);
+	push( @pdfLayers, $LDViaFillBOT );
+
 	# POS 9.c: Type_OUTERCU from BOT
 	my $LDOuterCuBOT = LayerData->new( Enums->Type_OUTERCU, Enums->Visible_FROMBOT );
 	$LDOuterCuBOT->AddSingleLayers( grep { $_->{"gROWname"} eq "s" } @boardL );
@@ -316,35 +369,16 @@ sub __InitLayers {
 	$LDOuterSurfaceBOT->AddSingleLayers( grep { $_->{"gROWname"} eq "s" } @boardL );
 	push( @pdfLayers, $LDOuterSurfaceBOT );
 
-	# POS 17: Type_VIAFILL from TOP
-	my $LDViaFillBOT = LayerData->new( Enums->Type_VIAFILL, Enums->Visible_FROMBOT );
-	$LDViaFillBOT->AddSingleLayers(
-		grep {
-			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
-		} @boardL
-	);
-	push( @pdfLayers, $LDViaFillBOT );
-
 	# POS 8: Type_PLTDEPTHNC from BOT
 	my $LDPltDepthBOT = LayerData->new( Enums->Type_PLTDEPTHNC, Enums->Visible_FROMBOT );
 	$LDPltDepthBOT->AddSingleLayers(
 		grep {
-			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
+			defined $_->{"type"}
+			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot )
 		} @boardL
 	);
 	push( @pdfLayers, $LDPltDepthBOT );
-
-	# POS 8: Type_NPLTDEPTHNC from BOT
-	my $LDNPltDepthBOT = LayerData->new( Enums->Type_NPLTDEPTHNC, Enums->Visible_FROMBOT );
-	$LDNPltDepthBOT->AddSingleLayers(
-		grep {
-			$_->{"type"}
-			  && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score )
-		} @boardL
-	);
-	push( @pdfLayers, $LDNPltDepthBOT );
 
 	# POS 10: Type_MASK from BOT
 	my $LDMaskBOT = LayerData->new( Enums->Type_MASK, Enums->Visible_FROMBOT );
@@ -386,22 +420,45 @@ sub __InitLayers {
 	$LDStiffenerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^stiffs\d*$/ } @boardL );
 	push( @pdfLayers, $LDStiffenerBOT );
 
+	# POS 8: Type_NPLTDEPTHNC from BOT
+	my $LDNPltDepthBOT = LayerData->new( Enums->Type_NPLTDEPTHNC, Enums->Visible_FROMBOT );
+	$LDNPltDepthBOT->AddSingleLayers(
+		grep {
+			$_->{"type"}
+			  && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score )
+		} @boardL
+	);
+	push( @pdfLayers, $LDNPltDepthBOT );
+
 	# If exist coverlays, insert them next by proper Cu layer
 
-	foreach my $l ( grep { $_->{"gROWname"} =~ /^coverlay(\w*)/ } @boardL ) {
+	foreach my $l ( grep { $_->{"gROWlayer_type"} eq "coverlay" } @boardL ) {
 
 		my $sigL = ( $l->{"gROWname"} =~ /^coverlay(\w*)/ )[0];
 
 		# POS 9.f: Type_COVERLAY from TOP or BOT
-		my $side = StackupOperation->GetSideByLayer( $jobId, $sigL, $stackup );
+		my $side;
+
+		if ( $sigL eq "c" ) {
+
+			$side = "top";
+		}
+		elsif ( $sigL eq "s" ) {
+
+			$side = "bot";
+		}
+		else {
+			$side = StackupOperation->GetSideByLayer( $jobId, $sigL, $stackup );
+		}
+
 		my $LDCoverlay = LayerData->new( Enums->Type_COVERLAY, ( $side eq "top" ? Enums->Visible_FROMTOP : Enums->Visible_FROMBOT ) );
 		$LDCoverlay->AddSingleLayers($l);
-
+		$LDCoverlay->AddSingleLayers( grep { defined $_->{"type"} && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) } @boardL );
 		my $idx = first_index {
-			( grep { $_->{"gROWname"} eq $sigL } $_->GetLayers() )[0]
+			( grep { $_->{"gROWname"} eq $sigL } $_->GetSingleLayers() )[0]
 
-			  && (    $_->GetType() eq Enums->Type_OUTERCU
-				   || $_->GetType() eq Enums->Type_OUTERCU )
+			  && (    $_->GetType() eq Enums->Type_INNERCU
+				   || $_->GetType() eq Enums->Type_OUTERSURFACE )
 		}
 		@pdfLayers;
 		splice @pdfLayers, ( $side eq "top" ? $idx : $idx + 1 ), 0, $LDCoverlay;
@@ -468,32 +525,65 @@ sub __DisableLayer {
 			$_->SetIsActive(0) for ( grep { $_->GetVisibleFrom() eq Enums->Visible_FROMTOP } @{$pdfLayers} );
 		}
 
+		$_->SetIsActive(0) for ( grep { $_->GetType() eq Enums->Type_INNERCU || $_->GetType() eq Enums->Type_RIGIDMATINNER } @{$pdfLayers} );
+
 		# Theses layers can by visible from other side (materials are transparent)
 
-		# Include all coverlays
+		# Include all coverlays (because it is transparent)
 		$_->SetIsActive(1) for ( grep { $_->GetType() eq Enums->Type_COVERLAY } @{$pdfLayers} );
 
-		# Include all flex mask
+		# Include all flex mask (because it is transparent)
 		$_->SetIsActive(1) for ( grep { $_->GetType() eq Enums->Type_FLEXMASK } @{$pdfLayers} );
 
-		# Include all flex mask
+		# Include all flex core material (because it is transparent)
 		$_->SetIsActive(1) for ( grep { $_->GetType() eq Enums->Type_FLEXMATINNER || $_->GetType() eq Enums->Type_FLEXMATOUTER } @{$pdfLayers} );
 
-		# Include all Cu on flex cores
+		# Include all Cu on flex cores (because it is transparent)
 		for ( my $i = 0 ; $i < scalar( @{$pdfLayers} ) ; $i++ ) {
 
 			if (    $pdfLayers->[$i]->GetType() eq Enums->Type_FLEXMATINNER
 				 || $pdfLayers->[$i]->GetType() eq Enums->Type_FLEXMATOUTER )
 			{
 
-				if ( $pdfLayers->[ $i - 1 ]->GetType() eq Enums->Type_OUTERCU || $pdfLayers->[ $i - 1 ]->GetType() eq Enums->Type_INNERCU ) {
-					$pdfLayers->[ $i - 1 ]->SetIsActive(1);
+				# Look for top cu
+				for ( my $j = $i - 1 ; $j >= 0 ; $j-- ) {
+
+					if ( $pdfLayers->[$j]->GetType() eq Enums->Type_OUTERCU || $pdfLayers->[$j]->GetType() eq Enums->Type_INNERCU ) {
+						$pdfLayers->[$j]->SetIsActive(1);
+						last;
+					}
 				}
 
-				if ( $pdfLayers->[ $i + 1 ]->GetType() eq Enums->Type_OUTERCU || $pdfLayers->[ $i + 1 ]->GetType() eq Enums->Type_INNERCU ) {
-					$pdfLayers->[ $i + 1 ]->SetIsActive(1);
+				# Look for bot cu
+				for ( my $j = $i + 1 ; $j < scalar( @{$pdfLayers} ) ; $j++ )
+				{
+					if ( $pdfLayers->[$j]->GetType() eq Enums->Type_OUTERCU || $pdfLayers->[$j]->GetType() eq Enums->Type_INNERCU ) {
+						$pdfLayers->[$j]->SetIsActive(1);
+						last;
+					}
 				}
+ 
 			}
+		}
+
+		# Include Rigid material from back of view side, because flex material is transparent
+		if ( $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO ) {
+
+			my $outerCore;
+
+			if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
+
+				$outerCore =
+				  ( grep { $_->GetType() eq Enums->Type_RIGIDMATOUTER && $_->GetVisibleFrom() eq Enums->Visible_FROMBOT } @{$pdfLayers} )[0];
+
+			}
+			elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
+
+				$outerCore =
+				  ( grep { $_->GetType() eq Enums->Type_RIGIDMATOUTER && $_->GetVisibleFrom() eq Enums->Visible_FROMTOP } @{$pdfLayers} )[0];
+			}
+
+			$outerCore->SetIsActive(1) if ($outerCore);
 		}
 	}
 

@@ -9,6 +9,7 @@ package Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerDataLi
 #3th party library
 use strict;
 use warnings;
+use Storable qw(dclone);
 
 #local library
 use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerData';
@@ -56,6 +57,14 @@ sub GetOutputLayers {
 	return grep { $_->OutputLayer() } @{ $self->{"layers"} };
 }
 
+
+sub _SetLayers{
+	my $self   = shift;
+	my $layers = shift;	
+	
+	@{$self->{"layers"}} = reverse(@{$layers}); 
+}
+
 sub _SetColors {
 	my $self   = shift;
 	my $colors = shift;
@@ -63,7 +72,8 @@ sub _SetColors {
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
 		my $surface = $colors->{ $l->GetType() };
-		$l->SetSurface($surface);
+		
+		$l->SetSurface(dclone($surface));
 	}
 
 }

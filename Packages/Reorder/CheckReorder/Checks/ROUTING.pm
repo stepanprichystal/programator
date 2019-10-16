@@ -134,7 +134,7 @@ sub Run {
 
 			if ($stepsOnBridges ==  scalar(@steps)) {
 
-				$self->_AddChange("DPS obsahuje frézu na můstky a zároveň je požadavek na počet kusů větší než 50. Komunikuj s OÚ.");
+				$self->_AddChange("DPS obsahuje frézu na můstky a zároveň požadavek na počet kusů (".$orderInfo{"kusy_pozadavek"}.") je větší než 50. Komunikuj s OÚ.");
 			}
 		}
 

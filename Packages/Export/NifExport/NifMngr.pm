@@ -79,7 +79,7 @@ sub Run {
 
 		$self->{"nifBuilder"} = StencilBuilder->new();
 	}
-	elsif ( $typeCu eq EnumsGeneral->PcbType_1V ) {
+	elsif ( $typeCu eq EnumsGeneral->PcbType_1V || $typeCu eq EnumsGeneral->PcbType_1VFLEX ) {
 
 		$self->{"nifBuilder"} = V1Builder->new();
 	}

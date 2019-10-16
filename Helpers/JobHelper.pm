@@ -44,27 +44,7 @@ sub GetBaseCuThick {
 	return $cuThick;
 }
 
-#return final thick of pcb in µm
-sub GetFinalPcbThick {
-	my $self  = shift;
-	my $jobId = shift;
 
-	my $thick;
-
-	if ( HegMethods->GetBasePcbInfo($jobId)->{"pocet_vrstev"} > 2 ) {
-
-		my $stackup = Stackup->new($jobId);
-
-		$thick = $stackup->GetFinalThick();
-	}
-	else {
-
-		$thick = HegMethods->GetPcbMaterialThick($jobId);
-		$thick = $thick * 1000;
-	}
-
-	return $thick;
-}
 
 #Return 1 if stackup for pcb exist
 sub StackupExist {

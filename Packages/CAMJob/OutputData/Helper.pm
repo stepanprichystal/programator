@@ -92,8 +92,8 @@ sub GetJobLayerTitle {
 		my %en = ();
 		$en{"pc"}    = "Silk screen (top)";
 		$en{"ps"}    = "Silk screen (bot)";
-		$en{"pc2"}    = "Silk screen (top; second)";
-		$en{"ps2"}    = "Silk screen (bot; second)";
+		$en{"pc2"}   = "Silk screen (top; second)";
+		$en{"ps2"}   = "Silk screen (bot; second)";
 		$en{"mc"}    = "Solder mask (top)";
 		$en{"ms"}    = "Solder mask (bot)";
 		$en{"c"}     = "Component layer (top)";
@@ -126,7 +126,34 @@ sub GetJobLayerTitle {
 			$title = $czl{ $l->{"gROWname"} };
 		}
 	}
+	elsif ( $l->{"gROWname"} =~ /^coverlay(\w*)$/i ) {
 
+		# coverlay
+		my $sigLayer = $1;
+		my $sigLayerCz;
+		my $sigLayerEn;
+
+		if ( $sigLayer eq "c" ) {
+			$sigLayerCz = "Strana součástek (top)";
+			$sigLayerEn = "Component layer (top)";
+		}
+		elsif ( $sigLayer eq "s" ) {
+			$sigLayerCz = "Strana spojů (bot)";
+			$sigLayerEn = "Solder layer (bot)";
+		}
+		elsif ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
+
+			my $lNum = $1;
+			$sigLayerCz = "Vnitřní vrstva číslo: $lNum.";
+			$sigLayerEn = "Inner layer number: $lNum.";
+		}
+
+		$title = "Coverlay on " . $sigLayerEn;
+		if ($cz) {
+			$title = "Coverlay na " . $sigLayerCz;
+		}
+	
+	}
 	# nc layers
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
 			|| ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $outputType eq Enums->Type_NCLAYERS ) )

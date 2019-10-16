@@ -163,20 +163,21 @@ sub __ProcessTemplate {
 	my $previewTopPath = shift;
 	my $previewBotPath = shift;
 
-	unless ( -e $previewTopPath ) {
-		die "Error when creating pcb image, view from top.\n";
-	}
-
-	unless ( -e $previewBotPath ) {
-		die "Error when creating pcb image, view from bot.\n";
-	}
+#	unless ( -e $previewTopPath ) {
+#		die "Error when creating pcb image, view from top.\n";
+#	}
+#
+#	unless ( -e $previewBotPath ) {
+#		die "Error when creating pcb image, view from bot.\n";
+#	}
 
 	my $tempPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\PcbControlPdf\\HtmlTemplate\\template.html";
 
 	# Fill data template
 	my $templData = TemplateKey->new();
 
-	$self->{"fillTemplate"}->Fill( $templData, $stackupPath, $previewTopPath, $previewBotPath, $self->{"infoToPdf"} );
+	$self->{"fillTemplate"}->FillKeysData( $templData, $stackupPath, $previewTopPath, $previewBotPath, $self->{"infoToPdf"} );
+	$self->{"fillTemplate"}->FillKeysLayout( $templData );
 
 	my $result = $self->{"template"}->ProcessTemplatePdf( $tempPath, $templData );
 
@@ -252,7 +253,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d251321";
+	my $jobId = "d222769";
 
 	my $mess = ""; 
 
@@ -261,8 +262,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#$control->CreateStackup(\$mess);
 	$control->CreatePreviewTop( \$mess );
-
-	#$control->CreatePreviewBot(\$mess);
+	$control->CreatePreviewBot(\$mess);
 	#$control->CreatePreviewSingle( \$mess );
 	#$control->GeneratePdf();
 

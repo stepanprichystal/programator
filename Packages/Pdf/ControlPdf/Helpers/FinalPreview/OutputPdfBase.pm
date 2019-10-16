@@ -62,7 +62,7 @@ sub _Output {
 	mkdir($dirPath) or die "Can't create dir: " . $dirPath . $_;
 
 	# 1) output all layers together
-	my @layerStr =  map { $_->GetOutputLayer() } @layers;
+	my @layerStr = map { $_->GetOutputLayer() } @layers;
 	my $layerStr = join( "\\;", @layerStr );
 
 	my $multiPdf = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
@@ -96,7 +96,7 @@ sub _Output {
 	# delete helper layers
 	foreach my $lData (@layers) {
 
-		$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
+		#$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
 	}
 
 	# 2) split whole pdf to single pdf
@@ -111,19 +111,19 @@ sub _Output {
 	# 4) merge all images together
 	$self->__MergePng( $layerList, $dirPath );
 
-	# 5) delete temporary png and directory
-	foreach my $l (@layers) {
-		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
-
-			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
-		}
-		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
-
-			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
-		}
-	}
-
-	rmdir($dirPath);
+	#	# 5) delete temporary png and directory
+	#	foreach my $l (@layers) {
+	#		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
+	#
+	#			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
+	#		}
+	#		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
+	#
+	#			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
+	#		}
+	#	}
+	#
+	#	rmdir($dirPath);
 
 }
 
@@ -250,7 +250,7 @@ sub __CreatePng {
 		# command convert pdf to png with specific resolution
 		push( @cmds1, " ( " );
 
-		push( @cmds1, " -density 300" );
+		push( @cmds1, " -density 350" );
 		push( @cmds1, $dirPath . $l->GetOutputLayer() . ".pdf -flatten" );
 		push( @cmds1, "-shave 20x20 -trim -shave 5x5" );                     # shave two borders around image
 		push( @cmds1, "-resize " . $resolution->{"x"} );
@@ -280,8 +280,22 @@ sub __CreatePng {
 
 			push( @cmds2, $texturPath . " -crop " . $resolution->{"x"} . "x" . $resolution->{"y"} . "+0+0" );
 		}
+		
+		# Add brightness
+		if($layerSurf->GetBrightness() != 0){
+			push( @cmds2, " -brightness-contrast " . $layerSurf->GetBrightness() ) ;
+		} 
+		
+		# Add overlay image if exist
+		if ( defined $layerSurf->GetOverlayTexture() ) {
 
-		my $cmds2Str = join( " ", @cmds2 );    # finnal comand cmd2
+			my $overlayPath = GeneralHelper->Root() . "\\Resources\\Textures\\" . $layerSurf->GetOverlayTexture() . ".png";
+			# tadz je to potreba zmensit overlay img, jinak se overlaz spatne orizne
+			$overlayPath .= " -crop " . ($resolution->{"x"}-2) . "x" . ($resolution->{"y"} -2)."+0+0"; 
+			push( @cmds2, $overlayPath . " -gravity center -compose over -composite ");
+		}
+
+		my $cmds2Str = join(" ", @cmds2 );                                                 # finnal comand cmd2
 
 		# 3) ============================================================================================
 		# Cmd3 - merge created canvas/background with copied alpha channel created in cmd1
@@ -295,13 +309,13 @@ sub __CreatePng {
 		my $cmds3Str = join( " ", @cmds3 );    # finnal comand cmd3
 
 		# 4) ============================================================================================
-		# Cmd4 -add brightness, and set transparetnt, set output path
+		# Cmd4 set transparetnt, set output path
 
 		my @cmds4 = ();
 
-		# run 'convert' console application
+		# run 'convert' console application (+antialias prevent wierd horizontal/vertical stripes during conversion pdf2png)
 
-		push( @cmds4, EnumsPaths->Client_IMAGEMAGICK . "convert.exe" );
+		push( @cmds4, EnumsPaths->Client_IMAGEMAGICK . "convert.exe +antialias" );
 
 		#push( @cmds4, "convert" );
 
@@ -309,7 +323,7 @@ sub __CreatePng {
 		push( @cmds4, $cmds3Str );
 		push( @cmds4, " ) " );
 
-		my $brightness = ( $layerSurf->GetBrightness() != 0 ) ? " -brightness-contrast " . $layerSurf->GetBrightness() : "";
+		 
 		my $opaque = "";
 
 		if ( $layerSurf->GetOpaque() < 100 ) {
@@ -336,7 +350,7 @@ sub __CreatePng {
 			$edges3d .= " -compose overlay -composite  ) -compose In -composite   ";
 		}
 
-		push( @cmds4, $brightness );
+ 
 		push( @cmds4, $opaque );
 		push( @cmds4, $edges3d );
 
@@ -353,7 +367,7 @@ sub __CreatePng {
 
 		push( @allCmds, $cmds4Str );
 
-		print $cmds4Str. "\n\n\n";
+		print STDERR "Type:" . $l->GetType() . "\n" . $cmds4Str . "\n\n\n";
 
 	}
 
@@ -404,6 +418,9 @@ sub __MergePng {
 	push( @cmd, $outputTmp );
 
 	my $cmdStr = join( " ", @cmd );
+	
+	print STDERR "Image: ".$self->{""}.", CMD:\n$cmdStr\n";
+	
 
 	my $systeMres = system($cmdStr);
 

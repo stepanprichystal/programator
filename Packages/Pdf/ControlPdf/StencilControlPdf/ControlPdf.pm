@@ -203,7 +203,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f13609";
+	my $jobId = "d251561";
 
 	foreach my $l ( CamJob->GetAllLayers( $inCAM, $jobId ) ) {
 		

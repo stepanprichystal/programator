@@ -46,7 +46,12 @@ use constant {
 	Texture_CU => "cu",
 	Texture_HAL => "hal",
 	Texture_PEELABLE => "peelable",
-	Texture_GRAFIT => "grafit"
+	Texture_GRAFIT => "grafit",
+	Texture_MILLEDRIGID => "milledrigid"
+}; 
+
+use constant {
+	TextureOverlay_MILLING => "millingoverlay"
 }; 
 
 1;
