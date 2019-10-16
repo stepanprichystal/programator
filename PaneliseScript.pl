@@ -1102,7 +1102,11 @@ sub _Panelize {
 							}else{
 									HegMethods->UpdateOrderNotes($jobName, 'Pool-desku neni s cim sloucit - panelizovano samostatne.');
 									my $reference = HegMethods->GetNumberOrder($jobName);
-										HegMethods->UpdatePooling($reference, 0);			
+										HegMethods->UpdatePooling($reference, 0);	
+										
+									unless (HegMethods->GetIdcustomer($jobName) eq '05626') {
+											HegMethods->UpdateOdsouhlasovat($jobName, 'N');
+									}	
 							}
 					}
 									

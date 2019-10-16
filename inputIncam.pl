@@ -484,8 +484,9 @@ sub _Process {
  			
  			$inCAM -> PAUSE('ZKONTROLUJ CLEAN-UP');
  			
+ 			$inCAM -> COM ('save_job',job=>"$pcbId",override=>'no',skip_upgrade=>'no');
  			
- 			
+ 					
  			# Here is check if there is result of 'Surface analyzer' in the green color.
  			while () {
  					if (_CheckREDresult($pcbId)) {
