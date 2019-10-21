@@ -119,7 +119,6 @@ sub __PrepareLayers {
 
 }
 
-# Create layer and fill profile - simulate pcb material
 sub __PrepareRIGIDMAT {
 	my $self  = shift;
 	my $layer = shift;
@@ -153,7 +152,7 @@ sub __PrepareRIGIDMAT {
 	$layer->SetOutputLayer($lName);
 }
 
-# Create layer and fill profile - simulate pcb material
+
 sub __PrepareFLEXMAT {
 	my $self  = shift;
 	my $layer = shift;
@@ -181,7 +180,7 @@ sub __PrepareFLEXMAT {
 	$layer->SetOutputLayer($lName);
 }
 
-# Dont do nothing and export cu layer as is
+
 sub __PrepareOUTERCU {
 	my $self  = shift;
 	my $layer = shift;
@@ -203,7 +202,7 @@ sub __PrepareOUTERCU {
 	}
 }
 
-# Dont do nothing and export cu layer as is
+
 sub __PrepareINNERCU {
 	my $self  = shift;
 	my $layer = shift;
@@ -225,7 +224,7 @@ sub __PrepareINNERCU {
 	}
 }
 
-# Dont do nothing and export cu layer as is
+
 sub __PrepareOUTERSURFACE {
 	my $self  = shift;
 	my $layer = shift;
@@ -274,7 +273,7 @@ sub __PrepareOUTERSURFACE {
 	}
 }
 
-# goldfinger layer
+
 sub __PrepareGOLDFINGER {
 	my $self  = shift;
 	my $layer = shift;
@@ -311,7 +310,7 @@ sub __PrepareGOLDFINGER {
 	}
 }
 
-# grafit layer
+
 sub __PrepareGRAFIT {
 	my $self  = shift;
 	my $layer = shift;
@@ -335,7 +334,7 @@ sub __PrepareGRAFIT {
 	}
 }
 
-# Prepare Peelable mask
+
 sub __PreparePEELABLE {
 	my $self  = shift;
 	my $layer = shift;
@@ -401,7 +400,7 @@ sub __PreparePEELABLE {
 	}
 }
 
-# Invert solder mask
+
 sub __PrepareMASK {
 	my $self  = shift;
 	my $layer = shift;
@@ -491,7 +490,7 @@ sub __PrepareCOVERLAY {
 
 }
 
-# Dont do nothing and export silk as is
+
 sub __PrepareSILK {
 	my $self  = shift;
 	my $layer = shift;
@@ -512,7 +511,7 @@ sub __PrepareSILK {
 	}
 }
 
-# Compensate this layer and resize about 100µm (plating)
+
 sub __PreparePLTDEPTHNC {
 	my $self  = shift;
 	my $layer = shift;
@@ -575,7 +574,7 @@ sub __PreparePLTDEPTHNC {
 
 }
 
-# Compensate this layer and resize about 100µm (plating)
+
 sub __PrepareNPLTDEPTHNC {
 	my $self  = shift;
 	my $layer = shift;
@@ -640,7 +639,7 @@ sub __PrepareNPLTDEPTHNC {
 
 }
 
-# Compensate this layer and resize about 100µm (plating)
+
 sub __PreparePLTTHROUGHNC {
 	my $self  = shift;
 	my $layer = shift;
@@ -714,7 +713,7 @@ sub __PreparePLTTHROUGHNC {
 
 }
 
-# Nonplated layer
+
 sub __PrepareNPLTTHROUGHNC {
 	my $self  = shift;
 	my $layer = shift;
@@ -836,89 +835,10 @@ sub __PrepareNPLTTHROUGHNC {
 
 	}
 
-	#	# compensate
-	#	foreach my $l (@layers) {
-	#
-	#		my %featHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"pdfStep"}, $l->{"gROWname"} );
-	#		next if ( $featHist{"total"} == 0 );
-	#
-	#		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-	#
-	#			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-	#			my $lComp = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-	#
-	#			$inCAM->COM( "merge_layers", "source_layer" => $lComp, "dest_layer" => $lName );
-	#
-	#			$inCAM->COM( 'delete_layer', "layer" => $lComp );
-	#
-	#		}
-	#		else {
-	#
-	#			$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
-	#		}
-	#
-	#		# There can by small remains of pcb material, which is not milled
-	#		# We don't want see this pieces in pdf, so delete tem from layer $lName
-	#		# (pieces larger than 20% of total step area will be keepd)
-	#
-	#		#$inCAM->COM( "merge_layers", "source_layer" => $lName, "dest_layer" => $lTmp );
-	#
-	#		my $unitRTM = UniRTM->new( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l->{"gROWname"}, 0, 0, 1 );
-	#
-	#		my @outFeatsId = map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() } $unitRTM->GetMultiChainSeqList();
-	#
-	#		#my @outline = $unitRTM->GetOutlineChains();
-	#		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
-	#
-	#		CamFilter->SelectByFeatureIndexes( $inCAM, $self->{"jobId"}, \@outFeatsId );
-	#
-	#		$inCAM->COM("sel_reverse");
-	#		my $tmpRout = GeneralHelper->GetGUID();
-	#		$inCAM->COM(
-	#					 "sel_copy_other",
-	#					 "dest"         => "layer_name",
-	#					 "target_layer" => $tmpRout,
-	#					 "invert"       => "no"
-	#		);
-	#
-	#		my $lTmp = CamLayer->RoutCompensation( $inCAM, $tmpRout, "document" );
-	#		$inCAM->COM( 'delete_layer', "layer" => $tmpRout );
-	#
-	#		# 1) do negative of prepared rout layer
-	#		CamLayer->NegativeLayerData( $inCAM, $lTmp, $self->{"profileLim"} );
-	#		CamLayer->WorkLayer( $inCAM, $lTmp );
-	#
-	#		# 2) Select all 'small pieces'/surfaces and copy them negative to $lName
-	#		CamLayer->Contourize( $inCAM, $lTmp );
-	#		CamLayer->WorkLayer( $inCAM, $lTmp );
-	#
-	#		# Select 'surface pieces'
-	#
-	#		my $profileArea =
-	#		  abs( $self->{"profileLim"}->{"xMin"} - $self->{"profileLim"}->{"xMax"} ) *
-	#		  abs( $self->{"profileLim"}->{"yMin"} - $self->{"profileLim"}->{"yMax"} );
-	#
-	#		my $maxArea = $profileArea / 10;    # pieces smaller than 10% of totalaarea will be keeped in pictore
-	#
-	#		if ( CamFilter->BySurfaceArea( $inCAM, 0, $maxArea ) > 0 ) {
-	#			my @layers = ($lName);
-	#			CamLayer->CopySelOtherLayer( $inCAM, \@layers, 0, 0 );
-	#		}
-	#
-	#		$inCAM->COM( 'delete_layer', "layer" => $lTmp );
-	#	}
-
-#	CamLayer->WorkLayer( $inCAM, $lName );
-#	$inCAM->COM(
-#				 "sel_contourize",
-#				 "accuracy"         => "0",
-#				 "break_to_islands" => "yes"
-#	);
-
 	$layer->SetOutputLayer($lName);
 }
 
-# Resize about 100µm (plating)
+
 sub __PrepareVIAFILL {
 	my $self  = shift;
 	my $layer = shift;
@@ -988,6 +908,8 @@ sub __PrepareSTIFFENER {
 
 }
 
+# Prepare negative data of bend area shape to special layer
+# This layer can be used by another function which prepare standard layers
 sub __GetOverlayBendArea {
 	my $self      = shift;
 	my $layerList = shift;
@@ -1078,6 +1000,8 @@ sub __GetOverlayBendArea {
 
 }
 
+# Prepare positive data of covelay area shape to special layer
+# This layer can be used by another function which prepare standard layers
 sub __GetOverlayCoverlays {
 	my $self      = shift;
 	my $layerlist = shift;
@@ -1231,13 +1155,7 @@ sub __OptimizeLayers {
 		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
 	}
 
-	#	$inCAM->COM(
-	#				 "sel_contourize",
-	#				 "accuracy"         => "0",
-	#				 "break_to_islands" => "yes"
-	#	);
-	#	$inCAM->COM(
-	#				 "curve2segs", "curve_seg_tol"=>100);
+ 
 
 	# clip area around profile
 	$inCAM->COM(

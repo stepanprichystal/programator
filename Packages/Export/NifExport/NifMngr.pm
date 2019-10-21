@@ -63,7 +63,7 @@ sub Run {
 	my $self = shift;
 
 	#information necessary for making decision which nif builder use
-	my $typeCu   = JobHelper->GetPcbType(  $self->{"jobId"} );
+	my $typeCu   = JobHelper->GetPcbType( $self->{"jobId"} );
 	my $isPool   = HegMethods->GetPcbIsPool( $self->{"jobId"} );
 	my $pnlExist = CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
 
@@ -75,20 +75,30 @@ sub Run {
 
 		$self->{"nifBuilder"} = V0Builder->new();
 
-	}elsif ( $typeCu eq EnumsGeneral->PcbType_STENCIL ) {
+	}
+	elsif ( $typeCu eq EnumsGeneral->PcbType_STENCIL ) {
 
 		$self->{"nifBuilder"} = StencilBuilder->new();
 	}
-	elsif ( $typeCu eq EnumsGeneral->PcbType_1V || $typeCu eq EnumsGeneral->PcbType_1VFLEX ) {
+	elsif (    $typeCu eq EnumsGeneral->PcbType_1V
+			|| $typeCu eq EnumsGeneral->PcbType_1VFLEX )
+	{
 
 		$self->{"nifBuilder"} = V1Builder->new();
 	}
-	elsif ( $typeCu eq EnumsGeneral->PcbType_2V ) {
+	elsif (    $typeCu eq EnumsGeneral->PcbType_2V
+			|| $typeCu eq EnumsGeneral->PcbType_2VFLEX )
+	{
 
 		$self->{"nifBuilder"} = V2Builder->new();
 
 	}
-	elsif ( $typeCu eq EnumsGeneral->PcbType_MULTI ) {
+	elsif (
+			   $typeCu eq EnumsGeneral->PcbType_MULTI
+			|| $typeCu eq EnumsGeneral->PcbType_RIGIDFLEXO
+			|| $typeCu eq EnumsGeneral->PcbType_RIGIDFLEXI
+	  )
+	{
 
 		$self->{"nifBuilder"} = VVBuilder->new();
 
@@ -159,12 +169,12 @@ sub __Save {
 	#  => copy it to new nif
 
 	my $formerNif = NifFile->new( $self->{"jobId"} );
-	if (    $formerNif->Exist()
+	if ( $formerNif->Exist()
 		 && !scalar( grep { $_->GetName() =~ /Priplatky/i } @sections ) )
 	{
 
 		my @rows = ();
-		if ( $formerNif->GetSection("Priplatky", \@rows ) ) {
+		if ( $formerNif->GetSection( "Priplatky", \@rows ) ) {
 			push( @nif, @rows );
 		}
 	}

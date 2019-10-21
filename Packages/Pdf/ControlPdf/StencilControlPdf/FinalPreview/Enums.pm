@@ -21,6 +21,13 @@ use constant {
  
  
 use constant {
+	Visible_FROMTOP => "visible_fromTop",
+	Visible_FROMBOT => "visible_fromBot",
+	Visible_FROMTOPBOT => "visible_fromTopBot"
+ 
+}; 
+ 
+use constant {
 	Texture_METAL => "metal"
 }; 
 

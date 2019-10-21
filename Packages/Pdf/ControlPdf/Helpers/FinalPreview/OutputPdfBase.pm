@@ -96,7 +96,7 @@ sub _Output {
 	# delete helper layers
 	foreach my $lData (@layers) {
 
-		#$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
+		$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
 	}
 
 	# 2) split whole pdf to single pdf
@@ -111,19 +111,19 @@ sub _Output {
 	# 4) merge all images together
 	$self->__MergePng( $layerList, $dirPath );
 
-	#	# 5) delete temporary png and directory
-	#	foreach my $l (@layers) {
-	#		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
-	#
-	#			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
-	#		}
-	#		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
-	#
-	#			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
-	#		}
-	#	}
-	#
-	#	rmdir($dirPath);
+	# 5) delete temporary png and directory
+	foreach my $l (@layers) {
+		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
+
+			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
+		}
+		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
+
+			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
+		}
+	}
+
+	rmdir($dirPath);
 
 }
 
@@ -280,22 +280,23 @@ sub __CreatePng {
 
 			push( @cmds2, $texturPath . " -crop " . $resolution->{"x"} . "x" . $resolution->{"y"} . "+0+0" );
 		}
-		
+
 		# Add brightness
-		if($layerSurf->GetBrightness() != 0){
-			push( @cmds2, " -brightness-contrast " . $layerSurf->GetBrightness() ) ;
-		} 
-		
+		if ( $layerSurf->GetBrightness() != 0 ) {
+			push( @cmds2, " -brightness-contrast " . $layerSurf->GetBrightness() );
+		}
+
 		# Add overlay image if exist
 		if ( defined $layerSurf->GetOverlayTexture() ) {
 
 			my $overlayPath = GeneralHelper->Root() . "\\Resources\\Textures\\" . $layerSurf->GetOverlayTexture() . ".png";
+
 			# tadz je to potreba zmensit overlay img, jinak se overlaz spatne orizne
-			$overlayPath .= " -crop " . ($resolution->{"x"}-2) . "x" . ($resolution->{"y"} -2)."+0+0"; 
-			push( @cmds2, $overlayPath . " -gravity center -compose over -composite ");
+			$overlayPath .= " -crop " . ( $resolution->{"x"} - 2 ) . "x" . ( $resolution->{"y"} - 2 ) . "+0+0";
+			push( @cmds2, $overlayPath . " -gravity center -compose over -composite " );
 		}
 
-		my $cmds2Str = join(" ", @cmds2 );                                                 # finnal comand cmd2
+		my $cmds2Str = join( " ", @cmds2 );    # finnal comand cmd2
 
 		# 3) ============================================================================================
 		# Cmd3 - merge created canvas/background with copied alpha channel created in cmd1
@@ -323,7 +324,6 @@ sub __CreatePng {
 		push( @cmds4, $cmds3Str );
 		push( @cmds4, " ) " );
 
-		 
 		my $opaque = "";
 
 		if ( $layerSurf->GetOpaque() < 100 ) {
@@ -350,7 +350,6 @@ sub __CreatePng {
 			$edges3d .= " -compose overlay -composite  ) -compose In -composite   ";
 		}
 
- 
 		push( @cmds4, $opaque );
 		push( @cmds4, $edges3d );
 
@@ -418,9 +417,8 @@ sub __MergePng {
 	push( @cmd, $outputTmp );
 
 	my $cmdStr = join( " ", @cmd );
-	
-	print STDERR "Image: ".$self->{""}.", CMD:\n$cmdStr\n";
-	
+
+	print STDERR "Image: " . $self->{""} . ", CMD:\n$cmdStr\n";
 
 	my $systeMres = system($cmdStr);
 

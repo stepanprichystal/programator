@@ -172,11 +172,11 @@ sub __InitLayers {
 	my $stackup   = Stackup->new($jobId) if ( $layerCnt > 2 );
 	my $isFlex    = JobHelper->GetIsFlex($jobId);
 
-	# 1) Prepare layers which are visible either from botsh sides TOP and BOT
+	# 1) Prepare layers which are visible  from both sides TOP and BOT
 
 	my @NCThroughLayers = ();
 
-	# POS 9.f: Type_PLTTHROUGHNC from TOP or BOT
+	# POS 1.f: Type_NPLTTHROUGHNC from TOP or BOT
 	my $LDNPltThrough = LayerData->new( Enums->Type_NPLTTHROUGHNC, Enums->Visible_FROMTOPBOT );
 	$LDNPltThrough->AddSingleLayers(
 		grep {
@@ -190,7 +190,7 @@ sub __InitLayers {
 	);
 	push( @NCThroughLayers, $LDNPltThrough );
 
-	# POS 9.f: Type_PLTTHROUGHNC from TOP or BOT
+	# POS 2.f: Type_PLTTHROUGHNC from TOP or BOT
 	my $LDPltThrough = LayerData->new( Enums->Type_PLTTHROUGHNC, Enums->Visible_FROMTOPBOT );
 	$LDPltThrough->AddSingleLayers(
 		grep {
@@ -217,47 +217,47 @@ sub __InitLayers {
 	);
 	push( @pdfLayers, $LDNPltDepthTOP );
 
-	# POS 1: Type_STIFFENER from TOP
+	# POS 3: Type_STIFFENER from TOP
 	my $LDStiffenerTOP = LayerData->new( Enums->Type_STIFFENER, Enums->Visible_FROMTOP );
 	$LDStiffenerTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^stiffc\d*$/ } @boardL );
 	push( @pdfLayers, $LDStiffenerTOP );
 
-	# POS 2: Type_GRAFIT from TOP
+	# POS 4: Type_GRAFIT from TOP
 	my $LDGraffitTOP = LayerData->new( Enums->Type_GRAFIT, Enums->Visible_FROMTOP );
 	$LDGraffitTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^gc$/ } @boardL );
 	push( @pdfLayers, $LDGraffitTOP );
 
-	# POS 3: Type_PEELABLE from TOP
+	# POS 5: Type_PEELABLE from TOP
 	my $LDPeelableTOP = LayerData->new( Enums->Type_PEELABLE, Enums->Visible_FROMTOP );
 	$LDPeelableTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^lc$/ } @boardL );
 	push( @pdfLayers, $LDPeelableTOP );
 
-	# POS 4: Type_GOLDFINGER from TOP
+	# POS 6: Type_GOLDFINGER from TOP
 	my $LDGoldfingerTOP = LayerData->new( Enums->Type_GOLDFINGER, Enums->Visible_FROMTOP );
 	$LDGoldfingerTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^goldc$/ } @boardL );
 	push( @pdfLayers, $LDGoldfingerTOP );
 
-	# POS 5: Type_SILK2 from TOP
+	# POS 7: Type_SILK2 from TOP
 	my $LDSilk2TOP = LayerData->new( Enums->Type_SILK2, Enums->Visible_FROMTOP );
 	$LDSilk2TOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^pc2$/ } @boardL );
 	push( @pdfLayers, $LDSilk2TOP );
 
-	# POS 6: Type_SILK from TOP
+	# POS 8: Type_SILK from TOP
 	my $LDSilkTOP = LayerData->new( Enums->Type_SILK, Enums->Visible_FROMTOP );
 	$LDSilkTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^pc$/ } @boardL );
 	push( @pdfLayers, $LDSilkTOP );
 
-	# POS 7: Type_FLEXMASK from TOP
+	# POS 9: Type_FLEXMASK from TOP
 	my $LDMaskFlexTOP = LayerData->new( Enums->Type_FLEXMASK, Enums->Visible_FROMTOP );
 	$LDMaskFlexTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^mcflex$/ } @boardL );
 	push( @pdfLayers, $LDMaskFlexTOP );
 
-	# POS 8: Type_MASK from TOP
+	# POS 10: Type_MASK from TOP
 	my $LDMaskTOP = LayerData->new( Enums->Type_MASK, Enums->Visible_FROMTOP );
 	$LDMaskTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^mc$/ } @boardL );
 	push( @pdfLayers, $LDMaskTOP );
 
-	# POS 8: Type_PLTDEPTHNC from TOP
+	# POS 11: Type_PLTDEPTHNC from TOP
 	my $LDPltDepthTOP = LayerData->new( Enums->Type_PLTDEPTHNC, Enums->Visible_FROMTOP );
 	$LDPltDepthTOP->AddSingleLayers(
 		grep {
@@ -268,18 +268,17 @@ sub __InitLayers {
 	);
 	push( @pdfLayers, $LDPltDepthTOP );
 
-	# POS 9.b: Type_OUTERSURFACE from TOP
+	# POS 12: Type_OUTERSURFACE from TOP
 	my $LDOuterSurfaceTOP = LayerData->new( Enums->Type_OUTERSURFACE, Enums->Visible_FROMTOP );
 	$LDOuterSurfaceTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^c$/ } @boardL );
 	push( @pdfLayers, $LDOuterSurfaceTOP );
 
-	# POS 9: Type_OUTERCU; Type_OUTERSURFACE; Type_INNERCU; Type_COVERLAY;
-	# POS 9.a: Type_OUTERCU from TOP
+	# POS 13: Type_OUTERCU from TOP;
 	my $LDOuterCuTOP = LayerData->new( Enums->Type_OUTERCU, Enums->Visible_FROMTOP );
 	$LDOuterCuTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^c$/ } @boardL );
 	push( @pdfLayers, $LDOuterCuTOP );
 
-	# POS 17: Type_VIAFILL from TOP
+	# POS 14: Type_VIAFILL from TOP
 	my $LDViaFillTOP = LayerData->new( Enums->Type_VIAFILL, Enums->Visible_FROMTOP );
 	$LDViaFillTOP->AddSingleLayers(
 		grep {
@@ -290,6 +289,7 @@ sub __InitLayers {
 	);
 	push( @pdfLayers, $LDViaFillTOP );
 
+	# POS 15: Type_FLEXMATOUTER; Type_RIGIDMATOUTER;Type_INNERCU from TOP
 	if ( $layerCnt <= 2 ) {
 
 		# For 1v + 2v add one pcb material (flex or rigid)
@@ -348,7 +348,7 @@ sub __InitLayers {
 		}
 	}
 
-	# POS 17: Type_VIAFILL from TOP
+	# POS 16: Type_VIAFILL from TOP
 	my $LDViaFillBOT = LayerData->new( Enums->Type_VIAFILL, Enums->Visible_FROMBOT );
 	$LDViaFillBOT->AddSingleLayers(
 		grep {
@@ -359,17 +359,17 @@ sub __InitLayers {
 	);
 	push( @pdfLayers, $LDViaFillBOT );
 
-	# POS 9.c: Type_OUTERCU from BOT
+	# POS 17: Type_OUTERCU from BOT
 	my $LDOuterCuBOT = LayerData->new( Enums->Type_OUTERCU, Enums->Visible_FROMBOT );
 	$LDOuterCuBOT->AddSingleLayers( grep { $_->{"gROWname"} eq "s" } @boardL );
 	push( @pdfLayers, $LDOuterCuBOT );
 
-	# POS 9.d: Type_OUTERSURFACE from BOT
+	# POS 18: Type_OUTERSURFACE from BOT
 	my $LDOuterSurfaceBOT = LayerData->new( Enums->Type_OUTERSURFACE, Enums->Visible_FROMBOT );
 	$LDOuterSurfaceBOT->AddSingleLayers( grep { $_->{"gROWname"} eq "s" } @boardL );
 	push( @pdfLayers, $LDOuterSurfaceBOT );
 
-	# POS 8: Type_PLTDEPTHNC from BOT
+	# POS 19: Type_PLTDEPTHNC from BOT
 	my $LDPltDepthBOT = LayerData->new( Enums->Type_PLTDEPTHNC, Enums->Visible_FROMBOT );
 	$LDPltDepthBOT->AddSingleLayers(
 		grep {
@@ -380,47 +380,47 @@ sub __InitLayers {
 	);
 	push( @pdfLayers, $LDPltDepthBOT );
 
-	# POS 10: Type_MASK from BOT
+	# POS 20: Type_MASK from BOT
 	my $LDMaskBOT = LayerData->new( Enums->Type_MASK, Enums->Visible_FROMBOT );
 	$LDMaskBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^ms$/ } @boardL );
 	push( @pdfLayers, $LDMaskBOT );
 
-	# POS 11: Type_FLEXMASK from BOT
+	# POS 21: Type_FLEXMASK from BOT
 	my $LDMaskFlexBOT = LayerData->new( Enums->Type_FLEXMASK, Enums->Visible_FROMBOT );
 	$LDMaskFlexBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^msflex$/ } @boardL );
 	push( @pdfLayers, $LDMaskFlexBOT );
 
-	# POS 12: Type_SILK from BOT
+	# POS 22: Type_SILK from BOT
 	my $LDSilkBOT = LayerData->new( Enums->Type_SILK, Enums->Visible_FROMBOT );
 	$LDSilkBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^ps$/ } @boardL );
 	push( @pdfLayers, $LDSilkBOT );
 
-	# POS 13: Type_SILK2 from BOT
+	# POS 23: Type_SILK2 from BOT
 	my $LDSilk2BOT = LayerData->new( Enums->Type_SILK2, Enums->Visible_FROMBOT );
 	$LDSilk2BOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^ps2$/ } @boardL );
 	push( @pdfLayers, $LDSilk2BOT );
 
-	# POS 14: Type_GOLDFINGER from BOT
+	# POS 24: Type_GOLDFINGER from BOT
 	my $LDGoldfingerBOT = LayerData->new( Enums->Type_GOLDFINGER, Enums->Visible_FROMBOT );
 	$LDGoldfingerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^golds$/ } @boardL );
 	push( @pdfLayers, $LDGoldfingerBOT );
 
-	# POS 15: Type_PEELABLE from BOT
+	# POS 25: Type_PEELABLE from BOT
 	my $LDPeelableBOT = LayerData->new( Enums->Type_PEELABLE, Enums->Visible_FROMBOT );
 	$LDPeelableBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^ls$/ } @boardL );
 	push( @pdfLayers, $LDPeelableBOT );
 
-	# POS 16: Type_GRAFIT from BOT
+	# POS 26: Type_GRAFIT from BOT
 	my $LDGraffitBOT = LayerData->new( Enums->Type_GRAFIT, Enums->Visible_FROMBOT );
 	$LDGraffitBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^gs$/ } @boardL );
 	push( @pdfLayers, $LDGraffitBOT );
 
-	# POS 17: Type_STIFFENER from BOT
+	# POS 27: Type_STIFFENER from BOT
 	my $LDStiffenerBOT = LayerData->new( Enums->Type_STIFFENER, Enums->Visible_FROMBOT );
 	$LDStiffenerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^stiffs\d*$/ } @boardL );
 	push( @pdfLayers, $LDStiffenerBOT );
 
-	# POS 8: Type_NPLTDEPTHNC from BOT
+	# POS 28: Type_NPLTDEPTHNC from BOT
 	my $LDNPltDepthBOT = LayerData->new( Enums->Type_NPLTDEPTHNC, Enums->Visible_FROMBOT );
 	$LDNPltDepthBOT->AddSingleLayers(
 		grep {
@@ -472,6 +472,7 @@ sub __InitLayers {
 
 }
 
+# Make some layer NON active depends of PCB type and view side
 sub __DisableLayer {
 	my $self      = shift;
 	my $pdfLayers = shift;
@@ -555,14 +556,13 @@ sub __DisableLayer {
 				}
 
 				# Look for bot cu
-				for ( my $j = $i + 1 ; $j < scalar( @{$pdfLayers} ) ; $j++ )
-				{
+				for ( my $j = $i + 1 ; $j < scalar( @{$pdfLayers} ) ; $j++ ) {
 					if ( $pdfLayers->[$j]->GetType() eq Enums->Type_OUTERCU || $pdfLayers->[$j]->GetType() eq Enums->Type_INNERCU ) {
 						$pdfLayers->[$j]->SetIsActive(1);
 						last;
 					}
 				}
- 
+
 			}
 		}
 

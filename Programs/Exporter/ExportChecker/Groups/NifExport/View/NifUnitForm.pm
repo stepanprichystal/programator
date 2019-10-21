@@ -140,9 +140,8 @@ sub __SetLayoutSettings {
 
 	my @maskColor = NifHelper->GetPcbMaskColors();
 	push( @maskColor, "" );
-	my @flexMaskColor = grep { $_ =~ /^green$/i } @maskColor;
-	push( @flexMaskColor, "" );
-
+	my @flexMaskColor =  ( "", "GreenUVFlex" );
+  
 	my @silkColor = NifHelper->GetPcbSilkColors();
 	push( @silkColor, "" );
 
@@ -176,10 +175,10 @@ sub __SetLayoutSettings {
 
 	my $silkTop2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top 2",    \@silkColor );
 	my $silkTopCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top",      \@silkColor );
-	my $maskTopBendCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Flex mask top", \@flexMaskColor );
+	my $maskTopBendCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask top flex", \@flexMaskColor );
 	my $maskTopCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask top",      \@maskColor );
 	my $maskBotCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask bot",      \@maskColor );
-	my $maskBotBendCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Flex mask bot", \@flexMaskColor );
+	my $maskBotBendCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask bot flex", \@flexMaskColor );
 	my $silkBotCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk bot",      \@silkColor );
 	my $silkBot2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk bot 2",    \@silkColor );
 
@@ -520,16 +519,16 @@ sub SetFlexi_maska {
 	$self->{"maskBotBendCb"}->SetValue("");
 
 	if ( $value =~ /^c$/i ) {
-		$self->{"maskTopBendCb"}->SetValue("Green");
+		$self->{"maskTopBendCb"}->SetValue("GreenUVFlex");
 	}
 
 	if ( $value =~ /^s$/i ) {
-		$self->{"maskBotBendCb"}->SetValue("Green");
+		$self->{"maskBotBendCb"}->SetValue("GreenUVFlex");
 	}
 
 	if ( $value =~ /^2$/i ) {
-		$self->{"maskTopBendCb"}->SetValue("Green");
-		$self->{"maskBotBendCb"}->SetValue("Green");
+		$self->{"maskTopBendCb"}->SetValue("GreenUVFlex");
+		$self->{"maskBotBendCb"}->SetValue("GreenUVFlex");
 	}
 }
 

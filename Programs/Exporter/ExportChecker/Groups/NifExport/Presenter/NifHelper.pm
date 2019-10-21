@@ -19,7 +19,7 @@ use Wx;
 sub GetPcbMaskColors {
 	my $self = shift;
 
-	my @color = ( "Green", "Black", "White", "Blue", "Red", "Transparent" );
+	my @color = ( "Green", "Black", "White", "Blue", "Red", "GreenSMDFlex", "Transparent" );
 
 	return @color;
 }
@@ -32,20 +32,21 @@ sub GetPcbSilkColors {
 	return @color;
 }
 
-
-
 sub GetColorDef {
 	my $self  = shift;
 	my $color = shift;
 
 	my %colorMap = ();
-	$colorMap{"Green"}       = Wx::Colour->new( 85,  128, 0 );
-	$colorMap{"Black"}       = Wx::Colour->new( 0,   0,   0 );
-	$colorMap{"White"}       = Wx::Colour->new( 255, 255, 255 );
-	$colorMap{"Blue"}        = Wx::Colour->new( 0,   0,   255 );
-	$colorMap{"Transparent"} = Wx::Colour->new( 245, 245, 245 );
-	$colorMap{"Red"}         = Wx::Colour->new( 230, 46,  0 );
-	$colorMap{"Yellow"}      = Wx::Colour->new( 255, 255, 0 );
+	$colorMap{"Green"}         = Wx::Colour->new( 85,  128, 0 );
+	$colorMap{"Black"}         = Wx::Colour->new( 0,   0,   0 );
+	$colorMap{"White"}         = Wx::Colour->new( 255, 255, 255 );
+	$colorMap{"Blue"}          = Wx::Colour->new( 0,   0,   255 );
+	$colorMap{"Transparent"}   = Wx::Colour->new( 245, 245, 245 );
+	$colorMap{"Red"}           = Wx::Colour->new( 230, 46,  0 );
+	$colorMap{"Yellow"}        = Wx::Colour->new( 255, 255, 0 );
+	$colorMap{"GreenSMDFlex"} = Wx::Colour->new( 104,  160, 0 );
+	$colorMap{"GreenUVFlex"} = Wx::Colour->new( 70,  106, 0 );	
+	
 
 	return $colorMap{$color};
 }
@@ -59,4 +60,3 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-

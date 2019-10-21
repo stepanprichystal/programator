@@ -77,7 +77,8 @@ sub Build {
 	push(@req, "poznamka");
 	push(@req, "datacode");
 	push(@req, "ul_logo");
-	push(@req, "2814075"); #maska 0,1mm
+	push(@req, "2814075"); # maska 0,1mm
+	push(@req, "19031137"); # BGA
 	push(@req, "mereni_tolerance_vrtani");
 	push(@req, "prerusovana_drazka");
 	push(@req, "srazeni_hran");

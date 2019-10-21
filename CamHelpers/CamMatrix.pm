@@ -208,7 +208,7 @@ sub GetNonSignalLayerSide {
 	
 	}
 	
-	$$sigRef = $sigL;
+	$$sigRef = $sigL if(defined $sigRef);
 	
 	return $side;
 }

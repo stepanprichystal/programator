@@ -32,14 +32,14 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift;
-	$self->{"pdfStep"} = shift;
-
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"pdfStep"}  = shift;
 	$self->{"viewType"} = shift;    # TOP/BOT
+	$self->{"params"}   = shift;    # Stencil parameters
 
 	$self->{"layerList"} = LayerDataList->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"} );
-	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"} );
+	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"}, $self->{"params"} );
 	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
 
@@ -56,7 +56,7 @@ sub Create {
 
 	# set layer list
 	$self->{"layerList"}->InitLayers( \@layers );
-	$self->{"layerList"}->InitColors( $self->__DefineSurfaces() );
+	$self->{"layerList"}->InitSurfaces( $self->__DefineSurfaces() );
 
 	$self->{"outputPrepare"}->PrepareLayers( $self->{"layerList"} );
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
@@ -156,7 +156,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "f77258";
+	my $jobId = "d259045";
 
 	my $mess = "";
 
@@ -164,7 +164,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	$control->Create();
 
 	#$control->CreateStackup(\$mess);
-	#$control->CreatePreviewTop( \$mess );
+	$control->CreatePreviewTop( \$mess );
 
 	$control->CreatePreviewBot( \$mess );
 

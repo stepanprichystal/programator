@@ -19,6 +19,8 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
@@ -62,7 +64,7 @@ sub Build {
 		$section->AddRow( "ul_logo", $nifData{"ul_logo"} );
 	}
 
-	#rel(22305,L)
+	# Maska 0,1 IS subject number: 2814075
 
 	if ( $self->_IsRequire("2814075") ) {
 
@@ -76,6 +78,47 @@ sub Build {
 
 		$section->AddRow( "rel(22305,L)", $maska );
 	}
+
+	# BGA na desce IS subject number: 19031137
+	if ( $self->_IsRequire("19031137") ) {
+
+		$section->AddComment("BGA");
+
+		my $bga = "-19031137";
+
+		my @bgaLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId, 0, 1 );
+
+		foreach my $s ( CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId ) ) {
+			foreach my $l (@bgaLayers) {
+
+				my %att = CamHistogram->GetAttHistogram( $inCAM, $jobId, $s->{"stepName"}, $l );
+				if ( $att{".bga"} ) {
+					$bga =~ s/-//;
+					last;
+				}
+			}
+
+			last unless ( $bga =~ /-/ );
+		}
+
+		$section->AddRow( "rel(22305,L)", $bga );
+	}
+
+	# Coverlay template. IS subject number: 19031138
+	if ( $self->_IsRequire("19031138") ) {
+
+		$section->AddComment("Coverlay template");
+
+		my $templ = "-19031138";
+
+		if(CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" )){
+			
+			$templ = "19031138";
+		}
+ 
+		$section->AddRow( "rel(22305,L)", $templ );
+	}
+
 
 	#merit_presfitt
 	if ( $self->_IsRequire("merit_presfitt") ) {
@@ -130,22 +173,21 @@ sub Build {
 		$section->AddComment("N - neni; B - vse; C - pouze vybrane");
 		$section->AddRow( "zaplneni_otvoru", $self->__GetViaFillType() );
 	}
- 
-	
-#	#zaplneni_otvoru_STRANA
-#	if ( $self->_IsRequire("zaplneni_otvoru_STRANA") ) {
-#		my $res = "";
-#		
-#		my $side;
-#		if(CamDrilling->GetViaFillExists( $inCAM, $jobId, \$side )){
-#			
-#			$res = "C" if($side eq "top");
-#			$res = "S" if($side eq "bot");
-#			$res = "2" if($side eq "both");
-#		}
-#
-#		$section->AddRow( "zaplneni_otvoru_STRANA", $res );
-#	}
+
+	#	#zaplneni_otvoru_STRANA
+	#	if ( $self->_IsRequire("zaplneni_otvoru_STRANA") ) {
+	#		my $res = "";
+	#
+	#		my $side;
+	#		if(CamDrilling->GetViaFillExists( $inCAM, $jobId, \$side )){
+	#
+	#			$res = "C" if($side eq "top");
+	#			$res = "S" if($side eq "bot");
+	#			$res = "2" if($side eq "both");
+	#		}
+	#
+	#		$section->AddRow( "zaplneni_otvoru_STRANA", $res );
+	#	}
 }
 
 sub __PrepareNote {
@@ -201,22 +243,17 @@ sub __GetViaFillType {
 	# 3) Test if not all via hole are filed
 
 	if ($viaFill) {
-		my $l = [ EnumsGeneral->LAYERTYPE_plt_nDrill, 
-		EnumsGeneral->LAYERTYPE_plt_bDrillTop,
-		EnumsGeneral->LAYERTYPE_plt_bDrillBot
-		];
+		my $l = [ EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_bDrillTop, EnumsGeneral->LAYERTYPE_plt_bDrillBot ];
 
 		# if via fill layer exist and "standard not via fill" it means, not all via are filled
-		if(CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $l )){
-			
+		if ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $l ) ) {
+
 			$type = "C";
 		}
 	}
-	
+
 	return $type;
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -166,7 +166,6 @@ sub __DefineSurfaces {
 
 	# Outer cu
 	my $outerCuClr = LayerColor->new( PrevEnums->Surface_COLOR, "232,141,77" );
-  
 
 	$clrs{ Enums->Type_OUTERCU } = $outerCuClr;
 
@@ -216,35 +215,46 @@ sub __DefineSurfaces {
 	$clrs{ Enums->Type_GRAFIT } = $grafitClr;
 
 	# Mask color
-	my $clrRGB = $self->__GetMaskColor();
-	my $maskClr = LayerColor->new( PrevEnums->Surface_COLOR, $clrRGB );
-
-	# Set opaque for different color
-	if ( $clrRGB eq "250,250,250" ) {
-
-		# White
-
-		$maskClr->SetOpaque(92);
-	}
-	elsif ( $clrRGB eq "59,59,59" ) {
-
-		# Blask
-
-		$maskClr->SetOpaque(89);
-	}
-	elsif ( $clrRGB eq "0,70,113" ) {
-
-		# Blue
-
-		$maskClr->SetOpaque(85);
-	}
-	else {
-		# other
-
-		$maskClr->SetOpaque(70);
-	}
-
+	my ( $clrKey, $clrRGB ) = $self->__GetMaskColor();
+	my $maskClr = LayerColor->new( PrevEnums->Surface_COLOR );
 	$clrs{ Enums->Type_MASK } = $maskClr;
+
+	if ( defined $clrKey ) {
+
+		$maskClr->SetColor($clrRGB);
+
+		# Set opaque for different color
+		if ( $clrKey eq "W" ) {
+
+			# White
+
+			$maskClr->SetOpaque(92);
+		}
+		elsif ( $clrKey eq "B" ) {
+
+			# Black
+
+			$maskClr->SetOpaque(89);
+		}
+		elsif ( $clrKey eq "M" ) {
+
+			# Blue
+
+			$maskClr->SetOpaque(85);
+		}
+		elsif ( $clrKey eq "G" ) {
+
+			# Green SMD Flex
+
+			$maskClr->SetOpaque(45);
+		}
+		else {
+			# other
+
+			$maskClr->SetOpaque(70);
+		}
+
+	}
 
 	# Pcb Flex Mask color
 
@@ -265,13 +275,23 @@ sub __DefineSurfaces {
 
 	# Silk color
 
-	my $silkClr = LayerColor->new( PrevEnums->Surface_COLOR, $self->__GetSilkColor() );
+	my ( $silkClrKey, $silkClrRGB ) = $self->__GetSilkColor();
+	my $silkClr = LayerColor->new( PrevEnums->Surface_COLOR );
 	$clrs{ Enums->Type_SILK } = $silkClr;
+
+	if ( defined $silkClrKey ) {
+		$silkClr->SetColor($silkClrRGB);
+	}
 
 	# Silk color 2 (second selkscreen)
 
-	my $silkClr2 = LayerColor->new( PrevEnums->Surface_COLOR, $self->__GetSilkColor(1) );
-	$clrs{ Enums->Type_SILK2 } = $silkClr2;
+	my ( $silk2ClrKey, $silk2ClrRGB ) = $self->__GetSilkColor(1);
+	my $silk2Clr = LayerColor->new( PrevEnums->Surface_COLOR );
+	$clrs{ Enums->Type_SILK2 } = $silk2Clr;
+
+	if ( defined $silk2ClrKey ) {
+		$silk2Clr->SetColor($silk2ClrRGB);
+	}
 
 	# Depth NC plated - same as surface but dareker
 
@@ -350,20 +370,21 @@ sub __GetMaskColor {
 	}
 
 	unless ($pcbMaskVal) {
-		return "";
+		return ();
 	}
 
 	my %colorMap = ();
 	$colorMap{"Z"} = "0,115,42";       # green
 	$colorMap{"B"} = "59,59,59";       # black
-	$colorMap{"W"} = "250,250,250";    #white
-	$colorMap{"M"} = "0,70,113";       #blue
+	$colorMap{"W"} = "250,250,250";    # white
+	$colorMap{"M"} = "0,70,113";       # blue
 	$colorMap{"T"} = "255,255,255";    # ??
 	$colorMap{"R"} = "196,0,28";       # red
+	$colorMap{"G"} = "0,100,11";       # green SD
 
 	die "Not defined mask color: $pcbMaskVal" unless ( defined $colorMap{$pcbMaskVal} );
 
-	return $colorMap{$pcbMaskVal};
+	return ( $pcbMaskVal, $colorMap{$pcbMaskVal} );
 }
 
 sub __GetSilkColor {
@@ -384,7 +405,7 @@ sub __GetSilkColor {
 	}
 
 	unless ($pcbSilkVal) {
-		return "";
+		return ();
 	}
 
 	my %colorMap = ();
@@ -392,7 +413,7 @@ sub __GetSilkColor {
 	$colorMap{"Z"} = "255,247,0";      #yellow
 	$colorMap{"C"} = "74,74,74";       # black
 
-	return $colorMap{$pcbSilkVal};
+	return ( $pcbSilkVal, $colorMap{$pcbSilkVal} );
 }
 
 # go through board layers, and if there is gold_plating attribute, add .gold_plating => 1, to layer

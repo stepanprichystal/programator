@@ -24,7 +24,6 @@ use aliased 'Helpers::ValueConvertor';
 use aliased 'Helpers::Translator';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'CamHelpers::CamAttributes';
-use aliased 'Programs::Stencil::StencilSerializer::StencilSerializer';
 use aliased 'Programs::Stencil::StencilCreator::Enums'           => 'StnclEnums';
 use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper' => 'StnclHelper';
 
@@ -39,6 +38,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"params"}   = shift;    # Stencil parameters
 
 	return $self;
 }
@@ -53,9 +53,7 @@ sub Fill {
 	my $jobId = $self->{"jobId"};
 
 	# Load info about pcb
-
-	my $ser    = StencilSerializer->new( $self->{"jobId"} );
-	my $params = $ser->LoadStenciLParams();
+ 
 	my %inf    = StnclHelper->GetStencilInfo( $self->{"jobId"} );
 
 	my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );    # zakaznicke sady
@@ -94,14 +92,14 @@ sub Fill {
 	$template->SetKey( "Dimension", "Dimension", "Rozměry" );
 
 	my $dim =
-	    sprintf( "%0.1f mm", $params->GetStencilSizeX() ) . " x "
-	  . sprintf( "%0.1f mm", $params->GetStencilSizeY() ) . " x "
-	  . sprintf( "%0.3f mm", $params->GetThickness() );
+	    sprintf( "%0.1f mm", $self->{"params"}->GetStencilSizeX() ) . " x "
+	  . sprintf( "%0.1f mm", $self->{"params"}->GetStencilSizeY() ) . " x "
+	  . sprintf( "%0.3f mm", $self->{"params"}->GetThickness() );
 	$template->SetKey( "DimensionVal", $dim );
 
 	$template->SetKey( "PutIntoFrame", "Stick into frame", "Vlepit do rámu" );
 
-	my $frame = $params->GetSchema()->{"type"} eq StnclEnums->Schema_FRAME ? 1 : 0;
+	my $frame = $self->{"params"}->GetSchema()->{"type"} eq StnclEnums->Schema_FRAME ? 1 : 0;
 	$template->SetKey( "PutIntoFrameVal", $frame ? "Yes, using squeegee from readable side" : "No", $frame ? "Ano, pohyb stěrky z čitelné strany" : "Ne" );
 
 	$template->SetKey( "Technology", "Technology", "Technologie" );
@@ -126,7 +124,7 @@ sub Fill {
 
 	$template->SetKey( "Fiducials", "Fiducial marks", "Fiduciální značky" );
 
-	my $fiducInf    = $params->GetFiducial();
+	my $fiducInf    = $self->{"params"}->GetFiducial();
 	my $fiducTextEn = "";
 	my $fiducTextCz = "";
 
@@ -154,14 +152,14 @@ sub Fill {
 	
 	my $typeEn = "";
 	my $typeCz = "";
-	if($params->GetStencilType() eq StnclEnums->StencilType_TOP){
+	if($self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP){
 		$typeEn = "For TOP pcb side";
 		$typeCz = "Pro vrchní TOP stranu dps";
 	
-	}elsif($params->GetStencilType() eq StnclEnums->StencilType_BOT){
+	}elsif($self->{"params"}->GetStencilType() eq StnclEnums->StencilType_BOT){
 		$typeEn = "For BOTTOM pcb side";
 		$typeCz = "Pro spodní BOT stranu pcb ";
-	}elsif($params->GetStencilType() eq StnclEnums->StencilType_TOPBOT){
+	}elsif($self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT){
 		$typeEn = "For TOP+BOTTOM pcb side";
 		$typeCz = "Pro vrchní TOP + spodní BOT stranu dps";
 	}
@@ -174,13 +172,13 @@ sub Fill {
 	my $sourceTypeEn = "";
 	my $sourceTypeCz = "";
 	
-	if($params->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA){
+	if($self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA){
 		$sourceTypeEn = "Customer data";
 		$sourceTypeCz = "Dodáno zákazníkem";
 	
-	}elsif($params->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
-		$sourceTypeEn = "Order - ".$params->GetDataSource()->{"sourceJob"}.($params->GetDataSource()->{"sourceJobIsPool"}?" (POOL)":"");
-		$sourceTypeCz = "Zakázka - ".$params->GetDataSource()->{"sourceJob"}.($params->GetDataSource()->{"sourceJobIsPool"}?" (POOL)":"");
+	}elsif($self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
+		$sourceTypeEn = "Order - ".$self->{"params"}->GetDataSource()->{"sourceJob"}.($self->{"params"}->GetDataSource()->{"sourceJobIsPool"}?" (POOL)":"");
+		$sourceTypeCz = "Zakázka - ".$self->{"params"}->GetDataSource()->{"sourceJob"}.($self->{"params"}->GetDataSource()->{"sourceJobIsPool"}?" (POOL)":"");
 	} 
 	
 	$template->SetKey( "SourceTypeVal", $sourceTypeEn, $sourceTypeCz );
@@ -203,7 +201,7 @@ sub SetDataSource {
  	my $legendProfEn = "";
  	my $legendProfCz = "";
  
- 	if($params->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
+ 	if($self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
 		$legendProfEn = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\profile.png" /> pcb profile';
 		$legendProfCz = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\profile.png" /> profil dps';
  	}
@@ -213,7 +211,7 @@ sub SetDataSource {
 	my $legendDataEn = "";
  	my $legendDataCz = "";
 	
-	if($params->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
+	if($self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
 	 	$legendDataEn = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\data.png" /> stencil data limits';
 		$legendDataCz = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\data.png" /> ohraničení plošek šablony';
 	}

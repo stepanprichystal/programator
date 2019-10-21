@@ -163,13 +163,13 @@ sub __ProcessTemplate {
 	my $previewTopPath = shift;
 	my $previewBotPath = shift;
 
-#	unless ( -e $previewTopPath ) {
-#		die "Error when creating pcb image, view from top.\n";
-#	}
-#
-#	unless ( -e $previewBotPath ) {
-#		die "Error when creating pcb image, view from bot.\n";
-#	}
+	unless ( -e $previewTopPath ) {
+		die "Error when creating pcb image, view from top.\n";
+	}
+
+	unless ( -e $previewBotPath ) {
+		die "Error when creating pcb image, view from bot.\n";
+	}
 
 	my $tempPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\PcbControlPdf\\HtmlTemplate\\template.html";
 
@@ -253,7 +253,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d222769";
+	my $jobId = "d260205";
 
 	my $mess = ""; 
 
@@ -263,10 +263,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#$control->CreateStackup(\$mess);
 	$control->CreatePreviewTop( \$mess );
 	$control->CreatePreviewBot(\$mess);
-	#$control->CreatePreviewSingle( \$mess );
-	#$control->GeneratePdf();
+	$control->CreatePreviewSingle( \$mess );
+	$control->GeneratePdf();
 
-	#$control->GetOutputPath();
+	$control->GetOutputPath();
 
 }
 

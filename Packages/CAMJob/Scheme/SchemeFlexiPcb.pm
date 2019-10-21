@@ -214,61 +214,110 @@ sub AddFlexiCoreFrame {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	my $frameAttr    = "flexicore_frame";
-	my $frameWidthLR = 18;                  # 18mm of copper frame on left and right
-	my $frameWidthTB = 25;                  # 25 mm of copper frame on top and bot
+	return 0 if ( !JobHelper->GetIsFlex($jobId) );
 
-	my $schemeFrame = SchemeFrame->new( $inCAM, $jobId );
+	my $frameAttr = "flexicore_frame";
+	my $frameWidthLR;                     # 18mm of copper frame on left and right
+	my $frameWidthTB;                     # 25 mm of copper frame on top and bot
 
 	my $type = JobHelper->GetPcbType($jobId);
 
-	if ( !( JobHelper->GetIsFlex($jobId) && ( $type eq EnumsGeneral->PcbType_RIGIDFLEXO || $type eq EnumsGeneral->PcbType_RIGIDFLEXI ) )
-	  )
-	{
-		return 0;
+	my @layers = ();
+
+	if ( $type eq EnumsGeneral->PcbType_1VFLEX || $type eq EnumsGeneral->PcbType_2VFLEX ) {
+
+		push( @layers, { "side" => "top", "polarity" => "positive", "name" => "c" } );
+		push( @layers, { "side" => "bot", "polarity" => "positive", "name" => "s" } );
+
+		$frameWidthLR = 12;               # 18mm of copper frame on left and right
+		$frameWidthTB = 12;               # 25 mm of copper frame on top and bot
+
 	}
+	elsif ( $type eq EnumsGeneral->PcbType_RIGIDFLEXO || $type eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
 
-	my $stackup = Stackup->new($jobId);
-	my @layers  = ();
+		my $stackup = Stackup->new($jobId);
 
-	foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
+		foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
 
-		push( @layers, $c->GetTopCopperLayer()->GetCopperName() );
-		push( @layers, $c->GetBotCopperLayer()->GetCopperName() );
+			my $topCopper = $c->GetTopCopperLayer()->GetCopperName();
+			my $botCopper = $c->GetBotCopperLayer()->GetCopperName();
+
+			push(
+				  @layers,
+				  {
+					 "side"     => "top",
+					 "polarity" => CamMatrix->GetLayerPolarity( $inCAM, $jobId, $topCopper ),
+					 "name"     => $topCopper
+				  }
+			) if ( $topCopper ne "c" );
+
+			push(
+				  @layers,
+				  {
+					 "side"     => "bot",
+					 "polarity" => CamMatrix->GetLayerPolarity( $inCAM, $jobId, $botCopper ),
+					 "name"     => $botCopper
+				  }
+			) if ( $topCopper ne "s" );
+		}
+
+		$frameWidthLR = 16;    # 18mm of copper frame on left and right
+		$frameWidthTB = 23;
 	}
 
 	foreach my $l (@layers) {
 
-		# look for
+		my $polarity = CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l->{"name"} );
 
-		my $polarity = CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l );
+		CamSymbol->AddCurAttribute( $inCAM, $jobId, $frameAttr );
+
+		$inCAM->COM(
+			"sr_fill",
+			"type"       => "solid",
+			"solid_type" => "surface",
+
+			"polarity" => $l->{"polarity"} eq "positive" ? "negative" : "positive",
+			"step_max_dist_x" => $frameWidthLR,
+			"step_max_dist_y" => $frameWidthTB,
+			"consider_feat"   => "yes",
+			"feat_margin"     => "0",
+			"dest"            => "layer_name",
+			"layer"           => $l->{"name"},
+			"attributes"      => "yes"
+		);
 
 		$inCAM->COM(
 					 "sr_fill",
-					 "type"            => "solid",
-					 "solid_type"      => "surface",
-					 "polarity"        => $polarity,
-					 "step_max_dist_x" => $frameWidthLR,
-					 "step_max_dist_y" => $frameWidthTB,
-					 "consider_feat"   => "yes",
-					 "feat_margin"     => "0",
-					 "dest"            => "layer_name",
-					 "layer"           => $l,
-					 "attributes"      => "yes"
+					 "type"                    => "predefined_pattern",
+					 "predefined_pattern_type" => "cross_hatch",
+					 "indentation"             => $l->{"side"} eq "top" ? "odd" : "even",
+					 "cross_hatch_angle"       => "45",
+					 "cross_hatch_witdh"       => "1200",
+					 "cross_hatch_dist"        => "2600",
+					 "polarity"                => $l->{"polarity"},
+					 "step_max_dist_x"         => $frameWidthLR,
+					 "step_max_dist_y"         => $frameWidthTB,
+					 "consider_feat"           => "yes",
+					 "feat_margin"             => "0.5",
+					 "dest"                    => "layer_name",
+					 "layer"                   => $l->{"name"},
+					 "attributes"              => "yes",
+					 "cut_prims"               => "no"
 		);
+		CamSymbol->ResetCurAttributes($inCAM);
 
-		CamLayer->WorkLayer( $inCAM, $l );
+		CamLayer->WorkLayer( $inCAM, $l->{"name"} );
 
-		# Set core frame attribute
-		# surface area has about 20000mm2
-		if ( CamFilter->BySurfaceArea( $inCAM, 1000, 30000 ) ) {
-
-			CamAttributes->SetFeatuesAttribute( $inCAM, $frameAttr, "" );
-
-		}
-		else {
-			die "Copper frame for flex core was not detected for layer:$l";
-		}
+		#			# Set core frame attribute
+		#			# surface area has about 20000mm2
+		#			if ( CamFilter->BySurfaceArea( $inCAM, 1000, 30000 ) ) {
+		#
+		#				CamAttributes->SetFeatuesAttribute( $inCAM, $frameAttr, "" );
+		#
+		#			}
+		#			else {
+		#				die "Copper frame for flex core was not detected for layer:" . $l->{"name"};
+		#			}
 
 		# look for place for drilled pcb without copper and add coper
 
@@ -276,7 +325,6 @@ sub AddFlexiCoreFrame {
 
 			$inCAM->COM("sel_invert");
 		}
-
 	}
 
 	CamLayer->ClearLayers($inCAM);
@@ -284,90 +332,90 @@ sub AddFlexiCoreFrame {
 }
 
 # If any flex inner layer contain coverlay, remove pattern fill from copper layer
-sub ReplacePatternFillFlexiCore {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-
-	my $result = 1;
-
-	return 0 unless ( JobHelper->GetIsFlex($jobId) );
-
-	my $flexType = JobHelper->GetPcbType($jobId);
-
-	return 0 if ( !( $flexType eq EnumsGeneral->PcbType_RIGIDFLEXO || $flexType eq EnumsGeneral->PcbType_RIGIDFLEXI ) );
-
-	CamHelper->SetStep( $inCAM, "panel" );
-
-	my @nestStep = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
-
-	my $stackup = Stackup->new($jobId);
-	my @layers  = ();
-
-	foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
-
-		push( @layers, $c->GetTopCopperLayer()->GetCopperName() );
-		push( @layers, $c->GetBotCopperLayer()->GetCopperName() );
-	}
-
-	foreach my $l (@layers) {
-
-		# Inner layer with coverlay
-		if ( $l =~ /^v\d$/ && CamHelper->LayerExists( $inCAM, $jobId, "coverlay" . $l ) ) {
-
-			CamLayer->WorkLayer( $inCAM, $l );
-
-			my $f = FeatureFilter->new( $inCAM, $jobId, $l );
-
-			$f->AddIncludeAtt(".pattern_fill");
-			$f->AddExcludeAtt("flexicore_frame");    # there is fcopper core at flexi cores - do not delete it
-
-			if ( CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l ) eq "positive" ) {
-				$f->SetPolarity( FilterEnums->Polarity_POSITIVE );
-			}
-			else {
-				$f->SetPolarity( FilterEnums->Polarity_NEGATIVE );
-			}
-
-			if ( $f->Select() ) {
-				$inCAM->COM("sel_delete");
-
-				# Put new special schema "Cross hatch" for flex layer
-				$inCAM->COM(
-							 "sr_fill",
-							 "type"                    => "predefined_pattern",
-							 "predefined_pattern_type" => "cross_hatch",
-							 "indentation"             => "even",
-							 "cross_hatch_angle"       => "45",
-							 "cross_hatch_witdh"       => "500",
-							 "cross_hatch_dist"        => "2000",
-							 "step_margin_x"           => "8",
-							 "step_margin_y"           => "27",
-							 "step_max_dist_x"         => "555",
-							 "step_max_dist_y"         => "555",
-							 "sr_margin_x"             => "2.5",
-							 "sr_margin_y"             => "2.5",
-							 "sr_max_dist_x"           => "555",
-							 "sr_max_dist_y"           => "555",
-							 "consider_feat"           => "yes",
-							 "feat_margin"             => "1",
-							 "consider_drill"          => "yes",
-							 "drill_margin"            => "1",
-							 "consider_rout"           => "no",
-							 "dest"                    => "layer_name",
-							 "layer"                   => $l,
-							 "stop_at_steps"           => join( ";", @nestStep )
-				);
-			}
-			else {
-
-				die "No pattern fill was found in inner layer:$l, step panel: panel";
-			}
-
-		}
-	}
-
-}
+#sub ReplacePatternFillFlexiCore {
+#	my $self  = shift;
+#	my $inCAM = shift;
+#	my $jobId = shift;
+#
+#	my $result = 1;
+#
+#	return 0 unless ( JobHelper->GetIsFlex($jobId) );
+#
+#	my $flexType = JobHelper->GetPcbType($jobId);
+#
+#	return 0 if ( !( $flexType eq EnumsGeneral->PcbType_RIGIDFLEXO || $flexType eq EnumsGeneral->PcbType_RIGIDFLEXI ) );
+#
+#	CamHelper->SetStep( $inCAM, "panel" );
+#
+#	my @nestStep = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+#
+#	my $stackup = Stackup->new($jobId);
+#	my @layers  = ();
+#
+#	foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
+#
+#		push( @layers, $c->GetTopCopperLayer()->GetCopperName() );
+#		push( @layers, $c->GetBotCopperLayer()->GetCopperName() );
+#	}
+#
+#	foreach my $l (@layers) {
+#
+#		# Inner layer with coverlay
+#		if ( $l =~ /^v\d$/ && CamHelper->LayerExists( $inCAM, $jobId, "coverlay" . $l ) ) {
+#
+#			CamLayer->WorkLayer( $inCAM, $l );
+#
+#			my $f = FeatureFilter->new( $inCAM, $jobId, $l );
+#
+#			$f->AddIncludeAtt(".pattern_fill");
+#			$f->AddExcludeAtt("flexicore_frame");    # there is fcopper core at flexi cores - do not delete it
+#
+#			if ( CamMatrix->GetLayerPolarity( $inCAM, $jobId, $l ) eq "positive" ) {
+#				$f->SetPolarity( FilterEnums->Polarity_POSITIVE );
+#			}
+#			else {
+#				$f->SetPolarity( FilterEnums->Polarity_NEGATIVE );
+#			}
+#
+#			if ( $f->Select() ) {
+#				$inCAM->COM("sel_delete");
+#
+#				# Put new special schema "Cross hatch" for flex layer
+#				$inCAM->COM(
+#							 "sr_fill",
+#							 "type"                    => "predefined_pattern",
+#							 "predefined_pattern_type" => "cross_hatch",
+#							 "indentation"             => "even",
+#							 "cross_hatch_angle"       => "45",
+#							 "cross_hatch_witdh"       => "500",
+#							 "cross_hatch_dist"        => "2000",
+#							 "step_margin_x"           => "8",
+#							 "step_margin_y"           => "27",
+#							 "step_max_dist_x"         => "555",
+#							 "step_max_dist_y"         => "555",
+#							 "sr_margin_x"             => "2.5",
+#							 "sr_margin_y"             => "2.5",
+#							 "sr_max_dist_x"           => "555",
+#							 "sr_max_dist_y"           => "555",
+#							 "consider_feat"           => "yes",
+#							 "feat_margin"             => "1",
+#							 "consider_drill"          => "yes",
+#							 "drill_margin"            => "1",
+#							 "consider_rout"           => "no",
+#							 "dest"                    => "layer_name",
+#							 "layer"                   => $l,
+#							 "stop_at_steps"           => join( ";", @nestStep )
+#				);
+#			}
+#			else {
+#
+#				die "No pattern fill was found in inner layer:$l, step panel: panel";
+#			}
+#
+#		}
+#	}
+#
+#}
 
 sub AddCoverlayRegisterHoles {
 	my $self  = shift;
@@ -534,11 +582,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152456";
+	my $jobId = "d222773";
 
 	my $mess = "";
 
-	my $result = SchemeFlexiPcb->AddCoverlayRegisterMarks( $inCAM, $jobId, "panel" );
+	my $result = SchemeFlexiPcb->AddFlexiCoreFrame( $inCAM, $jobId, "panel" );
 
 	print STDERR "Result is: $result, error message: $mess\n";
 
