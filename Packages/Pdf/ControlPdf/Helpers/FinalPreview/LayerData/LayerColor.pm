@@ -44,12 +44,14 @@ sub new {
 	unless ( defined $self->{"opaque"} ) {
 		$self->{"opaque"} = 100;
 	}
-	
+
 	$self->{"3DEdges"} = shift;
 
 	unless ( defined $self->{"3DEdges"} ) {
 		$self->{"3DEdges"} = 0;
-	}	
+	}
+
+	$self->{"overlay"} = shift;    # allow place overlay image over basic colored/textured canvas
 
 	return $self;
 }
@@ -88,6 +90,19 @@ sub SetTexture {
 	$self->{"texture"} = shift;
 }
 
+sub GetOverlayTexture {
+	my $self        = shift;
+	my $overlayName = shift;    # Physic name of overlay texture
+
+	return $self->{"overlay"};
+}
+
+sub SetOverlayTexture {
+	my $self = shift;
+
+	$self->{"overlay"} = shift;
+}
+
 sub GetBrightness {
 	my $self = shift;
 
@@ -122,7 +137,7 @@ sub Get3DEdges {
 # 0 - no edges
 # > 0 - value of blur ("sharbness of edge" 1-9)
 sub Set3DEdges {
-	my $self = shift; 
+	my $self = shift;
 
 	$self->{"3DEdges"} = shift;
 }

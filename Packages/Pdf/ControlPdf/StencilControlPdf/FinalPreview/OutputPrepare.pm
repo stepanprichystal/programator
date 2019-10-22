@@ -28,7 +28,6 @@ use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputData::Helper';
-use aliased 'Programs::Stencil::StencilSerializer::StencilSerializer';
 use aliased 'Programs::Stencil::StencilCreator::Enums' => 'StnclEnums';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolLib::DimV1In';
@@ -46,16 +45,13 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"viewType"} = shift;
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
+	$self->{"viewType"} = shift;
 	$self->{"pdfStep"}  = shift;
+	$self->{"params"}   = shift;    # Stencil parameters
 
-	$self->{"profileLim"} = undef;    # limts of pdf step
-
-	# Load deserialiyed stencil parameters
-	my $ser = StencilSerializer->new( $self->{"jobId"} );
-	$self->{"params"} = $ser->LoadStenciLParams();
+	$self->{"profileLim"} = undef;  # limts of pdf step
 
 	# If only bot stencil, whole psb will be mirrored
 	$self->{"mirror"} = $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_BOT ? 1 : 0;
@@ -100,28 +96,32 @@ sub __PrepareLayers {
 	$self->{"codeTxtThick"} *= $self->{"ratio"};
 	$self->{"codeTxtSize"}  *= $self->{"ratio"};
 
-	$self->__PrepareSTNCLMAT( $layerList->GetLayerByType( Enums->Type_STNCLMAT ) );
-	$self->__PrepareSTNCLMAT( $layerList->GetLayerByType( Enums->Type_COVER ) );
-	$self->__PrepareHOLES( $layerList->GetLayerByType( Enums->Type_HOLES ) );
+	foreach my $l ( $layerList->GetLayers() ) {
 
-	$self->__PrepareCODES( $layerList->GetLayerByType( Enums->Type_CODES ) );
-	$self->__PreparePROFILE( $layerList->GetLayerByType( Enums->Type_PROFILE ) );
-	$self->__PrepareDATAPROFILE( $layerList->GetLayerByType( Enums->Type_DATAPROFILE ) );
+		$self->__PrepareSTNCLMAT($l) if ( $l->GetType() eq Enums->Type_STNCLMAT );
+		$self->__PrepareSTNCLMAT($l) if ( $l->GetType() eq Enums->Type_COVER );
+		$self->__PrepareHOLES($l)    if ( $l->GetType() eq Enums->Type_HOLES );
 
-	$self->__PrepareHALFFIDUC( $layerList->GetLayerByType( Enums->Type_HALFFIDUC ) );
-	$self->__PrepareFIDUCPOS( $layerList->GetLayerByType( Enums->Type_FIDUCPOS ) );
+		$self->__PrepareCODES($l)       if ( $l->GetType() eq Enums->Type_CODES );
+		$self->__PreparePROFILE($l)     if ( $l->GetType() eq Enums->Type_PROFILE );
+		$self->__PrepareDATAPROFILE($l) if ( $l->GetType() eq Enums->Type_DATAPROFILE );
 
-	# if stencil is type bot, mirrro all layers
-	if ( $self->{"mirror"} ) {
-		foreach my $outputL ( map { $_->GetOutputLayer() } $layerList->GetLayers() ) {
+		$self->__PrepareHALFFIDUC($l) if ( $l->GetType() eq Enums->Type_HALFFIDUC );
+		$self->__PrepareFIDUCPOS($l)  if ( $l->GetType() eq Enums->Type_FIDUCPOS );
 
-			CamLayer->WorkLayer( $self->{"inCAM"}, $outputL );
-
-			my $w = abs( $self->{"profileLim"}->{"xMax"} - $self->{"profileLim"}->{"xMin"} );
-			my $h = abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} );
-			$self->{"inCAM"}->COM( "sel_transform", "x_anchor" => $w / 2, "y_anchor" => $h / 2, "oper" => "mirror", "mode" => "anchor" );
-		}
 	}
+
+	#	# if stencil is type bot, mirrro all layers
+	#	if ( $self->{"mirror"} ) {
+	#		foreach my $outputL ( map { $_->GetOutputLayer() } $layerList->GetLayers() ) {
+	#
+	#			CamLayer->WorkLayer( $self->{"inCAM"}, $outputL );
+	#
+	#			my $w = abs( $self->{"profileLim"}->{"xMax"} - $self->{"profileLim"}->{"xMin"} );
+	#			my $h = abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} );
+	#			$self->{"inCAM"}->COM( "sel_transform", "x_anchor" => $w / 2, "y_anchor" => $h / 2, "oper" => "mirror", "mode" => "anchor" );
+	#		}
+	#	}
 }
 
 # Create layer and fill profile - simulate pcb material
@@ -235,7 +235,7 @@ sub __PrepareProfCODES {
 	my $self  = shift;
 	my $layer = shift;
 	my $lName = shift;
-	
+
 	# Do not draw profile codes, if source is customer data, because pcb profile is same size as stencil size
 	if ( $self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA ) {
 		return 0;
@@ -256,8 +256,11 @@ sub __PrepareProfCODES {
 		my $tpPos = $self->{"params"}->GetTopProfilePos();
 		my $dimTopLen = sprintf( "%.1f", $stenclH - ( ( $stenclH - $area->{"h"} ) / 2 ) - ( $tpPos->{"y"} + $topProf->{"h"} ) );
 
-		my $dimTop =
-		  DimV1In->new( $self->{"codeSize"}, $dimTopLen, $self->{"codeWidth"}, "$dimTopLen mm", $self->{"codeTxtSize"}, $self->{"codeTxtThick"}, );
+		my $dimTop = DimV1In->new( $self->{"codeSize"}, $dimTopLen, $self->{"codeWidth"},
+								   "$dimTopLen mm",
+								   $self->{"codeTxtSize"},
+								   $self->{"codeTxtThick"},
+								   $self->{"mirror"} );
 
 		$draw->AddSymbol( $dimTop, Point->new( $tpPos->{"x"}, $tpPos->{"y"} + $topProf->{"h"} ) );
 
@@ -266,8 +269,11 @@ sub __PrepareProfCODES {
 
 			# dim from top edge to active area
 			my $dimBotLen = sprintf( "%.1f", $tpPos->{"y"} - ( ( $stenclH - $area->{"h"} ) / 2 ) );
-			my $dimTop =
-			  DimV1In->new( $self->{"codeSize"}, $dimBotLen, $self->{"codeWidth"}, "$dimBotLen mm", $self->{"codeTxtSize"}, $self->{"codeTxtThick"} );
+			my $dimTop = DimV1In->new( $self->{"codeSize"}, $dimBotLen, $self->{"codeWidth"},
+									   "$dimBotLen mm",
+									   $self->{"codeTxtSize"},
+									   $self->{"codeTxtThick"},
+									   $self->{"mirror"} );
 
 			$draw->AddSymbol( $dimTop, Point->new( $tpPos->{"x"}, ( $stenclH - $area->{"h"} ) / 2 ) );
 		}
@@ -325,7 +331,7 @@ sub __PrepareDataCODES {
 	my $self  = shift;
 	my $layer = shift;
 	my $lName = shift;
-	
+
 	# Do not draw profiles, if source is customer data, because pcb profile is same size as stencil size
 	if ( $self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA ) {
 		return 0;
@@ -350,8 +356,11 @@ sub __PrepareDataCODES {
 		my $posY   = $tpPos->{"y"} + $topProf->{"pasteDataPos"}->{"y"};
 
 		my $dimTopLen = sprintf( "%.1f", $stenclH - ( ( $stenclH - $area->{"h"} ) / 2 ) - ( $posY + $tdData->{"h"} ) );
-		my $dimTop =
-		  DimV1In->new( $self->{"codeSize"}, $dimTopLen, $self->{"codeWidth"}, "$dimTopLen mm", $self->{"codeTxtSize"}, $self->{"codeTxtThick"} );
+		my $dimTop = DimV1In->new( $self->{"codeSize"}, $dimTopLen, $self->{"codeWidth"},
+								   "$dimTopLen mm",
+								   $self->{"codeTxtSize"},
+								   $self->{"codeTxtThick"},
+								   $self->{"mirror"} );
 
 		$draw->AddSymbol( $dimTop, Point->new( $posX + ( $tdData->{"w"} / 2 ), $posY + $tdData->{"h"} ) );
 
@@ -360,8 +369,11 @@ sub __PrepareDataCODES {
 
 			# dim from top edge to active area
 			my $dimBotLen = sprintf( "%.1f", $posY - ( ( $stenclH - $area->{"h"} ) / 2 ) );
-			my $dimTop =
-			  DimV1In->new( $self->{"codeSize"}, $dimBotLen, $self->{"codeWidth"}, "$dimBotLen mm", $self->{"codeTxtSize"}, $self->{"codeTxtThick"} );
+			my $dimTop = DimV1In->new( $self->{"codeSize"}, $dimBotLen, $self->{"codeWidth"},
+									   "$dimBotLen mm",
+									   $self->{"codeTxtSize"},
+									   $self->{"codeTxtThick"},
+									   $self->{"mirror"} );
 
 			$draw->AddSymbol( $dimTop, Point->new( $posX + ( $tdData->{"w"} / 2 ), ( $stenclH - $area->{"h"} ) / 2 ) );
 		}
@@ -514,6 +526,7 @@ sub __PreparePROFILE {
 	if ( $self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA ) {
 		return 0;
 	}
+
 	# New layer
 	my $lName = GeneralHelper->GetGUID();
 	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
@@ -619,27 +632,31 @@ sub __PrepareHALFFIDUC {
 	my $self  = shift;
 	my $layer = shift;
 
-	my $fiduc = $self->{"params"}->GetFiducial();
-	unless ( $fiduc->{"halfFiducials"} && $fiduc->{"fiducSide"} eq "readable" ) {
-		return 0;
-	}
-
 	unless ( $layer->HasLayers() ) {
 		return 0;
 	}
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $fiduc = $self->{"params"}->GetFiducial();
 
-	my @layers = $layer->GetSingleLayers();
+	return 0 unless ( $fiduc->{"halfFiducials"} );
 
-	my $lName = GeneralHelper->GetGUID();
+	if (    ( $self->{"viewType"} eq Enums->View_FROMTOP && $fiduc->{"fiducSide"} eq "readable" )
+		 || ( $self->{"viewType"} eq Enums->View_FROMBOT && $fiduc->{"fiducSide"} eq "nonreadable" ) )
+	{
 
-	CamLayer->WorkLayer( $inCAM, $layers[0]->{"gROWname"} );
-	if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".fiducial_name", "*" ) ) {
+		my $inCAM = $self->{"inCAM"};
+		my $jobId = $self->{"jobId"};
 
-		CamLayer->CopySelOtherLayer( $inCAM, [$lName] );
-		$layer->SetOutputLayer($lName);
+		my @layers = $layer->GetSingleLayers();
+
+		my $lName = GeneralHelper->GetGUID();
+
+		CamLayer->WorkLayer( $inCAM, $layers[0]->{"gROWname"} );
+		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".fiducial_name", "*" ) ) {
+
+			CamLayer->CopySelOtherLayer( $inCAM, [$lName] );
+			$layer->SetOutputLayer($lName);
+		}
 	}
 }
 
@@ -698,7 +715,7 @@ sub __OptimizeLayers {
 	my $layerList = shift;
 
 	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	# 1) Clip area behind profile
 

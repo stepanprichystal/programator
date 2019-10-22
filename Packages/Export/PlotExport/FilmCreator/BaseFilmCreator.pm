@@ -199,7 +199,7 @@ sub __AddLayerTypes {
 	my $self = shift;
 
 	# add information about top/bot
-	#CamMatrix->AddSideType( $self->{"layers"} );
+	 
 
 	foreach my $l ( @{ $self->{"layers"} } ) {
 

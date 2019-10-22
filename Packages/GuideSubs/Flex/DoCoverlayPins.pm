@@ -76,8 +76,8 @@ sub CreateCoverlayPins {
 
 	my $lName = "coverlaypins";
 
-	my $type = JobHelper->GetPcbFlexType($jobId);
-	return 0 if ( $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXI && $type ne EnumsGeneral->PcbFlexType_RIGIDFLEXO );
+	my $type = JobHelper->GetPcbType($jobId);
+	return 0 if ( $type ne EnumsGeneral->PcbType_RIGIDFLEXI && $type ne EnumsGeneral->PcbType_RIGIDFLEXO );
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 

@@ -74,7 +74,6 @@ sub new {
 	$self->{"pcbClass"}      = undef;    # pcb class of outer layer
 	$self->{"pcbClassInner"} = undef;    # pcb class of inner layer
 	$self->{"pcbIsFlex"}     = undef;    # pcb is flex
-	$self->{"pcbFlexType"}   = undef;    # pcb flex type
 
 	$self->__InitDefault();
 
@@ -122,7 +121,7 @@ sub GetEtchType {
 
 	my $etchType = EnumsGeneral->Etching_ONLY;
 
-	if ( $self->{"layerCnt"} <= 1 || ($self->{"layerCnt"} == 2 && $self->GetIsFlex() )) {
+	if ( $self->{"layerCnt"} <= 1 || ( $self->{"layerCnt"} == 2 && $self->GetIsFlex() ) ) {
 
 		$etchType = EnumsGeneral->Etching_ONLY;
 
@@ -294,8 +293,11 @@ sub GetCompByLayer {
 	# Determine if layer has plating
 	my $plated = 0;
 
-	# 2vv always plated
-	if ( $self->GetLayerCnt() == 2 ) {
+	if ($self->GetLayerCnt() == 1 || JobHelper->GetPcbType( $self->{"jobId"} ) eq EnumsGeneral->PcbType_1VFLEX ) {
+		$plated = 0;
+	}
+	     # 2vv always plated
+	elsif ( $self->GetLayerCnt() == 2 ) {
 
 		$plated = 1;
 
@@ -696,22 +698,12 @@ sub GetPcbThick {
 	return $self->{"pcbThick"};
 }
 
-
-# Return 1 if PCB is flex 
+# Return 1 if PCB is flex
 sub GetIsFlex {
 	my $self = shift;
 
 	return $self->{"pcbIsFlex"};
 }
-
-# Return type of flexible PCB
-sub GetFlexType {
-	my $self = shift;
-
-	return $self->{"pcbFlexType"};
-}
-
-
 
 sub __InitDefault {
 	my $self = shift;
@@ -773,11 +765,10 @@ sub __InitDefault {
 
 	$self->{"pcbSurface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
 
-	$self->{"pcbThick"} = JobHelper->GetFinalPcbThick( $self->{"jobId"} );
-	
+	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $self->{"inCAM"}, $self->{"jobId"} );
+
 	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
-	
-	$self->{"pcbFlexType"} = JobHelper->GetPcbFlexType( $self->{"jobId"} );
+
 }
 
 #-------------------------------------------------------------------------------------------#

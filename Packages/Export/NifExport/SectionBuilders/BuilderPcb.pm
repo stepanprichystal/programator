@@ -19,6 +19,8 @@ use Time::localtime;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamMatrix';
+
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -128,7 +130,6 @@ sub Build {
 		$section->AddRow( "potisk_s_1", $nifData{"s_silk_screen_colour"} );
 	}
 
-
 	#c_silk_screen_colour2
 	if ( $self->_IsRequire("c_silk_screen_colour2") ) {
 
@@ -148,7 +149,42 @@ sub Build {
 
 		$section->AddRow( "potisk_s_2", $nifData{"s_silk_screen_colour2"} );
 	}
- 
+
+	#flexi_maska
+	if ( $self->_IsRequire("flexi_maska") ) {
+
+		unless ( $nifData{"flexi_maska"} ) {
+			$nifData{"flexi_maska"} = "";
+		}
+
+		$section->AddRow( "flexi_maska", $nifData{"flexi_maska"} );
+	}
+
+	#coverlay
+	if ( $self->_IsRequire("coverlay") ) {
+
+		my @coverLay =
+		  grep { $_->{"gROWlayer_type"} eq "coverlay" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+
+		my $top = 0;
+		my $bot = 0;
+
+		foreach my $c (@coverLay) {
+
+			my $side = CamMatrix->GetNonSignalLayerSide( $inCAM, $jobId, $c->{"gROWname"} );
+
+			$top = 1 if ( $side eq "top" );
+			$bot = 1 if ( $side eq "bot" );
+
+		}
+
+		my $res = "";
+		$res = "C" if ( $top  && !$bot );
+		$res = "S" if ( !$top && $bot );
+		$res = "2" if ( $top  && $bot );
+
+		$section->AddRow( "coverlay", $res );
+	}
 
 	#tenting
 	if ( $self->_IsRequire("tenting") ) {
@@ -169,6 +205,31 @@ sub Build {
 	#uhlik_typ
 	if ( $self->_IsRequire("uhlik_typ") ) {
 		$section->AddRow( "uhlik_typ", $self->__GetUhlikTyp() );
+	}
+
+	#stiffener
+	if ( $self->_IsRequire("stiffener") ) {
+
+		my @stiffener =
+		  grep { $_->{"gROWlayer_type"} eq "stiffener" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+
+		my $top = 0;
+		my $bot = 0;
+
+		foreach my $s (@stiffener) {
+
+			my $side = CamMatrix->GetNonSignalLayerSide( $inCAM, $jobId, $s->{"gROWname"} );
+
+			$top = 1 if ( $side eq "top" );
+			$bot = 1 if ( $side eq "bot" );
+		}
+
+		my $res = "";
+		$res = "C" if ( $top  && !$bot );
+		$res = "S" if ( !$top && $bot );
+		$res = "2" if ( $top  && $bot );
+
+		$section->AddRow( "stiffener", $res );
 	}
 
 	#film_konektoru
@@ -252,7 +313,7 @@ sub __GetProkoveni {
 			$result = 'A';
 
 		}
- 
+
 		my $rExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
 		if ($rExist) {
 			$result = 'A';

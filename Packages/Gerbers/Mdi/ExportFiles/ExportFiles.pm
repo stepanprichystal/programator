@@ -287,7 +287,7 @@ sub __GetLayerLimit {
 #	# Exceptions for Outer Rigid-Flex with top coverlay
 #	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 #
-#		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbFlexType_RIGIDFLEXO
+#		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbType_RIGIDFLEXO
 #			 && CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "coverlayc" ) )
 #		{
 #			%lim = %{ $self->{"profLim"} };
@@ -359,7 +359,7 @@ sub __GetFiducials {
 	# Exceptions for Outer Rigid-Flex with top coverlay
 	if ( $layerName =~ /^[cs]$/ && JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 
-		if (    JobHelper->GetPcbFlexType($jobId) eq EnumsGeneral->PcbFlexType_RIGIDFLEXO
+		if (    JobHelper->GetPcbType($jobId) eq EnumsGeneral->PcbType_RIGIDFLEXO
 			 && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) )
 		{
 			$drillLayer = "v1";

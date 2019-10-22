@@ -43,7 +43,7 @@ sub GetMissingPads {
 
 	CamHelper->SetStep( $inCAM, $step );
 
-	my $pcbThick = JobHelper->GetFinalPcbThick($jobId);
+	my $pcbThick = CamJob->GetFinalPcbThick($inCAM, $jobId);
 
 	#my %h = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $layers[$i] );
 

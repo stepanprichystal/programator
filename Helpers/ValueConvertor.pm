@@ -23,8 +23,6 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
-
-
 sub GetNifCodeValue {
 	my $self = shift;
 	my $code = shift;
@@ -76,13 +74,14 @@ sub GetMaskColorToCode {
 	}
 
 	my %colorMap = ();
-	$colorMap{"Green"}       = "Z";
-	$colorMap{"Black"}       = "B";
-	$colorMap{"White"}       = "W";
-	$colorMap{"Blue"}        = "M";
-	$colorMap{"Transparent"} = "T";
-	$colorMap{"Red"}         = "R";
-
+	$colorMap{"Green"}        = "Z";
+	$colorMap{"Black"}        = "B";
+	$colorMap{"White"}        = "W";
+	$colorMap{"Blue"}         = "M";
+	$colorMap{"Transparent"}  = "T";
+	$colorMap{"Red"}          = "R";
+	$colorMap{"GreenSMDFlex"} = "G";
+	
 	return $colorMap{$color};
 }
 
@@ -101,6 +100,7 @@ sub GetMaskCodeToColor {
 	$colorMap{"M"} = "Blue";
 	$colorMap{"T"} = "Transparent";
 	$colorMap{"R"} = "Red";
+	$colorMap{"G"} = "GreenSMDFlex";
 
 	return $colorMap{$code};
 
@@ -140,21 +140,21 @@ sub GetSilkCodeToColor {
 	#
 }
 
-
 # Return full name of impedance line type by shortcut
 #EnumsImp->Type_SE     => "se",
 #EnumsImp->Type_DIFF   => "diff",
 #EnumsImp->Type_COSE   => "coplanar_se",
 #EnumsImp->Type_CODIFF => "coplanar_diff",
-sub GetImpedanceType{
+sub GetImpedanceType {
 	my $self = shift;
 	my $type = shift;
-	
-	return "Single ended" if($type eq EnumsImp->Type_SE);
-	return "Differential" if($type eq EnumsImp->Type_DIFF);
-	return "Coplanar single ended" if($type eq EnumsImp->Type_COSE);
-	return "Coplanar differential" if($type eq EnumsImp->Type_CODIFF);
+
+	return "Single ended"          if ( $type eq EnumsImp->Type_SE );
+	return "Differential"          if ( $type eq EnumsImp->Type_DIFF );
+	return "Coplanar single ended" if ( $type eq EnumsImp->Type_COSE );
+	return "Coplanar differential" if ( $type eq EnumsImp->Type_CODIFF );
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

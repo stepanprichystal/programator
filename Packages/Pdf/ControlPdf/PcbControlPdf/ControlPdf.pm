@@ -79,7 +79,8 @@ sub Create {
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
 
-	CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"pdfStep"}, 1 );
+	my @layerFilter = map { $_->{"gROWname"}} CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"pdfStep"}, 1, \@layerFilter ); 
  
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
 }
@@ -175,7 +176,8 @@ sub __ProcessTemplate {
 	# Fill data template
 	my $templData = TemplateKey->new();
 
-	$self->{"fillTemplate"}->Fill( $templData, $stackupPath, $previewTopPath, $previewBotPath, $self->{"infoToPdf"} );
+	$self->{"fillTemplate"}->FillKeysData( $templData, $stackupPath, $previewTopPath, $previewBotPath, $self->{"infoToPdf"} );
+	$self->{"fillTemplate"}->FillKeysLayout( $templData );
 
 	my $result = $self->{"template"}->ProcessTemplatePdf( $tempPath, $templData );
 
@@ -251,7 +253,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152456";
+	my $jobId = "d260205";
 
 	my $mess = ""; 
 
@@ -260,12 +262,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#$control->CreateStackup(\$mess);
 	$control->CreatePreviewTop( \$mess );
+	$control->CreatePreviewBot(\$mess);
+	$control->CreatePreviewSingle( \$mess );
+	$control->GeneratePdf();
 
-	#$control->CreatePreviewBot(\$mess);
-	#$control->CreatePreviewSingle( \$mess );
-	#$control->GeneratePdf();
-
-	#$control->GetOutputPath();
+	$control->GetOutputPath();
 
 }
 

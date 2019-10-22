@@ -67,6 +67,8 @@ sub Build {
 	push(@req, "s_silk_screen_colour");
 	push(@req, "c_silk_screen_colour2");
 	push(@req, "s_silk_screen_colour2");
+	push(@req, "flexi_maska");	
+	push(@req, "coverlay");
 	push(@req, "tenting");
 	push(@req, "lak_typ");
 	push(@req, "uhlik_typ");
@@ -100,6 +102,8 @@ sub Build {
 	push(@req, "datacode");
 	push(@req, "ul_logo");
 	push(@req, "2814075"); #maska 0,1mm
+	push(@req, "19031137"); # BGA
+	push(@req, "19031138"); # Coverlay template
 	push(@req, "merit_presfitt");
 	push(@req, "mereni_tolerance_vrtani");
 	push(@req, "prerusovana_drazka");

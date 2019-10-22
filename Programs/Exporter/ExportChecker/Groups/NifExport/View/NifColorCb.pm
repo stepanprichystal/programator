@@ -60,7 +60,7 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	my $colorCbTxt = Wx::StaticText->new( $self, -1, $title, &Wx::wxDefaultPosition, [ 70, 20 ] );
-	my $colorCb = Wx::ComboBox->new( $self, -1, $colors[0], &Wx::wxDefaultPosition, [ 70, 20 ], \@colors, &Wx::wxCB_READONLY );
+	my $colorCb = Wx::ComboBox->new( $self, -1, $colors[0], &Wx::wxDefaultPosition, [ 77, 20 ], \@colors, &Wx::wxCB_READONLY );
 
 	my $colorPnl = Wx::Panel->new( $self, -1, &Wx::wxDefaultPosition, [ 20, 20 ], &Wx::wxSIMPLE_BORDER );
 

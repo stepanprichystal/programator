@@ -11,7 +11,8 @@ use constant {
 	Type_DOCUMENT => "typeDocument",
 	Type_DRILLMAP => "typeDrillMap",
 	Type_SPECIALSURF => "typeSpecialSurf",
-	Type_FILLEDHOLES => "filledHoles"
+	Type_FILLEDHOLES => "filledHoles",
+	Type_FLEXLAYERS => "flexlayers"
 };
  
  use constant {

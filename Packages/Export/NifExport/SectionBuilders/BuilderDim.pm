@@ -166,7 +166,7 @@ sub __GetFrDimemsion {
 #	my $pcbFlexType = JobHelper->GetPcbFlexType($jobId);
 #	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 #
-#		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbFlexType_RIGIDFLEXO
+#		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbType_RIGIDFLEXO
 #			 && CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "coverlayc" ) )
 #		{
 #			my %lim = CamJob->GetProfileLimits( $inCAM, $jobId, $stepName );

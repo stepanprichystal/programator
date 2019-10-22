@@ -238,27 +238,27 @@ sub GetPcbType {
 
 	if ( HegMethods->GetTypeOfPcb($jobId) eq 'Neplatovany' ) {
 
-		$type = EnumsGeneral->PcbTyp_NOCOPPER;
+		$type = EnumsGeneral->PcbType_NOCOPPER;
 	
 	}elsif(HegMethods->GetTypeOfPcb($jobId) eq 'Sablona'){
 		
-		$type = EnumsGeneral->PcbTyp_STENCIL
+		$type = EnumsGeneral->PcbType_STENCIL
 	}
 	else {
 		
 		if ( $layerCnt == 1 ) {
 
-			$type = EnumsGeneral->PcbTyp_ONELAYER;
+			$type = EnumsGeneral->PcbType_1V;
 
 		}
 		elsif ( $layerCnt == 2 ) {
 
-			$type = EnumsGeneral->PcbTyp_TWOLAYER;
+			$type = EnumsGeneral->PcbType_2V;
 
 		}
 		else {
 
-			$type = EnumsGeneral->PcbTyp_MULTILAYER;
+			$type = EnumsGeneral->PcbType_MULTI;
 		}
 	}
 

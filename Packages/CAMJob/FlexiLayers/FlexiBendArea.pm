@@ -717,7 +717,9 @@ sub PrepareRoutTransitionZone {
 			my %startP = $transZone->GetStartPoint();
 			my %endP   = $transZone->GetEndPoint();
 
+			CamSymbol->AddCurAttribute($inCAM, $jobId, "transition_zone");
 			CamSymbol->AddLine( $inCAM, \%startP, \%endP, "r200" );
+			CamSymbol->ResetCurAttributes($inCAM, $jobId);
 			$featIdx++;
 
 			if ( CamFilter->SelectByFeatureIndexes( $inCAM, $jobId, [$featIdx] ) ) {

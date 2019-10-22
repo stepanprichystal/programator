@@ -9,6 +9,7 @@ package Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerDataLi
 #3th party library
 use strict;
 use warnings;
+use Storable qw(dclone);
 
 #local library
 use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerData';
@@ -24,37 +25,45 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
- 
+
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"viewType"} = shift;
 
 	$self->{"layers"} = [];
- 
 
 	return $self;
 }
- 
 
 sub GetLayers {
-	my $self      = shift;
-	my $printable = shift;
+	my $self        = shift;
+	my $type        = shift;
+	my $visibleFrom = shift;
+	my $active      = shift // 1;
 
 	my @layers = @{ $self->{"layers"} };
 
-	@layers = grep { $_->PrintLayer() } @layers;
+	@layers = grep { $_->GetType() eq $type } @layers               if ( defined $type );
+	@layers = grep { $_->GetVisibleFrom() eq $visibleFrom } @layers if ( defined $visibleFrom );
+	@layers = grep { $_->GetIsActive() } @layers                    if ( defined $active );
 
 	return @layers;
 }
 
-sub GetLayerByType {
+# Return all output (intended for pdf outut) layer data strucutre
+sub GetOutputLayers {
 	my $self = shift;
-	my $type = shift;
 
-	my $layer = ( grep { $_->GetType() eq $type } @{ $self->{"layers"} } )[0];
-
-	return $layer;
-
+	return grep { $_->OutputLayer() } @{ $self->{"layers"} };
 }
 
- 
+
+sub _SetLayers{
+	my $self   = shift;
+	my $layers = shift;	
+	
+	@{$self->{"layers"}} = reverse(@{$layers}); 
+}
 
 sub _SetColors {
 	my $self   = shift;
@@ -63,11 +72,11 @@ sub _SetColors {
 	foreach my $l ( @{ $self->{"layers"} } ) {
 
 		my $surface = $colors->{ $l->GetType() };
-		$l->SetSurface($surface);
+		
+		$l->SetSurface(dclone($surface));
 	}
-  
+
 }
- 
 
 sub _AddToLayerData {
 	my $self      = shift;

@@ -157,7 +157,7 @@ sub __GetCuArea {
 	}
 
 	unless ($pcbThick) {
-		$pcbThick = JobHelper->GetFinalPcbThick($jobName);
+		$pcbThick = CamJob->GetFinalPcbThick($inCAM, $jobName);
 	}
 
 	#set default value

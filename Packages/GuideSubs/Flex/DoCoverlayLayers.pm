@@ -49,7 +49,7 @@ sub PrepareCoverlayLayers {
 
 	CamHelper->SetStep( $inCAM, $step );
 
-	my $type    = JobHelper->GetPcbFlexType($jobId);
+	my $type    = JobHelper->GetPcbType($jobId);
 	my $stackup = Stackup->new($jobId);
 
 	my %coverlayType   = HegMethods->GetCoverlayType($jobId);

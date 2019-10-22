@@ -57,7 +57,7 @@ sub new {
 
 	$self->{"outputNClayer"} = shift;
 
-	$self->{"pcbThick"}    = JobHelper->GetFinalPcbThick( $self->{"jobId"} ) / 1000;    # in mm
+	$self->{"pcbThick"}    = CamJob->GetFinalPcbThick( $self->{"inCAM"}, $self->{"jobId"} ) / 1000;    # in mm
 	$self->{"dataOutline"} = "200";                                                     # symbol def, which is used for outline
 
 	return $self;

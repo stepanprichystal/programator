@@ -32,21 +32,13 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
-	 
-	$self->{"inCAM"}    = shift;
-	$self->{"jobId"}    = shift;
-	$self->{"pdfStep"}  = shift;
-	$self->{"outputPath"} = shift; 
- 
+
+	$self->{"inCAM"}      = shift;
+	$self->{"jobId"}      = shift;
+	$self->{"pdfStep"}    = shift;
+	$self->{"outputPath"} = shift;
 
 	return $self;
-}
-
-sub _Output {
-	my $self      = shift;
-	my $layerList = shift;
-
-	$self->__OutputPdf($layerList);
 }
 
 sub GetOutput {
@@ -55,7 +47,7 @@ sub GetOutput {
 	return $self->{"outputPath"};
 }
 
-sub __OutputPdf {
+sub _Output {
 	my $self      = shift;
 	my $layerList = shift;
 
@@ -63,7 +55,7 @@ sub __OutputPdf {
 
 	my $inCAM = $self->{"inCAM"};
 
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	# folder, where are putted temporary layer pdf and layer png
 	my $dirPath = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
@@ -141,7 +133,7 @@ sub __SplitMultiPdf {
 	my $pdfOutput = shift;
 	my $dirPath   = shift;
 
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	my $pdf_in = PDF::API2->open($pdfOutput);
 
@@ -238,7 +230,7 @@ sub __CreatePng {
 	my $dirPath    = shift;
 	my $resolution = shift;
 
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	my @allCmds = ();
 
@@ -258,7 +250,7 @@ sub __CreatePng {
 		# command convert pdf to png with specific resolution
 		push( @cmds1, " ( " );
 
-		push( @cmds1, " -density 300" );
+		push( @cmds1, " -density 350" );
 		push( @cmds1, $dirPath . $l->GetOutputLayer() . ".pdf -flatten" );
 		push( @cmds1, "-shave 20x20 -trim -shave 5x5" );                     # shave two borders around image
 		push( @cmds1, "-resize " . $resolution->{"x"} );
@@ -289,6 +281,21 @@ sub __CreatePng {
 			push( @cmds2, $texturPath . " -crop " . $resolution->{"x"} . "x" . $resolution->{"y"} . "+0+0" );
 		}
 
+		# Add brightness
+		if ( $layerSurf->GetBrightness() != 0 ) {
+			push( @cmds2, " -brightness-contrast " . $layerSurf->GetBrightness() );
+		}
+
+		# Add overlay image if exist
+		if ( defined $layerSurf->GetOverlayTexture() ) {
+
+			my $overlayPath = GeneralHelper->Root() . "\\Resources\\Textures\\" . $layerSurf->GetOverlayTexture() . ".png";
+
+			# tadz je to potreba zmensit overlay img, jinak se overlaz spatne orizne
+			$overlayPath .= " -crop " . ( $resolution->{"x"} - 2 ) . "x" . ( $resolution->{"y"} - 2 ) . "+0+0";
+			push( @cmds2, $overlayPath . " -gravity center -compose over -composite " );
+		}
+
 		my $cmds2Str = join( " ", @cmds2 );    # finnal comand cmd2
 
 		# 3) ============================================================================================
@@ -303,13 +310,13 @@ sub __CreatePng {
 		my $cmds3Str = join( " ", @cmds3 );    # finnal comand cmd3
 
 		# 4) ============================================================================================
-		# Cmd4 -add brightness, and set transparetnt, set output path
+		# Cmd4 set transparetnt, set output path
 
 		my @cmds4 = ();
 
-		# run 'convert' console application
+		# run 'convert' console application (+antialias prevent wierd horizontal/vertical stripes during conversion pdf2png)
 
-		push( @cmds4, EnumsPaths->Client_IMAGEMAGICK . "convert.exe" );
+		push( @cmds4, EnumsPaths->Client_IMAGEMAGICK . "convert.exe +antialias" );
 
 		#push( @cmds4, "convert" );
 
@@ -317,7 +324,6 @@ sub __CreatePng {
 		push( @cmds4, $cmds3Str );
 		push( @cmds4, " ) " );
 
-		my $brightness = ( $layerSurf->GetBrightness() != 0 ) ? " -brightness-contrast " . $layerSurf->GetBrightness() : "";
 		my $opaque = "";
 
 		if ( $layerSurf->GetOpaque() < 100 ) {
@@ -339,12 +345,11 @@ sub __CreatePng {
 		if ( $layerSurf->Get3DEdges() ) {
 
 			$edges3d .= " ( +clone -channel A -separate +channel -negate ";
-			$edges3d .= " -background black -virtual-pixel background -blur 0x".$layerSurf->Get3DEdges()." -shade 0x21.78 -contrast-stretch ";
+			$edges3d .= " -background black -virtual-pixel background -blur 0x" . $layerSurf->Get3DEdges() . " -shade 0x21.78 -contrast-stretch ";
 			$edges3d .= "  0% +sigmoidal-contrast 7x50%  -fill grey50 -colorize 10% +clone +swap  ";
 			$edges3d .= " -compose overlay -composite  ) -compose In -composite   ";
 		}
 
-		push( @cmds4, $brightness );
 		push( @cmds4, $opaque );
 		push( @cmds4, $edges3d );
 
@@ -361,7 +366,7 @@ sub __CreatePng {
 
 		push( @allCmds, $cmds4Str );
 
-		print $cmds4Str. "\n\n\n";
+		print STDERR "Type:" . $l->GetType() . "\n" . $cmds4Str . "\n\n\n";
 
 	}
 
@@ -386,7 +391,7 @@ sub __MergePng {
 	my $layerList = shift;
 	my $dirPath   = shift;
 
-	my @layers = $layerList->GetLayers(1);
+	my @layers = $layerList->GetOutputLayers();
 
 	my @layerStr2 = map { $dirPath . $_->GetOutputLayer() . ".png" } @layers;
 	my $layerStr2 = join( " ", @layerStr2 );
@@ -413,9 +418,10 @@ sub __MergePng {
 
 	my $cmdStr = join( " ", @cmd );
 
+	print STDERR "Image: " . $self->{""} . ", CMD:\n$cmdStr\n";
+
 	my $systeMres = system($cmdStr);
 
-	 
 }
 
 sub _ConvertColor {
