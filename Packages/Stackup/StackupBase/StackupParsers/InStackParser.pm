@@ -135,6 +135,8 @@ sub ParseStackup {
 				$layerInfo->{"typetext"} = $info->{typetext};
 				$layerInfo->{"id"}       = $matUda{$matRef}->{"dps_id"};
 				$layerInfo->{"qId"}      = $matUda{$matRef}->{"dps_qid"};
+				# prepreg is noflow if contains text "no flow"
+				$layerInfo->{"noFlow"}   = $layerInfo->{"typetext"} =~ /((no)|(low)).*flow/i ? 1 : 0;
 
 				push( @layers, $layerInfo );
 			}
@@ -204,47 +206,7 @@ sub ParseStackup {
 
 	}
 
-	#Set copper name c, v2....., s
-	foreach my $l (@layers) {
 
-		if ( $l->{"type"} eq Enums->MaterialType_COPPER ) {
-			if ( $l->{"copperNumber"} == 1 ) {
-
-				$l->{"copperName"} = "c";
-
-			}
-			elsif ( $l->{"copperNumber"} == $copperCnt ) {
-				$l->{"copperName"} = "s";
-			}
-			else {
-
-				$l->{"copperName"} = "v" . $l->{"copperNumber"};
-			}
-		}
-	}
-
-	#Set core top/bot copper layers
-	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
-
-		my $l = $layers[$i];
-
-		if ( $l->{"type"} eq Enums->MaterialType_CORE ) {
-
-			my $topCopper = $layers[ $i - 1 ];
-
-			if ( $topCopper && $topCopper->{"type"} eq Enums->MaterialType_COPPER ) {
-
-				$l->{"topCopperLayer"} = $topCopper;
-			}
-
-			my $botCopper = $layers[ $i + 1 ];
-
-			if ( $botCopper && $botCopper->{"type"} eq Enums->MaterialType_COPPER ) {
-
-				$l->{"botCopperLayer"} = $botCopper;
-			}
-		}
-	}
 
 	return @layers;
 }

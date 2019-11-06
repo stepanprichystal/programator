@@ -66,6 +66,7 @@ sub Build {
 	push(@req, "uhlik_typ");
 	push(@req, "stiffener");
 	push(@req, "film_konektoru");
+	push(@req, "technologie");
 	push(@req, "prokoveni");
 	push(@req, "datum_pripravy");
 	

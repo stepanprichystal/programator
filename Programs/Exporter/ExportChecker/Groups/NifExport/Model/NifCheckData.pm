@@ -220,6 +220,19 @@ sub OnCheckGroupData {
 
 		$dataMngr->_AddWarningResult( "Pattern", "Dps by měla jít do výroby jako pattern, ale ve formuláši máš zaškrknutý tenting." );
 	}
+	
+	# X) Check technogy
+	# If layer cnt is => 2 technology should be galvanics (if there are plated drill layers), in other case resist
+	if(  $defaultInfo->GetLayerCnt() >= 2 && $groupData->GetTechnology() eq "M"){
+		
+		my $cu = $defaultInfo->GetBaseCuThick("c");
+		$dataMngr->_AddWarningResult( "Technology", "DPS má zvolenou technologii \"Leptací resist\". "
+											."Tedy DPS nebude prokovená a výsledná Cu bude základní (".$cu."µm). "
+											."Je to pro zákazníka akceptovatelné?" );
+		
+	}
+ 
+	
 
 	# 8) Check if goldfinger exist, if area is greater than 10mm^2
 
@@ -810,7 +823,7 @@ sub __IsTentingCS {
 
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) ) {
 
-		my $etch = $defaultInfo->GetEtchType("c");
+		my $etch = $defaultInfo->GetDefaultEtchType("c");
 
 		if ( $etch eq EnumsGeneral->Etching_TENTING ) {
 

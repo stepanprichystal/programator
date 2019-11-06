@@ -414,17 +414,23 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+	use aliased 'Packages::CAM::FeatureFilter::Enums' => "FiltrEnums";
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'CamHelpers::CamHelper';
 
 	my $inCAM = InCAM->new();
 	my $jobId = "d113608";
 
-	my $f = FeatureFilter->new( $inCAM, $jobId, "c" );
-	 
-	$f->AddIncludeAtt(".nomenclature");
+	my @layers = ("c", "s");
+
+	my $f = FeatureFilter->new( $inCAM, $jobId, undef, \@layers);
+	$f->SetPolarity(FiltrEnums->Polarity_POSITIVE);
  
-	print $f->Select();
+	unless($f->Select()){
+		
+		
+		die "No positive features..";
+	}
 
  
 

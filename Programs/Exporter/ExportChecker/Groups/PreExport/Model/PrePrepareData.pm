@@ -56,18 +56,15 @@ sub OnPrepareGroupData {
 
 	# Prepare default layer settings
 	my @signalLayers = $defaultInfo->GetSignalLayers();
- 
-	$defaultInfo->SetDefaultLayersSettings(\@signalLayers);
-	
- 
+
+	$defaultInfo->SetDefaultLayersSettings( \@signalLayers );
+
 	my @layers = $self->__GetFinalLayers( \@signalLayers );
- 
+
 	$groupData->SetSignalLayers( \@layers );
 
 	return $groupData;
 }
-
-
 
 sub __GetFinalLayers {
 	my $self   = shift;
@@ -76,24 +73,21 @@ sub __GetFinalLayers {
 	my @prepared = ();
 
 	foreach my $l (@layers) {
-
 		my %lInfo = ();
 
-		$lInfo{"plot"}     = 1;
-		$lInfo{"name"}     = $l->{"gROWname"};
-		$lInfo{"polarity"} = $l->{"polarity"};
+		$lInfo{"plot"}        = 1;
+		$lInfo{"name"}        = $l->{"gROWname"};
+		$lInfo{"polarity"}    = $l->{"polarity"};
 		$lInfo{"etchingType"} = $l->{"etchingType"};
-		$lInfo{"mirror"}   = $l->{"mirror"};
-		$lInfo{"comp"}     = $l->{"comp"};
-		
-		push(@prepared, \%lInfo);
+		$lInfo{"mirror"}      = $l->{"mirror"};
+		$lInfo{"comp"}        = $l->{"comp"};
+
+		push( @prepared, \%lInfo );
 	}
-	
+
 	return @prepared;
 
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

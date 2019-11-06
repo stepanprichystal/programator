@@ -13,7 +13,6 @@ use constant {
 			   PcbType_RIGIDFLEXI => "flexType_rigidFlexI",
 			   PcbType_STENCIL    => "stencil"
 };
- 
 
 use constant {
 			   MessageType_ERROR       => 'Error',
@@ -65,6 +64,7 @@ use constant {
 	LAYERTYPE_plt_bFillDrillTop => "plt_bFillDrillTop",    # blind filled holes top
 	LAYERTYPE_plt_bFillDrillBot => "plt_bFillDrillBot",    # blind filled holes bot
 	LAYERTYPE_plt_cDrill        => "plt_cDrill",           # core plated
+	LAYERTYPE_plt_cFillDrill    => "plt_cFillDrill",       # core filled plated
 	LAYERTYPE_plt_nMill         => "plt_nMill",            # normall mill slits
 	LAYERTYPE_plt_bMillTop      => "plt_bMillTop",         # z-axis mill slits top
 	LAYERTYPE_plt_bMillBot      => "plt_bMillBot",         # z-axis mill slits bot
@@ -100,6 +100,13 @@ use constant {
 			   Etching_PATTERN => 'pattern',
 			   Etching_TENTING => 'tenting',
 			   Etching_ONLY    => 'etching',
+};
+
+use constant {
+			   Technology_GALVANICS   => 'galvanics',
+			   Technology_RESIST      => 'resist',
+			   Technology_OTHER       => 'other',
+			   Technology_SCREENPRINT => 'screenprint'
 };
 
 use constant {

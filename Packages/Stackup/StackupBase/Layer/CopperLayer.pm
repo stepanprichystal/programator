@@ -7,6 +7,8 @@
 package Packages::Stackup::StackupBase::Layer::CopperLayer;
 use base('Packages::Stackup::StackupBase::Layer::StackupLayer');
 
+use Class::Interface;
+&implements('Packages::Stackup::StackupBase::Layer::IStackupLayer');
 
 #3th party library
 use strict;
@@ -32,6 +34,8 @@ sub new {
 	
 	# c = 1, v2 = 2, v3 = 3, v4 = 4,......, s = order of last layer
 	$self->{"copperNumber"} = undef;
+	
+	$self->{"isFoil"} = 1;
 	
 	return $self;  
 }
@@ -70,6 +74,13 @@ sub GetCoreExtraPlating {
 	}
 
 	return $plating;
+}
+
+# Return 1 if copper is foil. 0 if copper lay on core
+sub GetIsFoil{
+	my $self = shift;
+	
+	return $self->{"isFoil"};
 }
 
 #-------------------------------------------------------------------------------------------#

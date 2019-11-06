@@ -72,7 +72,7 @@ sub InitForm {
 	$self->{"groupWrapper"} = $groupWrapper;
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	$self->{"form"} = PlotUnitForm->new( $parent, $inCAM, $self->{"jobId"});
+	$self->{"form"} = PlotUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo());
 	
 	# init base class with event class
 	$self->{"eventClass"} = PlotUnitFormEvt->new($self->{"form"});

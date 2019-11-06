@@ -17,7 +17,6 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::Translator';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Stackup::Stackup::Stackup';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -81,7 +80,7 @@ sub GetMaskColorToCode {
 	$colorMap{"Transparent"}  = "T";
 	$colorMap{"Red"}          = "R";
 	$colorMap{"GreenSMDFlex"} = "G";
-	
+
 	return $colorMap{$color};
 }
 
@@ -153,6 +152,41 @@ sub GetImpedanceType {
 	return "Differential"          if ( $type eq EnumsImp->Type_DIFF );
 	return "Coplanar single ended" if ( $type eq EnumsImp->Type_COSE );
 	return "Coplanar differential" if ( $type eq EnumsImp->Type_CODIFF );
+}
+
+# Convert "technology" name to IS code
+sub GetTechNameToCode {
+	my $self = shift;
+	my $name = shift;
+
+	if ( $name eq "" ) {
+		return "";
+	}
+
+	my %techMap = ();
+	$techMap{ EnumsGeneral->Technology_GALVANICS }   = "G";
+	$techMap{ EnumsGeneral->Technology_RESIST }      = "M";
+	$techMap{ EnumsGeneral->Technology_OTHER }       = "J";
+	$techMap{ EnumsGeneral->Technology_SCREENPRINT } = "S";
+
+	return $techMap{$name};
+}
+
+# Convert "technology" IS code to name
+sub GetTechCodeToName {
+	my $self = shift;
+	my $code = shift;
+
+	if ( $code eq "" ) {
+		return "";
+	}
+
+	my %techMap = ();
+	$techMap{"G"} = EnumsGeneral->Technology_GALVANICS;
+	$techMap{"M"} = EnumsGeneral->Technology_RESIST;
+	$techMap{"J"} = EnumsGeneral->Technology_OTHER;
+	$techMap{"S"} = EnumsGeneral->Technology_SCREENPRINT;
+	return $techMap{$code};
 }
 
 #-------------------------------------------------------------------------------------------#

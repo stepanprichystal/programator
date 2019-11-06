@@ -31,7 +31,7 @@ sub new {
 	my $group       = shift;
 	my $constraints = shift;
 
-	my $self = $class->SUPER::new( $parent, $group );
+	my $self = $class->SUPER::new( $parent, $group, &Wx::wxBORDER_SIMPLE );
 
 	bless($self);
 

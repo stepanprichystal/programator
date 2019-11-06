@@ -28,13 +28,17 @@ sub new {
 	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-	my $ref = $wrapper->can('ChangeCustomerJump');
+	my $ref = $wrapper->can('OnSCOGroupChangeCustomerJump');
 	$self->_AddHandler( $ref , Enums->Event_sco_customerJump );
+	
+	my $ref2 = $wrapper->can('OnPREGroupTentingChangeHandler');
+	$self->_AddHandler( $ref2 , Enums->Event_pre_tenting );
+	
+	my $ref3 = $wrapper->can('OnPREGroupTechnologyChangeHandler');
+	$self->_AddHandler( $ref3 , Enums->Event_pre_technology );
  
 	# Provided events
-	
-	$self->_AddEvent( $wrapper->{'onTentingChange'}, Enums->Event_nif_tenting );
-
+ 
 	return $self;
 }
 

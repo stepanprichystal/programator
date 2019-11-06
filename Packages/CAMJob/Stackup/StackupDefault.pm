@@ -110,11 +110,11 @@ sub CreateStackup {
 
 	#if pcb is in 8 class, set outer Cu 9µm
 	if ( $pcbClass >= 8 && $outerCuThick <= 18 ) {
-		$outerCuThick = 9;
+		$self->_SetOuterCu( \$xml, 9 );
 	}
 
 	#create new xml stackup file
-	$self->_SetOuterCu( \$xml, $outerCuThick, $pcbClass );
+	
 	$self->_SetCuUsage( \$xml, \@innerCuUsage );
 	$self->_CreateNewStackup( \$xml, $pcbId, $pcbId );
 
@@ -204,7 +204,6 @@ sub _SetOuterCu {
 	my $self         = shift;
 	my $xml          = ${ shift(@_) };
 	my $outerCuThick = shift;
-	my $pcbClass     = shift;
 
 	my $idOfCu   = $self->_GetCuIdByThick($outerCuThick);
 	my @elements = @{ $xml->{ml}->{element} };
@@ -319,7 +318,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $layerCnt     = 6;
 	my @innerCuUsage = ( 58, 15, 12, 44 );
 	my $outerCuThick = 9;
-	my $pcbClass     = 6;
+	my $pcbClass     = 7;
 
 	use aliased 'Packages::CAMJob::Stackup::StackupDefault';
 

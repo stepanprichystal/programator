@@ -38,7 +38,7 @@ sub new {
 
 	# Name, Color, Polarity, Mirror, Comp
 	my @widths = ( 60,     20, 50,         40,       50,     50,      80,       80, );
-	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp", "Films", "Merged", "Single" );
+	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp", "Technology", "Merged films", "Single films" );
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
@@ -171,7 +171,7 @@ sub __SetLayout {
 		# zaregistrovat udalost
 		#$self->{"onSelectedChanged"}->Add(sub{ $row->PlotSelectionChanged($self, @_) });
 
-		$row->{"onRowChanged"}->Add( sub { $self->{"onRowChanged"}->Do(@_) } );
+		#$row->{"onRowChanged"}->Add( sub { $self->{"onRowChanged"}->Do(@_) } );
 
 		$self->AddRow($row);
 

@@ -23,8 +23,9 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 	my $itemId = shift;
+	my $style = shift;
 
-	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ], &Wx::wxBORDER_SIMPLE );
+	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ], $style );
 
 	bless($self);
 

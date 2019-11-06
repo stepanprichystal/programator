@@ -166,7 +166,7 @@ sub GetMaxAspectRatio {
 
 	# thick of pcb after this pressing in µm
 	my $fromLayer = $NCStartSide eq Enums->SignalLayer_TOP ? $self->{"topSignalLayer"} : $self->{"botSignalLayer"};
-	my $finalThick = $self->{"stackupNC"}->GetThickByLayerName( $fromLayer->GetName() ) * 1000;
+	my $finalThick = $self->{"stackupNC"}->GetThickByCuLayer( $fromLayer->GetName() ) * 1000;
 
 	my $aspectRatio = 0;
 

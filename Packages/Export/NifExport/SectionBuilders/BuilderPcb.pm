@@ -239,10 +239,21 @@ sub Build {
 
 	#prokoveni
 	if ( $self->_IsRequire("prokoveni") ) {
-		$section->AddRow( "prokoveni", $self->__GetProkoveni() );
+		
+		my $prokoveni = undef;
+		
+		$prokoveni = "A" if($nifData{"technology"} eq "G");
+		$prokoveni = "N" if($nifData{"technology"} eq "M");
+
+		$section->AddRow( "prokoveni", $prokoveni );
 	}
 
-	#prokoveni
+	# technologie
+	if ( $self->_IsRequire("technologie") ) {
+		$section->AddRow( "technologie", $nifData{"technology"} );
+	}
+
+	#typ_dps
 	if ( $self->_IsRequire("typ_dps") ) {
 		$section->AddRow( "typ_dps", $self->__GetTypDps() );
 	}
@@ -297,31 +308,50 @@ sub __GetLayerExist {
 	return $res;
 }
 
-sub __GetProkoveni {
-	my $self = shift;
-
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $stepName = "panel";
-	my $result   = 'N';
-
-	my $sExist = CamHelper->LayerExists( $inCAM, $jobId, "s" );
-
-	if ($sExist) {
-		if ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_nFillDrill ] ) ) {
-
-			$result = 'A';
-
-		}
-
-		my $rExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
-		if ($rExist) {
-			$result = 'A';
-		}
-	}
-
-	return ($result);
-}
+#sub __GetProkoveni {
+#	my $self = shift;
+#
+#	my $inCAM    = $self->{"inCAM"};
+#	my $jobId    = $self->{"jobId"};
+#	my $stepName = "panel";
+#	my $result   = 'N';
+#
+#	if ( $self->{"layerCnt"} >= 2
+#		 && CamDrilling->GetNCLayersByTypes(
+#											 $inCAM, $jobId,
+#											 [
+#											   EnumsGeneral->LAYERTYPE_plt_nDrill,        EnumsGeneral->LAYERTYPE_plt_bDrillTop,
+#											   EnumsGeneral->LAYERTYPE_plt_bDrillBot,     EnumsGeneral->LAYERTYPE_plt_nFillDrill,
+#											   EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
+#											   EnumsGeneral->LAYERTYPE_plt_nMill,         EnumsGeneral->LAYERTYPE_plt_bMillTop,
+#											   EnumsGeneral->LAYERTYPE_plt_bMillBot
+#											 ]
+#		 )
+#	  )
+#	{
+#
+#		$result = 'A';
+#	}
+#
+#	return ($result);
+#}
+#
+#sub __GetTechnologie {
+#	my $self = shift;
+#
+#	my $inCAM    = $self->{"inCAM"};
+#	my $jobId    = $self->{"jobId"};
+#	my $stepName = "panel";
+#
+#	my $prokoveni = $self->__GetProkoveni();
+#
+#	die "Attribute \"Prokoveni\" is not defined" if ( !defined $prokoveni );
+#
+#	my $tech = 'G';    # galvanika
+#	$tech = 'M' if ( $prokoveni eq "N" );    # leptaci resist
+#
+#	return ($tech);
+#}
 
 sub __GetTypDps {
 	my $self = shift;

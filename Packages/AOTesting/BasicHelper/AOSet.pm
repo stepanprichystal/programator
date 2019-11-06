@@ -143,7 +143,7 @@ sub SetStage {
 
 		my $cuLayer = $stackup->GetCuLayer($layerName);
 		$cuThick  = $cuLayer->GetThick();
-		$pcbThick = $stackup->GetThickByLayerName($layerName);
+		$pcbThick = $stackup->GetThickByCuLayer($layerName);
 
 	}
 

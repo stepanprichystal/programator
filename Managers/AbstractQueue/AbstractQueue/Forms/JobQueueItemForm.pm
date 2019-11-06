@@ -34,7 +34,7 @@ sub new {
 	my $groupMngr    = shift;
 	my $itemMngr     = shift;
 
-	my $self = $class->SUPER::new( $parent, $taskId );
+	my $self = $class->SUPER::new( $parent, $taskId,  &Wx::wxBORDER_SIMPLE );
 
 	bless($self);
 

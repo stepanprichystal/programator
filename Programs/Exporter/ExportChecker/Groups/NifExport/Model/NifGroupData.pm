@@ -196,6 +196,19 @@ sub GetTenting {
 }
 
 
+# Technology
+sub SetTechnology {
+	my $self  = shift;
+	
+	$self->{"data"}->{"technology"} = shift;
+}
+
+sub GetTechnology {
+	my $self  = shift;
+	
+	return $self->{"data"}->{"technology"};
+}
+
 #maska 01
 sub SetMaska01 {
 	my $self  = shift;

@@ -17,7 +17,6 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Model::PlotG
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -55,27 +54,24 @@ sub OnPrepareGroupData {
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
-	
 	# Prepare default layer settings
 	my @baseLayers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
-	
-	$defaultInfo->SetDefaultLayersSettings(\@baseLayers);
-	
+
+	$defaultInfo->SetDefaultLayersSettings( \@baseLayers );
+
 	#$self->__SetDefaultLayers(\@baseLayers, $defaultInfo);
 
 	my @layers = $self->__GetFinalLayers( \@baseLayers, $defaultInfo );
- 
+
 	$groupData->SetSendToPlotter(0);
-	$groupData->SetLayers(\@layers);
- 
+	$groupData->SetLayers( \@layers );
+
 	return $groupData;
 }
 
- 
-
 sub __GetFinalLayers {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
+	my $self        = shift;
+	my @layers      = @{ shift(@_) };
 	my $defaultInfo = shift;
 
 	my @prepared = ();
@@ -84,31 +80,32 @@ sub __GetFinalLayers {
 
 		my %lInfo = ();
 
-		$lInfo{"plot"}     = 1;
-		$lInfo{"name"}     = $l->{"gROWname"};
-		$lInfo{"polarity"} = $l->{"polarity"};
-		$lInfo{"mirror"}   = $l->{"mirror"};
-		$lInfo{"comp"}     = $l->{"comp"};
-		
-		push(@prepared, \%lInfo);
+		$lInfo{"plot"}        = 1;
+		$lInfo{"name"}        = $l->{"gROWname"};
+		$lInfo{"polarity"}    = $l->{"polarity"};
+		$lInfo{"mirror"}      = $l->{"mirror"};
+		$lInfo{"comp"}        = $l->{"comp"};
+		$lInfo{"etchingType"} = $l->{"etchingType"};
+
+		push( @prepared, \%lInfo );
 	}
-	
+
 	# remove/not plot layer "c" if no copper pcb
-	if($defaultInfo->GetTypeOfPcb() eq "Neplatovany"){
-		
-		foreach (@prepared){
-			
-			if($_->{"name"} eq "c"){
+	if ( $defaultInfo->GetTypeOfPcb() eq "Neplatovany" ) {
+
+		foreach (@prepared) {
+
+			if ( $_->{"name"} eq "c" ) {
 				$_->{"plot"} = 0;
 				last;
 			}
 		}
 	}
-	
+
 	# Remove layers not to by plotted
 	@prepared = grep { $_->{"name"} ne "bend" } @prepared;
 	@prepared = grep { $_->{"name"} !~ /^coverlay/ } @prepared;
- 
+
 	return @prepared;
 
 }

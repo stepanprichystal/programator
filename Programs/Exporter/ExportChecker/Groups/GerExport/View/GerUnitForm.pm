@@ -67,7 +67,7 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
-	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow1     = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szColInner = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
@@ -79,11 +79,11 @@ sub __SetLayout {
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	
+
 	$szColInner->Add( $jetPrint, 1, &Wx::wxEXPAND );
 	$szColInner->Add( $gerbers, 0, &Wx::wxEXPAND | &Wx::wxTOP, 2 );
 
-	$szRow1->Add( $mdi,     50, &Wx::wxEXPAND );
+	$szRow1->Add( $mdi, 50, &Wx::wxEXPAND );
 	$szRow1->Add( $szColInner, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 
 	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND );
@@ -167,7 +167,7 @@ sub __SetLayoutJetprint {
 
 	# DEFINE CONTROLS
 
-	my $exportChb   = Wx::CheckBox->new( $statBox, -1, "Export",          &Wx::wxDefaultPosition );
+	my $exportChb   = Wx::CheckBox->new( $statBox, -1, "Export",            &Wx::wxDefaultPosition );
 	my $fiduc3p2Chb = Wx::CheckBox->new( $statBox, -1, "Fiduc holes 3.2mm", &Wx::wxDefaultPosition );
 
 	# SET EVENTS
@@ -178,8 +178,8 @@ sub __SetLayoutJetprint {
 	$szStatBox->Add( $fiduc3p2Chb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
-	$self->{"exportJetprintChb"}   = $exportChb;
-	$self->{"fiduc3p2Chb"} = $fiduc3p2Chb;
+	$self->{"exportJetprintChb"} = $exportChb;
+	$self->{"fiduc3p2Chb"}       = $fiduc3p2Chb;
 
 	return $szStatBox;
 }
@@ -291,11 +291,11 @@ sub __OnStepChange {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $stepName = $self->{"stepCb"}->GetValue();
-	my $srExist = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName );
+	my $stepName    = $self->{"stepCb"}->GetValue();
+	my $srExist     = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName );
 	my $mpanelExist = $self->{"defaultInfo"}->StepExist("mpanel");
-	
-	unless ($srExist && $mpanelExist) {
+
+	unless ( $srExist && $mpanelExist ) {
 		$self->{"singleProfileChb"}->Disable();
 		$self->{"singleProfileChb"}->SetValue(0);
 		$self->{"addFiducialChb"}->Disable();
@@ -307,25 +307,21 @@ sub __OnStepChange {
 	}
 
 }
+sub OnChangeLayerHandler {
+	my $self  = shift;
+	my $layer = shift;
 
-sub PlotRowSettChanged {
-	my $self    = shift;
-	my $plotRow = shift;
+	my $row = $self->{"plotList"}->GetRowByText( $layer->{"name"} );
 
-	my %lInfo = $plotRow->GetLayerValues();
+	die "Plot list row was not found by layer name:" . $layer->{"name"};
 
-	foreach my $l ( @{ $self->{"layers"} } ) {
-
-		if ( $l->{"name"} eq $plotRow->GetRowText() ) {
-
-			$l->{"mirror"}   = $lInfo{"mirror"};
-			$l->{"polarity"} = $lInfo{"polarity"};
-			$l->{"comp"}     = $lInfo{"comp"};
-		}
-	}
-
+	$row->SetPolarity( $layer->{"polarity"} );
+	$row->SetMirror( $layer->{"mirror"} );
+	$row->SetComp( $layer->{"comp"} );
+	$row->SetShrinkX( $layer->{"shrinkX"} );
+	$row->SetShrinkY( $layer->{"shrinkY"} );
+ 
 }
-
 # =====================================================================
 # DISABLING CONTROLS
 # =====================================================================
@@ -351,22 +347,22 @@ sub DisableControls {
 	unless ( $defaultInfo->LayerExist("goldc") && $defaultInfo->LayerExist("golds") ) {
 		$self->{"goldChb"}->Disable();
 	}
-	
+
 	# JETPRINT Gerbers
-	
+
 	if ( !$defaultInfo->LayerExist("pc") && !$defaultInfo->LayerExist("ps") ) {
 		$self->{"exportJetprintChb"}->Disable();
-		$self->{"fiduc3p2Chb"}->Disable(); 
+		$self->{"fiduc3p2Chb"}->Disable();
 	}
-	
+
 	# PASTE FILES
 	my $mpanelExist = $defaultInfo->StepExist("mpanel");
-	
-	unless($mpanelExist){
+
+	unless ($mpanelExist) {
 		$self->{"singleProfileChb"}->Disable();
 		$self->{"addFiducialChb"}->Disable();
 	}
- 
+
 }
 
 # =====================================================================
@@ -533,7 +529,6 @@ sub GetMdiInfo {
 
 # Export jetprint gerbers =========================================================
 
-
 sub SetJetprintInfo {
 	my $self = shift;
 	my $info = shift;
@@ -563,6 +558,5 @@ sub GetJetprintInfo {
 
 	return \%info;
 }
- 
 
 1;

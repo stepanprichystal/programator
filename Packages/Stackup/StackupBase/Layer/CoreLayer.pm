@@ -7,6 +7,8 @@
 package Packages::Stackup::StackupBase::Layer::CoreLayer;
 use base('Packages::Stackup::StackupBase::Layer::StackupLayer');
 
+use Class::Interface;
+&implements('Packages::Stackup::StackupBase::Layer::IStackupLayer');
 
 #3th party library
 use strict;

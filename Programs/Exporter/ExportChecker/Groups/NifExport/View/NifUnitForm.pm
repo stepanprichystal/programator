@@ -25,6 +25,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::QuickNo
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::MarkingFrm::MarkingList';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -52,13 +53,16 @@ sub new {
 
 	# PROPERTIES
 
-	$self->{'quickNoteFrm'}    = undef;    # window where quick notes are showed
-	$self->{'jumpScoringProp'} = undef;    # store information about cust jumpscoring
+	# NIF values passed other group
+	$self->{'tentingProp'}         = undef;    # store information about tenting
+	$self->{'technologyProp'}      = undef;    # store information about tenting
+	$self->{"jumpScoringProp"} = undef;    # store information about tenting
 
 	$self->__SetLayout();
 
 	# EVENTS
-	$self->{'onTentingChange'} = Event->new();
+	$self->{'onTentingChange'}    = Event->new();
+	$self->{'onTechnologyChange'} = Event->new();
 
 	return $self;
 }
@@ -140,8 +144,8 @@ sub __SetLayoutSettings {
 
 	my @maskColor = NifHelper->GetPcbMaskColors();
 	push( @maskColor, "" );
-	my @flexMaskColor =  ( "", "GreenUVFlex" );
-  
+	my @flexMaskColor = ( "", "GreenUVFlex" );
+
 	my @silkColor = NifHelper->GetPcbSilkColors();
 	push( @silkColor, "" );
 
@@ -158,7 +162,8 @@ sub __SetLayoutSettings {
 	my $textWidth = 110;
 	my $cbWidth   = 55;
 
-	my $tentingChb      = Wx::CheckBox->new( $statBox, -1, "Tenting (c,s)",    &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
+ 
+
 	my $maskaChb        = Wx::CheckBox->new( $statBox, -1, "Mask 100µm",      &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $pressfitChb     = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",   &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
 	my $tolMeasureChb   = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)", &Wx::wxDefaultPosition, [ $textWidth, 20 ] );
@@ -168,10 +173,10 @@ sub __SetLayoutSettings {
 	my @markingL = ( "pc", "mc", "c", "s", "ms", "ps" );
 
 	# add special layers
-	unshift( @markingL, "pc2" )    if ( $self->{"defaultInfo"}->LayerExist("pc2") );
-	push( @markingL, "ps2" )    if ( $self->{"defaultInfo"}->LayerExist("ps2") );
+	unshift( @markingL, "pc2" ) if ( $self->{"defaultInfo"}->LayerExist("pc2") );
+	push( @markingL, "ps2" ) if ( $self->{"defaultInfo"}->LayerExist("ps2") );
 
-	my $markingFrm = MarkingList->new($statBox, \@markingL);
+	my $markingFrm = MarkingList->new( $statBox, \@markingL );
 
 	my $silkTop2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top 2",    \@silkColor );
 	my $silkTopCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top",      \@silkColor );
@@ -183,15 +188,14 @@ sub __SetLayoutSettings {
 	my $silkBot2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk bot 2",    \@silkColor );
 
 	# SET EVENTS
-	Wx::Event::EVT_CHECKBOX( $tentingChb, -1, sub { $self->__OnTentingChangeHandler(@_) } );
-
+ 
 	# BUILD STRUCTURE OF LAYOUT
-	$szCol1->Add( $tentingChb,      0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+ 
 	$szCol1->Add( $maskaChb,        0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $pressfitChb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $tolMeasureChb,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol1->Add( $chamferEdgesChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
+	
 	$szCol2->Add( $markingFrm, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szCol4->Add( $silkTop2Cb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -212,11 +216,12 @@ sub __SetLayoutSettings {
 	$szStatBox->Add( $szCol4, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 20 );
 
 	# Set References
-	$self->{"tentingChb"}      = $tentingChb;
+
 	$self->{"maskaChb"}        = $maskaChb;
 	$self->{"pressfitChb"}     = $pressfitChb;
 	$self->{"tolMeasureChb"}   = $tolMeasureChb;
 	$self->{"chamferEdgesChb"} = $chamferEdgesChb;
+
 
 	$self->{"markingFrm"} = $markingFrm;
 
@@ -383,14 +388,29 @@ sub __QuickNotesClick {
 	$self->{'quickNoteFrm'}->{"mainFrm"}->Show();
 }
 
-# Control handlers
-sub __OnTentingChangeHandler {
+
+# =====================================================================
+# HANDLERS CONTROLS
+# =====================================================================
+sub OnPREGroupTentingChangeHandler {
 	my $self = shift;
-	my $chb  = shift;
+	my $val  = shift;
 
-	my $val = $chb->GetValue() ? 1 : 0;
+	$self->{'tenting'} = $val;
+}
 
-	$self->{"onTentingChange"}->Do($val);
+sub OnPREGroupTechnologyChangeHandler {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{'technology'} = $val;
+}
+
+sub OnSCOGroupChangeCustomerJump {
+	my $self          = shift;
+	my $isJumpscoring = shift;
+
+	$self->{"jumpScoringProp"} = $isJumpscoring;
 }
 
 # =====================================================================
@@ -409,6 +429,7 @@ sub DisableControls {
 	if ( $self->{"defaultInfo"}->GetLayerCnt() <= 1 ) {
 
 		$self->{"tentingChb"}->Disable();
+		$self->{"technologyCb"}->Disable();
 	}
 
 	# Show/hide special solder mask and silk screen
@@ -418,17 +439,8 @@ sub DisableControls {
 	$self->{"maskBotBendCb"}->Hide() unless ( $self->{"defaultInfo"}->LayerExist("msflex") );
 
 }
+ 
 
-# =====================================================================
-# HANDLERS - HANDLE EVENTS ANOTHER GROUPS
-# =====================================================================
-
-sub ChangeCustomerJump {
-	my $self          = shift;
-	my $isJumpscoring = shift;
-
-	$self->{"jumpScoringProp"} = $isJumpscoring;
-}
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
@@ -648,12 +660,27 @@ sub GetS_silk_screen_colour {
 sub SetTenting {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"tentingChb"}->SetValue($value);
+	
+	$self->{"tentingProp"} = $value;
 }
 
 sub GetTenting {
 	my $self = shift;
-	return $self->{"tentingChb"}->GetValue();
+	
+	return $self->{"tentingProp"};
+}
+
+sub SetTechnology {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"technologyCb"} = $value;
+}
+
+sub GetTechnology {
+	my $self  = shift;
+
+	return $self->{"technologyProp"};
 }
 
 sub SetMaska01 {
@@ -788,16 +815,14 @@ sub SetJumpScoring {
 	my $value = shift;
 
 	$self->{"jumpScoringProp"} = $value;
-
-	#$self->{"jumpscoringChb"}->SetValue($value);
+ 
 }
 
 sub GetJumpScoring {
 	my $self = shift;
 
 	return $self->{"jumpScoringProp"};
-
-	#$self->{"jumpscoringChb"}->GetValue();
+ 
 }
 
 1;

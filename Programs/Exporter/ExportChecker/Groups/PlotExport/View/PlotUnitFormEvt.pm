@@ -28,11 +28,10 @@ sub new {
 	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-	my $ref = $wrapper->can('ChangeTentingHandler');
-	$self->_AddHandler( $ref , Enums->Event_nif_tenting );
-
+	my $ref = $wrapper->can('OnPREGroupChangeLayerHandler');
+	$self->_AddHandler( $ref , Enums->Event_pre_layerChange );
+	 
 	# Provided events
-	$self->_AddEvent( $wrapper->{'onPlotRowChanged'}, Enums->Event_plot_rowChange );
 	 
 
 	return $self;

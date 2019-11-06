@@ -28,21 +28,14 @@ sub new {
 	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-	my $ref = $wrapper->can('ChangeTentingHandler');
-	$self->_AddHandler( $ref , Enums->Event_nif_tenting );
-
-	# Provided handlers
-	my $ref2 = $wrapper->can('PlotRowSettChanged');
-	$self->_AddHandler( $ref2 , Enums->Event_plot_rowChange );
-
 
 	# Provided events
+	$self->_AddEvent( $wrapper->{'onTentingChange'},    Enums->Event_pre_tenting );
+	$self->_AddEvent( $wrapper->{'onTechnologyChange'}, Enums->Event_pre_technology );
+	$self->_AddEvent( $wrapper->{'onLayerSettChange'},  Enums->Event_pre_layerChange );
 
 	return $self;
 }
-
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

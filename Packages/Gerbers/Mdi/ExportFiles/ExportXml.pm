@@ -389,20 +389,20 @@ sub __GetThickByLayer {
 
 						# Top outer layer
 
-						$thick = $stackup->GetThickByLayerName("v2");
+						$thick = $stackup->GetThickByCuLayer("v2");
 
 					}
 					else {
 
 						# Bot outer layer
 
-						$thick = $stackup->GetThickByLayerName( "v" . ( ( $layer =~ /v(\d+)outer/ )[0] - 1 ) );
+						$thick = $stackup->GetThickByCuLayer( "v" . ( ( $layer =~ /v(\d+)outer/ )[0] - 1 ) );
 
 					}
 
 				}
 				else {
-					$thick = $stackup->GetThickByLayerName($layer);
+					$thick = $stackup->GetThickByCuLayer($layer);
 				}
 
 				# Check if core OR laminated package contains plated NC operation, if so add extra plating
@@ -423,7 +423,7 @@ sub __GetThickByLayer {
 
 				# it there is not progress lamination, find cu core
 				unless ( defined $stackupNCitem ) {
-					my $coreNum = $stackup->GetCoreByCopperLayer($layer)->GetCoreNumber();
+					my $coreNum = $stackup->GetCoreByCuLayer($layer)->GetCoreNumber();
 					$stackupNCitem = $stackupNC->GetCore($coreNum);
 
 				}

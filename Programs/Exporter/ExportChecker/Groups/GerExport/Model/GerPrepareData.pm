@@ -69,30 +69,28 @@ sub OnPrepareGroupData {
 	else {
 		$groupData->SetExportLayers(0);
 	}
-	
+
 	# 2) Prepare MDI settings
-	my %mdiInfo = $self->__GetMDIInfo($inCAM, $jobId);
+	my %mdiInfo = $self->__GetMDIInfo( $inCAM, $jobId );
 	$groupData->SetMdiInfo( \%mdiInfo );
 
 	# 3) Prepare paste settings
 	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId, $defaultInfo );
 
 	$groupData->SetPasteInfo( \%pasteInfo );
-	
+
 	# 4) Prepare jetprint settings
-	
-	my %jetInfo = $self->__GetJetprintInfo($jobId, $defaultInfo);
-	
+
+	my %jetInfo = $self->__GetJetprintInfo( $jobId, $defaultInfo );
+
 	$groupData->SetJetprintInfo( \%jetInfo );
-	
-	 
 
 	return $groupData;
 }
 
 sub __GetFinalLayers {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
+	my $self        = shift;
+	my @layers      = @{ shift(@_) };
 	my $defaultInfo = shift;
 
 	my @prepared = ();
@@ -101,21 +99,21 @@ sub __GetFinalLayers {
 
 		my %lInfo = ();
 
-		$lInfo{"plot"}     = 1;
-		$lInfo{"name"}     = $l->{"gROWname"};
-		$lInfo{"polarity"} = $l->{"polarity"};
-		$lInfo{"mirror"}   = $l->{"mirror"};
-		$lInfo{"comp"}     = $l->{"comp"};
+		$lInfo{"plot"}        = 1;
+		$lInfo{"name"}        = $l->{"gROWname"};
+		$lInfo{"polarity"}    = $l->{"polarity"};
+		$lInfo{"mirror"}      = $l->{"mirror"};
+		$lInfo{"comp"}        = $l->{"comp"};
 
 		push( @prepared, \%lInfo );
 	}
-	
+
 	# remove/not plot layer "c" if no copper pcb
-	if($defaultInfo->GetTypeOfPcb() eq "Neplatovany"){
-		
-		foreach (@prepared){
-			
-			if($_->{"name"} eq "c"){
+	if ( $defaultInfo->GetTypeOfPcb() eq "Neplatovany" ) {
+
+		foreach (@prepared) {
+
+			if ( $_->{"name"} eq "c" ) {
 				$_->{"plot"} = 0;
 				last;
 			}
@@ -126,23 +124,22 @@ sub __GetFinalLayers {
 
 }
 
-
 sub __GetPasteInfo {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $defaultInfo = shift;
 	my %pasteInfo   = ();
-	
+
 	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	#my @layers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
-	my $sa_ori  = $defaultInfo->LayerExist("sa-ori");
-	my $sb_ori  = $defaultInfo->LayerExist("sb-ori");
-	my $sa_made = $defaultInfo->LayerExist("sa-made");
-	my $sb_made = $defaultInfo->LayerExist("sb-made");
-	my $mpanelExist = $defaultInfo->StepExist( "mpanel" );
+	my $sa_ori      = $defaultInfo->LayerExist("sa-ori");
+	my $sb_ori      = $defaultInfo->LayerExist("sb-ori");
+	my $sa_made     = $defaultInfo->LayerExist("sa-made");
+	my $sb_made     = $defaultInfo->LayerExist("sb-made");
+	my $mpanelExist = $defaultInfo->StepExist("mpanel");
 
 	#my @layers     = ();
 	my $pasteExist = 1;
@@ -150,86 +147,86 @@ sub __GetPasteInfo {
 	if ( $sa_ori || $sb_ori ) {
 
 		$pasteInfo{"notOriginal"} = 0;
-		$pasteExist      = 1;
+		$pasteExist = 1;
 
 	}
 	elsif ( $sa_made || $sb_made ) {
 
 		$pasteInfo{"notOriginal"} = 1;
-		$pasteExist      = 1;
+		$pasteExist = 1;
 
 	}
 	else {
 
 		$pasteInfo{"notOriginal"} = 0;
-		$pasteExist      = 0;
+		$pasteExist = 0;
 	}
 
 	if ($mpanelExist) {
 		$pasteInfo{"step"} = "mpanel";
 	}
 	else {
-		$pasteInfo{"step"}   = "o+1";
+		$pasteInfo{"step"} = "o+1";
 	}
 
 	# default if export paste
-	if($pasteExist && !$defaultInfo->IsPool()){
- 
+	if ( $pasteExist && !$defaultInfo->IsPool() ) {
+
 		$pasteInfo{"export"} = 1;
-		
-	}else{
+
+	}
+	else {
 		$pasteInfo{"export"} = 0;
 	}
-	
 
 	# default is not add profile
-	if(defined $customerNote->ProfileToPaste()){
+	if ( defined $customerNote->ProfileToPaste() ) {
 		$pasteInfo{"addProfile"} = $customerNote->ProfileToPaste();
-		
-	}else{
-		
+
+	}
+	else {
+
 		$pasteInfo{"addProfile"} = 0;
 	}
-	
-	 # default is don't add single profile
-	if($mpanelExist && defined $customerNote->ProfileToPaste()){
+
+	# default is don't add single profile
+	if ( $mpanelExist && defined $customerNote->ProfileToPaste() ) {
 		$pasteInfo{"addSingleProfile"} = $customerNote->SingleProfileToPaste();
-		
-	}else{
-		
+
+	}
+	else {
+
 		$pasteInfo{"addSingleProfile"} = 0;
 	}
 
-	 
 	# default is don't add fiducials to paste
-	if($mpanelExist && defined $customerNote->FiducialToPaste()){
+	if ( $mpanelExist && defined $customerNote->FiducialToPaste() ) {
 		$pasteInfo{"addFiducial"} = $customerNote->FiducialToPaste();
-		
-	}else{
-		
+
+	}
+	else {
+
 		$pasteInfo{"addFiducial"} = 0;
 	}
-	 
-	$pasteInfo{"zipFile"}    = 1;
- 
+
+	$pasteInfo{"zipFile"} = 1;
 
 	return %pasteInfo;
 
 }
 
-
 sub __GetMDIInfo {
-	my $self        = shift;
+	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
- 
-	my %mdiTypes = MdiHelper->GetDefaultLayerTypes($inCAM, $jobId);
+
+	my %mdiTypes = MdiHelper->GetDefaultLayerTypes( $inCAM, $jobId );
 
 	my %mdi = ();
 	$mdi{"exportSignal"} = $mdiTypes{"typeSignal"};
-	$mdi{"exportMask"} = $mdiTypes{"typeMask"};
-	$mdi{"exportPlugs"} = $mdiTypes{"typePlug"};
-	$mdi{"exportGold"} = $mdiTypes{"typeGold"};
+	$mdi{"exportMask"}   = $mdiTypes{"typeMask"};
+	$mdi{"exportPlugs"}  = $mdiTypes{"typePlug"};
+	$mdi{"exportGold"}   = $mdiTypes{"typeGold"};
 
 	return %mdi;
 }
@@ -257,35 +254,36 @@ sub __GetMDIInfo {
 #	}
 #
 #	$mdiInfo{"exportPlugs"} = ( $defaultInfo->LayerExist("plgc") || $defaultInfo->LayerExist("plgs") ) ? 1 : 0;
-#	
+#
 #	$mdiInfo{"exportGold"} = ( $defaultInfo->LayerExist("goldc") || $defaultInfo->LayerExist("golds") ) ? 1 : 0;
 #
-# 
+#
 #	return %mdiInfo;
 #
 #}
 
-
 sub __GetJetprintInfo {
-	my $self        = shift;
-	 
+	my $self = shift;
+
 	my $jobId       = shift;
 	my $defaultInfo = shift;
 
 	my %jetInfo = ();
 
-	if (  $defaultInfo->LayerExist("pc") || $defaultInfo->LayerExist("ps")){
-		
+	if ( $defaultInfo->LayerExist("pc") || $defaultInfo->LayerExist("ps") ) {
+
 		$jetInfo{"exportGerbers"} = 1;
-	}else{
+	}
+	else {
 		$jetInfo{"exportGerbers"} = 0;
 	}
- 
- 	$jetInfo{"fiduc3p2"} = 0;
- 
+
+	$jetInfo{"fiduc3p2"} = 0;
+
 	return %jetInfo;
 
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

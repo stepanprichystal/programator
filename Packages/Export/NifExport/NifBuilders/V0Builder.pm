@@ -63,6 +63,7 @@ sub Build {
 	push(@req, "c_silk_screen_colour2");
 	push(@req, "s_silk_screen_colour2");
 	push(@req, "tenting");
+	push(@req, "technologie");
 	push(@req, "lak_typ");
 	push(@req, "uhlik_typ");
 	#push(@req, "typ_dps");

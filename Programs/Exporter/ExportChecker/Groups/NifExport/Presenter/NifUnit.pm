@@ -89,6 +89,7 @@ sub RefreshGUI {
 
 	#refresh group form
 	$self->{"form"}->SetTenting( $groupData->GetTenting() );
+	$self->{"form"}->SetTechnology( $groupData->GetTechnology() );
 	$self->{"form"}->SetMaska01( $groupData->GetMaska01() );
 	$self->{"form"}->SetPressfit( $groupData->GetPressfit() );
 	$self->{"form"}->SetToleranceHole( $groupData->GetToleranceHole() );
@@ -109,7 +110,6 @@ sub RefreshGUI {
 	$self->{"form"}->SetNasobnost( $groupData->GetNasobnost() );
 
 	# Mask color
-
 
 	$self->{"form"}->SetFlexi_maska( $groupData->GetFlexi_maska() );
 	$self->{"form"}->SetC_mask_colour( $groupData->GetC_mask_colour() );
@@ -137,6 +137,7 @@ sub GetGroupData {
 	if ($frm) {
 		$groupData = $self->{"dataMngr"}->GetGroupData();
 		$groupData->SetTenting( $frm->GetTenting() );
+		$groupData->SetTechnology( $frm->GetTechnology() );
 		$groupData->SetMaska01( $frm->GetMaska01() );
 		$groupData->SetPressfit( $frm->GetPressfit() );
 		$groupData->SetToleranceHole( $frm->GetToleranceHole() );

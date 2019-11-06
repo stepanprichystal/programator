@@ -369,7 +369,7 @@ sub _DrawPressThickness {
 	my $self    = shift;
 	my $stackup = shift;
 
-	if ( $stackup->ProgressLamination() ) {
+	if ( $stackup->GetSequentialLam() ) {
 
 		my %press = $stackup->GetPressInfo();
 
@@ -381,7 +381,7 @@ sub _DrawPressThickness {
 			
 			$y -= 20;
 
-			my $thick = $stackup->GetThickByLayerName( $press{$pressNum}->GetTopCopperLayer() );
+			my $thick = $stackup->GetThickByCuLayer( $press{$pressNum}->GetTopCopperLayer() );
 
 			my $txt = "$pressNum. press = " . sprintf("%.2f",$thick) . "mm\n";
 

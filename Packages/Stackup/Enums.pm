@@ -29,10 +29,25 @@ use constant {
     CoreType_FLEX => "flexCore"
 };
 
+use constant {
+    NoFlowPrepreg_P1 => "noFLowP1",
+    NoFlowPrepreg_P2 => "noFLowP2"
+};
+
 # source which stackup class read from
 use constant {
     StackupSource_ML => "stackupSource_ml",
     StackupSource_INSTACK => "stackupSource_instack"
+};
+
+use constant {
+    Product_INPUT => "productInput",
+    Product_PRESS => "productPress"
+};
+
+use constant {
+    ProductL_PRODUCT => "productLProduct",
+    ProductL_MATERIAL => "productLMaterial"
 };
 
 1;

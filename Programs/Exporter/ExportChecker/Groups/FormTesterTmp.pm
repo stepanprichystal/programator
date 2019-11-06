@@ -18,10 +18,11 @@ use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupWrapperForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitForm';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitForm';
- 
-use aliased 'Packages::InCAM::InCAM';
 
+use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitForm';
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -97,9 +98,13 @@ sub __SetLayout {
 sub _TestedForm {
 	my $self         = shift;
 	my $groupWrapper = shift;
+	
+ 
+
+	my $d = DefaultInfo->new( $self->{"inCAM"}, $self->{"jobId"});
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	my $nif = PlotUnitForm->new( $parent, $self->{"inCAM"}, $self->{"jobId"}, "PLot" );
+	my $nif = PreUnitForm->new( $parent, $self->{"inCAM"}, $self->{"jobId"}, $d );
 
 	return $nif;
 
@@ -111,9 +116,9 @@ sub _TestedForm {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new(-1, "f13609" );
+	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new(-1, "d222769" );
 	 
-	#$test->MainLoop();
+	$test->MainLoop();
 }
 
  

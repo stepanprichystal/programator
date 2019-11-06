@@ -50,6 +50,7 @@ sub OnExportGroupData {
 
 	# Other
 	$exportData->SetTenting( $groupData->GetTenting() );
+	$exportData->SetTechnology( $groupData->GetTechnology() );
 	$exportData->SetMaska01( $groupData->GetMaska01() );
 	$exportData->SetPressfit( $groupData->GetPressfit() );
 	$exportData->SetToleranceHole( $groupData->GetToleranceHole() );

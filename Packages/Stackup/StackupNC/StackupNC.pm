@@ -11,6 +11,7 @@ use base('Packages::Stackup::StackupBase::StackupBase');
 use strict;
 use warnings;
 
+
 #local library
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
@@ -136,6 +137,24 @@ sub GetCore {
 	}
 
 }
+
+ 
+ 
+my @planets = qw(
+   Mercury
+   Venus
+   Earth
+   Mars
+   Ceres
+   Jupiter
+   Saturn
+   Uranus
+   Neptune
+   Pluto
+   Charon
+);
+ 
+say first_index { $_ eq 'Mars' } @planets;
 
 sub GetPressCnt {
 	my $self = shift;

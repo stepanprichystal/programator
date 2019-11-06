@@ -235,6 +235,10 @@ sub AddNCLayerType {
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_cDrill;
 			$l->{"plated"} = 1;
 
+		}elsif ( $l->{"gROWname"} =~ /^jfill[0-9]+$/ ) {
+
+			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_cFillDrill;
+			$l->{"plated"} = 1;
 		}
 		elsif ( $l->{"gROWname"} =~ /^r[0-9]*$/ ) {
 

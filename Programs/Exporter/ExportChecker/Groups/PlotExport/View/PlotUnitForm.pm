@@ -10,9 +10,7 @@ use base qw(Wx::Panel);
 use Class::Interface;
 &implements('Programs::Exporter::ExportChecker::Groups::IUnitForm');
 
-use Class::Interface;
-&implements('Programs::Exporter::ExportChecker::Groups::IUnitForm');
-
+ 
 #3th party library
 use strict;
 use warnings;
@@ -23,6 +21,7 @@ use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::PlotList';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,15 +31,17 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $defaultInfo = shift;
 
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
 
-	$self->{"inCAM"} = $inCAM;
-	$self->{"jobId"} = $jobId;
+	$self->{"inCAM"}       = $inCAM;
+	$self->{"jobId"}       = $jobId;
+	$self->{"defaultInfo"} = $defaultInfo;
 
 	$self->__SetLayout();
 
@@ -143,9 +144,9 @@ sub __SetLayoutControlList {
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
- 
+
 	my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
- 
+
 	# Remove layers not to be plotted
 	@layers = grep { $_->{"gROWname"} ne "bend" } @layers;
 	@layers = grep { $_->{"gROWname"} !~ /^coverlay/ } @layers;
@@ -186,6 +187,27 @@ sub __OnSelectAllChangeHandler {
 
 }
 
+
+
+# =====================================================================
+# HANDLERS CONTROLS
+# =====================================================================
+sub OnPREGroupChangeLayerHandler {
+	my $self  = shift;
+	my $layer = shift;
+
+	my $row = $self->{"plotList"}->GetRowByText( $layer->{"name"} );
+
+	die "Plot list row was not found by layer name:" . $layer->{"name"};
+
+	$row->SetPolarity( $layer->{"polarity"} );
+	$row->SetMirror( $layer->{"mirror"} );
+	$row->SetComp( $layer->{"comp"} );
+	$row->SetShrinkX( $layer->{"shrinkX"} );
+	$row->SetShrinkY( $layer->{"shrinkY"} );
+ 
+}
+
 # =====================================================================
 # DISABLING CONTROLS
 # =====================================================================
@@ -194,36 +216,11 @@ sub DisableControls {
 
 }
 
+
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
-
-sub ChangeTentingHandler {
-	my $self      = shift;
-	my $tentingCS = shift;
-
-	my $polar = "";
-	if ($tentingCS) {
-		$polar = "-";
-	}
-	else {
-		$polar = "+";
-	}
-
-	my @rows = $self->{"plotList"}->GetAllRows();
-
-	foreach my $r (@rows) {
-
-		my $lName = $r->GetRowText();
-
-		if ( $lName =~ /^[cs]$/ ) {
-
-			$r->SetPolarity($polar);
-		}
-	}
-
-}
-
+ 
 # sendtToPlotter
 sub SetSendToPlotter {
 	my $self = shift;

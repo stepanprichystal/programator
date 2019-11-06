@@ -300,7 +300,7 @@ sub Build {
 
 			if ( $existTopPlt_nDrill || $existPlt_bDrillTop || $existBotPlt_nDrill || $existPlt_bDrillBot ) {
 
-				my $actualThick = $stackup->GetThickByLayerName( $stackupNCTopL->GetName() ) * 1000;    #in µm
+				my $actualThick = $stackup->GetThickByCuLayer( $stackupNCTopL->GetName() ) * 1000;    #in µm
 				my $baseCuThick = $stackup->GetCuLayer( $stackupNCTopL->GetName() )->GetThick();
 
 				my %resultTop;
@@ -346,7 +346,7 @@ sub Build {
 				my $stackupNCTopL = $core->GetTopSigLayer();
 				my $stackupNCBotL = $core->GetBotSigLayer();
 
-				my $actualThick = $stackup->GetThickByLayerName( $stackupNCTopL->GetName() ) * 1000;    #in µm
+				my $actualThick = $stackup->GetThickByCuLayer( $stackupNCTopL->GetName() ) * 1000;    #in µm
 				my $baseCuThick = $stackup->GetCuLayer( $stackupNCTopL->GetName() )->GetThick();
 
 				my %resultTop =

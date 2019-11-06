@@ -25,8 +25,6 @@ use aliased 'Packages::Stackup::StackupBase::Layer::CoreLayer';
 use aliased 'Packages::Stackup::StackupBase::Layer::CopperLayer';
 use aliased 'Packages::Stackup::StackupBase::Layer::StackupLayer';
 
-
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -35,7 +33,7 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-	
+
 	$self->{"jobId"} = shift;
 
 	return $self;
@@ -132,8 +130,7 @@ sub ParseStackup {
 			$layerInfo->{"text"}         = $info->{text};
 			$layerInfo->{"typetext"}     = $info->{typetext};
 			$layerInfo->{"copperNumber"} = $copperCnt;
-			$layerInfo->{"id"} = 			$element->{id};
-			
+			$layerInfo->{"id"}           = $element->{id};
 
 			push( @thickList, $layerInfo );
 
@@ -147,8 +144,10 @@ sub ParseStackup {
 			$layerInfo->{"thick"}    = $info->{d};
 			$layerInfo->{"text"}     = $info->{text};
 			$layerInfo->{"typetext"} = $info->{typetext};
-			$layerInfo->{"id"} = 			$element->{id};
-			$layerInfo->{"qId"} = 			$element->{qId};
+			$layerInfo->{"id"}       = $element->{id};
+			$layerInfo->{"qId"}      = $element->{qId};
+			# prepreg is noflow if contains text "no flow"
+			$layerInfo->{"noFlow"}   = $layerInfo->{"typetext"} =~ /((no)|(low)).*flow/i ? 1 : 0;
 
 			push( @thickList, $layerInfo );
 
@@ -166,59 +165,17 @@ sub ParseStackup {
 			$layerInfo->{"text"}       = $info->{text};
 			$layerInfo->{"typetext"}   = $info->{typetext};
 			$layerInfo->{"coreNumber"} = $coreCnt;
-			$layerInfo->{"id"} = 			$element->{id};
-			$layerInfo->{"qId"} = 			$element->{qId};
-			
+			$layerInfo->{"id"}         = $element->{id};
+			$layerInfo->{"qId"}        = $element->{qId};
+
 			push( @thickList, $layerInfo );
 		}
 
 	}
-
-	#Set copper name c, v2....., s
-	foreach my $l (@thickList) {
-
-		if ( $l->{"type"} eq Enums->MaterialType_COPPER ) {
-			if ( $l->{"copperNumber"} == 1 ) {
-
-				$l->{"copperName"} = "c";
-
-			}
-			elsif ( $l->{"copperNumber"} == $copperCnt ) {
-				$l->{"copperName"} = "s";
-			}
-			else {
-
-				$l->{"copperName"} = "v" . $l->{"copperNumber"};
-			}
-		}
-	}
-
-	#Set core top/bot copper layers
-	for ( my $i = 0 ; $i < scalar(@thickList) ; $i++ ) {
-
-		my $l = $thickList[$i];
-
-		if ( $l->{"type"} eq Enums->MaterialType_CORE ) {
-
-			my $topCopper = $thickList[ $i - 1 ];
-
-			if ( $topCopper && $topCopper->{"type"} eq Enums->MaterialType_COPPER ) {
-
-				$l->{"topCopperLayer"} = $topCopper;
-			}
-
-			my $botCopper = $thickList[ $i + 1 ];
-
-			if ( $botCopper && $botCopper->{"type"} eq Enums->MaterialType_COPPER ) {
-
-				$l->{"botCopperLayer"} = $botCopper;
-			}
-		}
-	}
+ 
 
 	return @thickList;
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

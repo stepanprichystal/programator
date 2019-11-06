@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Contain inforamtion about stacku layer
+# Description:  
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::StackupBase::Press::StackupPress;
+package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcBuilder::ProcBuilderBase;
 
 #3th party library
 use strict;
@@ -16,47 +16,27 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+	my $self  = {};
 	bless $self;
-
-	#Pressing order
-	$self->{"order"} 	= shift;  
-
-	#top pressing layer name
-	$self->{"top"}    = shift;  
 	
-	#top pressing layer number c=1, v2 = 2, etc..
-	$self->{"topNumber"}    = shift;  
-
-	#bot pressing layer name
-	$self->{"bot"}    = shift;  
+	#require rows in nif section
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift; 
 	
-	#bot pressing layer number c=1, v2 = 2, etc..
-	$self->{"botNumber"}    = shift; 
-	
-
-	return $self;  
+	return $self;
 }
 
-sub GetPressOrder{
+sub Init{
 	my $self = shift;
 	
-	return $self->{"order"};
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift; 
+	$self->{"nifData"} = shift; 
+	$self->{"layerCnt"} = shift;
+	
 }
  
-sub GetTopCopperLayer{
-	my $self = shift;
-	
-	return $self->{"top"};
-}
-
-sub GetBotCopperLayer{
-	my $self = shift;
-	
-	return $self->{"bot"};
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

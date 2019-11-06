@@ -37,7 +37,7 @@ sub GetThickByLayer {
 
 		my $stackup = Stackup->new($pcbId);
 
-		$thick = $stackup->GetThickByLayerName($layer);
+		$thick = $stackup->GetThickByCuLayer($layer);
 
 		my $cuLayer = $stackup->GetCuLayer($layer);
 
@@ -91,7 +91,7 @@ sub GetSideByLayer {
 		# Other standard signal layer
 
 		my %pressInfo = $stackup->GetPressInfo();
-		my $core      = $stackup->GetCoreByCopperLayer($layerName);
+		my $core      = $stackup->GetCoreByCuLayer($layerName);
 		my $press     = undef;
 
 		if ($core) {
@@ -291,10 +291,10 @@ sub StackupMatInStock {
 
 # Return array of couples
 # Couple contain top + bot "package" and its layers
-# Package is set of cores+prepregs+cu fil laminated in separately
+# Package is set of cores+prepregs+cu foil laminated in separately
 # Attention
 # - NoFlow prepregs are removed - bond bbetween package
-# - Not entirely finished couples flex + flex package
+# - Not entirely implemnted couple: flex + flex package
 sub GetJoinedFlexRigidPackages {
 	my $self    = shift;
 	my $pcbId   = shift;    #pcb id
@@ -403,7 +403,6 @@ sub GetJoinedFlexRigidPackages {
 			$infTop{"layers"}        = \@packgLayersTop;
 			$infTop{"topCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } @packgLayersTop )[0]->GetCopperName();
 			$infTop{"botCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } reverse @packgLayersTop )[0]->GetCopperName();
-
 			$infJoin{"packageTop"} = \%infTop;
 
 			my %infBot = ();

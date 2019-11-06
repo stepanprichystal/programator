@@ -9,18 +9,18 @@ package Packages::Stackup::StackupBase::StackupBase;
 use strict;
 use warnings;
 use XML::Simple;
+use List::Util qw(first);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Stackup::StackupBase::Press::StackupPress';
+
 use aliased 'Packages::Stackup::StackupBase::StackupParsers::InStackParser';
 use aliased 'Packages::Stackup::StackupBase::StackupParsers::MultiCalParser';
 use aliased 'Packages::Stackup::StackupBase::Layer::PrepregLayer';
 use aliased 'Packages::Stackup::StackupBase::StackupHelper';
-
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,22 +54,22 @@ sub new {
 	my @layers = ();
 	$self->{"layers"} = \@layers;
 
-	# Is stackup progressive lamination
-	$self->{"lamination"} = 0;
-
-	# Number of pressing
-	$self->{"pressCount"} = 0;
-
-	#info (hash) for each pressing, which layer are pressed (most top/bot layers)
-	# type of item is <StackupPress>
-	$self->{"press"} = undef;
-
 	# Cu layer count
 	$self->{"layerCnt"} = undef;
 
 	$self->__CreateStackup();
 
 	return $self;
+}
+
+# Return source type which stackup read from
+sub GetStackupSource {
+	my $self = shift;
+
+	my $p = $self->{"parser"};
+
+	return Enums->StackupSource_INSTACK if ( ref($p) && $p->isa("Packages::Stackup::StackupBase::StackupParsers::InStackParser") );
+	return Enums->StackupSource_ML      if ( ref($p) && $p->isa("Packages::Stackup::StackupBase::StackupParsers::MultiCalParser") );
 }
 
 # Return all layers of stackup
@@ -79,29 +79,19 @@ sub GetAllLayers {
 	return @{ $self->{"layers"} };
 }
 
-# Return number of pressing
-sub GetPressCount {
-	my $self = shift;
+# Get core by core number
+sub GetCore {
+	my $self    = shift;
+	my $coreNum = shift;
 
-	return $self->{"pressCount"};
+	return ( grep { $_->GetCoreNumber() eq $coreNum } $self->GetAllCores() )[0];
 }
 
-# Return info about each pressing
-sub GetPressInfo {
-	my $self = shift;
-
-	return %{ $self->{"press"} };
-}
-
-sub ProgressLamination {
-	my $self = shift;
-
-	return $self->{"lamination"};
-}
-
-# Return all stackup cores
+# Return all layers type of core
 sub GetAllCores {
-	my $self = shift;
+	my $self    = shift;
+	my $noRigid = shift;    # filter out rigid cores
+	my $noFlex  = shift;    # filter out flex cores
 
 	my @thickList = @{ $self->{"layers"} };
 	my @cores     = ();
@@ -113,103 +103,93 @@ sub GetAllCores {
 		}
 	}
 
-	return @cores;
-}
-
-
-#Return final thickness (in mm units!!) of multilayer pcb base on Cu layer number
-#- This has not be thick of whole pcb, but e.g. thick of one requested core with top/bot cu
-#- Or thick of pcb from layer v2 - v5..
-sub GetThickByLayerName {
-	my $self = shift;
-
-	my $lCuNumber = shift;    #layer of number. Simple c,1,2,s or v1, v2 use ENUMS::Layers
-
-	my $pcbId = $self->{"pcbId"};
-	my $thick = 0;                  #total thick
-	my %info;                       #help variable for layer info
-	my @thickList = @{ $self->{"layers"} };
-
-	#number of Cu layers
-	my $lCuCount = scalar( grep GeneralHelper->RegexEquals( $_->{type}, Enums->MaterialType_COPPER ), @thickList );
-
-	#get order number from layer name
-	$lCuNumber = StackupHelper->GetLayerCopperNumber( $lCuNumber, $lCuCount );
-
-	#get index of Cu layer in <@thickList>.
-	my $lCuIdx         = $self->_GetIndexOfCuLayer($lCuNumber);
-	my $nearestCoreIdx = $self->_GetIndexOfNearestCore($lCuNumber);
-
-	#test if given Cu layer <$lCuNumber> is outer, thus TOP or BOTTOM
-	my $lCuIsOuter = $lCuNumber == 1 || $lCuNumber == $lCuCount ? 1 : 0;
-
-	#when given Cu layer <$lCuNumber> is surounded by prepregs, thus it means progressive lamination
-	my $isProgLamin = $self->ProgressLamination();
-
-	#Calculation thickness base on stackup properties
-	if ($lCuIsOuter) {    #we want total thick of pcb
-
-		foreach my $lInfo (@thickList) {
-			%info = %{$lInfo};
-			$thick += $info{thick};
-		}
-	}
-	elsif ($isProgLamin) {    #progressive lamination
-
-		#fin out if it's Cu layer is put lower then middle of pcb
-		my $isTop = $lCuNumber <= $lCuCount / 2 ? 1 : 0;
-
-		#index, which we will start to read thickness off each layer from
-		my $startIdx = $lCuIdx;
-		if ( !$isTop ) {
-
-			$startIdx = ( scalar(@thickList) - 1 ) - $lCuIdx;
-		}
-
-		#get value, how many Cu layer we have to go through
-		my $lCountToRead = scalar(@thickList) - ( 2 * ($startIdx) );
-
-		#begin to read thickness with <$startIdx> index
-		my $cuLayerCnt = 0;
-		for ( my $i = $startIdx ; $i < scalar(@thickList) ; $i++ ) {
-
-			%info = %{ $thickList[$i] };
-
-			#start to read thicks of all material layers
-			if ( $lCountToRead > 0 ) {
-
-				$thick += $info{thick};
-				$lCountToRead--;
-			}
-		}
-	}
-	else {    #standart stackup plus three layer pcb..
-
-		#get nearest core thick + top Cu core thick + bot Cu core thick
-		%info = %{ $thickList[ $nearestCoreIdx - 1 ] };    #top Cu thick
-		$thick += GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_COPPER ) ? $info{thick} : 0;
-		%info = %{ $thickList[$nearestCoreIdx] };          #core thick
-		$thick += GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_CORE ) ? $info{thick} : 0;
-		%info = %{ $thickList[ $nearestCoreIdx + 1 ] };    #bot Cu thick
-		$thick += GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_COPPER ) ? $info{thick} : 0;
+	# filter out flex cores
+	if ($noFlex) {
+		@cores = grep { $_->GetThick() > 100 } @cores;
 	}
 
-	#convert to milimeter
-	$thick = $thick / 1000.0;
+	# filter rigid cores
+	if ($noRigid) {
+		@cores = grep { $_->GetThick() <= 100 } @cores;
+	}
 
-	return $thick;
+	if ( scalar(@cores) ) {
+
+		return @cores;
+
+	}
+	else {
+
+		return 0;
+	}
 
 }
 
-# Return source type which stackup read from
-sub GetStackupSource {
+# Return total thick of this stackup
+sub GetCuLayerCnt {
 	my $self = shift;
+
+	my $lCount = scalar( grep { $_->GetType() eq Enums->MaterialType_COPPER } $self->GetAllLayers() );
+
+	return $lCount;
+}
+
+# Return Cu layer (CopperLayer object) by name (c, v2, v3 ...)
+sub GetCuLayer {
+	my $self      = shift;
+	my $layerName = shift;
 	
-	my $p    = $self->{"parser"};
+	my $l = first { $_->GetType() eq Enums->MaterialType_CORE && $_->GetName() eq $layerName } @{ $self->{"layers"} };
 
-	return Enums->StackupSource_INSTACK if ( ref($p) && $p->isa("Packages::Stackup::StackupBase::StackupParsers::InStackParser") );
-	return Enums->StackupSource_ML if ( ref($p) && $p->isa("Packages::Stackup::StackupBase::StackupParsers::MultiCalParser") )
+	die "Copper layer: $layerName was not found" unless ( defined $l );
+
+	return $l;
 }
+
+# If layer is copper type, return core ( Core layer object) which copper layer belongs to
+sub GetCoreByCuLayer {
+	my $self      = shift;
+	my $layerName = shift;
+
+	my @thickList = @{ $self->{"layers"} };
+	my $cuLayer   = $self->GetCuLayer($layerName);
+
+	my $core = undef;
+
+	foreach my $c ( $self->GetAllCores() ) {
+
+		if ( $c->GetTopCopperLayer()->GetCopperName() eq $layerName || c->GetBotCopperLayer()->GetCopperName() eq $layerName ) {
+			$core = $c;
+			last;
+		}
+	}
+
+	die "Core by copper layer: $layerName was not found" unless ( defined $core );
+
+	return $core;
+}
+
+# Return type of material, which stackup is composed from
+# Assume, all layers are same type, so take type from first core
+sub GetStackupType {
+	my $self = shift;
+
+	return join( "+", uniq( map( $_->GetTextType(), $self->GetAllCores() ) ) );
+}
+
+# Return if stackup is hybrid
+# Stackup is hybrid if there are cores with different material type (eg.: IS400 + DUROID)
+sub GetStackupIsHybrid {
+	my $self = shift;
+
+	my @types = uniq( map( $_->GetTextType(), $self->GetAllCores() ) );
+
+	return scalar(@types) > 1 ? 1 : 0;
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Private method
+#-------------------------------------------------------------------------------------------#
 
 sub __CreateStackup {
 	my $self = shift;
@@ -217,267 +197,201 @@ sub __CreateStackup {
 	#set info about layers of stackup
 	$self->__SetStackupLayers();
 
+	# adjust final prepreg thickness by copper usage
+	$self->__AdjustPrepregThickness();
+
 	#set other stackup property
 	$self->__SetOtherProperty();
 
-	#set info about pressing and type of stackup
-	$self->__SetStackupPressInfo();
-
 }
 
-#set info about layers of stackup
+# Set info about layers of stackup
 sub __SetStackupLayers {
 	my $self = shift;
 
 	my $jobId = $self->{"jobId"};
 
-	# Return parsed stackup layers from top 2 bot
-	my @stackupList = $self->{"parser"}->ParseStackup();
+	# 1) Return parsed stackup layers from top 2 bot
+	my @parsedLayers = $self->{"parser"}->ParseStackup();
 
-	my @thickList = ();
+	my $copperCnt = scalar( grep { $_->GetType() eq Enums->MaterialType_COPPER } @parsedLayers );
 
-	# Merge prepregs, create parent prepreg
-	for ( my $i = 0 ; $i < scalar(@stackupList) ; $i++ ) {
+	my @stackupL = ();
 
-		my $layerInfo = $stackupList[$i];
-		my $layerPrevInfo;
+	my $curParentPrpg = undef;
 
-		if ( $i > 0 ) {
-			$layerPrevInfo = $stackupList[ $i - 1 ];
-		}
+	# 2) Do additional adjustment of layers
+	for ( my $i = 0 ; $i < scalar(@parsedLayers) ; $i++ ) {
 
-		if ( $layerInfo->GetType() eq Enums->MaterialType_PREPREG ) {
+		my $layerInfo = $parsedLayers[$i];
 
-			# if first prepreg after cu, create parent prepreg
-			if ( $layerPrevInfo && $layerPrevInfo->GetType() eq Enums->MaterialType_COPPER ) {
+		if ( $layerInfo->GetType() eq Enums->MaterialType_COPPER ) {
 
-				$layerInfo = PrepregLayer->new();
+			# COPPER
 
-				$layerInfo->{"type"}     = Enums->MaterialType_PREPREG;
-				$layerInfo->{"thick"}    = 0;
-				$layerInfo->{"text"}     = "";
-				$layerInfo->{"typetext"} = $layerInfo->GetTextType();
-				$layerInfo->{"parent"}   = 1;
-
-				# push all child prepregs to parent prepreg
-
-				my $layerInfo2 = $stackupList[$i];
-
-				while ( $layerInfo2->GetType() eq Enums->MaterialType_PREPREG ) {
-
-					$layerInfo->AddChildPrepreg($layerInfo2);
-
-					$i++;
-					$layerInfo2 = $stackupList[$i];
-
-				}
-				$i--;
-
-				#set thick by sum all child prepregs thick
-				my @all = $layerInfo->GetAllPrepregs();
-				foreach my $p (@all) {
-					$layerInfo->{"thick"} += $p->GetThick();
-				}
+			if ( $layerInfo->GetCopperNumber() == 1 ) {
+				$layerInfo->{"copperName"} = "c";
 			}
-		}
+			elsif ( $layerInfo->GetCopperNumber() == $copperCnt ) {
+				$layerInfo->{"copperName"} = "s";
+			}
+			else {
 
-		push( @thickList, $layerInfo );
-	}
-
-	$self->__ComputePrepregsByCu( \@thickList );
-
-	$self->{"layers"} = \@thickList;
-
-}
-
-#set info about pressing and type of stackup
-sub __SetStackupPressInfo {
-	my $self = shift;
-
-	my $jobId = $self->{"jobId"};    #pcb id
-
-	my @thickList = @{ $self->{"layers"} };
-
-	#number of signal layers
-	my $lCuCount = $self->{"layerCnt"};
-
-	my @lNames = ();
-
-	for ( my $i = 1 ; $i <= scalar($lCuCount) ; $i++ ) {
-
-		if ( $i == 1 ) {
-			push( @lNames, "c" );
-		}
-		elsif ( $i == scalar($lCuCount) ) {
-			push( @lNames, "s" );
-		}
-		else {
-			push( @lNames, "v" . $i );
-		}
-	}
-
-	my %pressInfo = ();
-
-	for ( my $i = int( $lCuCount / 2 ) ; $i >= 0 ; $i-- ) {
-
-		#for inner layers only
-		my $nearestCoreIdx = $self->_GetIndexOfNearestCore( $i + 1 );
-
-		#if TOP
-
-		#if core was found OR if wasn't but there is no pressing already ( two pressed cores together)
-		if ( $nearestCoreIdx == -1 || $i == 0 && $nearestCoreIdx && $self->{"pressCount"} == 0 ) {
-
-			my $order = $self->{"pressCount"};
-			$order++;
-
-			my $stackupPress = StackupPress->new();
-
-			# Cores was not found, it is mean, first/last copper without core
-			# Or inner copper without core => lamination
-			if ( $nearestCoreIdx == -1 ) {
-
-				$stackupPress->{"top"}       = $lNames[$i];
-				$stackupPress->{"topNumber"} = $i + 1;
-				$stackupPress->{"bot"}       = $lNames[ $lCuCount - $i - 1 ];
-				$stackupPress->{"botNumber"} = $lCuCount - $i;
-
-				#if it is not TOP layer, its mean progressive lamination
-				if ( $i + 1 != 1 ) {
-
-					$self->{"lamination"} = 1;
-				}
-
+				$layerInfo->{"copperName"} = "v" . $layerInfo->GetCopperNumber();
 			}
 
-			# Two pressed cores together, cores are entirely on top + bot
-			elsif ( $i == 0 && $nearestCoreIdx > -1 && $self->{"pressCount"} == 0 ) {
+			push( @stackupL, $layerInfo );
+		}
+		elsif ( $layerInfo->GetType() eq Enums->MaterialType_CORE ) {
 
-				$stackupPress->{"top"}       = $lNames[$i];
-				$stackupPress->{"topNumber"} = 1;
-				$stackupPress->{"bot"}       = $lNames[ $lCuCount - 1 ];
-				$stackupPress->{"botNumber"} = $lCuCount;
+			# CORE
+
+			my $topCopper = $parsedLayers[ $i - 1 ];
+
+			if ( $topCopper && $topCopper->GetType() eq Enums->MaterialType_COPPER ) {
+
+				$layerInfo->{"topCopperLayer"} = $topCopper;
+				$topCopper->{"isFoil"}         = 0;
 			}
 
-			$stackupPress->{"order"} = $order;
-			$self->{"press"}{$order} = $stackupPress;
+			my $botCopper = $parsedLayers[ $i + 1 ];
 
-			$self->{"pressCount"} = $order;
+			if ( $botCopper && $botCopper->GetType() eq Enums->MaterialType_COPPER ) {
+
+				$layerInfo->{"botCopperLayer"} = $botCopper;
+				$botCopper->{"isFoil"}         = 0;
+			}
+
+			push( @stackupL, $layerInfo );
+
+		}
+		elsif ( $layerInfo->GetType() eq Enums->MaterialType_PREPREG ) {
+
+			# PREPREGS
+
+			# Merge prepregs with same type, create parent prepreg
+
+			#my $layerPrevInfo = $parsedLayers[ $i - 1 ] if ( $i > 0 );
+
+			# 1) Determine type of noflow prepreg
+			# - If is right next flex core it is type P1
+			# - flex core has always one NoFlow prepreg from both side
+			my $noFlowType = undef;
+
+			if ( $parsedLayers[$i]->GetIsNoFlow() ) {
+				$noFlowType = Enums->NoFlowPrepreg_P2;
+
+				# find preview core
+				my $corePrevInfo = ( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers[ ( $i - 2 ) .. ( $i - 1 ) ] )[-1];
+
+				# find next core
+				my $coreNextInfo = ( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers[ ( $i + 1 ) .. ( $i + 2 ) ] )[0];
+
+				if (
+					 (
+					      defined $corePrevInfo
+					   && $corePrevInfo->GetType() eq Enums->MaterialType_CORE
+					   && $corePrevInfo->GetCoreRigidType() eq Enums->CoreType_FLEX
+					 )
+					 || (    defined $coreNextInfo
+						  && $coreNextInfo->GetType() eq Enums->MaterialType_CORE
+						  && $coreNextInfo->GetCoreRigidType() eq Enums->CoreType_FLEX )
+				  )
+				{
+
+					$noFlowType = Enums->NoFlowPrepreg_P1;
+				}
+			}
+
+			# 2) Decide if create new prepreg parent
+			my $newParent = 0;
+
+			$newParent = 1 if ( !defined $curParentPrpg );
+			$newParent = 1 if ( defined $curParentPrpg && $curParentPrpg->GetIsNoFlow() != $parsedLayers[$i]->GetIsNoFlow() );
+			$newParent = 1 if ( defined $curParentPrpg && $curParentPrpg->GetIsNoFlow() && $curParentPrpg->GetNoFlowType() ne $noFlowType );
+
+			if ($newParent) {
+
+				# store preview parent to final list
+				if ( defined $curParentPrpg ) {
+
+					push( @stackupL, $curParentPrpg );
+
+				}
+
+				$curParentPrpg               = PrepregLayer->new();
+				$curParentPrpg->{"type"}     = Enums->MaterialType_PREPREG;
+				$curParentPrpg->{"thick"}    = 0;
+				$curParentPrpg->{"text"}     = "";
+				$curParentPrpg->{"typetext"} = $parsedLayers[$i]->GetTextType();
+				$curParentPrpg->{"parent"}   = 1;
+				$curParentPrpg->{"noFlow"}   = $parsedLayers[$i]->GetIsNoFlow();
+				$curParentPrpg->{"noFlowType"} = $noFlowType if ( $parsedLayers[$i]->GetIsNoFlow() );
+
+			}
+
+			# push child prepreg to parent
+			my $childPrpgInfo = $parsedLayers[$i];
+
+			$childPrpgInfo->{"noFlowType"} = $noFlowType if ( $childPrpgInfo->GetIsNoFlow() );
+
+			$curParentPrpg->AddChildPrepreg($childPrpgInfo);
+
+			# store last prepreg to list
+			my $layerNextInfo = $parsedLayers[ $i + 1 ] if ( $i < scalar(@parsedLayers) );
+			if ( defined $curParentPrpg && $layerNextInfo->GetType() ne Enums->MaterialType_PREPREG ) {
+
+				push( @stackupL, $curParentPrpg );
+				$curParentPrpg = undef;
+			}
+
 		}
 	}
 
-	return %pressInfo;
+	$self->{"layers"} = \@stackupL;
 }
 
 # Set other property of stackup
 sub __SetOtherProperty {
 	my $self = shift;
 
-	my @thickList = @{ $self->{"layers"} };
+	my @stackupL = @{ $self->{"layers"} };
 
 	#set cu layers count
-	$self->{"layerCnt"} = scalar( grep GeneralHelper->RegexEquals( $_->{type}, Enums->MaterialType_COPPER ), @thickList );
+	$self->{"layerCnt"} = scalar( grep GeneralHelper->RegexEquals( $_->{type}, Enums->MaterialType_COPPER ), @stackupL );
 
 }
 
 #computation of prepreg thickness depending on Cu usage in percent
-sub __ComputePrepregsByCu {
-	my $self      = shift;
-	my @thickList = @{ shift(@_) };
+sub __AdjustPrepregThickness {
+	my $self = shift;
 
-	for ( my $i = 0 ; $i < scalar(@thickList) ; $i++ ) {
+	my @stackupL = @{ $self->{"layers"} };
 
-		my $l = $thickList[$i];
+	for ( my $i = 0 ; $i < scalar(@stackupL) ; $i++ ) {
 
-		if ( Enums->MaterialType_PREPREG =~ /$l->{type}/i ) {
+		if ( $stackupL[$i]->GetType() eq Enums->MaterialType_PREPREG ) {
 
-			#sub TOP and BOT cu thinkness from prepreg thinkness
+			# 1) Set final parent prepreg thick by sum all child prepregs thick
+
+			foreach my $p ( $stackupL[$i]->GetAllPrepregs() ) {
+				$stackupL[$i]->{"thick"} += $p->GetThick();
+			}
+
+			#  2) Sub TOP and BOT cu thinkness from prepreg thinkness
 			#Theoretical calculation for one prepreg and two Cu is:
 			# Thick = height(prepreg) - (height(topCu* (1-UsageInPer(topCu))  +   height(botCu* (1-UsageInPer(topCu)))
 
-			$thickList[$i]->{thick} -=
-			  $thickList[ $i - 1 ]->{thick} * ( 1 - $thickList[ $i - 1 ]->{usage} ) +
-			  $thickList[ $i + 1 ]->{thick} * ( 1 - $thickList[ $i + 1 ]->{usage} );
-		}
-	}
-}
+			if ( $stackupL[ $i - 1 ]->GetType() eq Enums->MaterialType_COPPER ) {
+				$stackupL[$i]->{thick} -= $stackupL[ $i - 1 ]->{thick} * ( 1 - $stackupL[ $i - 1 ]->{usage} );
+			}
 
-#Get index of core, which is connected with given inner Cu layer <$lCuNumber>
-sub _GetIndexOfNearestCore {
-	my $self      = shift;
-	my $lCuNumber = shift;
-
-	my %info;
-
-	my $lCuCount = $self->{"layerCnt"};
-
-	my @thickList = @{ $self->{"layers"} };
-
-	my $coreIdx = -1;
-
-	#if layer is TOP or BOT
-	#if ( $lCuNumber == 1 || $lCuNumber == $lCuCount ) {
-	#	return $coreIdx;
-	#}
-
-	#find connected core and return thick of that + cu layer
-	my $lCuIndex = $self->_GetIndexOfCuLayer($lCuNumber);
-
-	#try find CORE above Cu..
-	if ( $thickList[ $lCuIndex - 1 ] ) {
-
-		%info = %{ $thickList[ $lCuIndex - 1 ] };
-		if ( GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_CORE ) ) {
-
-			$coreIdx = $lCuIndex - 1;
+			if ( $stackupL[ $i + 1 ]->GetType() eq Enums->MaterialType_COPPER ) {
+				$stackupL[$i]->{thick} -= $stackupL[ $i + 1 ]->{thick} * ( 1 - $stackupL[ $i + 1 ]->{usage} );
+			}
 		}
 	}
 
-	#try find CORE under Cu..
-	if ( $thickList[ $lCuIndex + 1 ] ) {
-
-		%info = %{ $thickList[ $lCuIndex + 1 ] };
-		if ( GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_CORE ) ) {
-
-			$coreIdx = $lCuIndex + 1;
-		}
-	}
-
-	return $coreIdx;
-}
-
-#return index of given Cu layer in thicklist
-sub _GetIndexOfCuLayer {
-	my $self      = shift;
-	my $lCuNumber = shift;
-
-	my $lCuCount  = $self->{"layerCnt"};
-	my @thickList = @{ $self->{"layers"} };
-
-	#find index in <@thicklist> of layer number <$lCuNumber>
-
-	#if layer is TOP
-	if ( $lCuNumber == 1 ) {
-		return 0;
-	}
-	elsif ( $lCuNumber eq EnumsGeneral->Layers_BOT ) {
-		return $lCuCount - 1;
-	}
-
-	my $cuLayerCnt = 0;
-	for ( my $i = 0 ; $i < scalar(@thickList) ; $i++ ) {
-
-		my %info = %{ $thickList[$i] };
-
-		if ( GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_COPPER ) ) {
-			$cuLayerCnt++;
-		}
-
-		if ( $cuLayerCnt == $lCuNumber ) {
-			return $i;
-		}
-	}
-	return -1;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -485,6 +399,13 @@ sub _GetIndexOfCuLayer {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::Stackup::StackupBase::StackupBase';
+
+	my $jobId   = "d152456";
+	my $stackup = StackupBase->new($jobId);
+
+	die;
 
 }
 

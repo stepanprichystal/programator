@@ -32,14 +32,39 @@ sub new {
 
  
 # layers
-sub SetSignalLayers {
+sub SetLayers {
 	my $self  = shift;
 	$self->{"data"}->{"layers"} = shift;
 }
 
-sub GetSignalLayers {
+sub GetLayers {
 	my $self  = shift;
 	return $self->{"data"}->{"layers"};
+}
+
+# Tenting
+sub SetTenting {
+	my $self  = shift;
+	$self->{"data"}->{"tenting"} = shift;
+}
+
+sub GetTenting {
+	my $self  = shift;
+	return $self->{"data"}->{"tenting"};
+}
+
+
+# Technology
+sub SetTechnology {
+	my $self  = shift;
+	
+	$self->{"data"}->{"technology"} = shift;
+}
+
+sub GetTechnology {
+	my $self  = shift;
+	
+	return $self->{"data"}->{"technology"};
 }
  
 
