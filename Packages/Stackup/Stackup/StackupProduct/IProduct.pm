@@ -20,6 +20,8 @@ use warnings;
 use Class::Interface;
 &interface;
 
+sub GetId;
+
 sub GetTopCopperLayer;
 
 sub GetTopCopperNum;

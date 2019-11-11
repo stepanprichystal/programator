@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::StackupBase::Layer::CoreLayer;
-use base('Packages::Stackup::StackupBase::Layer::StackupLayer');
+use base('Packages::Stackup::StackupBase::Layer::StackupLayerBase');
 
 use Class::Interface;
 &implements('Packages::Stackup::StackupBase::Layer::IStackupLayer');

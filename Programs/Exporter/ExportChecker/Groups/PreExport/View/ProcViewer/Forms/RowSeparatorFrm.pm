@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::ProcRowSeparatorFrm;
+package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::RowSeparatorFrm;
 use base qw(Wx::Panel);
 
 #3th party library

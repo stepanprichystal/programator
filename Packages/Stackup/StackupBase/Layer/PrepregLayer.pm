@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::StackupBase::Layer::PrepregLayer;
-use base('Packages::Stackup::StackupBase::Layer::StackupLayer');
+use base('Packages::Stackup::StackupBase::Layer::StackupLayerBase');
 
 use Class::Interface;
 &implements('Packages::Stackup::StackupBase::Layer::IStackupLayer');
@@ -15,6 +15,7 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Packages::Stackup::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,7 +38,11 @@ sub new {
 
 	$self->{"noFlow"} = 0;     # no flow prepreg for RigidFlex
 
-	$self->{"noFlowType"} = undef; # no flow prepreg for RigidFlex
+	$self->{"noFlowType"} = undef;    # no flow prepreg for RigidFlex
+
+	# no flow prepreg can contain coverlay
+	# Coverlay pieces has same height as prepreg and are placed into pre-milled prepreg windows
+	$self->{"inclCoverlay"} = undef;
 
 	return $self;
 }
@@ -45,6 +50,8 @@ sub new {
 sub AddChildPrepreg {
 	my $self    = shift;
 	my $prepreg = shift;
+	
+	$self->{"thick"} += $prepreg->GetThick();
 
 	push( @{ $self->{"prepregs"} }, $prepreg );
 }
@@ -73,6 +80,40 @@ sub GetNoFlowType {
 
 	return $self->{"noFlowType"};
 }
+
+sub GetCoverlay {
+	my $self = shift;
+
+	die "Prepreg is not NoFLow " unless ( $self->GetIsNoFlow() );
+
+	return $self->{"inclCoverlay"};
+}
+
+sub GetIsCoverlayIncl {
+	my $self = shift;
+
+	die "Prepreg is not NoFLow " unless ( $self->GetIsNoFlow() );
+
+	return defined $self->{"inclCoverlay"} ? 1 : 0;
+}
+
+sub AddCoverlay {
+	my $self = shift;
+	my $cvrl = shift;
+
+	die "Prepreg is not NoFLow " unless ( $self->GetIsNoFlow() );
+	die "Prepreg is not type P1 " unless ( $self->GetNoFlowType() eq Enums->NoFlowPrepreg_P1);
+
+	$self->{"inclCoverlay"} = $cvrl;
+}
+
+sub SetThickCuUsage{
+	my $self = shift;
+	my $thick = shift;
+	
+	$self->{"thick"} = $thick;
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

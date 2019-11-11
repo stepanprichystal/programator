@@ -51,8 +51,7 @@ sub new {
 	$self->{"jobId"} = $jobId;
 
 	# Layers type of item is <StackupLayer>
-	my @layers = ();
-	$self->{"layers"} = \@layers;
+	$self->{"layers"} = [];
 
 	# Cu layer count
 	$self->{"layerCnt"} = undef;
@@ -138,7 +137,7 @@ sub GetCuLayerCnt {
 sub GetCuLayer {
 	my $self      = shift;
 	my $layerName = shift;
-	
+
 	my $l = first { $_->GetType() eq Enums->MaterialType_CORE && $_->GetName() eq $layerName } @{ $self->{"layers"} };
 
 	die "Copper layer: $layerName was not found" unless ( defined $l );
@@ -197,10 +196,7 @@ sub __CreateStackup {
 	#set info about layers of stackup
 	$self->__SetStackupLayers();
 
-	# adjust final prepreg thickness by copper usage
-	$self->__AdjustPrepregThickness();
-
-	#set other stackup property
+ 	#set other stackup property
 	$self->__SetOtherProperty();
 
 }
@@ -306,9 +302,18 @@ sub __SetStackupLayers {
 			# 2) Decide if create new prepreg parent
 			my $newParent = 0;
 
+			#			if ( defined $curParentPrpg && $curParentPrpg->GetIsNoFlow() && !defined $noFlowType ) {
+			#				die;
+			#			}
 			$newParent = 1 if ( !defined $curParentPrpg );
 			$newParent = 1 if ( defined $curParentPrpg && $curParentPrpg->GetIsNoFlow() != $parsedLayers[$i]->GetIsNoFlow() );
-			$newParent = 1 if ( defined $curParentPrpg && $curParentPrpg->GetIsNoFlow() && $curParentPrpg->GetNoFlowType() ne $noFlowType );
+			$newParent = 1
+			  if (
+				      defined $curParentPrpg
+				   && $curParentPrpg->GetIsNoFlow()
+				   && $parsedLayers[$i]->GetIsNoFlow()
+				   && $curParentPrpg->GetNoFlowType() ne $noFlowType
+			  );
 
 			if ($newParent) {
 
@@ -362,37 +367,25 @@ sub __SetOtherProperty {
 
 }
 
-#computation of prepreg thickness depending on Cu usage in percent
-sub __AdjustPrepregThickness {
-	my $self = shift;
-
-	my @stackupL = @{ $self->{"layers"} };
-
-	for ( my $i = 0 ; $i < scalar(@stackupL) ; $i++ ) {
-
-		if ( $stackupL[$i]->GetType() eq Enums->MaterialType_PREPREG ) {
-
-			# 1) Set final parent prepreg thick by sum all child prepregs thick
-
-			foreach my $p ( $stackupL[$i]->GetAllPrepregs() ) {
-				$stackupL[$i]->{"thick"} += $p->GetThick();
-			}
-
-			#  2) Sub TOP and BOT cu thinkness from prepreg thinkness
-			#Theoretical calculation for one prepreg and two Cu is:
-			# Thick = height(prepreg) - (height(topCu* (1-UsageInPer(topCu))  +   height(botCu* (1-UsageInPer(topCu)))
-
-			if ( $stackupL[ $i - 1 ]->GetType() eq Enums->MaterialType_COPPER ) {
-				$stackupL[$i]->{thick} -= $stackupL[ $i - 1 ]->{thick} * ( 1 - $stackupL[ $i - 1 ]->{usage} );
-			}
-
-			if ( $stackupL[ $i + 1 ]->GetType() eq Enums->MaterialType_COPPER ) {
-				$stackupL[$i]->{thick} -= $stackupL[ $i + 1 ]->{thick} * ( 1 - $stackupL[ $i + 1 ]->{usage} );
-			}
-		}
-	}
-
-}
+##computation of prepreg thickness depending on Cu usage in percent
+#sub __AdjustPrepregThickness {
+#	my $self = shift;
+#
+#	my @stackupL = @{ $self->{"layers"} };
+#
+#	for ( my $i = 0 ; $i < scalar(@stackupL) ; $i++ ) {
+#
+#		if ( $stackupL[$i]->GetType() eq Enums->MaterialType_PREPREG ) {
+#
+#			# 1) Set final parent prepreg thick by sum all child prepregs thick
+#
+#			foreach my $p ( $stackupL[$i]->GetAllPrepregs() ) {
+#				$stackupL[$i]->{"thick"} += $p->GetThick();
+#			}
+#		}
+#	}
+#
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

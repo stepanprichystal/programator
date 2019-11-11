@@ -6,6 +6,7 @@ use constant {
     MaterialType_COPPER => "copper",
     MaterialType_PREPREG => "prepreg",
     MaterialType_CORE => "core",
+    MaterialType_COVERLAY => "coverlay",
 	 
 };
 
@@ -34,6 +35,11 @@ use constant {
     NoFlowPrepreg_P2 => "noFLowP2"
 };
 
+use constant {
+    Coverlay_SELECTIVE => "coverlaySelective",
+    Coverlay_FULL => "coverlayFull"
+};
+
 # source which stackup class read from
 use constant {
     StackupSource_ML => "stackupSource_ml",
@@ -49,6 +55,12 @@ use constant {
     ProductL_PRODUCT => "productLProduct",
     ProductL_MATERIAL => "productLMaterial"
 };
+
+use constant {
+    Plating_STD => 25, # standard plating is 25µm
+    
+};
+
 
 1;
 

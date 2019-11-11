@@ -54,24 +54,38 @@ sub new {
 	return $self;
 }
 
+sub GetId {
+	my $self = shift;
+
+	return $self->{"id"};
+}
+
+# Return name of most outer TOP copper layer
+# (inspite of very frist ProductLayer is not copper)
 sub GetTopCopperLayer {
 	my $self = shift;
 
 	return $self->{"topCopper"};
 }
 
+# Return order of most outer TOP copper layer in entire stackup
+# (inspite of very frist ProductLayer is not copper)
 sub GetTopCopperNum {
 	my $self = shift;
 
 	return $self->{"topCopperNum"};
 }
 
+# Return name of most outer BOT copper layer
+# (inspite of very frist ProductLayer is not copper)
 sub GetBotCopperLayer {
 	my $self = shift;
 
 	return $self->{"botCopper"};
 }
 
+# Return order of most outer BOT copper layer in entire stackup
+# (inspite of very frist ProductLayer is not copper)
 sub GetBotCopperNum {
 	my $self = shift;
 
@@ -84,6 +98,7 @@ sub GetProductType {
 	return $self->{"productType"};
 }
 
+# Return if exist plating of this product
 sub GetIsPlated {
 	my $self = shift;
 
@@ -162,25 +177,107 @@ sub GetSideByCopperLayer {
 
 # Return total thickness of product in µm
 # Plating is included
-sub GetThick{
+sub GetThick {
 	my $self = shift;
-	
+	my $inclOuterPlt = shift // 1;
+
 	my $thick = 0;
-	
-	if(scalar($self->GetPltNCLayers()) > 0){
-		
+
+	if ( $inclOuterPlt && scalar( $self->GetPltNCLayers() ) > 0 ) {
+
+		$thick += 2 * Enums->Plating_STD;
 	}
-	
-	foreach my $l  ($self->GetLayers()){
+
+	foreach my $l ( $self->GetLayers() ) {
 
 		# Layer can by either type ProductL_MATERIAL or ProductL_PRODUCT
 		# Each both types have method GetThick
 
-		$thick += $l->GetData()->GetThick();
+		$thick += $l->GetData()->GetThick(1);
 	}
-	
+
 	return $thick;
 }
+
+
+#-------------------------------------------------------------------------------------------#
+#  Special methods, working with nested products
+#-------------------------------------------------------------------------------------------#
+
+# Return very first or very last layer (IProductLayer) of this product which is type of ProductL_MATERIAL
+# If product layer (IProductLayer) is type of ProductL_PRODUCT, go deeper and search until hit layer type ProductL_MATERIAL
+sub GetProductOuterMatLayer {
+	my $self         = shift;
+	my $pos          = shift;    # first/last
+	my $sourceProduc = shift;    # reference of source product of returned ProductLayer
+
+	die "Position of IProductLayer layer in IProduct is not defined" unless ( defined $pos );
+
+	my $idx = ( $pos eq "first" ? 0 : -1 );
+	my $topStackupL;
+
+	if ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_PRODUCT ) {
+
+		$topStackupL = $self->{"layers"}->[$idx]->GetData()->GetProductOuterMatLayer( $pos, $sourceProduc );
+
+	}
+	elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
+
+		$topStackupL = $self->{"layers"}->[$idx];
+		$$sourceProduc = $self if(defined $sourceProduc);
+	}
+
+	return $topStackupL;
+}
+
+sub RemoveProductOuterMatLayer {
+	my $self         = shift;
+	my $pos          = shift;    # first/last
+	my $sourceProduc = shift;    # reference of source product of returned ProductLayer
+
+	die "Position of IProductLayer layer in IProduct is not defined" unless ( defined $pos );
+
+	my $lCut;
+	my $idx = ( $pos eq "first" ? 0 : -1 );
+
+	if ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_PRODUCT ) {
+
+		$lCut = $self->{"layers"}->[$idx]->GetData()->RemoveProductOuterMatLayer( $pos, $sourceProduc );
+
+	}
+	elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
+
+		$lCut = splice @{ $self->{"layers"} }, $idx, 1;
+		$$sourceProduc = $self if(defined $sourceProduc);
+	}
+
+	return $lCut;
+}
+
+## Return if there is plating of product (top or bot side)
+## While method GetIsPLated() return if plating exist in current product,
+## this method go through all outer nested Products and return 1 if exist at least one product with plating
+#sub GetExistOuterPlating{
+#	my $self         = shift;
+#	my $side          = shift;    # top/bot
+# 
+#	die "Side of outer plating is not defined" unless ( defined $side );
+#
+# 	my $plating = $self->GetIsPlated();
+#	my $idx = ( $side eq "top" ? 0 : -1 );
+#
+#	if ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_PRODUCT ) {
+#
+#		$plating = $self->{"layers"}->[$idx]->GetData()->GetExistOuterPlating( $side );
+#
+#	}
+#	elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
+#
+#		$plating = 1 if($self->GetIsPlated());
+#	}
+#	
+#	return $plating;
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

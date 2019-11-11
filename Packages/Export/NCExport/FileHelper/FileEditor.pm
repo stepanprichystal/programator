@@ -107,7 +107,7 @@ sub EditAfterOpen {
 			my $coreMark    = "";
 			my $cuThick;
 
-			my %pressInfo = $stackup->GetPressInfo();
+			my %pressInfo = $stackup->GetPressProducts();
 
 			# case of blind drill (not last pressing) or burried (core drilling)
 			if ( $opItem->{"name"} =~ /c[0-9]+/ ) {

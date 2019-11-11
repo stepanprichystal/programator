@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::ProcRowCopperFrm;
+package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::RowCopperFrm;
 use base qw(Wx::Panel);
 
 #3th party library
@@ -23,9 +23,11 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcVie
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $parent    = shift;
-	my $layerName = shift;
+	my $class      = shift;
+	my $parent     = shift;
+	my $copperName = shift;
+	my $outerCore  = shift;
+	my $plugging   = shift;
 	my $cuFoilOnly = shift // 0;
 
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
@@ -35,10 +37,19 @@ sub new {
 	# Items references
 	# PROPERTIES
 
-	$self->{"layerName"} = $layerName;
-	$self->{"rowHeight"} = 22;
+	$self->{"copperName"} = $copperName;
+	$self->{"outerCore"}  = $outerCore;
+	$self->{"plugging"}   = $plugging;
+	$self->{"cuFoilOnly"} = $cuFoilOnly;
+	$self->{"rowHeight"}  = 22;
 
-	$self->__SetLayout();
+	#build layer name
+	my $lName = $self->{"copperName"};
+	$lName = "outer" . $lName   if ( $self->{"outerCore"} );
+	$lName = "plg" . $lName     if ( $self->{"plugging"} );
+	$lName = $lName . " (foil)" if ( $self->{"cuFoilOnly"} );
+
+	$self->__SetLayout($lName);
 
 	#EVENTS
 	$self->{"onLayerSettChanged"} = Event->new();
@@ -48,8 +59,9 @@ sub new {
 }
 
 sub __SetLayout {
-	my $self = shift;
-	my $cuFoilOnly = shift;
+	my $self  = shift;
+	my $lName = shift;
+
 	# DEFINE SZERS
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -61,8 +73,8 @@ sub __SetLayout {
 	# Row Head
 	my $rowHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 60, $self->{"rowHeight"} ] );
 	$rowHeadPnl->SetBackgroundColour( Wx::Colour->new( 180, 0, 0 ) );
-	my $rowHeadTxt = Wx::StaticText->new( $rowHeadPnl, -1, $self->{"layerName"}, [ -1, -1 ] );
-	$rowHeadTxt->SetForegroundColour( Wx::Colour->new( 255, 255, 255 ) );    # set text color
+	my $rowHeadTxt = Wx::StaticText->new( $rowHeadPnl, -1, $lName, [ -1, -1 ] );
+	$rowHeadTxt->SetForegroundColour( Wx::Colour->new( 255, 255, 255 ) );           # set text color
 
 	my @polar = ( "+", "-" );
 	my $polarityCb =
@@ -74,7 +86,7 @@ sub __SetLayout {
 	my $shrinkXTxt = Wx::TextCtrl->new( $self, -1, "113.5", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} ], &Wx::wxCB_READONLY );
 	my $shrinkYTxt = Wx::TextCtrl->new( $self, -1, "95",    &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} ], &Wx::wxCB_READONLY );
 
-	if ($cuFoilOnly) {
+	if ( $self->{"cuFoilOnly"} ) {
 		$polarityCb->Hide();
 		$mirrorChb->Hide();
 		$compTxt->Hide();

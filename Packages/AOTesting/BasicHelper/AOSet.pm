@@ -157,7 +157,7 @@ sub SetStage {
 		"drill"         => $drill,
 		"layer"         => $layerName,
 		"copper_weight" => $cuThick,
-		"panel_thick"   => $pcbThick * 1000    #in µm
+		"panel_thick"   => $pcbThick    #in µm
 	);
 
 }

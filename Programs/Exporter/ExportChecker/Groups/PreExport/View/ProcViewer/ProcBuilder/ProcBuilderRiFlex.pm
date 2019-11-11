@@ -16,6 +16,8 @@ use warnings;
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Enums';
 use aliased 'Packages::Stackup::StackupOperation';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -34,97 +36,96 @@ sub Build {
 	my $signalLayers  = shift;
 	my $stackup       = shift;
 
-	$self->__BuildSemiProducts( $procViewerFrm, $signalLayers, $stackup );
+	$self->__BuildInputProducts( $procViewerFrm, $signalLayers, $stackup );
 
-	$self->__BuildPressing( $procViewerFrm, $signalLayers, $stackup );
+	$self->__BuildPressProducts( $procViewerFrm, $signalLayers, $stackup );
 
 }
 
-sub __BuildSemiProducts {
+sub __BuildInputProducts {
 	my $self          = shift;
 	my $procViewerFrm = shift;
 	my $signalLayers  = shift;
 	my $stackup       = shift;
-	
-	
-#	my @lamPackages = StackupOperation->GetJoinedFlexRigidPackages($jobId, $stackup);
-#
-#	foreach my $lamPckg (@lamPackages) {
-#
-#		if (    $lamPckg->{"packageTop"}->{"coreType"} eq EnumsStack->CoreType_FLEX
-#			 && $lamPckg->{"packageBot"}->{"coreType"} eq EnumsStack->CoreType_RIGID )
-#		{
-#
-#			# find first Cu layer in BOT package
-#			my $lName = undef;
-#
-#			for ( my $i = 0 ; $i < scalar( @{ $lamPckg->{"packageBot"}->{"layers"} } ) ; $i++ ) {
-#				if ( $lamPckg->{"packageBot"}->{"layers"}->[$i]->GetType() eq EnumsStack->MaterialType_COPPER ) {
-#					$lName = $lamPckg->{"packageBot"}->{"layers"}->[$i]->GetCopperName();
-#					last;
-#				}
-#			}
-#
-#			die "Not a inner copper layer: $lName" if ( $lName !~ /^v\d+$/ );
-#			push( @layers, [ $lName, CamMatrix->GetLayerPolarity( $inCAM, $jobId, $lName ) ] );
-#
-#		}
-#		elsif (    $lamPckg->{"packageTop"}->{"coreType"} eq EnumsStack->CoreType_RIGID
-#				&& $lamPckg->{"packageBot"}->{"coreType"} eq EnumsStack->CoreType_FLEX )
-#		{
-#
-#			# find first Cu layer in TOP package
-#			my $lName = undef;
-#
-#			for ( my $i = scalar( @{ $lamPckg->{"packageTop"}->{"layers"} } ) - 1 ; $i >= 0 ; $i-- ) {
-#				if ( $lamPckg->{"packageTop"}->{"layers"}->[$i]->GetType() eq EnumsStack->MaterialType_COPPER ) {
-#					$lName = $lamPckg->{"packageTop"}->{"layers"}->[$i]->GetCopperName();
-#					last;
-#				}
-#			}
-#
-#			die "Not a inner copper layer: $lName" if ( $lName !~ /^v\d+$/ );
-#
-#			push( @layers, [ $lName, CamMatrix->GetLayerPolarity( $inCAM, $jobId, $lName ) ] );
-#		}
-#	}
-#	
-	
 
-	$procViewerFrm->AddGroupSep(Enums->Group_SEMIPRODUC);
+	$procViewerFrm->AddCategoryTitle	( Enums->Group_PRODUCTINPUT );
 
-	for ( my $i = 0 ; $i < 4 ; $i++ ) {
+	my @products = $stackup->GetInputProducts();
 
-		my $g = $procViewerFrm->AddGroupStackup($i, Enums->Group_SEMIPRODUC);
+	foreach my $p (@products) {
 
-		$g->AddCopperRow( $i + 30 );
+		# Create group
+		my $g = $procViewerFrm->AddGroup( $p->GetId(), Enums->Group_PRODUCTINPUT, $p );
 
-		if ( $i % 2 == 0 ) {
+		# Add sub groups for this gorup
+		my @nestProducts = ( $p, map { $_->GetData() } $p->GetChildProducts() );
 
-			$g->AddIsolRow( Enums->RowSeparator_CORE );
-			$g->AddCopperRow( $i + 40 );
+		foreach my $nestP (@nestProducts) {
 
-			my $g = $procViewerFrm->AddGroupSep(1);
+			# Add separator if at least one sub group exist
+			$g->AddSeparator() if ( scalar( $g->GetSubGroups() ) );
 
+			my $plugging     = $nestP->GetPlugging();
+			my $outerCoreTop = $nestP->GetOuterCoreTop();
+			my $outerCoreBot = $nestP->GetOuterCoreBot();
+
+			my $techCtrls = 1;    # show/hode technolgy controls
+			$techCtrls = 0
+			  unless (
+				grep {
+					     $_->GetType() eq StackEnums->ProductL_MATERIAL
+					  && $_->GetData()->GetType() eq StackEnums->MaterialType_COPPER
+					  && !$_->GetData()->GetIsFoil()
+				} $nestP->GetLayers()
+			  );
+
+			my $subG = $g->AddSubGroup( $nestP->GetId(), Enums->Group_PRODUCTINPUT, $techCtrls, $nestP );
+
+			foreach my $productL ( $nestP->GetLayers() ) {
+
+				my $lType = $productL->GetType();
+				my $lData = $productL->GetData();
+
+				if ( $lType eq StackEnums->ProductL_PRODUCT ) {
+
+					$subG->AddProductRow( $lData->GetId(), $lData->GetProductType() );
+
+				}
+				elsif ( $lType eq StackEnums->ProductL_MATERIAL ) {
+
+					if ( $lData->GetType() eq StackEnums->MaterialType_COPPER ) {
+
+						if ( $lData->GetCopperName() eq $nestP->GetTopCopperLayer() ) {
+
+							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreTop );
+							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreTop, 1 ) if ($plugging);
+
+						}
+						elsif ( $lData->GetCopperName() eq $nestP->GetBotCopperLayer() ) {
+
+							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreBot, 1 ) if ($plugging);
+							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreBot );
+						}
+					}
+					elsif ( $lData->GetType() eq StackEnums->MaterialType_PREPREG ) {
+
+						$subG->AddPrepregRow( Enums->RowSeparator_PRPG );
+
+					}
+					elsif ( $lData->GetType() eq StackEnums->MaterialType_CORE ) {
+						$subG->AddCoreRow( Enums->RowSeparator_CORE );
+
+					}
+					elsif ( $lData->GetType() eq StackEnums->MaterialType_COVERLAY ) {
+						$subG->AddCoverlayRow( Enums->RowSeparator_COVERLAY );
+					}
+				}
+			}
 		}
-		else {
-
-			my $g = $procViewerFrm->AddGroupSep(2);
-		}
-
 	}
- $procViewerFrm->AddGroupSep( Enums->Group_PRESSING);
-	my $g = $procViewerFrm->AddGroupStackup(10, Enums->Group_PRESSING);
-
-	$g->AddCopperRow(50);
-	$g->AddIsolRow( Enums->RowSeparator_PRPG );
-	$g->AddCopperRow(60);
-	$g->AddIsolRow( Enums->RowSeparator_CORE );
-	$g->AddCopperRow(70);
-
 }
 
-sub __BuildPressing {
+sub __BuildPressProducts {
 	my $self          = shift;
 	my $procViewerFrm = shift;
 	my $signalLayers  = shift;

@@ -23,7 +23,7 @@ use aliased 'Packages::Stackup::StackupBase::StackupInfo';
 use aliased 'Packages::Stackup::StackupBase::Layer::PrepregLayer';
 use aliased 'Packages::Stackup::StackupBase::Layer::CoreLayer';
 use aliased 'Packages::Stackup::StackupBase::Layer::CopperLayer';
-use aliased 'Packages::Stackup::StackupBase::Layer::StackupLayer';
+use aliased 'Packages::Stackup::StackupBase::Layer::StackupLayerBase';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#

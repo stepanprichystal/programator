@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::StackupNC::StackupNC;
-use base('Packages::Stackup::StackupBase::StackupBase');
+use base('Packages::Stackup::Stackup::Stackup');
 
 #3th party library
 use strict;
@@ -30,7 +30,7 @@ sub new {
 	my $jobId = shift;
 	my $inCAM = shift;
 		
-	my $self = $class->SUPER::new($jobId);
+	my $self = $class->SUPER::new($inCAM, $jobId);
 	bless $self;
  
  
@@ -63,7 +63,7 @@ sub __InitPress {
 	my $self = shift;
  
 	my $pressCnt  = $self->SUPER::GetPressCount();
-	my %pressInfo = $self->SUPER::GetPressInfo();
+	my %pressInfo = $self->SUPER::GetPressProducts();
 
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
@@ -135,26 +135,9 @@ sub GetCore {
 
 		return $cores[$idx];
 	}
-
 }
 
  
- 
-my @planets = qw(
-   Mercury
-   Venus
-   Earth
-   Mars
-   Ceres
-   Jupiter
-   Saturn
-   Uranus
-   Neptune
-   Pluto
-   Charon
-);
- 
-say first_index { $_ eq 'Mars' } @planets;
 
 sub GetPressCnt {
 	my $self = shift;

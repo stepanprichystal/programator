@@ -37,7 +37,7 @@ sub GetThickByLayer {
 
 		my $stackup = Stackup->new($pcbId);
 
-		$thick = $stackup->GetThickByCuLayer($layer);
+		$thick = $stackup->GetThickByCuLayer($layer)/1000;
 
 		my $cuLayer = $stackup->GetCuLayer($layer);
 
@@ -90,7 +90,7 @@ sub GetSideByLayer {
 
 		# Other standard signal layer
 
-		my %pressInfo = $stackup->GetPressInfo();
+		my %pressInfo = $stackup->GetPressProducts();
 		my $core      = $stackup->GetCoreByCuLayer($layerName);
 		my $press     = undef;
 

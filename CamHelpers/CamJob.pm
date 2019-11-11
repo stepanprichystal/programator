@@ -652,7 +652,7 @@ sub GetFinalPcbThick {
 
 	if ( $self->GetSignalLayerCnt($inCAM, $jobId) > 2 ) {
 
-		my $stackup = Stackup->new($jobId);
+		my $stackup = Stackup->new($inCAM,$jobId);
 
 		$thick = $stackup->GetFinalThick();
 	}

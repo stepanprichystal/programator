@@ -35,12 +35,12 @@ sub Build {
 	my $signalLayers  = shift;
 
 
-	$self->__BuildSemiProducts( $procViewerFrm, $signalLayers );
+	$self->__BuildInputProducts( $procViewerFrm, $signalLayers );
 
-	#$self->__BuildPressing( $procViewerFrm, $signalLayers, $stackup );
+	#$self->__BuildPressProducts( $procViewerFrm, $signalLayers, $stackup );
 }
 
-sub __BuildSemiProducts {
+sub __BuildInputProducts {
 	my $self          = shift;
 	my $procViewerFrm = shift;
 	my $signalLayers  = shift;
@@ -48,7 +48,7 @@ sub __BuildSemiProducts {
 
 }
 
-sub __BuildPressing {
+sub __BuildPressProducts {
 	my $self          = shift;
 	my $procViewerFrm = shift;
 	my $signalLayers  = shift;

@@ -1,10 +1,10 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Special layer - Copper, contain special propery and operation for this
+# Description: Special layer - Coverlay, contain special propery and operation for this
 # type of layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Stackup::StackupBase::Layer::CopperLayer;
+package Packages::Stackup::StackupBase::Layer::CoverlayLayer;
 use base('Packages::Stackup::StackupBase::Layer::StackupLayerBase');
 
 use Class::Interface;
@@ -15,7 +15,7 @@ use strict;
 use warnings;
 
 #local library
-
+use aliased 'Packages::Stackup::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -25,63 +25,44 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
+	$self->{"adhesiveThick"} = shift;
 
 	#only if materialType is copper
-	$self->{"usage"}    = undef;  
+	$self->{"method"}    = undef;  
 	
-	#only if materialType is copper
-	$self->{"copperName"}    = undef;  
 	
-	# c = 1, v2 = 2, v3 = 3, v4 = 4,......, s = order of last layer
-	$self->{"copperNumber"} = undef;
-	
-	$self->{"isFoil"} = 1;
 	
 	return $self;  
 }
 
-
-# return name of copper. Name can be
-# c, v2, v3, v4,......, s
-sub GetCopperName{
-	my $self = shift;
-	return $self->{"copperName"};
-}
-
-# Return number from 1 to infinity, according count of cu layers
-# c = 1, v2 = 2, v3 = 3, v4 = 4,......, s = order of last layer
-sub GetCopperNumber{
-	my $self = shift;
-	return $self->{"copperNumber"};
-}
-
-sub GetUssage{
-	my $self = shift;
-	return $self->{"usage"};
-}
-
-# Return plating value (if no requested combination Cu + core material on stock, cores has to be plated by 25um)
-sub GetCoreExtraPlating {
-	my $self = shift;
-
-	# check if plating exist on both side
-	my $plating = 0;
- 
-	# if Copper Id is negative it means plating 25um
-	if ( $self->GetId() < 0 ) {
-
-		$plating = 1;
-	}
-
-	return $plating;
-}
-
-# Return 1 if copper is foil. 0 if copper lay on core
-sub GetIsFoil{
+# Thickness of adhesive in µm
+sub GetAdhesiveThick{
 	my $self = shift;
 	
-	return $self->{"isFoil"};
+	return $self->{"adhesiveThick"};
 }
+
+# Return method of laminating coverlay
+# Coverlay_SELECTIVE - bikini method
+# Coverlay_FULL - full coverlaz sheet is laminated
+sub GetMethod{
+	my $self = shift;
+	return $self->{"method"};
+}
+
+# Override method GetThick
+# If Method is Coverlay_SELECTIVE, coverlay has 0µm thickness
+# because is inserted into NoFlw prepreg window (prepreg has same thickness as coverlay)
+sub GetThick{
+	my $self = shift;
+	
+	my $thick = $self->SUPER::GetThick();
+	
+	$thick = 0 if($self->GetMethod() eq Enums->Coverlay_SELECTIVE);
+	
+	return $thick; 
+}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

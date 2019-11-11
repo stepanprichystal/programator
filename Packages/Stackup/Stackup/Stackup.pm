@@ -11,14 +11,12 @@ use strict;
 use warnings;
 use Cache::MemoryCache;
 use List::MoreUtils qw(uniq);
+use List::Util qw(first);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
-use aliased 'Enums::EnumsPaths';
-use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::Stackup::StackupBase::StackupHelper';
 use aliased 'Packages::Stackup::Stackup::StackupBuilder';
 
@@ -68,7 +66,7 @@ sub new {
 
 	# type of item is <ProductInput>
 	$self->{"productInputs"} = [];
-	
+
 	# Structure contains IProduct reference to each copper layer
 	# which depand on attributes: PLugging, Outer core, etc..
 	$self->{"copperMatrix"} = [];
@@ -86,26 +84,37 @@ sub GetPressCount {
 	return $self->{"pressCount"};
 }
 
-# Return info about each pressing
-sub GetPressInfo {
+# Return info about each pressing in hash structure
+# where first press start with 1
+sub GetPressProducts {
 	my $self = shift;
 
 	return %{ $self->{"productPress"} };
+}
+
+# Return info about each pressing
+sub GetLastPress {
+	my $self = shift;
+
+	my $lastPress = $self->{"productPress"}->{ $self->{"pressCount"} };
+
+	return $lastPress;
+}
+
+# Return info about each input products
+sub GetInputProducts {
+	my $self = shift;
+
+	return @{ $self->{"productInputs"} };
 }
 
 # Return total thick of this stackup in µm
 # Do not consider extra plating (drilled core, progress lamination)
 sub GetFinalThick {
 	my $self = shift;
+	my $inclPlating = shift // 1;    # include plating on outer product layers
 
-	my $thick = 0;
-
-	my %info;
-	foreach my $lInfo ( @{ $self->{"layers"} } ) {
-
-		%info = %{$lInfo};
-		$thick += $info{thick};
-	}
+	my $thick = $self->GetLastPress()->GetThick($inclPlating);
 
 	return $thick;
 }
@@ -116,8 +125,6 @@ sub GetSequentialLam {
 	return $self->{"sequentialLam"};
 }
 
-
-
 sub GetSideByCuLayer {
 	my $self = shift;
 
@@ -125,90 +132,23 @@ sub GetSideByCuLayer {
 
 }
 
-#Return final thickness (in mm units!!) of multilayer pcb base on Cu layer number
-#- This has not be thick of whole pcb, but e.g. thick of one requested core with top/bot cu
-#- Or thick of pcb from layer v2 - v5..
+# Return final thickness of Input/Press product in µm by given copper name
 sub GetThickByCuLayer {
-	my $self = shift;
+	my $self        = shift;
+	my $lName       = shift;
+	my $outerCore   = shift;         # indicate if copper is located on the core and on the outer of press package in the same time
+	my $plugging    = shift;         # indicate if layer contain plugging
+	my $inclPlating = shift // 1;    # include plating on outer product layers
 
-	my $lCuNumber = shift;    #layer of number. Simple c,1,2,s or v1, v2 use ENUMS::Layers
+	# Check format of layer name
+	die "Wrong signal layer name: $lName" if ( $lName !~ /^([cs])|(v\d+)$/ );
 
-	my $pcbId = $self->{"pcbId"};
-	my $thick = 0;                  #total thick
-	my %info;                       #help variable for layer info
-	my @thickList = @{ $self->{"layers"} };
+	my $product = $self->__GetProductByLayer( $lName, $outerCore, $plugging );
 
-	#number of Cu layers
-	my $lCuCount = scalar( grep GeneralHelper->RegexEquals( $_->{type}, Enums->MaterialType_COPPER ), @thickList );
-
-	#get order number from layer name
-	$lCuNumber = StackupHelper->GetLayerCopperNumber( $lCuNumber, $lCuCount );
-
-	#get index of Cu layer in <@thickList>.
-	my $lCuIdx         = $self->_GetIndexOfCuLayer($lCuNumber);
-	my $nearestCoreIdx = $self->_GetIndexOfNearestCore($lCuNumber);
-
-	#test if given Cu layer <$lCuNumber> is outer, thus TOP or BOTTOM
-	my $lCuIsOuter = $lCuNumber == 1 || $lCuNumber == $lCuCount ? 1 : 0;
-
-	#when given Cu layer <$lCuNumber> is surounded by prepregs, thus it means progressive lamination
-	my $isProgLamin = $self->GetSequentialLam();
-
-	#Calculation thickness base on stackup properties
-	if ($lCuIsOuter) {    #we want total thick of pcb
-
-		foreach my $lInfo (@thickList) {
-			%info = %{$lInfo};
-			$thick += $info{thick};
-		}
-	}
-	elsif ($isProgLamin) {    #progressive lamination
-
-		#fin out if it's Cu layer is put lower then middle of pcb
-		my $isTop = $lCuNumber <= $lCuCount / 2 ? 1 : 0;
-
-		#index, which we will start to read thickness off each layer from
-		my $startIdx = $lCuIdx;
-		if ( !$isTop ) {
-
-			$startIdx = ( scalar(@thickList) - 1 ) - $lCuIdx;
-		}
-
-		#get value, how many Cu layer we have to go through
-		my $lCountToRead = scalar(@thickList) - ( 2 * ($startIdx) );
-
-		#begin to read thickness with <$startIdx> index
-		my $cuLayerCnt = 0;
-		for ( my $i = $startIdx ; $i < scalar(@thickList) ; $i++ ) {
-
-			%info = %{ $thickList[$i] };
-
-			#start to read thicks of all material layers
-			if ( $lCountToRead > 0 ) {
-
-				$thick += $info{thick};
-				$lCountToRead--;
-			}
-		}
-	}
-	else {    #standart stackup plus three layer pcb..
-
-		#get nearest core thick + top Cu core thick + bot Cu core thick
-		%info = %{ $thickList[ $nearestCoreIdx - 1 ] };    #top Cu thick
-		$thick += GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_COPPER ) ? $info{thick} : 0;
-		%info = %{ $thickList[$nearestCoreIdx] };          #core thick
-		$thick += GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_CORE ) ? $info{thick} : 0;
-		%info = %{ $thickList[ $nearestCoreIdx + 1 ] };    #bot Cu thick
-		$thick += GeneralHelper->RegexEquals( $info{type}, Enums->MaterialType_COPPER ) ? $info{thick} : 0;
-	}
-
-	#convert to milimeter
-	$thick = $thick / 1000.0;
+	my $thick = $product->GetThick($inclPlating);
 
 	return $thick;
-
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods
@@ -216,11 +156,38 @@ sub GetThickByCuLayer {
 
 sub __GetProductByLayer {
 	my $self      = shift;
-	my $layerName = shift;
-	my $outerCore = shift;
-	my $plugging  = shift;
-	
-	
+	my $lName     = shift;
+	my $outerCore = shift;    # indicate if copper is located on the core and on the outer of press package in the same time
+	my $plugging  = shift;    # indicate if layer contain plugging
+
+	# Check format of layer name
+	die "Wrong signal layer name: $lName" if ( $lName !~ /^([cs])|(v\d+)$/ );
+
+	my $product = first {
+		$_->{"name"} eq $lName
+		  && $_->{"outerCore"} == $outerCore
+		  && $_->{"plugging"} == $plugging
+	}
+	@{ $self->{"copperMatrix"} };
+
+	die "Product was not found by copper layer: $lName (outerCore=$outerCore; plugging=$plugging)" if ( !defined $product );
+
+	return $product;
+}
+
+sub __GetAllProducts {
+	my $self        = shift;
+	my $currProduct = shift;
+	my $pList       = shift;
+
+	my @childProducts = $currProduct->GetLayers( Enums->ProductL_PRODUCT );
+	foreach my $childP ( map { $_->GetData() } @childProducts ) {
+
+		$self->__GetAllProducts( $childP, $pList );
+	}
+
+	push( @{$pList}, $currProduct );
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -230,6 +197,7 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
+	use aliased 'Packages::Stackup::Stackup::StackupTester';
 
 	use aliased 'Packages::InCAM::InCAM';
 
@@ -238,10 +206,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "d152456";
 	my $stackup = Stackup->new( $inCAM, $jobId );
 
-	print $stackup;
+	
 
-	print 1;
+	#my $thick = $stackup->GetFinalThick();
+
+	 
+	StackupTester->PrintStackupTree($stackup);
+	
+	die;
+
 }
-
 1;
 

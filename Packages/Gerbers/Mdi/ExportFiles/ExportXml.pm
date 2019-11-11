@@ -389,20 +389,20 @@ sub __GetThickByLayer {
 
 						# Top outer layer
 
-						$thick = $stackup->GetThickByCuLayer("v2");
+						$thick = $stackup->GetThickByCuLayer("v2")/1000;
 
 					}
 					else {
 
 						# Bot outer layer
 
-						$thick = $stackup->GetThickByCuLayer( "v" . ( ( $layer =~ /v(\d+)outer/ )[0] - 1 ) );
+						$thick = $stackup->GetThickByCuLayer( "v" . ( ( $layer =~ /v(\d+)outer/ )[0] - 1 ) )/1000;
 
 					}
 
 				}
 				else {
-					$thick = $stackup->GetThickByCuLayer($layer);
+					$thick = $stackup->GetThickByCuLayer($layer)/1000;
 				}
 
 				# Check if core OR laminated package contains plated NC operation, if so add extra plating

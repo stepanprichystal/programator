@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::ProcSemiProducFrm;
+package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::RowProductFrm;
 use base qw(Wx::Panel);
 
 #3th party library
@@ -17,7 +17,7 @@ use warnings;
 #local library
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Enums';
-
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -25,8 +25,8 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcVie
 sub new {
 	my $class     = shift;
 	my $parent    = shift;
-	my $groupId   = shift;
-	my $groupType = shift;
+	my $productId   = shift;
+	my $productType = shift;
 
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
 
@@ -35,9 +35,9 @@ sub new {
 	# Items references
 	# PROPERTIES
 
-	$self->{"rowHeight"} = 40;
+	$self->{"rowHeight"} = 20;
 
-	$self->__SetLayout( $groupId, $groupType );
+	$self->__SetLayout( $productId, $productType );
 
 	#EVENTS
 	$self->{"onLayerSettChanged"} = Event->new();
@@ -48,8 +48,8 @@ sub new {
 
 sub __SetLayout {
 	my $self      = shift;
-	my $groupId   = shift;
-	my $groupType = shift;
+	my $productId   = shift;
+	my $productType = shift;
 
 	# DEFINE SZERS
 
@@ -62,20 +62,20 @@ sub __SetLayout {
 	# Row Head
 	my $rowHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 60, $self->{"rowHeight"} ] );
 
-	if ( $groupType eq Enums->Group_SEMIPRODUC ) {
+	if ( $productType eq StackEnums->Product_INPUT ) {
 
-		$rowHeadPnl->SetBackgroundColour( Wx::Colour->new( 255, 192, 0 ) );
+		$rowHeadPnl->SetBackgroundColour( Enums->Color_PRODUCTINPUT );
 	}
-	elsif ( $groupType eq Enums->Group_PRESSING ) {
-		$rowHeadPnl->SetBackgroundColour( Wx::Colour->new( 155, 194, 230 ) );
+	elsif ( $productType eq StackEnums->Product_PRESS ) {
+		$rowHeadPnl->SetBackgroundColour( Enums->Color_PRODUCTPRESS );
 	}
 
-	my $rowHeadTxt = Wx::StaticText->new( $rowHeadPnl, -1, $groupId, [ -1, -1 ] );
+	my $rowHeadTxt = Wx::StaticText->new( $rowHeadPnl, -1, $productId, [ -1, -1 ] );
 
-	my $fontLblBold = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
+	#my $fontLblBold = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 
-	$groupHeadTxt->SetForegroundColour( Wx::Colour->new( 40, 40, 40 ) );    # set text color
-	$groupHeadTxt->SetFont($fontLblBold);
+	$rowHeadTxt->SetForegroundColour( Wx::Colour->new( 40, 40, 40 ) );    # set text color
+	#$rowHeadTxt->SetFont($fontLblBold);
 
 	# SET EVENTS
 

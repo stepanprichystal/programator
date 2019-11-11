@@ -187,7 +187,7 @@ sub GetBaseCuThick {
 	my $cuThick;
 	if ( HegMethods->GetBasePcbInfo( $self->{"jobId"} )->{"pocet_vrstev"} > 2 ) {
 
-		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
+		$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 		my $cuLayer = $self->{"stackup"}->GetCuLayer($layerName);
 		$cuThick = $cuLayer->GetThick();
@@ -872,7 +872,7 @@ sub __InitDefault {
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
-		$self->{"stackup"} = Stackup->new( $self->{'jobId'} );
+		$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{'jobId'} );
 		$self->{"stackupNC"} = StackupNC->new( $self->{'jobId'}, $self->{"inCAM"} );
 	}
 
@@ -936,7 +936,7 @@ sub __GetDefaultEtchType {
 
 		if ( scalar(@platedNC) ) {
 
-			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} ) {
+			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || CamDrilling->GetViaFillExists($inCAM, $jobId) ) {
 				$etchType = EnumsGeneral->Etching_PATTERN;
 			}
 			else {
@@ -947,7 +947,7 @@ sub __GetDefaultEtchType {
 	elsif ( $self->{"layerCnt"} > 2 ) {
 
 		my $pressCnt   = $self->{"stackup"}->GetPressCount();
-		my %pressInfo  = $self->{"stackup"}->GetPressInfo();
+		my %pressInfo  = $self->{"stackup"}->GetPressProducts();
 		my $lamination = $self->{"stackup"}->GetSequentialLam();
 
 		my $stackupNCitem = undef;
@@ -1064,7 +1064,7 @@ sub __GetDefaultEtchType {
 
 			if ( $self->{"surface"} !~ /g/i ) {
 
-				if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} ) {
+				if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || CamDrilling->GetViaFillExists($inCAM, $jobId) ) {
 					$etchType = EnumsGeneral->Etching_PATTERN;
 				}
 			}

@@ -29,6 +29,11 @@ sub new {
 
 	#Pressing order
 	$self->{"order"} = shift;
+	
+	# Layers, which are pressed after this sequential press
+	# List contains references to list of all layers
+	# Typical layer types coverlay and No Flow prepregs
+	$self->{"extraLayers"} = [];
 
 	return $self;
 }
@@ -37,6 +42,25 @@ sub GetPressOrder {
 	my $self = shift;
 
 	return $self->{"order"};
+}
+
+sub GetExistExtraPress{
+	my $self = shift;
+	
+	return scalar(@{$self->{"extraLayers"} }) ? 1 : 0;
+}
+
+sub GetExtraPressLayers{
+	my $self = shift;
+	
+	return @{$self->{"extraLayers"} };
+}
+
+sub AddExtraPressLayers{
+	my $self = shift;
+	my $layers = shift;
+	
+	push( @{$self->{"extraLayers"} }, @{$layers});
 }
 
 #-------------------------------------------------------------------------------------------#
