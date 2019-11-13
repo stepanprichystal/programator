@@ -86,7 +86,7 @@ sub GetChildProducts {
 sub SetTopOuterCore {
 	my $self = shift;
 
-	die "Only child input product allow set full copper" if ( $self->GetIsParent() );
+	#die "Only child input product allow set full copper" if ( $self->GetIsParent() );
 
 	$self->{"outerCoreTop"} = shift;
 }
@@ -94,7 +94,7 @@ sub SetTopOuterCore {
 sub SetBotOuterCore {
 	my $self = shift;
 
-	die "Only child input product allow set full copper" if ( $self->GetIsParent() );
+	#die "Only child input product allow set full copper" if ( $self->GetIsParent() );
 
 	$self->{"outerCoreBot"} = shift;
 }

@@ -138,7 +138,7 @@ sub GetCuLayer {
 	my $self      = shift;
 	my $layerName = shift;
 
-	my $l = first { $_->GetType() eq Enums->MaterialType_CORE && $_->GetName() eq $layerName } @{ $self->{"layers"} };
+	my $l = first { $_->GetType() eq Enums->MaterialType_COPPER && $_->GetCopperName() eq $layerName } @{ $self->{"layers"} };
 
 	die "Copper layer: $layerName was not found" unless ( defined $l );
 

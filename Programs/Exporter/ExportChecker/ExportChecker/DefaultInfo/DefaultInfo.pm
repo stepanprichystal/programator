@@ -485,10 +485,11 @@ sub GetDefSignalLSett {
 	my $self = shift;
 	my $l    = shift;
 
-	my $etching = $self->__GetDefaultEtchType( $l->{"gROWname"} );
-	my $plt = $etching eq EnumsGeneral->Etching_ONLY ? 0 : 1;
+	my $etching    = $self->__GetDefaultEtchType( $l->{"gROWname"} );
+	my $plt        = $etching eq EnumsGeneral->Etching_ONLY ? 0 : 1;
+	my $technology = $self->__GetDefaultTechType( $l->{"gROWname"} );
 
-	my %lSett = $self->GetSignalLSett( $l, $plt, $etching );
+	my %lSett = $self->GetSignalLSett( $l, $plt, $etching, $technology );
 
 	return %lSett;
 
@@ -505,6 +506,10 @@ sub GetSignalLSett {
 	# EnumsGeneral->Etching_TENTING
 	my $etchType = shift;
 
+	# EnumsGeneral->Technology_GALVANICS
+	# EnumsGeneral->Technology_RESIST
+	my $technology = shift;
+
 	die "Signal layer si not allowed"
 	  if (    $l->{"gROWlayer_type"} ne "signal"
 		   && $l->{"gROWlayer_type"} ne "power_ground"
@@ -516,7 +521,11 @@ sub GetSignalLSett {
 
 	$lSett{"etchingType"} = $etchType;
 
-	# 2) Set compensation
+	# 2) Settechnology type
+
+	$lSett{"technologyType"} = $technology;
+
+	# 3) Set compensation
 
 	my $class = undef;    # Signal layer construction class
 
@@ -556,7 +565,7 @@ sub GetSignalLSett {
 		$lSett{"comp"} = $comp;
 	}
 
-	# 3) Set polarity by etching type
+	# 4) Set polarity by etching type
 	if ( $etchType eq EnumsGeneral->Etching_PATTERN ) {
 		$lSett{"polarity"} = "positive";
 	}
@@ -564,7 +573,7 @@ sub GetSignalLSett {
 		$lSett{"polarity"} = "negative";
 	}
 
-	# 4) Exception for layer c, s and Galvanic gold. Polarity always postitive
+	# 5) Exception for layer c, s and Galvanic gold. Polarity always postitive
 	if ( $l->{"gROWname"} eq "c" || $l->{"gROWname"} eq "s" ) {
 
 		if ( $self->{"surface"} =~ /g/i ) {
@@ -583,7 +592,7 @@ sub GetSignalLSett {
 		}
 	}
 
-	# 5) Set mirror
+	# 6) Set mirror
 	if ( $l->{"gROWname"} =~ /^c$/i ) {
 		$lSett{"mirror"} = 1;
 	}
@@ -606,16 +615,17 @@ sub GetSignalLSett {
 		}
 	}
 
-	# 6) Set Shrink
+	# 7) Set Shrink
 	$lSett{"shrinkX"} = 0;
 	$lSett{"shrinkY"} = 0;
 
-	die "Etching type is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"etchingType"} );
-	die "Compensation is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"comp"} );
-	die "Polarity is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"polarity"} );
-	die "Mirror is not defined for layer:" . $self->{"gROWname"}       if ( !defined $lSett{"mirror"} );
-	die "Shrink X is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"shrinkX"} );
-	die "Shrink Y is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"shrinkY"} );
+	die "Etching type is not defined for layer:" . $self->{"gROWname"}    if ( !defined $lSett{"etchingType"} );
+	die "Technology type is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"technologyType"} );
+	die "Compensation is not defined for layer:" . $self->{"gROWname"}    if ( !defined $lSett{"comp"} );
+	die "Polarity is not defined for layer:" . $self->{"gROWname"}        if ( !defined $lSett{"polarity"} );
+	die "Mirror is not defined for layer:" . $self->{"gROWname"}          if ( !defined $lSett{"mirror"} );
+	die "Shrink X is not defined for layer:" . $self->{"gROWname"}        if ( !defined $lSett{"shrinkX"} );
+	die "Shrink Y is not defined for layer:" . $self->{"gROWname"}        if ( !defined $lSett{"shrinkY"} );
 
 	return %lSett;
 }
@@ -917,6 +927,30 @@ sub __InitDefault {
 
 }
 
+# Return default type of technology
+sub __GetDefaultTechType {
+	my $self      = shift;
+	my $layerName = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $platedNC = 0;
+
+	# Default type of plating is Etching only
+	my $techType = EnumsGeneral->Technology_RESIST;
+
+	my $etch = $self->__GetDefaultEtchType($layerName);
+
+	if ( $etch ne EnumsGeneral->Etching_ONLY ) {
+
+		$techType = EnumsGeneral->Technology_GALVANICS;
+	}
+
+	return $techType;
+
+}
+
 sub __GetDefaultEtchType {
 	my $self      = shift;
 	my $layerName = shift;
@@ -936,7 +970,7 @@ sub __GetDefaultEtchType {
 
 		if ( scalar(@platedNC) ) {
 
-			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || CamDrilling->GetViaFillExists($inCAM, $jobId) ) {
+			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
 				$etchType = EnumsGeneral->Etching_PATTERN;
 			}
 			else {
@@ -1064,7 +1098,7 @@ sub __GetDefaultEtchType {
 
 			if ( $self->{"surface"} !~ /g/i ) {
 
-				if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || CamDrilling->GetViaFillExists($inCAM, $jobId) ) {
+				if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
 					$etchType = EnumsGeneral->Etching_PATTERN;
 				}
 			}

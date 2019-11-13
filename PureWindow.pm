@@ -12,12 +12,14 @@ use Wx;
 use Win32::GUI;
 
 #local library
-
+use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::Reorder::ReorderApp::Enums';
 use aliased 'Popup';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+
 #use aliased 'Managers::AbstractQueue::NotifyMngr::NotifyMngr';
 
 #-------------------------------------------------------------------------------------------#
@@ -27,8 +29,10 @@ use aliased 'Popup';
 sub new {
 
 	my $class  = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
 	my @params = @_;
- 
+
 	my $title     = "My title";
 	my $w         = 500;
 	my $h         = 700;
@@ -38,8 +42,11 @@ sub new {
 
 	bless($self);
 
+	$self->{"inCAM"} = $inCAM;
+	$self->{"jobId"} = $jobId;
+
 	$self->__SetLayout();
- 
+
 	# Properties
 
 	return $self;
@@ -68,7 +75,7 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
-	# Content definition	
+	# Content definition
 	my $content = $self->__SetContentLayout( $self->{"mainFrm"} );
 
 	$self->AddContent($content);
@@ -77,9 +84,9 @@ sub __SetLayout {
 	$self->SetButtonHeight(30);
 
 	# Button definition
-	my $btnTest = $self->AddButton( "notify 1", sub { $self->test1(@_) } );
+	my $btnTest  = $self->AddButton( "notify 1", sub { $self->test1(@_) } );
 	my $btnTest2 = $self->AddButton( "notify 2", sub { $self->test2(@_) } );
-	my $btnTest3 = $self->AddButton( "test 3",      sub { $self->test3(@_) } );
+	my $btnTest3 = $self->AddButton( "test 3",   sub { $self->test3(@_) } );
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -91,39 +98,26 @@ sub __SetContentLayout {
 	my $self   = shift;
 	my $parent = shift;
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'My content' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	# DEFINE CONTROLS
 
-	my $signalChb = Wx::CheckBox->new( $statBox, -1, "Signal layers", &Wx::wxDefaultPosition );
-	my $maskChb   = Wx::CheckBox->new( $statBox, -1, "Mask layers",   &Wx::wxDefaultPosition );
-	my $plugChb   = Wx::CheckBox->new( $statBox, -1, "Plug layers",   &Wx::wxDefaultPosition );
-	my $goldChb   = Wx::CheckBox->new( $statBox, -1, "Gold layers",   &Wx::wxDefaultPosition );
+	use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcViewer';
+	
+	my $stackup = Stackup->new($inCAM, $jobId);
+	
+	my $procViewer = ProcViewer->new( $inCAM, $jobId, [1,2,3], 1, $stackup );
+	my $procViewerFrm = $procViewer->BuildForm($statBox);
 
-	# SET EVENTS
-	Wx::Event::EVT_CHECKBOX( $signalChb, -1, sub { $self->__OnCheckboxChecked("Ahoj") } );
-	Wx::Event::EVT_CHECKBOX( $maskChb, -1, sub { $self->__OnCheckboxChecked("Hi") } );
-	Wx::Event::EVT_CHECKBOX( $plugChb, -1, sub { $self->__OnCheckboxChecked("Hallo") } );
-	Wx::Event::EVT_CHECKBOX( $goldChb, -1, sub { $self->__OnCheckboxChecked("Ciao") } );
-
-	# BUILD STRUCTURE OF LAYOUT
-
-	$szStatBox->Add( $signalChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $maskChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $plugChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $goldChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	# Set References
-	$self->{"signalChb"} = $signalChb;
-	$self->{"maskChb"}   = $maskChb;
-	$self->{"plugChb"}   = $plugChb;
-	$self->{"goldChb"}   = $goldChb;
+	$szStatBox->Add( $procViewerFrm, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	return $szStatBox;
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Handlers
@@ -132,12 +126,13 @@ sub __SetContentLayout {
 sub test1 {
 	my $self = shift;
 
- print STDERR "notify 1\n";
+	print STDERR "notify 1\n";
 
 }
+
 sub test2 {
 	my $self = shift;
-	
+
 	print STDERR "notify 2\n";
 
 }
@@ -145,21 +140,39 @@ sub test2 {
 sub test3 {
 	my $self = shift;
 
-	 print STDERR "notify 3\n";
+	print STDERR "notify 3\n";
 }
 
 sub __OnCheckboxChecked {
-	my $self = shift;
+	my $self     = shift;
 	my $greeting = shift;
 
-	 print STDERR "$greeting\n";
+	print STDERR "$greeting\n";
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#
+
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId    = "d152456";
+	my $stepName = "o+1";
+
+	#my $layerName = "fstiffs";
+
+	my $frm = PureWindow->new( $inCAM, $jobId );
+	$frm->{"mainFrm"}->Show();
+	$frm->MainLoop();
+
+	die;
+
+}
 
 1;
 

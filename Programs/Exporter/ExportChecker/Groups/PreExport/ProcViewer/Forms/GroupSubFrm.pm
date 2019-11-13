@@ -19,7 +19,7 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::RowCopperFrm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::RowProductFrm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::RowSeparatorFrm';
@@ -34,6 +34,8 @@ sub new {
 	my $parent      = shift;
 	my $productId   = shift;
 	my $productType = shift;
+	my $techCntrls  = shift;    # Show/hode technology controls
+	my $productObj  = shift;
 
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
 
@@ -44,8 +46,10 @@ sub new {
 	$self->{"copperRows"}  = [];
 	$self->{"productId"}   = $productId;
 	$self->{"productType"} = $productType;
+	$self->{"techCntrls"}  = $techCntrls;
+	$self->{"productObj"}  = $productObj;
 
-	$self->__SetLayout();
+	$self->__SetLayout($techCntrls);
 
 	#EVENTS
 	$self->{"layerSettChangedEvt"}  = Event->new();
@@ -83,12 +87,8 @@ sub AddCopperRow {
 	my $copperName = shift;
 	my $outerCore  = shift;
 	my $plugging   = shift;
-	my $cuFoil = shift;
-	my $cuThick = shift;
-	
-	
 
-	my $row = RowCopperFrm->new( $self, $copperName, $outerCore, $plugging, $cuFoil, $cuThick );
+	my $row = RowCopperFrm->new( $self, $copperName, $outerCore, $plugging );
 	$self->{"szRows"}->Add( $row, 0, &Wx::wxALL, 0 );
 	push( @{ $self->{"copperRows"} }, $row );
 
@@ -101,24 +101,13 @@ sub AddCopperRow {
 
 sub AddPrepregRow {
 	my $self = shift;
-	my $extraPress = shift;
-	
-	my $text = "<= Prepreg lamination after press" if($extraPress);
-	
 
-	my $rowPrpg = RowSeparatorFrm->new( $self, Enums->RowSeparator_PRPG, $text );
+	my $rowGapT = RowSeparatorFrm->new( $self, Enums->RowSeparator_GAP );
+	$self->{"szRows"}->Add( $rowGapT, 0, &Wx::wxALL, 0 );
+	my $rowPrpg = RowSeparatorFrm->new( $self, Enums->RowSeparator_PRPG );
 	$self->{"szRows"}->Add( $rowPrpg, 0, &Wx::wxALL, 0 );
-
-}
-
-sub AddPrepregCoverlayRow {
-	my $self = shift;
-	my $extraPress = shift;
-	
-	my $text = "<= Prepreg + Coverlay lamination after press" if($extraPress);
-
-	my $rowPrpg = RowSeparatorFrm->new( $self, Enums->RowSeparator_PRPGCOVERLAY, $text );
-	$self->{"szRows"}->Add( $rowPrpg, 0, &Wx::wxALL, 0 );
+	my $rowGapB = RowSeparatorFrm->new( $self, Enums->RowSeparator_GAP );
+	$self->{"szRows"}->Add( $rowGapB, 0, &Wx::wxALL, 0 );
 
 }
 
@@ -133,11 +122,8 @@ sub AddCoreRow {
 sub AddCoverlayRow {
 	my $self = shift;
 	my $type = shift;
-	my $extraPress = shift;
-	
-	my $text = "<= Coverlay lamination after press" if($extraPress);
 
-	my $row = RowSeparatorFrm->new( $self, Enums->RowSeparator_COVERLAY, $text );
+	my $row = RowSeparatorFrm->new( $self, Enums->RowSeparator_COVERLAY );
 	$self->{"szRows"}->Add( $row, 0, &Wx::wxALL, 0 );
 
 }
@@ -149,6 +135,7 @@ sub AddProductRow {
 
 	my $row = RowProductFrm->new( $self, $productId, $productType );
 	$self->{"szRows"}->Add( $row, 0, &Wx::wxALL, 0 );
+	push( @{ $self->{"copperRows"} }, $row );
 
 	$row->{"onLayerSettChanged"}->Add( sub { $self->{"onLayerSettChanged"}->Do(@_) } );
 
@@ -159,7 +146,7 @@ sub GetCopperRow {
 	my $self      = shift;
 	my $layerName = shift;
 
-	return ( grep { $_->GetCopperName() eq $layerName } @{ $self->{"copperRows"} } )[0];
+	return ( grep { $_->GetLayerName() eq $layerName } @{ $self->{"copperRows"} } )[0];
 }
 
 sub GetAllCopperRows {
@@ -167,50 +154,6 @@ sub GetAllCopperRows {
 	my $layerName = shift;
 
 	return @{ $self->{"copperRows"} };
-}
-
-sub GetProductId {
-	my $self = shift;
-
-	return $self->{"productId"};
-}
-
-sub GetProductType {
-	my $self = shift;
-
-	return $self->{"productType"};
-}
-
-#-------------------------------------------------------------------------------------------#
-#  GET/SET frm methods
-#-------------------------------------------------------------------------------------------#
-
-sub SetTechnologyVal {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"technologyCb"}->SetValue($val);
-
-}
-
-sub GetTechnologyVal {
-	my $self = shift;
-
-	return $self->{"technologyCb"}->GetValue();
-}
-
-sub SetTentingVal {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"tentingCb"}->SetValue($val);
-
-}
-
-sub GetTentingVal {
-	my $self = shift;
-
-	return $self->{"tentingCb"}->GetValue();
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -221,14 +164,6 @@ sub HideSubGroupTitle {
 
 	# 1) Hidesubgroups, where is no layer except product layer
 	$self->{"headPnl"}->Hide();
-}
-
-sub HideSubGroupTechnology {
-	my $self = shift;
-
-	$self->{"technologyCb"}->Hide();
-	$self->{"tentingCb"}->Hide();
-
 }
 
 sub __SetLayout {
@@ -248,22 +183,18 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	#$self->SetBackgroundColour( Wx::Colour->new( 0, 255, 0 ) );
+	$self->SetBackgroundColour( Wx::Colour->new( 0, 255, 0 ) );
 
 	# Group head
-	my $groupHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 18, -1 ], );
+	my $groupHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 20, -1 ], );
 
 	# product press has title always invisible
-	if ( $self->{"productType"} eq StackEnums->Product_INPUT ) {
+	if ( $self->{"productType"} eq Enums->Group_PRODUCTINPUT ) {
 
-		$groupHeadPnl->SetBackgroundColour(Enums->Color_PRODUCTINPUT );
-	
-	}elsif ( $self->{"productType"} eq StackEnums->Product_PRESS ) {
-		
-		$groupHeadPnl->SetBackgroundColour( Enums->Color_PRODUCTPRESS );
+		$groupHeadPnl->SetBackgroundColour( Wx::Colour->new( 255, 192, 0 ) );
 	}
 
-	my $title = $self->{"productType"} eq StackEnums->Product_INPUT ? $self->{"productId"} : "";
+	my $title = $self->{"productType"} eq Enums->Group_PRODUCTINPUT ? $self->{"productId"} : "";
 	my $groupHeadTxt = Wx::StaticText->new( $groupHeadPnl, -1, $title, [ -1, -1 ] );
 
 	#my $fontLblBold = Wx::Font->new( 9, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL );
@@ -275,13 +206,16 @@ sub __SetLayout {
 	my @pltType = ( EnumsGeneral->Etching_PATTERN, EnumsGeneral->Etching_TENTING, EnumsGeneral->Etching_ONLY );
 	my $tentingCb = Wx::ComboBox->new( $cntrlsWrapperPnl, -1, $pltType[0], &Wx::wxDefaultPosition, [ 77, 23 ], \@pltType, &Wx::wxCB_READONLY );
 
-	$groupHeadSz->Add( $groupHeadTxt, 1,   &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER |  &Wx::wxALIGN_CENTER_HORIZONTAL , 0 );
+	$technologyCb->Hide() unless ( $self->{"techCntrls"} );
+	$tentingCb->Hide()    unless ( $self->{"techCntrls"} );
+
+	$groupHeadSz->Add( $groupHeadTxt, 1, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 5 );
 	$groupHeadPnl->SetSizer($groupHeadSz);
 
 	$cntrlsWrapperSz->Add( $technologyCb, 0, &Wx::wxALL, 1 );
 	$cntrlsWrapperSz->Add( $tentingCb,    0, &Wx::wxALL, 1 );
 
-	$szMain->Add( $groupHeadPnl,     0, &Wx::wxEXPAND | &Wx::wxLEFT, ($self->{"productType"} eq StackEnums->Product_INPUT ? 4 : 0) );
+	$szMain->Add( $groupHeadPnl,     0, &Wx::wxEXPAND );
 	$szMain->Add( $szCol2,           1, &Wx::wxLEFT, 5 );
 	$szMain->Add( $cntrlsWrapperPnl, 0, &Wx::wxLEFT, 5 );
 
@@ -305,25 +239,14 @@ sub __SetLayout {
 
 sub __OnTechnologyChanged {
 	my $self = shift;
-	
-	my $technology = $self->{"technologyCb"}->GetValue();
-	
-	# Disable enable tenting according technology value
-	
-	if($technology ne EnumsGeneral->Technology_GALVANICS){
-		$self->{"tentingCb"}->Hide();
-  
-	}else{
-		$self->{"tentingCb"}->Show();
-	}
 
-	$self->{"technologyChangedEvt"}->Do( $self->{"productId"}, $self->{"productType"}, $technology );
+	$self->{"technologyChangedEvt"}->Do( $self->{"productId"}, $self->{"technologyCb"}->GetValue() );
 }
 
 sub __OnTentingChanged {
 	my $self = shift;
 
-	$self->{"tentingChangedEvt"}->Do( $self->{"productId"}, $self->{"productType"}, $self->{"tentingCb"}->GetValue() );
+	$self->{"tentingChangedEvt"}->Do( $self->{"productId"}, $self->{"tentingCb"}->GetValue() );
 }
 
 #-------------------------------------------------------------------------------------------#

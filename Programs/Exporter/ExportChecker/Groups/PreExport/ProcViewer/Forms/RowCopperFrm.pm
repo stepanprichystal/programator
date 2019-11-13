@@ -17,7 +17,7 @@ use warnings;
 #local library
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Enums';
-use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -29,8 +29,7 @@ sub new {
 	my $outerCore  = shift;
 	my $plugging   = shift;
 	my $cuFoilOnly = shift // 0;
- 	my $cuThickness = shift;
- 	
+
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
 
 	bless($self);
@@ -42,8 +41,7 @@ sub new {
 	$self->{"outerCore"}  = $outerCore;
 	$self->{"plugging"}   = $plugging;
 	$self->{"cuFoilOnly"} = $cuFoilOnly;
-	$self->{"cuThickness"} = $cuThickness;
-	$self->{"rowHeight"}  = 20;
+	$self->{"rowHeight"}  = 22;
 
 	#build layer name
 	my $lName = $self->{"copperName"};
@@ -59,122 +57,53 @@ sub new {
 	return $self;
 
 }
- 
-sub UpdatePlating {
-	my $self = shift;
-	my $plating = shift;
-	
-	my $cur = $self->{"cuThickTxt"};
-	my $base = $cur =~ /^(\d+)/;
-	
-	$base .= "+25" if($plating);
 
-	$self->{"cuThickTxt"}->SetValue($base);
-}
 
-sub GetCopperName {
-	my $self = shift;
+sub SetLayerValues {
+	my $self  = shift;
+	my %lInfo = %{ shift(@_) };
 
-	return $self->{"copperName"};
-}
+	$self->SetSelected( $lInfo{"plot"} );
 
-sub GetOuterCore {
-	my $self = shift;
-
-	return $self->{"outerCore"};
-}
-
-sub GetPlugging {
-	my $self = shift;
-
-	return $self->{"plugging"};
-}
-
-sub GetCuFoilOnly {
-	my $self = shift;
-
-	return $self->{"cuFoilOnly"};
-}
-
-#-------------------------------------------------------------------------------------------#
-#  GET/SET frm methods
-#-------------------------------------------------------------------------------------------#
-
-sub SetPolarityVal {
-	my $self = shift;
-	my $val  = shift;
-
-	if ( $val eq "positive" ) {
+	if ( $lInfo{"polarity"} eq "positive" ) {
 		$self->{"polarityCb"}->SetValue("+");
 	}
-	elsif ( $val eq "negative" ) {
+	elsif ( $lInfo{"polarity"} eq "negative" ) {
 		$self->{"polarityCb"}->SetValue("-");
 	}
+
+	$self->{"mirrorChb"}->SetValue( $lInfo{"mirror"} );
+	$self->{"compTxt"}->SetValue( $lInfo{"comp"} );
+	$self->{"shrinkX"}->SetValue( $lInfo{"shrinkX"} );
+	$self->{"shrinkY"}->SetValue( $lInfo{"shrinkX"} );
 }
 
-sub GetPolarityVal {
+sub GetLayerValues {
 	my $self = shift;
 
-	return $self->{"polarityCb"}->GetValue() eq "+" ? "positive" : "negative";
-}
+	my %lInfo = ();
 
-sub SetMirrorVal {
-	my $self = shift;
-	my $val  = shift;
+	$lInfo{"name"} = $self->GetRowText();
 
-	$self->{"mirrorChb"}->SetValue($val);
-}
-
-sub GetMirrorVal {
-	my $self = shift;
+	$lInfo{"polarity"} = $self->{"polarityCb"}->GetValue() eq "+" ? "positive" : "negative";
 
 	if ( $self->{"mirrorChb"}->IsChecked() ) {
-		return 1;
+		$lInfo{"mirror"} = 1;
 	}
 	else {
-		return 0;
+		$lInfo{"mirror"} = 0;
 
 	}
+	$lInfo{"comp"} = $self->{"compTxt"}->GetValue();
+
+	$lInfo{"shrinkX"} = $self->{"shrinkXTxt"}->GetValue();
+
+	$lInfo{"shrinkY"} = $self->{"shrinkYTxt"}->GetValue();
+
+	return %lInfo;
 }
+ 
 
-sub SetCompVal {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"compTxt"}->SetValue($val);
-}
-
-sub GetCompVal {
-	my $self = shift;
-
-	return $self->{"compTxt"}->GetValue();
-}
-
-sub SetShrinkXVal {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"shrinkXTxt"}->SetValue($val);
-}
-
-sub GetShrinkXVal {
-	my $self = shift;
-
-	return $self->{"shrinkXTxt"}->GetValue();
-}
-
-sub SetShrinkYVal {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"shrinkYTxt"}->SetValue($val);
-}
-
-sub GetShrinkYVal {
-	my $self = shift;
-
-	return $self->{"shrinkYTxt"}->GetValue();
-}
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#
@@ -184,6 +113,8 @@ sub __OnRowChanged {
 
 	$self->{"layerSettChangedEvt"}->Do( $self->{"copperName"}, $self->{"outerCore"}, $self->{"plugging"} );
 }
+
+
 
 sub __SetLayout {
 	my $self  = shift;
@@ -203,14 +134,9 @@ sub __SetLayout {
 	# Row Head
 	my $rowHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 60, $self->{"rowHeight"} ] );
 	$rowHeadPnl->SetBackgroundColour( Wx::Colour->new( 180, 0, 0 ) );
-	
-	my $lTitle = $lName;
-	$lTitle = "(".$lTitle.")" if($self->GetPlugging());
-	
-	my $rowHeadTxt = Wx::StaticText->new( $rowHeadPnl, -1, $lTitle, [ -1, -1 ] );
+	my $rowHeadTxt = Wx::StaticText->new( $rowHeadPnl, -1, $lName, [ -1, -1 ] );
 	$rowHeadTxt->SetForegroundColour( Wx::Colour->new( 255, 255, 255 ) );    # set text color
 
-	my $cuThickTxt = Wx::StaticText->new( $cntrlsWrapperPnl, -1, $self->{"cuThickness"}, &Wx::wxDefaultPosition, [ 35, $self->{"rowHeight"} ] );
 	my @polar = ( "+", "-" );
 	my $polarityCb =
 	  Wx::ComboBox->new( $cntrlsWrapperPnl, -1, $polar[0], &Wx::wxDefaultPosition, [ 40, $self->{"rowHeight"} ], \@polar, &Wx::wxCB_READONLY );
@@ -222,15 +148,15 @@ sub __SetLayout {
 	my $shrinkXTxt = Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "113.5", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} ], &Wx::wxCB_READONLY );
 	my $shrinkYTxt = Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "95",    &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} ], &Wx::wxCB_READONLY );
 
-	if ( $self->{"cuFoilOnly"} ) {
-		$polarityCb->Hide();
-		$mirrorChb->Hide();
-		$compTxt->Hide();
-		$shrinkXTxt->Hide();
-		$shrinkYTxt->Hide();
-	}
+	#	if ( $self->{"cuFoilOnly"} ) {
+	#		$polarityCb->Hide();
+	#		$mirrorChb->Hide();
+	#		$compTxt->Hide();
+	#		$shrinkXTxt->Hide();
+	#		$shrinkYTxt->Hide();
+	#	}
 
-	#$self->SetBackgroundColour( Wx::Colour->new( 255, 0, 0 ) );
+	$self->SetBackgroundColour( Wx::Colour->new( 255, 0, 0 ) );
 
 	# SET EVENTS
 	Wx::Event::EVT_CHECKBOX( $mirrorChb, -1, sub { $self->__OnRowChanged(@_) } );
@@ -246,9 +172,6 @@ sub __SetLayout {
 
 	$szMain->Add( $rowHeadPnl, 0, &Wx::wxALL, 0 );
 
-
-
-	$cntrlsWrapperSz->Add( $cuThickTxt, 0, &Wx::wxLEFT, 10 );
 	$cntrlsWrapperSz->Add( $polarityCb, 0, &Wx::wxLEFT, 10 );
 	$cntrlsWrapperSz->Add( $mirrorChb,  0, &Wx::wxLEFT, 15 );
 	$cntrlsWrapperSz->Add( $compTxt,    0, &Wx::wxLEFT, 5 );
@@ -260,8 +183,7 @@ sub __SetLayout {
 	$self->SetSizer($szMain);
 
 	# SET REFERENCES
-	
-	$self->{"cuThickTxt"} = $cuThickTxt;
+
 	$self->{"polarityCb"} = $polarityCb;
 	$self->{"mirrorChb"}  = $mirrorChb;
 	$self->{"compTxt"}    = $compTxt;

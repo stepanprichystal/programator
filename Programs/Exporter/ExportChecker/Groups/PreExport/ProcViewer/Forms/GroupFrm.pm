@@ -29,8 +29,8 @@ use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 sub new {
 	my $class     = shift;
 	my $parent    = shift;
-	my $productId   = shift;
-	my $productType = shift;
+	my $groupId   = shift;
+	my $groupType = shift;
 
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
 
@@ -39,8 +39,8 @@ sub new {
 	# Items references
 	# PROPERTIES
 	$self->{"subGroups"} = [];
-	$self->{"productId"}   = $productId;
-	$self->{"productType"} = $productType;
+	$self->{"groupId"}   = $groupId;
+	$self->{"groupType"} = $groupType;
 
 	$self->__SetLayout();
 
@@ -57,14 +57,24 @@ sub AddSubGroup {
 	my $self        = shift;
 	my $producId    = shift;
 	my $productType = shift;
+	my $productObj  = shift;
 
 	if ( scalar( @{ $self->{"subGroups"} } ) ) {
 		$self->__AddSeparator();
 	}
 
+	# show/hode technolgy controls at sub group
+	my $techCntrls = 1;
+	$techCntrls = 0
+	  unless (
+		grep {
+			     $_->GetType() eq StackEnums->ProductL_MATERIAL
+			  && $_->GetData()->GetType() eq StackEnums->MaterialType_COPPER
+			  && !$_->GetData()->GetIsFoil()
+		} $productObj->GetLayers()
+	  );
 
-
-	my $subGroup = GroupSubFrm->new( $self, $producId, $productType);
+	my $subGroup = GroupSubFrm->new( $self, $producId, $productType, $techCntrls, $productObj );
 	$self->{"szSubGroups"}->Add( $subGroup, 0, &Wx::wxALL, 0 );
 
 	push( @{ $self->{"subGroups"} }, $subGroup );
@@ -97,18 +107,18 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	# Group head
-	my $groupHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 15, -1 ], );
+	my $groupHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 20, -1 ], );
 
-	if ( $self->{"productType"} eq StackEnums->Product_INPUT ) {
+	if ( $self->{"groupType"} eq Enums->Group_PRODUCTINPUT ) {
 
 		$groupHeadPnl->SetBackgroundColour( Enums->Color_PRODUCTINPUT );
 	}
-	elsif ( $self->{"productType"} eq StackEnums->Product_PRESS ) {
+	elsif ( $self->{"groupType"} eq Enums->Group_PRODUCTPRESS ) {
 		$groupHeadPnl->SetBackgroundColour( Enums->Color_PRODUCTPRESS );
 	}
 
-	my $groupHeadTxt = Wx::StaticText->new( $groupHeadPnl, -1, $self->{"productId"}, [ -1, -1 ] );
-	my $fontLblBold = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
+	my $groupHeadTxt = Wx::StaticText->new( $groupHeadPnl, -1, $self->{"groupId"}, [ -1, -1 ] );
+	my $fontLblBold = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 
 	$groupHeadTxt->SetForegroundColour( Wx::Colour->new( 40, 40, 40 ) );    # set text color
 	$groupHeadTxt->SetFont($fontLblBold);
@@ -118,7 +128,7 @@ sub __SetLayout {
 	$groupHeadPnl->SetSizer($groupHeadSz);
 
 	$szMain->Add( $groupHeadPnl, 0, &Wx::wxEXPAND );
-	$szMain->Add( $szCol2, 0, &Wx::wxLEFT, 0 );
+	$szMain->Add( $szCol2, 0, &Wx::wxLEFT, 5 );
 
 	$self->SetSizer($szMain);
 
@@ -138,7 +148,7 @@ sub __AddSeparator {
 
 	# DEFINE CONTROLS
 	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, 2 ] );
-	$sepPnl->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
+	$sepPnl->SetBackgroundColour( Wx::Colour->new( 40, 40, 40 ) );
 
 	# BUILD LAYOUT STRUCTURE
 

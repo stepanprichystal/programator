@@ -75,21 +75,14 @@ sub InitForm {
 
 	$self->{"groupWrapper"} = $groupWrapper;
 
-	unless ( $self->IsFormLess() ) {
-
-		my $parent = $groupWrapper->GetParentForGroup();
-		$self->{"form"} = undef
+	my $parent = $groupWrapper->GetParentForGroup();
+	$self->{"form"} = PreUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo());
 	
-	}else{
-		
-		# init fake/empty view class
-		$self->{"form"} = PreUnitForm->new( $inCAM, $self->{"jobId"} );
-	}
-
 	# init base class with event class
-	$self->{"eventClass"} = PreUnitFormEvt->new( $self->{"form"} );
+	$self->{"eventClass"} = PreUnitFormEvt->new($self->{"form"});
 
 	$self->_SetHandlers();
+ 
 
 }
 

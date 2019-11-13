@@ -41,6 +41,9 @@ sub new {
 	$self->{"inCAM"}       = $inCAM;
 	$self->{"jobId"}       = $jobId;
 	$self->{"defaultInfo"} = $defaultInfo;
+	
+	
+	$self->{"procViewer"} = undef; 
 
 	$self->__SetLayout();
 
@@ -90,7 +93,7 @@ sub __SetLayoutSigLayerSett {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
-	my $szTech = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	#my $szTech = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
 
@@ -105,19 +108,12 @@ sub __SetLayoutSigLayerSett {
 
 	my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
-	my @sigLayers =
-	  $self->{"defaultInfo"}->GetSignalLayers();
-
+  
 	# Remove layers not to be plotted
-	my $procViewer = ProcViewer->new(
-		$inCAM, $jobId,
-		\@sigLayers,
-		$self->{"defaultInfo"}->GetIsFlex(),
-		$self->{"defaultInfo"}->GetStackup()
-	);
+	$self->{"procViewer"} = ProcViewer->new( $inCAM, $jobId, $self->{"defaultInfo"} );
 
-	my $procViewerFrm = $procViewer->BuildForm($statBox);
-
+	my $procViewerFrm = $self->{"procViewer"}->BuildForm($statBox);
+	
 	# SET EVENTS
 	#$sigLayerList->{"onRowChanged"}->Add( sub { $self->{"__OnLayerListRowSettChange"}->Do(@_) } );
 
@@ -138,7 +134,7 @@ sub __SetLayoutSigLayerSett {
 	#$self->{"tentingChb"}   = $tentingChb;
 	#$self->{"technologyCb"} = $technologyCb;
 
-	$self->{"procViewer"} = $procViewer;
+	#$self->{"procViewer"} = $procViewer;
 
 	return $szStatBox;
 
@@ -167,18 +163,18 @@ sub __SetLayoutOtherLayerSett {
 		  && $_->{"gROWlayer_type"} eq "stiffener"
 	} @layers;
 
-	my $otherLayerList = PlotList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@otherLayers );
-
-	# SET EVENTS
-	$otherLayerList->{"onRowChanged"}->Add( sub { $self->{"__OnLayerListRowSettChange"}->Do(@_) } );
+	#	my $otherLayerList = PlotList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@otherLayers );
+	#
+	#	# SET EVENTS
+	#	$otherLayerList->{"onRowChanged"}->Add( sub { $self->{"__OnLayerListRowSettChange"}->Do(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szStatBox->Add( $otherLayerList, 0, &Wx::wxEXPAND );
+	
 
 	# Set References
 
-	$self->{"otherLayerList"} = $otherLayerList;
+	#$self->{"otherLayerList"} = $otherLayerList;
 
 	return $szStatBox;
 }
@@ -260,37 +256,32 @@ sub SetLayers {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
 
-	$self->{"sigLayerList"}->SetLayers( \@layers );
-
+	$self->{"procViewer"}->SetLayerValues( \@layers );
+ 
 }
 
 sub GetLayers {
 	my $self = shift;
 
-	my @layers    = ();
-	my @sigRows   = $self->{"sigLayerList"}->GetAllRows();
-	my @otherRows = $self->{"otherLayerList"}->GetAllRows();
+	#my @layers    = ();
+#	my @sigRows   = $self->{"sigLayerList"}->GetAllRows();
+#	my @otherRows = $self->{"otherLayerList"}->GetAllRows();
 
-	foreach my $r ( @sigRows, @otherRows ) {
-
-		my %linfo = $r->GetLayerValues();
-
-		push( @layers, \%linfo );
-
-	}
-
+	my @layers = $self->{"procViewer"}->GetLayerValues();
+ 
 	return \@layers;
 }
 
 sub SetTenting {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"tentingChb"}->SetValue($value);
+	
+	$self->{"procViewer"}->SetTentingCS($value);
 }
 
 sub GetTenting {
 	my $self = shift;
-	return $self->{"tentingChb"}->GetValue();
+	return $self->{"procViewer"}->GetTentingCS();
 }
 
 sub SetTechnology {

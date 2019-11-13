@@ -35,7 +35,7 @@ sub new {
 	# Items references
 	# PROPERTIES
 
-	$self->{"rowHeight"} = 15;
+	$self->{"rowHeight"} = 20;
 
 	$self->__SetLayout( $productId, $productType );
 
@@ -80,10 +80,8 @@ sub __SetLayout {
 	# SET EVENTS
 
 	# DEFINE STRUCTURE
- 
-	$rowHeadSz->Add( 1, 1,1 );
-	$rowHeadSz->Add( $rowHeadTxt, 0,   &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER,  );
-	$rowHeadSz->Add( 1, 1,1 );
+
+	$rowHeadSz->Add( $rowHeadTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 5 );
 	$rowHeadPnl->SetSizer($rowHeadSz);
 
 	$szMain->Add( $rowHeadPnl, 0, &Wx::wxALL, 0 );

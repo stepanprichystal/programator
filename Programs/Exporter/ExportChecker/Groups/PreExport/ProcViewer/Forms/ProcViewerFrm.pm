@@ -19,7 +19,7 @@ use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::GroupFrm';
-use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+
 #use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::GroupSeparatorFrm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Enums';
 
@@ -54,29 +54,30 @@ sub new {
 
 sub AddGroup {
 	my $self      = shift;
-	my $productId   = shift;
-	my $productType = shift;
+	my $groupId   = shift;
+	my $groupType = shift;
 
 	# Add separator if any group exist
-	if ( $productType eq StackEnums->Product_INPUT && scalar( @{ $self->{"groupFrmInput"} } ) ) {
+	if ( $groupType eq Enums->Group_PRODUCTINPUT && scalar( @{ $self->{"groupFrmInput"} } ) ) {
 		$self->__AddSeparator();
 	}
-	elsif ( $productType eq StackEnums->Product_PRESS && scalar( @{ $self->{"groupFrmPress"} } ) ) {
+	elsif ( $groupType eq Enums->Group_PRODUCTPRESS && scalar( @{ $self->{"groupFrmPress"} } ) ) {
 		$self->__AddSeparator();
 	}
 
-	my $group = GroupFrm->new( $self, $productId, $productType );
-
+	my $group = GroupFrm->new( $self, $groupId, $groupType );
+	
 	$group->{"layerSettChangedEvt"}->Add( sub  { $self->{"layerSettChangedEvt"}->Do(@_) } );
 	$group->{"technologyChangedEvt"}->Add( sub { $self->{"technologyChangedEvt"}->Do(@_) } );
 	$group->{"tentingChangedEvt"}->Add( sub    { $self->{"tentingChangedEvt"}->Do(@_) } );
 
 	$self->{"szGroups"}->Add( $group, 0, &Wx::wxALL, 0 );
+ 
 
-	if ( $productType eq StackEnums->Product_INPUT ) {
+	if ( $groupType eq Enums->Group_PRODUCTINPUT ) {
 		push( @{ $self->{"groupFrmInput"} }, $group );
 	}
-	elsif ( $productType eq StackEnums->Product_PRESS ) {
+	elsif ( $groupType eq Enums->Group_PRODUCTPRESS ) {
 		push( @{ $self->{"groupFrmPress"} }, $group );
 	}
 
@@ -92,8 +93,8 @@ sub GetGroups {
 
 	my @groupsFrm = ();
 
-	@groupsFrm = @{ $self->{"groupFrmInput"} } if ( defined $type && $type eq StackEnums->Product_INPUT );
-	@groupsFrm = @{ $self->{"groupFrmPress"} } if ( defined $type && $type eq StackEnums->Product_PRESS );
+	@groupsFrm = @{ $self->{"groupFrmInput"} } if ( defined $type && $type eq Enums->Group_PRODUCTINPUT );
+	@groupsFrm = @{ $self->{"groupFrmPress"} } if ( defined $type && $type eq Enums->Group_PRODUCTPRESS );
 	@groupsFrm = ( @{ $self->{"groupFrmInput"} }, @{ $self->{"groupFrmPress"} } ) if ( !defined $type );
 
 	return @groupsFrm;
@@ -101,9 +102,8 @@ sub GetGroups {
 }
 
 sub AddCategoryTitle {
-	my $self  = shift;
-	my $type  = shift;
-	my $title = shift;
+	my $self = shift;
+	my $type = shift;
 
 	# DEFINE SIZERS
 	#my $szMain       = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -113,18 +113,17 @@ sub AddCategoryTitle {
 	my $groupTitlePnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, -1 ] );
 	my $groupTitleTxt = Wx::StaticText->new( $groupTitlePnl, -1, "", [ -1, -1 ] );
 
-	if ( $type eq StackEnums->Product_INPUT ) {
+	if ( $type eq Enums->Group_PRODUCTINPUT ) {
 
 		$groupTitlePnl->SetBackgroundColour( Enums->Color_PRODUCTINPUT );
+		$groupTitleTxt->SetLabel("Input semi-product");
 	}
-	elsif ( $type eq StackEnums->Product_PRESS ) {
+	elsif ( $type eq Enums->Group_PRODUCTPRESS ) {
 		$groupTitlePnl->SetBackgroundColour( Enums->Color_PRODUCTPRESS );
-
+		$groupTitleTxt->SetLabel("Pressing");
 	}
 
-	$groupTitleTxt->SetLabel($title);
-
-	my $fontLblBold = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_NORMAL );
+	my $fontLblBold = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 
 	$groupTitleTxt->SetForegroundColour( Wx::Colour->new( 40, 40, 40 ) );    # set text color
 	$groupTitleTxt->SetFont($fontLblBold);
@@ -133,7 +132,7 @@ sub AddCategoryTitle {
 	$groupTitleSz->Add( $groupTitleTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 5 );
 	$groupTitlePnl->SetSizer($groupTitleSz);
 
-	$self->{"szGroups"}->Add( $groupTitlePnl, 0, &Wx::wxEXPAND | &Wx::wxBOTTOM|&Wx::wxTOP, 2 );
+	$self->{"szGroups"}->Add( $groupTitlePnl, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	#$self->{"szGroups"}->Add( 5, 5 );
 
@@ -159,50 +158,16 @@ sub GetLayerValues {
 	return $layerRow->GetLayerValues();
 }
 
-sub GetCopperFrms {
-	my $self       = shift;
-	my $copperName = shift;
-	my $outerCore  = shift;
-	my $plugging   = shift;
-
-	my $rowFrm      = undef;
-	my $subGroupFrm = undef;
-
-	foreach my $groupFrm ( $self->GetGroups() ) {
-
-		foreach my $subGroupFrm ( $groupFrm->GetSubGroups() ) {
-
-			foreach my $copperRowFrm ( $subGroupFrm->GetCopperRow() ) {
-
-				if (    $copperRowFrm->GetCopperName() eq $copperName
-					 && $copperRowFrm->GetOuterCore() eq $outerCore
-					 && $copperRowFrm->GetPlugging() eq $plugging )
-				{
-
-					$rowFrm      = $copperRowFrm;
-					$subGroupFrm = $subGroupFrm;
-					last;
-				}
-			}
-			last if ( defined $rowFrm );
-		}
-		last if ( defined $rowFrm );
-	}
-
-	return ( $rowFrm, $subGroupFrm );
-}
-
 #-------------------------------------------------------------------------------------------#
 #  Layout settings
 #-------------------------------------------------------------------------------------------#
-sub HideControls {
+sub HideSubGroup {
 	my $self = shift;
 
-	# 1) Hide input sub group title
-	# Input product Sub group head can be hidden, if there no groups has more than one sobgroup
+	# 1) Input product Sub group head can be hidden, if there no groups has more than one sobgroup
 	my $hide = 1;
 
-	foreach my $groupFrm ( $self->GetGroups( StackEnums->Product_INPUT ) ) {
+	foreach my $groupFrm ( $self->GetGroups( Enums->Group_PRODUCTINPUT ) ) {
 
 		if ( scalar( $groupFrm->GetSubGroups() ) > 1 ) {
 
@@ -215,16 +180,7 @@ sub HideControls {
 		$_->HideSubGroupTitle() foreach ( map { $_->GetSubGroups() } $self->GetGroups() );
 	}
 
-	# 2) Hide technology controls if there is no copper
-	foreach my $subGroup ( map { $_->GetSubGroups() } $self->GetGroups() ) {
-
-		my $hide = 1;
-		if ( scalar( grep { !$_->GetCuFoilOnly() } $subGroup->GetAllCopperRows() ) ) {
-			$hide = 0;
-		}
-		$subGroup->HideSubGroupTechnology() if ($hide);
-	}
-
+	$_->HideSubGroupTitle() foreach ( map { $_->GetSubGroups() } $self->GetGroups( Enums->Group_PRODUCTPRESS ) );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -238,7 +194,7 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	#$self->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
+	$self->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
 
 	# Group head
 
@@ -259,12 +215,12 @@ sub __AddSeparator {
 	#my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
-	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, 3 ] );
-	$sepPnl->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
+	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, 2 ] );
+	$sepPnl->SetBackgroundColour( Wx::Colour->new( 40, 40, 40 ) );
 
 	# BUILD LAYOUT STRUCTURE
 
-	$self->{"szGroups"}->Add( $sepPnl, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$self->{"szGroups"}->Add( $sepPnl, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 }
 

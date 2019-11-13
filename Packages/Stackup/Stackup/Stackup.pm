@@ -84,12 +84,28 @@ sub GetPressCount {
 	return $self->{"pressCount"};
 }
 
-# Return info about each pressing in hash structure
-# where first press start with 1
+# Return info about each pressing
+# -  in hash structure where first press start with key 1
+# -  or sorted list structure
 sub GetPressProducts {
 	my $self = shift;
+	my $array = shift // 0;    # Retturn in sorted array by press order ASC
 
-	return %{ $self->{"productPress"} };
+	if ($array) {
+
+		my @arr = ();
+		foreach my $k ( sort { $a <=> $b } keys %{ $self->{"productPress"} } ) {
+
+			push( @arr, $self->{"productPress"}->{$k} );
+		}
+
+		return @arr;
+
+	}
+	else {
+		return %{ $self->{"productPress"} };
+	}
+
 }
 
 # Return info about each pressing
@@ -206,13 +222,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "d152456";
 	my $stackup = Stackup->new( $inCAM, $jobId );
 
-	
-
 	#my $thick = $stackup->GetFinalThick();
 
-	 
 	StackupTester->PrintStackupTree($stackup);
-	
+
 	die;
 
 }

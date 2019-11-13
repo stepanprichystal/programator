@@ -760,7 +760,7 @@ sub __BuildProductPress {
 
 			if ( $eLIdx < scalar( @{$pars} ) ) {
 
-				my @extraPressL = map { ProductLayer->new( $_->{"t"}, $_->{"l"} ) } @{$pars}[ $eLIdx+1 .. scalar( @{$pars} ) -1 ];
+				my @extraPressL = map { ProductLayer->new( $_->{"t"}, $_->{"l"} ) } @{$pars}[ $eLIdx + 1 .. scalar( @{$pars} ) - 1 ];
 				push( @pLayers,           @extraPressL );
 				push( @pExtraPressLayers, @extraPressL );
 			}
@@ -809,13 +809,20 @@ sub __SetProductOuterCore {
 
 		my @l = $press->GetLayers();
 
-		my $topInput = $l[0]->GetData()
-		  if (    $l[0]->GetType() eq Enums->ProductL_PRODUCT
-			   && $l[0]->GetData()->GetProductType() eq Enums->Product_INPUT );
+		# Check if there are product inputs on outer sides of press package
+		# (warning: sometimes there can be noflow prepreg very outer on press package then skip prepregs)
+		my $topIdx = $l[0]->GetType() eq Enums->ProductL_MATERIAL
+		  && $l[0]->GetData()->GetType() eq Enums->MaterialType_PREPREG ? 1 : 0;
+		my $botIdx = $l[-1]->GetType() eq Enums->ProductL_MATERIAL
+		  && $l[-1]->GetData()->GetType() eq Enums->MaterialType_PREPREG ? -2 : -1;
 
-		my $botInput = $l[-1]->GetData()
-		  if (    $l[-1]->GetType() eq Enums->ProductL_PRODUCT
-			   && $l[-1]->GetData()->GetProductType() eq Enums->Product_INPUT );
+		my $topInput = $l[$topIdx]->GetData()
+		  if (    $l[$topIdx]->GetType() eq Enums->ProductL_PRODUCT
+			   && $l[$topIdx]->GetData()->GetProductType() eq Enums->Product_INPUT );
+
+		my $botInput = $l[$botIdx]->GetData()
+		  if (    $l[$botIdx]->GetType() eq Enums->ProductL_PRODUCT
+			   && $l[$botIdx]->GetData()->GetProductType() eq Enums->Product_INPUT );
 
 		# If pressing contains Produc input on outer side
 		# Check if product input is created from single core without extra cu foil
@@ -823,29 +830,31 @@ sub __SetProductOuterCore {
 
 			# If parent input product not contains copper foil
 			# Set full TOP coper attribut to child input products (core)
-			if (
-				 !(
-					   ( $topInput->GetLayers() )[0]->GetType() eq Enums->ProductL_MATERIAL
-					&& ( $topInput->GetLayers() )[0]->GetData()->GetType() eq Enums->MaterialType_COPPER
-				 )
-			  )
-			{
-				( $topInput->GetChildProducts() )[0]->GetData()->SetTopOuterCore(1);
+			#			if (
+			#				 !(
+			#					   ( $topInput->GetLayers() )[0]->GetType() eq Enums->ProductL_MATERIAL
+			#					&& ( $topInput->GetLayers() )[0]->GetData()->GetType() eq Enums->MaterialType_COPPER
+			#				 )
+			#			  )
+			#			{
+			$topInput->SetTopOuterCore(1);
+			( $topInput->GetChildProducts() )[0]->GetData()->SetTopOuterCore(1);
 
-			}
+			#			}
 
 			# If parent input product not contains copper foil
 			# Set full BOT coper attribut to child input products (core)
-			if (
-				 !(
-					   ( $botInput->GetLayers() )[-1]->GetType() eq Enums->ProductL_MATERIAL
-					&& ( $botInput->GetLayers() )[-1]->GetData()->GetType() eq Enums->MaterialType_COPPER
-				 )
-			  )
-			{
-				( $botInput->GetChildProducts() )[-1]->GetData()->SetBotOuterCore(1);
+			#			if (
+			#				 !(
+			#					   ( $botInput->GetLayers() )[-1]->GetType() eq Enums->ProductL_MATERIAL
+			#					&& ( $botInput->GetLayers() )[-1]->GetData()->GetType() eq Enums->MaterialType_COPPER
+			#				 )
+			#			  )
+			#			{
+			$botInput->SetBotOuterCore(1);
+			( $botInput->GetChildProducts() )[-1]->GetData()->SetBotOuterCore(1);
 
-			}
+			#			}
 
 		}
 	}
