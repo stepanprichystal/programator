@@ -10,143 +10,118 @@ use base('Packages::Stackup::Stackup::Stackup');
 #3th party library
 use strict;
 use warnings;
-
+use List::Util qw(first);
 
 #local library
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
 use aliased 'CamHelpers::CamDrilling';
-use aliased 'Packages::Stackup::StackupNC::StackupNCPress';
-use aliased 'Packages::Stackup::StackupNC::StackupNCCore';
-use aliased 'Packages::Stackup::StackupNC::StackupNCSignal';
+use aliased 'Packages::Stackup::StackupNC::StackupNCProduct';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-sub new { 
+sub new {
 	my $class = shift;
 	
-	my $jobId = shift;
 	my $inCAM = shift;
-		
-	my $self = $class->SUPER::new($inCAM, $jobId);
+	my $jobId = shift;
+
+	my $self = $class->SUPER::new( $inCAM, $jobId );
 	bless $self;
- 
- 
+
 	# SET PROPERTIES
-	
-	$self->{"inCAM"} = $inCAM;
-	 
-	$self->{"NCPress"} = [];
+
+	$self->{"NCPresses"} = [];
 
 	$self->{"NCCores"} = [];
 
 	my @pltLayers = CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	my @npltLayers = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	my @NCLayers = ( @pltLayers, @npltLayers );
-	
+
 	#get info which layer drilling/millin starts from/ end in
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
-	
+
 	$self->{"ncLayers"} = \@NCLayers;
 
 	# INIT STACKUP
 
 	$self->__InitPress();
 	$self->__InitCores();
-	
+
 	return $self;
 }
 
 sub __InitPress {
 	my $self = shift;
- 
-	my $pressCnt  = $self->SUPER::GetPressCount();
-	my %pressInfo = $self->SUPER::GetPressProducts();
 
-	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
+	foreach my $p ( $self->SUPER::GetPressProducts(1) ) {
 
-		my $pressOrder = $i + 1;
-		my $press      = $pressInfo{$pressOrder};
+		my $pressNC = StackupNCProduct->new( $self->{"inCAM"}, $self->{"jobId"}, $p, $self->{"ncLayers"} );
 
-		my $topSignal = StackupNCSignal->new( $press->{"top"}, $press->{"topNumber"} );
-		my $botSignal = StackupNCSignal->new( $press->{"bot"}, $press->{"botNumber"} );
-
-		my $pressNC = StackupNCPress->new( $self, $topSignal, $botSignal, $pressOrder );
-
-		push( @{ $self->{"NCPress"} }, $pressNC );
+		push( @{ $self->{"NCPresses"} }, $pressNC );
 	}
 }
 
 sub __InitCores {
 	my $self = shift;
 
-	my @cores   = $self->SUPER::GetAllCores();
+	foreach my $p ( map { $_->GetChildProducts() } $self->SUPER::GetInputProducts() ) {
 
-	for ( my $i = 0 ; $i < scalar(@cores) ; $i++ ) {
+		my $coreNC = StackupNCProduct->new( $self->{"inCAM"}, $self->{"jobId"}, $p->GetData(), $self->{"ncLayers"} );
 
-		my $coreNum = $i + 1;
-
-		my $idx = ( grep { $cores[$_]->GetCoreNumber() eq $coreNum } 0 .. $#cores )[0];
-
-		if ( defined $idx ) {
-
-			my $core = $cores[$idx];
-
-			my $topCopper = $core->GetTopCopperLayer();
-			my $botCopper = $core->GetBotCopperLayer();
-
-			my $topSignal = StackupNCSignal->new( $topCopper->GetCopperName(), $topCopper->GetCopperNumber() );
-			my $botSignal = StackupNCSignal->new( $botCopper->GetCopperName(), $botCopper->GetCopperNumber() );
-
-			my $coreNC = StackupNCCore->new( $self, $topSignal, $botSignal, $coreNum );
-
-			push( @{ $self->{"NCCores"} }, $coreNC );
-
-		}
+		push( @{ $self->{"NCCores"} }, $coreNC );
 	}
 }
 
 # Return specific press info object by press order
-sub GetPress {
+sub GetNCPressProduct {
 	my $self       = shift;
 	my $pressOrder = shift;
 
-	my @press = @{ $self->{"NCPress"} };
-	my $idx = ( grep { $press[$_]->GetPressOrder() eq $pressOrder } 0 .. $#press )[0];
+	my @press = @{ $self->{"NCPresses"} };
+	my $idx = ( grep { $press[$_]->GetIProduct()->GetPressOrder() eq $pressOrder } 0 .. $#press )[0];
 
 	if ( defined $idx ) {
 
 		return $press[$idx];
-
 	}
 }
 
-# Return specific core info object by core number
-sub GetCore {
+
+# Return specific press info object by press order
+sub GetNCCoreProduct {
 	my $self       = shift;
-	my $coreNumber = shift;
+	my $coreNum = shift;
 
-	my @cores = @{ $self->{"NCCores"} };
-	my $idx = ( grep { $cores[$_]->GetCoreNumber() eq $coreNumber } 0 .. $#cores )[0];
+	my $core = first { $_->GetIProduct()->GetCoreNumber() eq $coreNum } @{ $self->{"NCCores"} };
 
-	if ( defined $idx ) {
-
-		return $cores[$idx];
-	}
+	return $core;
 }
-
  
 
-sub GetPressCnt {
-	my $self = shift;
-	return scalar( @{ $self->{"NCPress"} } );
+sub GetNCProductByLayer{
+	my $self       = shift;
+	my $lName     = shift;
+	my $outerCore = shift;    # indicate if copper is located on the core and on the outer of press package in the same time
+	my $plugging  = shift;    # indicate if layer contain plugging
+	
+	
+	# Get IProduct
+	my $p = $self->SUPER::GetProductByLayer($lName, $outerCore, $plugging); 
+	 my @arr = (@{$self->{"NCPresses"}}, @{$self->{"NCCores"}});
+	my $NCProduct = first { $_->GetIProduct() eq $p } @arr;
+	 
+	return $NCProduct;
 }
+
 
 sub GetCoreCnt {
 	my $self = shift;
-	return scalar( @{ $self->{"NCCores"} } );
+
+	return scalar(@{$self->{"NCCores"}} );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -158,18 +133,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Stackup::StackupNC::StackupNC';
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM  = InCAM->new();
 
- 	my $jobId = "d244516";
-	my $stackupNC = StackupNC->new( $jobId, $inCAM);
-	
-	 
-	my $press = $stackupNC->GetPress(2);
-	
-	my @layers = $press->GetNCLayers("top");
+	my $inCAM = InCAM->new();
+
+	my $jobId = "d244516";
+	my $stackupNC = StackupNC->new( $inCAM,$jobId );
+
+	my $press = $stackupNC->GetNCPressProduct(2);
+
+	my @layers  = $press->GetNCLayers("top");
 	my @layers2 = $press->GetNCLayers("bot");
- 
+
 	die;
 
 }

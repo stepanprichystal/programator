@@ -26,7 +26,7 @@ use FindBin;
 use lib "$FindBin::Bin/../";
 use PackagesLib;
 
-use aliased 'Packages::TifFile::TifSigLayers';
+use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::Technology::EtchOperation';
 
@@ -320,7 +320,7 @@ sub get_gerber_mdi {
 			
 	#### hledani polarity
 	unless ($mdiItem eq 'mc' or $mdiItem eq 'ms' or $mdiItem eq 'plgc' or $mdiItem eq 'plgs' or $mdiItem eq 'goldc' or $mdiItem eq 'golds') {	
-			my $file   = TifSigLayers->new($jobName);
+			my $file   = TifLayers->new($jobName);
 			my $fileExist = $file->TifFileExist();
 			my %layers = $file->GetSignalLayers();
 
@@ -414,7 +414,7 @@ sub get_gerber_mdi {
 					}
 					
 					unless ($mdiItem eq 'mc' or $mdiItem eq 'ms' or $mdiItem eq 'plgc' or $mdiItem eq 'plgs' or $mdiItem eq 'goldc' or $mdiItem eq 'golds') {	
-								my $file   = TifSigLayers->new($jobName);
+								my $file   = TifLayers->new($jobName);
 								my $fileExist = $file->TifFileExist();
 								my %layers = $file->GetSignalLayers();
 					
@@ -624,7 +624,7 @@ sub export_XML {
 	$katalog->{job_params}->[0]->{parts_total}->[0] = $pocetPrirezu;
 	$katalog->{job_params}->[0]->{parts_remaining}->[0] = $pocetPrirezu;
 	
-    $katalog->{job_params}->[0]->{part_size}->[0]->{z} = StackupOperation->GetThickByLayer($jobName, $layerName);		#set thick
+    $katalog->{job_params}->[0]->{part_size}->[0]->{z} = StackupOperation->GetThickByLayer($genesis, $jobName, $layerName);		#set thick
 	$katalog->{job_params}->[0]->{image_size}->[0]->{x} = getValueNoris($jobName, 'x_size');		# rozmer prirezu X
 	$katalog->{job_params}->[0]->{image_size}->[0]->{y} = getValueNoris($jobName, 'y_size');		# rozmer prirezu Y
 	

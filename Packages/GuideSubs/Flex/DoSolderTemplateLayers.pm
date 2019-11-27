@@ -49,7 +49,7 @@ sub PrepareTemplateLayers {
 
 	CamHelper->SetStep( $inCAM, $step );
 
-	my $stackup = Stackup->new($jobId);
+	my $stackup = Stackup->new($inCAM, $jobId);
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 

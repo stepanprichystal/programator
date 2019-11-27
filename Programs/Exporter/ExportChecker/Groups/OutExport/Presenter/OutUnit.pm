@@ -94,8 +94,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetControlStep( $groupData->GetControlStep() );
  
 
-	#refresh wrapper
-	$self->_RefreshWrapper();
+
 }
 
 sub GetGroupData {

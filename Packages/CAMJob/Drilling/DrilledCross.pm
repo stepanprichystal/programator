@@ -14,7 +14,7 @@ use warnings;
 #local library
 use aliased 'Packages::Stackup::Enums';
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Stackup::StackupBase::StackupBase';
 
 
 
@@ -26,7 +26,7 @@ sub ComputeCrossDepths {
 	my $self = shift;
 	my $pcbId = shift;
 	
-	my $stackup = Stackup->new($pcbId);
+	my $stackup = StackupBase->new($pcbId);
 	my @thicks = $stackup->GetAllLayers();
 	
 	my @depths = ();

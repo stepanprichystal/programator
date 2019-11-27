@@ -192,6 +192,19 @@ sub GetForm{
 }
 
 
+sub RefreshWrapper {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	my $groupState = $self->{"dataMngr"}->GetGroupState();
+	$self->{"groupWrapper"}->SetState($groupState);
+
+	#refresh wrapper of form based on "group state"
+	$self->{"groupWrapper"}->Refresh();
+
+}
+
+
 sub _SetHandlers {
 	my $self = shift;
 
@@ -212,17 +225,7 @@ sub __OnChangeState {
 
 }
 
-sub _RefreshWrapper {
-	my $self  = shift;
-	my $inCAM = shift;
 
-	my $groupState = $self->{"dataMngr"}->GetGroupState();
-	$self->{"groupWrapper"}->SetState($groupState);
-
-	#refresh wrapper of form based on "group state"
-	$self->{"groupWrapper"}->Refresh();
-
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -177,7 +177,7 @@ sub OnPrepareGroupData {
 	$groupData->SetC_silk_screen_colour2( $silk2{"top"} );
 	$groupData->SetS_silk_screen_colour2( $silk2{"bot"} );
 
-	# Tenting 
+	# Tenting
 	my $tenting = $self->__IsTenting( $inCAM, $jobId, $defaultInfo );
 
 	$groupData->SetTenting($tenting);
@@ -186,7 +186,6 @@ sub OnPrepareGroupData {
 	my $technology = $self->__GetTechnology( $inCAM, $jobId, $defaultInfo );
 
 	$groupData->SetTechnology($technology);
-
 
 	my $scoreChecker = $defaultInfo->GetScoreChecker();
 	my $jump         = 0;
@@ -276,33 +275,23 @@ sub __GetTechnology {
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $defaultInfo = shift;
- 
- 	my $tech = undef;
- 
-	 
-	if ( $defaultInfo->GetLayerCnt() >= 2
-		 && CamDrilling->GetNCLayersByTypes(
-											 $inCAM, $jobId,
-											 [
-											   EnumsGeneral->LAYERTYPE_plt_nDrill,         EnumsGeneral->LAYERTYPE_plt_bDrillTop,
-											   EnumsGeneral->LAYERTYPE_plt_bDrillBot,     EnumsGeneral->LAYERTYPE_plt_nFillDrill,
-											   EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
-											   EnumsGeneral->LAYERTYPE_plt_nMill,         EnumsGeneral->LAYERTYPE_plt_bMillTop,
-											   EnumsGeneral->LAYERTYPE_plt_bMillBot
-											 ]
-		 )
-	  )
-	{
 
-		$tech = 'G'; # galvanics
-	}else{
-		
-		$tech = 'M'; # Resist
+	my $tech = EnumsGeneral->Technology_OTHER;
+
+	# if layer cnt > 1
+
+	if ( $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER ) {
+
+		$tech = EnumsGeneral->Technology_OTHER;
+
+	}
+	elsif ( $defaultInfo->GetLayerCnt() >= 1 ) {
+
+		$tech = $defaultInfo->GetDefaultTechType("c");
 	}
 
-	return ($tech);
+	return $tech;
 }
-
 
 # Merge information about datacode from IS with found datacodes in job
 sub __GetDacode {

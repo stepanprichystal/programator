@@ -190,7 +190,8 @@ sub Build {
 	if ( $self->_IsRequire("tenting") ) {
 
 		my $val = "N";
-		if ( $nifData{"tenting"} ) {
+	 	
+		if ( $nifData{"tenting"} eq EnumsGeneral->Etching_TENTING  ) {
 			$val = "A";
 		}
 
@@ -239,18 +240,24 @@ sub Build {
 
 	#prokoveni
 	if ( $self->_IsRequire("prokoveni") ) {
-		
-		my $prokoveni = undef;
-		
-		$prokoveni = "A" if($nifData{"technology"} eq "G");
-		$prokoveni = "N" if($nifData{"technology"} eq "M");
 
+		my $prokoveni = "N";
+		$prokoveni = "A" if ( $nifData{"technology"} eq EnumsGeneral->Technology_GALVANICS );
+		
 		$section->AddRow( "prokoveni", $prokoveni );
 	}
 
 	# technologie
 	if ( $self->_IsRequire("technologie") ) {
-		$section->AddRow( "technologie", $nifData{"technology"} );
+	
+		my $technology = undef;
+		
+		$technology = "G" if ( $nifData{"technology"} eq EnumsGeneral->Technology_GALVANICS );
+		$technology = "M" if ( $nifData{"technology"} eq EnumsGeneral->Technology_RESIST );
+		$technology = "J" if ( $nifData{"technology"} eq EnumsGeneral->Technology_OTHER );
+		$technology = "S" if ( $nifData{"technology"} eq EnumsGeneral->Technology_SCREENPRINT );
+	
+		$section->AddRow( "technologie", $technology );
 	}
 
 	#typ_dps

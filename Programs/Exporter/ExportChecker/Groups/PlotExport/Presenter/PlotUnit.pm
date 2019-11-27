@@ -90,8 +90,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetSendToPlotter( $groupData->GetSendToPlotter() );
 	$self->{"form"}->SetLayers( $groupData->GetLayers() );
  
-	#refresh wrapper
-	$self->_RefreshWrapper();
+
 }
 
 sub GetGroupData {

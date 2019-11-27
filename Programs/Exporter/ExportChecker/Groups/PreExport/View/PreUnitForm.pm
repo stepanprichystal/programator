@@ -21,6 +21,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcViewer';
+use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::OtherLayerList::OtherLayerList';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,18 +42,22 @@ sub new {
 	$self->{"inCAM"}       = $inCAM;
 	$self->{"jobId"}       = $jobId;
 	$self->{"defaultInfo"} = $defaultInfo;
-	
-	
-	$self->{"procViewer"} = undef; 
+
+	$self->{"procViewer"} = undef;
 
 	$self->__SetLayout();
 
 	#$self->Disable();
 
 	# EVENTS
-	#$self->{"onPlotRowChanged"} = Event->new();    # when row changed
+
+	$self->{"technologyChangedEvt"}     = Event->new();    # technology change
+	$self->{"tentingChangedEvt"}        = Event->new();    # tentingChange
+	$self->{"sigLayerSettChangedEvt"}   = Event->new();    # when signal row changed
+	$self->{"otherLayerSettChangedEvt"} = Event->new();    # when other row changed
 
 	return $self;
+
 }
 
 sub __SetLayout {
@@ -64,17 +69,16 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	my $sigLsettingsStatBox = $self->__SetLayoutSigLayerSett($self);
-
-	#my $otherLsettingsStatBox = $self->__SetLayoutOtherLayerSett($self);
+	my $sigLsettingsStatBox   = $self->__SetLayoutSigLayerSett($self);
+	my $otherLsettingsStatBox = $self->__SetLayoutOtherLayerSett($self);
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $sigLsettingsStatBox, 1, &Wx::wxEXPAND );
-
-	#$szMain->Add( $otherLsettingsStatBox, 1, &Wx::wxEXPAND );
+	$szMain->Add( $sigLsettingsStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( 10, 0, 1 );    # Expander
+	$szMain->Add( $otherLsettingsStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$self->SetSizer($szMain);
 
@@ -90,7 +94,7 @@ sub __SetLayoutSigLayerSett {
 	my $jobId = $self->{"jobId"};
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'settings' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Signal layer settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	#my $szTech = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -108,17 +112,19 @@ sub __SetLayoutSigLayerSett {
 
 	my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
-  
 	# Remove layers not to be plotted
 	$self->{"procViewer"} = ProcViewer->new( $inCAM, $jobId, $self->{"defaultInfo"} );
 
 	my $procViewerFrm = $self->{"procViewer"}->BuildForm($statBox);
-	
+
+	#$procViewerFrm->Fit();
+
 	# SET EVENTS
 	#$sigLayerList->{"onRowChanged"}->Add( sub { $self->{"__OnLayerListRowSettChange"}->Do(@_) } );
 
-	#Wx::Event::EVT_CHECKBOX( $tentingChb, -1, sub { $self->__OnTentingChangeHandler(@_) } );
-	#Wx::Event::EVT_COMBOBOX( $technologyCb, -1, sub { $self->__OnTechnologyChangeHandler( @_, $tentingChb ) } );
+	$self->{"procViewer"}->{"sigLayerSettChangedEvt"}->Add( sub { $self->{"sigLayerSettChangedEvt"}->Do(@_) } );
+	$self->{"procViewer"}->{"technologyChangedEvt"}->Add( sub   { $self->{"technologyChangedEvt"}->Do(@_) } );
+	$self->{"procViewer"}->{"tentingChangedEvt"}->Add( sub      { $self->{"tentingChangedEvt"}->Do(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -145,7 +151,7 @@ sub __SetLayoutOtherLayerSett {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Other layer settings' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Non signal layer settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
@@ -154,27 +160,21 @@ sub __SetLayoutOtherLayerSett {
 
 	my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
-	my @otherLayers = grep {
-		     $_->{"gROWlayer_type"} ne "signal"
-		  && $_->{"gROWlayer_type"} eq "power_ground"
-		  && $_->{"gROWlayer_type"} eq "mixed"
-		  && $_->{"gROWlayer_type"} eq "coverlay"
-		  && $_->{"gROWlayer_type"} eq "bendarea"
-		  && $_->{"gROWlayer_type"} eq "stiffener"
-	} @layers;
+	my @otherLayers =
+	  grep { $_->{"gROWlayer_type"} eq "solder_mask" || $_->{"gROWlayer_type"} eq "silk_screen" || $_->{"gROWname"} =~ /^((gold)|([gl]))[cs]$/ }
+	  @layers;
 
-	#	my $otherLayerList = PlotList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@otherLayers );
-	#
-	#	# SET EVENTS
-	#	$otherLayerList->{"onRowChanged"}->Add( sub { $self->{"__OnLayerListRowSettChange"}->Do(@_) } );
+	my $otherLayerList = OtherLayerList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@otherLayers );
+
+	# SET EVENTS
+	$otherLayerList->{"otherLayerSettChangedEvt"}->Add( sub { $self->{"otherLayerSettChangedEvt"}->Do(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-
-	
+	$szStatBox->Add( $otherLayerList, 0, &Wx::wxEXPAND | &Wx::wxTOP, 4 );
 
 	# Set References
 
-	#$self->{"otherLayerList"} = $otherLayerList;
+	$self->{"otherLayerList"} = $otherLayerList;
 
 	return $szStatBox;
 }
@@ -182,16 +182,6 @@ sub __SetLayoutOtherLayerSett {
 # =====================================================================
 # HANDLERS CONTROLS
 # =====================================================================
-
-sub __OnLayerListRowSettChange {
-	my $self    = shift;
-	my $plotRow = shift;
-
-	my %lInfo = $plotRow->GetLayerValues();
-
-	$self->{"onLayerSettChange"}->Do( \%lInfo )
-
-}
 
 # Control handlers
 sub __OnTentingChangeHandler {
@@ -231,14 +221,6 @@ sub __OnTechnologyChangeHandler {
 sub DisableControls {
 	my $self = shift;
 
-	# disable tenting chb when layercnt <= 1
-
-	if ( $self->{"defaultInfo"}->GetLayerCnt() <= 1 ) {
-
-		$self->{"tentingChb"}->Disable();
-		$self->{"technologyCb"}->Disable();
-	}
-
 }
 
 # =====================================================================
@@ -252,50 +234,36 @@ sub DisableControls {
 # Layers to export ========================================================
 
 # layers
-sub SetLayers {
+sub SetSignalLayers {
 	my $self   = shift;
 	my @layers = @{ shift(@_) };
 
 	$self->{"procViewer"}->SetLayerValues( \@layers );
- 
+
 }
 
-sub GetLayers {
+sub GetSignalLayers {
 	my $self = shift;
 
-	#my @layers    = ();
-#	my @sigRows   = $self->{"sigLayerList"}->GetAllRows();
-#	my @otherRows = $self->{"otherLayerList"}->GetAllRows();
-
 	my @layers = $self->{"procViewer"}->GetLayerValues();
- 
+
 	return \@layers;
 }
 
-sub SetTenting {
-	my $self  = shift;
-	my $value = shift;
-	
-	$self->{"procViewer"}->SetTentingCS($value);
+sub SetOtherLayers {
+	my $self   = shift;
+	my @layers = @{ shift(@_) };
+
+	$self->{"otherLayerList"}->SetLayerValues( \@layers );
+
 }
 
-sub GetTenting {
+sub GetOtherLayers {
 	my $self = shift;
-	return $self->{"procViewer"}->GetTentingCS();
-}
 
-sub SetTechnology {
-	my $self  = shift;
-	my $value = shift;
+	my @layers = $self->{"otherLayerList"}->GetLayerValues();
 
-	my $color = ValueConvertor->GetTechCodeToName($value);
-	$self->{"technologyCb"}->SetValue($color);
-}
-
-sub GetTechnology {
-	my $self  = shift;
-	my $color = $self->{"technologyCb"}->GetValue();
-	return ValueConvertor->GetTechNameToCode($color);
+	return \@layers;
 }
 
 1;

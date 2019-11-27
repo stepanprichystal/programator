@@ -15,6 +15,7 @@ use List::Util qw(first);
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcViewerMatrixItem';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Helpers::JobHelper';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -40,16 +41,16 @@ sub BuildMatrix {
 
 		# 1) parse layer by name
 
-		my %lInfo = $self->__ParseCopperLayerName( $l->{"gROWname"} );
+		my %lInfo = JobHelper->ParseSignalLayerName( $l->{"gROWname"} );
 
 		# 2) Find copper row form
 
-		my ($copperRowFrm, $subGroupFrm) = $procViewerFrm->GetCopperFrms( $lInfo{"nameCopper"}, $lInfo{"outerCore"}, $lInfo{"plugging"} );
+		my ($copperRowFrm, $subGroupFrm) = $procViewerFrm->GetCopperFrms( $lInfo{"sourceName"}, $lInfo{"outerCore"}, $lInfo{"plugging"} );
 		 
 		# 3) Create matrix item
 
 		my $mItem =
-		  ProcViewerMatrixItem->new( $l->{"gROWname"}, $l, $lInfo{"nameCopper"}, $lInfo{"outerCore"}, $lInfo{"plugging"}, $copperRowFrm, $subGroupFrm );
+		  ProcViewerMatrixItem->new( $l->{"gROWname"}, $l, $lInfo{"sourceName"}, $lInfo{"outerCore"}, $lInfo{"plugging"}, $copperRowFrm, $subGroupFrm );
 		push( @{ $self->{"matrixItems"} }, $mItem );
 	}
 }
@@ -58,9 +59,10 @@ sub GetItemsByProduct {
 	my $self        = shift;
 	my $productId   = shift;
 	my $productType = shift;
-	my $side        = shift;
+	 
 
-	die "Side is not defined" unless ( defined $side );
+	die "Product Id is not defined" unless ( defined $productId );
+	die "Product Id is not defined" unless ( defined $productType );
 
 	my @items =
 	  grep { $_->GetSubGroupFrm()->GetProductId() eq $productId && $_->GetSubGroupFrm()->GetProductType() eq $productType }
@@ -72,6 +74,8 @@ sub GetItemsByProduct {
 sub GetItemByOriName {
 	my $self    = shift;
 	my $oriName = shift;
+	
+	die "Original layer name is not defined" unless ( defined $oriName );
 
 	my $item = first { $_->GetLayerName() eq $oriName } @{ $self->{"matrixItems"} };
 
@@ -79,34 +83,12 @@ sub GetItemByOriName {
 }
 
 
-sub BuildCopperLayerName {
-	my $self       = shift;
-	my $copperName = shift;
-	my $outerCore  = shift;
-	my $plugging   = shift;
-
-	my $name = "";
-
-	$name .= "outer" if ($outerCore);
-	$name .= "plg"   if ($plugging);
-	$name .= $copperName;
-
-	return $name;
+sub GetAllSignalLayers{
+	my $self    = shift;
+	
+	return  map { $_->GetLayerName() } @{ $self->{"matrixItems"} };
 }
 
-
-sub __ParseCopperLayerName {
-	my $self        = shift;
-	my $copperLName = shift;
-
-	my %lInfo = ();
- 
-	$lInfo{"nameCopper"} = ( $copperLName =~ /([csv]\d*)/ )[0];
-	$lInfo{"outerCore"}  = $copperLName =~ /outer([csv]\d*)/ ? 1 : 0;
-	$lInfo{"plugging"}   = $copperLName =~ /plg([csv]\d*)/ ? 1 : 0;
-
-	return %lInfo;
-}
 
 
 

@@ -32,6 +32,9 @@ sub CheckBeforeExport;
 # When group form is buiild, refresh controls based on default/group data
 sub RefreshGUI;
 
+# When group form is buiild, refresh group wrapper
+sub RefreshWrapper;
+
 # Get vale, if group is disable, active and on, active and off
 sub GetGroupState;
 

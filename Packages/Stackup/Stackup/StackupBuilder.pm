@@ -37,25 +37,27 @@ sub new {
 	# PROPERTIES
 
 	# Get plated NC layers which affect press lamination
-	my @NCLayers = CamDrilling->GetNCLayersByTypes(
-													$self->{"inCAM"},
-													$self->{"jobId"},
-													[
-													   EnumsGeneral->LAYERTYPE_plt_nDrill,        EnumsGeneral->LAYERTYPE_plt_bDrillTop,
-													   EnumsGeneral->LAYERTYPE_plt_bDrillBot,     EnumsGeneral->LAYERTYPE_plt_nFillDrill,
-													   EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
-													   EnumsGeneral->LAYERTYPE_plt_cDrill,        EnumsGeneral->LAYERTYPE_plt_cFillDrill
-													]
+	my @PltNC = CamDrilling->GetNCLayersByTypes(
+												 $self->{"inCAM"},
+												 $self->{"jobId"},
+												 [
+													EnumsGeneral->LAYERTYPE_plt_nDrill,        EnumsGeneral->LAYERTYPE_plt_bDrillTop,
+													EnumsGeneral->LAYERTYPE_plt_bDrillBot,     EnumsGeneral->LAYERTYPE_plt_nFillDrill,
+													EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
+													EnumsGeneral->LAYERTYPE_plt_cDrill,        EnumsGeneral->LAYERTYPE_plt_cFillDrill,
+													EnumsGeneral->LAYERTYPE_plt_nMill,         EnumsGeneral->LAYERTYPE_plt_bMillTop,
+													EnumsGeneral->LAYERTYPE_plt_bMillBot
+												 ]
 	);
-	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
+	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@PltNC );
 
 	my @NCCoreDrill =
-	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NCLayers;
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill } @PltNC;
 
 	my @NCBlindDrill =
-	  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NCLayers;
+	  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill } @PltNC;
 
-	$self->{"NCLayers"} = \@NCLayers;
+	$self->{"PltNC"} = \@PltNC;
 
 	$self->{"NCInclCoreDrill"} = \@NCCoreDrill;
 
@@ -159,8 +161,8 @@ sub __AddCoverlayLayers {
 		die "Coverlay adhesive ($name) thickness is not defined in IS "
 		  if ( !defined $thickAdh || $thickAdh eq "" );
 		die "Coverlay ($name) UDA id is not defined in IS " if ( !defined $id || $id eq "" );
-		die "Coverlay ($name) UDA qId is not defined in IS "
-		  if ( !defined $qId || $qId eq "" );
+			die "Coverlay ($name) UDA qId is not defined in IS "
+		 if ( !defined $qId || $qId eq "" );
 
 		$layerInfo->{"thick"}         = $thick * 1000000;
 		$layerInfo->{"adhesiveThick"} = $thickAdh;
@@ -829,30 +831,25 @@ sub __SetProductOuterCore {
 		if ( $topInput || $botInput ) {
 
 			# If parent input product not contains copper foil
-			# Set full TOP coper attribut to child input products (core)
-			#			if (
-			#				 !(
-			#					   ( $topInput->GetLayers() )[0]->GetType() eq Enums->ProductL_MATERIAL
-			#					&& ( $topInput->GetLayers() )[0]->GetData()->GetType() eq Enums->MaterialType_COPPER
-			#				 )
-			#			  )
-			#			{
-			$topInput->SetTopOuterCore(1);
-			( $topInput->GetChildProducts() )[0]->GetData()->SetTopOuterCore(1);
+			# Set full TOP coper attribut to parent and child input products (core)
+			my $topMat = $topInput->GetProductOuterMatLayer("first")->GetData();
+
+			if ( $topMat->GetType() eq Enums->MaterialType_COPPER && !$topMat->GetIsFoil() ) {
+				$topInput->SetTopOuterCore(1);
+				( $topInput->GetChildProducts() )[0]->GetData()->SetTopOuterCore(1);
+			}
 
 			#			}
 
 			# If parent input product not contains copper foil
-			# Set full BOT coper attribut to child input products (core)
-			#			if (
-			#				 !(
-			#					   ( $botInput->GetLayers() )[-1]->GetType() eq Enums->ProductL_MATERIAL
-			#					&& ( $botInput->GetLayers() )[-1]->GetData()->GetType() eq Enums->MaterialType_COPPER
-			#				 )
-			#			  )
-			#			{
-			$botInput->SetBotOuterCore(1);
-			( $botInput->GetChildProducts() )[-1]->GetData()->SetBotOuterCore(1);
+			# Set full BOT coper attribut to parent and child input products (core)
+
+			my $botMat = $botInput->GetProductOuterMatLayer("last")->GetData();
+
+			if ( $botMat->GetType() eq Enums->MaterialType_COPPER && !$botMat->GetIsFoil() ) {
+				$botInput->SetBotOuterCore(1);
+				( $botInput->GetChildProducts() )[-1]->GetData()->SetBotOuterCore(1);
+			}
 
 			#			}
 

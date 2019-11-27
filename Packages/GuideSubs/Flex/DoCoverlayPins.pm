@@ -544,7 +544,7 @@ sub __PutPinMarks {
 
 	# Ask for put cu to flex layers
 
-	my $stackup = Stackup->new($jobId);
+	my $stackup = Stackup->new($inCAM, $jobId);
 
 	my @cores  = $stackup->GetAllCores(1);
 	my @layers = JobHelper->GetCoverlaySigLayers($jobId);

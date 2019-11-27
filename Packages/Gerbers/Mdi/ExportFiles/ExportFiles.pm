@@ -34,7 +34,7 @@ use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportXml';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
-use aliased 'Packages::TifFile::TifSigLayers';
+use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper';
 
 #-------------------------------------------------------------------------------------------#
@@ -67,7 +67,7 @@ sub new {
 
 	# Other properties ========================
 
-	$self->{"tifFile"} = TifSigLayers->new( $self->{"jobId"} );
+	$self->{"tifFile"} = TifLayers->new( $self->{"jobId"} );
 
 	unless ( $self->{"tifFile"}->TifFileExist() ) {
 		die "Dif file must exist when MDI data are exported.\n";
@@ -153,7 +153,6 @@ sub __ExportLayers {
 
 		# 8) Copy file to mdi folder after exportig xml template
 		my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $l->{"gROWname"} . "_mdi.ger";
-		$finalName =~ s/outer//; # remove outer from fake outer core signal layers
 		copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
 		unlink($tmpFile);
 
@@ -227,13 +226,13 @@ sub __GetLayers2Export {
 
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^[csv]\d*(outer)?$/ } @all;    # outer is for fake innera layers: v1outer, ..
+		my @l = grep { $_->{"gROWname"} =~ /^(outer)?[csv]\d*$/ } @all;    # outer is for fake innera layers: v1outer, ..
 		push( @exportLayers, @l );
 	}
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?(flex)?$/ } @all;             # number 2 is second scilkscreeen and soldermask
+		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?(flex)?$/ } @all;      # number 2 is second scilkscreeen and soldermask
 		push( @exportLayers, @l );
 	}
 
@@ -269,8 +268,8 @@ sub __GetLayerLimit {
 	# - plg(c/s) layers
 	# - mask layer second (mc2;ms2; ) layer
 	# - mask layer flex (mcflex;msflex; ) layer
-	if (    $self->{"layerCnt"} > 2
-		 && ($layerName =~ /^((gold)|m|plg)?[cs]$/ || $layerName =~ /^m[cs]2?(flex)?$/) )
+	if ( $self->{"layerCnt"} > 2
+		 && ( $layerName =~ /^((gold)|m|plg)?[cs]$/ || $layerName =~ /^m[cs]2?(flex)?$/ ) )
 	{
 		%lim = %{ $self->{"frLim"} };
 	}
@@ -284,15 +283,15 @@ sub __GetLayerLimit {
 		%lim = %{ $self->{"profLim"} };
 	}
 
-#	# Exceptions for Outer Rigid-Flex with top coverlay
-#	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
-#
-#		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbType_RIGIDFLEXO
-#			 && CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "coverlayc" ) )
-#		{
-#			%lim = %{ $self->{"profLim"} };
-#		}
-#	}
+	#	# Exceptions for Outer Rigid-Flex with top coverlay
+	#	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+	#
+	#		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbType_RIGIDFLEXO
+	#			 && CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "coverlayc" ) )
+	#		{
+	#			%lim = %{ $self->{"profLim"} };
+	#		}
+	#	}
 
 	return %lim;
 }
@@ -346,7 +345,7 @@ sub __GetFiducials {
 
 	my $drillLayer = undef;
 
-	if ( $layerName =~ /^v\d+(outer)?$/ ) {
+	if ( $layerName =~ /^(outer)(plg)?v\d+$/ ) {
 
 		$drillLayer = "v1";
 
@@ -356,15 +355,15 @@ sub __GetFiducials {
 		$drillLayer = "v";
 	}
 
-	# Exceptions for Outer Rigid-Flex with top coverlay
-	if ( $layerName =~ /^[cs]$/ && JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
-
-		if (    JobHelper->GetPcbType($jobId) eq EnumsGeneral->PcbType_RIGIDFLEXO
-			 && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) )
-		{
-			$drillLayer = "v1";
-		}
-	}
+	#	# Exceptions for Outer Rigid-Flex with top coverlay
+	#	if ( $layerName =~ /^[cs]$/ && JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+	#
+	#		if (    JobHelper->GetPcbType($jobId) eq EnumsGeneral->PcbType_RIGIDFLEXO
+	#			 && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) )
+	#		{
+	#			$drillLayer = "v1";
+	#		}
+	#	}
 
 	my $f = Features->new();
 	$f->Parse( $inCAM, $jobId, $step, $drillLayer );
@@ -496,27 +495,12 @@ sub __CompensateLayer {
 
 	my $class = $self->{"pcbClass"};
 
-	my $comp = 0;
+	# Find layer settings in TIF file
+	my $lTIF = $self->{"tifFile"}->GetLayer( $layerName );
 
-	if ( $layerName =~ /^c$/ || $layerName =~ /^s$/ || $layerName =~ /^v\d+(outer)?$/ ) {
+	die "Output layer settings was not found in tif file for layer: " . $layerName unless ( defined $lTIF );
 
-		#		# read comp from tif file
-		#		if ( $self->{"tifFile"}->TifFileExist() ) {
-
-		my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
-		$comp = $sigLayers{$layerName}->{'comp'};
-
-		#		}
-		#		# read default comp (old pcb doesn't contain dif file)
-		#		else{
-		#
-		#			my $inner = $layerName =~ /^v\d+$/ ? 1 : 0;
-		#			my $cuThick = JobHelper->GetBaseCuThick($jobId, $layerName);
-		#
-		#			$comp = EtchOperation->GetCompensation( $cuThick, $class, $inner );
-		#		}
-
-	}
+	my $comp = $lTIF->{"comp"};
 
 	if ( $comp != 0 ) {
 		CamLayer->CompensateLayerData( $inCAM, $layerName, $comp );
@@ -599,19 +583,25 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d259477";
+	my $jobId    = "d257279";
 	my $stepName = "panel";
+
+	use aliased 'Packages::Export::PreExport::FakeLayers';
+	FakeLayers->CreateFakeLayers( $inCAM, $jobId, undef, 1 );
+ 
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
 				 Enums->Type_SIGNAL => "1",
-				 Enums->Type_MASK   => "0",
+				 Enums->Type_MASK   => "1",
 				 Enums->Type_PLUG   => "0",
 				 Enums->Type_GOLD   => "0"
 	);
 
 	$export->Run( \%type );
+	
+		FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
 
 }
 

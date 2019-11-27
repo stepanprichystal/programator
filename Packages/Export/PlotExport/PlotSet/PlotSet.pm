@@ -115,7 +115,7 @@ sub GetOutputFileName {
 		}
 
 		my $lName = $plotL->GetName();
-		$lName =~ s/^(v\d)outer$/$1/; # If layer is fake oouter core layer, remove "outer" from name
+		$lName =~ s/^outer(v\d)$/$1/; # If layer is fake oouter core layer, remove "outer" from name
 
 		$fName .= $lName . $indicator . "_" . abs($plotL->GetComp()); # if negative comp, remove minus
 	}

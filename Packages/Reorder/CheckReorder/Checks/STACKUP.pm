@@ -60,7 +60,7 @@ sub Run {
 	# If multilayer
 	if ( !$isPool && $materialKind ) {
 
-		my $stackup = Stackup->new($jobId);
+		my $stackup = Stackup->new($inCAM, $jobId);
 
 		# 1) Test id material in helios, match material in stackup
 		my $stackKind = $stackup->GetStackupType();

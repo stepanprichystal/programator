@@ -55,7 +55,8 @@ sub Run {
 	my $plt = shift;
 	my $nplt = shift;
 
-	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
+	$self->{"defaultInfo"} = DefaultInfo->new($jobId );
+	$self->{"defaultInfo"}->Init($inCAM);
 
 	# Check data
 

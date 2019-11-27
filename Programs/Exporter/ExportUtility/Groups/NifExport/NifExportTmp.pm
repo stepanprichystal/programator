@@ -49,7 +49,8 @@ sub Run {
 	my $jumpScore = shift;
 	
  
-	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
+	$self->{"defaultInfo"} = DefaultInfo->new($jobId );
+	$self->{"defaultInfo"}->Init($inCAM);
 
 	# Check data
 	my $resultMngr = ItemResultMngr->new();

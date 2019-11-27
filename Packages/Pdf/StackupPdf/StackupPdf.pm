@@ -30,7 +30,7 @@ sub new {
 	$self = {};
 	bless $self;
 
-	#$self->{"inCAM"}   = shift;
+	$self->{"inCAM"}   = shift;
 	$self->{"jobId"}   = shift;
 	 
 	$self->{"outputPdf"} =  OutputPdf->new(  $self->{"jobId"});
@@ -53,7 +53,7 @@ sub Create {
 	}
 	
 
-	my $stackup = Stackup->new($self->{"jobId"});
+	my $stackup = Stackup->new($self->{"inCAM"}, $self->{"jobId"});
 	my $stackupName = $self->__GetStackupName($stackup);
 
 	$self->{"outputPdf"}->Output($stackupName, $stackup, $addMatQuality,$addMatTG, $addPressThick);

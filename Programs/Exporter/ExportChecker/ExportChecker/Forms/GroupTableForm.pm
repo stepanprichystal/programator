@@ -89,6 +89,7 @@ sub __SetLayout {
 
 				# Init unit form, where parent will by group wrapper
 				$cell->InitForm( $groupWrapperPnl, $inCAM );
+				$cell->GetForm()->DisableControls(); # after disabling controls, dimension of from can be changed	
 			}
 			else{
 				

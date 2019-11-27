@@ -14,6 +14,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Stackup::StackupBase::StackupBase';
 use aliased 'Enums::EnumsIS';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
 use aliased 'CamHelpers::CamJob';
@@ -27,6 +28,7 @@ use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 #Return final thickness of pcb base on Cu layer number
 sub GetThickByLayer {
 	my $self     = shift;
+	my $inCAM    = shift;
 	my $pcbId    = shift;    #pcb id
 	my $layer    = shift;    #layer of number. Simple c,1,2,s or v1, v2 use ENUMS::Layers
 	my $noResist = shift;    #indicate id add resit
@@ -35,9 +37,9 @@ sub GetThickByLayer {
 
 	if ( HegMethods->GetBasePcbInfo($pcbId)->{"pocet_vrstev"} > 2 ) {
 
-		my $stackup = Stackup->new($pcbId);
+		my $stackup = Stackup->new( $inCAM, $pcbId );
 
-		$thick = $stackup->GetThickByCuLayer($layer)/1000;
+		$thick = $stackup->GetThickByCuLayer($layer) / 1000;
 
 		my $cuLayer = $stackup->GetCuLayer($layer);
 
@@ -69,99 +71,50 @@ sub GetThickByLayer {
 # Return string "top" or "bot"
 sub GetSideByLayer {
 	my $self      = shift;
+	my $inCAM     = shift;
 	my $jobId     = shift;
 	my $layerName = shift;
 	my $stackup   = shift;
 
 	unless ( defined $stackup ) {
-		$stackup = Stackup->new($jobId);
+		$stackup = Stackup->new( $inCAM, $jobId );
 	}
 
 	my $side = "";
 
-	if ( $layerName =~ m/^v(\d)outer$/ ) {
+	my $product = $stackup->GetProductByLayer($layerName);
+ 
+	if ( $layerName eq $product->GetTopCopperLayer() ) {
 
-		# Fake outer core layer
-
-		$side = $1 == 1 ? "top" : "bot";
-
+		$side = "top";
 	}
-	else {
+	elsif ( $layerName eq $product->GetBotCopperLayer() ) {
 
-		# Other standard signal layer
-
-		my %pressInfo = $stackup->GetPressProducts();
-		my $core      = $stackup->GetCoreByCuLayer($layerName);
-		my $press     = undef;
-
-		if ($core) {
-
-			my $topCopperName = $core->GetTopCopperLayer()->GetCopperName();
-			my $botCopperName = $core->GetBotCopperLayer()->GetCopperName();
-
-			if ( $layerName eq $topCopperName ) {
-
-				$side = "top";
-			}
-			elsif ( $layerName eq $botCopperName ) {
-
-				$side = "bot";
-			}
-		}
-		else {
-
-			# find, which press was layer pressed in
-			foreach my $pNum ( keys %pressInfo ) {
-
-				my $p = $pressInfo{$pNum};
-
-				if ( $p->GetTopCopperLayer() eq $layerName ) {
-
-					$side = "top";
-					last;
-
-				}
-				elsif ( $p->GetBotCopperLayer() eq $layerName ) {
-
-					$side = "bot";
-					last;
-				}
-			}
-		}
+		$side = "bot";
 	}
-
+	
 	return $side;
 }
 
 # If stackup contains core topmost or very bottom (Cu-core-cu-prepreg-Cu-core-cu)
 # Return 1, else 0
 sub OuterCore {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $pcbId = shift;    #pcb id
-	my $side  = shift;    # scalar referenc with positions of outer cores: top/bot/both
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $pcbId         = shift;    #pcb id
+	my $inputProducts = shift;    # input products which contain outer core
 
 	my $result = 0;
 
 	if ( CamJob->GetSignalLayerCnt( $inCAM, $pcbId ) > 2 ) {
 
-		my $stackup = Stackup->new($pcbId);
-		my @cores   = $stackup->GetAllCores();
+		my $stackup = Stackup->new( $inCAM, $pcbId );
 
-		my $firstC = $cores[0];
-		my $lastC  = $cores[ scalar(@cores) - 1 ];
+		my @input = grep { $_->GetOuterCoreTop() || $_->GetOuterCoreBot() } $stackup->GetInputProducts();
 
-		my $topCopper = $firstC->GetTopCopperLayer()->GetCopperName();
-
-		my $botCopper = $lastC->GetBotCopperLayer()->GetCopperName();
-
-		if ( $topCopper eq "c" || $botCopper eq "s" ) {
-
+		if ( scalar(@input) ) {
 			$result = 1;
-
-			$$side = "both" if ( $topCopper eq "c" && $botCopper eq "s" );
-			$$side = "top"  if ( $topCopper eq "c" && $botCopper ne "s" );
-			$$side = "bot"  if ( $topCopper ne "c" && $botCopper eq "s" );
+			push( @{$inputProducts}, @input ) if ( defined $inputProducts );
 		}
 	}
 
@@ -179,7 +132,7 @@ sub StackupMatInStock {
 	my $result = 1;
 
 	unless ($stackup) {
-		$stackup = Stackup->new($pcbId);
+		$stackup = Stackup->new( $inCAM, $pcbId );
 	}
 
 	my $pnl = StandardBase->new( $inCAM, $pcbId );
@@ -192,7 +145,7 @@ sub StackupMatInStock {
 
 		if ( $m->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
 
-			# Flex material is always cut from dimension 305*456mm, test if panel height is smaller than 456mm 
+			# Flex material is always cut from dimension 305*456mm, test if panel height is smaller than 456mm
 			# (tolerance +-3mm)
 			@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 3 && $pnl->H() <= $_->{"hloubka"} } @mat;
 
@@ -248,7 +201,7 @@ sub StackupMatInStock {
 
 				# Flex prepreg material is always cut from dimension 305*456mm, test if panel height is smaller than 456mm
 				# (tolerance +-3mm)
-				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 3 &&  $prepregH <= $_->{"hloubka"} } @mat;
+				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 3 && $prepregH <= $_->{"hloubka"} } @mat;
 
 			}
 			else {
@@ -303,7 +256,7 @@ sub GetJoinedFlexRigidPackages {
 	my $result = 1;
 
 	unless ($stackup) {
-		$stackup = Stackup->new($pcbId);
+		$stackup = StackupBase->new($pcbId);
 	}
 
 	my @laminatePckgsInf = ();
@@ -403,7 +356,7 @@ sub GetJoinedFlexRigidPackages {
 			$infTop{"layers"}        = \@packgLayersTop;
 			$infTop{"topCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } @packgLayersTop )[0]->GetCopperName();
 			$infTop{"botCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } reverse @packgLayersTop )[0]->GetCopperName();
-			$infJoin{"packageTop"} = \%infTop;
+			$infJoin{"packageTop"}   = \%infTop;
 
 			my %infBot = ();
 			$infBot{"coreType"}      = $secondCore;

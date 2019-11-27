@@ -37,20 +37,21 @@ use aliased 'Packages::Polygon::PolygonFeatures';
 # Create fake layers necesserz for export
 # All fake layers has attribut "export_fake_layer" set to: yes
 sub CreateFakeLayers {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift // "panel";
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift // "panel";
+	my $emptyLayers = shift // 0;         # Create layer without any data
 
 	$self->RemoveFakeLayers( $inCAM, $jobId, $step );
 
-	my @smFake = $self->__CreateFakeSMLayers( $inCAM, $jobId, $step );
-	my @outerFake = $self->__CreateFakeOuterCoreLayers( $inCAM, $jobId, $step );
-	my @smOLECFake = $self->__CreateFakeSMOLECLayers( $inCAM, $jobId, $step );
+	my @smFake = $self->__CreateFakeSMLayers( $inCAM, $jobId, $step, $emptyLayers );
+	my @outerFake = $self->__CreateFakeOuterCoreLayers( $inCAM, $jobId, $step, $emptyLayers );
+	my @smOLECFake = $self->__CreateFakeSMOLECLayers( $inCAM, $jobId, $step, $emptyLayers );
 
 	my @fake = ();
-	push( @fake, @smFake )    if (@smFake);
-	push( @fake, @outerFake ) if (@outerFake);
+	push( @fake, @smFake )     if (@smFake);
+	push( @fake, @outerFake )  if (@outerFake);
 	push( @fake, @smOLECFake ) if (@smOLECFake);
 
 	foreach my $l (@fake) {
@@ -83,10 +84,11 @@ sub RemoveFakeLayers {
 
 # Create fake layers for PCB where is second mask
 sub __CreateFakeSMLayers {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift;
+ 
 
 	my %mask = HegMethods->GetSolderMaskColor2($jobId);
 
@@ -128,10 +130,11 @@ sub __CreateFakeSMLayers {
 # But OLEC machine need films from both side in order register films
 # For Multilayer PCB only (rest of PCB is exposed without cameras??)
 sub __CreateFakeSMOLECLayers {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift;
+	my $emptyLayers = shift // 0;    # Create layer without any data
 
 	my @fakeLayers = ();
 
@@ -166,69 +169,75 @@ sub __CreateFakeSMOLECLayers {
 	CamMatrix->CreateLayer( $inCAM, $jobId, $fakeSM, "solder_mask", "positive", 1 );
 
 	$inCAM->COM( "merge_layers", "source_layer" => $sourceL, "dest_layer" => $fakeSM );
-	CamLayer->WorkLayer( $inCAM, $sourceL );
 
-	# Rotate OLEC marks
+	if ( !$emptyLayers ) {
 
-	CamLayer->WorkLayer( $inCAM, $fakeSM );
-	if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".geometry", "OLEC*" ) == 4 ) {
-		$inCAM->COM( "sel_change_sym", "symbol" => ( $sourceL eq "mc" ? "cross_mask" : "cross_mask_x" ) );
+		CamLayer->WorkLayer( $inCAM, $sourceL );
+
+		# Rotate OLEC marks
+
+		CamLayer->WorkLayer( $inCAM, $fakeSM );
+		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".geometry", "OLEC*" ) == 4 ) {
+			$inCAM->COM( "sel_change_sym", "symbol" => ( $sourceL eq "mc" ? "cross_mask" : "cross_mask_x" ) );
+		}
+		else {
+			die "All OLEC crosees (four, symbol name: cross_mask) were not found in layer: $sourceL";
+		}
+
+		# Move centre moire
+		my $f = FeatureFilter->new( $inCAM, $jobId, $fakeSM );
+		$f->AddIncludeSymbols( ["s5000"] );
+		$f->AddIncludeAtt( ".geometry", "centre-moire*" );
+		$f->SetPolarity( EnumsFiltr->Polarity_NEGATIVE );
+		if ( $f->Select() ) {
+			$inCAM->COM("sel_delete");
+		}
+
+		$f->Reset();
+		my $sign = ( $sourceL eq "mc" ) ? -1 : 1;
+		$f->AddIncludeSymbols( ["center-moire"] );
+		$f->AddIncludeAtt( ".pnl_place", "*right-top*" );
+		if ( $f->Select() ) {
+			$inCAM->COM( "sel_move", "dx" => 0, "dy" => $sign * 6 );
+		}
+
+		$f->Reset();
+		$f->AddIncludeSymbols( ["center-moire"] );
+		$f->AddIncludeAtt( ".pnl_place", "*right-bot*" );
+		$f->AddIncludeAtt( ".pnl_place", "*left-bot*" );
+		$f->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
+		if ( $f->Select() ) {
+			$inCAM->COM( "sel_move", "dx" => 0, "dy" => $sign * -6 );
+		}
+
+		# Remove film description and put new
+		$f->Reset();
+		$f->AddIncludeAtt( ".pnl_place", "T-*" );
+		if ( $f->Select() ) {
+			$inCAM->COM("sel_delete");
+		}
+
+		my $xPos = 205;
+		my $yPos = 6;
+		$yPos += 20 if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 );
+
+		$self->__PutInfoText( $inCAM, $jobId, $fakeSM, ( $sourceL eq "mc" ? "bot" : "top" ),
+							  $xPos, $yPos, ( $sourceL eq "mc" ? "Spoje MASKA" : "Soucastky MASKA" ) );
+
 	}
-	else {
-		die "All OLEC crosees (four, symbol name: cross_mask) were not found in layer: $sourceL";
-	}
 
-	# Move centre moire
-	my $f = FeatureFilter->new( $inCAM, $jobId, $fakeSM );
-	$f->AddIncludeSymbols( ["s5000"] );
-	$f->AddIncludeAtt( ".geometry", "centre-moire*" );
-	$f->SetPolarity( EnumsFiltr->Polarity_NEGATIVE );
-	if ( $f->Select() ) {
-		$inCAM->COM("sel_delete");
-	}
+	push( @fakeLayers, $fakeSM );
 
-	$f->Reset();
-	my $sign = ( $sourceL eq "mc" ) ? -1 : 1;
-	$f->AddIncludeSymbols( ["center-moire"] );
-	$f->AddIncludeAtt( ".pnl_place", "*right-top*" );
-	if ( $f->Select() ) {
-		$inCAM->COM( "sel_move", "dx" => 0, "dy" => $sign * 6 );
-	}
-
-	$f->Reset();
-	$f->AddIncludeSymbols( ["center-moire"] );
-	$f->AddIncludeAtt( ".pnl_place", "*right-bot*" );
-	$f->AddIncludeAtt( ".pnl_place", "*left-bot*" );
-	$f->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
-	if ( $f->Select() ) {
-		$inCAM->COM( "sel_move", "dx" => 0, "dy" => $sign * -6 );
-	}
-
-	# Remove film description and put new
-	$f->Reset();
-	$f->AddIncludeAtt( ".pnl_place", "T-*" );
-	if ( $f->Select() ) {
-		$inCAM->COM("sel_delete");
-	}
-
-	my $xPos = 205;
-	my $yPos = 6;
-	$yPos += 20 if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 );
-
-	$self->__PutInfoText( $inCAM, $jobId, $fakeSM, ( $sourceL eq "mc" ? "bot" : "top" ),
-						  $xPos, $yPos, ( $sourceL eq "mc" ? "Spoje MASKA" : "Soucastky MASKA" ) );
-	
-	push(@fakeLayers, $fakeSM);
-			  
 	return @fakeLayers;
 
 }
 
 # Outer layers for PCB with outer core at stackup
 sub __CreateFakeOuterCoreLayers {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $emptyLayers = shift // 0;    # Create layer without any data
 
 	my $step = "panel";
 
@@ -238,69 +247,85 @@ sub __CreateFakeOuterCoreLayers {
 
 	return @fakeLayers if ( $layerCnt <= 2 );
 
-	my $side;    # top/bot/both
-	if ( StackupOperation->OuterCore( $inCAM, $jobId, \$side ) ) {
+	my @IProducts = ();              # top/bot/both
+	if ( StackupOperation->OuterCore( $inCAM, $jobId, \@IProducts ) ) {
 
 		CamHelper->SetStep( $inCAM, $step );
 
-		my $topL = "v1outer";
-		my $botL = "v$layerCnt" . "outer";
+		foreach my $IProduct (@IProducts) {
 
-		# check if outer core are on both side (top and bot)
+			my @layers = ();
 
-		push( @fakeLayers, $topL ) if ( $side eq "both" || $side eq "top" );
-		push( @fakeLayers, $botL ) if ( $side eq "both" || $side eq "bot" );
+			# check if outer core are on both side (top and bot)
+			if ( $IProduct->GetOuterCoreTop() ) {
 
-		# Create fake layers
-		foreach my $l (@fakeLayers) {
-			CamMatrix->DeleteLayer( $inCAM, $jobId, $l );
-			CamMatrix->CreateLayer( $inCAM, $jobId, $l, "document", "positive", 1 );
-		}
-
-		# Put surface over whole panel (full sopper)
-
-		CamLayer->AffectLayers( $inCAM, \@fakeLayers );
-		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
-		my @pointsLim = ();
-		push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );
-		push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} } );
-		push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMax"} } );
-		push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMin"} } );
-
-		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
-
-		# frame 100µm width around pcb (fr frame coordinate)
-		CamSymbol->AddPolyline( $inCAM, \@pointsLim, "r200", "negative", 1 );
-
-		# Put schmoll crosses
-		if ( JobHelper->GetIsFlex($jobId) ) {
-
-			my $f = Features->new();
-			$f->Parse( $inCAM, $jobId, $step, "v2" );    # layer v2 should already exist in multilayer pcb
-
-			my @cross = grep { defined $_->{"symbol"} && $_->{"symbol"} =~ /^schmoll_cross_10$/i } $f->GetFeatures();
-
-			die "All schmol crosees (four, symbol name: schmoll_cross_10) were not found in layer: v2" unless ( scalar(@cross) == 4 );
-
-			foreach my $c (@cross) {
-
-				#CamSymbol->AddPad( $inCAM, "s12000", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
-				CamSymbol->AddPad( $inCAM, "schmoll_cross_10", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
+				my $name = JobHelper->BuildSignalLayerName( $IProduct->GetTopCopperLayer(), 1, $IProduct->GetPlugging() );
+				push( @layers, $name );
 			}
-		}
 
-		# Put info text
-		 
-		my $xPos = 205;
-		my $yPos = 6;
+			if ( $IProduct->GetOuterCoreBot() ) {
 
-		if ( $side eq "both" || $side eq "top" ) {
+				my $name = JobHelper->BuildSignalLayerName( $IProduct->GetBotCopperLayer(), 1, $IProduct->GetPlugging() );
+				push( @layers, $name );
+			}
 
-			$self->__PutInfoText( $inCAM, $jobId, $topL, "top", $xPos, $yPos, "V1 (C) TOP" );
-		}
+			# Create fake layers
+			foreach my $l (@layers) {
+				CamMatrix->DeleteLayer( $inCAM, $jobId, $l );
+				CamMatrix->CreateLayer( $inCAM, $jobId, $l, "document", "positive", 1 );
+			}
 
-		if ( $side eq "both" || $side eq "bot" ) {
-			$self->__PutInfoText( $inCAM, $jobId, $botL, "bot", $xPos, $yPos, "V$layerCnt (S) BOT" );
+			# Put surface over whole panel (full sopper)
+			if ( !$emptyLayers ) {
+				CamLayer->AffectLayers( $inCAM, \@layers );
+				my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+				my @pointsLim = ();
+				push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );
+				push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} } );
+				push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMax"} } );
+				push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMin"} } );
+
+				CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
+
+				# frame 100µm width around pcb (fr frame coordinate)
+				CamSymbol->AddPolyline( $inCAM, \@pointsLim, "r200", "negative", 1 );
+
+				# Put schmoll crosses
+				if ( JobHelper->GetIsFlex($jobId) ) {
+
+					my $f = Features->new();
+					$f->Parse( $inCAM, $jobId, $step, "v2" );    # layer v2 should already exist in multilayer pcb
+
+					my @cross = grep { defined $_->{"symbol"} && $_->{"symbol"} =~ /^schmoll_cross_10$/i } $f->GetFeatures();
+
+					die "All schmol crosees (four, symbol name: schmoll_cross_10) were not found in layer: v2" unless ( scalar(@cross) == 4 );
+
+					foreach my $c (@cross) {
+
+						#CamSymbol->AddPad( $inCAM, "s12000", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
+						CamSymbol->AddPad( $inCAM, "schmoll_cross_10", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
+					}
+				}
+
+				# Put info text
+
+				my $xPos = 205;
+				my $yPos = 6;
+
+				if ( $IProduct->GetOuterCoreTop() ) {
+					my $name = JobHelper->BuildSignalLayerName( $IProduct->GetTopCopperLayer(), 1, $IProduct->GetPlugging() );
+					$self->__PutInfoText( $inCAM, $jobId, $name, "top", $xPos, $yPos, "Outer " . $IProduct->GetTopCopperLayer() . " TOP" );
+				}
+
+				if ( $IProduct->GetOuterCoreBot() ) {
+
+					my $name = JobHelper->BuildSignalLayerName( $IProduct->GetBotCopperLayer(), 1, $IProduct->GetPlugging() );
+					$self->__PutInfoText( $inCAM, $jobId, $name, "bot", $xPos, $yPos, "Outer " . $IProduct->GetBotCopperLayer() . " BOT" );
+				}
+
+			}
+
+			push( @fakeLayers, @layers );
 		}
 
 	}

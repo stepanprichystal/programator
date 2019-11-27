@@ -20,6 +20,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::GroupFrm';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+
 #use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::GroupSeparatorFrm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Enums';
 
@@ -31,7 +32,7 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 
-	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ 500, 500 ] );
+	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
 
 	bless($self);
 
@@ -40,38 +41,40 @@ sub new {
 	$self->{"groupFrmInput"} = [];
 	$self->{"groupFrmPress"} = [];
 
+	$self->{"titleExpanders"} = [];
+
 	$self->__SetLayout();
 
 	#EVENTS
 
-	$self->{"layerSettChangedEvt"}  = Event->new();
-	$self->{"technologyChangedEvt"} = Event->new();
-	$self->{"tentingChangedEvt"}    = Event->new();
+	$self->{"sigLayerSettChangedEvt"} = Event->new();
+	$self->{"technologyChangedEvt"}   = Event->new();
+	$self->{"tentingChangedEvt"}      = Event->new();
 
 	return $self;
 
 }
 
 sub AddGroup {
-	my $self      = shift;
+	my $self        = shift;
 	my $productId   = shift;
 	my $productType = shift;
 
 	# Add separator if any group exist
 	if ( $productType eq StackEnums->Product_INPUT && scalar( @{ $self->{"groupFrmInput"} } ) ) {
-		$self->__AddSeparator();
+		$self->AddSeparator(1, Wx::Colour->new( 200, 200, 200 ),2);
 	}
 	elsif ( $productType eq StackEnums->Product_PRESS && scalar( @{ $self->{"groupFrmPress"} } ) ) {
-		$self->__AddSeparator();
+		$self->AddSeparator(1, Wx::Colour->new( 200, 200, 200 ),2);
 	}
 
 	my $group = GroupFrm->new( $self, $productId, $productType );
 
-	$group->{"layerSettChangedEvt"}->Add( sub  { $self->{"layerSettChangedEvt"}->Do(@_) } );
-	$group->{"technologyChangedEvt"}->Add( sub { $self->{"technologyChangedEvt"}->Do(@_) } );
-	$group->{"tentingChangedEvt"}->Add( sub    { $self->{"tentingChangedEvt"}->Do(@_) } );
+	$group->{"sigLayerSettChangedEvt"}->Add( sub { $self->{"sigLayerSettChangedEvt"}->Do(@_) } );
+	$group->{"technologyChangedEvt"}->Add( sub   { $self->{"technologyChangedEvt"}->Do(@_) } );
+	$group->{"tentingChangedEvt"}->Add( sub      { $self->{"tentingChangedEvt"}->Do(@_) } );
 
-	$self->{"szGroups"}->Add( $group, 0, &Wx::wxALL, 0 );
+	$self->{"szGroups"}->Add( $group, 0, &Wx::wxALL | &Wx::wxEXPAND, 0 );
 
 	if ( $productType eq StackEnums->Product_INPUT ) {
 		push( @{ $self->{"groupFrmInput"} }, $group );
@@ -101,41 +104,71 @@ sub GetGroups {
 }
 
 sub AddCategoryTitle {
-	my $self  = shift;
-	my $type  = shift;
-	my $title = shift;
+	my $self = shift;
+	my $type = shift;
+	my $text = shift;
 
 	# DEFINE SIZERS
-	#my $szMain       = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szMain       = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $groupTitleSz = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $groupClmnSz  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
 	my $groupTitlePnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, -1 ] );
-	my $groupTitleTxt = Wx::StaticText->new( $groupTitlePnl, -1, "", [ -1, -1 ] );
+	my $groupTitleTxt = Wx::StaticText->new( $groupTitlePnl, -1, $text, [ -1, -1 ], [ 90, -1 ] );
 
 	if ( $type eq StackEnums->Product_INPUT ) {
 
 		$groupTitlePnl->SetBackgroundColour( Enums->Color_PRODUCTINPUT );
+
 	}
 	elsif ( $type eq StackEnums->Product_PRESS ) {
 		$groupTitlePnl->SetBackgroundColour( Enums->Color_PRODUCTPRESS );
 
 	}
 
-	$groupTitleTxt->SetLabel($title);
-
 	my $fontLblBold = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_NORMAL );
 
 	$groupTitleTxt->SetForegroundColour( Wx::Colour->new( 40, 40, 40 ) );    # set text color
 	$groupTitleTxt->SetFont($fontLblBold);
 
+	my $groupClmnsPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, -1 ] );
+	$groupClmnsPnl->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
+	my $groupClThickTxt = Wx::StaticText->new( $groupClmnsPnl, -1, "EtchCu [µm]",, [ -1, -1 ], [ 50, -1 ] );
+	my $groupClPolarTxt = Wx::StaticText->new( $groupClmnsPnl, -1, "Polar",,        [ -1, -1 ], [ 40, -1 ] );
+	my $groupClMirrTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "Mirror",,       [ -1, -1 ], [ 40, -1 ] );
+	my $groupClCompTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "Comp [µm]",,   [ -1, -1 ], [ 50, -1 ] );
+	my $groupClShrXTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "ShrinkX [%]",,  [ -1, -1 ], [ 50, -1 ] );
+	my $groupClShrYTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "ShrinkY [%]",,  [ -1, -1 ], [ 50, -1 ] );
+	my $technoClTxt     = Wx::StaticText->new( $groupClmnsPnl, -1, "Technology",,   [ -1, -1 ], [ 80, -1 ] );
+	my $technoDrillTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "Plt NC",,       [ -1, -1 ], [ 70, -1 ] );
+
 	# BUILD LAYOUT STRUCTURE
+	$groupTitleSz->Add( 0, 22, 0 );    #expander vertical
 	$groupTitleSz->Add( $groupTitleTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 5 );
+	my $expandH = Wx::Panel->new( $groupTitlePnl, -1, [ -1, -1 ], [ 25, -1 ] );
+	$groupTitleSz->Add( $expandH, 0 );    #expander horizontal
 	$groupTitlePnl->SetSizer($groupTitleSz);
 
-	$self->{"szGroups"}->Add( $groupTitlePnl, 0, &Wx::wxEXPAND | &Wx::wxBOTTOM|&Wx::wxTOP, 2 );
+	$groupClmnSz->Add( 0, 22, 0 );        #expander
+	$groupClmnSz->Add( $groupClThickTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 10 );
+	$groupClmnSz->Add( $groupClPolarTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $groupClMirrTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $groupClCompTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $groupClShrXTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $groupClShrYTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $technoClTxt,     0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $technoDrillTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
 
-	#$self->{"szGroups"}->Add( 5, 5 );
+	$groupClmnsPnl->SetSizer($groupClmnSz);
+
+	$szMain->Add( $groupTitlePnl, 0, &Wx::wxLEFT, 0 );
+	$szMain->Add( $groupClmnsPnl, 1, &Wx::wxLEFT, 0 );
+
+	$self->{"szGroups"}->Add( $szMain, 0, &Wx::wxEXPAND | &Wx::wxTOP | &Wx::wxBOTTOM, 4 );
+
+	# SET REFERENCES
+	push( @{ $self->{"titleExpanders"} }, $expandH );
 
 	#$self->__SetJobOrder();
 
@@ -165,31 +198,32 @@ sub GetCopperFrms {
 	my $outerCore  = shift;
 	my $plugging   = shift;
 
-	my $rowFrm      = undef;
-	my $subGroupFrm = undef;
+	my $resRowFrm      = undef;
+	my $resSubGroupFrm = undef;
 
 	foreach my $groupFrm ( $self->GetGroups() ) {
 
 		foreach my $subGroupFrm ( $groupFrm->GetSubGroups() ) {
 
-			foreach my $copperRowFrm ( $subGroupFrm->GetCopperRow() ) {
+			foreach my $copperRowFrm ( $subGroupFrm->GetAllCopperRows() ) {
 
 				if (    $copperRowFrm->GetCopperName() eq $copperName
 					 && $copperRowFrm->GetOuterCore() eq $outerCore
-					 && $copperRowFrm->GetPlugging() eq $plugging )
+					 && $copperRowFrm->GetPlugging() eq $plugging 
+					 && !$copperRowFrm->GetCuFoilOnly())
 				{
 
-					$rowFrm      = $copperRowFrm;
-					$subGroupFrm = $subGroupFrm;
+					$resRowFrm      = $copperRowFrm;
+					$resSubGroupFrm = $subGroupFrm;
 					last;
 				}
 			}
-			last if ( defined $rowFrm );
+			last if ( defined $resRowFrm );
 		}
-		last if ( defined $rowFrm );
+		last if ( defined $resRowFrm );
 	}
 
-	return ( $rowFrm, $subGroupFrm );
+	return ( $resRowFrm, $resSubGroupFrm );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -212,7 +246,18 @@ sub HideControls {
 	}
 
 	if ($hide) {
+
+		# Hide title
 		$_->HideSubGroupTitle() foreach ( map { $_->GetSubGroups() } $self->GetGroups() );
+
+		# Resize header because of hiding group title
+
+		foreach my $titleExp ( @{ $self->{"titleExpanders"} } ) {
+
+			$titleExp->Hide();
+
+		}
+
 	}
 
 	# 2) Hide technology controls if there is no copper
@@ -252,19 +297,22 @@ sub __SetLayout {
 
 }
 
-sub __AddSeparator {
-	my $self = shift;
+sub AddSeparator {
+	my $self   = shift;
+	my $height = shift;
+	my $color  = shift;
+	my $margin = shift // 0;
 
 	# DEFINE SIZERS
 	#my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
-	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, 3 ] );
-	$sepPnl->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
+	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, $height ] );
+	$sepPnl->SetBackgroundColour($color) if(defined $color);
 
 	# BUILD LAYOUT STRUCTURE
 
-	$self->{"szGroups"}->Add( $sepPnl, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$self->{"szGroups"}->Add( $sepPnl, 0, &Wx::wxEXPAND | &Wx::wxTOP | &Wx::wxBOTTOM, $margin );
 
 }
 

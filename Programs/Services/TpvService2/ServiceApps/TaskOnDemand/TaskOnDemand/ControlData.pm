@@ -100,7 +100,8 @@ sub __Run {
 	# Open job
 	$self->{"taskDataApp"}->_OpenJob($jobId);
 
-	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
+	$self->{"defaultInfo"} = DefaultInfo->new($jobId );
+	$self->{"defaultInfo"}->Init($inCAM);
 
 	# Check data - Group PRE (if we export some group,
 	# always check PRE group too, because thera are important controls)

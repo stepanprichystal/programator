@@ -148,13 +148,17 @@ sub GetRowByText {
 	my $self = shift;
 	my $text = shift;	
 	
+	my $row = undef;
+	
 	foreach my $r (@{$self->{"rows"}}){
 		
 		if( $r->GetRowText() eq $text ){
 			
-			return $r;
+			$row = $r;
 		}
 	}
+	
+	return $row;
 
 }
 

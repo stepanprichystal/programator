@@ -29,16 +29,54 @@ sub new {
 }
  
  
-# layers
+ 
+# signal layers
 sub SetSignalLayers {
 	my $self  = shift;
-	$self->{"data"}->{"layers"} = shift;
+	$self->{"data"}->{"signalLayers"} = shift;
 }
 
 sub GetSignalLayers {
 	my $self  = shift;
-	return $self->{"data"}->{"layers"};
+	return $self->{"data"}->{"signalLayers"};
 }
+
+# other layers
+sub SetOtherLayers {
+	my $self  = shift;
+	$self->{"data"}->{"otherLayers"} = shift;
+}
+
+sub GetOtherLayers {
+	my $self  = shift;
+	return $self->{"data"}->{"otherLayers"};
+}
+
+## Tenting
+#sub SetTentingCS {
+#	my $self  = shift;
+#	$self->{"data"}->{"tentingCS"} = shift;
+#}
+#
+#sub GetTentingCS {
+#	my $self  = shift;
+#	return $self->{"data"}->{"tentingCS"};
+#}
+#
+#
+## Technology
+#sub SetTechnologyCS {
+#	my $self  = shift;
+#	
+#	$self->{"data"}->{"technologyCS"} = shift;
+#}
+#
+#sub GetTechnologyCS {
+#	my $self  = shift;
+#	
+#	return $self->{"data"}->{"technologyCS"};
+#}
+# 
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -192,7 +192,7 @@ sub __ExportStackup {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $stackup = StackupPdf->new( $self->{"jobId"} );
+	my $stackup = StackupPdf->new( $inCAM, $self->{"jobId"} );
 	my $resultCreate = $stackup->Create( 1, 1, 1 );
 
 	my $tmpPath = $stackup->GetStackupPath();

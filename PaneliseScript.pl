@@ -1839,7 +1839,7 @@ sub _MakeStackup {
 
   								
   				if (HegMethods->GetPcbIsPool($jobId) == 1) {
-  										StackupDefault->CreateStackup($jobId, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
+  										StackupDefault->CreateStackup($inCAM, $jobId, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
   				}else{
   							my $thickOfPcb = sprintf "%.2f",(HegMethods->GetPcbMaterialThick($jobId) );
   							$thickOfPcb =~ s/\./,/g;
@@ -1856,7 +1856,7 @@ sub _MakeStackup {
 
   								if ($btnNumber == 1) {
   										#print STDERR 'jsem zde';
-  										StackupDefault->CreateStackup($jobId, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
+  										StackupDefault->CreateStackup( $inCAM, $jobId, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
 	  							}else{
 	  									#print STDERR 'jsem ajjj';
 		  						}

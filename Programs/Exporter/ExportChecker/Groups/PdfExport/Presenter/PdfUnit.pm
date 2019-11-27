@@ -95,8 +95,6 @@ sub RefreshGUI {
 	$self->{"form"}->SetInfoToPdf( $groupData->GetInfoToPdf() );
 	
 
-	#refresh wrapper
-	$self->_RefreshWrapper();
 }
 
 sub GetGroupData {

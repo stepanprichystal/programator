@@ -9,7 +9,6 @@ package Programs::Exporter::ExportChecker::ExportChecker::ExportChecker;
 use Class::Interface;
 &implements('Packages::InCAMHelpers::AppLauncher::IAppLauncher');
 
-
 #3th party library
 use strict;
 use warnings;
@@ -52,6 +51,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Packages::Export::PreExport::FakeLayers';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -71,15 +71,15 @@ sub new {
 
 	$self->{"jobId"} = shift;
 
-	$self->{"serverPort"}    = shift;
+	$self->{"serverPort"} = shift;
 
 	$self->{"inCAM"} = undef;
- 
- 	# Launcher, helper, which do connection to InCAm editor
- 	$self->{"launcher"} = undef;
-  
+
+	# Launcher, helper, which do connection to InCAm editor
+	$self->{"launcher"} = undef;
+
 	# Main application form
-	$self->{"form"} = ExportCheckerForm->new( -1, $self->{"jobId"}, $self->{"inCAM"} );
+	$self->{"form"} = ExportCheckerForm->new( -1, $self->{"jobId"} );
 
 	# Class whin manage popup form for checking
 	$self->{"exportPopup"} = ExportPopup->new( $self->{"jobId"} );
@@ -97,19 +97,18 @@ sub new {
 }
 
 sub Init {
-	my $self = shift;
-	my $launcher = shift; # contain InCAM library conencted to server
-	
-	# 1) Get InCAm from Launcher
-	
-	$self->{"launcher"} = $launcher;
-	$self->{"inCAM"} = $launcher->GetInCAM();
+	my $self     = shift;
+	my $launcher = shift;    # contain InCAM library conencted to server
 
+	# 1) Get InCAm from Launcher
+
+	$self->{"launcher"} = $launcher;
+	$self->{"inCAM"}    = $launcher->GetInCAM();
 
 	# 2) Create fake layers which will be exported, but are created automatically
 	#$self->{"inCAM"}->SetDisplay(0);
-	FakeLayers->CreateFakeLayers($self->{"inCAM"}, $self->{"jobId"});
-		
+	FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, undef, 1 );
+
 	# 3) Initialization of whole export app
 
 	# Keep structure of groups
@@ -120,9 +119,7 @@ sub Init {
 	$self->{"units"}->Init( $self->{"inCAM"}, $self->{"jobId"}, \@cells );
 
 	# Build phyisic table with groups, which has completely set GUI
-	#my $groupBuilder = $self->{"form"}->GetGroupBuilder();
-	#$groupBuilder->Build( $self->{"groupTables"}, $self->{"inCAM"} );
-	$self->{"form"}->BuildGroupTableForm( $self->{"groupTables"}, $self->{"inCAM"} );
+	$self->{"form"}->BuildGroupTableForm( $self->{"inCAM"}, $self->{"groupTables"} );
 
 	# 4) Initialization of each single group
 
@@ -132,13 +129,19 @@ sub Init {
 	#3) BuildGUI()
 	#4) InitDataMngr()
 	#5) RefreshGUI()
+	#6) RefreshWrapper()
 	#==> export
-	#6) CheckBeforeExport()
-	#7) GetGroupData()
- 
+	#7) CheckBeforeExport()
+	#8) GetGroupData()
+
 	$self->{"units"}->InitDataMngr( $self->{"inCAM"} );
 
 	$self->{"units"}->RefreshGUI();
+
+	$self->{"units"}->RefreshWrapper();
+
+	# After first loading group data, create event/handler connection between groups
+	$self->{"form"}->BuildGroupEventConn( $self->{"groupTables"} );
 
 	$self->__RefreshForm();
 
@@ -151,10 +154,10 @@ sub Run {
 	my $self = shift;
 	$self->{"form"}->{"mainFrm"}->Show(1);
 
-#	# When all succesinit, close waiting form
-#	if ( $self->{"loadingFrmPid"} ) {
-#		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
-#	}
+	#	# When all succesinit, close waiting form
+	#	if ( $self->{"loadingFrmPid"} ) {
+	#		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
+	#	}
 
 	#Helper->ShowAbstractQueueWindow(0,"Loading Exporter Checker");
 
@@ -166,8 +169,8 @@ sub Run {
 # FORM HANDLERS
 # ================================================================================
 sub __ExportSyncFormHandler {
-	my $self   = shift;
-	 
+	my $self = shift;
+
 	#if ( $client->ClientConnected() ) {
 	#
 	#		print STDERR "Close\n";
@@ -211,16 +214,15 @@ sub __OnCloseFormHandler {
 }
 
 sub __CheckBeforeExport {
-	my $self = shift;
-	my $mode = shift;
+	my $self     = shift;
+	my $mode     = shift;
 	my $onServer = shift // 0;    # default is not export on server
 
 	#disable from during checking
 	$self->{"disableForm"} = 1;
 	$self->__RefreshForm();
 
-	 
-	my $inCAM  = $self->{"inCAM"};
+	my $inCAM = $self->{"inCAM"};
 
 	#get all gorup data and save them to disc
 	$self->{"storageMngr"}->SaveGroupData();
@@ -232,12 +234,12 @@ sub __CheckBeforeExport {
 
 		#$client->SetConnected(0);
 	}
- 
+
 	#Win32::OLE->Uninitialize();
 
 	#init and run checking form
 	$self->{"exportPopup"}->Init( $mode, $onServer, $self->{"units"}, $self->{"form"} );
-	$self->{"exportPopup"}->CheckBeforeExport($self->{"launcher"}->GetServerPort());
+	$self->{"exportPopup"}->CheckBeforeExport( $self->{"launcher"}->GetServerPort() );
 
 }
 
@@ -263,8 +265,8 @@ sub __CleanUpAndExitForm {
 
 	#}
 
-	FakeLayers->RemoveFakeLayers($self->{"inCAM"}, $self->{"jobId"});
-		
+	FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, $self->{"jobId"} );
+
 	$self->{"form"}->{"mainFrm"}->Destroy();
 
 }
@@ -274,8 +276,8 @@ sub __UncheckAllHandler {
 
 	$self->{"units"}->SetGroupState( Enums->GroupState_ACTIVEOFF );
 
-	# Refresh loaded data in group form
-	$self->{"units"}->RefreshGUI();
+	# Refresh wrapper
+	$self->{"units"}->RefreshWrapper();
 
 	# Refresh form
 	$self->__RefreshForm();
@@ -290,6 +292,7 @@ sub __LoadLastHandler {
 
 	# Refresh loaded data in group form
 	$self->{"units"}->RefreshGUI();
+	$self->{"units"}->RefreshWrapper();
 
 	# Refresh form
 	$self->__RefreshForm();
@@ -303,6 +306,7 @@ sub __LoadDefaultHandler {
 
 	# Refresh loaded data in group form
 	$self->{"units"}->RefreshGUI();
+	$self->{"units"}->RefreshWrapper();
 
 	# Refresh form
 	$self->__RefreshForm();
@@ -349,8 +353,6 @@ sub __OnResultPopupHandler {
 	# to this income server
 
 	$self->{"inCAM"}->Reconnect();
-	
-	
 
 	my $active    = 1;
 	my $toProduce = $self->{"form"}->GetToProduce($active);
@@ -359,19 +361,17 @@ sub __OnResultPopupHandler {
 		 || $resultType eq Enums->PopupResult_SUCCES )
 	{
 
-
-		FakeLayers->RemoveFakeLayers($self->{"inCAM"}, $self->{"jobId"});
+		FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 		my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $self->{"jobId"};
 
 		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC && $onServer ) {
 			$pathExportFile = EnumsPaths->Jobs_EXPORTFILESPCB . $self->{"jobId"};
 		}
-		
+
 		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
 
-		my $inCAM  = $self->{"inCAM"};
-		 
+		my $inCAM = $self->{"inCAM"};
 
 		my @orders = HegMethods->GetPcbOrderNumbers( $self->{"jobId"} );
 		@orders = map { $_->{"reference_subjektu"} } @orders;
@@ -412,13 +412,13 @@ sub __OnResultPopupHandler {
 
 			#test if client is connected
 			#if so, disconnect, because exportUtility connect to this server (launched in InCAM toolkit)
-			
-			
+
 			if ( $inCAM->IsConnected() ) {
 				$inCAM->ClientFinish();
+
 				#$client->SetConnected(0);
 			}
-			
+
 			$self->{"launcher"}->SetLetServerRun();
 
 			# Start server in this script
@@ -433,9 +433,9 @@ sub __OnResultPopupHandler {
 		if ($onServer) {
 
 			# Show summary message
-			$self->{"form"}->{"messageMngr"}->ShowModal( $self->{"form"}->{"mainFrm"}, 
-			EnumsGeneral->MessageType_INFORMATION, 
-			[ "Job: \"" . $self->{"jobId"} . "\" was succesfully sent to server." ] );
+			$self->{"form"}->{"messageMngr"}->ShowModal( $self->{"form"}->{"mainFrm"},
+														 EnumsGeneral->MessageType_INFORMATION,
+														 [ "Job: \"" . $self->{"jobId"} . "\" was succesfully sent to server." ] );
 
 		}
 		else {
@@ -474,17 +474,18 @@ sub __RefreshForm {
 	$self->{"form"}->SetLoadLastBtn( $self->{"storageMngr"}->ExistGroupData() );
 
 	# Set export buttons
-	my $groupsState = $self->{"units"}->GetGroupState();
+	my %groupsState = $self->{"units"}->GetGroupState();
 
-	if ( $groupsState eq Enums->GroupState_ACTIVEOFF || $groupsState eq Enums->GroupState_DISABLE ) {
+	if ($groupsState{Enums->GroupState_ACTIVEON} == 0) {
 		$self->{"form"}->DisableExportBtn(1);
 	}
 	else {
 		$self->{"form"}->DisableExportBtn(0);
 	}
 
+	# Display default TAB
+
 }
- 
 
 sub __SetHandlers {
 	my $self = shift;
@@ -534,8 +535,6 @@ sub __DefineTableGroups {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	 
 
 }
 

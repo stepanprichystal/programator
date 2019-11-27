@@ -235,7 +235,7 @@ sub AddFlexiCoreFrame {
 	}
 	elsif ( $type eq EnumsGeneral->PcbType_RIGIDFLEXO || $type eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
 
-		my $stackup = Stackup->new($jobId);
+		my $stackup = Stackup->new($inCAM, $jobId);
 
 		foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
 

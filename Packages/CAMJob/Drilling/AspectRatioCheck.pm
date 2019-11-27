@@ -46,7 +46,7 @@ sub GetToolsARatio {
 
 	if ( $layerCnt > 2 ) {
 
-		$stackup = Stackup->new($jobId);
+		$stackup = Stackup->new($inCAM,$jobId);
 
 		$pcbThick = $stackup->GetFinalThick();
 	}

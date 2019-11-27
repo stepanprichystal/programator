@@ -41,6 +41,7 @@ sub OnExportGroupData {
 
 	# Other
 	$exportData->SetSignalLayers( $groupData->GetSignalLayers() );
+	$exportData->SetOtherLayers( $groupData->GetOtherLayers() );
 	 
 
 	return $exportData;

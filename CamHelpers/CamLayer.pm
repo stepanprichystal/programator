@@ -192,28 +192,7 @@ sub RemoveTempLayerPlus {
 	}
 }
 
-#Return layers, where marking can be placed
-sub GetMarkingLayers {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-
-	my @arr = CamJob->GetBoardLayers( $inCAM, $jobId );
-
-	my @res = ();
-
-	foreach my $l (@arr) {
-
-		if (    $l->{"gROWlayer_type"} =~ /solder_mask/i
-			 || $l->{"gROWlayer_type"} =~ /silk_screen/i
-			 || ( $l->{"gROWlayer_type"} =~ /signal/i && $l->{"gROWname"} !~ /v/i ) )
-		{
-			push( @res, $l );
-		}
-	}
-
-	return @res;
-}
+ 
 
 # Display single layer and set as work layer
 sub SetLayerTypeLayer {

@@ -41,7 +41,8 @@ sub Run {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
+	$self->{"defaultInfo"} = DefaultInfo->new( $jobId );
+	$self->{"defaultInfo"}->Init($inCAM);
 
 	# Check data
 

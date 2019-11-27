@@ -177,9 +177,10 @@ sub GetNCLayersByTypes {
 	return @layers;
 }
 
-# Add  to every hash in array new value: type
-# Type is assign by our rules, which ve use wehen proscess pcb
-# Plated tells, if holes/slots in layer are plated or not
+# Add  to every hash in array new value:
+# - type: Type is assign by our rules, which ve use wehen proscess pcb
+# - plated: Plated tells, if holes/slots in layer are plated or not
+# - technical: NC layer only concerns panel technical frame
 # Input is array of hash references
 sub AddNCLayerType {
 	my $self   = shift;
@@ -196,84 +197,99 @@ sub AddNCLayerType {
 		my %i = ();
 		if ( $l->{"gROWname"} =~ /^m[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_nDrill;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_nDrill;
+			$l->{"plated"}    = 1;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^sc[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bDrillTop;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^ss[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bDrillBot;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^mfill[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_nFillDrill;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^scfill[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bFillDrillTop;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^ssfill[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bFillDrillBot;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^j[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_cDrill;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 
-		}elsif ( $l->{"gROWname"} =~ /^jfill[0-9]+$/ ) {
+		}
+		elsif ( $l->{"gROWname"} =~ /^jfill[0-9]+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_cFillDrill;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 		}
 		elsif ( $l->{"gROWname"} =~ /^r[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_nMill;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^rzc[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bMillTop;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^rzs[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bMillBot;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^v$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fDrill;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 1;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^v1$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fcDrill;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 1;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^dc$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_dcDrill;
 			$l->{"plated"} = 1;
+			$l->{"technical"} = 1;
 		}
 
 		# Non plated NC layers
@@ -281,78 +297,91 @@ sub AddNCLayerType {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nDrill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^f[0-9]*$/ || $l->{"gROWname"} =~ /^f(sch)?(lm)?$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fzc[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_bMillTop;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fzs[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_bMillBot;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^rs[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_rsMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fr[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_frMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^score$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_score;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^jfzc[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cbMillTop;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^jfzs[0-9]*$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cbMillBot;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fk$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_kMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^flc$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_lcMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fls$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_lsMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^f_.*/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_fMillSpec;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 		}
 
 		# new for flexi
@@ -360,42 +389,49 @@ sub AddNCLayerType {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlycMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fcoverlays\d?/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlysMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fprepreg[12]/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_prepregMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fstiffc\d?/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_stiffcMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fstiffs\d?/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_stiffsMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fsoldc\d?/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_soldcMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fsolds\d?/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_soldsMill;
 			$l->{"plated"} = 0;
+			$l->{"technical"} = 0;
 		}
 
 	}
@@ -773,7 +809,6 @@ sub GetViaFillExists {
 
 	return scalar(@ncLayers) ? 1 : 0;
 }
- 
 
 # Return NC operation name
 # Operation name is used for getting tool parameters, tool feed rate, etc..

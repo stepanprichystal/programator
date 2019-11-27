@@ -57,9 +57,9 @@ sub OnPrepareGroupData {
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
 	# 1) Prepare default layer settings
-	my @baseLayers = $defaultInfo->GetBoardBaseLayers();
-	$defaultInfo->SetDefaultLayersSettings( \@baseLayers );
-	my @layers = $self->__GetFinalLayers( \@baseLayers, $defaultInfo );
+	my @layers = ();
+	push( @layers, $self->__GetSignalLayersSett($defaultInfo) );
+	push( @layers, $self->__GetOtherLayersSett($defaultInfo) );
 
 	$groupData->SetLayers( \@layers );
 
@@ -88,40 +88,49 @@ sub OnPrepareGroupData {
 	return $groupData;
 }
 
-sub __GetFinalLayers {
+sub __GetSignalLayersSett {
 	my $self        = shift;
-	my @layers      = @{ shift(@_) };
 	my $defaultInfo = shift;
+
+	my @signalLayers = ();
+	push( @signalLayers, $defaultInfo->GetSignalLayers() );
+	push( @signalLayers, $defaultInfo->GetSignalExtLayers() );
+
+	# if No copper, remove layer C
+
+	@signalLayers = () if ( $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER );
 
 	my @prepared = ();
 
-	foreach my $l (@layers) {
+	foreach my $l (@signalLayers) {
 
-		my %lInfo = ();
-
-		$lInfo{"plot"}        = 1;
-		$lInfo{"name"}        = $l->{"gROWname"};
-		$lInfo{"polarity"}    = $l->{"polarity"};
-		$lInfo{"mirror"}      = $l->{"mirror"};
-		$lInfo{"comp"}        = $l->{"comp"};
+		my %lInfo = $defaultInfo->GetDefSignalLSett($l);
 
 		push( @prepared, \%lInfo );
 	}
 
-	# remove/not plot layer "c" if no copper pcb
-	if ( $defaultInfo->GetTypeOfPcb() eq "Neplatovany" ) {
+	return @prepared;
+}
 
-		foreach (@prepared) {
+sub __GetOtherLayersSett {
+	my $self        = shift;
+	my $defaultInfo = shift;
 
-			if ( $_->{"name"} eq "c" ) {
-				$_->{"plot"} = 0;
-				last;
-			}
-		}
+	my @otherLayer = $defaultInfo->GetBoardBaseLayers();
+
+	@otherLayer =
+	  grep { $_->{"gROWlayer_type"} eq "solder_mask" || $_->{"gROWname"} =~ /^(gold)[cs]$/ } @otherLayer;
+
+	my @prepared = ();
+
+	foreach my $l (@otherLayer) {
+
+		my %lInfo = $defaultInfo->GetNonSignalLSett($l);
+
+		push( @prepared, \%lInfo );
 	}
 
 	return @prepared;
-
 }
 
 sub __GetPasteInfo {

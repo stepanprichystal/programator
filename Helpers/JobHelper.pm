@@ -15,7 +15,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Stackup::StackupBase::StackupBase';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -31,7 +31,7 @@ sub GetBaseCuThick {
 
 	if ( HegMethods->GetBasePcbInfo($jobId)->{"pocet_vrstev"} > 2 ) {
 
-		my $stackup = Stackup->new($jobId);
+		my $stackup = StackupBase->new($jobId);
 
 		my $cuLayer = $stackup->GetCuLayer($layerName);
 		$cuThick = $cuLayer->GetThick();
@@ -329,7 +329,7 @@ sub GetCoverlaySigLayers {
 
 	if ( $coverlayType{"top"} ) {
 
-		my $stackup = Stackup->new($jobId);
+		my $stackup = StackupBase->new($jobId);
 
 		# find flexible inner layers
 		my $core = ( $stackup->GetAllCores(1) )[0];
@@ -340,7 +340,7 @@ sub GetCoverlaySigLayers {
 
 	if ( $coverlayType{"bot"} ) {
 
-		my $stackup = Stackup->new($jobId);
+		my $stackup = StackupBase->new($jobId);
 
 		# find flexible inner layers
 		my $core = ( $stackup->GetAllCores(1) )[0];
@@ -391,44 +391,35 @@ sub GetIsolationByClass {
 	return $isolation;
 }
 
-#
-#sub GetClassByIsolation {
-#	my $self  = shift;
-#	my $isolation = shift;
-#
-#	my $class;
-#
-#	if ( $isolation <= 400 ) {
-#
-#		$class = 3;
-#	}
-#	elsif ( $class <= 4 ) {
-#
-#		$isolation = 300;
-#
-#	}
-#	elsif ( $class <= 5 ) {
-#
-#		$isolation = 200;
-#
-#	}
-#	elsif ( $class <= 6 ) {
-#
-#		$isolation = 150;
-#
-#	}
-#	elsif ( $class <= 7 ) {
-#
-#		$isolation = 125;
-#
-#	}
-#	elsif ( $class <= 8 ) {
-#
-#		$isolation = 100;
-#	}
-#
-#	return $isolation;
-#}
+sub BuildSignalLayerName {
+	my $self       = shift;
+	my $copperName = shift;
+	my $outerCore  = shift;
+	my $plugging   = shift;
+
+	my $name = "";
+
+	$name .= "outer" if ($outerCore);
+	$name .= "plg"   if ($plugging);
+	$name .= $copperName;
+
+	return $name;
+}
+
+
+sub ParseSignalLayerName {
+	my $self        = shift;
+	my $copperLName = shift;
+
+	my %lInfo = ();
+ 
+	$lInfo{"sourceName"} = ( $copperLName =~ /([csv]\d*)/ )[0];
+	$lInfo{"outerCore"}  = $copperLName =~ /outer([csv]\d*)/ ? 1 : 0;
+	$lInfo{"plugging"}   = $copperLName =~ /plg([csv]\d*)/ ? 1 : 0;
+
+	return %lInfo;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

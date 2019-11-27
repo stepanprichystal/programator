@@ -398,7 +398,7 @@ sub __GetStackupInfo {
 	else {
 
 		#get info from stackup
-		my $stackup = Stackup->new( $self->{"jobId"} );
+		my $stackup = Stackup->new($self->{"inCAM"}, $self->{"jobId"} );
 		$inf{"thick"} = sprintf( "%.2f mm", $stackup->GetFinalThick() / 1000 );
 	}
 

@@ -88,8 +88,6 @@ sub RefreshGUI {
 	$self->{"form"}->SetSendToServer( $groupData->GetSendToServer() );
 	$self->{"form"}->SetIncldMpanelFrm( $groupData->GetIncldMpanelFrm() );
 
-	#refresh wrapper
-	$self->_RefreshWrapper();
 }
 
 sub GetGroupData {

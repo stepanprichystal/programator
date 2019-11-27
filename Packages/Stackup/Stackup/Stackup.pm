@@ -159,18 +159,14 @@ sub GetThickByCuLayer {
 	# Check format of layer name
 	die "Wrong signal layer name: $lName" if ( $lName !~ /^([cs])|(v\d+)$/ );
 
-	my $product = $self->__GetProductByLayer( $lName, $outerCore, $plugging );
+	my $product = $self->GetProductByLayer( $lName, $outerCore, $plugging );
 
 	my $thick = $product->GetThick($inclPlating);
 
 	return $thick;
 }
 
-#-------------------------------------------------------------------------------------------#
-#  Private methods
-#-------------------------------------------------------------------------------------------#
-
-sub __GetProductByLayer {
+sub GetProductByLayer {
 	my $self      = shift;
 	my $lName     = shift;
 	my $outerCore = shift;    # indicate if copper is located on the core and on the outer of press package in the same time
@@ -179,17 +175,20 @@ sub __GetProductByLayer {
 	# Check format of layer name
 	die "Wrong signal layer name: $lName" if ( $lName !~ /^([cs])|(v\d+)$/ );
 
-	my $product = first {
-		$_->{"name"} eq $lName
-		  && $_->{"outerCore"} == $outerCore
-		  && $_->{"plugging"} == $plugging
-	}
-	@{ $self->{"copperMatrix"} };
+	my @items = grep { $_->{"name"} eq $lName } @{ $self->{"copperMatrix"} };
+	@items = grep { $_->{"outerCore"} == $outerCore } @items if ( defined $outerCore );
+	@items = grep { $_->{"plugging"} == $plugging } @items   if ( defined $plugging );
+	
+	my $item = $items[0];
+	
+	die "Product was not found by copper layer: $lName (outerCore=$outerCore; plugging=$plugging)" if ( !defined $item );
 
-	die "Product was not found by copper layer: $lName (outerCore=$outerCore; plugging=$plugging)" if ( !defined $product );
-
-	return $product;
+	return $item->{"product"};
 }
+
+#-------------------------------------------------------------------------------------------#
+#  Private methods
+#-------------------------------------------------------------------------------------------#
 
 sub __GetAllProducts {
 	my $self        = shift;

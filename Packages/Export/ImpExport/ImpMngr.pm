@@ -77,7 +77,7 @@ sub Run {
 		my @oldStackups = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" );
 		unlink ($_) foreach(@oldStackups);
 
-		my $convertor = StackupConvertor->new($jobId);
+		my $convertor = StackupConvertor->new($inCAM, $jobId);
 		my $res       = $convertor->DoConvert();
 
 		my $resultStack = $self->_GetNewItem("Generate ML stackup");

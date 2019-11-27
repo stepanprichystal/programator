@@ -24,7 +24,6 @@ use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderScore';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRout';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDrill';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderOther';
-use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderFlexiTmp';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderNCDuration';
 
 #-------------------------------------------------------------------------------------------#
@@ -159,8 +158,6 @@ sub Build {
  	
 	$nifMngr->AddSection("Delka NC operaci", BuilderNCDuration->new(\@req));
 
-	# Flexi section
-	$nifMngr->AddSection("DOCASNE - FLEXI PARAMETRY PRO POSTUP", BuilderFlexiTmp->new([]));
 
 }
 

@@ -86,8 +86,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetExportMeasurePdf( $groupData->GetExportMeasurePdf() );
 	$self->{"form"}->SetBuildMLStackup( $groupData->GetBuildMLStackup() );
 	
-	#refresh wrapper
-	$self->_RefreshWrapper();
+
 }
 
 sub GetGroupData {

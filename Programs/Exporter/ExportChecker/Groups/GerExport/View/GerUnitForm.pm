@@ -21,6 +21,7 @@ use aliased 'Packages::Events::Event';
 #use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStep';
+use aliased 'Enums::EnumsGeneral';
 
 #use aliased 'CamHelpers::CamJob';
 
@@ -48,11 +49,8 @@ sub new {
 
 	$self->__SetLayout();
 
-	#$self->__SetName();
-
-	#$self->Disable();
-
-	#$self->SetBackgroundColour($Widgets::Style::clrLightBlue);
+	# GER values passed from other group
+	$self->{'layers'} = [];    # store information about layers
 
 	# EVENTS
 	#$self->{'onTentingChange'} = Event->new();
@@ -167,8 +165,8 @@ sub __SetLayoutJetprint {
 
 	# DEFINE CONTROLS
 
-	my $exportChb   = Wx::CheckBox->new( $statBox, -1, "Export",            &Wx::wxDefaultPosition );
-	my $fiduc3p2Chb = Wx::CheckBox->new( $statBox, -1, "Fiduc holes 3.2mm", &Wx::wxDefaultPosition );
+	my $exportChb   = Wx::CheckBox->new( $statBox, -1, "Export",      &Wx::wxDefaultPosition );
+	my $fiduc3p2Chb = Wx::CheckBox->new( $statBox, -1, "Fiduc 3.2mm", &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 
@@ -209,12 +207,12 @@ sub __SetLayoutPaste {
 	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
 	my $last = $steps[ scalar(@steps) - 1 ];
 
-	my $stepCb           = Wx::ComboBox->new( $statBox, -1, $last,             &Wx::wxDefaultPosition, [ 70, 20 ], \@steps, &Wx::wxCB_READONLY );
-	my $notOriChb        = Wx::CheckBox->new( $statBox, -1, "Readme.txt",      &Wx::wxDefaultPosition, [ 70, 20 ] );
-	my $profileChb       = Wx::CheckBox->new( $statBox, -1, "Add outer prof.", &Wx::wxDefaultPosition, [ 70, 20 ] );
-	my $singleProfileChb = Wx::CheckBox->new( $statBox, -1, "Add inner prof.", &Wx::wxDefaultPosition, [ 70, 20 ] );
-	my $addFiducialChb   = Wx::CheckBox->new( $statBox, -1, "Add fiducials",   &Wx::wxDefaultPosition, [ 70, 20 ] );
-	my $zipFileChb       = Wx::CheckBox->new( $statBox, -1, "Zip files",       &Wx::wxDefaultPosition, [ 70, 20 ] );
+	my $stepCb           = Wx::ComboBox->new( $statBox, -1, $last,             &Wx::wxDefaultPosition, [ -1, 20 ], \@steps, &Wx::wxCB_READONLY );
+	my $notOriChb        = Wx::CheckBox->new( $statBox, -1, "Readme.txt",      &Wx::wxDefaultPosition, [ -1, 20 ] );
+	my $profileChb       = Wx::CheckBox->new( $statBox, -1, "Add outer prof.", &Wx::wxDefaultPosition, [ -1, 20 ] );
+	my $singleProfileChb = Wx::CheckBox->new( $statBox, -1, "Add inner prof.", &Wx::wxDefaultPosition, [ -1, 20 ] );
+	my $addFiducialChb   = Wx::CheckBox->new( $statBox, -1, "Add fiducials",   &Wx::wxDefaultPosition, [ -1, 20 ] );
+	my $zipFileChb       = Wx::CheckBox->new( $statBox, -1, "Zip files",       &Wx::wxDefaultPosition, [ -1, 20 ] );
 
 	# SET EVENTS
 
@@ -307,21 +305,24 @@ sub __OnStepChange {
 	}
 
 }
-sub OnChangeLayerHandler {
+
+sub OnPREGroupLayerSettChanged {
 	my $self  = shift;
 	my $layer = shift;
 
-	my $row = $self->{"plotList"}->GetRowByText( $layer->{"name"} );
+	my $l = ( grep { $_->{"name"} eq $layer->{"name"} } @{ $self->{"layers"} } )[0];
 
-	die "Plot list row was not found by layer name:" . $layer->{"name"};
+	#die "Layer was not found by layer name:" . $layer->{"name"};
 
-	$row->SetPolarity( $layer->{"polarity"} );
-	$row->SetMirror( $layer->{"mirror"} );
-	$row->SetComp( $layer->{"comp"} );
-	$row->SetShrinkX( $layer->{"shrinkX"} );
-	$row->SetShrinkY( $layer->{"shrinkY"} );
- 
+	if ( defined $l ) {
+
+		foreach my $key ( keys %{$layer} ) {
+
+			$l->{$key} = $layer->{$key};
+		}
+	}
 }
+
 # =====================================================================
 # DISABLING CONTROLS
 # =====================================================================
@@ -332,7 +333,7 @@ sub DisableControls {
 	# MDI gerbers
 
 	my $defaultInfo = $self->{"defaultInfo"};
-	if ( !$defaultInfo->LayerExist("c") || $defaultInfo->GetTypeOfPcb( $self->{"jobId"} ) eq "Neplatovany" ) {
+	if ( !$defaultInfo->LayerExist("c") || $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER ) {
 		$self->{"signalChb"}->Disable();
 	}
 
@@ -467,7 +468,8 @@ sub GetExportLayers {
 # Layers to export ========================================================
 
 sub SetLayers {
-	my $self = shift;
+	my $self   = shift;
+	my $layers = shift;
 
 	$self->{"layers"} = shift;
 }

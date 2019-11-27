@@ -342,7 +342,7 @@ sub PrepareRoutCoverlay {
 	}
 	else {
 		# Rigid flex
-		$side = StackupOperation->GetSideByLayer( $jobId, $sigLayer );
+		$side = StackupOperation->GetSideByLayer( $inCAM, $jobId, $sigLayer );
 	}
 
 	# Build coverlay rout name

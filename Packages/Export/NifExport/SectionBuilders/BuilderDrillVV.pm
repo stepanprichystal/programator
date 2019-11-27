@@ -45,9 +45,9 @@ sub Build {
 	my %nifData  = %{ $self->{"nifData"} };
 	my $stepName = "panel";
 
-	my $stackup   = Stackup->new( $self->{'jobId'} );
-	my $stackupNC = StackupNC->new( $self->{'jobId'}, $inCAM);
-	my $pressCnt  = $stackupNC->GetPressCnt();
+	my $stackup   = Stackup->new( $inCAM, $self->{'jobId'} );
+	my $stackupNC = StackupNC->new( $inCAM, $self->{'jobId'} );
+	my $pressCnt  = $stackupNC->GetPressCount();
 	
 	
 
@@ -63,7 +63,7 @@ sub Build {
 		# comment
 		$section->AddComment( "Vrtani Pred Prokovem C" . $pressOrder . " ($pressOrder. lisovani)" );
 
-		my $press = $stackupNC->GetPress($pressOrder);
+		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
@@ -103,7 +103,7 @@ sub Build {
 		# comment
 		$section->AddComment( "Vrtani Pred Prokovem S" . $pressOrder . " ($pressOrder. lisovani)" );
 
-		my $press = $stackupNC->GetPress($pressOrder);
+		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 
@@ -151,7 +151,7 @@ sub Build {
 		# comment
 		$section->AddComment( "Slepe Vrtani C" . $pressOrder . " ($pressOrder. lisovani)" );
 
-		my $press = $stackupNC->GetPress($pressOrder);
+		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef,  $layerType );
 
@@ -187,7 +187,7 @@ sub Build {
 		# comment
 		$section->AddComment( "Slepe Vrtani S" . $pressOrder . " ($pressOrder. lisovani)" );
 
-		my $press = $stackupNC->GetPress($pressOrder);
+		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, $layerType );
 
@@ -221,7 +221,7 @@ sub Build {
 		# comment
 		$section->AddComment( "Slepe Vrtani C" . $pressCnt );
 
-		my $press = $stackupNC->GetPress($pressCnt);
+		my $press = $stackupNC->GetNCPressProduct($pressCnt);
 
 #		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 #
@@ -253,7 +253,7 @@ sub Build {
 		# comment
 		$section->AddComment( "Slepe Vrtani S" . $pressCnt );
 
-		my $press = $stackupNC->GetPress($pressCnt);
+		my $press = $stackupNC->GetNCPressProduct($pressCnt);
 
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 

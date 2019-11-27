@@ -169,7 +169,7 @@ sub __InitLayers {
 
 	my @pdfLayers = ();
 	my $layerCnt  = CamJob->GetSignalLayer( $inCAM, $jobId );
-	my $stackup   = Stackup->new($jobId) if ( $layerCnt > 2 );
+	my $stackup   = Stackup->new($inCAM, $jobId) if ( $layerCnt > 2 );
 	my $isFlex    = JobHelper->GetIsFlex($jobId);
 
 	# 1) Prepare layers which are visible  from both sides TOP and BOT
@@ -309,7 +309,7 @@ sub __InitLayers {
 			next if ( $l->GetType() eq EnumsStack->MaterialType_COPPER && ( $l->GetCopperName() =~ /^[cs]$/ ) );
 
 			if ( $l->GetType() eq EnumsStack->MaterialType_COPPER ) {
-				my $side = StackupOperation->GetSideByLayer( $jobId, $l->GetCopperName(), $stackup );
+				my $side = StackupOperation->GetSideByLayer( $inCAM, $jobId, $l->GetCopperName(), $stackup );
 				my $LDInnerCu = LayerData->new( Enums->Type_INNERCU, ( $side eq "top" ? Enums->Visible_FROMTOP : Enums->Visible_FROMBOT ) );
 				$LDInnerCu->AddSingleLayers( grep { $_->{"gROWname"} eq $l->GetCopperName() } @boardL );
 				push( @pdfLayers, $LDInnerCu );
@@ -448,7 +448,7 @@ sub __InitLayers {
 			$side = "bot";
 		}
 		else {
-			$side = StackupOperation->GetSideByLayer( $jobId, $sigL, $stackup );
+			$side = StackupOperation->GetSideByLayer( $inCAM, $jobId, $sigL, $stackup );
 		}
 
 		my $LDCoverlay = LayerData->new( Enums->Type_COVERLAY, ( $side eq "top" ? Enums->Visible_FROMTOP : Enums->Visible_FROMBOT ) );

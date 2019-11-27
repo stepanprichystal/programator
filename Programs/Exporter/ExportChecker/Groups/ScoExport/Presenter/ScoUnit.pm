@@ -92,8 +92,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetScoringType( $groupData->GetScoringType() );
 	$self->{"form"}->SetCustomerJump( $groupData->GetCustomerJump() );
 
-	#refresh wrapper
-	$self->_RefreshWrapper();
+
 }
 
 sub GetGroupData {

@@ -71,7 +71,7 @@ sub Run {
 	my @signalLayers = @{ $self->{"layerNames"} };
 
 	if ( $self->{"layerCnt"} > 2 ) {
-		$self->{"stackup"} = Stackup->new($jobId);
+		$self->{"stackup"} = Stackup->new($inCAM, $jobId);
 	}
 
 	# Delete old files

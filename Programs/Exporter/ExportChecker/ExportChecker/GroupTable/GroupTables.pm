@@ -25,6 +25,8 @@ sub new {
 
 	my @tables = ();
 	$self->{"groupTables"} = \@tables;
+	
+	$self->{"defaultSelected"} = undef; # Default selected table
 
 	return $self;
 }
@@ -61,6 +63,21 @@ sub GetAllUnits{
 
 	return @all;
 } 
+
+
+sub GetDefaultSelected{
+	my $self = shift;
+
+	return $self->{"defaultSelected"};
+}
+
+sub SetDefaultSelected{
+	my $self = shift;
+	my $table = shift;
+	
+	$self->{"defaultSelected"} = $table;
+	
+}
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

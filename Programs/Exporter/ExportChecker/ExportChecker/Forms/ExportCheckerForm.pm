@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use Wx;
 use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
+use Test::More;
 
 BEGIN {
 	eval { require Wx::RichText; };
@@ -48,13 +49,12 @@ sub new {
 	# PROPERTIES
 
 	$self->{"jobId"} = shift;
-	$self->{"inCAM"} = shift;
 
 	#$self->{"groupBuilder"} = GroupBuilder->new($self);
 
 	my $mainFrm = $self->__SetLayout($parent);
-	
-	$self->{"messageMngr"} = MessageMngr->new( "Exporter checker" );
+
+	$self->{"messageMngr"} = MessageMngr->new("Exporter checker");
 
 	#EVENTS
 
@@ -70,15 +70,6 @@ sub new {
 
 	return $self;
 }
-
-## Return tab reference by number
-#sub GetTab {
-#	my $self      = shift;
-#	my $tabNumber = shift;
-#
-#	my $tab = $self->{"nb"}->GetPage($tabNumber);
-#	return $tab;
-#}
 
 sub GetToProduce {
 	my $self = shift;
@@ -114,11 +105,13 @@ sub DisableExportBtn {
 
 		$self->{"btnSync"}->Disable();
 		$self->{"btnASync"}->Disable();
+		$self->{"btnASyncServer"}->Disable();
 	}
 	else {
 
 		$self->{"btnSync"}->Enable();
 		$self->{"btnASync"}->Enable();
+		$self->{"btnASyncServer"}->Enable();
 	}
 
 }
@@ -178,6 +171,98 @@ sub AddPage {
 	return $page;
 }
 
+
+
+sub BuildGroupTableForm {
+	my $self = shift;
+	my $inCAM = shift;
+
+	# class keep rows structure and group instances
+	my $groupTables = shift;
+ 
+	$self->{"mainFrm"}->Freeze();
+
+	my $defSelPageTab = undef;    # Default selected notebook page
+
+	foreach my $table ( $groupTables->GetTables() ) {
+
+		my $pageTab   = $self->AddPage( $table->GetTitle() );
+		my $scrollPnl = $pageTab->{"scrollPnl"};
+
+		# physics structure of groups, tab is parent
+		my $groupTableForm = GroupTableForm->new($scrollPnl);
+
+		#crete physic "table" structure from "groupTable" object
+		#my $table = $self->__DefineTableGroups();
+		$groupTableForm->InitGroupTable( $table, $inCAM );
+
+		my $scrollSizer = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+		$scrollSizer->Add( $groupTableForm, 1, &Wx::wxEXPAND );
+
+		#$scrollSizer->Layout();
+		$scrollPnl->SetSizer($scrollSizer);
+
+		# get height of group table, for init scrollbar panel
+		$scrollPnl->Layout();
+
+		$self->{"nb"}->InvalidateBestSize();
+		$scrollPnl->FitInside();
+
+		#$self->{"mainFrm"}->Layout();
+		$scrollPnl->Layout();
+		my ( $width, $height ) = $groupTableForm->GetSizeWH();
+
+		diag( "Table title: " . $table->GetTitle() . ", dim: $width x $height \n" );
+
+		#compute number of rows. One row has height 10 px
+		$scrollPnl->SetRowCount( $height / 10 );
+
+		$defSelPageTab = $pageTab if ( defined $groupTables->GetDefaultSelected() && $table eq $groupTables->GetDefaultSelected() );
+	}
+
+	# Set default selected table
+	if ( defined $groupTables->GetDefaultSelected() ) {
+		$self->{"nb"}->SetSelection( $groupTables->GetDefaultSelected()->GetOrderNumber() - 1 );
+	}
+
+	$self->{"mainFrm"}->Thaw();
+}
+
+# Create event/handler connection between groups by binding handlers to evnets
+# provided by groups
+sub BuildGroupEventConn {
+	my $self = shift;
+	# class keep rows structure and group instances
+	my $groupTables = shift;
+
+	# Do conenction between units events/handlers
+	my @units = $groupTables->GetAllUnits();
+
+	foreach my $unitA (@units) {
+
+		my $evtClassA = $unitA->GetEventClass();
+
+		unless ($evtClassA) {
+			next;
+		}
+
+		my @unitEvents = $unitA->GetEventClass()->GetEvents();
+
+		# search handler for this event type in all units
+		foreach my $unitB (@units) {
+
+			my $evtClassB = $unitB->GetEventClass();
+
+			if ($evtClassB) {
+				$unitB->GetEventClass()->ConnectEvents( \@unitEvents );
+			}
+
+		}
+	}
+
+}
+
+
 sub __OnExportSync {
 	my $self = shift;
 
@@ -187,7 +272,7 @@ sub __OnExportSync {
 }
 
 sub __OnExportASync {
-	my $self = shift;
+	my $self     = shift;
 	my $onServer = shift;
 
 	#raise events
@@ -237,7 +322,7 @@ sub __SetLayout {
 		-1,                                             # ID -1 means any
 		"Exporter checker Job: " . $self->{"jobId"},    # title
 		&Wx::wxDefaultPosition,                         # window position
-		[ 1120, 750 ],    # size
+		[ 1150, 800 ],    # size
 		                  #&Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
 	);
 
@@ -279,7 +364,6 @@ sub __SetLayout {
 	my $imagelist = Wx::ImageList->new( 10, 25 );
 	$nb->AssignImageList($imagelist);
 
-	
 	my $btnSync = Wx::Button->new( $pnlBtns, -1, "Export", &Wx::wxDefaultPosition, [ 130, 33 ] );
 	$btnSync->SetFont($Widgets::Style::fontBtn);
 	my $btnASyncServer = Wx::Button->new( $pnlBtns, -1, "Export on server (beta)", &Wx::wxDefaultPosition, [ 160, 33 ] );
@@ -289,15 +373,15 @@ sub __SetLayout {
 
 	# REGISTER EVENTS
 
-	Wx::Event::EVT_BUTTON( $btnSync,  -1, sub { $self->__OnExportSync() } );
-	Wx::Event::EVT_BUTTON( $btnASyncServer,  -1, sub { $self->__OnExportASync(1) } );
-	Wx::Event::EVT_BUTTON( $btnASync, -1, sub { $self->__OnExportASync() } );
-	 
+	Wx::Event::EVT_BUTTON( $btnSync,        -1, sub { $self->__OnExportSync() } );
+	Wx::Event::EVT_BUTTON( $btnASyncServer, -1, sub { $self->__OnExportASync(1) } );
+	Wx::Event::EVT_BUTTON( $btnASync,       -1, sub { $self->__OnExportASync() } );
+
 	$mainFrm->{"onClose"}->Add( sub { $self->__OnCloseHandler(@_) } );
 
-	$szBtnsChild->Add( $btnSync,  0, &Wx::wxALL, 2 );
-	$szBtnsChild->Add( $btnASync, 0, &Wx::wxALL, 2 );
-	$szBtnsChild->Add( $btnASyncServer,  0, &Wx::wxALL, 2 );
+	$szBtnsChild->Add( $btnSync,        0, &Wx::wxALL, 2 );
+	$szBtnsChild->Add( $btnASync,       0, &Wx::wxALL, 2 );
+	$szBtnsChild->Add( $btnASyncServer, 0, &Wx::wxALL, 2 );
 	$szBtns->Add( 10, 10, 1, &Wx::wxGROW );
 	$szBtns->Add( $szBtnsChild, 0, &Wx::wxALIGN_RIGHT | &Wx::wxALL );
 	$pnlBtns->SetSizer($szBtns);
@@ -326,8 +410,9 @@ sub __SetLayout {
 
 	$self->{"nb"} = $nb;
 
-	$self->{"btnSync"}  = $btnSync;
-	$self->{"btnASync"} = $btnASync;
+	$self->{"btnSync"}        = $btnSync;
+	$self->{"btnASync"}       = $btnASync;
+	$self->{"btnASyncServer"} = $btnASyncServer;
 
 	return $mainFrm;
 }
@@ -480,14 +565,14 @@ sub __SetLayoutOther {
 	push( @affectOrder, HegMethods->GetOrdersByState( $self->{"jobId"}, 2 ) );    # Orders on Predvzrobni priprava
 	push( @affectOrder, HegMethods->GetOrdersByState( $self->{"jobId"}, 4 ) );    # Orders on Ve vyrobe
 
-	my @affectOrderNum = sort{ $a<=>$b } map { $_->{"reference_subjektu"} =~ /-(\d+)/ } @affectOrder;
+	my @affectOrderNum = sort { $a <=> $b } map { $_->{"reference_subjektu"} =~ /-(\d+)/ } @affectOrder;
 
 	$noteTextTxt = Wx::StaticText->new( $statBox, -1, "   REORDER (" . join( "; ", @affectOrderNum ) . ")   ", &Wx::wxDefaultPosition, [ 110, 22 ] );
 	$noteTextTxt->SetForegroundColour( Wx::Colour->new( 255, 0, 0 ) );
 
 	#my $firstOrder = grep { $_ == 1 } @affectOrderNum;
 
-	if (scalar(@affectOrderNum) <= 1) {
+	if ( scalar(@affectOrderNum) <= 1 ) {
 		$noteTextTxt->Hide();
 	}
 
@@ -496,10 +581,8 @@ sub __SetLayoutOther {
 	# if affected orders are all reorders and has state "Hotovo-zadat" or "Zadano"
 	# Uncheck sent to produce
 
-	my @exported = grep {
-		$_->{"aktualni_krok"} eq EnumsIS->CurStep_HOTOVOZADAT
-		  || $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZADANO
-	} @affectOrder;
+	my @exported =
+	  grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_HOTOVOZADAT || $_->{"aktualni_krok"} eq EnumsIS->CurStep_ZADANO } @affectOrder;
 
 	if ( scalar(@exported) == scalar(@affectOrder) ) {
 		$sentToProduce = 0;
@@ -512,8 +595,7 @@ sub __SetLayoutOther {
 	#$chbProduce->Refresh();
 	#$chbProduce->SetBackgroundStyle(&Wx::wxBG_STYLE_TRANSPARENT);
 	$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
-	Wx::Event::EVT_ERASE_BACKGROUND( $chbProduce, sub { $self->Test(@_) } );
-
+  
 	$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 	$chbProduce->Refresh();
 
@@ -529,18 +611,7 @@ sub __SetLayoutOther {
 	return $szStatBox;
 
 }
-
-sub Test {
-	my $self   = shift;
-	my $parent = shift;
-	my $evt    = shift;
-
-	my $dc = $evt->GetDC();
-
-	$dc->Clear();
-
-	# $self->{"chbProduce"}->Refresh();
-}
+ 
 
 sub __OnScrollPaint {
 	my $self      = shift;
@@ -561,76 +632,7 @@ sub __OnResize {
 
 }
 
-sub BuildGroupTableForm {
-	my $self = shift;
 
-	# class keep rows structure and group instances
-	my $groupTables = shift;
-	$self->{"inCAM"} = shift;
-
-	$self->{"mainFrm"}->Freeze();
-
-	foreach my $table ( $groupTables->GetTables() ) {
-
-		my $pageTab   = $self->AddPage( $table->GetTitle() );
-		my $scrollPnl = $pageTab->{"scrollPnl"};
-
-		# physics structure of groups, tab is parent
-		my $groupTableForm = GroupTableForm->new($scrollPnl);
-
-		#crete physic "table" structure from "groupTable" object
-		#my $table = $self->__DefineTableGroups();
-		$groupTableForm->InitGroupTable( $table, $self->{"inCAM"} );
-
-		my $scrollSizer = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-		$scrollSizer->Add( $groupTableForm, 1, &Wx::wxEXPAND );
-
-		#$scrollSizer->Layout();
-		$scrollPnl->SetSizer($scrollSizer);
-
-		# get height of group table, for init scrollbar panel
-		$scrollPnl->Layout();
-
-		$self->{"nb"}->InvalidateBestSize();
-		$scrollPnl->FitInside();
-
-		#$self->{"mainFrm"}->Layout();
-		$scrollPnl->Layout();
-		my ( $width, $height ) = $groupTableForm->GetSizeWH();
-
-		#compute number of rows. One row has height 10 px
-		$scrollPnl->SetRowCount( $height / 10 );
-		 
-	}
-
-	$self->{"mainFrm"}->Thaw();
-
-	# Do conenction between units events/handlers
-	my @units = $groupTables->GetAllUnits();
-
-	foreach my $unitA (@units) {
-
-		my $evtClassA = $unitA->GetEventClass();
-
-		unless ($evtClassA) {
-			next;
-		}
-
-		my @unitEvents = $unitA->GetEventClass()->GetEvents();
-
-		# search handler for this event type in all units
-		foreach my $unitB (@units) {
-
-			my $evtClassB = $unitB->GetEventClass();
-
-			if ($evtClassB) {
-				$unitB->GetEventClass()->ConnectEvents( \@unitEvents );
-			}
-
-		}
-	}
-
-}
 
 sub _AddEvent {
 	my $self      = shift;

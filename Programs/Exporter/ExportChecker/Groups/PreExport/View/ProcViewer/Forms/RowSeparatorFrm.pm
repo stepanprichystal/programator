@@ -28,7 +28,7 @@ sub new {
 	my $type   = shift;
 	my $text   = shift;
 
-	my $width = 60;
+	my $width = 70;
 
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
 
@@ -40,16 +40,16 @@ sub new {
 	$self->{"textSize"} = 8;
 
 	if ( $type eq Enums->RowSeparator_PRPG ) {
-		$self->__SetLayoutPrepreg( $text, $width, 8 );
+		$self->__SetLayoutPrepreg( $text, $width, 10 );
 	}
 	elsif ( $type eq Enums->RowSeparator_PRPGCOVERLAY ) {
-		$self->__SetLayoutPrepregCvrl( $text, $width, 8 );
+		$self->__SetLayoutPrepregCvrl( $text, $width, 10 );
 	}
 	elsif ( $type eq Enums->RowSeparator_CORE ) {
-		$self->__SetLayoutCore( $width, 15 );
+		$self->__SetLayoutCore( $width, 17 );
 	}
 	elsif ( $type eq Enums->RowSeparator_COVERLAY ) {
-		$self->__SetLayoutCvrl( $text, $width, 8 );
+		$self->__SetLayoutCvrl( $text, $width, 10 );
 	}
 
 	#EVENTS
@@ -82,9 +82,9 @@ sub __SetLayoutPrepreg {
 
 	# DEFINE STRUCTURE
 
-	$rowHeadSz->Add( 1, ( $text ? 5 : 1 ), 1, &Wx::wxEXPAND );
+	$rowHeadSz->Add( 1, ( $text ? 5 : 2 ), 1, &Wx::wxEXPAND );
 	$rowHeadSz->Add( $rowHeadPnl, 0, &Wx::wxLEFT, ( $width - $width * $widthPerc ) / 2 );
-	$rowHeadSz->Add( 1, ( $text ? 5 : 1 ), 1, &Wx::wxEXPAND );
+	$rowHeadSz->Add( 1, ( $text ? 5 : 2 ), 1, &Wx::wxEXPAND );
 
 	$szMain->Add( $rowHeadSz, 0, );
 	$szMain->Add( $rowTxt, 0, &Wx::wxLEFT, 10 ) if ( defined $text );
@@ -114,9 +114,9 @@ sub __SetLayoutCvrl {
 
 	# DEFINE STRUCTURE
 
-	$rowHeadSz->Add( 1, ( $text ? 5 : 1 ), 1, &Wx::wxEXPAND );
+	$rowHeadSz->Add( 1, ( $text ? 5 : 2 ), 1, &Wx::wxEXPAND );
 	$rowHeadSz->Add( $rowHeadPnl, 0, &Wx::wxLEFT, 0 );
-	$rowHeadSz->Add( 1, ( $text ? 5 : 1 ), 1, &Wx::wxEXPAND );
+	$rowHeadSz->Add( 1, ( $text ? 5 : 2 ), 1, &Wx::wxEXPAND );
 
 	$szMain->Add( $rowHeadSz, 0, );
 	$szMain->Add( $rowTxt, 0, &Wx::wxLEFT, 10 ) if ( defined $text );
@@ -177,9 +177,9 @@ sub __SetLayoutPrepregCvrl {
 	$rowHead2Sz->Add( $cvrlPnl,  0, );
 	$rowHead2Sz->Add( $prpgRPnl, 0, );
 
-	$rowHead1Sz->Add( 1, ( $text ? 5 : 1 ), 1, &Wx::wxEXPAND );
+	$rowHead1Sz->Add( 1, ( $text ? 5 : 2 ), 1, &Wx::wxEXPAND );
 	$rowHead1Sz->Add( $rowHead2Sz, 0, &Wx::wxALL, 0 );
-	$rowHead1Sz->Add( 1, ( $text ? 5 : 1 ), 1, &Wx::wxEXPAND );
+	$rowHead1Sz->Add( 1, ( $text ? 5 : 2 ), 1, &Wx::wxEXPAND );
 
 	$szMain->Add( $rowHead1Sz, 0, );
 	$szMain->Add( $rowTxt, 0, &Wx::wxLEFT, 10 ) if ( defined $text );

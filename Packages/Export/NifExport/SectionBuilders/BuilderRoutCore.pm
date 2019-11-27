@@ -44,8 +44,8 @@ sub Build {
 	my $stepName = "panel";
 	my %nifData  = %{ $self->{"nifData"} };
 
-	my $stackup = Stackup->new( $self->{'jobId'} );
-	my $stackupNC = StackupNC->new($self->{'jobId'}, $inCAM);
+	my $stackup = Stackup->new( $inCAM, $self->{'jobId'} );
+	my $stackupNC = StackupNC->new( $inCAM, $self->{'jobId'});
 	my $coreCnt = $stackupNC->GetCoreCnt();
 
 	# comment
@@ -60,7 +60,7 @@ sub Build {
 
 		my $coreNum = $i + 1;
 
-		my $core = $stackupNC->GetCore($coreNum);
+		my $core = $stackupNC->GetNCCoreProduct($coreNum);
 		my $existDrill = $core->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 
 		#if ( $self->_IsRequire( "frezovani_jadra_po_c_" . $coreNum ) ) {
@@ -76,7 +76,7 @@ sub Build {
 
 		my $coreNum = $i + 1;
 
-		my $core = $stackupNC->GetCore($coreNum);
+		my $core = $stackupNC->GetNCCoreProduct($coreNum);
 		my $existDrill = $core->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 
 		#if ( $self->_IsRequire( "frezovani_jadra_po_s_" . $coreNum ) ) {

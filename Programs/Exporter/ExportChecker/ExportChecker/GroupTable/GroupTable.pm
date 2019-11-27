@@ -40,7 +40,7 @@ sub GetTitle{
 
 sub GetOrderNumber{
 	my $self = shift;
-	return $self->{"order"}*100; # x 100 because group in first table has order 101, 102, 103. In secodn table 201,202,203
+	return $self->{"order"};
 }
 
 sub AddRow {

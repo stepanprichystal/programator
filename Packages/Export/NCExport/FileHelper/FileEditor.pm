@@ -98,7 +98,7 @@ sub EditAfterOpen {
 	# - J<number of core> if opItem is core
 	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill && $self->{"layerCnt"} > 2 ) {
 
-		my $stackup = Stackup->new( $self->{"jobId"} );
+		my $stackup = Stackup->new($self->{"inCAM"},  $self->{"jobId"} );
 
 		# case of blind drill (not last pressing) or burried (core drilling) or only frame drill (v1)
 		if ( $opItem->{"name"} =~ /c[0-9]+/ || $opItem->{"name"} =~ /v1/ || $opItem->{"name"} =~ /j[0-9]+/ ) {
@@ -115,7 +115,7 @@ sub EditAfterOpen {
 				if ( $opItem->GetPressOrder() != $stackup->GetPressCount() ) {
 
 					my $press     = $pressInfo{ $opItem->GetPressOrder() };
-					my $topCuName = $press->{"top"};
+					my $topCuName = $press->GetTopCopperLayer();
 					$cuThick = $stackup->GetCuLayer($topCuName)->GetThick();
 				}
 

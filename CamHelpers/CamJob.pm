@@ -55,6 +55,7 @@ sub GetSignalLayerNames {
 	return @result;
 }
 
+# Return all layers which are board and type of: signal; mixed; powerground
 sub GetSignalLayer {
 	my $self    = shift;
 	my $inCAM   = shift;
@@ -77,6 +78,7 @@ sub GetSignalLayer {
 			if ( $rowType eq "signal" || $rowType eq "mixed" || $rowType eq "power_ground" ) {
 
 				my %info = ();
+				$info{"gROWrow"}       = ${ $inCAM->{doinfo}{gROWrow} }[$i];
 				$info{"gROWname"}       = ${ $inCAM->{doinfo}{gROWname} }[$i];
 				$info{"gROWlayer_type"} = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
 				$info{"gROWpolarity"}   = ${ $inCAM->{doinfo}{gROWpolarity} }[$i];
@@ -86,19 +88,40 @@ sub GetSignalLayer {
 			}
 		}
 	}
-	
+
 	# filter out outer layers
-	if($noOuter){
-		@arr =  grep { $_->{"gROWname"} !~ /^[cs]$/} @arr;
+	if ($noOuter) {
+		@arr = grep { $_->{"gROWname"} !~ /^[cs]$/ } @arr;
 	}
-	
-	
+
 	# filter out inner layers
-	if($noInner){
-		@arr =  grep { $_->{"gROWname"} !~ /^v\d+$/} @arr;
-	}	
-	
+	if ($noInner) {
+		@arr = grep { $_->{"gROWname"} !~ /^v\d+$/ } @arr;
+	}
+
 	return @arr;
+}
+
+# Return all layers which are not directly signal but special:
+# - layers for plugging vias
+# - layers for outer cores Copper exposing
+sub GetSignalExtLayer {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+ 
+
+	my @boarBase = $self->GetBoardBaseLayers( $inCAM, $jobId );
+
+	my @extraL = ();
+
+	# Add plug layers
+	push( @extraL, grep { $_->{"gROWname"} =~ /^plg[csv]\d*$/ } @boarBase );
+
+	# Add outer core layers
+	push( @extraL, grep { $_->{"gROWname"} =~ /^outer[csv]\d*$/ } @boarBase );
+ 
+	return @extraL;
 }
 
 #Return limits of profile
@@ -349,11 +372,12 @@ sub GetAllLayers {
 				  entity_type     => 'matrix',
 				  entity_path     => "$jobId/matrix",
 				  data_type       => 'ROW',
-				  parameters      => "layer_type+name+type+context+polarity"
+				  parameters      => "layer_type+name+type+context+polarity+row"
 	);
 
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gROWname} } ) ; $i++ ) {
 		my %info = ();
+		$info{"gROWrow"}       = ${ $inCAM->{doinfo}{gROWrow} }[$i];
 		$info{"gROWname"}       = ${ $inCAM->{doinfo}{gROWname} }[$i];
 		$info{"gROWlayer_type"} = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
 		$info{"gROWcontext"}    = ${ $inCAM->{doinfo}{gROWcontext} }[$i];
@@ -579,13 +603,13 @@ sub GetJobList {
 			last;
 		}
 	}
-	
+
 	my $jobListRef = $inCAM->{doinfo}{gJOBS_LIST};
 
-	die "InCAM error, unable to read database jobs from joblist.xml" if(!defined $jobListRef);
+	die "InCAM error, unable to read database jobs from joblist.xml" if ( !defined $jobListRef );
 
 	return @{$jobListRef};
- 
+
 }
 
 # Return if job is imported and exit in incamdb
@@ -650,9 +674,9 @@ sub GetFinalPcbThick {
 
 	my $thick;
 
-	if ( $self->GetSignalLayerCnt($inCAM, $jobId) > 2 ) {
+	if ( $self->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
 
-		my $stackup = Stackup->new($inCAM,$jobId);
+		my $stackup = Stackup->new( $inCAM, $jobId );
 
 		$thick = $stackup->GetFinalThick();
 	}
@@ -678,7 +702,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId = "d152456";
 
-	my @lim = CamJob->GetJobList( $inCAM );
+	my @lim = CamJob->GetJobList($inCAM);
 
 	print @lim
 

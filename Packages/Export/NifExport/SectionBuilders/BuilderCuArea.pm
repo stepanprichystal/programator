@@ -60,10 +60,10 @@ sub Build {
 	my $pressCnt;
 
 	if ( $self->{"layerCnt"} > 2 ) {
-		$stackup   = Stackup->new($jobId);
-		$stackupNC = StackupNC->new( $jobId, $inCAM );
+		$stackup   = Stackup->new($inCAM, $jobId);
+		$stackupNC = StackupNC->new( $inCAM, $jobId );
 		$coreCnt   = $stackupNC->GetCoreCnt();
-		$pressCnt  = $stackupNC->GetPressCnt();
+		$pressCnt  = $stackupNC->GetPressCount();
 	}
 
 	my $pltMillExist;
@@ -287,10 +287,9 @@ sub Build {
 		for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
 			my $pressOrder = $i + 1;
-			my $press      = $stackupNC->GetPress($pressOrder);
+			my $press      = $stackupNC->GetNCPressProduct($pressOrder);
 
-			my $stackupNCTopL = $press->GetTopSigLayer();
-			my $stackupNCBotL = $press->GetBotSigLayer();
+ 
 
 			my $existTopPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 			my $existPlt_bDrillTop = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
@@ -300,23 +299,23 @@ sub Build {
 
 			if ( $existTopPlt_nDrill || $existPlt_bDrillTop || $existBotPlt_nDrill || $existPlt_bDrillBot ) {
 
-				my $actualThick = $stackup->GetThickByCuLayer( $stackupNCTopL->GetName() );    #in µm
-				my $baseCuThick = $stackup->GetCuLayer( $stackupNCTopL->GetName() )->GetThick();
+				my $actualThick = $stackup->GetThickByCuLayer( $press->GetTopCopperLayer() );    #in µm
+				my $baseCuThick = $stackup->GetCuLayer( $press->GetTopCopperLayer() )->GetThick();
 
 				my %resultTop;
 				my %resultBot;
 
-				if ( $pressOrder == $stackupNC->GetPressCnt() ) {
-					%resultTop = CamCopperArea->GetCuAreaByBox( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", $stackupNCTopL->GetName(),
+				if ( $pressOrder == $stackupNC->GetPressCount() ) {
+					%resultTop = CamCopperArea->GetCuAreaByBox( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", $press->GetTopCopperLayer(),
 																, undef, \%frLim, undef, 1 );
-					%resultBot = CamCopperArea->GetCuAreaByBox( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $stackupNCBotL->GetName(),
+					%resultBot = CamCopperArea->GetCuAreaByBox( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $press->GetBotCopperLayer(),
 																, \%frLim, undef, 1 );
 				}
 				else {
 					%resultTop =
-					  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", $stackupNCTopL->GetName(), undef, undef, 1 );
+					  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", $press->GetTopCopperLayer(), undef, undef, 1 );
 					%resultBot =
-					  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $stackupNCBotL->GetName(), undef, 1 );
+					  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $press->GetBotCopperLayer(), undef, 1 );
 				}
 
 				$section->AddRow( "g_plocha_c_vv_" . $pressOrder, $resultTop{"area"} );
@@ -336,23 +335,20 @@ sub Build {
 		for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
 			my $coreNum = $i + 1;
-			my $core    = $stackupNC->GetCore($coreNum);
+			my $core    = $stackupNC->GetNCCoreProduct($coreNum);
 
 			my $existDrillTop = $core->ExistNCLayers( Enums->SignalLayer_TOP,undef,  EnumsGeneral->LAYERTYPE_plt_cDrill );
 			my $existDrillBot = $core->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_cDrill );
 
 			if ( $existDrillTop || $existDrillBot ) {
-
-				my $stackupNCTopL = $core->GetTopSigLayer();
-				my $stackupNCBotL = $core->GetBotSigLayer();
-
-				my $actualThick = $stackup->GetThickByCuLayer( $stackupNCTopL->GetName() );    #in µm
-				my $baseCuThick = $stackup->GetCuLayer( $stackupNCTopL->GetName() )->GetThick();
+ 
+				my $actualThick = $stackup->GetThickByCuLayer( $core->GetTopCopperLayer() );    #in µm
+				my $baseCuThick = $stackup->GetCuLayer( $core->GetTopCopperLayer() )->GetThick();
 
 				my %resultTop =
-				  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", $stackupNCTopL->GetName(), undef, undef, 1 );
+				  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", $core->GetTopCopperLayer(), undef, undef, 1 );
 				my %resultBot =
-				  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $stackupNCBotL->GetName(), undef, 1 );
+				  CamCopperArea->GetCuArea( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $core->GetTopCopperLayer(), undef, 1 );
 
 				$section->AddRow( "g_plocha_c_" . $coreNum, $resultTop{"area"} );
 				$section->AddRow( "g_plocha_s_" . $coreNum, $resultBot{"area"} );

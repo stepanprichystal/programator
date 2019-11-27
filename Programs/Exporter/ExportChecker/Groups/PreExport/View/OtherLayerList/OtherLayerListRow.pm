@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::PlotListRow;
+package Programs::Exporter::ExportChecker::Groups::PreExport::View::OtherLayerList::OtherLayerListRow;
 use base qw(Widgets::Forms::CustomControlList::ControlListRow);
 
 #3th party library
@@ -19,7 +19,6 @@ use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::LayerColorPnl';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotList::FilmForm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -27,19 +26,19 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotLi
 
 sub new {
 
-	my $class  = shift;
-	my $parent = shift;
-	my $layer  = shift;
+	my $class     = shift;
+	my $parent    = shift;
+	my $layerName = shift;
 
-	#my $filmRuleSet1 = shift;
-	#my $filmRuleSet2 = shift;
 	my $rowHeight = 20;
 
-	my $self = $class->SUPER::new( -1, $parent, $layer->{"gROWname"}, $rowHeight );
+	my $self = $class->SUPER::new( -1, $parent, $layerName, $rowHeight );
 
 	bless($self);
 
-	$self->{"layer"}     = $layer;
+	# PROPERTIES
+
+	$self->{"layerName"} = $layerName;
 	$self->{"rowHeight"} = $rowHeight;
 
 	# this values are not represented  by controls
@@ -47,46 +46,15 @@ sub new {
 	$self->{"shrinkX"} = undef;
 	$self->{"shrinkY"} = undef;
 
-	#$self->{"filmRuleSet1"} = $filmRuleSet1;
-	#$self->{"filmRuleSet2"} = $filmRuleSet2;
-	$self->{"filmRuleSet1"} = undef;
-	$self->{"filmRuleSet2"} = undef;
-
 	$self->__SetLayout();
 
 	# EVENTS
+	$self->{"otherLayerSettChangedEvt"} = Event->new();
 
 	return $self;
 }
 
-sub SetRuleSets {
-	my $self = shift;
-
-	$self->{"filmRuleSet1"} = shift;
-	$self->{"filmRuleSet2"} = shift;
-
-	$self->{"film1Frm"}->SetRuleSet( $self->{"filmRuleSet1"} );
-	$self->{"film2Frm"}->SetRuleSet( $self->{"filmRuleSet2"} );
-}
-
-sub EnableEditing {
-	my $self   = shift;
-	my $enable = shift;
-
-	if ($enable) {
-		$self->{"polarityCb"}->Enable();
-		$self->{"mirrorChb"}->Enable();
-
-	}
-	else {
-
-		$self->{"polarityCb"}->Disable();
-		$self->{"mirrorChb"}->Disable();
-	}
-
-}
-
-sub SetPolarity {
+sub SetPolarityVal {
 	my $self = shift;
 	my $val  = shift;
 
@@ -98,32 +66,68 @@ sub SetPolarity {
 	}
 }
 
-sub SetMirror {
+sub GetPolarityVal {
+	my $self = shift;
+
+	return $self->{"polarityCb"}->GetValue() eq "+" ? "positive" : "negative";
+}
+
+sub SetMirrorVal {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"mirrorChb"}->SetValue($val);
 }
 
-sub SetComp {
+sub GetMirrorVal {
+	my $self = shift;
+
+	if ( $self->{"mirrorChb"}->IsChecked() ) {
+		return 1;
+	}
+	else {
+		return 0;
+
+	}
+}
+
+sub SetCompVal {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"comp"} = $val;
 }
 
-sub SetShrinkX {
+sub GetCompVal {
+	my $self = shift;
+
+	return $self->{"comp"};
+}
+
+sub SetShrinkXVal {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"shrinkX"} = $val;
 }
 
-sub SetShrinkY {
+sub GetShrinkXVal {
+	my $self = shift;
+
+	return $self->{"shrinkX"};
+}
+
+sub SetShrinkYVal {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"shrinkY"} = $val;
+}
+
+sub GetShrinkYVal {
+	my $self = shift;
+
+	return $self->{"shrinkY"};
 }
 
 sub __SetLayout {
@@ -131,64 +135,29 @@ sub __SetLayout {
 
 	# DEFINE CELLS
 
-	my $layerColor = LayerColorPnl->new( $self->{"parent"}, $self->{"layer"}->{"gROWname"}, $self->{"rowHeight"} );
+	my $layerColor = LayerColorPnl->new( $self->{"parent"}, $self->{"layerName"}, $self->{"rowHeight"} );
 
 	my @polar = ( "+", "-" );
 	my $polarityCb =
 	  Wx::ComboBox->new( $self->{"parent"}, -1, $polar[0], &Wx::wxDefaultPosition, [ 10, $self->{"rowHeight"} ], \@polar, &Wx::wxCB_READONLY );
-	$polarityCb->Disable();
+
 	my $fontPolar = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_MAX );
 
 	#$polarityCb->SetFont($fontPolar);
 	my $mirrorChb = Wx::CheckBox->new( $self->{"parent"}, -1, "", [ -1, -1 ], [ 10, $self->{"rowHeight"} ] );
-	$mirrorChb->Disable();
-
-	#my $compTxt = Wx::TextCtrl->new( $self->{"parent"}, -1, "", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ] );
-
-	#my $shrinkXTxt = Wx::TextCtrl->new( $self->{"parent"}, -1, "-", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ], &Wx::wxCB_READONLY );
-
-	#my $shrinkYTxt = Wx::TextCtrl->new( $self->{"parent"}, -1, "-", &Wx::wxDefaultPosition, [ 20, $self->{"rowHeight"} ], &Wx::wxCB_READONLY );
-
-	#$arrowTxt->SetFont($Widgets::Style::fontLblBold);
-
-	my $film1Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet1"}, $self->{"rowHeight"} );
-	my $film2Frm = FilmForm->new( $self->{"parent"}, $self->{"filmRuleSet2"}, $self->{"rowHeight"} );
-
-	# SET EVENTS
-	#	Wx::Event::EVT_CHECKBOX( $mirrorChb, -1, sub { $self->__OnRowChanged(@_) } );
-	#	Wx::Event::EVT_COMBOBOX( $polarityCb, -1, sub { $self->__OnRowChanged(@_) } );
-	#	Wx::Event::EVT_TEXT( $compTxt,       -1, sub { $self->__OnRowChanged(@_) } );
-	#	Wx::Event::EVT_TEXT( $technologyTxt, -1, sub { $self->__OnRowChanged(@_) } );
-
 	$self->_AddCell($layerColor);
 	$self->_AddCell($polarityCb);
 	$self->_AddCell($mirrorChb);
 
-	#$self->_AddCell($compTxt);
-	#$self->_AddCell($shrinkXTxt);
-	#$self->_AddCell($shrinkYTxt);
-	$self->_AddCell($film1Frm);
-	$self->_AddCell($film2Frm);
+	# SET EVENTS
+	Wx::Event::EVT_CHECKBOX( $mirrorChb, -1, sub { $self->{"otherLayerSettChangedEvt"}->Do( $self->{"layerName"} ) } );
+	Wx::Event::EVT_COMBOBOX( $polarityCb, -1, sub { $self->{"otherLayerSettChangedEvt"}->Do( $self->{"layerName"} ) } );
 
 	# SET REFERENCES
 
-	$self->{"film1Frm"}   = $film1Frm;
-	$self->{"film2Frm"}   = $film2Frm;
 	$self->{"polarityCb"} = $polarityCb;
 	$self->{"mirrorChb"}  = $mirrorChb;
 
-	#$self->{"compTxt"}    = $compTxt;
-	#$self->{"shrinkXTxt"} = $shrinkXTxt;
-	#$self->{"shrinkYTxt"} = $shrinkYTxt;
-
-}
-
-sub PlotSelectionChanged {
-	my $self           = shift;
-	my @selectedLayers = @{ shift(@_) };
-
-	$self->{"film1Frm"}->PlotSelectChanged( \@selectedLayers );
-	$self->{"film2Frm"}->PlotSelectChanged( \@selectedLayers );
 }
 
 # =====================================================================
@@ -210,10 +179,9 @@ sub SetLayerValues {
 	}
 
 	$self->{"mirrorChb"}->SetValue( $lInfo{"mirror"} );
-
-	$self->{"comp"}    = $lInfo{"comp"};
-	$self->{"shrinkX"} = $lInfo{"shrinkX"};
-	$self->{"shrinkY"} = $lInfo{"shrinkX"};
+	$self->{"compTxt"}->SetValue( $lInfo{"comp"} );
+	$self->{"shrinkX"}->SetValue( $lInfo{"shrinkX"} );
+	$self->{"shrinkY"}->SetValue( $lInfo{"shrinkX"} );
 }
 
 sub GetLayerValues {
@@ -234,11 +202,11 @@ sub GetLayerValues {
 		$lInfo{"mirror"} = 0;
 
 	}
-	$lInfo{"comp"} = $self->{"comp"};
+	$lInfo{"comp"} = $self->{"compTxt"}->GetValue();
 
-	$lInfo{"shrinkX"} = $self->{"shrinkX"};
+	$lInfo{"shrinkX"} = $self->{"shrinkXTxt"}->GetValue();
 
-	$lInfo{"shrinkY"} = $self->{"shrinkY"};
+	$lInfo{"shrinkY"} = $self->{"shrinkYTxt"}->GetValue();
 
 	return %lInfo;
 }

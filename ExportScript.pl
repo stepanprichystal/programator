@@ -3525,12 +3525,12 @@ sub _MakeStackup {
   								");
   								
   				if (HegMethods->GetPcbIsPool($jobName) == 1) {
-  										StackupDefault->CreateStackup($jobName, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
+  										StackupDefault->CreateStackup($genesis, $jobName, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
   				}else{
 	  					new MessageForm( Enums::MessageType->WARNING, \@messField, \@btns, \$result);
   								if ($result == 1) {
   										print STDERR 'jsem zde';
-  										StackupDefault->CreateStackup($jobName, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
+  										StackupDefault->CreateStackup($genesis, $jobName, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
 	  							}else{
 	  									print STDERR 'jsem ajjj';
 		  						}

@@ -31,18 +31,19 @@ sub new {
 }
 
 sub AddCell {
-	my $self      = shift;
-	my $unit = shift;
+	my $self  = shift;
+	my $unit  = shift;
 	my $width = shift;
-	
+
 	my @allUnits = $self->{"tableRef"}->GetAllUnits();
-	my $tabOrderNum = $self->{"tableRef"}->GetOrderNumber();
-	
-	
+
+	# x 100 because group in first table has order 101, 102, 103. In secodn table 201,202,203;
+	my $tabOrderNum = $self->{"tableRef"}->GetOrderNumber() * 100;
+
 	$unit->SetCellWidth($width);
- 	$unit->SetExportOrder($tabOrderNum + scalar(@allUnits));
- 	
-	push( @{$self->{"cells"}}, $unit );
+	$unit->SetExportOrder( $tabOrderNum + scalar(@allUnits) );
+
+	push( @{ $self->{"cells"} }, $unit );
 
 	return $unit;
 
@@ -66,19 +67,19 @@ sub GetCells {
 #
 #		#my $m = $cell->GetGroupHeight();
 #
-#		 
+#
 #		#print "Vyska je:".$m->GetHeight()."\n";
 #		#print $m{"Height"};
 #		#print $m{"y"};
 #		#print $m{"Y"};
 #
 #		my  $height  = $cell->{"form"}->{"groupHeight"};
-#		
-#		
+#
+#
 #		my ($w, $h ) = $cell->{"form"}->GetSizeWH();
-#		
+#
 #		print "Height = ".$h."\n";
-#		
+#
 #		#my $height = $h;
 #
 #		if ( $height > $max ) {

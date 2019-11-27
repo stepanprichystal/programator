@@ -60,7 +60,7 @@ sub __SetLayout {
 	# DEFINE CELLS
 
 	# Row Head
-	my $rowHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 60, $self->{"rowHeight"} ] );
+	my $rowHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 70, $self->{"rowHeight"} ] );
 
 	if ( $productType eq StackEnums->Product_INPUT ) {
 

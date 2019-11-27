@@ -55,7 +55,7 @@ sub PreparePrepregLayers {
 
 	CamHelper->SetStep( $inCAM, $step );
 
-	my $stackup = Stackup->new($jobId);
+	my $stackup = Stackup->new($inCAM, $jobId);
 
 	# Prepreg No1
 

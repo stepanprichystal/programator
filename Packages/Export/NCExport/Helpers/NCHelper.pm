@@ -529,7 +529,7 @@ sub StoreOperationInfoTif {
 			$matThick = HegMethods->GetPcbMaterialThick($jobId);
 		}
 		else {
-			my $stackup = Stackup->new($jobId);
+			my $stackup = Stackup->new( $inCAM, $jobId);
 			$matThick = $stackup->GetThickByCuLayer( $layers[0]->{"NCSigStart"} )/1000;
 		}
 

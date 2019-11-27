@@ -23,6 +23,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUn
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitForm';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -40,13 +41,13 @@ sub new {
 
 	$self->{"inCAM"} = InCAM->new();
 	$self->{"jobId"} = shift;
-	
+
 	my $mainFrm = $self->__SetLayout($parent);
 
 	# Properties
-	
+
 	$mainFrm->Show();
-	
+	$mainFrm->Refresh();
 
 	return $self;
 }
@@ -67,19 +68,18 @@ sub __SetLayout {
 		-1,                            # ID -1 means any
 		"Checking export settings",    # title
 		&Wx::wxDefaultPosition,        # window position
-		[ 800, 800 ],                                             # size
+		[ 800, 800 ],                  # size
 		&Wx::wxCAPTION | &Wx::wxCLOSE_BOX | &Wx::wxSTAY_ON_TOP |
-		  &Wx::wxMINIMIZE_BOX   |  &Wx::wxSYSTEM_MENU   | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
+		  &Wx::wxMINIMIZE_BOX | &Wx::wxSYSTEM_MENU | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX
 	);
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
-	my $groupWrapperPnl = GroupWrapperForm->new($mainFrm, "Test");
+	my $groupWrapperPnl = GroupWrapperForm->new( $mainFrm, "Test" );
 
 	my $form = $self->_TestedForm($groupWrapperPnl);
 
 	# Insert initialized group to group wrapper
-	$groupWrapperPnl->Init($form );
 
 	#$groupWrapperPnl->{"pnlBody"}->Disable();
 	#$cell->{"form"}->Disable();
@@ -90,7 +90,9 @@ sub __SetLayout {
 	$szMain->Add( $groupWrapperPnl, 1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 
 	$mainFrm->SetSizer($szMain);
-	$mainFrm->Layout();
+
+	#$mainFrm->Layout();
+	$mainFrm->Refresh();
 
 	return $mainFrm;
 }
@@ -98,17 +100,29 @@ sub __SetLayout {
 sub _TestedForm {
 	my $self         = shift;
 	my $groupWrapper = shift;
-	
- 
 
-	my $d = DefaultInfo->new( $self->{"inCAM"}, $self->{"jobId"});
+	use aliased 'Packages::Export::PreExport::FakeLayers';
 
-	my $parent = $groupWrapper->GetParentForGroup();
-	my $nif = PreUnitForm->new( $parent, $self->{"inCAM"}, $self->{"jobId"}, $d );
-	
-	 
-	
-	return $nif;
+	my %types = FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, "panel", 1 );
+
+	my $d = DefaultInfo->new( $self->{"jobId"} );
+	$d->Init( $self->{"inCAM"} );
+
+	use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
+
+	my $preUnit = PreUnit->new( $self->{"jobId"} );
+
+	$preUnit->SetDefaultInfo($d);
+	$preUnit->InitDataMngr( $self->{"inCAM"} );
+
+	$preUnit->InitForm( $groupWrapper, $self->{"inCAM"} );
+
+	$groupWrapper->Init( $preUnit->GetForm() );
+
+	$preUnit->RefreshGUI();
+	$preUnit->GetForm()->DisableControls();
+
+	return $preUnit->GetForm();
 
 }
 
@@ -118,12 +132,10 @@ sub _TestedForm {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new(-1, "d152456" );
-	 
+	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "d262220" );
+
 	$test->MainLoop();
 }
-
- 
 
 1;
 

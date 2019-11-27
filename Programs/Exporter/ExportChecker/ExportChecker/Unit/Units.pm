@@ -18,6 +18,7 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
 #-------------------------------------------------------------------------------------------#
@@ -26,8 +27,7 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
- 
-  
+
 	$self->{"onCheckEvent"} = Event->new();
 
 	$self->{"defaultInfo"} = undef;
@@ -40,18 +40,16 @@ sub Init {
 	my $inCAM = shift;
 	my $jobId = shift;
 	my @units = @{ shift(@_) };
-	
- 
+
 	# Each unit contain reference on default info - info with general info about pcb
-	$self->{"defaultInfo"} = DefaultInfo->new( $inCAM, $jobId );
+	$self->{"defaultInfo"} = DefaultInfo->new($jobId);
+	$self->{"defaultInfo"}->Init($inCAM);
 
 	# Save to each unit->dataMngr default info
 	foreach my $unit (@units) {
-		
+
 		$unit->SetDefaultInfo( $self->{"defaultInfo"} );
 	}
-
- 
 
 	$self->{"units"} = \@units;
 
@@ -88,13 +86,19 @@ sub InitDataMngr {
 
 sub RefreshGUI {
 	my $self = shift;
-
-	#my $inCAM = shift;
-
 	foreach my $unit ( @{ $self->{"units"} } ) {
 
 		$unit->RefreshGUI();
-		$unit->GetForm()->DisableControls();
+	}
+
+}
+
+sub RefreshWrapper {
+	my $self = shift;
+
+	foreach my $unit ( @{ $self->{"units"} } ) {
+
+		$unit->RefreshWrapper();
 	}
 
 }
@@ -106,7 +110,8 @@ sub CheckBeforeExport {
 	#my $totalRes = 1;
 
 	# Check only units, which are in ACTIVEON state
-	my @activeOnUnits = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };
+	my @activeOnUnits =
+	  grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON || $_->GetGroupState() eq Enums->GroupState_ACTIVEALWAYS } @{ $self->{"units"} };
 
 	foreach my $unit (@activeOnUnits) {
 
@@ -134,34 +139,20 @@ sub CheckBeforeExport {
 	#return $totalRes;
 }
 
+# Return numbers of each state
 sub GetGroupState {
 	my $self = shift;
 
 	my $unitsCnt = scalar( @{ $self->{"units"} } );
 
-	my $result;
+	my %unitState;
 
-	my @allDisable   = grep { $_->GetGroupState() eq Enums->GroupState_DISABLE } @{ $self->{"units"} };
-	my @allActiveOff = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEOFF } @{ $self->{"units"} };
+	$unitState{ Enums->GroupState_ACTIVEALWAYS } = scalar( grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEALWAYS } @{ $self->{"units"} } );
+	$unitState{ Enums->GroupState_DISABLE }      = scalar( grep { $_->GetGroupState() eq Enums->GroupState_DISABLE } @{ $self->{"units"} } );
+	$unitState{ Enums->GroupState_ACTIVEOFF }    = scalar( grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEOFF } @{ $self->{"units"} } );
+	$unitState{ Enums->GroupState_ACTIVEON }     = scalar( grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} } );
 
-	if ( scalar(@allDisable) == $unitsCnt ) {
-
-		# if all are disabled return  disable
-
-		$result = Enums->GroupState_DISABLE;
-	}
-	elsif ( scalar(@allActiveOff) == $unitsCnt ) {
-
-		# if all are active off return  Active off
-
-		$result = Enums->GroupState_ACTIVEOFF;
-	}
-	else {
-
-		# if exist some active ON, return Active on
-
-		$result = Enums->GroupState_ACTIVEON;
-	}
+	return %unitState;
 
 }
 
@@ -170,19 +161,12 @@ sub SetGroupState {
 	my $groupState = shift;
 
 	foreach my $unit ( @{ $self->{"units"} } ) {
-		
+
 		# dnot set state, if group is disabled
-		
-		if($unit->GetGroupState() eq Enums->GroupState_DISABLE){
+
+		if ( $unit->GetGroupState() eq Enums->GroupState_DISABLE || $unit->GetGroupState() eq Enums->GroupState_ACTIVEALWAYS ) {
 			next;
 		}
-		
-		# do exception for group PRE, because we want to group was always ACTIVEON
-		
-		if($unit->GetUnitId() eq UnitEnums->UnitId_PRE){
-			next;
-		}
-		
 
 		$unit->SetGroupState($groupState);
 	}
@@ -198,7 +182,7 @@ sub GetExportData {
 	my @units = @{ $self->{"units"} };
 
 	if ($activeGroups) {
-		@units = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @units;
+		@units = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON || $_->GetGroupState() eq Enums->GroupState_ACTIVEALWAYS } @units;
 	}
 
 	foreach my $unit (@units) {
@@ -209,10 +193,6 @@ sub GetExportData {
 
 	return %allExportData;
 }
-
-
-
-
 
 sub GetGroupData {
 	my $self = shift;
@@ -249,34 +229,29 @@ sub SetGroupChangeHandler {
 # Return number of active units for export
 sub GetActiveUnitsCnt {
 	my $self = shift;
-	my @activeOnUnits = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} };
+	my @activeOnUnits =
+	  grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON || $_->GetGroupState() eq Enums->GroupState_ACTIVEALWAYS } @{ $self->{"units"} };
 
 	return scalar(@activeOnUnits);
 }
 
-
-
 # Return units and info if group is mansatory
 sub GetUnitsMandatory {
-	my $self         = shift;
+	my $self      = shift;
 	my $mandatory = shift;
 
-	 
-
 	my @units = @{ $self->{"units"} };
-	
-	
+
 	if ($mandatory) {
 		@units = grep { $_->GetGroupMandatory() eq Enums->GroupMandatory_YES } @units;
-	}else{
-		
+	}
+	else {
+
 		@units = grep { $_->GetGroupMandatory() eq Enums->GroupMandatory_NO } @units;
 	}
-	
-	 
+
 	return @units;
 }
-
 
 # ===================================================================
 # Other methods

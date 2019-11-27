@@ -38,8 +38,8 @@ sub new {
 	$self->{"plugging"}   = shift;
 
 	# Reference to forms
-	$self->{"subGroupFrm"}  = shift;
-	$self->{"rowCopperFrm"} = shift;
+	$self->{"rowCopperFrm"}  = shift;
+	$self->{"subGroupFrm"} = shift;
 
 	return $self;
 }
@@ -50,7 +50,7 @@ sub GetLayerName {
 	return $self->{"name"};
 }
 
-sub GetMatrixProp {
+sub GetLayerMatrixProp {
 	my $self = shift;
 
 	return $self->{"matrixProp"};

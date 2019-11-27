@@ -68,7 +68,7 @@ sub Build {
 	my $stackup;
 
 	if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
-		$stackup = Stackup->new($jobId);
+		$stackup = Stackup->new($inCAM, $jobId);
 	}
 
 	my @layers = CamJob->GetBoardBaseLayers( $inCAM, $jobId );    # silks, mask, signal
@@ -97,7 +97,7 @@ sub Build {
 		}
 		elsif ( $lName =~ /^v\d+$/ ) {
 
-			my $side = StackupOperation->GetSideByLayer( $jobId, $lName, $stackup );
+			my $side = StackupOperation->GetSideByLayer( $inCAM, $jobId, $lName, $stackup );
 			$lLayout->SetMirror( $side eq "top" ? 0 : 1 );
 		}
 

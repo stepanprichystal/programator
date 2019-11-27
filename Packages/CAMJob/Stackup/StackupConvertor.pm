@@ -30,6 +30,7 @@ sub new {
 	$self = {};
 	bless $self;
 
+	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
 	return $self;
@@ -40,10 +41,11 @@ sub DoConvert {
 	my $self       = shift;
 	my $outputPath = shift; # default is standard stackup location if not specified
 
+	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# load stackup
-	my $stackup = Stackup->new($jobId);
+	my $stackup = Stackup->new($inCAM, $jobId);
 
 	my $thick = sprintf( "%.3f", $stackup->GetFinalThick() / 1000 );
 	 

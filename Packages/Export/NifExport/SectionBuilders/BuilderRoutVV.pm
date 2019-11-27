@@ -43,9 +43,9 @@ sub Build {
 	my $stepName = "panel";
 	my %nifData  = %{ $self->{"nifData"} };
 
-	my $stackup   = Stackup->new( $self->{'jobId'} );
-	my $stackupNC = StackupNC->new($self->{'jobId'}, $inCAM);
-	my $pressCnt  = $stackupNC->GetPressCnt();
+	my $stackup   = Stackup->new( $inCAM, $self->{'jobId'} );
+	my $stackupNC = StackupNC->new( $inCAM, $self->{'jobId'});
+	my $pressCnt  = $stackupNC->GetPressCount();
 
 	# comment
 	$section->AddComment(" HLOUBKOVE FREZOVANI PO LISOVANI ");
@@ -61,7 +61,7 @@ sub Build {
 
 
 
-		my $press = $stackupNC->GetPress($pressOrder);
+		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bMillTop );
 
@@ -79,7 +79,7 @@ sub Build {
 
 		my $pressOrder = $i + 1;
 
-		my $press = $stackupNC->GetPress($pressOrder);
+		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 
@@ -96,7 +96,7 @@ sub Build {
 
 		my $pressOrder = $i + 1;
 
-		my $press = $stackupNC->GetPress($pressOrder);
+		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
 
@@ -114,7 +114,7 @@ sub Build {
 
 		my $pressOrder = $i + 1;
 
-		my $press = $stackupNC->GetPress($pressOrder);
+		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 

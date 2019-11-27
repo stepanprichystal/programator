@@ -42,10 +42,11 @@ sub Init {
 	$self->{"jobId"}      = $jobId;
  
 	
-	my $layers =  $self->{"taskData"}->GetSignalLayers();
-
+	my $sigL =  $self->{"taskData"}->GetSignalLayers();
+	my $otherL =  $self->{"taskData"}->GetOtherLayers();
+ 
 	
-	my $mngr  = PreMngr->new( $inCAM, $jobId, $layers);
+	my $mngr  = PreMngr->new( $inCAM, $jobId, $sigL, $otherL);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

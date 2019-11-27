@@ -48,9 +48,9 @@ sub DefineOperations {
 	my $self      = shift;
 	my $opManager = shift;
 
-	my $stackup = Stackup->new( $self->{'jobId'} );
+	my $stackup = Stackup->new( $self->{"inCAM"}, $self->{'jobId'} );
 	$self->{'stackup'} = $stackup;                                                 #hash
-	$self->{'stackupNC'} = StackupNC->new( $self->{'jobId'}, $self->{"inCAM"} );
+	$self->{'stackupNC'} = StackupNC->new( $self->{"inCAM"}, $self->{'jobId'} );
 
 	#plated nc layers
 	my %pltDrillInfo = DrillingHelper->GetPltNCLayerInfo( $self->{"jobId"}, $self->{"stepName"}, $self->{"inCAM"}, $self->{"pltLayers"} );
@@ -79,10 +79,12 @@ sub __DefinePlatedGroups {
 	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# 1) Create group FROM TOP depend on pressing order
+	
+	my %pressProducts =  $stackup->GetPressProducts();
 
-	foreach my $pressOrder ( keys $stackup->{"press"} ) {
+	foreach my $pressOrder ( keys %pressProducts ) {
 
-		my $press = $stackup->{"press"}{$pressOrder};
+		my $press = $pressProducts{$pressOrder};
 
 		my @operations = ();
 		my $name       = "";
@@ -116,10 +118,10 @@ sub __DefinePlatedGroups {
 	}
 
 	# 2) Create group FROM BOT depend on pressing order
+	
+	foreach my $pressOrder ( keys %pressProducts ) {
 
-	foreach my $pressOrder ( keys $stackup->{"press"} ) {
-
-		my $press = $stackup->{"press"}{$pressOrder};
+		my $press = $pressProducts{$pressOrder};
 
 		my @operations = ();
 		my $name       = "";
@@ -156,10 +158,11 @@ sub __DefineNPlatedGroups {
 	my $stackup = $self->{'stackup'};    #info about press count, which layer are pressed, etc..
 
 	# 1) Create group FROM TOP depend on pressing order
+	my %pressProducts =  $stackup->GetPressProducts();
+	
+	foreach my $pressOrder ( keys %pressProducts ) {
 
-	foreach my $pressOrder ( keys $stackup->{"press"} ) {
-
-		my $press = $stackup->{"press"}{$pressOrder};
+		my $press = $pressProducts{$pressOrder};
 
 		my @operations = ();
 		my $name       = "";
@@ -196,7 +199,7 @@ sub __DefinePlatedOperations {
 	my %pltDrillInfo = %{ $self->{"pltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 	my $stackup      = $self->{'stackup'};              #info about press count, which layer are pressed, etc..
 	my $stackupNC    = $self->{'stackupNC'};            #info about signal lyers, contain if contain blind, cor drilling etc:..
-	my $pressCnt     = $stackupNC->GetPressCnt();
+	my $pressCnt     = $stackupNC->GetPressCount();
 	my $coreCnt      = $stackupNC->GetCoreCnt();
 	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -225,14 +228,13 @@ sub __DefinePlatedOperations {
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
 		my $pressOrder = $i + 1;
-		my $press      = $stackupNC->GetPress($pressOrder);
+		my $press      = $stackupNC->GetNCPressProduct($pressOrder);
 
 		my $outFile = "c" . $pressOrder . ( $viaFill && $pressOrder == $stackup->GetPressCount() ? "_d" : "" );    # Add "_d" if viafill
 		my @layers = ();
 
-		my $topSignal    = $press->GetTopSigLayer();
-		my $startTop     = $topSignal->GetNumber();
-		my $startTopName = $topSignal->GetName();
+		my $startTop     = $press->GetTopCopperNum();
+		my $startTopName = $press->GetTopCopperLayer();
 
 		# plated normal drilling "m" start from top in layer <$drillStartTop>
 		my @normalTop = grep { $_->{"NCSigStartOrder"} == $startTop } @plt_nDrill;
@@ -264,15 +266,17 @@ sub __DefinePlatedOperations {
 	# 2) Operation name = s<press order>, can contain layer
 	# - @plt_nDrill
 	# - @plt_bDrillBot
-	foreach my $pressOrder ( keys $stackup->{"press"} ) {
+	my %pressProducts =  $stackup->GetPressProducts();
+	
+	foreach my $pressOrder ( keys %pressProducts ) {
 
-		my $press = $stackup->{"press"}{$pressOrder};
+		my $press = $pressProducts{$pressOrder};
 
 		my $outFile = "s" . $pressOrder . ( $viaFill && $pressOrder == $stackup->GetPressCount() ? "_d" : "" );    # Add "_d" if viafill
 		my @layers = ();
 
-		my $startBot     = $press->{"botNumber"};
-		my $startBotName = $press->{"bot"};
+		my $startBot     = $press->GetBotCopperNum();
+		my $startBotName = $press->GetBotCopperLayer();
 
 		#blind drilling start from bot in layer <$drillStartTop>
 		my @blindBot = grep { $_->{"NCSigStartOrder"} == $startBot } @plt_bDrillBot;
@@ -289,13 +293,13 @@ sub __DefinePlatedOperations {
 	# Via fill layer can start only from very top
 	if ($viaFill) {
 
-		my $press = $stackup->{"press"}{ $stackup->GetPressCount() };
+		my $press = $pressProducts{ $stackup->GetPressCount() };
 
 		my $outFile = "c" . $stackup->GetPressCount();
 		my @layers  = ();
 
-		my $startTop     = $press->{"topNumber"};
-		my $startTopName = $press->{"top"};
+		my $startTop     = $press->GetTopCopperNum();
+		my $startTopName = $press->GetTopCopperLayer();
 
 		# frame drilling if viafill
 		push( @layers, $plt_fDrill[0] );
@@ -315,13 +319,13 @@ sub __DefinePlatedOperations {
 	# Via fill layer can start only from very bot layer
 	if ($viaFill) {
 
-		my $press = $stackup->{"press"}{ $stackup->GetPressCount() };
+		my $press = $pressProducts{ $stackup->GetPressCount() };
 
 		my $outFile = "s" . $stackup->GetPressCount();
 		my @layers  = ();
 
-		my $startBot     = $press->{"botNumber"};
-		my $startBotName = $press->{"bot"};
+		my $startBot     = $press->GetBotCopperNum();
+		my $startBotName = $press->GetBotCopperLayer();
 
 		#filled blind drilling start from top
 		push( @layers, grep { $_->{"NCSigStartOrder"} == $startBot } @plt_bFillDrillBot );
@@ -347,7 +351,7 @@ sub __DefinePlatedOperations {
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
 		my $coreNum = $i + 1;
-		my $core    = $stackupNC->GetCore($coreNum);
+		my $core    = $stackupNC->GetNCCoreProduct($coreNum);
 
 		my @layers = ();
 		my @layersCore = $core->GetNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cDrill );
@@ -370,7 +374,7 @@ sub __DefinePlatedOperations {
 			# Add frame
 			push( @layers, $plt_fcDrill[0] );
 
-			$opManager->AddOperationDef( "j" . $core->GetCoreNumber(), \@layers, 0 );
+			$opManager->AddOperationDef( "j" . $core->GetIProduct()->GetCoreNumber(), \@layers, 0 );
 		}
 	}
 
@@ -386,7 +390,7 @@ sub __DefinePlatedOperations {
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
 		my $coreNum = $i + 1;
-		my $coreNC  = $stackupNC->GetCore($coreNum);
+		my $coreNC  = $stackupNC->GetNCCoreProduct($coreNum);
 
 		# start/stop plated NC layers in core
 		my @ncLayers = ();
@@ -399,7 +403,7 @@ sub __DefinePlatedOperations {
 
 		# outer core
 		my $outer = 0;
-		if ( $coreNC->GetTopSigLayer()->GetName() eq "c" || $coreNC->GetBotSigLayer()->GetName() eq "s" ) {
+		if ( $coreNC->GetTopCopperLayer() eq "c" || $coreNC->GetBotCopperLayer() eq "s" ) {
 			$outer = 1;
 		}
 
@@ -424,7 +428,7 @@ sub __DefineNPlatedOperations {
 	my %npltDrillInfo = %{ $self->{"npltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 	my $stackup       = $self->{'stackup'};               #info about press count, which layer are pressed, etc..
 
-	my $stackupNC = StackupNC->new( $self->{'jobId'}, $self->{"inCAM"} );
+	my $stackupNC = StackupNC->new( $self->{"inCAM"}, $self->{'jobId'} );
 	my $coreCnt = $stackupNC->GetCoreCnt();
 
 	#non plated
@@ -444,25 +448,26 @@ sub __DefineNPlatedOperations {
 	my @nplt_cvrlysMill  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };     #bot coverlay mill
 	my @nplt_prepregMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } };    #prepreg mill
 
-	my @nplt_stiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };      # milling for stiffener from side c
-	my @nplt_stiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };      # milling for stiffener from side s
-	my @nplt_soldcMill =  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_soldcMill } };    # milling of template for soldering coverlay from side c
-	my @nplt_soldsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_soldsMill } };    # milling of template for soldering coverlay from side s
+	my @nplt_stiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };    # milling for stiffener from side c
+	my @nplt_stiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };    # milling for stiffener from side s
+	my @nplt_soldcMill  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_soldcMill } };     # milling of template for soldering coverlay from side c
+	my @nplt_soldsMill  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_soldsMill } };     # milling of template for soldering coverlay from side s
 
 	#Define operation:
+	my %pressProducts =  $stackup->GetPressProducts();
 
 	# 1) Operation name = fzc<press order>, can contain layer
 	# - @nplt_bMillTop
 	# - @nplt_nDrill
 
-	foreach my $pressOrder ( keys $stackup->{"press"} ) {
+	foreach my $pressOrder (keys %pressProducts) {
 
-		my $press   = $stackup->{"press"}{$pressOrder};
+		my $press   = $pressProducts{$pressOrder};
 		my $outFile = "fzc" . $pressOrder;
 		my @layers  = ();
 
-		my $startTop     = $press->{"topNumber"};
-		my $startTopName = $press->{"top"};
+		my $startTop     = $press->GetTopCopperNum();
+		my $startTopName = $press->GetTopCopperLayer();
 
 		#blind milling start from top in layer <$drillStartTop>
 		my @blindTop = grep { $_->{"NCSigStartOrder"} == $startTop } @nplt_bMillTop;
@@ -475,14 +480,14 @@ sub __DefineNPlatedOperations {
 	# - @nplt_bMillBot
 	# - @nplt_nDrill
 
-	foreach my $pressOrder ( keys $stackup->{"press"} ) {
+	foreach my $pressOrder ( keys %pressProducts ) {
 
-		my $press   = $stackup->{"press"}{$pressOrder};
+		my $press   = $pressProducts{$pressOrder};
 		my $outFile = "fzs" . $pressOrder;
 		my @layers  = ();
 
-		my $startBot     = $press->{"botNumber"};
-		my $startBotName = $press->{"bot"};
+		my $startBot     = $press->GetBotCopperNum();
+		my $startBotName = $press->GetBotCopperLayer();
 
 		#blind milling start from top in layer <$drillStartTop>
 		my @blindBot = grep { $_->{"NCSigStartOrder"} == $startBot } @nplt_bMillBot;
@@ -581,19 +586,19 @@ sub __DefineNPlatedOperations {
 
 		$opManager->AddOperationDef( "prepreg" . $prepregNum, [$l], -1 );
 	}
-	
+
 	# 12) Operation name = fstiffc - can contain layer
 	# - @nplt_stiffcMill
 	$opManager->AddOperationDef( "fstiffc", \@nplt_stiffcMill, -1 );
-	
+
 	# 13) Operation name = fstiffs - can contain layer
 	# - @nplt_stiffcMill
 	$opManager->AddOperationDef( "fstiffs", \@nplt_stiffsMill, -1 );
-	
+
 	# 14) Operation name = soldc - can contain layer
 	# - @nplt_soldcMill
 	$opManager->AddOperationDef( "soldc", \@nplt_soldcMill, -1 );
-	
+
 	# 15) Operation name = soldc - can contain layer
 	# - @nplt_soldsMill
 	$opManager->AddOperationDef( "solds", \@nplt_soldsMill, -1 );

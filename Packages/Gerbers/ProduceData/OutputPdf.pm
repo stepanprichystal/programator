@@ -54,7 +54,7 @@ sub __PrepareStackup {
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
-		my $stackup      = StackupPdf->new( $self->{"jobId"} );
+		my $stackup      = StackupPdf->new( $self->{"inCAM"}, $self->{"jobId"} );
 		my $resultCreate = $stackup->Create(0,1,0);
 
 		my $path = $stackup->GetStackupPath();

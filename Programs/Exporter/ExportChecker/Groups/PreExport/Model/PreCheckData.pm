@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Enums::EnumsProducPanel';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
@@ -134,7 +135,7 @@ sub OnCheckGroupData {
 		foreach my $l ( grep { $_->{"gROWname"} =~ /^v\d+$/ } @sig ) {
 
 			# Get real side from stackup
-			my $side = StackupOperation->GetSideByLayer( $jobId, $l->{"gROWname"}, $stackup );
+			my $side = StackupOperation->GetSideByLayer( $inCAM, $jobId, $l->{"gROWname"}, $stackup );
 
 			my %layerAttr = CamAttributes->GetLayerAttr( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
 			if ( $layerAttr{'layer_side'} !~ /^$side$/i ) {
@@ -150,27 +151,55 @@ sub OnCheckGroupData {
 			}
 		}
 	}
-	
-	# 4) Check if onesided flex layer has always two signal layer in matrix
-	if($defaultInfo->GetIsFlex() &&  HegMethods->GetTypeOfPcb( $jobId, 1 ) =~ /^F$/i && $layerCnt != 2){
-		
-		$dataMngr->_AddErrorResult(
-											"Špatný počet signálových vrstev",
-											"Pokud je typ DPS jednostranný flex, v matrixu musí být vždy dvě signálové vrstvy: c + s");
+
+	# X) Check if exist plt layers and technology is not galvanic
+	if ( $layerCnt >= 2 ) {
+
+		my @pltNC = grep { $_->{"plated"} && !$_->{"technical"} } $defaultInfo->GetNCLayers();
+		my $tech = ( grep { $_->{"name"} eq "c" } @{ $groupData->GetSignalLayers() } )[0]->{"technologyType"};
+
+		if ( scalar(@pltNC) && $tech ne EnumsGeneral->Technology_GALVANICS ) {
+			$dataMngr->_AddWarningResult(
+										  "Wrong technology",
+										  "V jobu byly nalezeny prokovené NC vrstvy ("
+											. join( "; ", map { $_->{"gROWname"} } @pltNC ) . "), "
+											. "ale technologie není Galvanika. Je to OK?"
+			);
+
+		}
+
 	}
-	 
+
+	# 7) Check if dps should be pattern, if tenting is realz unchecked
+	if ( $layerCnt >= 2 ) {
+		my $defEtch = $defaultInfo->GetDefaultEtchType("c");
+		my $formEtch = ( grep { $_->{"name"} eq "c" } @{$groupData->GetSignalLayers()} )[0]->{"etchingType"};
+
+		if ( $defEtch eq EnumsGeneral->Etching_PATTERN && $defEtch ne $formEtch ) {
+
+			$dataMngr->_AddWarningResult( "Pattern", "Dps by měla jít do výroby jako pattern, ale je vybraná technologie:$formEtch" );
+		}
+
+	}
+
+	# 4) Check if onesided flex layer has always two signal layer in matrix
+	if ( $defaultInfo->GetIsFlex() && HegMethods->GetTypeOfPcb( $jobId, 1 ) =~ /^F$/i && $layerCnt != 2 ) {
+
+		$dataMngr->_AddErrorResult( "Špatný počet signálových vrstev",
+									"Pokud je typ DPS jednostranný flex, v matrixu musí být vždy dvě signálové vrstvy: c + s" );
+	}
 
 	# 4) Check if material and pcb thickness and base cuthickness is set
 	my $materialKindIS = $defaultInfo->GetMaterialKind();
 	$materialKindIS =~ s/[\s\t]//g;
 
-	my $pcbType = $defaultInfo->GetTypeOfPcb();
+	my $pcbType = $defaultInfo->GetPcbType();
 
 	my $baseCuThickHelios = HegMethods->GetOuterCuThick($jobId);
 	my $pcbThickHelios    = HegMethods->GetPcbMaterialThick($jobId);
 
 	# 5) Check if helios contain base cutthick, pcb thick
-	if ( $layerCnt >= 1 && $pcbType ne "Neplatovany" ) {
+	if ( $layerCnt >= 1 && $pcbType ne EnumsGeneral->PcbType_NOCOPPER ) {
 
 		unless ( defined $baseCuThickHelios ) {
 
@@ -182,18 +211,24 @@ sub OnCheckGroupData {
 			$dataMngr->_AddErrorResult( "Pcb thickness", "Pcb thickness is not defined in Helios." );
 		}
 	}
-	
-	
+
 	# 5) Check if stackup outer base Cu thickness and IS base Cu thickness match
-	if( defined $baseCuThickHelios && $defaultInfo->GetLayerCnt() > 2 ){
-		
+	if ( defined $baseCuThickHelios && $defaultInfo->GetLayerCnt() > 2 ) {
+
 		my $stackupCu = $defaultInfo->GetStackup()->GetCuLayer("c")->GetThick();
-		$stackupCu = 18 if($defaultInfo->GetPcbClass() >= 8 && $stackupCu == 9 && $baseCuThickHelios != 9); # we use 9µm Cu if 8class in order easier pcb production
-		
-		if($stackupCu != $baseCuThickHelios){
-				
-	 			$dataMngr->_AddErrorResult( "Tloušťka Cu",
-											"Nesouhlasí tloušťka základní Cu vnějších vrstev ve složení (".$stackupCu."µm) a v IS (".$baseCuThickHelios."µm)");
+		$stackupCu = 18
+		  if ( $defaultInfo->GetPcbClass() >= 8 && $stackupCu == 9 && $baseCuThickHelios != 9 )
+		  ;    # we use 9µm Cu if 8class in order easier pcb production
+
+		if ( $stackupCu != $baseCuThickHelios ) {
+
+			$dataMngr->_AddErrorResult(
+										"Tloušťka Cu",
+										"Nesouhlasí tloušťka základní Cu vnějších vrstev ve složení ("
+										  . $stackupCu
+										  . "µm) a v IS ("
+										  . $baseCuThickHelios . "µm)"
+			);
 		}
 	}
 
@@ -210,7 +245,7 @@ sub OnCheckGroupData {
 
 		my @flexMats = ("PYRALUX");
 
-		unless( grep { $_ =~ /$materialKindIS/i } @flexMats ) {
+		unless ( grep { $_ =~ /$materialKindIS/i } @flexMats ) {
 
 			$dataMngr->_AddErrorResult(
 										"PCB material",

@@ -8,17 +8,20 @@ package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::
 #3th party library
 use strict;
 use warnings;
+use Test::More;
 
 #local library
 use aliased 'Packages::Events::Event';
 use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Helpers::JobHelper';
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::ProcViewerFrm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcBuilder::ProcBuilder2V';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcBuilder::ProcBuilderVV';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcBuilder::ProcBuilderRiFlex';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcViewerMatrix';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -39,9 +42,9 @@ sub new {
 	$self->{"searchMatrix"} = ProcViewerMatrix->new();
 
 	# EVENTS
-	$self->{"layerSettChangedEvt"}  = Event->new();
-	$self->{"technologyChangedEvt"} = Event->new();    # Technology for layer c/s only
-	$self->{"tentingChangedEvt"}    = Event->new();    # Tenting for layer c/s only
+	$self->{"sigLayerSettChangedEvt"} = Event->new();
+	$self->{"technologyChangedEvt"}   = Event->new();    # Technology for layer c/s only
+	$self->{"tentingChangedEvt"}      = Event->new();    # Tenting for layer c/s only
 
 	return $self;
 }
@@ -55,34 +58,38 @@ sub BuildForm {
 
 	$self->{"procViewFrm"} = ProcViewerFrm->new( $parent, $inCAM, $jobId );
 
-	
-	my @sigLayers = $self->{"defaultInfo"}->GetSignalLayers();
-	my $isFlex    = $self->{"defaultInfo"}->GetIsFlex();
-	my $stackup   = $self->{"defaultInfo"}->GetStackup();
-	my $layerCnt  = scalar(@sigLayers );
-
 	my $procViewerBldr;
 
-	if ( $layerCnt <= 2 ) {
-		$procViewerBldr = ProcBuilder2V->new( $inCAM, $jobId );
-	}
-	elsif ( $layerCnt > 2 && !$isFlex ) {
-		$procViewerBldr = ProcBuilderVV->new( $inCAM, $jobId );
-	}
-	elsif ( $layerCnt > 2 && $isFlex ) {
-		$procViewerBldr = ProcBuilderRiFlex->new( $inCAM, $jobId );
-	}
+	if ( $self->{"defaultInfo"}->GetLayerCnt() <= 2 ) {
+		my @sigLayers       = $self->{"defaultInfo"}->GetSignalLayers();
+		my @boardBaseLayers = $self->{"defaultInfo"}->GetBoardBaseLayers();
+		my @pltNClayers     = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
 
-	$procViewerBldr->Build( $self->{"procViewFrm"}, \@sigLayers, $stackup );
+		$procViewerBldr = ProcBuilder2V->new( $inCAM, $jobId );
+		$procViewerBldr->Build( $self->{"procViewFrm"}, \@sigLayers, \@boardBaseLayers, \@pltNClayers );
+	}
+	elsif ( $self->{"defaultInfo"}->GetLayerCnt() > 2 ) {
+		my $stackup = $self->{"defaultInfo"}->GetStackup();
+
+		$procViewerBldr = ProcBuilderVV->new( $inCAM, $jobId );
+		$procViewerBldr->Build( $self->{"procViewFrm"}, $stackup );
+
+	}
 
 	# Set handlers
 
-	$self->{"procViewFrm"}->{"layerSettChangedEvt"}->Add( sub  { $self->__OnlayerSettChangedHndl(@_) } );
-	$self->{"procViewFrm"}->{"technologyChangedEvt"}->Add( sub { $self->__OnTechnologyChangedHndl(@_) } );
-	$self->{"procViewFrm"}->{"tentingChangedEvt"}->Add( sub    { $self->__OnTentingChangedHndl(@_) } );
+	$self->{"procViewFrm"}->{"sigLayerSettChangedEvt"}->Add( sub { $self->__OnlayerSettChangedHndl(@_) } );
+	$self->{"procViewFrm"}->{"technologyChangedEvt"}->Add( sub   { $self->__OnTechnologyChangedHndl(@_) } );
+	$self->{"procViewFrm"}->{"tentingChangedEvt"}->Add( sub      { $self->__OnTentingChangedHndl(@_) } );
 
 	# Build search matrix
-	$self->{"searchMatrix"}->BuildMatrix($self->{"procViewFrm"}, \@sigLayers );
+	my @sigLayers    = $self->{"defaultInfo"}->GetSignalLayers();
+	my @sigExtLayers = $self->{"defaultInfo"}->GetSignalExtLayers();
+	my @allSig       = ( @sigLayers, @sigExtLayers );
+
+	@allSig = () if ( $self->{"defaultInfo"}->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER );
+
+	$self->{"searchMatrix"}->BuildMatrix( $self->{"procViewFrm"}, \@allSig );
 
 	return $self->{"procViewFrm"};
 }
@@ -114,7 +121,8 @@ sub SetLayerValue {
 	$copperFrm->SetShrinkXVal( $l->{"shrinkX"} );
 	$copperFrm->SetShrinkYVal( $l->{"shrinkY"} );
 
-	$self->{"procViewFrm"}->SetLayerRow($l);
+	# Update plating at copper row frm
+	$copperFrm->UpdatePlating( $l->{"technologyType"} eq EnumsGeneral->Technology_GALVANICS ? 1 : 0 );
 
 	# 2) Set product technology
 
@@ -122,14 +130,10 @@ sub SetLayerValue {
 	my $etchType    = $l->{"etchingType"};
 
 	# set tenting
-	$subGroupFrm->SetTenting( $l->{"etchingType"} );
+	$subGroupFrm->SetTentingVal( $l->{"etchingType"} );
 
 	# Set technology
-	$subGroupFrm->SetTechnology( $l->{"technologyType"} );
-	
-	# Update plating
-	
-	$subGroupFrm->UpdatePlating($l->{"technologyType"} eq EnumsGeneral->Technology_GALVANICS ? 1 : 0);
+	$subGroupFrm->SetTechnologyVal( $l->{"technologyType"} );
 
 }
 
@@ -138,14 +142,14 @@ sub GetLayerValues {
 
 	my @layers = ();
 
-	foreach my $l ( @{ $self->{"signalLayers"} } ) {
+	foreach my $l ( $self->{"searchMatrix"}->GetAllSignalLayers() ) {
 
-		my %linfo = $self->GetLayerValue( $l->{"gROWname"} );
+		my %linfo = $self->GetLayerValue($l);
 
 		push( @layers, \%linfo );
 	}
 
-	return \@layers;
+	return @layers;
 }
 
 sub GetLayerValue {
@@ -163,9 +167,9 @@ sub GetLayerValue {
 
 	$lInfo{"polarity"} = $copperFrm->GetPolarityVal();
 	$lInfo{"mirror"}   = $copperFrm->GetMirrorVal();
-	$lInfo{"comp"}     = $copperFrm->SetCompVal();
-	$lInfo{"shrinkX"}  = $copperFrm->SetShrinkXVal();
-	$lInfo{"shrinkY"}  = $copperFrm->SetShrinkYVal();
+	$lInfo{"comp"}     = $copperFrm->GetCompVal();
+	$lInfo{"shrinkX"}  = $copperFrm->GetShrinkXVal();
+	$lInfo{"shrinkY"}  = $copperFrm->GetShrinkYVal();
 
 	$lInfo{"etchingType"}    = $subGroupFrm->GetTentingVal();
 	$lInfo{"technologyType"} = $subGroupFrm->GetTechnologyVal();
@@ -173,43 +177,43 @@ sub GetLayerValue {
 	return %lInfo;
 }
 
-# User can set etching type for layer cs manually
-sub SetTechnologyS {
-	my $self       = shift;
-	my $technology = shift;
-
-	my $subGroupFrm = $self->{"searchMatrix"}->GetItemByOriName("c")->GetSubGroupFrm();
-
-	$subGroupFrm->SetTechnologyVal($technology);
-}
-
-# User can set etching type for layer cs manually
-sub GetTechnologyCS {
-	my $self = shift;
-
-	my $subGroupFrm = $self->{"searchMatrix"}->GetItemByOriName("c")->GetSubGroupFrm();
-
-	return $subGroupFrm->GetTechnologyVal();
-}
-
-# User can set etching type for layer cs manually
-sub SetTentingCS {
-	my $self    = shift;
-	my $tenting = shift;
-
-	my $subGroupFrm = $self->{"searchMatrix"}->GetItemByOriName("c")->GetSubGroupFrm();
-
-	$subGroupFrm->SetTentingVal($tenting);
-}
-
-# User can set etching type for layer cs manually
-sub GetTentingCS {
-	my $self = shift;
-
-	my $subGroupFrm = $self->{"searchMatrix"}->GetItemByOriName("c")->GetSubGroupFrm();
-
-	return $subGroupFrm->GetTentingVal();
-}
+## User can set etching type for layer cs manually
+#sub SetTechnologyCS {
+#	my $self       = shift;
+#	my $technology = shift;
+#
+#	my $subGroupFrm = $self->{"searchMatrix"}->GetItemByOriName("c")->GetSubGroupFrm();
+#
+#	$subGroupFrm->SetTechnologyVal($technology);
+#}
+#
+## User can set etching type for layer cs manually
+#sub GetTechnologyCS {
+#	my $self = shift;
+#
+#	my $subGroupFrm = $self->{"searchMatrix"}->GetItemByOriName("c")->GetSubGroupFrm();
+#
+#	return $subGroupFrm->GetTechnologyVal();
+#}
+#
+## User can set etching type for layer cs manually
+#sub SetTentingCS {
+#	my $self    = shift;
+#	my $tenting = shift;
+#
+#	my $subGroupFrm = $self->{"searchMatrix"}->GetItemByOriName("c")->GetSubGroupFrm();
+#
+#	$subGroupFrm->SetTentingVal($tenting);
+#}
+#
+## User can set etching type for layer cs manually
+#sub GetTentingCS {
+#	my $self = shift;
+#
+#	my $subGroupFrm = $self->{"searchMatrix"}->GetItemByOriName("c")->GetSubGroupFrm();
+#
+#	return $subGroupFrm->GetTentingVal();
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods
@@ -221,14 +225,14 @@ sub __OnlayerSettChangedHndl {
 	my $outerCore  = shift;
 	my $plugging   = shift;
 
-	my $lName = $self->{"searchMatrix"}->BuildCopperLayerName( $copperName, $outerCore, $plugging );
+	my $lName = JobHelper->BuildSignalLayerName( $copperName, $outerCore, $plugging );
 
 	# 1) Get current layer value
 	my %currLSett = $self->GetLayerValue($lName);
 
-	$self->{"layerSettChangedEvt"}->Do( \%currLSett );
+	$self->{"sigLayerSettChangedEvt"}->Do( \%currLSett );
 
-	print STDERR "Copper row changed: $copperName, outer core: $outerCore, plugging: $plugging\n";
+	diag("Copper row changed: $copperName, outer core: $outerCore, plugging: $plugging\n");
 
 }
 
@@ -238,36 +242,36 @@ sub __OnTechnologyChangedHndl {
 	my $productType = shift;
 	my $technology  = shift;
 
-	print STDERR "Technology changed. Product Id: $productId, technology: $technology  \n";
+	diag("Technology changed. Product Id: $productId, technology: $technology  \n");
 
-	# Get affected layers
-	my @mItems = $self->{"searchMatrix"}->GetItemsByProduct( $productId, $productType );
+	# Change Tenting by technology
+	my $mItem = ( $self->{"searchMatrix"}->GetItemsByProduct( $productId, $productType ) )[0];
+	my $tentingNew = undef;
 
-	foreach my $mItem (@mItems) {
+	if ( $technology eq EnumsGeneral->Technology_GALVANICS ) {
 
-		my $lName      = $mItem->GetLayerName();
-		my $tentingNew = undef;
-
-		if ( $technology eq EnumsGeneral->Technology_GALVANICS ) {
-
+		if ( $self->{"defaultInfo"}->GetLayerCnt() <= 1 ) {
+			$tentingNew = EnumsGeneral->Etching_TENTING;
+	
+		}
+		else {
 			# Set automatically default trenting value
-
-			my %defLSett = $self->{"defaultInfo"}->GetDefSignalLSett( $mItem->GetMatrixProp() );
-			$tentingNew = $defLSett{"etchingType"}
+			my %defLSett = $self->{"defaultInfo"}->GetDefSignalLSett( $mItem->GetLayerMatrixProp() );
+			$tentingNew = $defLSett{"etchingType"};
 		}
-		elsif ( $technology ne EnumsGeneral->Technology_GALVANICS ) {
-
-			# Set automatically tenting = resis
-			$tentingNew = EnumsGeneral->Etching_ONLY;
-		}
-
-		$mItem->GetSubGroupFrm()->SetTenting($tentingNew);    # Update GUI
-		$self->__OnTentingChangedHndl( $productId, $productType, $tentingNew );    # Riese event in order recompute layer values
 
 	}
+	elsif ( $technology ne EnumsGeneral->Technology_GALVANICS ) {
+
+		# Set automatically tenting = resis
+		$tentingNew = EnumsGeneral->Etching_ONLY;
+	}
+
+	$mItem->GetSubGroupFrm()->SetTentingVal($tentingNew);    # Update GUI
+	$self->__OnTentingChangedHndl( $productId, $productType, $tentingNew );    # Riese event in order recompute layer values
 
 	# raise event if tenting change for layer c/s
-	if ( scalar( grep { $_->GetLayerName() =~ /^[cs]$/ } @mItems ) ) {
+	if ( $mItem->GetLayerName() =~ /^[cs]$/ ) {
 
 		$self->{"technologyChangedEvt"}->Do($technology);
 	}
@@ -294,9 +298,14 @@ sub __OnTentingChangedHndl {
 
 		# 2) Recompute settings
 
-		my $isPlt = $currLSett{"technology"} eq EnumsGeneral->Technology_GALVANICS ? 1 : 0;
+		my $isPlt = 1;
 
-		my %newSett = $self->{"defaultInfo"}->GetSignalLSett( $lName, $isPlt, $currLSett{"etchingType"}, $currLSett{"technologyType"} );
+		if ( $currLSett{"etchingType"} eq EnumsGeneral->Etching_ONLY || $mItem->GetOuterCore()  ) {
+			$isPlt = 0;
+		}
+
+		my %newSett =
+		  $self->{"defaultInfo"}->GetSignalLSett( $mItem->GetLayerMatrixProp(), $isPlt, $currLSett{"etchingType"}, $currLSett{"technologyType"} );
 
 		# 3) Update form
 
@@ -304,9 +313,9 @@ sub __OnTentingChangedHndl {
 
 		# 4) Reise change event
 
-		$self->{"layerSettChangedEvt"}->Do( \%newSett );
+		$self->{"sigLayerSettChangedEvt"}->Do( \%newSett );
 
-		print STDERR "Technology changed. Product Id: $productId, Layer: $lName,  tenting: $tenting  \n";
+		diag("Technology changed. Product Id: $productId, Layer: $lName,  tenting: $tenting  \n");
 	}
 
 	# raise event if tenting change for layer c/s

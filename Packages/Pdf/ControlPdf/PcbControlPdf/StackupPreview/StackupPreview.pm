@@ -40,7 +40,7 @@ sub Create {
 	my $self    = shift;
 	my $message = shift;
 
-	my $stackup      = StackupPdf->new( $self->{"jobId"} );
+	my $stackup      = StackupPdf->new( $self->{"inCAM"}, $self->{"jobId"} );
 	my $resultCreate = $stackup->Create();
 
 	if ( $self->{"layerCnt"} <= 2 ) {

@@ -95,8 +95,7 @@ sub RefreshGUI {
     $self->{"form"}->SetExportMeasureData( $groupData->GetExportMeasureData() );
     $self->{"form"}->SetFiducialInfo( $groupData->GetFiducialInfo() );
 
-	#refresh wrapper
-	$self->_RefreshWrapper();
+
 }
 
 sub GetGroupData {

@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use XML::Simple;
 use List::Util qw(first);
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -152,19 +153,20 @@ sub GetCoreByCuLayer {
 
 	my @thickList = @{ $self->{"layers"} };
 	my $cuLayer   = $self->GetCuLayer($layerName);
+	
+	die "Copper is not \"core\" copper, but copper foil" if($cuLayer->GetIsFoil());
 
 	my $core = undef;
 
 	foreach my $c ( $self->GetAllCores() ) {
 
-		if ( $c->GetTopCopperLayer()->GetCopperName() eq $layerName || c->GetBotCopperLayer()->GetCopperName() eq $layerName ) {
+		if ( $c->GetTopCopperLayer()->GetCopperName() eq $layerName || $c->GetBotCopperLayer()->GetCopperName() eq $layerName ) {
 			$core = $c;
 			last;
 		}
 	}
-
-	die "Core by copper layer: $layerName was not found" unless ( defined $core );
-
+ 
+ 
 	return $core;
 }
 

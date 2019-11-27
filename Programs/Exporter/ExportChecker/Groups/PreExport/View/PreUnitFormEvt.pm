@@ -30,10 +30,11 @@ sub new {
 	# Provided handlers
 
 	# Provided events
-	$self->_AddEvent( $wrapper->{'onTentingChange'},    Enums->Event_pre_tenting );
-	$self->_AddEvent( $wrapper->{'onTechnologyChange'}, Enums->Event_pre_technology );
-	$self->_AddEvent( $wrapper->{'onLayerSettChange'},  Enums->Event_pre_layerChange );
-
+	$self->_AddEvent( $wrapper->{'technologyChangedEvt'}, Enums->Event_pre_technology );
+	$self->_AddEvent( $wrapper->{'tentingChangedEvt'},    Enums->Event_pre_tenting );
+	$self->_AddEvent( $wrapper->{'sigLayerSettChangedEvt'},  Enums->Event_pre_sigLayerChange );
+	$self->_AddEvent( $wrapper->{'otherLayerSettChangedEvt'},  Enums->Event_pre_otherLayerChange );
+	
 	return $self;
 }
 

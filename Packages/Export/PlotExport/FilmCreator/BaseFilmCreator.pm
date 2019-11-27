@@ -221,12 +221,12 @@ sub __AddLayerTypes {
 			$l->{"plotType"} = Enums->LType_MASKBOT;
 
 		}
-		elsif ( $l->{"name"} =~ /^[cs]$/ ) {
+		elsif ( $l->{"name"} =~ /^(outer)?[cs]$/ ) {
 
 			$l->{"plotType"} = Enums->LType_SIGOUTER;
 
 		}
-		elsif ( $l->{"name"} =~ /^v\d+(outer)?$/ ) {
+		elsif ( $l->{"name"} =~ /^(outer)?v\d+$/ ) {
 
 			$l->{"plotType"} = Enums->LType_SIGINNER;
 

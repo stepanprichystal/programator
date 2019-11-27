@@ -57,7 +57,7 @@ sub Create {
 
 	# Impedance job
 	my $inStackJob = InStackJob->new($jobId);
-	my $stackup    = Stackup->new($jobId);
+	my $stackup    = Stackup->new($inCAM, $jobId);
 
 	# get impedance steps
 

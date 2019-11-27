@@ -8,6 +8,7 @@ use base('Packages::ItemResult::ItemEventMngr');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
+
 #3th party library
 use strict;
 use warnings;
@@ -18,7 +19,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Export::PreExport::LayerInvert';
 use aliased 'Packages::CAMJob::Scheme::SchemeFrame::SchemeFrame';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::TifFile::TifSigLayers';
+use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Export::PreExport::Enums';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
@@ -33,9 +34,10 @@ sub new {
 	my $self      = $class->SUPER::new( $packageId, @_ );
 	bless $self;
 
-	$self->{"inCAM"}  = shift;
-	$self->{"jobId"}  = shift;
-	$self->{"layers"} = shift;
+	$self->{"inCAM"}        = shift;
+	$self->{"jobId"}        = shift;
+	$self->{"signalLayers"} = shift;
+	$self->{"otherLayers"}  = shift;
 
 	$self->{"layerFrame"}  = SchemeFrame->new( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"layerInvert"} = LayerInvert->new( $self->{"inCAM"}, $self->{"jobId"} );
@@ -60,8 +62,7 @@ sub Run {
 
 	$self->_OnItemResult($resultItemFrames);
 
-	my $resultItem = $self->_GetNewItem("Save job");
-	$self->_OnItemResult($resultItem);
+
 
 	# if job is changed, save it
 	if ($isChanged) {
@@ -79,29 +80,33 @@ sub Run {
 	}
 
 	# 2) Save info to tif file
-	my $file = TifSigLayers->new( $self->{"jobId"} );
+	my $resultItemDif = $self->_GetNewItem("Dif file");
+	
 
 	# Load old values
-	my %layers = $file->GetSignalLayers();
+	my $tif       = TifLayers->new( $self->{"jobId"} );
+	my %sigLayers = $tif->GetSignalLayers();
 
 	# add new layers or change old
-	foreach my $l ( @{ $self->{"layers"} } ) {
+	foreach my $l ( @{ $self->{"signalLayers"} } ) {
 
-		$layers{ $l->{"name"} } = $l;
-
-		# dif contain information about physis mirror
-		# but layer info contain mirror which consider emulsion on films
-
-		if ( $l->{"mirror"} ) {
-			$layers{ $l->{"name"} }->{"mirror"} = 0;
-		}
-		else {
-			$layers{ $l->{"name"} }->{"mirror"} = 1;
-		}
-
+		$sigLayers{ $l->{"name"} } = $l;
 	}
 
-	$file->SetSignalLayers( \%layers );
+	$tif->SetSignalLayers( \%sigLayers );
+
+	# Load old values
+	my %otherLayers = $tif->GetOtherLayers();
+
+	# add new layers or change old
+	foreach my $l ( @{ $self->{"otherLayers"} } ) {
+
+		$otherLayers{ $l->{"name"} } = $l;
+	}
+
+	$tif->SetOtherLayers( \%otherLayers );
+	
+	$self->_OnItemResult($resultItemDif);
 
 }
 
@@ -120,7 +125,7 @@ sub __PatternFrame {
 		$patternSch = 'pattern-2v';
 	}
 
-	foreach my $l ( @{ $self->{"layers"} } ) {
+	foreach my $l ( @{ $self->{"signalLayers"} } ) {
 
 		if ( $l->{"etchingType"} eq EnumsGeneral->Etching_TENTING ) {
 
@@ -149,14 +154,13 @@ sub __PatternFrame {
 	}
 
 }
- 
 
 sub TaskItemsCount {
 	my $self = shift;
 
 	my $totalCnt = 0;
 
-	$totalCnt += 2;    # check pattern frames + save job
+	$totalCnt += 3;    # check pattern frames + save job
 
 	return $totalCnt;
 

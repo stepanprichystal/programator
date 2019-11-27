@@ -25,7 +25,6 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -34,6 +33,7 @@ use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 #Create xml and pdf stackup and  automatically
 sub CreateStackup {
 	my $self         = shift;
+	my $inCAM        = shift;
 	my $pcbId        = shift;
 	my $lCount       = shift;
 	my @innerCuUsage = @{ shift(@_) };
@@ -91,7 +91,7 @@ sub CreateStackup {
 	#$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, \@btn );
 
 	#my $res = $messMngr->Result();
-	my $mat = HegMethods->GetMaterialKind( $pcbId );
+	my $mat = HegMethods->GetMaterialKind($pcbId);
 
 	my $path;
 
@@ -114,12 +114,12 @@ sub CreateStackup {
 	}
 
 	#create new xml stackup file
-	
+
 	$self->_SetCuUsage( \$xml, \@innerCuUsage );
 	$self->_CreateNewStackup( \$xml, $pcbId, $pcbId );
 
 	#get final thick of pcb and get info about stackup layers
-	my $stackup  = Stackup->new($pcbId);
+	my $stackup = Stackup->new( $inCAM, $pcbId );
 	my $pcbThick = $stackup->GetFinalThick();
 
 	#generate name of stackup file eg.: d99991_4vv_1,578_Euro.xml
@@ -165,7 +165,6 @@ sub GetStackupName {
 
 	return $pcbId . "_" . $lCount . "vv" . "_" . $pcbThick . "_" . $customer;
 }
-
 
 #Load xml stackup for pcb
 sub _LoadStandardStackup {
@@ -304,8 +303,6 @@ sub _CompleteNewStackup {
 	FileHelper->WriteString( EnumsPaths->Jobs_STACKUPS . $stackupName . "\.xml", $xmlString );
 
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

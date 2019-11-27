@@ -38,7 +38,7 @@ sub BlindDrillChecks {
 
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, [$layer] );
 
-	my $stackup = Stackup->new($jobId);
+	my $stackup = Stackup->new($inCAM, $jobId);
 	my $uniDTM  = UniDTM->new( $inCAM, $jobId, $step, $layer->{"gROWname"}, 0 );
 	my @tools   = $uniDTM->GetUniqueTools();
 

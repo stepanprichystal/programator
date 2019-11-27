@@ -16,6 +16,7 @@ use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 
 use aliased 'Packages::Events::Event';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -32,9 +33,9 @@ sub new {
 	$self->{"state"} = Enums->GroupState_ACTIVEON;
 
 	$self->__SetLayout();
-	
+
 	#EVENTS
-	
+
 	$self->{"onChangeState"} = Event->new();
 
 	return $self;
@@ -64,8 +65,6 @@ sub Init {
 
 	#my ( $w, $h ) = $groupBody->GetSizeWH(); Exporter checker
 
- 
-
 }
 
 sub GetGroupHeight {
@@ -91,7 +90,7 @@ sub __SetLayout {
 
 	my $szHeader = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	my $headerTxt = Wx::StaticText->new( $pnlHeader, -1, $self->{"title"});
+	my $headerTxt = Wx::StaticText->new( $pnlHeader, -1, $self->{"title"} );
 
 	my $pnlSwitch = Wx::Panel->new( $pnlHeader, -1, &Wx::wxDefaultPosition, [ 40, 10 ] );
 
@@ -99,14 +98,13 @@ sub __SetLayout {
 
 	#Wx::Event::EVT_MOUSE_EVENTS( $pnlSwitch, sub { $self->__Switch( $pnlSwitch, @_ ) } );
 	#Wx::Event::EVT_MOUSE_EVENTS( $headerTxt, sub { $self->__Switch( $pnlSwitch, @_ ) } );
-	#Wx::Event::EVT_MOUSE_EVENTS( $pnlHeader, sub { $self->__Switch( $pnlSwitch, @_ ) } );
+	#Wx::Event::EVT_SIZE( $self, sub { $self->Test() } );
 
 	$self->{"headerTxt"} = $headerTxt;
 
 	my $pnlBody = Wx::Panel->new( $self, -1 );
 
 	$pnlBody->SetBackgroundColour( Wx::Colour->new( 245, 245, 245 ) );
- 
 
 	my $szBody = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
@@ -129,12 +127,17 @@ sub __SetLayout {
 	$self->{"pnlBody"}   = $pnlBody;
 	$self->{"pnlSwitch"} = $pnlSwitch;
 
- 
-	
-	
 	$self->__RecursiveHandler($pnlHeader);
 
 }
+
+#sub Test {
+#	my $self = shift;
+#	print STDERR "Refresh";
+#	#$self->{"groupBody"}->Refresh();
+#	#$self->{"pnlSwitch"}->Refresh();
+#
+#}
 
 sub SetState {
 	my $self  = shift;
@@ -145,7 +148,7 @@ sub SetState {
 }
 
 sub GetState {
-	my $self  = shift;
+	my $self = shift;
 
 	return $self->{"state"};
 
@@ -154,7 +157,12 @@ sub GetState {
 sub Refresh {
 	my $self = shift;
 
-	if ( $self->{"state"} eq Enums->GroupState_ACTIVEON ) {
+	if ( $self->{"state"} eq Enums->GroupState_ACTIVEALWAYS ) {
+		$self->{"pnlSwitch"}->SetBackgroundColour( Wx::Colour->new( 66, 82, 225 ) );    # blue
+		$self->{"groupBody"}->Enable();
+
+	}
+	elsif ( $self->{"state"} eq Enums->GroupState_ACTIVEON ) {
 		$self->{"pnlSwitch"}->SetBackgroundColour( Wx::Colour->new( 34, 177, 76 ) );    # green
 		$self->{"groupBody"}->Enable();
 
@@ -177,9 +185,11 @@ sub Refresh {
 sub __Switch {
 	my ( $self, $control, $c, $d ) = @_;
 
-	if (  $d->ButtonDown()  && $self->{"state"} ne Enums->GroupState_DISABLE ) {
- 
- 
+	if (    $d->ButtonDown()
+		 && $self->{"state"} ne Enums->GroupState_DISABLE
+		 && $self->{"state"} ne Enums->GroupState_ACTIVEALWAYS )
+	{
+
 		if ( $self->{"state"} eq Enums->GroupState_ACTIVEON ) {
 
 			$self->{"state"} = Enums->GroupState_ACTIVEOFF;
@@ -187,18 +197,17 @@ sub __Switch {
 		else {
 			$self->{"state"} = Enums->GroupState_ACTIVEON;
 		}
-		
-		$self->Refresh();
-		
-		$self->{"onChangeState"}->Do($self->{"state"});	
-	}
 
+		$self->Refresh();
+
+		$self->{"onChangeState"}->Do( $self->{"state"} );
+	}
 
 }
 
 # This method register handler LEFT_DOWN on every ("Wx::Panel", "Wx::StaticSizer", "Wx::StaticText")
 # child controls of this control
-# Thus, every child control will react on left button click 
+# Thus, every child control will react on left button click
 sub __RecursiveHandler {
 	my $self    = shift;
 	my $control = shift;
@@ -209,8 +218,7 @@ sub __RecursiveHandler {
 
 		Wx::Event::EVT_LEFT_DOWN( $control, sub { $self->__Switch( $control, @_ ) } );
 
-	 
-	} 
+	}
 
 	my @childrens = $control->GetChildren();
 

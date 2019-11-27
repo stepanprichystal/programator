@@ -37,8 +37,8 @@ sub new {
 	my $layers = shift;
 
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 60,     20, 50,         40,       50,     50,      80,       80, );
-	my @titles = ( "Name", "", "Polarity", "Mirror", "Comp", "Technology", "Merged films", "Single films" );
+	my @widths = ( 100,     20, 50,         40,           120,       	   120, );
+	my @titles = ( "Name", "", "Polarity", "Mirror",   "Merged films", "Single films" );
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
@@ -104,6 +104,7 @@ sub SetLayers {
 	my $self   = shift;
 	my $layers = shift;
 
+
 	my %smallLim = ();
 	my %bigLim   = ();
 
@@ -147,6 +148,20 @@ sub SetLayers {
 	$self->__OnSelectedChangeHandler();
 
 	$self->{"szMain"}->Layout();
+}
+
+sub EnableEditing{
+	my $self   = shift;
+	my $enable = shift;
+	
+	my @rows = $self->GetAllRows();
+
+	foreach my $r (@rows) {
+
+		$r->EnableEditing($enable);
+	}
+	
+	
 }
 
 sub __SetLayout {

@@ -89,8 +89,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetLocalCopy( $groupData->GetLocalCopy() );
 	$self->{"form"}->SetServerCopy( $groupData->GetServerCopy() );	
  
-	#refresh wrapper
-	$self->_RefreshWrapper();
+
 }
 
 sub GetGroupData {

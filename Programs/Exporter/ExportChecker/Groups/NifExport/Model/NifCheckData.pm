@@ -211,19 +211,11 @@ sub OnCheckGroupData {
 		);
 	}
 
-	# 7) Check if dps should be pattern, if tenting is realz unchecked
 
-	my $tenting = $self->__IsTentingCS( $inCAM, $jobId, $defaultInfo );
-	my $tentingForm = $groupData->GetTenting();
-
-	if ( !$tenting && $tentingForm ) {
-
-		$dataMngr->_AddWarningResult( "Pattern", "Dps by měla jít do výroby jako pattern, ale ve formuláši máš zaškrknutý tenting." );
-	}
 	
 	# X) Check technogy
 	# If layer cnt is => 2 technology should be galvanics (if there are plated drill layers), in other case resist
-	if(  $defaultInfo->GetLayerCnt() >= 2 && $groupData->GetTechnology() eq "M"){
+	if(  $defaultInfo->GetLayerCnt() >= 2 && $groupData->GetTechnology() eq EnumsGeneral->Technology_RESIST){
 		
 		my $cu = $defaultInfo->GetBaseCuThick("c");
 		$dataMngr->_AddWarningResult( "Technology", "DPS má zvolenou technologii \"Leptací resist\". "
@@ -236,7 +228,7 @@ sub OnCheckGroupData {
 
 	# 8) Check if goldfinger exist, if area is greater than 10mm^2
 
-	if ( $defaultInfo->LayerExist("c") && $defaultInfo->GetTypeOfPcb() ne "Neplatovany" ) {
+	if ( $defaultInfo->LayerExist("c") && $defaultInfo->GetPcbType() ne EnumsGeneral->PcbType_NOCOPPER ) {
 
 		my $goldCExist = CamGoldArea->GoldFingersExist( $inCAM, $jobId, $stepName, "c" );
 		my $goldSExist = 0;
@@ -425,7 +417,7 @@ sub OnCheckGroupData {
 
 	# 20) Check max cu thickness by pcb class
 
-	if ( $defaultInfo->GetTypeOfPcb() ne "Neplatovany" ) {
+	if ( $defaultInfo->GetPcbType() ne EnumsGeneral->PcbType_NOCOPPER ) {
 
 		my $maxCuThick = undef;
 
@@ -809,31 +801,7 @@ sub __CheckMarkingLayer {
 	return $res;
 }
 
-sub __IsTentingCS {
-	my $self        = shift;
-	my $inCAM       = shift;
-	my $jobId       = shift;
-	my $defaultInfo = shift;
-
-	unless ($defaultInfo) {
-		return 1;
-	}
-
-	my $tenting = 0;
-
-	if ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) ) {
-
-		my $etch = $defaultInfo->GetDefaultEtchType("c");
-
-		if ( $etch eq EnumsGeneral->Etching_TENTING ) {
-
-			$tenting = 1;
-		}
-
-	}
-
-	return $tenting;
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

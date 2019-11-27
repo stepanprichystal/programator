@@ -8,20 +8,17 @@ use constant {
 			   PopupResult_SUCCES      => "checkingSucces"
 };
 
-
-
 use constant {
-			   GroupState_ACTIVEON  => "groupActiveOn",
-			   GroupState_ACTIVEOFF => "groupActiveOff",
-			   GroupState_DISABLE   => "groupDisable"
+			   GroupState_ACTIVEON     => "groupActiveOn",
+			   GroupState_ACTIVEOFF    => "groupActiveOff",
+			   GroupState_DISABLE      => "groupDisable",
+			   GroupState_ACTIVEALWAYS => "groupActiveAlways",
 };
 
-
 use constant {
-			   GroupMandatory_YES  => "groupMandatoryYes",
-			   GroupMandatory_NO => "groupMandatoryNo"
+			   GroupMandatory_YES => "groupMandatoryYes",
+			   GroupMandatory_NO  => "groupMandatoryNo"
 };
-
 
 #
 #package EnumsGeneral::UserName;

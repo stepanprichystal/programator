@@ -91,8 +91,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetLayers( $groupData->GetLayers() );
 	$self->{"form"}->SetJetprintInfo( $groupData->GetJetprintInfo() );
  
-	#refresh wrapper
-	$self->_RefreshWrapper();
+
 }
 
 sub GetGroupData {

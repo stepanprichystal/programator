@@ -52,6 +52,8 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	
+	return 0 unless(scalar(@{$self->{"layers"}}));
 
 	#  1) Create fake layers which will be exported, but are created automatically
 	FakeLayers->CreateFakeLayers($inCAM, $jobId );

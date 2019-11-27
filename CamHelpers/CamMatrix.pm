@@ -204,7 +204,7 @@ sub GetNonSignalLayerSide {
 	}
 	else {
 
-		$side = StackupOperation->GetSideByLayer( $jobId, $sigL, $stackup );
+		$side = StackupOperation->GetSideByLayer( $inCAM, $jobId, $sigL, $stackup );
 	
 	}
 	

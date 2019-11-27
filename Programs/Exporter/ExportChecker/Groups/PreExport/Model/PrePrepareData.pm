@@ -37,8 +37,8 @@ sub OnGetGroupState {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
 
-	#we want nif group allow always, so return ACTIVE ON
-	return Enums->GroupState_ACTIVEON;
+	# Pre group has to be aways exported
+	return Enums->GroupState_ACTIVEALWAYS;
 
 }
 
@@ -54,39 +54,73 @@ sub OnPrepareGroupData {
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
-	# Prepare default layer settings
-	my @signalLayers = $defaultInfo->GetSignalLayers();
 
-	$defaultInfo->SetDefaultLayersSettings( \@signalLayers );
+	# Prepare technology CS
+	
+	
+	# Prepare tenting CS
 
-	my @layers = $self->__GetFinalLayers( \@signalLayers );
 
-	$groupData->SetSignalLayers( \@layers );
+	# Prepare signal layer for settings
+ 
+	my @sigLayers = $self->__GetSignalLayersSett( $defaultInfo );
+	$groupData->SetSignalLayers( \@sigLayers );
+	
+	# Prepare other layer for settings
+	
+	my @otherLayers = $self->__GetOtherLayersSett( $defaultInfo );
+	$groupData->SetOtherLayers( \@otherLayers );
 
 	return $groupData;
 }
 
-sub __GetFinalLayers {
+sub __GetSignalLayersSett {
 	my $self   = shift;
-	my @layers = @{ shift(@_) };
+	my $defaultInfo = shift;
+	
+	my @signalLayers = ();
+	push(@signalLayers, $defaultInfo->GetSignalLayers());
+	push(@signalLayers, $defaultInfo->GetSignalExtLayers());	
+
+	# if No copper, remove layer C
+	
+	@signalLayers = () if($defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER);
 
 	my @prepared = ();
 
-	foreach my $l (@layers) {
-		my %lInfo = ();
-
-		$lInfo{"plot"}        = 1;
-		$lInfo{"name"}        = $l->{"gROWname"};
-		$lInfo{"polarity"}    = $l->{"polarity"};
-		$lInfo{"etchingType"} = $l->{"etchingType"};
-		$lInfo{"mirror"}      = $l->{"mirror"};
-		$lInfo{"comp"}        = $l->{"comp"};
-
+	foreach my $l (@signalLayers) {
+		 
+		 my %lInfo = $defaultInfo->GetDefSignalLSett($l);
+		 
+	 
 		push( @prepared, \%lInfo );
 	}
 
 	return @prepared;
+}
 
+sub __GetOtherLayersSett {
+	my $self   = shift;
+	my $defaultInfo = shift;
+	
+	my @otherLayer = $defaultInfo->GetBoardBaseLayers();
+
+	@otherLayer =   grep { 
+	  	 $_->{"gROWlayer_type"} eq "solder_mask" 
+	  || $_->{"gROWlayer_type"} eq "silk_screen" 
+	  || $_->{"gROWname"} =~ /^((gold)|([gl]))[cs]$/ }
+	  @otherLayer;
+
+	my @prepared = ();
+
+	foreach my $l (@otherLayer) {
+		 
+		 my %lInfo = $defaultInfo->GetNonSignalLSett($l);
+ 
+		push( @prepared, \%lInfo );
+	}
+
+	return @prepared;
 }
 
 #-------------------------------------------------------------------------------------------#

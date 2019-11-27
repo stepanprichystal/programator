@@ -10,6 +10,7 @@ package Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultIn
 #3th party library
 use strict;
 use warnings;
+use Test::More;
 
 #local library
 use aliased 'Enums::EnumsGeneral';
@@ -38,50 +39,66 @@ use aliased 'Helpers::JobHelper';
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+	my $jobId = shift;
+
+	my $self = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+	$self->{"jobId"} = $jobId;
 	$self->{"step"}  = "panel";
+	$self->{"init"}  = 0;
 
 	# Defaul values
-	$self->{"layerCnt"}      = undef;
-	$self->{"stackup"}       = undef;
-	$self->{"stackupNC"}     = undef;
-	$self->{"pattern"}       = undef;
-	$self->{"tenting"}       = undef;
-	$self->{"baseLayers"}    = undef;
-	$self->{"signalLayers"}  = undef;
-	$self->{"scoreChecker"}  = undef;
-	$self->{"materialKind"}  = undef;
-	$self->{"pcbTypeHelios"} = undef;    # type by helios oboustranny, neplat etc..
-	$self->{"finalPcbThick"} = undef;
-	$self->{"allStepsNames"} = undef;    # all steps
-	$self->{"allLayers"}     = undef;    # all layers
-	$self->{"isPool"}        = undef;
-	$self->{"surface"}       = undef;
-	$self->{"jobAttributes"} = undef;    # all job attributes
-	$self->{"costomerInfo"}  = undef;    # info about customer, name, reference, ...
-	$self->{"costomerNote"}  = undef;    # notes about customer, like export paste, info to pdf, ..
-	$self->{"pressfitExist"} = undef;    # if pressfit exist in job
-	$self->{"tolHoleExist"}  = undef;    # if tolerance hole exist in job
-	$self->{"pcbBaseInfo"}   = undef;    # contain base info about pcb from IS
-	$self->{"reorder"}       = undef;    # indicate id in time in export exist reorder
-	$self->{"panelType"}     = undef;    # return type of panel from Enums::EnumsProducPanel
-	$self->{"pcbSurface"}    = undef;    # surface from IS
-	$self->{"pcbThick"}      = undef;    # total thick of pcb
-	$self->{"pcbClass"}      = undef;    # pcb class of outer layer
-	$self->{"pcbClassInner"} = undef;    # pcb class of inner layer
-	$self->{"pcbIsFlex"}     = undef;    # pcb is flex
-
-	$self->__InitDefault();
+	$self->{"pcbType"}         = undef;
+	$self->{"layerCnt"}        = undef;
+	$self->{"stackup"}         = undef;
+	$self->{"stackupNC"}       = undef;
+	$self->{"pattern"}         = undef;
+	$self->{"tenting"}         = undef;
+	$self->{"baseLayers"}      = undef;
+	$self->{"signalLayers"}    = undef;
+	$self->{"signalExtLayers"} = undef;
+	$self->{"NCLayers"}        = undef;
+	$self->{"scoreChecker"}    = undef;
+	$self->{"materialKind"}    = undef;
+	$self->{"pcbTypeHelios"}   = undef;    # type by helios oboustranny, neplat etc..
+	$self->{"finalPcbThick"}   = undef;
+	$self->{"allStepsNames"}   = undef;    # all steps
+	$self->{"allLayers"}       = undef;    # all layers
+	$self->{"isPool"}          = undef;
+	$self->{"surface"}         = undef;
+	$self->{"jobAttributes"}   = undef;    # all job attributes
+	$self->{"costomerInfo"}    = undef;    # info about customer, name, reference, ...
+	$self->{"costomerNote"}    = undef;    # notes about customer, like export paste, info to pdf, ..
+	$self->{"pressfitExist"}   = undef;    # if pressfit exist in job
+	$self->{"tolHoleExist"}    = undef;    # if tolerance hole exist in job
+	$self->{"pcbBaseInfo"}     = undef;    # contain base info about pcb from IS
+	$self->{"reorder"}         = undef;    # indicate id in time in export exist reorder
+	$self->{"panelType"}       = undef;    # return type of panel from Enums::EnumsProducPanel
+	$self->{"pcbSurface"}      = undef;    # surface from IS
+	$self->{"pcbThick"}        = undef;    # total thick of pcb
+	$self->{"pcbClass"}        = undef;    # pcb class of outer layer
+	$self->{"pcbClassInner"}   = undef;    # pcb class of inner layer
+	$self->{"pcbIsFlex"}       = undef;    # pcb is flex
 
 	return $self;
 }
 
+sub Init {
+	my $self = shift;
+
+	# Do not store InCAM object as Object property,
+	# becase if is Defalt info used in child thread, InCAM don't work
+	my $inCAM = shift;
+
+	$self->__Init($inCAM);
+
+}
+
 sub GetBoardBaseLayers {
 	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	return @{ $self->{"baseLayers"} };
 }
@@ -89,17 +106,40 @@ sub GetBoardBaseLayers {
 sub GetSignalLayers {
 	my $self = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return @{ $self->{"signalLayers"} };
 }
 
+sub GetSignalExtLayers {
+	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
+	return @{ $self->{"signalExtLayers"} };
+}
+
+sub GetNCLayers {
+	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
+	return @{ $self->{"NCLayers"} };
+}
+
+
 sub GetPcbClass {
 	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	return $self->{"pcbClass"};
 }
 
 sub GetPcbClassInner {
 	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	# take class from "outer" if not defined
 	if ( !defined $self->{"pcbClassInner"} || $self->{"pcbClassInner"} == 0 ) {
@@ -112,18 +152,9 @@ sub GetPcbClassInner {
 sub GetLayerCnt {
 	my $self = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return $self->{"layerCnt"};
-}
-
-# Return if Cu layer has orientation TOP/BOT
-# Orientation is based on view pcb from top
-sub GetSideByLayer {
-	my $self      = shift;
-	my $layerName = shift;
-
-	my $side = StackupOperation->GetSideByLayer( $self->{"jobId"}, $layerName, $self->{"stackup"} );
-
-	return $side;
 }
 
 sub GetCompBySigLayer {
@@ -131,31 +162,30 @@ sub GetCompBySigLayer {
 	my $layerName = shift;
 	my $plated    = shift;    # EnumsGeneral->Technology_xxx.
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	die "Attr \"plated\" has to be specified" unless ( defined $plated );
 
 	my $class = undef;        # Signal layer construction class
 
-	if ( $layerName =~ /^v\d+(outer)?$/ ) {
+	my %lPars = JobHelper->ParseSignalLayerName($layerName);
+
+	if ( $lPars{"sourceName"} =~ /^v\d+$/ ) {
 		$class = $self->GetPcbClassInner();
 	}
 	else {
 		$class = $self->GetPcbClass();
 	}
 
-	my $layerNameCu = $layerName;
-
-	if ( $layerName =~ m/^v(\d+)outer$/ ) {
-
-		$layerNameCu = $1 == 1 ? "c" : "s";
-	}
-
-	my $cuThick = $self->GetBaseCuThick($layerNameCu);
+	my $cuThick = $self->GetBaseCuThick( $lPars{"sourceName"} );
 
 	return EtchOperation->GetCompensation( $cuThick, $class, $plated );
 }
 
 sub GetScoreChecker {
 	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	my $res = 0;
 
@@ -166,15 +196,18 @@ sub GetScoreChecker {
 
 }
 
-sub GetTypeOfPcb {
+sub GetPcbType {
 	my $self = shift;
 
-	$self->{"pcbTypeHelios"} = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-	return $self->{"pcbTypeHelios"};
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
+	return $self->{"pcbType"};
 }
 
 sub GetMaterialKind {
 	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	$self->{"materialKind"} = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	return $self->{"materialKind"};
@@ -184,13 +217,13 @@ sub GetBaseCuThick {
 	my $self      = shift;
 	my $layerName = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	my $cuThick;
 	if ( HegMethods->GetBasePcbInfo( $self->{"jobId"} )->{"pocet_vrstev"} > 2 ) {
 
-		$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
+		$cuThick = $self->{"stackup"}->GetCuLayer($layerName)->GetThick();
 
-		my $cuLayer = $self->{"stackup"}->GetCuLayer($layerName);
-		$cuThick = $cuLayer->GetThick();
 	}
 	else {
 
@@ -200,294 +233,24 @@ sub GetBaseCuThick {
 	return $cuThick;
 }
 
-## Set polarity, mirro, compensation for board layers
-## this is used for OPFX export, tif file export
-#sub SetDefaultLayersSettings {
-#	my $self   = shift;
-#	my $layers = shift;
-#
-#	# Set polarity of layers
-#	foreach my $l ( @{$layers} ) {
-#
-#		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
-#
-#			$l->{"polarity"} = "negative";
-#
-#		}
-#		elsif ( $l->{"gROWlayer_type"} eq "solder_mask" ) {
-#
-#			$l->{"polarity"} = "positive";
-#
-#		}
-#		elsif (    $l->{"gROWlayer_type"} eq "signal"
-#				|| $l->{"gROWlayer_type"} eq "power_ground"
-#				|| $l->{"gROWlayer_type"} eq "mixed"
-#				|| $l->{"gROWname"} =~ /^v\d+(outer)?$/i )
-#		{
-#
-#			# 1) set etching type
-#			my $etching = $self->GetDefaultEtchType( $l->{"gROWname"} );
-#
-#			$l->{"etchingType"} = $etching;
-#
-#			# 2) Set polarity by etching type
-#			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
-#				$l->{"polarity"} = "positive";
-#			}
-#			elsif ( $etching eq EnumsGeneral->Etching_TENTING || $etching eq EnumsGeneral->Etching_ONLY ) {
-#				$l->{"polarity"} = "negative";
-#			}
-#
-#			# 3) Exception for layer c, s and Galvanic gold. Polarity always postitive
-#			if ( $l->{"gROWname"} eq "c" || $l->{"gROWname"} eq "s" ) {
-#
-#				if ( $self->{"surface"} =~ /g/i ) {
-#					$l->{"polarity"} = "positive";
-#				}
-#			}
-#
-#			# 4) Edit polarity according InCAM matrix polarity
-#			# if polarity negative, switch polarity
-#			if ( $l->{"gROWpolarity"} eq "negative" ) {
-#
-#				if ( $l->{"polarity"} eq "negative" ) {
-#					$l->{"polarity"} = "positive";
-#
-#				}
-#				elsif ( $l->{"polarity"} eq "positive" ) {
-#					$l->{"polarity"} = "negative";
-#				}
-#
-#			}
-#
-#		}
-#		else {
-#
-#			$l->{"polarity"} = "positive";
-#
-#		}
-#	}
-#
-#	# Set mirror of layers
-#	foreach my $l ( @{$layers} ) {
-#
-#		# whatever with "c" is mirrored
-#		if ( $l->{"gROWname"} =~ /^[pm]*c2?$/i ) {
-#
-#			$l->{"mirror"} = 1;
-#
-#		}
-#
-#		# whatever with "s" is not mirrored
-#		elsif ( $l->{"gROWname"} =~ /^[pm]*s2?$/i ) {
-#
-#			$l->{"mirror"} = 0;
-#
-#		}
-#
-#		# inner layers decide by stackup
-#		elsif ( $l->{"gROWname"} =~ /^v\d+(outer)?$/i ) {
-#
-#			my $side = $self->GetSideByLayer( $l->{"gROWname"} );
-#
-#			if ( $side eq "top" ) {
-#
-#				$l->{"mirror"} = 1;
-#
-#			}
-#			else {
-#
-#				$l->{"mirror"} = 0;
-#			}
-#		}
-#
-#		# if layer end with c, mirror
-#		elsif ( $l->{"gROWname"} =~ /c$/i ) {
-#
-#			$l->{"mirror"} = 1;
-#
-#		}    # if layer end with s, mirror
-#		elsif ( $l->{"gROWname"} =~ /s$/i ) {
-#
-#			$l->{"mirror"} = 0;
-#
-#		}
-#	}
-#
-#	# Set compensation of signal layer
-#	foreach my $l ( @{$layers} ) {
-#
-#		if (    $l->{"gROWlayer_type"} eq "signal"
-#			 || $l->{"gROWlayer_type"} eq "power_ground"
-#			 || $l->{"gROWlayer_type"} eq "mixed"
-#			 || $l->{"gROWname"} =~ /^v\d+(outer)?$/i )
-#		{
-#
-#			$l->{"comp"} = $self->GetDefaultCompByLayer( $l->{"gROWname"} );
-#
-#			# If layer is negative, set negative compensation
-#			if ( defined $l->{"comp"} && $l->{"gROWpolarity"} eq "negative" ) {
-#				$l->{"comp"} = -$l->{"comp"};
-#			}
-#
-#			unless ( defined $l->{"comp"} ) {
-#				$l->{"comp"} = "NaN";
-#			}
-#
-#		}
-#		else {
-#
-#			$l->{"comp"} = 0;
-#
-#		}
-#	}
-#
-#}
-
-## Set polarity, mirro, compensation for board layers
-## this is used for OPFX export, tif file export
-#sub GetDefaultNonSignalLSett {
-#	my $self   = shift;
-#	my $layers = shift;
-#
-#	# Set polarity of layers
-#	foreach my $l ( @{$layers} ) {
-#
-#		if ( $l->{"gROWlayer_type"} eq "silk_screen" ) {
-#
-#			$l->{"polarity"} = "negative";
-#
-#		}
-#		elsif ( $l->{"gROWlayer_type"} eq "solder_mask" ) {
-#
-#			$l->{"polarity"} = "positive";
-#
-#		}
-#		elsif (    $l->{"gROWlayer_type"} eq "signal"
-#				|| $l->{"gROWlayer_type"} eq "power_ground"
-#				|| $l->{"gROWlayer_type"} eq "mixed"
-#				|| $l->{"gROWname"} =~ /^v\d+(outer)?$/i )
-#		{
-#
-#			# 1) set etching type
-#			my $etching = $self->GetDefaultEtchType( $l->{"gROWname"} );
-#
-#			$l->{"etchingType"} = $etching;
-#
-#			# 2) Set polarity by etching type
-#			if ( $etching eq EnumsGeneral->Etching_PATTERN ) {
-#				$l->{"polarity"} = "positive";
-#			}
-#			elsif ( $etching eq EnumsGeneral->Etching_TENTING || $etching eq EnumsGeneral->Etching_ONLY ) {
-#				$l->{"polarity"} = "negative";
-#			}
-#
-#			# 3) Exception for layer c, s and Galvanic gold. Polarity always postitive
-#			if ( $l->{"gROWname"} eq "c" || $l->{"gROWname"} eq "s" ) {
-#
-#				if ( $self->{"surface"} =~ /g/i ) {
-#					$l->{"polarity"} = "positive";
-#				}
-#			}
-#
-#			# 4) Edit polarity according InCAM matrix polarity
-#			# if polarity negative, switch polarity
-#			if ( $l->{"gROWpolarity"} eq "negative" ) {
-#
-#				if ( $l->{"polarity"} eq "negative" ) {
-#					$l->{"polarity"} = "positive";
-#
-#				}
-#				elsif ( $l->{"polarity"} eq "positive" ) {
-#					$l->{"polarity"} = "negative";
-#				}
-#
-#			}
-#
-#		}
-#		else {
-#
-#			$l->{"polarity"} = "positive";
-#
-#		}
-#	}
-#
-#	# Set mirror of layers
-#	foreach my $l ( @{$layers} ) {
-#
-#		# whatever with "c" is mirrored
-#		if ( $l->{"gROWname"} =~ /^[pm]*c2?$/i ) {
-#
-#			$l->{"mirror"} = 1;
-#
-#		}
-#
-#		# whatever with "s" is not mirrored
-#		elsif ( $l->{"gROWname"} =~ /^[pm]*s2?$/i ) {
-#
-#			$l->{"mirror"} = 0;
-#
-#		}
-#
-#		# inner layers decide by stackup
-#		elsif ( $l->{"gROWname"} =~ /^v\d+(outer)?$/i ) {
-#
-#			my $side = $self->GetSideByLayer( $l->{"gROWname"} );
-#
-#			if ( $side eq "top" ) {
-#
-#				$l->{"mirror"} = 1;
-#
-#			}
-#			else {
-#
-#				$l->{"mirror"} = 0;
-#			}
-#		}
-#
-#		# if layer end with c, mirror
-#		elsif ( $l->{"gROWname"} =~ /c$/i ) {
-#
-#			$l->{"mirror"} = 1;
-#
-#		}    # if layer end with s, mirror
-#		elsif ( $l->{"gROWname"} =~ /s$/i ) {
-#
-#			$l->{"mirror"} = 0;
-#
-#		}
-#	}
-#
-#	# Set compensation of signal layer
-#	foreach my $l ( @{$layers} ) {
-#
-#		if (    $l->{"gROWlayer_type"} eq "signal"
-#			 || $l->{"gROWlayer_type"} eq "power_ground"
-#			 || $l->{"gROWlayer_type"} eq "mixed"
-#			 || $l->{"gROWname"} =~ /^v\d+(outer)?$/i )
-#		{
-#
-#			$l->{"comp"} = $self->GetDefaultCompByLayer( $l->{"gROWname"} );
-#
-#		}
-#		else {
-#
-#			$l->{"comp"} = 0;
-#
-#		}
-#	}
-#
-#}
-
 # Set polarity, mirro, compensation for board layers
 # this is used for OPFX export, tif file export
 sub GetDefSignalLSett {
 	my $self = shift;
 	my $l    = shift;
 
-	my $etching    = $self->__GetDefaultEtchType( $l->{"gROWname"} );
-	my $plt        = $etching eq EnumsGeneral->Etching_ONLY ? 0 : 1;
-	my $technology = $self->__GetDefaultTechType( $l->{"gROWname"} );
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
+	my %lPars = JobHelper->ParseSignalLayerName( $l->{"gROWname"} );
+
+	my $etching = $self->GetDefaultEtchType( $l->{"gROWname"} );
+	my $plt     = 1;
+
+	if ( $etching eq EnumsGeneral->Etching_ONLY || $lPars{"outerCore"}  ) {
+		$plt = 0;
+	}
+
+	my $technology = $self->GetDefaultTechType( $l->{"gROWname"} );
 
 	my %lSett = $self->GetSignalLSett( $l, $plt, $etching, $technology );
 
@@ -502,6 +265,8 @@ sub GetSignalLSett {
 	my $l    = shift;
 	my $plt  = shift;    # Is layer plated
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	# EnumsGeneral->Etching_PATTERN
 	# EnumsGeneral->Etching_TENTING
 	my $etchType = shift;
@@ -515,7 +280,9 @@ sub GetSignalLSett {
 		   && $l->{"gROWlayer_type"} ne "power_ground"
 		   && $l->{"gROWlayer_type"} eq "mixed" );
 
-	my %lSett = ();
+	my %lPars = JobHelper->ParseSignalLayerName( $l->{"gROWname"} );
+
+	my %lSett = ( "name" => $l->{"gROWname"} );
 
 	# 1) Set etching type
 
@@ -529,28 +296,21 @@ sub GetSignalLSett {
 
 	my $class = undef;    # Signal layer construction class
 
-	if ( $l->{"gROWname"} =~ /^v\d+(outer)?$/ ) {
+	if ( $lPars{"sourceName"} =~ /^v\d+$/ ) {
 		$class = $self->GetPcbClassInner();
 	}
 	else {
 		$class = $self->GetPcbClass();
 	}
 
-	my $layerNameCu = $l->{"gROWname"};
+	my $cuThick = $self->GetBaseCuThick( $lPars{"sourceName"} );
 
-	# if fake outer layer, take cu from c or s signal layer
-	if ( $layerNameCu =~ m/^v(\d+)outer$/ ) {
-		$layerNameCu = $1 == 1 ? "c" : "s";
-	}
-
-	my $cuThick = $self->GetBaseCuThick($layerNameCu);
-
-	if ( $self->GetTypeOfPcb() eq 'Neplatovany' ) {
+	if ( $self->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER || $lPars{"plugging"} ) {
 
 		$lSett{"comp"} = 0;
 	}
 	else {
-
+ 
 		my $comp = EtchOperation->GetCompensation( $cuThick, $class, $plt, $etchType );
 
 		# If layer is negative, set negative compensation
@@ -563,6 +323,9 @@ sub GetSignalLSett {
 		}
 
 		$lSett{"comp"} = $comp;
+
+		diag( "Layer: " . $lSett{"name"} . "; Cu thick: $cuThick; Class: $class; Plated: $plt; EthingType: $etchType" );
+
 	}
 
 	# 4) Set polarity by etching type
@@ -593,16 +356,27 @@ sub GetSignalLSett {
 	}
 
 	# 6) Set mirror
-	if ( $l->{"gROWname"} =~ /^c$/i ) {
+	if ( $lPars{"sourceName"} =~ /^c$/i ) {
 		$lSett{"mirror"} = 1;
 	}
-	elsif ( $l->{"gROWname"} =~ /^s$/i ) {
+	elsif ( $lPars{"sourceName"} =~ /^s$/i ) {
 		$lSett{"mirror"} = 0;
 	}
 
-	elsif ( $l->{"gROWname"} =~ /^v\d+(outer)?$/i ) {
+	elsif ( $lPars{"sourceName"} =~ /^v\d+$/i ) {
+ 
+		my $side = undef;
 
-		my $side = $self->GetSideByLayer( $l->{"gROWname"} );
+		my $product = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"} );
+
+		if ( $lPars{"sourceName"} eq $product->GetTopCopperLayer() ) {
+
+			$side = "top";
+		}
+		elsif ( $lPars{"sourceName"} eq $product->GetBotCopperLayer() ) {
+
+			$side = "bot";
+		}
 
 		if ( $side eq "top" ) {
 
@@ -619,6 +393,7 @@ sub GetSignalLSett {
 	$lSett{"shrinkX"} = 0;
 	$lSett{"shrinkY"} = 0;
 
+	die "Layer name is not defined for layer:" . $self->{"gROWname"}      if ( !defined $lSett{"name"} );
 	die "Etching type is not defined for layer:" . $self->{"gROWname"}    if ( !defined $lSett{"etchingType"} );
 	die "Technology type is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"technologyType"} );
 	die "Compensation is not defined for layer:" . $self->{"gROWname"}    if ( !defined $lSett{"comp"} );
@@ -636,12 +411,14 @@ sub GetNonSignalLSett {
 	my $self = shift;
 	my $l    = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	die "Signal layer si not allowed"
 	  if (    $l->{"gROWlayer_type"} eq "signal"
 		   || $l->{"gROWlayer_type"} eq "power_ground"
 		   || $l->{"gROWlayer_type"} eq "mixed" );
 
-	my %lSett = ();
+	my %lSett = ( "name" => $l->{"gROWname"} );
 
 	# 1) Set polarity
 
@@ -662,14 +439,14 @@ sub GetNonSignalLSett {
 	# 2) Set mirror
 
 	# whatever with "c" is mirrored
-	if ( $l->{"gROWname"} =~ /^[pm]*c2?(flex)?$/i ) {
+	if ( $l->{"gROWname"} =~ /^(gold)*[lgpm]*c2?(flex)?$/i ) {
 
 		$lSett{"mirror"} = 1;
 
 	}
 
 	# whatever with "s" is not mirrored
-	elsif ( $l->{"gROWname"} =~ /^[pm]*s2?(flex)?$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^(gold)*[lgpm]*s2?(flex)?$/i ) {
 
 		$lSett{"mirror"} = 0;
 
@@ -683,8 +460,10 @@ sub GetNonSignalLSett {
 	$lSett{"shrinkX"} = 0;
 	$lSett{"shrinkY"} = 0;
 
-	die "Polarity is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"polarity"} );
-	die "Mirror is not defined for layer:" . $self->{"gROWname"}       if ( !defined $lSett{"mirror"} );
+	die "Layer name is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"name"} );
+	die "Polarity is not defined for layer:" . $self->{"gROWname"}   if ( !defined $lSett{"polarity"} );
+	die "Mirror is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"mirror"} );
+
 	die "Compensation is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"comp"} );
 	die "Shrink X is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"shrinkX"} );
 	die "Shrink Y is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"shrinkY"} );
@@ -695,6 +474,8 @@ sub GetNonSignalLSett {
 sub GetStackup {
 	my $self = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return $self->{"stackup"};
 }
 
@@ -702,6 +483,8 @@ sub GetStackup {
 sub StepExist {
 	my $self     = shift;
 	my $stepName = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	my @s = grep { $_ eq $stepName } @{ $self->{"allStepsNames"} };
 
@@ -717,7 +500,10 @@ sub StepExist {
 sub LayerExist {
 	my $self      = shift;
 	my $layerName = shift;
-	my @l         = grep { $_->{"gROWname"} eq $layerName } @{ $self->{"allLayers"} };
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
+	my @l = grep { $_->{"gROWname"} eq $layerName } @{ $self->{"allLayers"} };
 
 	if ( scalar(@l) ) {
 		return 1;
@@ -730,6 +516,8 @@ sub LayerExist {
 sub IsPool {
 	my $self = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return $self->{"isPool"};
 }
 
@@ -737,11 +525,15 @@ sub GetJobAttrByName {
 	my $self = shift;
 	my $attr = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return $self->{"jobAttributes"}->{$attr};
 }
 
 sub GetCustomerNote {
 	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	return $self->{"costomerNote"};
 }
@@ -749,11 +541,15 @@ sub GetCustomerNote {
 sub GetCustomerISInfo {
 	my $self = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return $self->{"costomerInfo"};
 }
 
 sub GetPressfitExist {
 	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	return $self->{"pressfitExist"};
 }
@@ -761,12 +557,16 @@ sub GetPressfitExist {
 sub GetToleranceHoleExist {
 	my $self = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return $self->{"tolHoleExist"};
 }
 
 sub GetPcbBaseInfo {
 	my $self = shift;
 	my $key  = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	if ($key) {
 		return $self->{"pcbBaseInfo"}->{$key};
@@ -781,6 +581,8 @@ sub GetMeritPressfitIS {
 	my $self = shift;
 	my $key  = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	if ( $self->{"pcbBaseInfo"}->{"merit_presfitt"} =~ /^A$/i ) {
 		return 1;
 	}
@@ -793,6 +595,8 @@ sub GetMeritPressfitIS {
 sub GetToleranceHoleIS {
 	my $self = shift;
 	my $key  = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	if ( $self->{"pcbBaseInfo"}->{"mereni_tolerance_vrtani"} =~ /^A$/i ) {
 		return 1;
@@ -807,6 +611,8 @@ sub GetChamferEdgesIS {
 	my $self = shift;
 	my $key  = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	if ( $self->{"pcbBaseInfo"}->{"srazeni_hran"} =~ /^A$/i ) {
 		return 1;
 	}
@@ -818,6 +624,8 @@ sub GetChamferEdgesIS {
 # Return if any reordr exist for this job id
 sub GetIsReorder {
 	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	if ( int( $self->{"reorder"} ) > 1 ) {
 
@@ -833,12 +641,16 @@ sub GetIsReorder {
 sub GetPanelType {
 	my $self = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return $self->{"panelType"};
 }
 
 # Return pcb surface from IS
 sub GetPcbSurface {
 	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	return $self->{"pcbSurface"};
 }
@@ -847,6 +659,8 @@ sub GetPcbSurface {
 sub GetPcbThick {
 	my $self = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return $self->{"pcbThick"};
 }
 
@@ -854,93 +668,24 @@ sub GetPcbThick {
 sub GetIsFlex {
 	my $self = shift;
 
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
 	return $self->{"pcbIsFlex"};
 }
 
-#-------------------------------------------------------------------------------------------#
-#  Private methods
-#-------------------------------------------------------------------------------------------#
-
-sub __InitDefault {
-	my $self = shift;
-
-	my @baseLayers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"baseLayers"} = \@baseLayers;
-
-	my @signalLayers = CamJob->GetSignalLayer( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"signalLayers"} = \@signalLayers;
-
-	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->{"pcbClassInner"} = CamJob->GetJobPcbClassInner( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->{"platedRoutExceed"} = PlatedRoutArea->PlatedAreaExceed( $self->{"inCAM"}, $self->{'jobId'}, "panel" );
-
-	$self->{"rsExist"} = CamDrilling->NCLayerExists( $self->{"inCAM"}, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
-
-	if ( $self->{"layerCnt"} > 2 ) {
-
-		$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{'jobId'} );
-		$self->{"stackupNC"} = StackupNC->new( $self->{'jobId'}, $self->{"inCAM"} );
-	}
-
-	if ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "score" ) ) {
-
-		$self->{"scoreChecker"} = ScoreChecker->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "score", 1 );
-		$self->{"scoreChecker"}->Init();
-	}
-
-	my @allSteps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"allStepsNames"} = \@allSteps;    #all steps
-
-	my @allLayers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"allLayers"} = \@allLayers;
-
-	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
-
-	$self->{"surface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
-
-	my %jobAtt = CamAttributes->GetJobAttr( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"jobAttributes"} = \%jobAtt;
-
-	$self->{"costomerInfo"} = HegMethods->GetCustomerInfo( $self->{"jobId"} );
-
-	$self->{"costomerNote"} = CustomerNote->new( $self->{"costomerInfo"}->{"reference_subjektu"} );
-
-	$self->{"pressfitExist"} = PressfitOperation->ExistPressfitJob( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
-
-	$self->{"tolHoleExist"} = TolHoleOperation->ExistTolHoleJob( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
-
-	$self->{"pcbBaseInfo"} = HegMethods->GetBasePcbInfo( $self->{"jobId"} );
-
-	$self->{"reorder"} = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
-
-	$self->{"panelType"} = PanelDimension->GetPanelType( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->{"pcbSurface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
-
-	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $self->{"inCAM"}, $self->{"jobId"} );
-
-	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
-
-}
-
 # Return default type of technology
-sub __GetDefaultTechType {
+sub GetDefaultTechType {
 	my $self      = shift;
 	my $layerName = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	my $platedNC = 0;
 
 	# Default type of plating is Etching only
 	my $techType = EnumsGeneral->Technology_RESIST;
 
-	my $etch = $self->__GetDefaultEtchType($layerName);
+	my $etch = $self->GetDefaultEtchType($layerName);
 
 	if ( $etch ne EnumsGeneral->Etching_ONLY ) {
 
@@ -951,26 +696,26 @@ sub __GetDefaultTechType {
 
 }
 
-sub __GetDefaultEtchType {
+sub GetDefaultEtchType {
 	my $self      = shift;
 	my $layerName = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	my $platedNC = 0;
 
 	# Default type of plating is Etching only
 	my $etchType = EnumsGeneral->Etching_ONLY;
 
-	if ( $self->{"layerCnt"} <= 2 ) {
+	if ( $self->{"layerCnt"} == 2 ) {
 
-		my @platedNC = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-		@platedNC = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_fDrill } @platedNC;
+		my @platedNC = grep { $_->{"plated"} && !$_->{"technical"}} $self->GetNCLayers();
 
 		if ( scalar(@platedNC) ) {
 
-			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
+			my @viaFill = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill } @platedNC;
+
+			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || scalar(@viaFill) ) {
 				$etchType = EnumsGeneral->Etching_PATTERN;
 			}
 			else {
@@ -980,116 +725,31 @@ sub __GetDefaultEtchType {
 	}
 	elsif ( $self->{"layerCnt"} > 2 ) {
 
-		my $pressCnt   = $self->{"stackup"}->GetPressCount();
-		my %pressInfo  = $self->{"stackup"}->GetPressProducts();
-		my $lamination = $self->{"stackup"}->GetSequentialLam();
+		# Parse signal layer name
+		my %lPars = JobHelper->ParseSignalLayerName($layerName);
+		my $NCproduct = $self->{"stackupNC"}->GetNCProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
 
-		my $stackupNCitem = undef;
+		if (    $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop, 1 )
+			 || $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill,    1 )
+			 || $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, 1 )
+			 || $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_cFillDrill,    1 )
+			 || $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot,     1 )
+			 || $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot, 1 ) )
+		{
+			# if top core layer contains a blind drill top -> pattern (e.g. when 4vv stackup is make from 2 cores)
 
-		# 1) We need to get top and bot layer, which will be pressed, etched etd together
-		my $core = $self->{"stackup"}->GetCoreByCuLayer($layerName);
-
-		# a) create  stackup item contains one core
-		if ($core) {
-
-			my $order = $core->GetCoreNumber();
-
-			$stackupNCitem = $self->{"stackupNC"}->GetCore($order);
-
-		}
-
-		# b) create stackup item, which conatin > 2 signal layer (pressing)
-		# (sometimes ona layer is exposed twise in production
-		# E.g. when 4vv stackup is make from 2 cores)
-
-		my $press = undef;
-
-		# find, which press was layer pressed in
-		foreach my $pNum ( keys %pressInfo ) {
-
-			my $p = $pressInfo{$pNum};
-
-			if ( $p->GetTopCopperLayer() eq $layerName || $p->GetBotCopperLayer() eq $layerName ) {
-				$press = $p;
-
-				my $order = $press->GetPressOrder();
-				$stackupNCitem = $self->{"stackupNC"}->GetPress($order);
-
-				last;
-			}
+			$etchType = EnumsGeneral->Etching_PATTERN;
 
 		}
+		elsif (    $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_cDrill, 1 )
+				|| $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_nDrill,   1 )
+				|| $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bMillTop, 1 )
+				|| $NCproduct->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bMillBot, 1 ) )
+		{
 
-		# 2) Now decide, if there is blind/burried drilling in stackupItem ( = pressInfo/coreInfo)
+			# if top core layer contains any other plated drill/rout
 
-		# core can have different etching
-		if ( $core && !$press ) {
-
-			# if core contain core(burried) drilling -> tenting
-
-			if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
-
-				$etchType = EnumsGeneral->Etching_TENTING;
-			}
-
-			if ( $stackupNCitem->GetTopSigLayer()->GetName() eq $layerName ) {
-				if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop ) ) {
-
-					# if top core layer contains a blind drill top -> pattern (e.g. when 4vv stackup is make from 2 cores)
-
-					$etchType = EnumsGeneral->Etching_PATTERN;
-
-				}
-				elsif (    $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill )
-						|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill )
-						|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop )
-						|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bMillTop ) )
-				{
-
-					# if top core layer contains any other plated drill/rout
-
-					$etchType = EnumsGeneral->Etching_TENTING;
-				}
-			}
-
-			if ( $stackupNCitem->GetBotSigLayer()->GetName() eq $layerName ) {
-				if ( $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) ) {
-
-					# if bot core layer contains a blind drill bot -> pattern (e.g. when 4vv stackup is make from 2 cores)
-
-					$etchType = EnumsGeneral->Etching_PATTERN;
-				}
-				elsif (    $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot )
-						|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bMillBot ) )
-				{
-
-					# if bot core layer contains any other plated drill/rout
-
-					$etchType = EnumsGeneral->Etching_TENTING;
-				}
-			}
-
-		}
-		elsif ($press) {
-
-			# if press, when both side of stackup item has to have same etching type
-
-			if (    $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop )
-				 || $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot ) )
-			{
-				$etchType = EnumsGeneral->Etching_PATTERN;
-			}
-			elsif (    $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill )
-					|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill )
-					|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop )
-					|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bMillTop )
-					|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot )
-					|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bMillBot )
-					|| $stackupNCitem->ExistNCLayers( StackupEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bMillBot ) )
-			{
-
-				$etchType = EnumsGeneral->Etching_TENTING;
-			}
+			$etchType = EnumsGeneral->Etching_TENTING;
 		}
 
 		# 3) Check on plated rout most outer layers (only when surface is not hard galvanic gold)
@@ -1098,7 +758,7 @@ sub __GetDefaultEtchType {
 
 			if ( $self->{"surface"} !~ /g/i ) {
 
-				if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
+				if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} ) {
 					$etchType = EnumsGeneral->Etching_PATTERN;
 				}
 			}
@@ -1108,38 +768,85 @@ sub __GetDefaultEtchType {
 	return $etchType;
 }
 
-sub __GetCompByLayer {
-	my $self      = shift;
-	my $layerName = shift;
-	my $plated    = shift;
-	my $etchType  = shift;    # EnumsGeneral->Technology_xxx. Only signal layers depends on this attr
+#-------------------------------------------------------------------------------------------#
+#  Private methods
+#-------------------------------------------------------------------------------------------#
 
-	my $class = undef;        # Signal layer construction class
+sub __Init {
+	my $self  = shift;
+	my $inCAM = shift;
 
-	if ( $layerName =~ /^v\d+(outer)?$/ ) {
-		$class = $self->GetPcbClassInner();
+	$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
+
+	my @baseLayers = CamJob->GetBoardBaseLayers( $inCAM, $self->{"jobId"} );
+	$self->{"baseLayers"} = \@baseLayers;
+
+	my @signalLayers = CamJob->GetSignalLayer( $inCAM, $self->{"jobId"} );
+	$self->{"signalLayers"} = \@signalLayers;
+
+	my @signalExtLayers = CamJob->GetSignalExtLayer( $inCAM, $self->{"jobId"} );
+	$self->{"signalExtLayers"} = \@signalExtLayers;
+
+	my @NCLayers = CamJob->GetNCLayers( $inCAM, $self->{"jobId"} );
+	CamDrilling->AddNCLayerType(\@NCLayers);
+	$self->{"NCLayers"} = \@NCLayers;
+
+	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $inCAM, $self->{"jobId"} );
+
+	$self->{"pcbClassInner"} = CamJob->GetJobPcbClassInner( $inCAM, $self->{"jobId"} );
+
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $self->{"jobId"} );
+
+	$self->{"platedRoutExceed"} = PlatedRoutArea->PlatedAreaExceed( $inCAM, $self->{'jobId'}, "panel" );
+
+	$self->{"rsExist"} = CamDrilling->NCLayerExists( $inCAM, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+
+	if ( $self->{"layerCnt"} > 2 ) {
+
+		$self->{"stackup"} = Stackup->new( $inCAM, $self->{'jobId'} );
+		$self->{"stackupNC"} = StackupNC->new( $inCAM, $self->{'jobId'} );
 	}
-	else {
-		$class = $self->GetPcbClass();
+
+	if ( CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "score" ) ) {
+
+		$self->{"scoreChecker"} = ScoreChecker->new( $inCAM, $self->{"jobId"}, $self->{"step"}, "score", 1 );
+		$self->{"scoreChecker"}->Init();
 	}
 
-	my $layerNameCu = $layerName;
+	my @allSteps = CamStep->GetAllStepNames( $inCAM, $self->{"jobId"} );
+	$self->{"allStepsNames"} = \@allSteps;    #all steps
 
-	if ( $layerName =~ m/^v(\d+)outer$/ ) {
+	my @allLayers = CamJob->GetAllLayers( $inCAM, $self->{"jobId"} );
+	$self->{"allLayers"} = \@allLayers;
 
-		$layerNameCu = $1 == 1 ? "c" : "s";
-	}
+	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
 
-	my $cuThick = $self->GetBaseCuThick($layerNameCu);
+	$self->{"surface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
 
-	my $comp = 0;
+	my %jobAtt = CamAttributes->GetJobAttr( $inCAM, $self->{"jobId"} );
+	$self->{"jobAttributes"} = \%jobAtt;
 
-	# when neplat, there is layer "c" but return 0 comp
-	if ( $self->GetTypeOfPcb() eq 'Neplatovany' ) {
-		return 0;
-	}
+	$self->{"costomerInfo"} = HegMethods->GetCustomerInfo( $self->{"jobId"} );
 
-	return EtchOperation->GetCompensation( $cuThick, $class, $plated, $etchType );
+	$self->{"costomerNote"} = CustomerNote->new( $self->{"costomerInfo"}->{"reference_subjektu"} );
+
+	$self->{"pressfitExist"} = PressfitOperation->ExistPressfitJob( $inCAM, $self->{"jobId"}, $self->{"step"}, 1 );
+
+	$self->{"tolHoleExist"} = TolHoleOperation->ExistTolHoleJob( $inCAM, $self->{"jobId"}, $self->{"step"}, 1 );
+
+	$self->{"pcbBaseInfo"} = HegMethods->GetBasePcbInfo( $self->{"jobId"} );
+
+	$self->{"reorder"} = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
+
+	$self->{"panelType"} = PanelDimension->GetPanelType( $inCAM, $self->{"jobId"} );
+
+	$self->{"pcbSurface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
+
+	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $inCAM, $self->{"jobId"} );
+
+	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
+
+	$self->{"init"} = 1;
 
 }
 

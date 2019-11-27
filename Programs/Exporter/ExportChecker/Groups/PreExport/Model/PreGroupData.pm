@@ -31,41 +31,52 @@ sub new {
 }
 
  
-# layers
-sub SetLayers {
+# signal layers
+sub SetSignalLayers {
 	my $self  = shift;
-	$self->{"data"}->{"layers"} = shift;
+	$self->{"data"}->{"signalLayers"} = shift;
 }
 
-sub GetLayers {
+sub GetSignalLayers {
 	my $self  = shift;
-	return $self->{"data"}->{"layers"};
+	return $self->{"data"}->{"signalLayers"};
 }
 
-# Tenting
-sub SetTenting {
+# other layers
+sub SetOtherLayers {
 	my $self  = shift;
-	$self->{"data"}->{"tenting"} = shift;
+	$self->{"data"}->{"otherLayers"} = shift;
 }
 
-sub GetTenting {
+sub GetOtherLayers {
 	my $self  = shift;
-	return $self->{"data"}->{"tenting"};
+	return $self->{"data"}->{"otherLayers"};
 }
 
-
-# Technology
-sub SetTechnology {
-	my $self  = shift;
-	
-	$self->{"data"}->{"technology"} = shift;
-}
-
-sub GetTechnology {
-	my $self  = shift;
-	
-	return $self->{"data"}->{"technology"};
-}
+## Tenting
+#sub SetTentingCS {
+#	my $self  = shift;
+#	$self->{"data"}->{"tentingCS"} = shift;
+#}
+#
+#sub GetTentingCS {
+#	my $self  = shift;
+#	return $self->{"data"}->{"tentingCS"};
+#}
+#
+#
+## Technology
+#sub SetTechnologyCS {
+#	my $self  = shift;
+#	
+#	$self->{"data"}->{"technologyCS"} = shift;
+#}
+#
+#sub GetTechnologyCS {
+#	my $self  = shift;
+#	
+#	return $self->{"data"}->{"technologyCS"};
+#}
  
 
 #-------------------------------------------------------------------------------------------#

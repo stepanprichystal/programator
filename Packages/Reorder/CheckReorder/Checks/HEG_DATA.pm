@@ -48,7 +48,7 @@ sub Run {
 	# 1) Check nakoveni in cores
 	if ( !$isPool && $layerCnt > 2 ) {
 
-		my $stackup = Stackup->new($jobId);
+		my $stackup = Stackup->new($inCAM, $jobId);
  
 		foreach my $coreIS ( HegMethods->GetAllCoresInfo($jobId) ) {
 

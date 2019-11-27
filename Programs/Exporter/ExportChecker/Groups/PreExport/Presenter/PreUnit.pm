@@ -46,7 +46,7 @@ sub new {
 	$self->{"unitId"} = UnitEnums->UnitId_PRE;
 
 	# GUI exist
-	$self->{"formLess"} = 1;
+	$self->{"formLess"} = 0;
 
 	# init class for model
 	my $checkData   = PreCheckData->new();
@@ -92,12 +92,14 @@ sub RefreshGUI {
 	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
-	#$self->{"form"}->SetSendToPlotter( $groupData->GetSendToPlotter() );
 	$self->{"form"}->SetSignalLayers( $groupData->GetSignalLayers() );
-
-	#refresh wrapper
-	#$self->_RefreshWrapper();
+	$self->{"form"}->SetOtherLayers( $groupData->GetOtherLayers() );
+ 	#$self->{"form"}->SetTechnologyCS( $groupData->GetTechnologyCS() );
+ 	#$self->{"form"}->SetTentingCS( $groupData->GetTentingCS() );
+	
+ 
 }
+
 
 sub GetGroupData {
 
@@ -111,11 +113,14 @@ sub GetGroupData {
 	#else return default group data, not processed by form
 
 	if ($frm) {
+		
 		$groupData = $self->{"dataMngr"}->GetGroupData();
- 
+		
 		$groupData->SetSignalLayers( $frm->GetSignalLayers() );
-		 
-
+		$groupData->SetOtherLayers( $frm->GetOtherLayers() );
+		#$groupData->SetTechnologyCS( $frm->GetTechnologyCS() );	 
+		#$groupData->SetTentingCS( $frm->GetTentingCS() );
+ 
 	}
 	else {
 
@@ -123,7 +128,6 @@ sub GetGroupData {
 	}
 
 	return $groupData;
-
 }
 
 #-------------------------------------------------------------------------------------------#

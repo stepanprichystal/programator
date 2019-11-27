@@ -52,7 +52,7 @@ sub PrepareBendAreaOther {
 
 	CamHelper->SetStep( $inCAM, $step );
 
-	my $stackup = Stackup->new($jobId);
+	my $stackup = Stackup->new($inCAM, $jobId);
 
 	# 1) Put Cu to signal layers in bend area
 	my @mess = (@messHead);

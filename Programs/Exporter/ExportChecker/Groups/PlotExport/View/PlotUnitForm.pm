@@ -10,7 +10,6 @@ use base qw(Wx::Panel);
 use Class::Interface;
 &implements('Programs::Exporter::ExportChecker::Groups::IUnitForm');
 
- 
 #3th party library
 use strict;
 use warnings;
@@ -99,15 +98,18 @@ sub __SetLayoutQuickSettings {
 
 	# DEFINE CONTROLS
 	my $allChb = Wx::CheckBox->new( $statBox, -1, "All", &Wx::wxDefaultPosition, [ 70, 20 ] );
-
+	my $enableEditChb = Wx::CheckBox->new( $statBox, -1, "Enable editing", &Wx::wxDefaultPosition, [ 100, 20 ] );
 	# SET EVENTS
 	Wx::Event::EVT_CHECKBOX( $allChb, -1, sub { $self->__OnSelectAllChangeHandler(@_) } );
-
+	Wx::Event::EVT_CHECKBOX( $enableEditChb, -1, sub { $self->__OnEnableEditChangeHandler(@_) } );
+	
 	# BUILD STRUCTURE OF LAYOUT
 	$szStatBox->Add( $allChb, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szStatBox->Add( $enableEditChb, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 
 	# Set References
 	$self->{"allChb"} = $allChb;
+	$self->{"enableEditChb"} = $enableEditChb;
 
 	return $szStatBox;
 }
@@ -145,16 +147,19 @@ sub __SetLayoutControlList {
 
 	# DEFINE CONTROLS
 
-	my @layers = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	# init layers
+	my @layers = ();
+	push( @layers, $self->{"defaultInfo"}->GetSignalLayers() );
+	push( @layers, $self->{"defaultInfo"}->GetSignalExtLayers() );
+	@layers = () if ( $self->{"defaultInfo"}->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER );
 
-	# Remove layers not to be plotted
-	@layers = grep { $_->{"gROWname"} ne "bend" } @layers;
-	@layers = grep { $_->{"gROWname"} !~ /^coverlay/ } @layers;
-
-	foreach my $l (@layers) {
-		print STDERR $l->{"gROWname"} . "\n";
-	}
-
+	my @otherLayer =
+	  grep { $_->{"gROWlayer_type"} eq "solder_mask" || $_->{"gROWlayer_type"} eq "silk_screen" || $_->{"gROWname"} =~ /^((gold)|([gl]))[cs]$/ }
+	  $self->{"defaultInfo"}->GetBoardBaseLayers();
+	push( @layers, @otherLayer );
+	
+	@layers = sort{$a->{"gROWrow"} <=> $b->{"gROWrow"}} @layers;
+	
 	my $plotList = PlotList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@layers );
 
 	# SET EVENTS
@@ -187,25 +192,39 @@ sub __OnSelectAllChangeHandler {
 
 }
 
+# Enable/disable editing of plot rows
+sub __OnEnableEditChangeHandler {
+	my $self = shift;
+	my $chb  = shift;
 
+	if ( $self->{"enableEditChb"}->IsChecked() ) {
 
+		$self->{"plotList"}->EnableEditing(1);
+	}
+	else {
+
+		$self->{"plotList"}->EnableEditing(0);
+	}
+
+}
+ 
 # =====================================================================
 # HANDLERS CONTROLS
 # =====================================================================
-sub OnPREGroupChangeLayerHandler {
+sub OnPREGroupLayerSettChanged {
 	my $self  = shift;
 	my $layer = shift;
 
 	my $row = $self->{"plotList"}->GetRowByText( $layer->{"name"} );
 
-	die "Plot list row was not found by layer name:" . $layer->{"name"};
+	die "Plot list row was not found by layer name:" . $layer->{"name"} unless(defined $row);
 
 	$row->SetPolarity( $layer->{"polarity"} );
 	$row->SetMirror( $layer->{"mirror"} );
 	$row->SetComp( $layer->{"comp"} );
 	$row->SetShrinkX( $layer->{"shrinkX"} );
 	$row->SetShrinkY( $layer->{"shrinkY"} );
- 
+
 }
 
 # =====================================================================
@@ -216,11 +235,10 @@ sub DisableControls {
 
 }
 
-
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
- 
+
 # sendtToPlotter
 sub SetSendToPlotter {
 	my $self = shift;
@@ -249,8 +267,6 @@ sub SetLayers {
 	}
 
 	$self->{"allChb"}->SetValue($allChecked);
-
-	$self->{"data"}->{"layers"} = shift;
 }
 
 sub GetLayers {

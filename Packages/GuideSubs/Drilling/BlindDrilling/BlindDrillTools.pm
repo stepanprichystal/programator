@@ -45,7 +45,7 @@ sub SetBlindDrills {
 
 		$result = 1;
 
-		my $stackup = Stackup->new($jobId);
+		my $stackup = Stackup->new($self->{"inCAM"}, $jobId);
 		CamDrilling->AddLayerStartStop( $inCAM, $jobId, [ \%lInfo ] );
 		my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $layer, 0 );
 

@@ -58,13 +58,26 @@ sub __SetLayout {
 		$color = Wx::Colour->new( 0, 164, 123 );
 
 	}
-	elsif ($layer =~ /^[csv]\d*(outer)?$/) {
+	elsif ($layer =~ /^(outer)?[csv]\d*$/) {
 
 		$color = Wx::Colour->new( 251, 197, 77 );
 
 	}elsif ($layer =~ /^gold[cs]$/) {
 
 		$color = Wx::Colour->new( 255, 225, 74 );
+
+	}elsif ($layer =~ /^plg[csv]\d*$/) {
+
+		$color = Wx::Colour->new( 0, 105, 156 );
+
+	}elsif ($layer =~ /^l[cs]\d*$/) {
+
+		$color = Wx::Colour->new( 13, 225, 133 );
+
+	}
+	elsif ($layer =~ /^g[cs]\d*$/) {
+
+		$color = Wx::Colour->new( 100, 100, 100 );
 
 	}
 	else {

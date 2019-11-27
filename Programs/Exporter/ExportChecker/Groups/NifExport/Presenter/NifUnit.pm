@@ -119,8 +119,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetS_silk_screen_colour2( $groupData->GetS_silk_screen_colour2() );
 	$self->{"form"}->SetC_silk_screen_colour2( $groupData->GetC_silk_screen_colour2() );
 
-	#refresh wrapper
-	$self->_RefreshWrapper();
+
 }
 
 sub GetGroupData {

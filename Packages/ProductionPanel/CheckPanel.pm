@@ -143,7 +143,7 @@ sub _CheckPolarityInnerLayer {
 			  CamAttributes->GetLayerAttr( $inCAM, $jobId, 'panel', $layer );
 
 			$layAttrStackup{$layer} =
-			  StackupOperation->GetSideByLayer( $jobId, $layer );
+			  StackupOperation->GetSideByLayer( $inCAM, $jobId, $layer );
 
 			$layAttrPanel{$layer} = $layerAttr{'layer_side'};
 		}

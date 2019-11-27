@@ -28,8 +28,10 @@ sub new {
 	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
-	my $ref = $wrapper->can('OnPREGroupChangeLayerHandler');
-	$self->_AddHandler( $ref , Enums->Event_pre_layerChange );
+	my $ref = $wrapper->can('OnPREGroupLayerSettChanged');
+	$self->_AddHandler( $ref , Enums->Event_pre_sigLayerChange );
+	my $ref2 = $wrapper->can('OnPREGroupLayerSettChanged');
+	$self->_AddHandler( $ref2 , Enums->Event_pre_otherLayerChange );
 	 
 	# Provided events
 	 

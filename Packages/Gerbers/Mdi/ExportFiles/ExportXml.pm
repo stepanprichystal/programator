@@ -14,9 +14,10 @@ use XML::Simple;
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::NifFile::NifFile';
-use aliased 'Packages::TifFile::TifSigLayers';
+use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Enums::EnumsGeneral';
@@ -40,11 +41,11 @@ sub new {
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
-		$self->{"stackup"} = Stackup->new( $self->{"jobId"} );
-		$self->{"stackupNC"} = StackupNC->new( $self->{"jobId"}, $self->{"inCAM"} );
+		$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
+		$self->{"stackupNC"} = StackupNC->new( $self->{"inCAM"}, $self->{"jobId"} );
 	}
 
-	$self->{"tifFile"} = TifSigLayers->new( $self->{"jobId"} );
+	$self->{"tifFile"} = TifLayers->new( $self->{"jobId"} );
 	$self->{"nifFile"} = NifFile->new( $self->{"jobId"} );
 
 	unless ( $self->{"tifFile"}->TifFileExist() ) {
@@ -68,35 +69,16 @@ sub Export {
 	my $polarity = undef;
 	my $etching  = undef;
 
-	if ( $l->{"gROWname"} =~ /^[cs]$/ || $l->{"gROWname"} =~ /^v\d+$/ ) {
+	# Find layer settings in TIF file
+	my $lTIF = $self->{"tifFile"}->GetLayer( $l->{"gROWname"} );
 
-		my %sigLayers = $self->{"tifFile"}->GetSignalLayers();
-		$mirror   = $sigLayers{ $l->{"gROWname"} }->{'mirror'};
-		$polarity = $sigLayers{ $l->{"gROWname"} }->{'polarity'};
-		$etching  = $sigLayers{ $l->{"gROWname"} }->{'etchingType'};
-	}
-	elsif ( $l->{"gROWname"} =~ /^v\d+outer$/ ) {
+	die "Output layer settings was not found in tif file for layer: " . $l->{"gROWname"} unless ( defined $lTIF );
 
-		# fake outer core signal layers
-		$mirror   = ( $l->{"gROWname"} =~ /^v1outer$/ ? 0 : 1 );
-		$polarity = "negative";
-		$etching  = undef;
-
-	}
-	else {
-		if ( $l->{"gROWname"} =~ /c/ ) {
-			$mirror = 0;
-		}
-		elsif ( $l->{"gROWname"} =~ /s/ ) {
-			$mirror = 1;
-		}
-
-		$polarity = "positive";
-
-	}
+	$mirror   = $lTIF->{'mirror'};
+	$polarity = $lTIF->{'polarity'};
+	$etching  = $lTIF->{'etchingType'};
 
 	$self->__ExportXml( $l->{"gROWname"}, $mirror, $polarity, $etching, $fiducDCode, $pnlDim );
-
 }
 
 sub __ExportXml {
@@ -178,7 +160,7 @@ sub __ExportXml {
 		my %mask = ();
 
 		if ( $layerName =~ /^m[cs]flex/ ) {
-			
+
 			$power = 250;    # SD 2460 - UV FLEX
 		}
 		else {
@@ -261,7 +243,9 @@ sub __ExportXml {
 	$templ->{"job_params"}->[0]->{"image_position"}->[0]->{"x"} = $x_position;
 	$templ->{"job_params"}->[0]->{"image_position"}->[0]->{"y"} = $y_position;
 
-	if ($mirror) {
+	my $mirrorY = $mirror == 1 ? 0 : 1;
+
+	if ($mirrorY) {
 		if ( $pnlDim->{"h"} > 540 ) {
 			$templ->{"job_params"}->[0]->{"rotation"}->[0] = 3;
 		}
@@ -279,7 +263,7 @@ sub __ExportXml {
 	}
 
 	$templ->{"job_params"}->[0]->{"mirror"}->[0]->{"x"} = 0;
-	$templ->{"job_params"}->[0]->{"mirror"}->[0]->{"y"} = $mirror;
+	$templ->{"job_params"}->[0]->{"mirror"}->[0]->{"y"} = $mirrorY;
 
 	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"diameter_x"}->[0]->{"iterations"}   = $iterations;
 	$templ->{"job_params"}->[0]->{"image_object_default"}->[0]->{"image_object"}->[0]->{"diameter_x"}->[0]->{"lowch"}        = $upper;
@@ -312,8 +296,7 @@ sub __ExportXml {
 	);
 
 	my $finalFile = EnumsPaths->Jobs_MDI . $self->{"jobId"} . $layerName . "_mdi.xml";
-	$finalFile =~ s/outer//;    # remove "outer" from outer core fake layers
-
+	 
 	FileHelper->WriteString( $finalFile, $xmlString );
 
 	unless ( -e $finalFile ) {
@@ -353,121 +336,14 @@ sub __GetThickByLayer {
 
 	my $thick = 0;                  #total thick
 
-	if ( $layer =~ /^[cs]$/ || $layer =~ /^v\d+(outer)?$/ ) {
-
-		# Signal layer, plug layers
-
-		if ( $self->{"layerCnt"} > 2 ) {
-
-			# Multilayer PCB
-
-			my $stackup   = $self->{"stackup"};
-			my $stackupNC = $self->{"stackupNC"};
-
-			if ( $layer =~ /^[cs]$/ ) {
-
-				# Outer signal layers
-
-				$thick = $self->{"stackup"}->GetFinalThick() / 1000;
-
-				# if via fill, there is extra pre plating
-				$thick += 2 * $PREPLTTHICKNESS if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) );
-
-				$thick += 2 * $PLTTHICKNESS if ( $etchingType eq EnumsGeneral->Etching_TENTING );
-
-			}
-			elsif ( $layer =~ /^v\d+(outer)?$/ ) {
-
-				# Inner signal layers
-
-				# This method consider progressive lamiantion
-				if ( $layer =~ /^v\d+outer$/ ) {
-
-					# find existing layer which has same core as this fake layer and
-					# compute thickness by existing layer
-					if ( $layer =~ /^v1outer$/ ) {
-
-						# Top outer layer
-
-						$thick = $stackup->GetThickByCuLayer("v2")/1000;
-
-					}
-					else {
-
-						# Bot outer layer
-
-						$thick = $stackup->GetThickByCuLayer( "v" . ( ( $layer =~ /v(\d+)outer/ )[0] - 1 ) )/1000;
-
-					}
-
-				}
-				else {
-					$thick = $stackup->GetThickByCuLayer($layer)/1000;
-				}
-
-				# Check if core OR laminated package contains plated NC operation, if so add extra plating
-				# For theses case add extra plating from both sides
-				my $stackupNCitem = undef;
-
-				for ( my $i = scalar( $stackupNC->GetPressCnt() ) - 1 ; $i > 0 ; $i-- ) {
-
-					my $press = $stackupNC->GetPress($i);
-
-					if ( $press->GetTopSigLayer()->GetName() eq $layer || $press->GetBotSigLayer()->GetName() eq $layer ) {
-
-						$stackupNCitem = $press;
-						last;
-
-					}
-				}
-
-				# it there is not progress lamination, find cu core
-				unless ( defined $stackupNCitem ) {
-					my $coreNum = $stackup->GetCoreByCuLayer($layer)->GetCoreNumber();
-					$stackupNCitem = $stackupNC->GetCore($coreNum);
-
-				}
-
-				die "Nor press package or core was not found for copper layer: $layer" if ( !defined $stackupNCitem );
-
-				my @ncLayers = ( $stackupNCitem->GetNCLayers("top"), $stackupNCitem->GetNCLayers("bot") );
-				$thick += 2 * $PLTTHICKNESS if ( grep { $_->{"plated"} } @ncLayers );
-
-			}
-		}
-		else {
-
-			# Single or double layer PCB
-
-			$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
-
-			$thick += 2 * $PLTTHICKNESS if ( $etchingType eq EnumsGeneral->Etching_TENTING );
-
-		}
-
-	}
-	elsif ( $layer =~ /^plg[cs]$/ ) {
-
-		# Plug layers
-
-		if ( $self->{"layerCnt"} > 2 ) {
-
-			$thick = $self->{"stackup"}->GetFinalThick() / 1000;
-		}
-		else {
-
-			$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
-		}
-
-		$thick += 2 * $PREPLTTHICKNESS;
-	}
-	elsif ( $layer =~ /^m[cs]2?(flex)?$/ || $layer =~ /^gold[cs]$/ ) {
+	if ( $layer =~ /^m[cs]2?(flex)?$/ || $layer =~ /^gold[cs]$/ ) {
 
 		# Solder mask layers
+		# Gold layers
 
 		if ( $self->{"layerCnt"} > 2 ) {
 
-			$thick = $self->{"stackup"}->GetFinalThick() / 1000;
+			$thick = $self->{"stackup"}->GetFinalThick(0) / 1000;
 		}
 		else {
 
@@ -487,6 +363,54 @@ sub __GetThickByLayer {
 
 			$thick += 2 * $SMTHICNESS if ( CamHelper->LayerExists( $inCAM, $jobId, $smLayer ) )
 
+		}
+
+	}
+	else {
+
+		# Signal layer, plug layers
+
+		my %lPars = JobHelper->ParseSignalLayerName($layer);
+
+		if ( $self->{"layerCnt"} > 2 ) {
+
+			# Multilayer PCB
+
+			my $stackup = $self->{"stackup"};
+
+			my $product = $stackup->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+			die "Stackup product was not found by layer: $layer " unless ( defined $product );
+
+			# Outer signal layers
+
+			$thick = $product->GetThick(0) / 1000;    # without outer plating
+
+			# if via fill, there is extra pre plating
+			$thick += 2 * $PREPLTTHICKNESS if ( $product->GetPlugging() );
+			$thick += 2 * $PLTTHICKNESS
+			  if ( !$product->GetOuterCoreTop() && !$product->GetOuterCoreBot() && $etchingType eq EnumsGeneral->Etching_TENTING );
+
+		}
+		else {
+
+			# Single or double layer PCB
+
+			$thick = HegMethods->GetPcbMaterialThick( $self->{"jobId"} );
+
+			if ( $lPars{"plugging"} ) {
+
+				# plg layer
+
+				$thick += 2 * $PREPLTTHICKNESS;
+
+			}
+			else {
+
+				# signal layer
+				$thick += 2 * $PLTTHICKNESS if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) );
+				$thick += 2 * $PLTTHICKNESS if ( $etchingType eq EnumsGeneral->Etching_TENTING );
+			}
 		}
 
 	}

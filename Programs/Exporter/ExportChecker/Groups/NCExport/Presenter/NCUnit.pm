@@ -89,8 +89,6 @@ sub RefreshGUI {
 	$self->{"form"}->SetNPltLayers( $groupData->GetNPltLayers() );
 	
 
-	#refresh wrapper
-	$self->_RefreshWrapper();
 }
 
 sub GetGroupData {

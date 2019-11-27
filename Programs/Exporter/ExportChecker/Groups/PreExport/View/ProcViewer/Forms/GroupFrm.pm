@@ -45,7 +45,7 @@ sub new {
 	$self->__SetLayout();
 
 	#EVENTS
-	$self->{"layerSettChangedEvt"}  = Event->new();
+	$self->{"sigLayerSettChangedEvt"}  = Event->new();
 	$self->{"technologyChangedEvt"} = Event->new();
 	$self->{"tentingChangedEvt"}    = Event->new();
 
@@ -57,6 +57,7 @@ sub AddSubGroup {
 	my $self        = shift;
 	my $producId    = shift;
 	my $productType = shift;
+	my $pltNC = shift;
 
 	if ( scalar( @{ $self->{"subGroups"} } ) ) {
 		$self->__AddSeparator();
@@ -64,12 +65,12 @@ sub AddSubGroup {
 
 
 
-	my $subGroup = GroupSubFrm->new( $self, $producId, $productType);
-	$self->{"szSubGroups"}->Add( $subGroup, 0, &Wx::wxALL, 0 );
+	my $subGroup = GroupSubFrm->new( $self, $producId, $productType, $pltNC);
+	$self->{"szSubGroups"}->Add( $subGroup, 0, &Wx::wxALL | &Wx::wxEXPAND, 0 );
 
 	push( @{ $self->{"subGroups"} }, $subGroup );
 
-	$subGroup->{"layerSettChangedEvt"}->Add( sub  { $self->{"layerSettChangedEvt"}->Do(@_) } );
+	$subGroup->{"sigLayerSettChangedEvt"}->Add( sub  { $self->{"sigLayerSettChangedEvt"}->Do(@_) } );
 	$subGroup->{"technologyChangedEvt"}->Add( sub { $self->{"technologyChangedEvt"}->Do(@_) } );
 	$subGroup->{"tentingChangedEvt"}->Add( sub    { $self->{"tentingChangedEvt"}->Do(@_) } );
 
@@ -97,7 +98,7 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	# Group head
-	my $groupHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 15, -1 ], );
+	my $groupHeadPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 17, -1 ], );
 
 	if ( $self->{"productType"} eq StackEnums->Product_INPUT ) {
 
@@ -113,12 +114,12 @@ sub __SetLayout {
 	$groupHeadTxt->SetForegroundColour( Wx::Colour->new( 40, 40, 40 ) );    # set text color
 	$groupHeadTxt->SetFont($fontLblBold);
 
-	$groupHeadSz->Add( $groupHeadTxt, 1, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 5 );
+	$groupHeadSz->Add( $groupHeadTxt, 1, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER, 6 );
 
 	$groupHeadPnl->SetSizer($groupHeadSz);
 
 	$szMain->Add( $groupHeadPnl, 0, &Wx::wxEXPAND );
-	$szMain->Add( $szCol2, 0, &Wx::wxLEFT, 0 );
+	$szMain->Add( $szCol2, 1, &Wx::wxLEFT, 0 );
 
 	$self->SetSizer($szMain);
 
@@ -135,15 +136,18 @@ sub __AddSeparator {
 
 	# DEFINE SIZERS
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	 
 
 	# DEFINE CONTROLS
-	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, 2 ] );
+	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, 1] );
 	$sepPnl->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
 
 	# BUILD LAYOUT STRUCTURE
-
-	$self->{"szSubGroups"}->Add( $sepPnl, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
+	$szMain->Add(  ( $self->{"productType"} eq StackEnums->Product_INPUT ? 6 : 0 ),0,0); # Expander
+	$szMain->Add($sepPnl,1); # Expander
+	$self->{"szSubGroups"}->Add( $szMain, 0, &Wx::wxEXPAND | &Wx::wxTOP | &Wx::wxBOTTOM, 4  );
+	
+	
 }
 
 #-------------------------------------------------------------------------------------------#

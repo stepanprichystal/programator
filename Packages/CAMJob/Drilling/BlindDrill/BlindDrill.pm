@@ -162,7 +162,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new($jobId);
+	my $stackup = Stackup->new($inCAM,$jobId);
 
 	my %res = ();
 

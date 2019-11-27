@@ -6,7 +6,6 @@
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::V0Builder;
 
-
 use Class::Interface;
 &implements('Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::IGroupBuilder');
 
@@ -15,19 +14,19 @@ use strict;
 use warnings;
 
 #local library
- 
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTable';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit';
- 
+
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Presenter::PdfUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::GerUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Presenter::ScoUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::OutExport::Presenter::OutUnit';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::Enums';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -36,55 +35,62 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
- 
+
 	return $self;
 }
 
 sub Build {
-	my $self  = shift;
+	my $self = shift;
 	$self->{"jobId"} = shift;
-	my $groupTables  = shift;
-	
+	my $groupTables = shift;
+
 	# Table 1
-	
-	my $tableTab1 = $groupTables->AddTable("Main groups");
-	
+
+	my $tableTab1 = $groupTables->AddTable("Technology groups");
+
 	# Units
-	my $preUnit1 = PreUnit->new( $self->{"jobId"});	
-	my $nifUnit1 = NifUnit->new( $self->{"jobId"});
-	my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
-	my $ncUnit1 = NCUnit->new( $self->{"jobId"});
-	my $gerUnit1 = GerUnit->new( $self->{"jobId"} );
-	my $scoUnit1 = ScoUnit->new( $self->{"jobId"} );
-	my $pdfUnit1 = PdfUnit->new( $self->{"jobId"} );
- 
+	my $preUnit1 = PreUnit->new( $self->{"jobId"} );
 
 	my $row1Tab1 = $tableTab1->AddRow();
-	$row1Tab1->AddCell($preUnit1, Enums->Width_50);
-	$row1Tab1->AddCell($nifUnit1, Enums->Width_50);
-	$row1Tab1->AddCell($plotUnit1, Enums->Width_50);
-
-
-	my $row2Tab1 = $tableTab1->AddRow();
-	$row2Tab1->AddCell($ncUnit1, Enums->Width_25);
-	$row2Tab1->AddCell($scoUnit1, Enums->Width_25);
-	$row2Tab1->AddCell($gerUnit1, Enums->Width_25);
-	$row2Tab1->AddCell($pdfUnit1, Enums->Width_25);
-	
+	$row1Tab1->AddCell( $preUnit1, Enums->Width_75 );
 
 	# Table 2
-	
-	my $tableTab2 = $groupTables->AddTable("Other groups");
-	
+
+	my $tableTab2 = $groupTables->AddTable("Main groups");
+
 	# Units
-	
-	my $outUnit1 = OutUnit->new( $self->{"jobId"} );
+	my $nifUnit1  = NifUnit->new( $self->{"jobId"} );
+	my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
+	my $ncUnit1   = NCUnit->new( $self->{"jobId"} );
+	my $gerUnit1  = GerUnit->new( $self->{"jobId"} );
+	my $scoUnit1  = ScoUnit->new( $self->{"jobId"} );
+	my $pdfUnit1  = PdfUnit->new( $self->{"jobId"} );
 
 	my $row1Tab2 = $tableTab2->AddRow();
-	$row1Tab2->AddCell($outUnit1, Enums->Width_25);
+	$row1Tab2->AddCell( $nifUnit1,  Enums->Width_50 );
+	$row1Tab2->AddCell( $plotUnit1, Enums->Width_50 );
+
+	my $row2Tab2 = $tableTab2->AddRow();
+	$row2Tab2->AddCell( $ncUnit1,  Enums->Width_25 );
+	$row2Tab2->AddCell( $scoUnit1, Enums->Width_25 );
+	$row2Tab2->AddCell( $gerUnit1, Enums->Width_25 );
+	$row2Tab2->AddCell( $pdfUnit1, Enums->Width_25 );
+
+	# Table 3
+
+	my $tableTab3 = $groupTables->AddTable("Other groups");
+
+	# Units
+
+	my $outUnit1 = OutUnit->new( $self->{"jobId"} );
+
+	my $row1Tab3 = $tableTab3->AddRow();
+	$row1Tab3->AddCell( $outUnit1, Enums->Width_25 );
+
+	# Set which group is selected by default
+	$groupTables->SetDefaultSelected($tableTab2);
 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

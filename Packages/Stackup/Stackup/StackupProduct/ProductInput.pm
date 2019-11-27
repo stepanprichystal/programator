@@ -32,11 +32,8 @@ sub new {
 
 	# Only child inputs
 
-
-
 	return $self;
 }
-
 
 # Return if core is rigid or flex
 # Decision is basend on core thickness (less than 100µm is flex core )
@@ -73,6 +70,21 @@ sub GetIsParent {
 	}
 }
 
+sub GetCoreNumber {
+	my $self = shift;
+
+	if ( $self->GetIsParent() ) {
+
+		die "Only child Input Product is represent by single core";
+
+	}
+	else {
+
+		my $c = ( map { $_->GetData() } grep { $_->GetData()->GetType() eq Enums->MaterialType_CORE } $self->GetLayers() )[0];
+		return $c->GetCoreNumber();
+	}
+}
+
 # Return all child input products
 sub GetChildProducts {
 	my $self = shift;
@@ -81,7 +93,6 @@ sub GetChildProducts {
 
 	return @childs;
 }
-
 
 sub SetTopOuterCore {
 	my $self = shift;
@@ -98,6 +109,7 @@ sub SetBotOuterCore {
 
 	$self->{"outerCoreBot"} = shift;
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

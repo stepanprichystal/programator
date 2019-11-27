@@ -136,8 +136,8 @@ sub Build {
 			my $blindExist = 0;
 
 			if ( $self->{"layerCnt"} > 2 ) {
-				my $stackupNC  = StackupNC->new( $jobId, $inCAM );
-				my $lastPress  = $stackupNC->GetPress( $stackupNC->GetPressCnt() );
+				my $stackupNC  = StackupNC->new( $inCAM, $jobId);
+				my $lastPress  = $stackupNC->GetNCPressProduct( $stackupNC->GetPressCount() );
 				my $blindExist = $lastPress->ExistNCLayers( StackEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 			}
 

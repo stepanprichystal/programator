@@ -225,7 +225,7 @@ sub CreateDefaultStackup {
 
 	}
 
-	StackupDefault->CreateStackup( $masterJob, $layerCnt, \@innerCuUsage, $cuThickness, $constClass );
+	StackupDefault->CreateStackup( $inCAM, $masterJob, $layerCnt, \@innerCuUsage, $cuThickness, $constClass );
 
 	return $result;
 

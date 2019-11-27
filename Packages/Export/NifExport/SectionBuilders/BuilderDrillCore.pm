@@ -42,8 +42,8 @@ sub Build {
 	my %nifData  = %{ $self->{"nifData"} };
 	my $stepName = "panel";
 
-	my $stackup = Stackup->new( $self->{'jobId'} );
-	my $stackupNC = StackupNC->new($self->{'jobId'}, $self->{"inCAM"});
+	my $stackup = Stackup->new( $inCAM, $self->{'jobId'} );
+	my $stackupNC = StackupNC->new( $self->{"inCAM"}, $self->{'jobId'});
 	my $coreCnt = $stackupNC->GetCoreCnt();
 
 	# comment
@@ -58,7 +58,7 @@ sub Build {
 		# comment
 		$section->AddComment(" Vrtani Jadra ".$coreNum);
 
-		my $coreNC = $stackupNC->GetCore($coreNum); 
+		my $coreNC = $stackupNC->GetNCCoreProduct($coreNum); 
 		my $core = $stackup->GetCore($coreNum);
  
 		my $drillVal = $coreNC->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cDrill )? "A" : "N";
