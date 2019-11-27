@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Helper class, which is used by Stackup.pm class for various helper purposes
+# Description: Helper class, which is used by Stackup.pm class for testing and visualising stackup tree
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::Stackup::StackupTester;

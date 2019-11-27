@@ -88,7 +88,9 @@ sub GetValueChanged {
 
 	if ( defined $self->{"resultValue"} ) {
 
-		if ( ( $self->{"type"} eq Enums->ParameterType_TEXT || $self->{"type"} eq Enums->ParameterType_OPTION )
+		if ( ( $self->{"type"} eq Enums->ParameterType_TEXT 
+		|| $self->{"type"} eq Enums->ParameterType_OPTION
+		|| $self->{"type"} eq Enums->ParameterType_CHECK )
 			 && $self->{"resultValue"} ne $self->{"oriValue"} )
 		{
 

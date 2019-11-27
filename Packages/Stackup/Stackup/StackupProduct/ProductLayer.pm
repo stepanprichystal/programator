@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Contain inforamtion about stacku layer
+# Description: Stackup layer contain data od final material layer or nested stackup product
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::Stackup::StackupProduct::ProductLayer;

@@ -11,6 +11,7 @@ use constant {
 # Type of parametre
 use constant {
 	ParameterType_TEXT   => "patameterTypeText",
+	ParameterType_CHECK   => "patameterTypeCheck",
 	ParameterType_NUMBER => "patameterTypeNumber",
 	ParameterType_OPTION => "patameterTypeOption",
 

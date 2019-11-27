@@ -133,6 +133,15 @@ sub GetNumberParameter {
 	return $self->__GetParameter(Enums->ParameterType_NUMBER, $title, $value);
 }
 
+# Prepare checkbox message parameter structure
+sub GetCheckParameter {
+	my $self  = shift;
+	my $title = shift;
+	my $value = shift;
+
+	return $self->__GetParameter(Enums->ParameterType_CHECK, $title, $value);
+}
+
 # Prepare option message parameter structure
 sub GetOptionParameter {
 	my $self  = shift;

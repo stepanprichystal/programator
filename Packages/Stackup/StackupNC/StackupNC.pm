@@ -54,29 +54,9 @@ sub new {
 	return $self;
 }
 
-sub __InitPress {
-	my $self = shift;
 
-	foreach my $p ( $self->SUPER::GetPressProducts(1) ) {
 
-		my $pressNC = StackupNCProduct->new( $self->{"inCAM"}, $self->{"jobId"}, $p, $self->{"ncLayers"} );
-
-		push( @{ $self->{"NCPresses"} }, $pressNC );
-	}
-}
-
-sub __InitCores {
-	my $self = shift;
-
-	foreach my $p ( map { $_->GetChildProducts() } $self->SUPER::GetInputProducts() ) {
-
-		my $coreNC = StackupNCProduct->new( $self->{"inCAM"}, $self->{"jobId"}, $p->GetData(), $self->{"ncLayers"} );
-
-		push( @{ $self->{"NCCores"} }, $coreNC );
-	}
-}
-
-# Return specific press info object by press order
+# Return specific StackupNCproduct which have source Press product
 sub GetNCPressProduct {
 	my $self       = shift;
 	my $pressOrder = shift;
@@ -91,7 +71,7 @@ sub GetNCPressProduct {
 }
 
 
-# Return specific press info object by press order
+# Return specific StackupNCproduct which have source Input product product
 sub GetNCCoreProduct {
 	my $self       = shift;
 	my $coreNum = shift;
@@ -123,6 +103,31 @@ sub GetCoreCnt {
 
 	return scalar(@{$self->{"NCCores"}} );
 }
+
+
+
+sub __InitPress {
+	my $self = shift;
+
+	foreach my $p ( $self->SUPER::GetPressProducts(1) ) {
+
+		my $pressNC = StackupNCProduct->new( $self->{"inCAM"}, $self->{"jobId"}, $p, $self->{"ncLayers"} );
+
+		push( @{ $self->{"NCPresses"} }, $pressNC );
+	}
+}
+
+sub __InitCores {
+	my $self = shift;
+
+	foreach my $p ( map { $_->GetChildProducts() } $self->SUPER::GetInputProducts() ) {
+
+		my $coreNC = StackupNCProduct->new( $self->{"inCAM"}, $self->{"jobId"}, $p->GetData(), $self->{"ncLayers"} );
+
+		push( @{ $self->{"NCCores"} }, $coreNC );
+	}
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

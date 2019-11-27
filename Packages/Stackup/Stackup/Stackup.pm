@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Contain all information about pcb stackup
+# Description: Contain all information about pcb stackup and production technology
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::Stackup::Stackup;

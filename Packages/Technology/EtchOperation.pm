@@ -23,6 +23,7 @@ sub GetCompensation {
 	my $cuThickness = shift;    # base layer Cu thickness
 	my $constrClass = shift;
 	my $isPlated    = shift;    # it means basic cuThickness is plated (+ 25um)
+	my $etchType    = shift;    # EnumsGeneral->Etching_PATTERN / EnumsGeneral->Etching_TENTING
 
 	die "PCB Cu thickness is not defined"       if ( !defined $cuThickness );
 	die "PCB construction class is not defined" if ( !defined $constrClass );
@@ -129,11 +130,6 @@ sub GetCompensation {
 	}
 	my $minimumSpace = $compensationAttr{$cuThickness}->{'space'};
 
-#	unless ( defined $compensationAttr{$cuThickness} ) {
-#		die "Unable to compute compensation for Cu: $cuThickness; constr class: $constrClass; plating: $isPlated";
-#	}
-#	
-#	print STDERR "Unable to compute compensation for Cu: $cuThickness; constr class: $constrClass; plating: $isPlated";
 
 	my @compensationLevel = @{ $compensationAttr{$cuThickness}->{'level'} };
 

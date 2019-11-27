@@ -258,15 +258,22 @@ sub __SetLayoutParameters {
 		elsif ( $messPar->GetParameterType() eq Enums->ParameterType_OPTION ) {
 
 			my @opt = $messPar->GetOptions();
-			$parVal = Wx::ComboBox->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition,   &Wx::wxDefaultSize, \@opt );
+			$parVal = Wx::ComboBox->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition,   &Wx::wxDefaultSize, \@opt, &Wx::wxCB_READONLY );
 			$parVal->SetValue( $messPar->GetOrigValue() );
 
 			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
 			Wx::Event::EVT_BUTTON( $btnReset, -1, sub { $parVal->SetValue( $messPar->GetOrigValue() ) } );
+		
+		}elsif ( $messPar->GetParameterType() eq Enums->ParameterType_CHECK ) {
+ 
+			$parVal = Wx::CheckBox->new( $parent, -1, "",  &Wx::wxDefaultPosition, &Wx::wxDefaultSize  );
+			$parVal->SetValue( $messPar->GetOrigValue() );
+			Wx::Event::EVT_CHECKBOX( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
+			Wx::Event::EVT_BUTTON( $btnReset, -1, sub { $parVal->SetValue( $messPar->GetOrigValue() ) } );
 		}
 
 		$szClTitle->Add( $parTitleTxt, 0, &Wx::wxALL, 3 );
-		$szClVal->Add( $parVal,   0, &Wx::wxALL, 0 );
+		$szClVal->Add( $parVal,   0, &Wx::wxALL | &Wx::wxEXPAND , 0 );
 		$szClDef->Add( $btnReset, 0, &Wx::wxALL, 0 );
 
 		#$szRow->Add( 10, 10, 75, &Wx::wxEXPAND | &Wx::wxALL, 0 );

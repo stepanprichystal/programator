@@ -1,6 +1,7 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Contain inforamtion about stacku layer
+# Description: Prosuct press represent layers which are pressed together
+# Layer can by material or nested Press product or nested Input product
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::Stackup::StackupProduct::ProductPress;

@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Helper class, which is used by Stackup.pm class for various helper purposes
+# Description: Core of building multilayer pruduction process and 
+# building structure of stackup Input and Press products
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Stackup::Stackup::StackupBuilder;
