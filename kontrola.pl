@@ -70,6 +70,16 @@ $main->title('Informace o DPS');
 																	->pack(-side=>'top',																
 																	-fill=>'both',
 																	-expand => "True");
+																											
+										my $topFrameLeftLeftInner = $topFrameLeftLeftTop->LabFrame(
+																	-label=>"Panelizace",
+																	-width=>100, 
+																	-height=>150)
+																	->pack(-side=>'bottom',																
+																	-fill=>'both',
+																	-expand => "True");	
+																	
+																	
 						my $topFrameLeft = $topFrame->Frame(
 												-width=>100, 
 												-height=>150)
@@ -130,6 +140,7 @@ $main->title('Informace o DPS');
 																	
 																	
 								_PutOUspecInfo($topFrameLeftLeftTop);
+								_PutOUspecInfoPanel($topFrameLeftLeftInner);
 								_PutHeliosInfo($topFrameLeftTop);
 
 								
@@ -644,6 +655,46 @@ sub _PutOUspecInfo {
 													$pole->insert("end", "$poznamkaTpv");
 									
 }
+
+
+sub _PutOUspecInfoPanel {
+		my $heliosFrame = shift;
+		my $colorText1 = 0;
+		my $colorText2 = 0;
+		
+							my @infoPcbHelios = HegMethods->GetSalesSpecPanel($jobName);
+							
+							
+							my $i=0;
+									foreach my $item (sort keys $infoPcbHelios[0]) {
+													#set color 
+													unless ($infoPcbHelios[0]->{$item} eq 'Ne') {
+															$colorText1 = 'black';
+															$colorText2 = 'red';
+													}else{
+															$colorText1 = 'black';
+															$colorText2 = 'black';
+													}
+													if ($infoPcbHelios[0]->{$item} eq 'Jeden kus') {
+                        										$infoPcbHelios[0]->{$item} = '';
+                        							}
+                        										
+													my $putTextInfo1 = $item . "=";
+													my $putTextInfo2 = $infoPcbHelios[0]->{$item};
+													chomp $putTextInfo2;
+													if($putTextInfo2){
+															my @tmpFrameH = ();
+															$tmpFrameH[$i] = $heliosFrame ->Frame(-width=>100, -height=>10)->pack(-side=>'top',-fill=>'x');
+															$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo1, -fg=>"$colorText1")->pack(-side=>'left');
+															$tmpFrameH[$i] ->Label(-textvariable=>\$putTextInfo2, -fg=>"$colorText2",-font=> 'ARIAL 9 {bold}')->pack(-side=>'left');		
+														$i++;
+													}
+									}
+													
+}
+
+
+
 sub _GetDimPCB {
 		$inCAM->INFO(units=>'mm',entity_type => 'step',entity_path => "$jobName/$StepName",data_type => 'PROF_LIMITS');
 				my $pcbXsize = sprintf "%3.2f",($inCAM->{doinfo}{gPROF_LIMITSxmax} - $inCAM->{doinfo}{gPROF_LIMITSxmin});
