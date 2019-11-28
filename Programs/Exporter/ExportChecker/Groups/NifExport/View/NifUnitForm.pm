@@ -392,9 +392,16 @@ sub __QuickNotesClick {
 # =====================================================================
 sub OnPREGroupTentingChangeHandler {
 	my $self = shift;
-	my $val  = shift;
-
-	$self->{'tentingProp'} = $val;
+	my $etchingType  = shift;
+	
+	
+	# if etchin type is tenting, tenting 1 else 0
+	
+	if($etchingType eq EnumsGeneral->Etching_TENTING){
+		$self->{'tentingProp'} = 1;
+	}else{
+		$self->{'tentingProp'} = 0;
+	}
 }
 
 sub OnPREGroupTechnologyChangeHandler {

@@ -191,7 +191,7 @@ sub Build {
 
 		my $val = "N";
 	 	
-		if ( $nifData{"tenting"} eq EnumsGeneral->Etching_TENTING  ) {
+		if ( $nifData{"tenting"} == 1 ) {
 			$val = "A";
 		}
 

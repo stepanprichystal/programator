@@ -247,10 +247,7 @@ sub __IsTenting {
 	my $jobId       = shift;
 	my $defaultInfo = shift;
 
-	unless ($defaultInfo) {
-		return 0;
-	}
-
+  
 	my $tenting = 0;
 
 	# if layer cnt > 1

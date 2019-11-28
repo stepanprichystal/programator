@@ -167,7 +167,7 @@ sub __OnlayerSettChangedHndl {
 
 	$self->{"otherLayerSettChangedEvt"}->Do( \%currLSett );
 
-	diag("Layer name changed: $lName\n");
+	#diag("Layer name changed: $lName\n");
 
 }
 

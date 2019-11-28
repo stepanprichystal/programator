@@ -324,7 +324,7 @@ sub GetSignalLSett {
 
 		$lSett{"comp"} = $comp;
 
-		diag( "Layer: " . $lSett{"name"} . "; Cu thick: $cuThick; Class: $class; Plated: $plt; EthingType: $etchType" );
+		#diag( "Layer: " . $lSett{"name"} . "; Cu thick: $cuThick; Class: $class; Plated: $plt; EthingType: $etchType" );
 
 	}
 

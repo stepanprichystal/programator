@@ -232,7 +232,7 @@ sub __OnlayerSettChangedHndl {
 
 	$self->{"sigLayerSettChangedEvt"}->Do( \%currLSett );
 
-	diag("Copper row changed: $copperName, outer core: $outerCore, plugging: $plugging\n");
+	#diag("Copper row changed: $copperName, outer core: $outerCore, plugging: $plugging\n");
 
 }
 
@@ -242,7 +242,7 @@ sub __OnTechnologyChangedHndl {
 	my $productType = shift;
 	my $technology  = shift;
 
-	diag("Technology changed. Product Id: $productId, technology: $technology  \n");
+	#diag("Technology changed. Product Id: $productId, technology: $technology  \n");
 
 	# Change Tenting by technology
 	my $mItem = ( $self->{"searchMatrix"}->GetItemsByProduct( $productId, $productType ) )[0];
@@ -315,7 +315,7 @@ sub __OnTentingChangedHndl {
 
 		$self->{"sigLayerSettChangedEvt"}->Do( \%newSett );
 
-		diag("Technology changed. Product Id: $productId, Layer: $lName,  tenting: $tenting  \n");
+		#diag("Technology changed. Product Id: $productId, Layer: $lName,  tenting: $tenting  \n");
 	}
 
 	# raise event if tenting change for layer c/s

@@ -212,7 +212,7 @@ sub BuildGroupTableForm {
 		$scrollPnl->Layout();
 		my ( $width, $height ) = $groupTableForm->GetSizeWH();
 
-		diag( "Table title: " . $table->GetTitle() . ", dim: $width x $height \n" );
+		#diag( "Table title: " . $table->GetTitle() . ", dim: $width x $height \n" );
 
 		#compute number of rows. One row has height 10 px
 		$scrollPnl->SetRowCount( $height / 10 );
