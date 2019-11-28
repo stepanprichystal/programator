@@ -143,7 +143,7 @@ sub __RunJob {
 
 		# if job is open by server, close and checkin job after error (other server block job)
 
-		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId ) ) {
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1 ) ) {
 
 			$self->{"inCAM"}->COM( "save_job",    "job" => "$jobId" );
 			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );

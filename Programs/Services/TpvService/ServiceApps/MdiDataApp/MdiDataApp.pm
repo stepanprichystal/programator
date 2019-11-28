@@ -12,7 +12,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
-
+ 
 #use File::Spec;
 use File::Basename;
 use Log::Log4perl qw(get_logger);
@@ -135,8 +135,11 @@ sub __RunJob {
 		my $err = "Process job id: \"$jobId\" exited with error: \n $eStr";
 
 		$self->__ProcessError( $jobId, $err );
-
-		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId ) ) {
+		
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1 ) ) {
+			
+				$self->__ProcessError( $jobId, "CLOSE JOB" );
+			
 			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
 			$self->{"inCAM"}->COM( "close_job", "job" => "$jobId" );
 		}
@@ -165,7 +168,10 @@ sub __ProcessJob {
 	$self->_OpenJob( $jobId, 1 );
 	$self->{"logger"}->debug("After open job: $jobId");
 
+	
+
 	# 2) Export mdi files
+ 
 
 	# getr dfault layer types to export
 	my %mdiInfo = MdiHelper->GetDefaultLayerTypes( $inCAM, $jobId );

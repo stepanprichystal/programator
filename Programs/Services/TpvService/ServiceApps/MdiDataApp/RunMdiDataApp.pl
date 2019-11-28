@@ -20,7 +20,7 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp' => "App";
  
-my $jobId    = "f52457";
+my $jobId    = "d264409";
 
 my $app = App->new();
 
@@ -32,9 +32,9 @@ $app->{"inCAM"} = $inCAM;
 
 #$app->Run();
 
-#$app->__RunJob($jobId);
+$app->__RunJob($jobId);
 
-$app->__DeleteOldMDIFiles();
+#$app->__DeleteOldMDIFiles();
 
 print "app inited";
 

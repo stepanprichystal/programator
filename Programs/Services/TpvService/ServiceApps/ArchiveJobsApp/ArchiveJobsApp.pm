@@ -130,7 +130,7 @@ sub __RunJob {
 
 		$self->__ProcessError( $jobId, $err );
 
-		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId ) ) {
+		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1 ) ) {
 			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
 			$self->{"inCAM"}->COM( "close_job", "job" => "$jobId" );
 		}
