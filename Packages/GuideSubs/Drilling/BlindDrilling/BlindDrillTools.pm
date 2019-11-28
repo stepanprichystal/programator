@@ -45,7 +45,7 @@ sub SetBlindDrills {
 
 		$result = 1;
 
-		my $stackup = Stackup->new($self->{"inCAM"}, $jobId);
+		my $stackup = Stackup->new($inCAM, $jobId);
 		CamDrilling->AddLayerStartStop( $inCAM, $jobId, [ \%lInfo ] );
 		my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $layer, 0 );
 
@@ -247,7 +247,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d113609";
+	my $jobId = "d264536";
 	my $step  = "o+1";
 
 	my $mess = "";
