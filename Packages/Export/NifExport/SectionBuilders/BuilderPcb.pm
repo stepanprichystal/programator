@@ -250,14 +250,14 @@ sub Build {
 	# technologie
 	if ( $self->_IsRequire("technologie") ) {
 	
-		my $technology = undef;
-		
-		$technology = "G" if ( $nifData{"technology"} eq EnumsGeneral->Technology_GALVANICS );
-		$technology = "M" if ( $nifData{"technology"} eq EnumsGeneral->Technology_RESIST );
-		$technology = "J" if ( $nifData{"technology"} eq EnumsGeneral->Technology_OTHER );
-		$technology = "S" if ( $nifData{"technology"} eq EnumsGeneral->Technology_SCREENPRINT );
-	
-		$section->AddRow( "technologie", $technology );
+#		my $technology = undef;
+#		
+#		$technology = "G" if ( $nifData{"technology"} eq EnumsGeneral->Technology_GALVANICS );
+#		$technology = "M" if ( $nifData{"technology"} eq EnumsGeneral->Technology_RESIST );
+#		$technology = "J" if ( $nifData{"technology"} eq EnumsGeneral->Technology_OTHER );
+#		$technology = "S" if ( $nifData{"technology"} eq EnumsGeneral->Technology_SCREENPRINT );
+#	
+#		$section->AddRow( "technologie", $technology );
 	}
 
 	#typ_dps

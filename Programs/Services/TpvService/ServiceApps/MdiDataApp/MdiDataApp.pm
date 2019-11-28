@@ -136,11 +136,12 @@ sub __RunJob {
 
 		$self->__ProcessError( $jobId, $err );
 		
+		# parameter "wholesite" has to by set, unless it noesn't work out in windows service
 		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1 ) ) {
-			
-				$self->__ProcessError( $jobId, "CLOSE JOB" );
-			
-			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+ 
+  			
+  			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "uncheckout", "ent_type" => "job" );	
+			#$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );		
 			$self->{"inCAM"}->COM( "close_job", "job" => "$jobId" );
 		}
 	}
