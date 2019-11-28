@@ -11,7 +11,7 @@ use strict;
 use warnings;
 use Wx;
 use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
-use Test::More;
+#use Test::More;
 
 #local library
 

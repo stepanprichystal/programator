@@ -8,7 +8,7 @@ package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::
 #3th party library
 use strict;
 use warnings;
-use Test::More;
+#use Test::More;
 
 #local library
 use aliased 'Packages::Events::Event';

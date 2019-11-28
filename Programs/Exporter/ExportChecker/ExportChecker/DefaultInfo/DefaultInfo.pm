@@ -10,7 +10,7 @@ package Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultIn
 #3th party library
 use strict;
 use warnings;
-use Test::More;
+#use Test::More;
 
 #local library
 use aliased 'Enums::EnumsGeneral';
