@@ -500,9 +500,13 @@ sub _Process {
  			$inCAM -> COM('chklist_close',chklist=>'clean_up',mode=>'hide');
  			
  			# Set CAM GUIDE called Skriptiky
- 			$inCAM -> COM('show_component',component=>'CAM_Guide',show=>'no',width=>0,height=>0);
- 			$inCAM -> COM('guide_from_lib',guide=>'Scriptiky',profile=>'none',customer=>'');
- 			$inCAM -> COM('set_current_guide',guide=>'Scriptiky');
+ 			$inCAM->INFO(entity_type=>'cam_guide',entity_path=>"$pcbId/Scriptiky",data_type=>'exists');
+					if ($inCAM->{doinfo}{gEXISTS} eq "no") {
+ 
+ 						$inCAM -> COM('show_component',component=>'CAM_Guide',show=>'no',width=>0,height=>0);
+ 						$inCAM -> COM('guide_from_lib',guide=>'Scriptiky',profile=>'none',customer=>'');
+ 						$inCAM -> COM('set_current_guide',guide=>'Scriptiky');
+					}
  			
  			
  			# Remove all features outside profile in the layer list 
