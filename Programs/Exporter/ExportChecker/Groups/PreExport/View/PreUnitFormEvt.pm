@@ -31,7 +31,7 @@ sub new {
 
 	# Provided events
 	$self->_AddEvent( $wrapper->{'technologyChangedEvt'}, Enums->Event_pre_technology );
-	$self->_AddEvent( $wrapper->{'tentingChangedEvt'},    Enums->Event_pre_tenting );
+	$self->_AddEvent( $wrapper->{"etchingChangedEvt"},    Enums->Event_pre_etching );
 	$self->_AddEvent( $wrapper->{'sigLayerSettChangedEvt'},  Enums->Event_pre_sigLayerChange );
 	$self->_AddEvent( $wrapper->{'otherLayerSettChangedEvt'},  Enums->Event_pre_otherLayerChange );
 	

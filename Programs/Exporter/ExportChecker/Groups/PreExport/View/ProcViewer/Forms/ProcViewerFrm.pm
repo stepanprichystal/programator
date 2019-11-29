@@ -49,7 +49,7 @@ sub new {
 
 	$self->{"sigLayerSettChangedEvt"} = Event->new();
 	$self->{"technologyChangedEvt"}   = Event->new();
-	$self->{"tentingChangedEvt"}      = Event->new();
+	$self->{"etchingChangedEvt"}      = Event->new();
 
 	return $self;
 
@@ -72,7 +72,7 @@ sub AddGroup {
 
 	$group->{"sigLayerSettChangedEvt"}->Add( sub { $self->{"sigLayerSettChangedEvt"}->Do(@_) } );
 	$group->{"technologyChangedEvt"}->Add( sub   { $self->{"technologyChangedEvt"}->Do(@_) } );
-	$group->{"tentingChangedEvt"}->Add( sub      { $self->{"tentingChangedEvt"}->Do(@_) } );
+	$group->{"etchingChangedEvt"}->Add( sub      { $self->{"etchingChangedEvt"}->Do(@_) } );
 
 	$self->{"szGroups"}->Add( $group, 0, &Wx::wxALL | &Wx::wxEXPAND, 0 );
 

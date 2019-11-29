@@ -36,9 +36,9 @@ use aliased 'CamHelpers::CamHelper';
 sub new {
 	my $class = shift;
 
-	my $appName = EnumsApp->App_CLEANJOBDB;
-	my $serverTimeout = 120; # 4 hours
-	my $self = $class->SUPER::new( $appName,$serverTimeout, @_ );
+	my $appName       = EnumsApp->App_CLEANJOBDB;
+	my $serverTimeout = 120;                                                  # 4 hours
+	my $self          = $class->SUPER::new( $appName, $serverTimeout, @_ );
 
 	#my $self = {};
 	bless $self;
@@ -68,10 +68,9 @@ sub Run {
 
 		# 2) delete mdi files of pcb which are not in produce
 		$self->__DeleteOldJetFiles();
-		
+
 		# 3) delete app logs, where are stored logs from failed app
 		$self->__DeleteAppLogs();
-		
 
 		# 3) cleanup InCAM databases
 		#$self->__RunDBUtil();
@@ -151,8 +150,6 @@ sub __RunJob {
 sub __ProcessJob {
 	my $self  = shift;
 	my $jobId = shift;
-
-	$jobId = lc($jobId);
 
 	my $inCAM = $self->{"inCAM"};
 
@@ -240,6 +237,8 @@ sub __GetJob2Archive {
 
 	# limit if more than 30jobs, in order don't block  another service apps
 	$logger->info( "Number of jobs to archive edited before more than " . $self->{"notEditedDays"} . "  days: " . scalar(@job2Archive) . "\n" );
+
+	
 
 	return @job2Archive;
 }
@@ -480,32 +479,32 @@ sub __DeleteOldJetFiles {
 }
 
 # Remove old app logs from applogs path
-sub __DeleteAppLogs{
+sub __DeleteAppLogs {
 	my $self = shift;
-	
+
 	my $appLog = EnumsPaths->Jobs_APPLOGS;
 	opendir( DIR, $appLog ) or die $!;
-	
+
 	my $totalLogDeleted = 0;
 
 	while ( my $dir = readdir(DIR) ) {
- 
+
 		next if ( $dir =~ /^\.$/ );
 		next if ( $dir =~ /^\.\.$/ );
 
-		my $dir = $appLog.$dir;
-		
+		my $dir = $appLog . $dir;
+
 		my @stats = stat($dir);
-		
+
 		# remove older than 3 months
-		if( -d $dir && (time() - $stats[10] ) >  1*60*60*24*30){
-			
+		if ( -d $dir && ( time() - $stats[10] ) > 1 * 60 * 60 * 24 * 30 ) {
+
 			$totalLogDeleted++;
- 			
+
 			rmdir($dir);
 		}
 	}
-	
+
 	$self->{"logger"}->info("Number of deleted log DIRs from: $appLog is: $totalLogDeleted");
 
 	close(DIR);
@@ -524,19 +523,19 @@ sub __DeleteAppLogs{
 #		my $log = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
 #
 #		$self->{"logger"}->info("Run dbutil.exe from: $DBUtilPath ");
-#		
+#
 #		system($DBUtilPath." check y 2>$log");
-#		
+#
 
-#		
+#
 #		if(-f $log){
-#			
+#
 #			my $str = FileHelper->ReadAsString($log);
 #			unlink($log);
-#			
+#
 #			$self->{"logger"}->info("DBUTIL error message:\n\n $str");
-#			
-#		}		
+#
+#		}
 #	}
 #	else {
 #

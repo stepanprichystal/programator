@@ -32,7 +32,7 @@ sub new {
 	$self->_AddHandler( $ref , Enums->Event_sco_customerJump );
 	
 	my $ref2 = $wrapper->can('OnPREGroupTentingChangeHandler');
-	$self->_AddHandler( $ref2 , Enums->Event_pre_tenting );
+	$self->_AddHandler( $ref2 , Enums->Event_pre_etching );
 	
 	my $ref3 = $wrapper->can('OnPREGroupTechnologyChangeHandler');
 	$self->_AddHandler( $ref3 , Enums->Event_pre_technology );

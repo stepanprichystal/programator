@@ -51,7 +51,7 @@ sub new {
 	#EVENTS
 	$self->{"sigLayerSettChangedEvt"} = Event->new();
 	$self->{"technologyChangedEvt"}   = Event->new();
-	$self->{"tentingChangedEvt"}      = Event->new();
+	$self->{"etchingChangedEvt"}      = Event->new();
 
 	return $self;
 
@@ -351,7 +351,7 @@ sub __OnTechnologyChanged {
 sub __OnTentingChanged {
 	my $self = shift;
 
-	$self->{"tentingChangedEvt"}->Do( $self->{"productId"}, $self->{"productType"}, $self->{"tentingCb"}->GetValue() );
+	$self->{"etchingChangedEvt"}->Do( $self->{"productId"}, $self->{"productType"}, $self->{"tentingCb"}->GetValue() );
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -112,6 +112,8 @@ sub __RunJob {
 	my $inserted = shift;
 	my $loginId = shift;
 
+	$jobId = lc($jobId);
+
 	eval {
 
 		$self->__ProcessJob( $jobId, $orderId, $taskType, $inserted, $loginId );
@@ -150,7 +152,7 @@ sub __ProcessJob {
 	my $inserted = shift;
 	my $loginId = shift;
 
-	$jobId = lc($jobId);
+	
 
 	my $inCAM = $self->{"inCAM"};
 

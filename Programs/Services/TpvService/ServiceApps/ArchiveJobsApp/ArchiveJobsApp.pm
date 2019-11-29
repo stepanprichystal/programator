@@ -144,10 +144,7 @@ sub __RunJob {
 sub __ProcessJob {
 	my $self  = shift;
 	my $jobId = shift;
-
-	$jobId = lc($jobId);
-	
-	
+ 
 
 	my $inCAM = $self->{"inCAM"};
 
@@ -273,6 +270,8 @@ sub __GetJob2Archive {
 
 	# limit if more than 30jobs, in order don't block  another service apps
 	$logger->info( "Number of jobs to archive: " . scalar(@job2Archive) . "\n" );
+
+	@job2Archive = map { lc($_) } @job2Archive;
 
 	return @job2Archive;
 }

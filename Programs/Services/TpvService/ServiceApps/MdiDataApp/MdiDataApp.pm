@@ -12,7 +12,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
- 
+
 #use File::Spec;
 use File::Basename;
 use Log::Log4perl qw(get_logger);
@@ -66,8 +66,6 @@ sub Run {
 	my $self = shift;
 
 	eval {
-
-
 
 		# 2) Load jobs to export MDI files
 		my @jobs = $self->__GetPcb2Export();
@@ -135,13 +133,19 @@ sub __RunJob {
 		my $err = "Process job id: \"$jobId\" exited with error: \n $eStr";
 
 		$self->__ProcessError( $jobId, $err );
-		
+
+		#$self->{"inCAM"}->Reconnect();
+
+		$self->{"inCAM"}->COM("get_user_name");
+		my $userName = $self->{"inCAM"}->GetReply();
+		$self->__ProcessError( $jobId, $userName );
+
 		# parameter "wholesite" has to by set, unless it noesn't work out in windows service
 		if ( CamJob->IsJobOpen( $self->{"inCAM"}, $jobId, 1 ) ) {
- 
-  			
-  			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "uncheckout", "ent_type" => "job" );	
-			#$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );		
+
+			$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+
+			#$self->{"inCAM"}->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
 			$self->{"inCAM"}->COM( "close_job", "job" => "$jobId" );
 		}
 	}
@@ -155,8 +159,6 @@ sub __ProcessJob {
 	my $self  = shift;
 	my $jobId = shift;
 
-	$jobId = lc($jobId);
-
 	my $inCAM = $self->{"inCAM"};
 
 	# 1) Open Job
@@ -169,10 +171,7 @@ sub __ProcessJob {
 	$self->_OpenJob( $jobId, 1 );
 	$self->{"logger"}->debug("After open job: $jobId");
 
-	
-
 	# 2) Export mdi files
- 
 
 	# getr dfault layer types to export
 	my %mdiInfo = MdiHelper->GetDefaultLayerTypes( $inCAM, $jobId );
@@ -234,6 +233,8 @@ sub __GetPcb2Export {
 
 	foreach my $jobId (@pcbInProduc) {
 
+		$jobId = lc($jobId);
+
 		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
 		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
 
@@ -272,11 +273,10 @@ sub __GetPcb2Export {
 	return @pcb2Export;
 }
 
-
 sub __GetPcbsInProduc {
 	my $self = shift;
 
-	my @pcbInProduc = HegMethods->GetPcbsInProduceMDI();        # get pcb "Ve vyrobe"
+	my @pcbInProduc = HegMethods->GetPcbsInProduceMDI();    # get pcb "Ve vyrobe"
 
 	@pcbInProduc = map { $_->{"reference_subjektu"} } @pcbInProduc;
 
@@ -299,14 +299,12 @@ sub __ProcessError {
 
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	 
 	#
 	#	print "ee";
 }

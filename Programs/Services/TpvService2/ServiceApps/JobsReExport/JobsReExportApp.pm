@@ -227,9 +227,7 @@ sub __RemoveFromJoblist {
 sub __ProcessJob {
 	my $self  = shift;
 	my $jobId = shift;
-
-	
-
+ 
 	my $inCAM = $self->{"inCAM"};
 
 	# 1) Open Job

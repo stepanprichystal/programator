@@ -47,7 +47,7 @@ sub new {
 	#EVENTS
 	$self->{"sigLayerSettChangedEvt"}  = Event->new();
 	$self->{"technologyChangedEvt"} = Event->new();
-	$self->{"tentingChangedEvt"}    = Event->new();
+	$self->{"etchingChangedEvt"}    = Event->new();
 
 	return $self;
 
@@ -72,7 +72,7 @@ sub AddSubGroup {
 
 	$subGroup->{"sigLayerSettChangedEvt"}->Add( sub  { $self->{"sigLayerSettChangedEvt"}->Do(@_) } );
 	$subGroup->{"technologyChangedEvt"}->Add( sub { $self->{"technologyChangedEvt"}->Do(@_) } );
-	$subGroup->{"tentingChangedEvt"}->Add( sub    { $self->{"tentingChangedEvt"}->Do(@_) } );
+	$subGroup->{"etchingChangedEvt"}->Add( sub    { $self->{"etchingChangedEvt"}->Do(@_) } );
 
 	#$self->AddItemToQueue($row);
 

@@ -139,8 +139,7 @@ sub __RunJob {
 sub __ProcessJob {
 	my $self  = shift;
 	my $jobId = shift;
-
-	$jobId = lc($jobId);
+ 
 
 	my $inCAM = $self->{"inCAM"};
 
@@ -204,6 +203,8 @@ sub __GetPcb2Export {
 	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_JETPRINT, '.ger' );
 
 	foreach my $jobId (@pcbInProduc) {
+		
+		$jobId = lc($jobId);
 
 		my @ger = grep { $_ =~ /($jobId)[\w\d]+_jet/i } @gerAll;
 

@@ -57,7 +57,7 @@ sub GetSignalLayers {
 	else {
 
 		my %h;
-		return {};
+		return %h;
 	}
 }
 

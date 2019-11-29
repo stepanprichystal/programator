@@ -44,7 +44,7 @@ sub new {
 	# EVENTS
 	$self->{"sigLayerSettChangedEvt"} = Event->new();
 	$self->{"technologyChangedEvt"}   = Event->new();    # Technology for layer c/s only
-	$self->{"tentingChangedEvt"}      = Event->new();    # Tenting for layer c/s only
+	$self->{"etchingChangedEvt"}      = Event->new();    # Tenting for layer c/s only
 
 	return $self;
 }
@@ -80,7 +80,7 @@ sub BuildForm {
 
 	$self->{"procViewFrm"}->{"sigLayerSettChangedEvt"}->Add( sub { $self->__OnlayerSettChangedHndl(@_) } );
 	$self->{"procViewFrm"}->{"technologyChangedEvt"}->Add( sub   { $self->__OnTechnologyChangedHndl(@_) } );
-	$self->{"procViewFrm"}->{"tentingChangedEvt"}->Add( sub      { $self->__OnTentingChangedHndl(@_) } );
+	$self->{"procViewFrm"}->{"etchingChangedEvt"}->Add( sub      { $self->__OnTentingChangedHndl(@_) } );
 
 	# Build search matrix
 	my @sigLayers    = $self->{"defaultInfo"}->GetSignalLayers();
@@ -321,7 +321,7 @@ sub __OnTentingChangedHndl {
 	# raise event if tenting change for layer c/s
 	if ( scalar( grep { $_->GetLayerName() =~ /^[cs]$/ } @mItems ) ) {
 
-		$self->{"tentingChangedEvt"}->Do($tenting);
+		$self->{"etchingChangedEvt"}->Do($tenting);
 	}
 }
 

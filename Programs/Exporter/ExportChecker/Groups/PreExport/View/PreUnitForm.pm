@@ -52,7 +52,7 @@ sub new {
 	# EVENTS
 
 	$self->{"technologyChangedEvt"}     = Event->new();    # technology change
-	$self->{"tentingChangedEvt"}        = Event->new();    # tentingChange
+	$self->{"etchingChangedEvt"}        = Event->new();    # tentingChange
 	$self->{"sigLayerSettChangedEvt"}   = Event->new();    # when signal row changed
 	$self->{"otherLayerSettChangedEvt"} = Event->new();    # when other row changed
 
@@ -124,7 +124,7 @@ sub __SetLayoutSigLayerSett {
 
 	$self->{"procViewer"}->{"sigLayerSettChangedEvt"}->Add( sub { $self->{"sigLayerSettChangedEvt"}->Do(@_) } );
 	$self->{"procViewer"}->{"technologyChangedEvt"}->Add( sub   { $self->{"technologyChangedEvt"}->Do(@_) } );
-	$self->{"procViewer"}->{"tentingChangedEvt"}->Add( sub      { $self->{"tentingChangedEvt"}->Do(@_) } );
+	$self->{"procViewer"}->{"etchingChangedEvt"}->Add( sub      { $self->{"etchingChangedEvt"}->Do(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
