@@ -22,6 +22,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Helper' => "UnitHelper";
 use aliased 'Programs::Exporter::ExportChecker::Enums'                       => 'CheckerEnums';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -35,40 +36,30 @@ sub new {
 	return $self;
 }
 
-# Check if exist new version of nif, if so it means it is from InCAM
 sub Run {
 	my $self = shift;
 
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
- 
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
 
-	unless ($jobExist) {
-		return 0;
-	}
+	if ( $reorderType eq Enums->ReorderType_STD ) {
 
-	my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
+		my $units = UnitHelper->PrepareUnits( $inCAM, $jobId );
 
-	if ( $isPool && !$pnlExist ) {
-		return 0;
-	}
+		my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $units->{"units"} };
 
-	my $units = UnitHelper->PrepareUnits( $inCAM, $jobId );
+		foreach my $unit (@activeOnUnits) {
 
-	my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $units->{"units"} };
+			my $resultMngr = -1;
+			my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
 
-	foreach my $unit (@activeOnUnits) {
+			if ( $resultMngr->GetErrorsCnt() ) {
 
-		my $resultMngr = -1;
-		my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
-
-		if ( $resultMngr->GetErrorsCnt() ) {
-
-			my $txt = "Kontrola před exportem - " . UnitEnums->GetTitle( $unit->GetUnitId() ) . "\n";
-			$txt .= $resultMngr->GetErrorsStr(1);
-			$self->_AddChange( $txt, 0 );
+				my $txt = "Kontrola před exportem - " . UnitEnums->GetTitle( $unit->GetUnitId() ) . "\n";
+				$txt .= $resultMngr->GetErrorsStr(1);
+				$self->_AddChange( $txt, 0 );
+			}
 		}
 	}
 

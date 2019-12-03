@@ -38,16 +38,13 @@ sub new {
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"poolInfo"} = $poolInfo;
 
-
 	$self->{"otherSettings"} = OtherSettings->new( $inCAM, $poolInfo );
 	$self->{"poolFile"} = PoolFile->new( $inCAM, $poolInfo );
 	$self->{"poolFile"} = PoolFile->new( $inCAM, $poolInfo );
 	$self->{"defaultStackup"} = DefaultStackup->new( $inCAM, $poolInfo );
-	
+
 	$self->{"exportPrepare"} = ExportPrepare->new( $inCAM, $poolInfo );
 	$self->{"exportPrepare"}->{"onItemResult"}->Add( sub { $self->_OnPoolItemResult(@_) } );
-
-	 
 
 	return $self;
 }
@@ -69,7 +66,19 @@ sub Run {
 
 	$self->_OnPoolItemResult($jobHeliosAttRes);
 
-	# 2) Set layer attribute, pcb class, ..
+	# 2) Store former class values of current mother to DIF (values are used when REorder)
+	my $formerAttr = $self->_GetNewItem("Backup child settings");
+	$mess = "";
+
+	unless ( $self->{"otherSettings"}->StoreFormerClass2DIF( $masterJob, \$mess ) ) {
+
+		$formerAttr->AddError($mess);
+	}
+
+	$self->_OnPoolItemResult($formerAttr);
+
+
+	# 3) Set layer attribute, pcb class, ..
 	my $jobAttRes = $self->_GetNewItem("Set job attribute");
 	$mess = "";
 
@@ -80,7 +89,7 @@ sub Run {
 
 	$self->_OnPoolItemResult($jobAttRes);
 
-	# 3) Remove unused symbols, layers
+	# 4) Remove unused symbols, layers
 	my $jobCleanupRes = $self->_GetNewItem("Job cleanup");
 	$mess = "";
 
@@ -92,7 +101,8 @@ sub Run {
 	$self->_OnPoolItemResult($jobCleanupRes);
 
 
-	# 4) Export default stackup
+
+	# 5) Export default stackup
 
 	if ( CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $masterJob ) > 2 ) {
 		my $stackupRes = $self->_GetNewItem("Export stackup");
@@ -106,11 +116,10 @@ sub Run {
 		$self->_OnPoolItemResult($stackupRes);
 	}
 
+	# 6) do control before creating "export file"
+	$self->{"exportPrepare"}->CheckBeforeExport($masterJob);
 
-	# 5) do control before creating "export file"
-	$self->{"exportPrepare"}->CheckBeforeExport($masterJob); 
-
-	# 6) Export "pool file"
+	# 7) Export "pool file"
 
 	my $poolFileRes = $self->_GetNewItem("Export pool file");
 	$mess = "";
@@ -122,16 +131,13 @@ sub Run {
 
 	$self->_OnPoolItemResult($poolFileRes);
 
-
-
-	# 7) Prepare "export file"
+	# 8) Prepare "export file"
 	my $exportPath = GeneralHelper->GetGUID();
 	$self->SetValInfoFile( "exportFile", $exportPath );
 	$self->{"exportPrepare"}->PrepareExportFile( $masterJob, $masterOrder, $exportPath, \$mess );
-	
-	
+
 	# save master job
-	CamJob->SaveJob($self->{"inCAM"}, $masterJob);
+	CamJob->SaveJob( $self->{"inCAM"}, $masterJob );
 
 }
 
@@ -140,9 +146,9 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt +=  8;    														 # nubber of units which are checked
-	$totalCnt += 6;                                                           # other checks..
-	$totalCnt += 1;  # saving master job (doe in JobWorkerClass)
+	$totalCnt += 8;    # nubber of units which are checked
+	$totalCnt += 6;    # other checks..
+	$totalCnt += 1;    # saving master job (doe in JobWorkerClass)
 	return $totalCnt;
 
 }

@@ -5,6 +5,7 @@
 use FindBin;
 use lib "$FindBin::Bin/../";
 use PackagesLib;
+use utf8;
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
@@ -21,7 +22,7 @@ my $inCAM = InCAM->new();
 
 #  tolik mezer tam je schvalne, protoze se tim logicky zvetsi policko pro zadavani jobu
 
-my $ACTIONTYPE_OPENCHECKOUT = "Open job + check out                        "; 
+my $ACTIONTYPE_OPENCHECKOUT = "Open job + check out                        ";
 my $ACTIONTYPE_OPENCHECKIN  = "Open job + check in";
 my $ACTIONTYPE_NOACTION     = "No action";
 
@@ -50,19 +51,22 @@ for ( my $i = 0 ; $i < scalar(@jobList) ; $i++ ) {
 
 		my $result = _AcquireNew( $inCAM, $job );
 
-		CamJob->CheckInJob( $inCAM, $job );
+		if ($result) {
 
-		next if ( $firstOnlyPar->GetResultValue(1) == 1 && $i > 0 );
+			CamJob->CheckInJob( $inCAM, $job );
 
-		# 2) Do action
+			next if ( $firstOnlyPar->GetResultValue(1) == 1 && $i > 0 );
 
-		if ( $actionTypePar->GetResultValue(1) eq $ACTIONTYPE_OPENCHECKOUT || $actionTypePar->GetResultValue(1) eq $ACTIONTYPE_OPENCHECKIN ) {
-			$inCAM->COM( "open_job", "job" => $job, "open_win" => "yes" );
-			$inCAM->COM( "set_subsystem", "name" => "1-Up-Edit" );
-			$inCAM->COM( "set_step",      "name" => "o+1" );
- 
-			CamJob->CheckOutJob( $inCAM, $job ) if ( $actionTypePar->GetResultValue(1) eq $ACTIONTYPE_OPENCHECKOUT );
+			# 2) Do action
 
+			if ( $actionTypePar->GetResultValue(1) eq $ACTIONTYPE_OPENCHECKOUT || $actionTypePar->GetResultValue(1) eq $ACTIONTYPE_OPENCHECKIN ) {
+				$inCAM->COM( "open_job", "job" => $job, "open_win" => "yes" );
+				$inCAM->COM( "set_subsystem", "name" => "1-Up-Edit" );
+				$inCAM->COM( "set_step",      "name" => "o+1" );
+
+				CamJob->CheckOutJob( $inCAM, $job ) if ( $actionTypePar->GetResultValue(1) eq $ACTIONTYPE_OPENCHECKOUT );
+
+			}
 		}
 	}
 }
@@ -78,8 +82,15 @@ sub _AcquireNew {
 
 	# Supress all toolkit exception/error windows
 	$inCAM->SupressToolkitException(1);
-	my $result = AcquireJob->Acquire( $inCAM, $jobId );
+	my $errMess = "";
+	my $result = AcquireJob->Acquire( $inCAM, $jobId, \$errMess );
 	$inCAM->SupressToolkitException(0);
+
+	unless ($result) {
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Nepodařilo se naimportovat job: $jobId. Detail chyby: $errMess"] );
+
+	}
 
 	return $result;
 }

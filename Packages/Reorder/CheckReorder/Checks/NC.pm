@@ -20,7 +20,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::CAMJob::Marking::Marking';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
-
+use aliased 'Packages::Reorder::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -39,17 +39,15 @@ sub Run {
 	
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
+	my $reorderType = $self->{"reorderType"};
+ 
 	
-	unless($jobExist){
-		return 0;
+	my $step  = undef;
+
+	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+		$step = "panel";
 	}
-	
-	
-	my $step = "panel";
-	
-	if($isPool){
+	else {
 		$step = "o+1";
 	}
  

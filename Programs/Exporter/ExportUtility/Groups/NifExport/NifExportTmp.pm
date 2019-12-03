@@ -89,7 +89,7 @@ sub Run {
 	}						
  
 	
-#	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
+	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
 #
 #	unless ( $resultMngr->Succes() ) {
 #

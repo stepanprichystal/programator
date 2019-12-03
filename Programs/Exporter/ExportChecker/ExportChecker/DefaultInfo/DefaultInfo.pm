@@ -10,9 +10,9 @@ package Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultIn
 #3th party library
 use strict;
 use warnings;
-#use Test::More;
 
 #local library
+use aliased 'Packages::Tests::Test';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums' => 'StackupEnums';
 use aliased 'CamHelpers::CamJob';
@@ -324,7 +324,7 @@ sub GetSignalLSett {
 
 		$lSett{"comp"} = $comp;
 
-		#diag( "Layer: " . $lSett{"name"} . "; Cu thick: $cuThick; Class: $class; Plated: $plt; EthingType: $etchType" );
+		Diag( "Layer: " . $lSett{"name"} . "; Cu thick: $cuThick; Class: $class; Plated: $plt; EthingType: $etchType" );
 
 	}
 

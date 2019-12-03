@@ -23,6 +23,7 @@ use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -40,17 +41,13 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $orderId  = $self->{"orderId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
-
-	unless ($jobExist) {
-		return 0;
-	}
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $orderId     = $self->{"orderId"};
+	my $reorderType = $self->{"reorderType"};
 
 	# 1) Check if rout is on bridges and attribute "routOnBridges" is not set.
+	my $isPool = HegMethods->GetOrderIsPool($orderId);
 	if ($isPool) {
 
 		my $unitRTM = UniRTM->new( $inCAM, $jobId, "o+1", "f" );
@@ -69,38 +66,6 @@ sub Run {
 							   1
 			);
 		}
-	}
-
-	# check all plt+nplt blind rout/drill if we have still all special tools
-	my @types = (
-				  EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bMillBot,
-				  EnumsGeneral->LAYERTYPE_plt_bMillTop,  EnumsGeneral->LAYERTYPE_plt_bMillBot
-	);
-
-	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, \@types ) ) {
-
-		my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
-
-		my @tools = grep { $_->GetDrillSize() > 6000 } $unitDTM->GetUniqueTools();
-
-		if (@tools) {
-
-			my $str = join( ";", map { $_->GetDrillSize() } @tools );
-
-			$self->_AddChange( "Vrstva: \""
-						 . $l->{"gROWname"}
-						 . "\" obsahuje speciální nástroje ($str) větší jak 6.5mm, které již nemáme."
-						 . " Pokud nástroj frézuje \"countersink\", použij jiný průměr.\n"
-						 . "Dej pozor, jestli nový nástroj bude stačit na průměr \"countersinku\", jestli ne tak předělej na pojezd/surface" );
-
-			if ( grep { !defined $_->GetMagazine() } $unitDTM->GetUniqueTools() ) {
-
-				$self->_AddChange(
-								  "Vrstva: \"" . $l->{"gROWname"} . "\" obsahuje speciální nástroje ($str), které nemají definovaný magazín" );
-			}
-
-		}
-
 	}
 
 	# Check if pcb is routed on bridge and order has more than 50 pieces
@@ -132,12 +97,49 @@ sub Run {
 				$stepsOnBridges++ if ( CamAttributes->GetStepAttrByName( $inCAM, $jobId, $s, "rout_on_bridges" ) =~ /^yes$/i );
 			}
 
-			if ($stepsOnBridges ==  scalar(@steps)) {
+			if ( $stepsOnBridges == scalar(@steps) ) {
 
-				$self->_AddChange("DPS obsahuje frézu na můstky a zároveň požadavek na počet kusů (".$orderInfo{"kusy_pozadavek"}.") je větší než 50. Komunikuj s OÚ.");
+				$self->_AddChange(   "DPS obsahuje frézu na můstky a zároveň požadavek na počet kusů ("
+								   . $orderInfo{"kusy_pozadavek"}
+								   . ") je větší než 50. Komunikuj s OÚ." );
 			}
 		}
 
+	}
+
+	if ( $reorderType eq Enums->ReorderType_STD ) {
+
+		# check all plt+nplt blind rout/drill if we have still all special tools
+		my @types = (
+					  EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bMillBot,
+					  EnumsGeneral->LAYERTYPE_plt_bMillTop,  EnumsGeneral->LAYERTYPE_plt_bMillBot
+		);
+
+		foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, \@types ) ) {
+
+			my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+
+			my @tools = grep { $_->GetDrillSize() > 6000 } $unitDTM->GetUniqueTools();
+
+			if (@tools) {
+
+				my $str = join( ";", map { $_->GetDrillSize() } @tools );
+
+				$self->_AddChange( "Vrstva: \""
+						 . $l->{"gROWname"}
+						 . "\" obsahuje speciální nástroje ($str) větší jak 6.5mm, které již nemáme."
+						 . " Pokud nástroj frézuje \"countersink\", použij jiný průměr.\n"
+						 . "Dej pozor, jestli nový nástroj bude stačit na průměr \"countersinku\", jestli ne tak předělej na pojezd/surface" );
+
+				if ( grep { !defined $_->GetMagazine() } $unitDTM->GetUniqueTools() ) {
+
+					$self->_AddChange(
+								  "Vrstva: \"" . $l->{"gROWname"} . "\" obsahuje speciální nástroje ($str), které nemají definovaný magazín" );
+				}
+
+			}
+
+		}
 	}
 
 }

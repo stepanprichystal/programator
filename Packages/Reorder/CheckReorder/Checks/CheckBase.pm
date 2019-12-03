@@ -16,14 +16,12 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self     = shift;
-	my $checkKey = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $orderId = shift;
-	my $jobExist = shift;
-	my $isPool   = shift;
-
+	my $self        = shift;
+	my $checkKey    = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $orderId     = shift;
+	my $reorderType = shift;
 
 	$self = {};
 	bless $self;
@@ -31,13 +29,11 @@ sub new {
 	my @changes = ();
 	$self->{"changes"} = \@changes;
 
-	$self->{"key"}      = $checkKey;
-	$self->{"inCAM"}    = $inCAM;
-	$self->{"jobId"}    = $jobId;
-	$self->{"orderId"} = $orderId;
-	$self->{"jobExist"} = $jobExist;
-	$self->{"isPool"}   = $isPool;
-
+	$self->{"key"}         = $checkKey;
+	$self->{"inCAM"}       = $inCAM;
+	$self->{"jobId"}       = $jobId;
+	$self->{"orderId"}     = $orderId;
+	$self->{"reorderType"} = $reorderType;
 
 	return $self;
 }
@@ -45,7 +41,7 @@ sub new {
 sub _AddChange {
 	my $self       = shift;
 	my $changeMess = shift;
-	my $critical   = shift || 0;        # It means, reorder can be processed, until critical changes are ok
+	my $critical   = shift || 0;    # It means, reorder can be processed, until critical changes are ok
 
 	my %inf = ( "text" => $changeMess, "critical" => $critical );
 

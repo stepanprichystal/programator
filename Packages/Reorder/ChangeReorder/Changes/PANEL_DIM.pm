@@ -21,7 +21,7 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -37,44 +37,33 @@ sub new {
 
 # Check if mask is not negative in matrix
 sub Run {
-	my $self  = shift;
+	my $self = shift;
 	my $mess = shift;
-	
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $isPool    = HegMethods->GetPcbIsPool($jobId);
-	
-	# Check only standard orders
-	if($isPool){
-		return 1;
-	}
-	
-	
-	my $stepName = "panel";
-	
+
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
+
 	my $result = 1;
- 
-	 # 1) Adjust active area borders to actual
-	my $area = ActiveArea->new( $inCAM, $jobId );
 
-	unless ( $area->IsBorderStandard() ) {
+	# Check only standard orders
+	if ( $reorderType eq Enums->ReorderType_STD ) {
 
-		my %b = $area->GetStandardBorder();
+		my $stepName = "panel";
 
-#		# check if active area will be bigger after change borders
-#		if ( $area->BorderL() < $b{"bl"} || $area->BorderR() < $b{"br"} || $area->BorderT() < $b{"bt"} || $area->BorderB() < $b{"bb"} ) {
-#
-#			$$mess .= "Panel doesn't have standard width of active area border. "
-#			  . "";
-#			  
-#			  $result =  0;
-#		}
-#		else {
+		# 1) Adjust active area borders to actual
+		my $area = ActiveArea->new( $inCAM, $jobId );
 
-			CamStep->SetActiveAreaBorder( $inCAM, "panel", $b{"bl"}, $b{"br"}, $b{"bt"}, $b{"bb"});
-#		}
+		unless ( $area->IsBorderStandard() ) {
+
+			my %b = $area->GetStandardBorder();
+
+			# check if active area will be bigger after change borders
+
+			CamStep->SetActiveAreaBorder( $inCAM, "panel", $b{"bl"}, $b{"br"}, $b{"bt"}, $b{"bb"} );
+		}
 	}
- 
+
 	return $result;
 }
 
@@ -84,17 +73,16 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'Packages::Reorder::ChangeReorder::Changes::MASK_POLAR' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
 
- 	use aliased 'Packages::Reorder::ChangeReorder::Changes::MASK_POLAR' => "Change";
- 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM    = InCAM->new();
+	my $inCAM = InCAM->new();
 	my $jobId = "f52457";
-	
-	my $check = Change->new("key", $inCAM, $jobId);
-	
+
+	my $check = Change->new( "key", $inCAM, $jobId );
+
 	my $mess = "";
-	print "Change result: ".$check->Run(\$mess);
+	print "Change result: " . $check->Run( \$mess );
 }
 
 1;

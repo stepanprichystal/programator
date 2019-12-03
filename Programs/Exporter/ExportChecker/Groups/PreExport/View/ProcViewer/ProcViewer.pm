@@ -8,9 +8,10 @@ package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::
 #3th party library
 use strict;
 use warnings;
-#use Test::More;
+
 
 #local library
+use aliased 'Packages::Tests::Test';
 use aliased 'Packages::Events::Event';
 use aliased 'Connectors::TpvConnector::TpvMethods';
 use aliased 'Enums::EnumsDrill';
@@ -232,7 +233,7 @@ sub __OnlayerSettChangedHndl {
 
 	$self->{"sigLayerSettChangedEvt"}->Do( \%currLSett );
 
-	#diag("Copper row changed: $copperName, outer core: $outerCore, plugging: $plugging\n");
+	Diag("Copper row changed: $copperName, outer core: $outerCore, plugging: $plugging\n");
 
 }
 
@@ -242,7 +243,7 @@ sub __OnTechnologyChangedHndl {
 	my $productType = shift;
 	my $technology  = shift;
 
-	#diag("Technology changed. Product Id: $productId, technology: $technology  \n");
+	Diag("Technology changed. Product Id: $productId, technology: $technology  \n");
 
 	# Change Tenting by technology
 	my $mItem = ( $self->{"searchMatrix"}->GetItemsByProduct( $productId, $productType ) )[0];
@@ -315,7 +316,7 @@ sub __OnTentingChangedHndl {
 
 		$self->{"sigLayerSettChangedEvt"}->Do( \%newSett );
 
-		#diag("Technology changed. Product Id: $productId, Layer: $lName,  tenting: $tenting  \n");
+		Diag("Technology changed. Product Id: $productId, Layer: $lName,  tenting: $tenting  \n");
 	}
 
 	# raise event if tenting change for layer c/s

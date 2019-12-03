@@ -10,6 +10,7 @@ use Class::Interface;
 &implements('Programs::Services::TpvService::ServiceApps::IServiceApp');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -30,10 +31,11 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Services::Helpers::AutoProcLog';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
-
+use aliased 'Enums::EnumsApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
 use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
 use aliased 'Packages::Reorder::CheckReorder::CheckReorder';
+use aliased 'Packages::Reorder::Enums' => 'ReorderEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -165,56 +167,67 @@ sub __ProcessJob {
 
 	my ($jobId) = $orderId =~ /^(\w\d+)-(\d+)/i;
 	$jobId = lc($jobId);
-	 
 
 	# 1) Check if pcb exist in InCAM
 
 	$self->__CheckAncestor( $jobId, $orderId );
+	my $errMess = "";
+	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId, \$errMess );
 
-	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
+	my @tasks      = ();
+	my $orderState = EnumsIS->CurStep_ZPRACOVANIAUTO;    # default state
 
-	$self->_OpenJob($jobId);
+	# Check if PCB is i
 
-	my @manCh = ();
+	if ( !$jobExist ) {
 
-	# 2) Check if job is former pool and now is standard
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
-	my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
-
-	if ( !( !$isPool && !$pnlExist ) ) {
-
-		#  Do all automatic changes
-		if ($jobExist) {
-
-			my $changeReorder = ChangeReorder->new( $inCAM, $jobId, $orderId );
-			my $errMess       = "";
-			my $res           = $changeReorder->RunChanges( \$errMess );
-			$self->{"inCAM"}->COM( "save_job", "job" => "$jobId" );
-
-			unless ($res) {
-				die $errMess;
-			}
-		}
+		my $errText = "Nepodařil se dohledat nebo naimportovat zarchivovaný TGZ soubor pro opakovanopu objednávku.";
+		$errText .= "Detail chyby: $errMess";
+ 
+		push( @tasks, { "text" => $errText, "critical" => 1 } );
 	}
+	else {
 
-	# 3) Do all controls and return check which are neet to be repair manualz bz tpv user
-	my $checkReorder = CheckReorder->new( $inCAM, $jobId, $orderId );
-	@manCh = $checkReorder->RunChecks();
+		$self->_OpenJob($jobId);
 
-	if ($jobExist) {
+		# 2) Determine Reorder type
+
+		my $isPool      = HegMethods->GetPcbIsPool($jobId);
+		my $pnlExist    = CamHelper->StepExists( $inCAM, $jobId, "panel" );
+		my $reorderType = undef;
+
+		$reorderType = ReorderEnums->ReorderType_POOL             if ( $isPool && !$pnlExist && $orderId !~ /-01/ );
+		$reorderType = ReorderEnums->ReorderType_POOLFORMERSTD    if ( $isPool && $pnlExist  && $orderId !~ /-01/ );
+		$reorderType = ReorderEnums->ReorderType_POOLFORMERMOTHER if ( $isPool && $pnlExist  && $orderId =~ /-01/ );
+		$reorderType = ReorderEnums->ReorderType_STD           if ( !$isPool && $pnlExist );
+		$reorderType = ReorderEnums->ReorderType_STDFORMERPOOL if ( !$isPool && !$pnlExist );
+
+		die "Reorder type was not found for order id: $orderId" unless ( defined $reorderType );
+
+		# 3) Check if job is former pool and now is standard
+
+		my $changeReorder = ChangeReorder->new( $inCAM, $jobId, $orderId, $reorderType );
+		my $errMess       = "";
+		my $res           = $changeReorder->RunChanges( \$errMess );
+		$self->{"inCAM"}->COM( "save_job", "job" => "$jobId" );
+
+		die "Error during reorder processing: $errMess" unless ($res);
+
+		# 4) Do all controls and return check which are neet to be repair manualz bz tpv user
+		my $checkReorder = CheckReorder->new( $inCAM, $jobId, $orderId, $reorderType );
+		@tasks = $checkReorder->RunChecks();
+
 		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
 		$inCAM->COM( "close_job", "job" => "$jobId" );
+
 	}
 
-	# 4) set order state
-
-	my $orderState = EnumsIS->CurStep_ZPRACOVANIAUTO;
-
-	if ( scalar(@manCh) > 0 ) {
+	# 5) set order state
+	if ( scalar(@tasks) > 0 ) {
 
 		$orderState = EnumsIS->CurStep_ZPRACOVANIMAN;
 
-		ChangeFile->Create( $jobId, \@manCh );    # create changes file to archive
+		ChangeFile->Create( $jobId, \@tasks );    # create changes file to archive
 
 	}
 	else {
@@ -266,7 +279,7 @@ sub __GetReorders {
 	push( @reorders, grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } HegMethods->GetReorders() );
 
 	# check if 01 order is already processed (is not predvyrobni priprava)
-	for ( my $i = scalar(@reorders) -1 ; $i >= 0 ; $i-- ) {
+	for ( my $i = scalar(@reorders) - 1 ; $i >= 0 ; $i-- ) {
 
 		my $jobId = $reorders[$i]->{"deska_reference_subjektu"};
 

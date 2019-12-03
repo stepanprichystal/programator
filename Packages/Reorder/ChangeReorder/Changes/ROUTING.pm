@@ -25,6 +25,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -43,22 +44,23 @@ sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM  = $self->{"inCAM"}; 
-	my $jobId  = $self->{"jobId"};
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $result = 1;
 
 	# Add pilot holes if doesnt exist to layer f and r
+	my @steps = ();
 
-	my @steps = "o+1";
-
-	unless ($isPool) {
-
-		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, 'panel' );
+	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+		@steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" );
+	}
+	else {
+		@steps = ("o+1");
 	}
 
-	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_plt_nMill] );
+	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_plt_nMill ] );
 
 	foreach my $step (@steps) {
 

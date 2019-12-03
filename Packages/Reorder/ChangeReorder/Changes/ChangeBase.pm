@@ -16,19 +16,21 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self     = shift;
-	my $checkKey = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $orderId = shift;
+	my $self        = shift;
+	my $checkKey    = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $orderId     = shift;
+	my $reorderType = shift;
 
 	$self = {};
 	bless $self;
 
-	$self->{"key"}      = $checkKey;
-	$self->{"inCAM"}    = $inCAM;
-	$self->{"jobId"}    = $jobId;
-	$self->{"orderId"} = $orderId;
+	$self->{"key"}         = $checkKey;
+	$self->{"inCAM"}       = $inCAM;
+	$self->{"jobId"}       = $jobId;
+	$self->{"orderId"}     = $orderId;
+	$self->{"reorderType"} = $reorderType;
 
 	return $self;
 }

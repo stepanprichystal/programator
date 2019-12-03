@@ -15,7 +15,7 @@ use warnings;
 
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
-
+use aliased 'Packages::Reorder::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -34,8 +34,7 @@ sub Run {
 
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $needChange = 0;
 

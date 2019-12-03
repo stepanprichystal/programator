@@ -29,6 +29,13 @@ sub new {
 	$self->{"jobId"}   = shift;    # Job id without order id
 	$self->{"orderId"} = shift;    # Complete order id (X000000-00)
 
+	# ReorderType_POOL
+	# ReorderType_POOLFORMERSTD
+	# ReorderType_POOLFORMERMOTHER
+	# ReorderType_STD
+	# ReorderType_STDFORMERPOOL
+	$self->{"reorderType"} = shift;
+
 	my @checks = ();
 	$self->{"changes"} = \@checks;
 
@@ -81,9 +88,10 @@ sub ExcludeChange {
 sub __LoadChanges {
 	my $self = shift;
 
-	my $inCAM   = $self->{"inCAM"};
-	my $jobId   = $self->{"jobId"};
-	my $orderId = $self->{"orderId"};
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $orderId     = $self->{"orderId"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $path  = GeneralHelper->Root() . "\\Packages\\Reorder\\ChangeReorder\\ChangeList";
 	my @lines = @{ FileHelper->ReadAsLines($path) };
@@ -107,7 +115,7 @@ sub __LoadChanges {
 			my $module = 'Packages::Reorder::ChangeReorder::Changes::' . $key;
 			eval("use  $module;");
 
-			push( @changes, $module->new( $key, $inCAM, $jobId, $orderId ) );
+			push( @changes, $module->new( $key, $inCAM, $jobId, $orderId, $reorderType) );
 		}
 	}
 
@@ -130,12 +138,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use Data::Dump qw(dump);
 
-	my $inCAM = InCAM->new();
-	my $jobId = "d152457";
+	my $inCAM   = InCAM->new();
+	my $jobId   = "d152457";
 	my $orderId = "d152457-03";
-	
 
-	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId);
+	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId );
 
 	my $errMess = "";
 	my @arr     = $ch->RunChanges( \$errMess );

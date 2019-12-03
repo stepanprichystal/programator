@@ -23,6 +23,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardExt';
 use aliased 'Packages::Stackup::StackupOperation';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -40,71 +41,63 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
+	
+	if ( $reorderType eq Enums->ReorderType_STD ) {
 
-	unless ($jobExist) {
-		return 0;
-	}
+		my $materialKind = HegMethods->GetMaterialKind($jobId);
 
-	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+		# If multilayer
+		if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 && $materialKind ) {
 
-	unless ( $layerCnt > 2 ) {
-		return 0;
-	}
+			my $stackup = Stackup->new( $inCAM, $jobId );
 
-	my $materialKind = HegMethods->GetMaterialKind($jobId);
+			# 1) Test id material in helios, match material in stackup
+			my $stackKind = $stackup->GetStackupType();
 
-	# If multilayer
-	if ( !$isPool && $materialKind ) {
-
-		my $stackup = Stackup->new($inCAM, $jobId);
-
-		# 1) Test id material in helios, match material in stackup
-		my $stackKind = $stackup->GetStackupType();
-
-		#exception DE 104 eq FR4
-		if ( $stackKind =~ /DE 104/i ) {
-			$stackKind = "FR4";
-		}
-
-		$stackKind =~ s/[\s\t]//g;
-
-		unless ( $materialKind =~ /$stackKind/i || $stackKind =~ /$materialKind/i ) {
-
-			$self->_AddChange( "Materiál složení ($stackKind) není stejný jako materiál v IS ($materialKind). Oprav to.", 1 );
-		}
-
-		# 2) Test if 4vv have old default stackup with 900µm core (if it is standard dimension)
-		my $pnl = StandardExt->new( $inCAM, $jobId );
-
-		if ( $pnl->IsStandardCandidate() && $stackup->GetCuLayerCnt() == 4 && $stackup->GetStackupType() =~ /DE 104/i ) {
-
-			my @cores = $stackup->GetAllCores();
-
-			if ( $cores[0]->GetText() =~ /900\s*/i ) {
-
-				$self->_AddChange(
-								   "Vypadá to, že se jedná o staré defaultní složení FR4 s jádrem 900µm. "
-									 . "Pokud je to pravda (není to vyložený požadavek zákazníka!), "
-									 . "předělej na nové standardní složení IS400.",
-								   0
-				);
+			#exception DE 104 eq FR4
+			if ( $stackKind =~ /DE 104/i ) {
+				$stackKind = "FR4";
 			}
+
+			$stackKind =~ s/[\s\t]//g;
+
+			unless ( $materialKind =~ /$stackKind/i || $stackKind =~ /$materialKind/i ) {
+
+				$self->_AddChange( "Materiál složení ($stackKind) není stejný jako materiál v IS ($materialKind). Oprav to.", 1 );
+			}
+
+			# 2) Test if 4vv have old default stackup with 900µm core (if it is standard dimension)
+			my $pnl = StandardExt->new( $inCAM, $jobId );
+
+			if ( $pnl->IsStandardCandidate() && $stackup->GetCuLayerCnt() == 4 && $stackup->GetStackupType() =~ /DE 104/i ) {
+
+				my @cores = $stackup->GetAllCores();
+
+				if ( $cores[0]->GetText() =~ /900\s*/i ) {
+
+					$self->_AddChange(
+									   "Vypadá to, že se jedná o staré defaultní složení FR4 s jádrem 900µm. "
+										 . "Pokud je to pravda (není to vyložený požadavek zákazníka!), "
+										 . "předělej na nové standardní složení IS400.",
+									   0
+					);
+				}
+			}
+
+			# 3) Test if stackup material is on stock
+
+			my $errMes = "";
+
+			my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $stackup, \$errMes );
+
+			unless ($matOk) {
+				$self->_AddChange( "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes", 1 );
+			}
+
 		}
-
-		# 3) Test if stackup material is on stock
-
-		my $errMes = "";
-
-		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $stackup, \$errMes );
-
-		unless($matOk){
-			$self->_AddChange( "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes", 1 );
-		}
-
 	}
 
 }

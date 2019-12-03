@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -40,68 +41,67 @@ sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM  = $self->{"inCAM"};
-	my $jobId  = $self->{"jobId"};
-	
-	my $isPool    = HegMethods->GetPcbIsPool($jobId);
-
-	# Check only standard orders
-	if ( $isPool ) {
-		return 1;
-	}
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $result = 1;
 
-	# 1) Delete coupons (test coupons were be put to pcb panel previously, today not)
-	
-	my @couponSteps = grep { $_ =~ /coupon_\d+vv/i } CamStep->GetAllStepNames($inCAM, $jobId);
- 
-	foreach my $s (@couponSteps) {
+	# Check only standard orders
+	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
 
-		if ( CamHelper->StepExists( $inCAM, $jobId, $s ) ) {
-			$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $s, "type" => "step" );
+		# 1) Delete coupons (test coupons were be put to pcb panel previously, today not)
+
+		my @couponSteps = grep { $_ =~ /coupon_\d+vv/i } CamStep->GetAllStepNames( $inCAM, $jobId );
+
+		foreach my $s (@couponSteps) {
+
+			if ( CamHelper->StepExists( $inCAM, $jobId, $s ) ) {
+				$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $s, "type" => "step" );
+			}
 		}
-	}
 
-	# 2) Delete old schema + all from panel board layer (if autopan_delete, it doesnt delete non schema features)
+		# 2) Delete old schema + all from panel board layer (if autopan_delete, it doesnt delete non schema features)
 
-	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+		my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
-	my @steps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId);
+		my @steps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 
-	$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
+		$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
 
-	CamHelper->SetStep( $inCAM, "panel" );
-	CamLayer->ClearLayers($inCAM);
-	my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
+		CamHelper->SetStep( $inCAM, "panel" );
+		CamLayer->ClearLayers($inCAM);
+		my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
 
-	@layers = grep { $_->{"gROWname"} ne "fsch" } @layers;    # we want keep old fsch
-	@layers = map  { $_->{"gROWname"} } @layers;
+		@layers = grep { $_->{"gROWname"} ne "fsch" } @layers;    # we want keep old fsch
+		@layers = map  { $_->{"gROWname"} } @layers;
 
-	CamLayer->AffectLayers( $inCAM, \@layers );
-	$inCAM->COM('sel_delete');
-	CamLayer->ClearLayers($inCAM);
+		CamLayer->AffectLayers( $inCAM, \@layers );
+		$inCAM->COM('sel_delete');
+		CamLayer->ClearLayers($inCAM);
 
-	# 3) Insert new schema
+		# 3) Insert new schema
 
-	my $schema = undef;
+		my $schema = undef;
 
-	if ( $layerCnt <= 2 ) {
+		if ( $layerCnt <= 2 ) {
 
-		$schema = "1a2v";
-	}
-	else {
-
-		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
-
-		if ( abs( $lim{"yMax"} - $lim{"yMin"} ) == 407 ) {
-			$schema = '4v-407';
+			$schema = "1a2v";
 		}
 		else {
-			$schema = '4v-485';
+
+			my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+
+			if ( abs( $lim{"yMax"} - $lim{"yMin"} ) == 407 ) {
+				$schema = '4v-407';
+			}
+			else {
+				$schema = '4v-485';
+			}
 		}
+		$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => "panel", "pcb" => $steps[0]->{"stepName"}, "scheme" => $schema );
+
 	}
-	$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => "panel", "pcb" => $steps[0]->{"stepName"}, "scheme" => $schema );
 
 	return $result;
 

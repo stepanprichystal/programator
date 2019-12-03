@@ -141,10 +141,10 @@ sub SetStage {
 	}
 	else {
 
-		my $cuLayer = $stackup->GetCuLayer($layerName);
-		$cuThick  = $cuLayer->GetThick();
-		$pcbThick = $stackup->GetThickByCuLayer($layerName);
-
+		my %lPars = JobHelper->ParseSignalLayerName($layerName);
+		my $thick = $stackup->GetThickByCuLayer($lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"});
+		$pcbThick = sprintf( "%.3f", $thick / 1000);
+	
 	}
 
 	
@@ -157,7 +157,7 @@ sub SetStage {
 		"drill"         => $drill,
 		"layer"         => $layerName,
 		"copper_weight" => $cuThick,
-		"panel_thick"   => $pcbThick    #in µm
+		"panel_thick"   => $pcbThick    #in mm
 	);
 
 }

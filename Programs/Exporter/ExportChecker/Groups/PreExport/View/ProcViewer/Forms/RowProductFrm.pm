@@ -87,7 +87,8 @@ sub __SetLayout {
 	$rowHeadPnl->SetSizer($rowHeadSz);
 
 	$szMain->Add( $rowHeadPnl, 0, &Wx::wxALL, 0 );
-
+	$szMain->Add( 318, 0, &Wx::wxALL, 0 );  # Add expander instead of controls
+	 
 	$self->SetSizer($szMain);
 
 	# SET REFERENCES

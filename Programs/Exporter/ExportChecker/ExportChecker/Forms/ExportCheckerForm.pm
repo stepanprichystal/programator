@@ -10,14 +10,14 @@ use strict;
 use warnings;
 use Wx;
 use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
-#use Test::More;
+ 
 
 BEGIN {
 	eval { require Wx::RichText; };
 }
 
 #local library
-
+use aliased 'Packages::Tests::Test';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ScrollPanel';
 use aliased 'Widgets::Forms::MyWxFrame';
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -212,7 +212,7 @@ sub BuildGroupTableForm {
 		$scrollPnl->Layout();
 		my ( $width, $height ) = $groupTableForm->GetSizeWH();
 
-		#diag( "Table title: " . $table->GetTitle() . ", dim: $width x $height \n" );
+		Diag( "Table title: " . $table->GetTitle() . ", dim: $width x $height \n" );
 
 		#compute number of rows. One row has height 10 px
 		$scrollPnl->SetRowCount( $height / 10 );

@@ -19,8 +19,7 @@ use Try::Tiny;
 use aliased 'Connectors::TpvConnector::Helper';
 use aliased 'Connectors::SqlParameter';
 use aliased 'Connectors::TpvConnector::Enums';
-use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#

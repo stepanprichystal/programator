@@ -20,7 +20,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-
+use aliased 'Packages::Reorder::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -38,15 +38,13 @@ sub Run {
 	my $self     = shift;
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $needChange = 0;
-
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	# 1) Check nakoveni in cores
-	if ( !$isPool && $layerCnt > 2 ) {
+	if ( $reorderType eq Enums->ReorderType_STD && $layerCnt > 2 ) {
 
 		my $stackup = Stackup->new($inCAM, $jobId);
  

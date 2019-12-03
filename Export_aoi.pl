@@ -14,7 +14,7 @@ use PackagesLib;
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::AOIExport::AOIExportTmp';
 
-my $jobId    = "f77120";
+my $jobId    = "d262773";
 my $inCAM    = InCAM->new();
 
 

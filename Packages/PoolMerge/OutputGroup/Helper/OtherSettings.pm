@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'Packages::CAMJob::Stackup::StackupDefault';
 use aliased 'Packages::NifFile::NifFile';
+use aliased 'Packages::TifFile::TifPoolMother';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -74,6 +75,24 @@ sub SetJobHeliosAttributes {
 
 	return $result;
 }
+
+
+# Store former values of construction class to DIF file
+sub StoreFormerClass2DIF {
+	my $self      = shift;
+	my $masterJob = shift;
+	my $mess      = shift;
+
+	my $result = 1;
+
+	my $inCAM = $self->{"inCAM"};
+	my $tif   = TifPoolMother->new($masterJob);
+
+	$tif->SetFormerOuterClass( CamAttributes->GetJobAttrByName( $inCAM, $masterJob, "pcb_class" ) );
+	$tif->SetFormerInnerClass( CamAttributes->GetJobAttrByName( $inCAM, $masterJob, "pcb_class_inner" ) );
+}
+
+
 
 sub SetJobAttributes {
 	my $self      = shift;
@@ -230,6 +249,7 @@ sub CreateDefaultStackup {
 	return $result;
 
 }
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

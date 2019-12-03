@@ -1111,6 +1111,31 @@ sub UpdateMaterialKind {
 
 }
 
+# Update base cu thickness in PCB
+sub UpdateBaseCu {
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $baseCu         = shift;
+	my $childThread = shift;
+
+	if ($childThread) {
+
+		my $result = $self->__SystemCall( "UpdateBaseCu", $pcbId, $baseCu );
+
+		return $result;
+	}
+	else {
+
+		#use Connectors::HeliosConnector::HelperWriter;
+		require Connectors::HeliosConnector::HelperWriter;
+
+		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $baseCu, "material_tloustka_medi" );
+
+		return $res;
+	}
+
+}
+
 # update column pooling in pcb order
 sub UpdatePooling {
 	my $self        = shift;
@@ -2059,7 +2084,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 #	my @matTop = HegMethods->GetPrepregStoreInfo( 10, 1 , undef, undef, 1);
 #	dump(@matTop);
 
-	my $matInfo = HegMethods->GetPcbCoverlayMat("d152456");
+	my $matInfo = HegMethods->UpdateBaseCu("d152457", 25);
 	
 	#my $matInfo = HegMethods->GetMatInfo($all[0]->{"material_coverlay_reference"});
 	dump($matInfo);

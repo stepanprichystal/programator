@@ -152,12 +152,15 @@ sub __ProcessJob {
 	my $inserted = shift;
 	my $loginId = shift;
 
-	
-
+ 
 	my $inCAM = $self->{"inCAM"};
 
 	# 1) Check if pcb exist in InCAM and import t InCAM
-	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId );
+	my $acquireErr = "";
+	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId, \$acquireErr);
+	
+	
+	die "Error during unarchive InCAM job. Error detail: $acquireErr" unless($jobExist);
 	
 	my $errMess = "";
 	my $result = undef;

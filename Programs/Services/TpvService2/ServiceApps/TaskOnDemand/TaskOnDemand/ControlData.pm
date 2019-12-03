@@ -333,7 +333,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	# 1) # zkontroluje jestli jib existuje v InCAM, pokud ne odarchivuje a nahraje do InCAM
 	# 2) # pokud se jedna o job ze stareho archivu, tak nahraje job do InCAMu z neho
-	#my $result = AcquireJob->Acquire($inCAM,"d142003");
 
 	my $jobId = "d152456";
 	my $d = ControlData->new( $inCAM, $jobId );

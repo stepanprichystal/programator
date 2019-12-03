@@ -19,6 +19,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::CAMJob::SilkScreen::SilkScreenCheck';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -36,18 +37,15 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
-
-	unless ($jobExist) {
-		return 0;
-	}
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $orderId       = $self->{"orderId"};
+	my $reorderType = $self->{"reorderType"};
+ 
 
 	# 1) In POOL pcb check width of silkscreen. (only pool, because it cause problem doring merging pools)
-	if ($isPool) {
-		
+	if (HegMethods->GetOrderIsPool($orderId)) {
+
 		my $mess = "";
 
 		unless ( SilkScreenCheck->FeatsWidthOkAllLayers( $inCAM, $jobId, "o+1", \$mess ) ) {
@@ -57,7 +55,6 @@ sub Run {
 		}
 	}
 
-	
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -125,7 +125,7 @@ sub CheckAllInLayers {
 
 	die "Job is not multilayer" unless ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 );
 
-	my $stackup = Stackup->new($jobId, $jobId);
+	my $stackup = Stackup->new($inCAM, $jobId);
 
 	my $chamferDepth = $stackup->GetFinalThick() / 3;    # routing depth of chamfer tool, assume 1/3 material
 

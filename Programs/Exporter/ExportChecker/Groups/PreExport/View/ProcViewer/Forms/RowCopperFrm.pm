@@ -49,8 +49,8 @@ sub new {
 	#build layer name
 	my $lName = $self->{"copperName"};
 	$lName = "(outer)" . $lName if ( $self->{"outerCore"} );
-	$lName = "(plg)" . $lName if ( $self->{"plugging"} );
-	$lName = "(foil)"         if ( $self->{"cuFoilOnly"} );
+	$lName = "(plg)" . $lName   if ( $self->{"plugging"} );
+	$lName = "(foil)"           if ( $self->{"cuFoilOnly"} );
 
 	$self->__SetLayout( $lName, $cuThickness, $shrink );
 
@@ -225,13 +225,22 @@ sub __SetLayout {
 	my $fontPolar = Wx::Font->new( 11, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_MAX );
 	$polarityCb->SetFont($fontPolar);
 	my $mirrorChb = Wx::CheckBox->new( $cntrlsWrapperPnl, -1, "", [ -1, -1 ], [ 40, $self->{"rowHeight"} - 2 ] );
-	my $compTxt = Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "undef", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} - 2 ] );
+	my $compTxt    = Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "undef", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} - 2 ] );
+	my $shrinkXTxt = undef;
+	my $shrinkYTxt = undef;
 
-	my $shrinkStyle = $shrink ?  undef : &Wx::wxCB_READONLY;
+	if ($shrink) {
+		$shrinkXTxt = Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "undef", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} - 2 ] );
+		$shrinkYTxt =
+		  Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "undef", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} - 2 ] );
+	}
+	else {
 
-	my $shrinkXTxt =
-	  Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "undef", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} - 2 ], $shrinkStyle );
-	my $shrinkYTxt = Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "undef", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} - 2 ], $shrinkStyle );
+		$shrinkXTxt =
+		  Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "undef", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} - 2 ], &Wx::wxCB_READONLY );
+		$shrinkYTxt =
+		  Wx::TextCtrl->new( $cntrlsWrapperPnl, -1, "undef", &Wx::wxDefaultPosition, [ 50, $self->{"rowHeight"} - 2 ], &Wx::wxCB_READONLY );
+	}
 
 	if ( $self->{"cuFoilOnly"} ) {
 		$polarityCb->Hide();
@@ -239,6 +248,7 @@ sub __SetLayout {
 		$compTxt->Hide();
 		$shrinkXTxt->Hide();
 		$shrinkYTxt->Hide();
+
 	}
 
 	if ( $self->{"plugging"} || $self->{"cuFoilOnly"} ) {
@@ -267,6 +277,8 @@ sub __SetLayout {
 	$cntrlsWrapperSz->Add( $compTxt,    0, &Wx::wxLEFT, 5 );
 	$cntrlsWrapperSz->Add( $shrinkXTxt, 0, &Wx::wxLEFT, 5 );
 	$cntrlsWrapperSz->Add( $shrinkYTxt, 0, &Wx::wxLEFT, 5 );
+	
+
 	$szMain->Add( $cntrlsWrapperPnl, 0, &Wx::wxALL, 1 );
 
 	$cntrlsWrapperPnl->SetSizer($cntrlsWrapperSz);

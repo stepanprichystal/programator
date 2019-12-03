@@ -29,9 +29,15 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift; # Job id without order id
-	$self->{"orderId"} = shift; # Complete order id (X000000-00)
+	$self->{"inCAM"}       = shift;
+	$self->{"jobId"}       = shift;    # Job id without order id
+	$self->{"orderId"}     = shift;    # Complete order id (X000000-00)
+	                                   # ReorderType_POOL
+	                                   # ReorderType_POOLFORMERSTD
+	                                   # ReorderType_POOLFORMERMOTHER
+	                                   # ReorderType_STD
+	                                   # ReorderType_STDFORMERPOOL
+	$self->{"reorderType"} = shift;
 
 	$self->{"isPool"} = HegMethods->GetPcbIsPool( $self->{"jobId"} );
 
@@ -63,32 +69,18 @@ sub RunChecks {
 	my $isPool = HegMethods->GetPcbIsPool($jobId);
 	my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
 
-	if ( !$isPool && !$pnlExist ) {
+	foreach my $check ( @{ $self->{"checks"} } ) {
 
-		my %inf = ( "text" => "Pcb is former POOL, now it is standard. Prepare step \"panel\".", "critical" => 1 );
-		my @changes = ( \%inf );
-		push( @manCh, @changes );
+		$check->Run();
+		my @changes = $check->GetChanges();
 
-		my $resultItem = $self->_GetNewItem("-");
+		if ( scalar(@changes) ) {
+			push( @manCh, @changes );
+		}
+
+		my $resultItem = $self->_GetNewItem( $check->GetCheckKey() );
 		$resultItem->SetData( \@changes );
 		$self->_OnItemResult($resultItem);
-
-	}
-	else {
-
-		foreach my $check ( @{ $self->{"checks"} } ) {
-
-			$check->Run();
-			my @changes = $check->GetChanges();
-
-			if ( scalar(@changes) ) {
-				push( @manCh, @changes );
-			}
-
-			my $resultItem = $self->_GetNewItem( $check->GetCheckKey() );
-			$resultItem->SetData( \@changes );
-			$self->_OnItemResult($resultItem);
-		}
 	}
 
 	return @manCh;
@@ -104,12 +96,11 @@ sub GetItemCnt {
 sub __LoadChecks {
 	my $self = shift;
 
-	my $inCAM   = $self->{"inCAM"};
-	my $jobId   = $self->{"jobId"};
-	my $orderId = $self->{"orderId"};
-	my $isPool  = $self->{"isPool"};
-
-	my $jobExist = CamJob->JobExist( $inCAM, $jobId );
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $orderId     = $self->{"orderId"};
+	my $isPool      = $self->{"isPool"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $path  = GeneralHelper->Root() . "\\Packages\\Reorder\\CheckReorder\\CheckList";
 	my @lines = @{ FileHelper->ReadAsLines($path) };
@@ -133,7 +124,7 @@ sub __LoadChecks {
 			my $module = 'Packages::Reorder::CheckReorder::Checks::' . $key;
 			eval("use  $module;");
 
-			push( @checks, $module->new( $key, $inCAM, $jobId, $orderId, $jobExist, $isPool ) );
+			push( @checks, $module->new( $key, $inCAM, $jobId, $orderId, $reorderType ) );
 		}
 	}
 

@@ -23,6 +23,7 @@ use aliased 'Packages::Export::NifExport::NifMngr';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::CAMJob::Dim::JobDim';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -41,25 +42,30 @@ sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $result = 1;
 
 	# 1) Chceck If pcb is pool and was in produce as standard before
-	my $pnlExist = CamHelper->StepExists( $inCAM, $jobId, "panel" );
 
 	# pcb is pool and was in produce as standard last order
-	if ( $isPool && $pnlExist ) {
+	if ( $reorderType eq Enums->ReorderType_POOLFORMERSTD ) {
 
 		# Check if pcb can be merged with another pool currently
 		if ( $self->__PoolCriteriaOk() ) {
 
-			# 1) delete panel (and et_panel if exist)
-			CamStep->DeleteStep( $inCAM, $jobId, "panel" );
-			CamStep->DeleteStep( $inCAM, $jobId, "et_panel" );
+			my @steps = CamStep->GetAllStepNames( $inCAM, $jobId );
+			my @alowed = ( CamStep->GetReferenceStep( $inCAM, $jobId, "o+1" ), "o+1", "o+1_single", "o+1_panel" );
+
+			my %tmp;
+			@tmp{@alowed} = ();
+			my @steps2Del = grep { !exists $tmp{$_} } @steps;
+
+			foreach my $step (@steps2Del) {
+				CamStep->DeleteStep( $inCAM, $jobId, $step );
+			}
 
 		}
 		else {
@@ -68,7 +74,6 @@ sub Run {
 			my $lastOrder = HegMethods->GetPcbOrderNumber($jobId);
 			my $res = HegMethods->UpdatePooling( $jobId . "-" . $lastOrder, 0 );
 		}
-
 	}
 
 	# if pcb was not change to standard and is not new id (01), export nif
@@ -79,7 +84,7 @@ sub Run {
 
 		# values taken from job (nasobnost_panelu and dimensions could be changed)
 		$exportNifData{"zpracoval"} = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "user_name" );
-		
+
 		my %dim = JobDim->GetDimension( $inCAM, $jobId );
 		$exportNifData{"single_x"}         = $dim{"single_x"};
 		$exportNifData{"single_y"}         = $dim{"single_y"};
@@ -93,10 +98,10 @@ sub Run {
 		$exportNifData{"s_mask_colour"}        = CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ? "Z" : "";
 		$exportNifData{"c_silk_screen_colour"} = CamHelper->LayerExists( $inCAM, $jobId, "pc" ) ? "B" : "";
 		$exportNifData{"s_silk_screen_colour"} = CamHelper->LayerExists( $inCAM, $jobId, "ps" ) ? "B" : "";
-	 
-		$exportNifData{"datacode"}  = HegMethods->GetDatacodeLayer($jobId);
-		$exportNifData{"ul_logo"}   = HegMethods->GetUlLogoLayer($jobId);
-		
+
+		$exportNifData{"datacode"} = HegMethods->GetDatacodeLayer($jobId);
+		$exportNifData{"ul_logo"}  = HegMethods->GetUlLogoLayer($jobId);
+
 		my $formerNif = NifFile->new($jobId);
 		$exportNifData{"maska01"}   = $formerNif->GetPayment("2814075");
 		$exportNifData{"wrongData"} = $formerNif->GetPayment("4007227");

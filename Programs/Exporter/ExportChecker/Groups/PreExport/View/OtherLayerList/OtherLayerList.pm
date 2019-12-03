@@ -11,10 +11,10 @@ use strict;
 use warnings;
 use Wx;
 use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
-#use Test::More;
+
 
 #local library
-
+use aliased 'Packages::Tests::Test';
 use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::OtherLayerList::OtherLayerListRow';
 use aliased 'Packages::Events::Event';
@@ -167,7 +167,7 @@ sub __OnlayerSettChangedHndl {
 
 	$self->{"otherLayerSettChangedEvt"}->Do( \%currLSett );
 
-	#diag("Layer name changed: $lName\n");
+	Diag("Layer name changed: $lName\n");
 
 }
 

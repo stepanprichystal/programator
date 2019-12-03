@@ -21,6 +21,7 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -38,11 +39,10 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $orderId  = $self->{"orderId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $orderId     = $self->{"orderId"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $needChange = 0;
 
@@ -89,10 +89,10 @@ sub Run {
 	# 3) Multi PCB
 	if ( $custInfo->{"reference_subjektu"} eq '05626' ) {
 
-		if ( !$isPool && CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+		if ( $reorderType eq Enums->ReorderType_STD ) {
 
 			# Check if there is good panel ussage (at least 40%) in reorder (if reorder amount is more than one panel)
-			
+
 			my %inf = HegMethods->GetAllByOrderId($orderId);
 			my @inProduc = HegMethods->GetOrdersByState( $jobId, 4 );    # Orders on Ve vyrobe
 
@@ -112,10 +112,10 @@ sub Run {
 
 				# compute final panel ussage
 				my $minUsage = 0.4;
-				if ( ($stepArea / $pnlArea) < $minUsage ) {
+				if ( ( $stepArea / $pnlArea ) < $minUsage ) {
 
 					$self->_AddChange(   "U opakované zakázky je malé využití panelu ("
-									   . sprintf("%d", $stepArea / $pnlArea * 100) . "%."
+									   . sprintf( "%d", $stepArea / $pnlArea * 100 ) . "%."
 									   . " Zkontroluj jestli nelze dosáhnout vyššího využití (pokud možno alespoň 40%)" );
 				}
 			}

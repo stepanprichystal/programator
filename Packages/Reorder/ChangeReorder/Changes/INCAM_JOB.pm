@@ -26,6 +26,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -46,8 +47,7 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
+	my $reorderType = $self->{"reorderType"};
 
 	# Check only standard orders
 

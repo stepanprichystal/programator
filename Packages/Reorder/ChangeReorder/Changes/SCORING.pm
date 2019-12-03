@@ -23,6 +23,7 @@ use aliased 'Packages::TifFile::TifScore';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Helpers::JobHelper';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -41,79 +42,77 @@ sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM  = $self->{"inCAM"};
-	my $jobId  = $self->{"jobId"};
-	my $isPool = HegMethods->GetPcbIsPool($jobId);
-
-	# Check only standard orders
-	if ($isPool) {
-		return 1;
-	}
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $result = 1;
 
-	my $stepName = "mpanel";
+	# Check only standard orders
+	if ( $reorderType eq Enums->ReorderType_STD ) {
 
-	my $sf = ScoreFlatten->new( $inCAM, $jobId, $stepName );
+		my $stepName = "mpanel";
 
-	my @scoreSteps = ();
+		my $sf = ScoreFlatten->new( $inCAM, $jobId, $stepName );
 
-	# 1) Check if flatten is needed
-	if ( $sf->NeedFlatten( \@scoreSteps ) ) {
+		my @scoreSteps = ();
 
-		# Check if there is jump scoring
+		# 1) Check if flatten is needed
+		if ( $sf->NeedFlatten( \@scoreSteps ) ) {
 
-		my @scoreStepsJump = ();
-		my $jumpScoring    = $sf->JumpScoringExist( \@scoreStepsJump );
+			# Check if there is jump scoring
 
-		# unless possible jumpscoring, flatten score
-		unless ($jumpScoring) {
+			my @scoreStepsJump = ();
+			my $jumpScoring    = $sf->JumpScoringExist( \@scoreStepsJump );
 
-			$sf->FlattenNestedScore(1);
+			# unless possible jumpscoring, flatten score
+			unless ($jumpScoring) {
+
+				$sf->FlattenNestedScore(1);
+			}
 		}
-	}
 
-	# 2) Check if material thickness after scoring is set in TIF file
-	if ( CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
+		# 2) Check if material thickness after scoring is set in TIF file
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
 
-		my $tifSco = TifScore->new($jobId);
+			my $tifSco = TifScore->new($jobId);
 
-		if ( !$tifSco->TifFileExist() || !defined $tifSco->GetScoreThick() ) {
+			if ( !$tifSco->TifFileExist() || !defined $tifSco->GetScoreThick() ) {
 
-			# check if exist score file, and get core thick
-			my $path = JobHelper->GetJobArchive($jobId);
+				# check if exist score file, and get core thick
+				my $path = JobHelper->GetJobArchive($jobId);
 
-			my @scoreFilesJum = FileHelper->GetFilesNameByPattern( $path, ".jum" );
-			my @scoreFilesCut = FileHelper->GetFilesNameByPattern( $path, ".cut" );    #old format of score file
+				my @scoreFilesJum = FileHelper->GetFilesNameByPattern( $path, ".jum" );
+				my @scoreFilesCut = FileHelper->GetFilesNameByPattern( $path, ".cut" );    #old format of score file
 
-			my @scoreFiles = ( @scoreFilesJum, @scoreFilesCut );
+				my @scoreFiles = ( @scoreFilesJum, @scoreFilesCut );
 
-			my $coreThick = undef;
+				my $coreThick = undef;
 
-			if ( scalar(@scoreFiles) > 0 ) {
+				if ( scalar(@scoreFiles) > 0 ) {
 
-				my @lines = @{ FileHelper->ReadAsLines( $scoreFiles[0] ) };
+					my @lines = @{ FileHelper->ReadAsLines( $scoreFiles[0] ) };
 
-				foreach (@lines) {
+					foreach (@lines) {
 
-					if ( $_ =~ /core\s*:\s*(\d+.\d+)/i ) {
-						$coreThick = $1;
-						last;
+						if ( $_ =~ /core\s*:\s*(\d+.\d+)/i ) {
+							$coreThick = $1;
+							last;
+						}
 					}
 				}
-			}
 
-			if ( defined $coreThick && $coreThick > 0 ) {
+				if ( defined $coreThick && $coreThick > 0 ) {
 
-				$tifSco->SetScoreThick($coreThick);
-			}
-			else {
+					$tifSco->SetScoreThick($coreThick);
+				}
+				else {
 
-				$$mess .= "Material thickness after scoring was not found in score program files";
-				$result = 0;
+					$$mess .= "Material thickness after scoring was not found in score program files";
+					$result = 0;
+				}
 			}
 		}
-
 	}
 
 	return $result;

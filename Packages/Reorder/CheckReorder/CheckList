@@ -6,6 +6,7 @@
 # === automatic changes ======  
 
 INCAM_JOB
+MISSING_JOBATTR
 CUSTOMERS  
 DATACODE
 GOLD_CONNECTOR

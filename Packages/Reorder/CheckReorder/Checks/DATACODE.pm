@@ -18,6 +18,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAMJob::Marking::Marking';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -33,35 +34,27 @@ sub new {
 
 # check if datacode is in helios
 sub Run {
-	my $self     = shift;
-	
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
-	
-	unless($jobExist){
-		return 0;
-	}
- 
+	my $self = shift;
+
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
+
 	# check if datacode id
 	my $datacodeL = HegMethods->GetDatacodeLayer($jobId);
 
 	if ( defined $datacodeL && $datacodeL ne "" ) {
 
-		if ($jobExist) {
+		my $step = CamHelper->StepExists( $inCAM, $jobId, "panel" ) ? "panel" : "o+1";
 
-			my $step = $isPool ? "o+1" : "panel";
+		$datacodeL = lc($datacodeL);
+		unless ( Marking->DatacodeExists( $inCAM, $jobId, $step, $datacodeL ) ) {
 
-			$datacodeL = lc($datacodeL);
-			unless ( Marking->DatacodeExists( $inCAM, $jobId, $step, $datacodeL ) ) {
-				
-				 $self->_AddChange("V Heliosu je datakód (vrstva: $datacodeL), ale v jobu nebyl dohledán dynamický datakód.")
-			}
-		} 
+			$self->_AddChange("V Heliosu je datakód (vrstva: $datacodeL), ale v jobu nebyl dohledán dynamický datakód.");
+		}
 	}
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

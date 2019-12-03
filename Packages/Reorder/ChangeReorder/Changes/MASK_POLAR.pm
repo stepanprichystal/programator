@@ -16,7 +16,7 @@ use warnings;
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -37,6 +37,7 @@ sub Run {
 	
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
 	
 	my $result = 1;
  

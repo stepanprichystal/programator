@@ -18,6 +18,8 @@ use List::MoreUtils qw(uniq);
 use aliased 'Packages::Scoring::ScoreFlatten';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::Reorder::Enums';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -33,35 +35,34 @@ sub new {
 
 # Check if exist new version of nif, if so it means it is from InCAM
 sub Run {
-	my $self     = shift;
-	
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
+	my $self = shift;
 
-	unless($jobExist){
-		return 0;
-	}
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
 
-	# 1) Check if score in mpanel is flatenned (no SR steps contain score) 
- 
+	# 1) Check if score in mpanel is flatenned (no SR steps contain score)
+
 	my $stepName = "mpanel";
+	if ( CamHelper->StepExists( $inCAM, $jobId, $stepName ) ) {
 
-	my $sf = ScoreFlatten->new( $inCAM, $jobId, $stepName );
+		my $sf = ScoreFlatten->new( $inCAM, $jobId, $stepName );
 
-	my @scoreSteps = ();
+		my @scoreSteps = ();
 
-	# 1) Check if flatten is needed
-	if ( $sf->NeedFlatten( \@scoreSteps ) ) {
-		
-		my $str = join(", ",@scoreSteps);
-		
-		$self->_AddChange("Step \"mpanel\" obsahuje SR stepy ($str), které obsahují pravděpodobně uživatelský jumpscoring. Přesuň drážku do stepu \"mpanel\" pomocí scriptu \"FlattenScoreScript.pl\"", 1 );
-		
+		# 1) Check if flatten is needed
+		if ( $sf->NeedFlatten( \@scoreSteps ) ) {
+
+			my $str = join( ", ", @scoreSteps );
+
+			$self->_AddChange(
+"Step \"mpanel\" obsahuje SR stepy ($str), které pravděpodobně obsahují uživatelský jumpscoring. Přesuň drážku do stepu \"mpanel\" pomocí­ scriptu \"FlattenScoreScript.pl\"",
+				1
+			);
+
+		}
 	}
 
- 
 }
 
 #-------------------------------------------------------------------------------------------#

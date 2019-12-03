@@ -18,7 +18,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -37,27 +37,26 @@ sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $isPool    = HegMethods->GetPcbIsPool($jobId);
-	
-	# Check only standard orders
-	if($isPool){
-		return 1;
-	}
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
 
 	my $result = 1;
 
-	# 1) if gold connector exist, check if job attribute gold_holder is set to yes
+	# Check only standard orders
+	if ( $reorderType eq Enums->ReorderType_STD ) {
 
-	my $goldFinger = CamGoldArea->GoldFingersExist( $inCAM, $jobId, "panel" );
+		# 1) if gold connector exist, check if job attribute gold_holder is set to yes
 
-	my $goldHolder = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "goldholder" );    # zakaznicky panel
- 
- 	# set attribute gold holder
-	if ($goldFinger && ( !defined $goldHolder || $goldHolder ne "yes" )) {
-		
-			CamAttributes->SetJobAttribute($inCAM, $jobId, "goldholder", "yes");
+		my $goldFinger = CamGoldArea->GoldFingersExist( $inCAM, $jobId, "panel" );
+
+		my $goldHolder = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "goldholder" );    # zakaznicky panel
+
+		# set attribute gold holder
+		if ( $goldFinger && ( !defined $goldHolder || $goldHolder ne "yes" ) ) {
+
+			CamAttributes->SetJobAttribute( $inCAM, $jobId, "goldholder", "yes" );
+		}
 	}
 
 	return $result;

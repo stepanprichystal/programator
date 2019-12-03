@@ -26,6 +26,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -43,17 +44,14 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
-	my $jobExist = $self->{"jobExist"};    # (in InCAM db)
-	my $isPool   = $self->{"isPool"};
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
+	my $reorderType = $self->{"reorderType"};
 
-	my $nifPath = JobHelper->GetJobArchive($jobId) . $jobId . ".nif";
+	# 1) Check if pcb is former pool
+	if ( $reorderType eq Enums->ReorderType_STDFORMERPOOL ) {
 
-	# 1) First test, if job is imported (exist) in incam db
-	unless ($jobExist) {
-
-		$self->_AddChange("Job není v InCAM databázi, zpracuj job ze starých dat (CAM 350, atd...");
+		$self->_AddChange( "Pcb is former POOL, now it is standard. Prepare step \"panel\"", 1 );
 	}
 
 	# 2) Check if DTM user columns are up to date in job
@@ -96,10 +94,10 @@ sub __CheckDTMColumns {
 
 				my ($clmns) = $data =~ /USER_DES_NAMES=(.*)/i;
 				my @clmns = ();
-				if(defined $clmns){
+				if ( defined $clmns ) {
 					@clmns = map { uc($_) } split( ";", $clmns );
 				}
-				
+
 				if ( scalar(@clmns) ) {
 
 					# Obsolete columns
@@ -113,11 +111,11 @@ sub __CheckDTMColumns {
 					foreach my $clmn (@curClmns) {
 						push( @missing, $clmn ) unless ( grep { $_ eq $clmn } @clmns );
 					}
-					 
+
 					# if exist only one user clmn and no TOOL has defined obsolete column value => ignore
 
-					if ( scalar(@obsolete)  ) {
-	 
+					if ( scalar(@obsolete) ) {
+
 						# check all tool
 						my $existValue = 0;
 						my @lines = split( "\n", $data );
@@ -130,19 +128,27 @@ sub __CheckDTMColumns {
 								}
 							}
 						}
- 
-						my $e = "Job contains obsolete DTM user columns: \"" . join(";", @obsolete) . "\".\n";
-						$e .= " - See job file: \"$p, \" see row: USER_DES_NAMES (column names) and USER_DES (column values) in each tool definition\n";
-						$e .= " - If it is possible, close job, remove/edit column name \"" . join(";", @obsolete) . "\", remove column values and open job again";
+
+						my $e = "Job contains obsolete DTM user columns: \"" . join( ";", @obsolete ) . "\".\n";
+						$e .=
+						  " - See job file: \"$p, \" see row: USER_DES_NAMES (column names) and USER_DES (column values) in each tool definition\n";
+						$e .=
+						    " - If it is possible, close job, remove/edit column name \""
+						  . join( ";", @obsolete )
+						  . "\", remove column values and open job again";
 
 						$self->_AddChange( $e, 1 );
 
 					}
-					elsif ( scalar(@missing)  ) {
+					elsif ( scalar(@missing) ) {
 
-						my $e = "Job has missing DTM user columns: \"" . join(";", @missing) . "\".\n";
-						$e .= " - See job file: \"$p, \" see row: USER_DES_NAMES (column names) and USER_DES (column values) in each tool definition\n";
-						$e .= " - If it is possible, close job, add/edit column name \"" . join(";", @missing) . "\", add/edit column values and open job again";
+						my $e = "Job has missing DTM user columns: \"" . join( ";", @missing ) . "\".\n";
+						$e .=
+						  " - See job file: \"$p, \" see row: USER_DES_NAMES (column names) and USER_DES (column values) in each tool definition\n";
+						$e .=
+						    " - If it is possible, close job, add/edit column name \""
+						  . join( ";", @missing )
+						  . "\", add/edit column values and open job again";
 						$e .= " - Actual DTM column names and order is: USER_DES_NAMES=$clmnStr";
 
 						$self->_AddChange( $e, 1 );
@@ -154,6 +160,7 @@ sub __CheckDTMColumns {
 		}
 	}
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -172,8 +179,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 	print "Change result: " . $check->Run( \$mess );
-	
- 	dump($check->GetChanges());
+
+	dump( $check->GetChanges() );
 }
 
 1;
