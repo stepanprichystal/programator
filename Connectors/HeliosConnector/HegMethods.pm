@@ -1115,7 +1115,7 @@ sub UpdateMaterialKind {
 sub UpdateBaseCu {
 	my $self        = shift;
 	my $pcbId       = shift;
-	my $baseCu         = shift;
+	my $baseCu      = shift;
 	my $childThread = shift;
 
 	if ($childThread) {
@@ -1441,11 +1441,12 @@ sub GetReorders {
 								d.stav AS dps_stav,
 								d.reference_subjektu AS deska_reference_subjektu
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
-				where z.stav='2'";
+				where 
+				z.cislo_poradace = 22050 
+				and z.stav='2'";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
-	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/ } @result;    # remove cores
 	@result = grep { $_->{"reference_subjektu"} !~ /-01/ } @result;
 
 	return @result;
@@ -1518,11 +1519,12 @@ sub GetPcbsInProduc {
 				d.material_typ
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
 				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
-				where vs.cislo_vztaz_subjektu is null and z.stav='4'";
+				where 
+				vs.cislo_vztaz_subjektu is null 
+				and z.cislo_poradace = 22050 
+				and z.stav='4'";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-
-	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+$/ } @result;    # remove cores
 
 	return @result;
 }
@@ -1570,11 +1572,11 @@ sub GetPcbsByStatus {
 				d.material_typ,
 				z.stav
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
-				WHERE z.stav IN ($strStatus)";
+				WHERE 
+				z.cislo_poradace = 22050 
+				and z.stav IN ($strStatus)";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-
-	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+$/ } @result;    # remove cores
 
 	return @result;
 }
@@ -1614,11 +1616,11 @@ sub GetOrdersByStatus {
 				z.reference_subjektu,
 				z.aktualni_krok
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska
-				WHERE z.stav IN ($strStatus)";
+				WHERE 
+				z.cislo_poradace = 22050 
+				and z.stav IN ($strStatus)";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-
-	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+-\d+$/ } @result;    # remove cores
 
 	return @result;
 }
@@ -1632,21 +1634,23 @@ sub GetPcbsInProduceSilk {
 	my @params = ();
 
 	my $cmd = "select distinct 
-				d.reference_subjektu,
-				d.potisk_c_1 c_silk_screen_colour,
-				d.potisk_s_1 s_silk_screen_colour,
-				d.material_typ,
-				z.stav
-				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
-				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
-				where 
-				vs.cislo_vztaz_subjektu is null and 
-				z.stav = 4 and
-				(d.potisk_c_1 IS NOT NULL OR d.potisk_s_1 IS NOT NULL)";
+                        d.reference_subjektu,
+                        d.potisk_c_1 c_silk_screen_colour,
+                        d.potisk_s_1 s_silk_screen_colour,
+                        d.material_typ,
+                        z.stav
+                        from lcs.zakazky_dps_22_hlavicka z
+                                        join lcs.desky_22 d on d.cislo_subjektu=z.deska 
+                        left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
+                        where 
+                        vs.cislo_vztaz_subjektu is null and 
+                        z.stav = 4 
+                        and z.cislo_poradace = 22050 
+                        and (d.potisk_c_1 IS NOT NULL OR d.potisk_s_1 IS NOT NULL)";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
-	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+$/ } @result;    # remove cores
+	 
 
 	return @result;
 }
@@ -1660,11 +1664,13 @@ sub GetPcbsInProduceMDI {
 	my $cmd = "select distinct d.reference_subjektu, d.material_typ
 				from lcs.zakazky_dps_22_hlavicka z join lcs.desky_22 d on d.cislo_subjektu=z.deska 
 				left outer join lcs.vztahysubjektu vs on vs.cislo_vztahu = 23054 and vs.cislo_subjektu = z.cislo_subjektu 
-				where vs.cislo_vztaz_subjektu is null and z.stav='4'";
+				where 
+				vs.cislo_vztaz_subjektu is null 
+				and z.cislo_poradace = 22050 
+				and z.stav='4'";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
-	@result = grep { $_->{"reference_subjektu"} =~ /^\w\d+$/ } @result;    # remove cores
 	@result = grep { $_->{"material_typ"} !~ /[t0s]/i } @result;
 
 	return @result;
@@ -1690,7 +1696,7 @@ sub GetPrepregStoreInfo {
 
 	my $type = EnumsIS->MatType_PREPREG;
 
-	$type = EnumsIS->MatType_PREPREGFLEX if($flex);
+	$type = EnumsIS->MatType_PREPREGFLEX if ($flex);
 
 	return $self->GetMatStoreInfo( $type, $qId, $id, undef, undef, $matXsize, $matYsize );
 
@@ -1699,11 +1705,11 @@ sub GetPrepregStoreInfo {
 # Return store information about core defined by multical ids
 sub GetCoreStoreInfo {
 	my $self     = shift;
-	my $qId      = shift;                                                  # quality id (DR4, IS400, ..)
-	my $id       = shift;                                                  # core thick id
-	my $id2      = shift;                                                  # copper thick id
-	my $matXsize = shift;                                                  # in mm
-	my $matYsize = shift;                                                  # in mm
+	my $qId      = shift;    # quality id (DR4, IS400, ..)
+	my $id       = shift;    # core thick id
+	my $id2      = shift;    # copper thick id
+	my $matXsize = shift;    # in mm
+	my $matYsize = shift;    # in mm
 
 	return $self->GetMatStoreInfo( EnumsIS->MatType_CORE, $qId, $id, $id2, undef, $matXsize, $matYsize );
 }
@@ -1951,7 +1957,6 @@ sub GetSalesSpecPanel {
 	}
 }
 
-
 sub GetPcbAncestor {
 	my $self  = shift;
 	my $pcbId = shift;
@@ -2002,7 +2007,6 @@ sub GetImpedancExist {
 
 }
 
-
 # Return information of coverlay material in PCB
 # This is temporary in order get information from IS
 # but normally this information should be in stackup file
@@ -2011,9 +2015,6 @@ sub GetPcbCoverlayMat {
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
-
-
- 
 
 	my $cmd = "select top 1
 				
@@ -2033,13 +2034,11 @@ sub GetPcbCoverlayMat {
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 left outer join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
-				 
-				 
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
 	if (@result) {
-		
+
 		return $result[0];
 	}
 	else {
@@ -2081,13 +2080,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-#	my @matTop = HegMethods->GetPrepregStoreInfo( 10, 1 , undef, undef, 1);
-#	dump(@matTop);
+	#	my @matTop = HegMethods->GetPrepregStoreInfo( 10, 1 , undef, undef, 1);
+	#	dump(@matTop);
 
-	my $matInfo = HegMethods->UpdateBaseCu("d152457", 25);
-	
-	#my $matInfo = HegMethods->GetMatInfo($all[0]->{"material_coverlay_reference"});
-	dump($matInfo);
+	my @produc = HegMethods->GetPcbsByStatus(2 );
+
+
+	dump(@produc);
 	die;
 }
 
