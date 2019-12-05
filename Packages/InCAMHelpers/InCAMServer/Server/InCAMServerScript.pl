@@ -47,7 +47,7 @@ my $hideApp = $options{"h"};
 
 # test if hide console window after start
 if ( defined $hideApp && $hideApp eq "yes" ) {
-	Helper->HideConsole(1);
+	#Helper->HideConsole(1);
 }
 
 $main::configPath = GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\InCAMServer\\Config";

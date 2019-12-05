@@ -62,7 +62,7 @@ sub CreateServer {
 				$result{"serverPID"} = $pidServer;
 
 				# 3) Temoporary solution because -x is not working in inCAM
-				$self->__MoveWindowOut($pidInCAM);
+				#$self->__MoveWindowOut($pidInCAM);
 
 				last;
 
