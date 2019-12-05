@@ -28,7 +28,7 @@ use aliased 'Packages::TriggerFunction::MDIFiles';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::TriggerFunction::NCFiles';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Programs::Services::TpvService::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
+use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
 use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 
 my $orderId  = shift;    # job order for process
