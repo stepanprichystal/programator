@@ -13,12 +13,12 @@ use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
-
+use aliased 'Packages::Export::PreExport::FakeLayers';
 
 
 #input parameters
  
-my $jobId    = "d264842";
+my $jobId    = "d264954";
  
 my $poznamka = "";
 my $tenting  = 0;
@@ -35,4 +35,9 @@ my $inCAM = InCAM->new();
 my $export = NifExportTmp->new();
 
 #return 1 if OK, else 0
+
+	FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel");
+
 $export->Run( $inCAM, $jobId, $poznamka, $tenting, $pressfit, $maska01, $datacode, $ullogo, $jumpScoring);
+
+	 FakeLayers->RemoveFakeLayers( $inCAM, $jobId, );

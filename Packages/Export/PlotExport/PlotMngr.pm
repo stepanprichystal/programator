@@ -56,7 +56,7 @@ sub Run {
 	return 0 unless(scalar(@{$self->{"layers"}}));
 
 	#  1) Create fake layers which will be exported, but are created automatically
-	FakeLayers->CreateFakeLayers($inCAM, $jobId );
+	#FakeLayers->CreateFakeLayers($inCAM, $jobId );
  
 
 	# 2) Delete old format opfx files
@@ -97,7 +97,7 @@ sub Run {
 	$self->{"opfxCreator"}->Export();
 
 	#  5) Remove fake layers after export
-	FakeLayers->RemoveFakeLayers( $inCAM, $jobId  );
+	#FakeLayers->RemoveFakeLayers( $inCAM, $jobId  );
 
 }
 

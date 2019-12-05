@@ -467,7 +467,8 @@ sub _Process {
 			# Check and create PLGC and PLGS
 			if ( CamDrilling->GetViaFillExists( $inCAM, $pcbId ) ) {
 
-            		my $result = PlugLayer->CreateCopperPlugLayers( $inCAM, $pcbId );
+					# Bude se generovat pred exportem
+            		#my $result = PlugLayer->CreateCopperPlugLayers( $inCAM,  $pcbId, "o+1" );
 
       		}
 			

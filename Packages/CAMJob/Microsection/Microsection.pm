@@ -189,7 +189,7 @@ sub __GetGroups {
 		   EnumsGeneral->LAYERTYPE_plt_nDrill,        EnumsGeneral->LAYERTYPE_plt_bDrillTop,
 		   EnumsGeneral->LAYERTYPE_plt_bDrillBot,     EnumsGeneral->LAYERTYPE_plt_nFillDrill,
 		   EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
-		   EnumsGeneral->LAYERTYPE_plt_cDrill
+		   EnumsGeneral->LAYERTYPE_plt_cDrill, EnumsGeneral->LAYERTYPE_plt_cFillDrill
 		]
 	);
 

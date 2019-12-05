@@ -202,6 +202,12 @@ sub GetJobLayerTitle {
 			$title = "Zaplněné slepé otvory z bot";
 		}
 
+	}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill && $outputType eq Enums->Type_FILLEDHOLES ) {
+
+		$title = "Filled burried drilling";
+		if ($cz) {
+			$title = "Zaplněné pohřbené otvory";
+		}
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
 		$title = "Plated core drilling";

@@ -71,6 +71,7 @@ sub InitParser {
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bDrillBot
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_cDrill
+		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_cFillDrill
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
 		 || $NCType eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot )

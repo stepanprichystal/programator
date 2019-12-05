@@ -26,11 +26,10 @@ use constant {
 			   DTMatt_MAGINFO => "tool_magazine_info"
 };
 
-
 # Type, which contain tools in standard DTM slot/hole
 use constant {
-	TypeTool_HOLE => "hole",
-	TypeTool_SLOT => "slot"
+			   TypeTool_HOLE => "hole",
+			   TypeTool_SLOT => "slot"
 };
 
 # Each tool has specified operation which is based on:
@@ -50,15 +49,12 @@ use constant {
 			   ToolOp_COVERLAYROUT   => "CoverlayRout",
 };
 
-# Possible types of via filling from side and through/bling point of view
-#- ViaFill_TOPTHROUGH => Via filling through pcb from top (through plated holes)
-#- ViaFill_TOPBLIND   => Blind via filling from top (blind plated holes from top)
-#- ViaFill_BOTBLIND   => Blind via filling from bot (blind plated holes from bot)
+# Possible types of via filling from inner/outer placement point of view
+#- ViaFill_OUTER => Via fill drilling which start/end on outer layers of stackup (c;s layer)
+#- ViaFill_INNER   => Via fill drilling which start/end inside stackup (v\d layer)
 use constant {
-	ViaFill_TOPTHROUGH => "viaFillTopThrough",
-	ViaFill_TOPBLIND   => "viaFillTopBlind",
-	ViaFill_BOTBLIND   => "viaFillBotBlind"
-
+			   ViaFill_OUTER => "viaFillTopThrough",
+			   ViaFill_INNER => "viaFillTopBlind"
 };
 
 1;

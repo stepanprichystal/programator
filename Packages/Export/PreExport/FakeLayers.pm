@@ -29,6 +29,8 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => 'EnumsFiltr';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Polygon::PolygonFeatures';
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,12 +50,13 @@ sub CreateFakeLayers {
 	my @smFake = $self->__CreateFakeSMLayers( $inCAM, $jobId, $step, $emptyLayers );
 	my @outerFake = $self->__CreateFakeOuterCoreLayers( $inCAM, $jobId, $step, $emptyLayers );
 	my @smOLECFake = $self->__CreateFakeSMOLECLayers( $inCAM, $jobId, $step, $emptyLayers );
+	my @plgFake = $self->__CreateFakePLGLayers( $inCAM, $jobId, $step, $emptyLayers );
 
 	my @fake = ();
 	push( @fake, @smFake )     if (@smFake);
 	push( @fake, @outerFake )  if (@outerFake);
 	push( @fake, @smOLECFake ) if (@smOLECFake);
-
+	push( @fake, @plgFake )    if (@plgFake);
 	foreach my $l (@fake) {
 
 		CamAttributes->SetLayerAttribute( $inCAM, "export_fake_layer", "yes", $jobId, $step, $l );
@@ -84,11 +87,10 @@ sub RemoveFakeLayers {
 
 # Create fake layers for PCB where is second mask
 sub __CreateFakeSMLayers {
-	my $self        = shift;
-	my $inCAM       = shift;
-	my $jobId       = shift;
-	my $step        = shift;
- 
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
 
 	my %mask = HegMethods->GetSolderMaskColor2($jobId);
 
@@ -227,6 +229,30 @@ sub __CreateFakeSMOLECLayers {
 	}
 
 	push( @fakeLayers, $fakeSM );
+
+	return @fakeLayers;
+
+}
+
+# Fake layers, where soldermask is only from one side.
+# But OLEC machine need films from both side in order register films
+# For Multilayer PCB only (rest of PCB is exposed without cameras??)
+sub __CreateFakePLGLayers {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift;
+	my $emptyLayers = shift // 0;    # Create layer without any data
+
+	my @fakeLayers = ();
+
+	my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
+
+	if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
+
+		@fakeLayers = PlugLayer->CreateCopperPlugLayersAllSteps( $inCAM, $jobId, undef, $emptyLayers );
+
+	}
 
 	return @fakeLayers;
 
@@ -388,10 +414,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d251321";
+	my $jobId    = "d264954";
 	my $stepName = "panel";
 
-	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
+	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 1 );
 
 	print %types;
 }
