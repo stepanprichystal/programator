@@ -278,7 +278,7 @@ sub SendMail {
 	my $htmlTempl = HtmlTemplate->new("en");
 
 	my $oriTemplPath =
-	  GeneralHelper->Root() . "\\Programs\\Services\\TpvService\\ServiceApps\\TaskOnDemand\\TaskOnDemand\\MailTemplate\\template.html";
+	  GeneralHelper->Root() . "\\Programs\\Services\\TpvService2\\ServiceApps\\TaskOnDemand\\TaskOnDemand\\MailTemplate\\template.html";
 
 	if ( $htmlTempl->ProcessTemplate( $oriTemplPath, $templKey ) ) {
 

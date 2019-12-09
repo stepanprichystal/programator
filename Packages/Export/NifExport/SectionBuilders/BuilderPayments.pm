@@ -201,7 +201,7 @@ sub Build {
 		my @gerbers = $self->__GetCustomerGer($jobId);    # get all cutomer gerbers, whic are not exported in lat 15 minutes (by tpv)
 
 		# if exist gerber files, check right format
-		# there must be 2 bot + top filne names at least
+		# there must be at least top or bot file (some 2v POOL are created from 1v source data)
 
 		my $gerbersOk = 1;
 
@@ -211,7 +211,7 @@ sub Build {
 			my $topExist = scalar( grep { $_ =~ /\.top$|top\.[(gbr)(ger)]/si } @gerbers );
 			my $botExist = scalar( grep { $_ =~ /\.bot$|bot\.[(gbr)(ger)]/si } @gerbers );
 
-			if ( !$topExist || !$botExist ) {
+			if ( !$topExist && !$botExist ) {
 				$gerbersOk = 0;
 			}
 		}

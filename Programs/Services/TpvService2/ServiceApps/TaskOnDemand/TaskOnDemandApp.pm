@@ -78,11 +78,14 @@ sub Run {
 
 			foreach my $jobInf (@jobs) {
 
-				$self->{"logger"}->info(
-						"Process task, jobId: " . $jobInf->{"JobId"} 
-						. " orderId: " . $jobInf->{"OrderId"} 
-						. " task type: " . $jobInf->{"TaskType"}
-						. " loginId: ". $jobInf->{"LoginId"} );
+				$self->{"logger"}->info(   "Process task, jobId: "
+										 . $jobInf->{"JobId"}
+										 . " orderId: "
+										 . $jobInf->{"OrderId"}
+										 . " task type: "
+										 . $jobInf->{"TaskType"}
+										 . " loginId: "
+										 . $jobInf->{"LoginId"} );
 
 				$self->__RunJob( $jobInf->{"JobId"}, $jobInf->{"OrderId"}, $jobInf->{"TaskType"}, $jobInf->{"Inserted"}, $jobInf->{"LoginId"} );
 
@@ -110,7 +113,7 @@ sub __RunJob {
 	my $orderId  = shift;
 	my $taskType = shift;
 	my $inserted = shift;
-	my $loginId = shift;
+	my $loginId  = shift;
 
 	$jobId = lc($jobId);
 
@@ -150,52 +153,55 @@ sub __ProcessJob {
 	my $orderId  = shift;
 	my $taskType = shift;
 	my $inserted = shift;
-	my $loginId = shift;
+	my $loginId  = shift;
 
- 
 	my $inCAM = $self->{"inCAM"};
 
 	# 1) Check if pcb exist in InCAM and import t InCAM
 	my $acquireErr = "";
-	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId, \$acquireErr);
-	
-	
-	die "Error during unarchive InCAM job. Error detail: $acquireErr" unless($jobExist);
-	
-	my $errMess = "";
-	my $result = undef;
- 
-	# process task
-	if ( $taskType eq TaskEnums->Data_COOPERATION ) {
+	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId, \$acquireErr );
 
-		my $data = ControlData->new($self, $inCAM, $jobId );
-		$result = $data->Run( \$errMess, TaskEnums->Data_COOPERATION, $inserted, $loginId );
-		
-		 
-	}
-	elsif ( $taskType eq TaskEnums->Data_CONTROL ) {
+	if ($jobExist) {
 
-		my $data = ControlData->new($self, $inCAM, $jobId );
-		$result = $data->Run( \$errMess, TaskEnums->Data_CONTROL, $inserted, $loginId );
+		my $errMess = "";
+		my $result  = undef;
+
+		# process task
+		if ( $taskType eq TaskEnums->Data_COOPERATION ) {
+
+			my $data = ControlData->new( $self, $inCAM, $jobId );
+			$result = $data->Run( \$errMess, TaskEnums->Data_COOPERATION, $inserted, $loginId );
+
+		}
+		elsif ( $taskType eq TaskEnums->Data_CONTROL ) {
+
+			my $data = ControlData->new( $self, $inCAM, $jobId );
+			$result = $data->Run( \$errMess, TaskEnums->Data_CONTROL, $inserted, $loginId );
+		}
+		else {
+
+			die "Not implemented type: $taskType";
+		}
+
+		if ($result) {
+
+			$self->{"logger"}->info("Task $taskType - $jobId finish SUCCESFULL");
+
+		}
+		else {
+
+			$self->{"logger"}->info("Task $taskType - $jobId FAILURE, error: $errMess");
+		}
+
+		if ( $jobExist && CamJob->IsJobOpen( $inCAM, $jobId ) ) {
+			$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
+			$inCAM->COM( "close_job", "job" => "$jobId" );
+		}
 	}
 	else {
 
-		die "Not implemented type: $taskType"
-	}
-	
-	if($result){
-		
-		$self->{"logger"}->info("Task $taskType - $jobId finish SUCCESFULL");
-		
-	}else{
-		
-		$self->{"logger"}->info("Task $taskType - $jobId FAILURE, error: $errMess");
-	}
-
+		$self->{"logger"}->error("Error during unarchive InCAM job. Error detail: $acquireErr") unless ($jobExist);
  
-	if ($jobExist && CamJob->IsJobOpen($inCAM, $jobId)) {
-		$inCAM->COM( "check_inout", "job" => "$jobId", "mode" => "in", "ent_type" => "job" );
-		$inCAM->COM( "close_job", "job" => "$jobId" );
 	}
 
 	TaskOndemMethods->DeleteTaskPcb( $jobId, $taskType, $loginId );
