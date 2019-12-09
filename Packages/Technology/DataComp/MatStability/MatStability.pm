@@ -1,0 +1,203 @@
+#-------------------------------------------------------------------------------------------#
+# Description: Return information about material stability
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
+package Packages::Technology::DataComp::MatStability::MatStability;
+
+#3th party library
+use strict;
+use warnings;
+
+#local library
+use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::GeneralHelper';
+
+#-------------------------------------------------------------------------------------------#
+#  Package methods
+#-------------------------------------------------------------------------------------------#
+sub new {
+	my $self = shift;
+	$self = {};
+	bless $self;
+
+	$self->{"matKinds"} = shift;
+
+	my %tables = $self->__LoadMatTables();
+
+	$self->{"tables"} = \%tables;
+
+	return $self;
+}
+
+sub GetMatStability {
+	my $self     = shift;
+	my $matKind  = shift;
+	my $matThick = shift;    # µm
+	my $cuThick  = shift;    # µm
+	my $cuUsage  = shift;    # %
+
+	# 1) indicate what is orientation of panel in production
+	my $ori = $self->__GetPanelOrientation($matKind);
+	# 2) Get dimension stability at % for panel x/y side
+
+	my $cuUsageCat = undef;
+	$cuUsageCat = "u1" if ( $cuThick < 33 );
+	$cuUsageCat = "u2" if ( $cuThick >= 33 && $cuThick <= 66 );
+	$cuUsageCat = "u3" if ( $cuThick > 66 );
+
+	my $p = GeneralHelper->Root() . "\\Packages\\Technology\\DataComp\\MatStability\\" . $matKind . ".csv";
+
+	die "Dim stability for: $matKind; thickness: $matThick µm is not defined at: $p"
+	  unless ( defined $self->{"tables"}->{$matKind}->{$matThick} );
+
+	die "Dim stability for: $matKind; thickness: $matThick µm; Cu thickness: $cuThick µm is not defined at: $p"
+	  unless ( defined $self->{"table"}->{$matKind}->{$matThick}->{$cuThick} );
+
+	die "Dim stability of 'X' dir for: $matKind; thickness: $matThick µm; Cu thickness: $cuThick µm is not defined at: $p"
+	  unless ( defined $self->{"table"}->{$matKind}->{$matThick}->{$cuThick}->{$cuUsageCat}->{"x"} );
+
+	die "Dim stability of 'Y' dir for: $matKind; thickness: $matThick µm; Cu thickness: $cuThick µm is not defined at: $p"
+	  unless ( defined $self->{"table"}->{$matKind}->{$matThick}->{$cuThick}->{$cuUsageCat}->{"y"} );
+
+	my $vals = $self->{"table"}->{$matThick}->{$cuThick}->{$cuUsageCat};
+
+	my $x = $ori eq "transverse" ? $vals->{"y"} : $vals->{"x"};
+	my $y = $ori eq "transverse" ? $vals->{"x"} : $vals->{"y"};
+
+	my $xPer = $x / 10000;
+	my $yPer = $y / 10000;
+
+	return ( $xPer, $yPer );
+
+}
+
+# Return panel orientation depands on usage of basic material
+# - machine - longer panel side is in machine direction (direction which machine output material)
+# - transverse - shorter panel side is in machine direction (cross direction which machine output material)
+sub __GetPanelOrientation {
+	my $self    = shift;
+	my $matKind = shift;
+
+	my %pnlOrient = ();
+	$pnlOrient{"PYRALUX"} = "transverse";
+
+	my $ori = $pnlOrient{$matKind};
+	$ori = "machine" unless ( defined $ori );
+
+	return $ori;
+}
+
+sub __LoadMatTables {
+	my $self = shift;
+
+	my $matKinds  = $self->{"matKinds"};
+	my %matTables = ();
+
+	# 1) Load material table and check format
+
+	# material file has to have folowing format:
+	# Legend:
+	# - <Core>           = Core thickness in µm
+	# - <Cu thickness>   = Cu thickness in µm
+	# - <1.usage>        = Cu usage <33%
+	# - <2.usage>        = Cu usage 33%-66%
+	# - <3.usage>        = Cu usage >66%
+	# - <xs>             = Stretch of material at x in PPM
+	# - <ys>             = Stretch of material at y axis in PPM (machine direction?)
+	#
+	# File format
+	# Cu     ;<Cu thickness>     ;         ;         ;<Cu thickness>;    ;         ;
+	# Usage  ;<1.usage>;<2.usage>;<3.usage>;<1.usage>;<2.usage>;<3.usage>;<1.usage>;<2.usage>
+	# Core   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;
+	# <Core> ;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;
+	# <Core> ;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;
+	# ...
+
+	foreach my $mat ( @{$matKinds} ) {
+
+		my $p = GeneralHelper->Root() . "\\Packages\\Technology\\DataComp\\MatStability\\" . $mat . ".csv";
+
+		die "Material stability fail for material kind: $mat doesnt exist at: $p" unless ( -e $p );
+
+		my @lines = grep { $_ ne "" } @{ FileHelper->ReadAsLines($p) };
+		@lines = grep( s/\s$//g, @lines );
+
+		die "Wrong formated Cu thickness line at Material stability file: $p" if ( $lines[0] !~ /^cu;(\d+(µm)?;{5};?)+$/i );
+		die "Wrong formated Cu usage line at Material stability file: $p"     if ( $lines[1] !~ /^usage;([<\->\w%]+;;?)+$/i );
+		die "Wrong formated x/y colums line at Material stability file: $p"   if ( $lines[2] !~ /^core;((x;y;?){3})+$/i );
+
+		# 2) Build search structure
+
+		$lines[0] =~ s/µm//ig;    # Remove units from Cu
+		my @cuThickness = grep { defined $_ && $_ =~ /\d+/ } split( ";", $lines[0] );
+
+		my %matrix = ();
+
+		my %coreInf = ();
+
+		foreach my $l ( @lines[ 3 .. scalar(@lines) - 1 ] ) {
+
+			my @lineVals = split( ";", $l );
+
+			my $coreThickness = shift @lineVals;
+			$coreThickness =~ s/µm//ig;
+
+			#my $cuInc  = 0;
+			my $currCu = $cuThickness[0];
+
+			my %cuVals = ();
+
+			for ( my $i = 0 ; $i < scalar(@lineVals) ; $i += 6 ) {
+
+				if ( $i > 0 && ($i) % 6 == 0 ) {
+					$currCu = $cuThickness[ ($i) / 6 ];
+
+					#$coreInf{$currCu} = \%cuVals;
+
+					#%cuVals = ();
+				}
+
+				my %cuVal = ();
+
+				#for ( my $j = $i ; $j < 6 ; $j++ ) {
+
+				my %usage1 = ( "x" =>, $lineVals[ $i + 0 ], "y" => $lineVals[ $i + 1 ] );
+				my %usage2 = ( "x" =>, $lineVals[ $i + 2 ], "y" => $lineVals[ $i + 3 ] );
+				my %usage3 = ( "x" =>, $lineVals[ $i + 4 ], "y" => $lineVals[ $i + 5 ] );
+
+				$cuVal{"u1"} = \%usage1;
+				$cuVal{"u2"} = \%usage2;
+				$cuVal{"u3"} = \%usage3;
+
+				#$i += 6;
+
+				#}
+
+				$cuVals{$currCu} = \%cuVal;
+
+			}
+
+			$coreInf{$coreThickness} = \%cuVals;
+		}
+
+		$matTables{$mat} = \%coreInf;
+	}
+
+	return %matTables;
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::Technology::DataComp::MatStability';
+
+	my $t = MatStability->new("PYRALUX");
+	die $t;
+
+}
+
+1;

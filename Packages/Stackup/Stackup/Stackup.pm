@@ -124,6 +124,16 @@ sub GetInputProducts {
 	return @{ $self->{"productInputs"} };
 }
 
+# Return "leaf" input product which represent core
+sub GetInputCoreProducts {
+	my $self = shift;
+
+	my @allProduct = $self->__GetAllProducts($self->GetLastPress());
+	my @inputCoreProduct = grep { $_->GetProductType() eq Enums->Product_INPUT && !$_->GetIsParent() } @allProduct;
+
+	return \@inputCoreProduct;
+}
+
 # Return total thick of this stackup in µm
 # Do not consider extra plating (drilled core, progress lamination)
 sub GetFinalThick {
