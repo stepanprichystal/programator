@@ -29,6 +29,7 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => 'EnumsFiltr';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Polygon::PolygonFeatures';
+use aliased 'Packages::Stackup::Stackup::Stackup';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,6 +49,7 @@ sub CreateFakeLayers {
 	my @smFake = $self->__CreateFakeSMLayers( $inCAM, $jobId, $step, $emptyLayers );
 	my @outerFake = $self->__CreateFakeOuterCoreLayers( $inCAM, $jobId, $step, $emptyLayers );
 	my @smOLECFake = $self->__CreateFakeSMOLECLayers( $inCAM, $jobId, $step, $emptyLayers );
+	my @coreDrillFake = $self->__CreateCoreDrillLayers( $inCAM, $jobId, $step, $emptyLayers );
 
 	my @fake = ();
 	push( @fake, @smFake )     if (@smFake);
@@ -84,11 +86,10 @@ sub RemoveFakeLayers {
 
 # Create fake layers for PCB where is second mask
 sub __CreateFakeSMLayers {
-	my $self        = shift;
-	my $inCAM       = shift;
-	my $jobId       = shift;
-	my $step        = shift;
- 
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
 
 	my %mask = HegMethods->GetSolderMaskColor2($jobId);
 
@@ -336,6 +337,46 @@ sub __CreateFakeOuterCoreLayers {
 
 }
 
+sub __CreateCoreDrillLayers {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift;
+	my $emptyLayers = shift // 0;    # Create layer without any data
+
+	my @fakeLayers = ();
+
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+
+	return @fakeLayers if ( $layerCnt <= 2 || !JobHelper->GetIsFlex($jobId) );
+
+	my $stackup = Stackup->new( $inCAM, $jobId );
+
+	my @products = $stackup->GetInputChildProducts();
+
+	foreach my $coreProdut ( sort { $b->GetCoreNumber() <=> $a->GetCoreNumber() } @products ) {
+
+		my $lName = "v1j" . $coreProdut->GetCoreNumber();
+
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
+		CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "drill", "positive", 1, "v1", "after" );
+		CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $lName, $coreProdut->GetTopCopperLayer(), $coreProdut->GetBotCopperLayer() );
+
+		push( @fakeLayers, $lName );
+	}
+
+	unless ($emptyLayers) {
+		CamHelper->SetStep( $inCAM, $step );
+
+		CamLayer->WorkLayer( $inCAM, "v1" );
+		CamLayer->CopySelOtherLayer( $inCAM, \@fakeLayers );
+
+		CamLayer->ClearLayers($inCAM);
+	}
+
+	return @fakeLayers;
+}
+
 sub __PutInfoText {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -388,10 +429,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d251321";
+	my $jobId    = "d262773";
 	my $stepName = "panel";
 
-	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
+	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId );
 
 	print %types;
 }

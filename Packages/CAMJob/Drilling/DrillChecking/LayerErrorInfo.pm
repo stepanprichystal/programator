@@ -103,7 +103,7 @@ sub CheckNCLayers {
 		}
 
 		# 2) Check if layer is not empty
-
+		
 		unless ( $self->CheckIsNotEmpty( \@layers, $stepName, $mess ) ) {
 
 			$result = 0;
@@ -167,6 +167,9 @@ sub CheckIsNotEmpty {
 	my $mess     = shift;
 
 	my $result = 1;
+
+	# remove core frame drilling generated before export (theses layers are empty for quicker creation)
+	@layers = grep {$_->{"gROWname"} !~ /v1j\d+/} @layers;
 
 	foreach my $l (@layers) {
 

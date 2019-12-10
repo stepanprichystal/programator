@@ -23,53 +23,63 @@ sub new {
 	# state data for gui controls
 	my %exportData = ();
 	$self->{"data"} = \%exportData;
-	
+
 	# state of whole group. Value is enum GroupState_xx
 	$self->{"state"} = Enums->GroupState_DISABLE;
 
 	return $self;
 }
 
-
 # exportSingle
 sub SetExportSingle {
-	my $self  = shift;
+	my $self = shift;
 	$self->{"data"}->{"exportSingle"} = shift;
 }
 
 sub GetExportSingle {
-	my $self  = shift;
+	my $self = shift;
 	return $self->{"data"}->{"exportSingle"};
 }
- 
-# Plt layers 
-sub SetPltLayers {
-	my $self  = shift;
-	$self->{"data"}->{"pltLayers"} = shift;
+
+# All mode NC layers
+sub SetAllModeLayers {
+	my $self = shift;
+	$self->{"data"}->{"allModeLayers"} = shift;
 }
 
-sub GetPltLayers {
-	my $self  = shift;
-	return $self->{"data"}->{"pltLayers"};
-} 
-
-# NPlt layers 
-sub SetNPltLayers {
-	my $self  = shift;
-	$self->{"data"}->{"npltLayers"} = shift;
+sub GetAllModeLayers {
+	my $self = shift;
+	return $self->{"data"}->{"allModeLayers"};
 }
 
-sub GetNPltLayers {
-	my $self  = shift;
-	return $self->{"data"}->{"npltLayers"};
-} 
+# Plt layers
+sub SetSingleModePltLayers {
+	my $self = shift;
+	$self->{"data"}->{"singleModePltLayers"} = shift;
+}
+
+sub GetSingleModePltLayers {
+	my $self = shift;
+	return $self->{"data"}->{"singleModePltLayers"};
+}
+
+# NPlt layers
+sub SetSingleModeNPltLayers {
+	my $self = shift;
+	$self->{"data"}->{"singleModeNpltLayers"} = shift;
+}
+
+sub GetSingleModeNPltLayers {
+	my $self = shift;
+	return $self->{"data"}->{"singleModeNpltLayers"};
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
 }
 
 1;

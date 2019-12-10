@@ -11,6 +11,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
@@ -79,8 +80,8 @@ sub __DefinePlatedGroups {
 	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# 1) Create group FROM TOP depend on pressing order
-	
-	my %pressProducts =  $stackup->GetPressProducts();
+
+	my %pressProducts = $stackup->GetPressProducts();
 
 	foreach my $pressOrder ( keys %pressProducts ) {
 
@@ -118,7 +119,7 @@ sub __DefinePlatedGroups {
 	}
 
 	# 2) Create group FROM BOT depend on pressing order
-	
+
 	foreach my $pressOrder ( keys %pressProducts ) {
 
 		my $press = $pressProducts{$pressOrder};
@@ -158,8 +159,8 @@ sub __DefineNPlatedGroups {
 	my $stackup = $self->{'stackup'};    #info about press count, which layer are pressed, etc..
 
 	# 1) Create group FROM TOP depend on pressing order
-	my %pressProducts =  $stackup->GetPressProducts();
-	
+	my %pressProducts = $stackup->GetPressProducts();
+
 	foreach my $pressOrder ( keys %pressProducts ) {
 
 		my $press = $pressProducts{$pressOrder};
@@ -255,7 +256,8 @@ sub __DefinePlatedOperations {
 			#for each pressing except last, add "v1" frame drilling
 			if ( !$press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cDrill ) ) {
 
-				push( @layers, $plt_fcDrill[0] ) if ( scalar(@plt_fcDrill) == 1 );
+				my $v1 = first { $_->{"gROWname"} eq "v1" } @plt_fcDrill;
+				push( @layers, $v1 );
 			}
 		}
 
@@ -266,8 +268,8 @@ sub __DefinePlatedOperations {
 	# 2) Operation name = s<press order>, can contain layer
 	# - @plt_nDrill
 	# - @plt_bDrillBot
-	my %pressProducts =  $stackup->GetPressProducts();
-	
+	my %pressProducts = $stackup->GetPressProducts();
+
 	foreach my $pressOrder ( keys %pressProducts ) {
 
 		my $press = $pressProducts{$pressOrder};
@@ -372,7 +374,12 @@ sub __DefinePlatedOperations {
 			}
 
 			# Add frame
-			push( @layers, $plt_fcDrill[0] );
+			# Get core frame drilling for this specific core (if not exist, tak default)
+			my $vCore = first { $_->{"gROWname"} eq "v1j$coreNum" } @plt_fcDrill;
+			unless ( defined $vCore ) {
+				$vCore = first { $_->{"gROWname"} eq "v1" } @plt_fcDrill;
+			}
+			push( @layers, $vCore );
 
 			$opManager->AddOperationDef( "j" . $core->GetIProduct()->GetCoreNumber(), \@layers, 0 );
 		}
@@ -394,27 +401,21 @@ sub __DefinePlatedOperations {
 
 		# start/stop plated NC layers in core
 		my @ncLayers = ();
-		if ( $coreNC->ExistNCLayers( Enums->SignalLayer_TOP ) ) {
-			push( @ncLayers, $coreNC->GetNCLayers( Enums->SignalLayer_TOP ) );
-		}
-		if ( $coreNC->ExistNCLayers( Enums->SignalLayer_BOT ) ) {
-			push( @ncLayers, $coreNC->GetNCLayers( Enums->SignalLayer_BOT ) );
-		}
+		if ( $coreNC->ExistNCLayers( undef, undef, undef, 1 ) ) {
 
-		# outer core
-		my $outer = 0;
-		if ( $coreNC->GetTopCopperLayer() eq "c" || $coreNC->GetBotCopperLayer() eq "s" ) {
-			$outer = 1;
-		}
+			# Get core frame drilling for this specific core
+			my $vCore = first { $_->{"gROWname"} eq "v1j$coreNum" } @plt_fcDrill;
 
-		if ( scalar( grep { $_->{"plated"} } @ncLayers ) == 0 || $outer ) {
-			$noNCExist = 1;
-			last;
+			$opManager->AddOperationDef( "v$coreNum", [$vCore], $stackup->GetPressCount() );
 		}
 	}
 
-	if ($noNCExist) {
-		$opManager->AddOperationDef( "v1", \@plt_fcDrill, $stackup->GetPressCount(), "core" );
+	# If no specific core frame drilling, export universal v1
+	unless ( scalar( grep { $_->{"gROWname"} =~ /v1j\d+"/ } @plt_fcDrill ) ) {
+
+		my $v1 = first { $_->{"gROWname"} eq "v1" } @plt_fcDrill;
+
+		$opManager->AddOperationDef( "v1", [$v1], $stackup->GetPressCount() );
 	}
 
 }
@@ -454,13 +455,13 @@ sub __DefineNPlatedOperations {
 	my @nplt_soldsMill  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_soldsMill } };     # milling of template for soldering coverlay from side s
 
 	#Define operation:
-	my %pressProducts =  $stackup->GetPressProducts();
+	my %pressProducts = $stackup->GetPressProducts();
 
 	# 1) Operation name = fzc<press order>, can contain layer
 	# - @nplt_bMillTop
 	# - @nplt_nDrill
 
-	foreach my $pressOrder (keys %pressProducts) {
+	foreach my $pressOrder ( keys %pressProducts ) {
 
 		my $press   = $pressProducts{$pressOrder};
 		my $outFile = "fzc" . $pressOrder;

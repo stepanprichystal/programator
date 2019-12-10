@@ -155,27 +155,27 @@ sub GetCompVal {
 	return $self->{"compTxt"}->GetValue();
 }
 
-sub SetShrinkXVal {
+sub SetStretchXVal {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"shrinkXTxt"}->SetValue($val);
 }
 
-sub GetShrinkXVal {
+sub GetStretchXVal {
 	my $self = shift;
 
 	return $self->{"shrinkXTxt"}->GetValue();
 }
 
-sub SetShrinkYVal {
+sub SetStretchYVal {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"shrinkYTxt"}->SetValue($val);
 }
 
-sub GetShrinkYVal {
+sub GetStretchYVal {
 	my $self = shift;
 
 	return $self->{"shrinkYTxt"}->GetValue();

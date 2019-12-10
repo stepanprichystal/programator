@@ -110,8 +110,8 @@ sub SetLayerValues {
 
 	$self->{"mirrorChb"}->SetValue( $lInfo{"mirror"} );
 	$self->{"compTxt"}->SetValue( $lInfo{"comp"} );
-	$self->{"shrinkX"}->SetValue( $lInfo{"shrinkX"} );
-	$self->{"shrinkY"}->SetValue( $lInfo{"shrinkX"} );
+	$self->{"stretchX"}->SetValue( $lInfo{"stretchX"} );
+	$self->{"stretchY"}->SetValue( $lInfo{"stretchX"} );
 }
 
 sub GetLayerValues {
@@ -134,9 +134,9 @@ sub GetLayerValues {
 	}
 	$lInfo{"comp"} = $self->{"compTxt"}->GetValue();
 
-	$lInfo{"shrinkX"} = $self->{"shrinkXTxt"}->GetValue();
+	$lInfo{"stretchX"} = $self->{"shrinkXTxt"}->GetValue();
 
-	$lInfo{"shrinkY"} = $self->{"shrinkYTxt"}->GetValue();
+	$lInfo{"stretchY"} = $self->{"shrinkYTxt"}->GetValue();
 
 	return %lInfo;
 }

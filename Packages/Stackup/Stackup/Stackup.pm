@@ -125,13 +125,14 @@ sub GetInputProducts {
 }
 
 # Return "leaf" input product which represent core
-sub GetInputCoreProducts {
+sub GetInputChildProducts {
 	my $self = shift;
 
-	my @allProduct = $self->__GetAllProducts($self->GetLastPress());
+	my @allProduct = ();
+	$self->__GetAllProducts( $self->GetLastPress(), \@allProduct );
 	my @inputCoreProduct = grep { $_->GetProductType() eq Enums->Product_INPUT && !$_->GetIsParent() } @allProduct;
 
-	return \@inputCoreProduct;
+	return @inputCoreProduct;
 }
 
 # Return total thick of this stackup in µm
@@ -167,7 +168,9 @@ sub GetThickByCuLayer {
 	my $inclPlating = shift // 1;    # include plating on outer product layers
 
 	# Check format of layer name
-	die "Wrong signal layer name: $lName" if ( $lName !~ /^([cs])|(v\d+)$/ );
+	if ( $lName !~ /^([cs])|(v\d+)$/ ) {
+		die "Wrong signal layer name: $lName";
+	}
 
 	my $product = $self->GetProductByLayer( $lName, $outerCore, $plugging );
 
@@ -179,8 +182,8 @@ sub GetThickByCuLayer {
 sub GetProductByLayer {
 	my $self      = shift;
 	my $lName     = shift;
-	my $outerCore = shift;    # indicate if copper is located on the core and on the outer of press package in the same time
-	my $plugging  = shift;    # indicate if layer contain plugging
+	my $outerCore = shift;           # indicate if copper is located on the core and on the outer of press package in the same time
+	my $plugging  = shift;           # indicate if layer contain plugging
 
 	# Check format of layer name
 	die "Wrong signal layer name: $lName" if ( $lName !~ /^([cs])|(v\d+)$/ );
@@ -188,9 +191,9 @@ sub GetProductByLayer {
 	my @items = grep { $_->{"name"} eq $lName } @{ $self->{"copperMatrix"} };
 	@items = grep { $_->{"outerCore"} == $outerCore } @items if ( defined $outerCore );
 	@items = grep { $_->{"plugging"} == $plugging } @items   if ( defined $plugging );
-	
+
 	my $item = $items[0];
-	
+
 	die "Product was not found by copper layer: $lName (outerCore=$outerCore; plugging=$plugging)" if ( !defined $item );
 
 	return $item->{"product"};

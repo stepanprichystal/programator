@@ -50,6 +50,20 @@ sub SetToolInfos {
 	$self->_Save();
 }
 
+
+# Set setting for each layer contain keys:
+# - name
+# - stretchX
+# - stretchY
+sub SetNCLayerSett {
+	my $self         = shift;
+	my $ncLayersSett = shift;
+
+	$self->{"tifData"}->{ $self->{"key"} }->{"LayerSett"} = $ncLayersSett;
+
+	$self->_Save();
+}
+
 sub GetToolInfo {
 	my $self     = shift;
 	my $chainNum = shift;
@@ -144,6 +158,13 @@ sub GetNCOperations {
 
 	return @{ $self->{"tifData"}->{ $self->{"key"} }->{"NCOperations"} };
 
+}
+
+sub GetNCLayerSett {
+	my $self  = shift;
+	my $lName = shift;
+
+	return @{ $self->{"tifData"}->{ $self->{"key"} }->{"LayerSett"} }->{$lName};
 }
 
 #-------------------------------------------------------------------------------------------#

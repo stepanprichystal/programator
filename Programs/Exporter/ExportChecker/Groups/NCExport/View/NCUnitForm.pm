@@ -25,6 +25,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCHelper';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCLayerList::NCLayerList';
+use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,7 +39,6 @@ sub new {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
@@ -45,21 +46,18 @@ sub new {
 	$self->{"inCAM"} = $inCAM;
 	$self->{"jobId"} = $jobId;
 
-
 	# Load data
 
 	my @plt = CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"plt"} = \@plt;
 
 	my @nplt = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	
-	@nplt = grep {$_->{"gROWname"} !~ /score/} @nplt;
-	
+
+	@nplt = grep { $_->{"gROWname"} !~ /score/ } @nplt;
+
 	$self->{"nplt"} = \@nplt;
 
 	$self->__SetLayout();
-
-	 
 
 	#$self->Disable();
 
@@ -81,7 +79,6 @@ sub new {
 #
 #	$self->__SetName();
 #}
- 
 
 #sub __SetHeight {
 #	my $self = shift;
@@ -104,20 +101,33 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	my $modeStatBox     = $self->__SetLayoutModeBox($self);
-	my $settingsStatBox = $self->__SetLayoutSettings($self);
+	my $modeStatBox = $self->__SetLayoutModeBox($self);
+
+	my $notebook = CustomNotebook->new( $self, -1 );
+
+	my $singlePage            = $notebook->AddPage(1, 0);
+	my $singleModeSettStatBox = $self->__SetLayoutSingleMode( $singlePage->GetParent() );
+	$singlePage->AddContent($singleModeSettStatBox);
+
+	my $allPage            = $notebook->AddPage(2, 0);
+	my $allModeSettStatBox = $self->__SetLayoutAllMode( $allPage->GetParent() );
+	$allPage->AddContent($allModeSettStatBox);
+	
+	$notebook->ShowPage(2);
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $modeStatBox,     40, &Wx::wxEXPAND );
-	$szMain->Add( $settingsStatBox, 60, &Wx::wxEXPAND );
+	$szMain->Add( $modeStatBox, 0, &Wx::wxEXPAND );
+	$szMain->Add( $notebook,    0, &Wx::wxEXPAND );
+
+	#$szMain->Add( $allModeSettStatBox, 80, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
 	# save control references
-
+	$self->{"notebook"} = $notebook;
 }
 
 sub __SetLayoutModeBox {
@@ -131,9 +141,9 @@ sub __SetLayoutModeBox {
 	my $szCol1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $rbAll = Wx::RadioButton->new( $statBox, -1, "Export All", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
-	my $rbSingle = Wx::RadioButton->new( $statBox, -1, "Export Single", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
-
+	my $rbAll = Wx::RadioButton->new( $statBox, -1, "All", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
+	my $rbSingle = Wx::RadioButton->new( $statBox, -1, "Single", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+ 
 	# SET EVENTS
 	Wx::Event::EVT_RADIOBUTTON( $rbAll,    -1, sub { $self->__OnModeChangeHandler(@_) } );
 	Wx::Event::EVT_RADIOBUTTON( $rbSingle, -1, sub { $self->__OnModeChangeHandler(@_) } );
@@ -152,12 +162,12 @@ sub __SetLayoutModeBox {
 }
 
 # Set layout for Quick set box
-sub __SetLayoutSettings {
+sub __SetLayoutSingleMode {
 	my $self   = shift;
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Settings' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Single mode settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	my $szCol1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
@@ -172,8 +182,8 @@ sub __SetLayoutSettings {
 
 	@plt  = map { $_->{"gROWname"} } @plt;
 	@nplt = map { $_->{"gROWname"} } @nplt;
-	my $pltChlb  = Wx::CheckListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [40,40], \@plt );
-	my $npltChlb = Wx::CheckListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [40,40], \@nplt );
+	my $pltChlb  = Wx::CheckListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [ 40, 40 ], \@plt );
+	my $npltChlb = Wx::CheckListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [ 40, 40 ], \@nplt );
 
 	# SET EVENTS
 
@@ -188,10 +198,36 @@ sub __SetLayoutSettings {
 	$szStatBox->Add( $szCol2, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 
 	# Set References
-	$self->{"pltChlb"}  = $pltChlb;
-	$self->{"npltChlb"} = $npltChlb;
-	$self->{"szStatBox"} = $szStatBox;
-	$self->{"statBox"} = $statBox;
+	$self->{"pltChlb"}       = $pltChlb;
+	$self->{"npltChlb"}      = $npltChlb;
+	$self->{"szStatBox"}     = $szStatBox;
+	$self->{"statBoxSingle"} = $statBox;
+	return $szStatBox;
+}
+
+# Set layout for Quick set box
+sub __SetLayoutAllMode {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'All mode settings' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+
+	my @NC = ( @{ $self->{"plt"} }, @{ $self->{"nplt"} } );
+	my $NCLayerList = NCLayerList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@NC );
+
+	# SET EVENTS
+	#$NCLayerList->{"NCLayerSettChangedEvt"}->Add( sub { $self->{"NCLayerSettChangedEvt"}->Do(@_) } );
+
+	# SET EVENTS
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szStatBox->Add( $NCLayerList, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+
+	$self->{"NCLayerList"} = $NCLayerList;
+	$self->{"statBoxAll"}  = $statBox;
 	return $szStatBox;
 }
 
@@ -212,7 +248,7 @@ sub __GetCheckedLayers {
 			}
 		}
 
-	} 
+	}
 	else {
 
 		for ( my $i = 0 ; $i < scalar( @{ $self->{"nplt"} } ) ; $i++ ) {
@@ -232,33 +268,26 @@ sub __GetCheckedLayers {
 # Control handlers
 sub __OnModeChangeHandler {
 	my $self = shift;
- 
-	
+
 	my $val = $self->{"rbSingle"}->GetValue();
-	
-	if(! defined $val || $val eq ""){
-		
-		$self->{"statBox"}->Disable();	
-	}else{
-	
-		$self->{"statBox"}->Enable(); 	
-		
+
+	if ( !defined $val || $val eq "" ) {
+
+		$self->{"notebook"}->ShowPage(2);
 	}
+	else {
+		$self->{"notebook"}->ShowPage(1);
 
-
-
-	#$self->{"onTentingChange"}->Do( $chb->GetValue() );
+	}
 }
 
 # =====================================================================
 # DISABLING CONTROLS
 # =====================================================================
 
-sub DisableControls{
-	
-	
-}
+sub DisableControls {
 
+}
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
@@ -270,12 +299,11 @@ sub DisableControls{
 sub SetExportSingle {
 	my $self  = shift;
 	my $value = shift;
-	
-	
+
 	$self->{"rbSingle"}->SetValue($value);
-	$self->{"rbAll"}->SetValue(!$value);
+	$self->{"rbAll"}->SetValue( !$value );
 	$self->__OnModeChangeHandler();
-	
+
 }
 
 sub GetExportSingle {
@@ -283,15 +311,30 @@ sub GetExportSingle {
 	return $self->{"rbSingle"}->GetValue();
 }
 
+sub GetAllModeLayers {
+	my $self = shift;
+
+	my $layers = $self->{"NCLayerList"}->GetLayerValues();
+
+	return $layers;
+}
+
+sub SetAllModeLayers {
+	my $self   = shift;
+	my $layers = shift;
+
+	$self->{"NCLayerList"}->SetLayerValues($layers);
+}
+
 # single_y
-sub SetPltLayers {
+sub SetSingleModePltLayers {
 	my $self  = shift;
 	my $value = shift;
 
 	#$self->{"singleyValTxt"}->SetLabel($value);
 }
 
-sub GetPltLayers {
+sub GetSingleModePltLayers {
 	my $self = shift;
 
 	my @arr = $self->__GetCheckedLayers("plt");
@@ -300,14 +343,14 @@ sub GetPltLayers {
 }
 
 # panel_x
-sub SetNPltLayers {
+sub SetSingleModeNPltLayers {
 	my $self  = shift;
 	my $value = shift;
 
 	#$self->{"panelxValTxt"}->SetLabel($value);
 }
 
-sub GetNPltLayers {
+sub GetSingleModeNPltLayers {
 	my $self = shift;
 	my @arr  = $self->__GetCheckedLayers("nplt");
 

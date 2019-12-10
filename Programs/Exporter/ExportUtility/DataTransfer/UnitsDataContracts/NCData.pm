@@ -40,26 +40,40 @@ sub GetExportSingle {
 	return $self->{"data"}->{"exportSingle"};
 }
  
-# Plt layers 
-sub SetPltLayers {
+
+# All mode NC layers
+sub SetAllModeLayers {
 	my $self  = shift;
-	$self->{"data"}->{"pltLayers"} = shift;
+	$self->{"data"}->{"allModeLayers"} = shift;
 }
 
-sub GetPltLayers {
+sub GetAllModeLayers {
 	my $self  = shift;
-	return $self->{"data"}->{"pltLayers"};
+	return $self->{"data"}->{"allModeLayers"};
+} 
+
+	 
+
+# Plt layers 
+sub SetSingleModePltLayers {
+	my $self  = shift;
+	$self->{"data"}->{"singleModePltLayers"} = shift;
+}
+
+sub GetSingleModePltLayers {
+	my $self  = shift;
+	return $self->{"data"}->{"singleModePltLayers"};
 } 
 
 # NPlt layers 
-sub SetNPltLayers {
+sub SetSingleModeNPltLayers {
 	my $self  = shift;
-	$self->{"data"}->{"npltLayers"} = shift;
+	$self->{"data"}->{"singleModeNpltLayers"} = shift;
 }
 
-sub GetNPltLayers {
+sub GetSingleModeNPltLayers {
 	my $self  = shift;
-	return $self->{"data"}->{"npltLayers"};
+	return $self->{"data"}->{"singleModeNpltLayers"};
 } 
  
 #-------------------------------------------------------------------------------------------#

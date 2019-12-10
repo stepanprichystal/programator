@@ -278,7 +278,7 @@ sub AddNCLayerType {
 			$l->{"technical"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^v1$/ ) {
+		elsif ( $l->{"gROWname"} =~ /^v1$/ || $l->{"gROWname"} =~ /^v1j\d+$/ ) {
 
 			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fcDrill;
 			$l->{"plated"} = 1;

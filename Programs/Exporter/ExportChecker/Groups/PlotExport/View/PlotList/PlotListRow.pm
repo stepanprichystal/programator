@@ -44,8 +44,8 @@ sub new {
 
 	# this values are not represented  by controls
 	$self->{"comp"}    = undef;
-	$self->{"shrinkX"} = undef;
-	$self->{"shrinkY"} = undef;
+	$self->{"stretchX"} = undef;
+	$self->{"stretchY"} = undef;
 
 	#$self->{"filmRuleSet1"} = $filmRuleSet1;
 	#$self->{"filmRuleSet2"} = $filmRuleSet2;
@@ -112,18 +112,18 @@ sub SetComp {
 	$self->{"comp"} = $val;
 }
 
-sub SetShrinkX {
+sub SetStretchX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"shrinkX"} = $val;
+	$self->{"stretchX"} = $val;
 }
 
-sub SetShrinkY {
+sub SetStretchY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"shrinkY"} = $val;
+	$self->{"stretchY"} = $val;
 }
 
 sub __SetLayout {
@@ -212,8 +212,8 @@ sub SetLayerValues {
 	$self->{"mirrorChb"}->SetValue( $lInfo{"mirror"} );
 
 	$self->{"comp"}    = $lInfo{"comp"};
-	$self->{"shrinkX"} = $lInfo{"shrinkX"};
-	$self->{"shrinkY"} = $lInfo{"shrinkX"};
+	$self->{"stretchX"} = $lInfo{"stretchX"};
+	$self->{"stretchY"} = $lInfo{"stretchX"};
 }
 
 sub GetLayerValues {
@@ -236,9 +236,9 @@ sub GetLayerValues {
 	}
 	$lInfo{"comp"} = $self->{"comp"};
 
-	$lInfo{"shrinkX"} = $self->{"shrinkX"};
+	$lInfo{"stretchX"} = $self->{"stretchX"};
 
-	$lInfo{"shrinkY"} = $self->{"shrinkY"};
+	$lInfo{"stretchY"} = $self->{"stretchY"};
 
 	return %lInfo;
 }

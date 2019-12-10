@@ -7,6 +7,7 @@ package Packages::Technology::DataComp::MatStability::MatStability;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 use aliased 'Helpers::FileHelper';
@@ -29,6 +30,7 @@ sub new {
 	return $self;
 }
 
+# Return how much is material shrinked at X/Y direction after process in PPM unit
 sub GetMatStability {
 	my $self     = shift;
 	my $matKind  = shift;
@@ -41,33 +43,38 @@ sub GetMatStability {
 	# 2) Get dimension stability at % for panel x/y side
 
 	my $cuUsageCat = undef;
-	$cuUsageCat = "u1" if ( $cuThick < 33 );
-	$cuUsageCat = "u2" if ( $cuThick >= 33 && $cuThick <= 66 );
-	$cuUsageCat = "u3" if ( $cuThick > 66 );
+	$cuUsageCat = "u1" if ( $cuUsage < 33 );
+	$cuUsageCat = "u2" if ( $cuUsage >= 33 && $cuUsage <= 66 );
+	$cuUsageCat = "u3" if ( $cuUsage > 66 );
 
 	my $p = GeneralHelper->Root() . "\\Packages\\Technology\\DataComp\\MatStability\\" . $matKind . ".csv";
 
-	die "Dim stability for: $matKind; thickness: $matThick µm is not defined at: $p"
-	  unless ( defined $self->{"tables"}->{$matKind}->{$matThick} );
+	# check available material thickness. Tolerance +-10%
+	
+	my @thicks = sort{$a <=> $b} keys %{$self->{"tables"}->{$matKind}};
+	my $selMatThick = first{ abs($_ - $matThick) < $_*0.1 }@thicks;
 
-	die "Dim stability for: $matKind; thickness: $matThick µm; Cu thickness: $cuThick µm is not defined at: $p"
-	  unless ( defined $self->{"table"}->{$matKind}->{$matThick}->{$cuThick} );
+	die "Dim stability for: $matKind; thickness: $selMatThick µm is not defined at: $p"
+	  unless ( defined $self->{"tables"}->{$matKind}->{$selMatThick} );
+ 
+	die "Dim stability for: $matKind; thickness: $selMatThick µm; Cu thickness: $cuThick µm is not defined at: $p"
+	  unless ( defined $self->{"tables"}->{$matKind}->{$selMatThick}->{$cuThick} );
 
-	die "Dim stability of 'X' dir for: $matKind; thickness: $matThick µm; Cu thickness: $cuThick µm is not defined at: $p"
-	  unless ( defined $self->{"table"}->{$matKind}->{$matThick}->{$cuThick}->{$cuUsageCat}->{"x"} );
+	die "Dim stability of 'X' dir for: $matKind; thickness: $selMatThick µm; Cu thickness: $cuThick µm is not defined at: $p"
+	  unless ( defined $self->{"tables"}->{$matKind}->{$selMatThick}->{$cuThick}->{$cuUsageCat}->{"x"} );
 
-	die "Dim stability of 'Y' dir for: $matKind; thickness: $matThick µm; Cu thickness: $cuThick µm is not defined at: $p"
-	  unless ( defined $self->{"table"}->{$matKind}->{$matThick}->{$cuThick}->{$cuUsageCat}->{"y"} );
+	die "Dim stability of 'Y' dir for: $matKind; thickness: $selMatThick µm; Cu thickness: $cuThick µm is not defined at: $p"
+	  unless ( defined $self->{"tables"}->{$matKind}->{$selMatThick}->{$cuThick}->{$cuUsageCat}->{"y"} );
 
-	my $vals = $self->{"table"}->{$matThick}->{$cuThick}->{$cuUsageCat};
+	my $vals = $self->{"tables"}->{$matKind}->{$selMatThick}->{$cuThick}->{$cuUsageCat};
 
 	my $x = $ori eq "transverse" ? $vals->{"y"} : $vals->{"x"};
 	my $y = $ori eq "transverse" ? $vals->{"x"} : $vals->{"y"};
 
-	my $xPer = $x / 10000;
-	my $yPer = $y / 10000;
+	my $xPPM = $x;
+	my $yPPM = $y;
 
-	return ( $xPer, $yPer );
+	return ( $xPPM, $yPPM );
 
 }
 
@@ -117,7 +124,7 @@ sub __LoadMatTables {
 
 		my $p = GeneralHelper->Root() . "\\Packages\\Technology\\DataComp\\MatStability\\" . $mat . ".csv";
 
-		die "Material stability fail for material kind: $mat doesnt exist at: $p" unless ( -e $p );
+		die "\"$mat\" material stability file doesn't exist at: $p" unless ( -e $p );
 
 		my @lines = grep { $_ ne "" } @{ FileHelper->ReadAsLines($p) };
 		@lines = grep( s/\s$//g, @lines );
@@ -193,7 +200,7 @@ sub __LoadMatTables {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Technology::DataComp::MatStability';
+	use aliased 'Packages::Technology::DataComp::MatStability::MatStability';
 
 	my $t = MatStability->new("PYRALUX");
 	die $t;

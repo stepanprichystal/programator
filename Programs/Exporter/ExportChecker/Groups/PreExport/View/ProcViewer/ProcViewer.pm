@@ -9,7 +9,6 @@ package Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::
 use strict;
 use warnings;
 
-
 #local library
 use aliased 'Packages::Tests::Test';
 use aliased 'Packages::Events::Event';
@@ -119,8 +118,8 @@ sub SetLayerValue {
 	$copperFrm->SetPolarityVal( $l->{"polarity"} );
 	$copperFrm->SetMirrorVal( $l->{"mirror"} );
 	$copperFrm->SetCompVal( $l->{"comp"} );
-	$copperFrm->SetShrinkXVal( $l->{"shrinkX"} );
-	$copperFrm->SetShrinkYVal( $l->{"shrinkY"} );
+	$copperFrm->SetStretchXVal( $l->{"stretchX"} );
+	$copperFrm->SetStretchYVal( $l->{"stretchY"} );
 
 	# Update plating at copper row frm
 	$copperFrm->UpdatePlating( $l->{"technologyType"} eq EnumsGeneral->Technology_GALVANICS ? 1 : 0 );
@@ -169,12 +168,11 @@ sub GetLayerValue {
 	$lInfo{"polarity"} = $copperFrm->GetPolarityVal();
 	$lInfo{"mirror"}   = $copperFrm->GetMirrorVal();
 	$lInfo{"comp"}     = $copperFrm->GetCompVal();
-	$lInfo{"shrinkX"}  = $copperFrm->GetShrinkXVal();
-	$lInfo{"shrinkY"}  = $copperFrm->GetShrinkYVal();
+	$lInfo{"stretchX"} = $copperFrm->GetStretchXVal();
+	$lInfo{"stretchY"} = $copperFrm->GetStretchYVal();
 
 	$lInfo{"etchingType"}    = $subGroupFrm->GetTentingVal();
 	$lInfo{"technologyType"} = $subGroupFrm->GetTechnologyVal();
-
 	return %lInfo;
 }
 
@@ -253,7 +251,7 @@ sub __OnTechnologyChangedHndl {
 
 		if ( $self->{"defaultInfo"}->GetLayerCnt() <= 1 ) {
 			$tentingNew = EnumsGeneral->Etching_TENTING;
-	
+
 		}
 		else {
 			# Set automatically default trenting value
@@ -301,7 +299,7 @@ sub __OnTentingChangedHndl {
 
 		my $isPlt = 1;
 
-		if ( $currLSett{"etchingType"} eq EnumsGeneral->Etching_ONLY || $mItem->GetOuterCore()  ) {
+		if ( $currLSett{"etchingType"} eq EnumsGeneral->Etching_ONLY || $mItem->GetOuterCore() ) {
 			$isPlt = 0;
 		}
 

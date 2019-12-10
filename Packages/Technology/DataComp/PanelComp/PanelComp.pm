@@ -10,9 +10,14 @@ use warnings;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Technology::DataComp::MatStability::MatStability';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamJob';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamCopperArea';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -34,9 +39,9 @@ sub new {
 	                               #$self->{"delayCuAreaCalc"} = $delayCuArea;    # if 1, cu area at 2v pcb is calculated during call "MatComp" method
 
 	# Load helper property based on job type
-	$self->{"pcbType"} = CamHelper->GetPcbType( $inCAM, $jobId );
+	$self->{"pcbType"} = JobHelper->GetPcbType($jobId);
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
-	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId );
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
 	$self->{"pnlW"} = $lim{"xMax"} - $lim{"xMin"};
 	$self->{"pnlH"} = $lim{"yMax"} - $lim{"yMin"};
 
@@ -48,8 +53,8 @@ sub new {
 		#unless ( $self->{"delayCuAreaCalc"} ) {
 
 		$self->{"2VcuUsage"}  = $self->__Get2vCuUsage();
-		$self->{"2VmatThick"} = HegMethods->GetOuterCuThick($jobId) * 1000;
-		$self->{"2VCuThick"}  = HegMethods->GetPcbMaterialThick($jobId) * 1000;
+		$self->{"2VmatThick"} = HegMethods->GetPcbMaterialThick($jobId) * 1000;
+		$self->{"2VCuThick"}  = HegMethods->GetOuterCuThick($jobId);
 
 		#}
 
@@ -63,7 +68,12 @@ sub new {
 		$self->{"stackup"} = Stackup->new( $inCAM, $jobId ) unless ( defined $self->{"stackup"} );
 
 		# Get material kind
-		@matKinds = split( "+", $self->{"stackup"}->GetStackupType() );
+		my @matKindsTxt = split( /\+/, $self->{"stackup"}->GetStackupType() );
+
+		foreach my $mTxt (@matKindsTxt) {
+
+			push( @matKinds, $self->__GetCoreMaterialKind($mTxt) );
+		}
 
 	}
 
@@ -82,15 +92,17 @@ sub GetCoreMatComp {
 
 	die "Only multilayer PCB" if ( $self->{"layerCnt"} <= 2 );
 
+	$matKind = $self->__GetCoreMaterialKind($matKind);
+
 	# Load property from stackup
 	my $core     = $self->{"stackup"}->GetCore($coreNum);
 	my $matThick = $core->GetThick();
 	my $cuThick  = $core->GetTopCopperLayer()->GetThick();
-	my $cuUsage  = $core->GetTopCopperLayer()->GetUssage();
+	my $cuUsage  = ( $core->GetTopCopperLayer()->GetUssage() + $core->GetBotCopperLayer()->GetUssage() ) / 2 * 100;
 
 	my @comp = $self->__GetPanelXYScale( $matKind, $matThick, $cuThick, $cuUsage );
 
-	return { "x" => $comp[0], "y" => $comp[1] };
+	return ( "x" => $comp[0], "y" => $comp[1] );
 
 }
 
@@ -98,7 +110,7 @@ sub GetBaseMatComp {
 	my $self = shift;
 
 	my $matKind  = $self->{"matKinds"}->[0];
-	my $matThick = self->{"2VmatThick"};
+	my $matThick = $self->{"2VmatThick"};
 	my $cuThick  = $self->{"2VCuThick"};
 	my $cuUsage  = $self->{"2VcuUsage"};
 
@@ -106,10 +118,26 @@ sub GetBaseMatComp {
 
 	my @comp = $self->__GetPanelXYScale( $matKind, $matThick, $cuThick, $cuUsage );
 
-	return { "x" => $comp[0], "y" => $comp[1] };
+	return ( "x" => $comp[0], "y" => $comp[1] );
 }
 
-# Return
+# Translate core material text to IS material kind
+sub __GetCoreMaterialKind {
+	my $self = shift;
+	my $mTxt = shift;
+
+	my $mKind = undef;
+	$mKind = "PYRALUX" if ( $mTxt =~ /pyralux/i );
+	$mKind = "IS400"   if ( $mTxt =~ /IS.*400/i );
+
+	die "Core material kind was not recognized from text: $mTxt" unless ( defined $mKind );
+
+	return $mKind;
+}
+
+# Return how much has to by panel stretch to achieve requested panel dimension
+# after production
+# Values are percent unit
 sub __GetPanelXYScale {
 	my $self     = shift;
 	my $matKind  = shift;
@@ -117,7 +145,7 @@ sub __GetPanelXYScale {
 	my $cuThick  = shift;
 	my $cuUsage  = shift;
 
-	my ( $xPer, $Yper ) = ( 100, 100 );
+	my ( $xPer, $Yper ) = ( 0, 0 );
 
 	# Decide which material and PCB type compensate
 	if (    $self->{"pcbType"} eq EnumsGeneral->PcbType_1VFLEX
@@ -127,23 +155,28 @@ sub __GetPanelXYScale {
 		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI )
 	{
 
-		( $xPer, $Yper ) = $self->{"matStability"}->GetMatStability( $matKind, $matThick, $cuThick, $cuUsage );
+		
+		my ( $xPPM, $YPPM ) = $self->{"matStability"}->GetMatStability( $matKind, $matThick, $cuThick, $cuUsage );
+		
+		$xPer =  0+$xPPM/10000;
+		$Yper = 0+$YPPM/10000;
 
 	}
-	    
+
+
 	return ( $xPer, $Yper );
 }
 
 sub __Get2vCuUsage {
 	my $self = shift;
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	my $botL = "s" if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
 	my %usage = CamCopperArea->GetCuArea( 0, 0, $inCAM, $jobId, "panel", "c", $botL );
 
-	my $cuUsage = = $usage{"percentage"};
-
-	return $cuUsage;
-
+	return $usage{"percentage"};
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -152,11 +185,6 @@ sub __Get2vCuUsage {
 
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
-	use aliased 'Packages::Technology::DataComp::MatStability';
-
-	my $t = MatStability->new("PYRALUX");
-	die $t;
 
 }
 

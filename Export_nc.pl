@@ -14,12 +14,20 @@ use PackagesLib;
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NCExport::NCExportTmp';
+use aliased 'Packages::Export::PreExport::FakeLayers';
 
 my $inCAM  = InCAM->new();
 my $export = NCExportTmp->new();
 
 #input parameters
-my $jobId = "d152457";
+my $jobId = "d262773";
+
+
+
+FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 0 );
+
+
+
 
 # Exportovat jednotlive vrstvy nebo vsechno
 my $exportSingle = 0;

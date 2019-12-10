@@ -14,6 +14,9 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Technology::DataComp::PanelComp::PanelComp';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamDrilling';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -45,17 +48,24 @@ sub GetLayerCompensation {
 	my $self    = shift;
 	my $NClayer = shift;
 
-	my %NCLInfo = CamDrilling->GetNCLayerInfo( undef, $jobId, $NClayer, 1 );
+	my %NCLInfo = CamDrilling->GetNCLayerInfo( undef, $self->{"jobId"}, $NClayer, 1 );
+
+	my %comp = ();
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
-		$self->__GetCompensationVV( \%NCLInfo );
+		%comp = $self->__GetCompensationVV( \%NCLInfo );
 
 	}
 	else {
 
-		$self->__GetCompensation2V( \%NCLInfo );
+		%comp = $self->__GetCompensation2V( \%NCLInfo );
 	}
+
+	$comp{"x"} = sprintf( "%.3f", $comp{"x"} );
+	$comp{"y"} = sprintf( "%.3f", $comp{"y"} );
+
+	return %comp;
 
 }
 
@@ -68,8 +78,10 @@ sub __GetCompensation2V {
 
 	my %comp = ( "x" => undef, "y" => undef );
 
- 
-	if ( $NCLInfo{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill || $NCLInfo{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill ) {
+	if (    $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+		 || $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
+		 || $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill )
+	{
 
 		%comp = $self->{"panelComp"}->GetBaseMatComp();
 
@@ -78,6 +90,8 @@ sub __GetCompensation2V {
 
 		%comp = ( "x" => 0, "y" => 0 );
 	}
+
+	return %comp;
 
 }
 
@@ -93,18 +107,18 @@ sub __GetCompensationVV {
 
 	my %comp = ( "x" => undef, "y" => undef );
 
-	if ( $NCLInfo{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill ) {
+	if ( $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill && $NCLInfo->{"gROWname"} =~ /^v1j(\d+)$/ ) {
 
-		$coreNum =~ (/^v(\d+)$/)[0];
+		$coreNum     = ( $NCLInfo->{"gROWname"} =~ /^v1j(\d+)$/ )[0];
 		$coreMatKind = $self->{"stackupNC"}->GetCore($coreNum)->GetTextType();
 
 		%comp = $self->{"panelComp"}->GetCoreMatComp( $coreNum, $coreMatKind );
 
 	}
-	elsif ( $NCLInfo{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $NCLInfo{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill ) {
+	elsif ( $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill ) {
 
 		my @coreProducts = $self->{"stackupNC"}->GetNCCoreProduct();
-		my $NCCore = first { $_->ExistNCLayers( undef, undef, $NCLInfo{"type"}, 1 ) } @coreProducts;
+		my $NCCore = first { $_->ExistNCLayers( undef, undef, $NCLInfo->{"type"}, 1 ) } @coreProducts;
 
 		my $c = ( map { $_->GetData() } grep { $_->GetData()->GetType() eq Enums->MaterialType_CORE } $NCCore->GetIProduct()->GetLayers() )[0];
 
@@ -119,7 +133,7 @@ sub __GetCompensationVV {
 		%comp = ( "x" => 0, "y" => 0 );
 	}
 
-	return \%comp;
+	return %comp;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -129,10 +143,25 @@ sub __GetCompensationVV {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Technology::DataComp::MatStability';
+	use aliased 'Packages::Technology::DataComp::NCLayerComp';
+	use aliased 'Packages::Export::PreExport::FakeLayers';
+	use aliased 'Packages::InCAM::InCAM';
 
-	my $t = MatStability->new("PYRALUX");
-	die $t;
+	my $inCAM = InCAM->new();
+
+	my $jobId    = "d222773";
+	my $stepName = "panel";
+
+	FakeLayers->CreateFakeLayers( $inCAM, $jobId );
+
+	my $lc = NCLayerComp->new( $inCAM, $jobId, undef, 1 );
+
+	my %comp1 = $lc->GetLayerCompensation("m");
+
+	print "Comp j1 X:" . $comp1{"x"} . "; Y:" . $comp1{"y"} . "\n";
+
+	my %comp2 = $lc->GetLayerCompensation("v");
+	print "Comp j2 X:" . $comp2{"x"} . "; Y:" . $comp2{"y"};
 
 }
 

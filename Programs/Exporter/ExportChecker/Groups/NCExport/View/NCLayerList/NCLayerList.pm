@@ -1,9 +1,8 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Responsible for creating "table of column", where GroupWrapperForms are
-# placed in. Is responsible for recaltulating "column" layout.
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::PreExport::View::OtherLayerList::OtherLayerList;
+package Programs::Exporter::ExportChecker::Groups::NCExport::View::NCLayerList::NCLayerList;
 use base qw(Widgets::Forms::CustomControlList::ControlList);
 
 #3th party library
@@ -12,14 +11,11 @@ use warnings;
 use Wx;
 use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
 
-
 #local library
 use aliased 'Packages::Tests::Test';
 use Widgets::Style;
-use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::OtherLayerList::OtherLayerListRow';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCLayerList::NCLayerListRow';
 use aliased 'Packages::Events::Event';
-use aliased 'Packages::Export::PlotExport::FilmCreator::FilmCreators';
-use aliased 'Packages::Export::PlotExport::FilmCreator::Helper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Widgets::Forms::CustomControlList::Enums' => 'EnumsList';
 
@@ -38,8 +34,8 @@ sub new {
 	my $layers = shift;
 
 	# Name, Color, Polarity, Mirror, Comp
-	my @widths = ( 100,     20, 50,         50, );
-	my @titles = ( "Name", "", "Polarity", "Mirror" );
+	my @widths = ( 70,     50,         50 );
+	my @titles = ( "Name", "StretchX", "StretchY" );
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
@@ -58,7 +54,7 @@ sub new {
 
 	# EVENTS
 
-	$self->{"otherLayerSettChangedEvt"} = Event->new();
+	$self->{"NCLayerSettChangedEvt"} = Event->new();
 
 	return $self;
 }
@@ -80,9 +76,6 @@ sub SetLayerValue {
 	my $row = $self->GetRowByText( $l->{"name"} );
 	die "Row list was not found by name: " . $l->{"name"} unless ( defined $row );
 
-	$row->SetPolarityVal( $l->{"polarity"} );
-	$row->SetMirrorVal( $l->{"mirror"} );
-	$row->SetCompVal( $l->{"comp"} );
 	$row->SetStretchXVal( $l->{"stretchX"} );
 	$row->SetStretchYVal( $l->{"stretchY"} );
 }
@@ -111,12 +104,9 @@ sub GetLayerValue {
 	my %lInfo = ();
 
 	$lInfo{"name"}     = $lName;
-	$lInfo{"polarity"} = $row->GetPolarityVal();
-	$lInfo{"mirror"}   = $row->GetMirrorVal();
-	$lInfo{"comp"}   = $row->GetCompVal();
-	$lInfo{"stretchX"}   = $row->GetStretchXVal();
-	$lInfo{"stretchY"}   = $row->GetStretchYVal();
-	 
+	$lInfo{"stretchX"} = $row->GetStretchXVal();
+	$lInfo{"stretchY"} = $row->GetStretchYVal();
+
 	return %lInfo;
 }
 
@@ -141,12 +131,12 @@ sub __SetLayout {
 	my @layers = @{ $self->{"layers"} };
 	foreach my $l (@layers) {
 
-		my $row = OtherLayerListRow->new( $self, $l->{"gROWname"} );
+		my $row = NCLayerListRow->new( $self, $l->{"gROWname"} );
 
 		# zaregistrovat udalost
 		#$self->{"onSelectedChanged"}->Add(sub{ $row->PlotSelectionChanged($self, @_) });
 
-		$row->{"otherLayerSettChangedEvt"}->Add( sub { $self->__OnlayerSettChangedHndl(@_) } );
+		$row->{"NCLayerSettChangedEvt"}->Add( sub { $self->__OnlayerSettChangedHndl(@_) } );
 
 		$self->AddRow($row);
 
@@ -165,9 +155,7 @@ sub __OnlayerSettChangedHndl {
 	# 1) Get current layer value
 	my %currLSett = $self->GetLayerValue($lName);
 
-	$self->{"otherLayerSettChangedEvt"}->Do( \%currLSett );
-
-	Diag("Layer name changed: $lName\n");
+	Diag("NC layer name changed: $lName\n");
 
 }
 

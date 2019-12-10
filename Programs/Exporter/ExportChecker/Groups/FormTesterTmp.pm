@@ -97,6 +97,7 @@ sub __SetLayout {
 	return $mainFrm;
 }
 
+
 sub _TestedForm {
 	my $self         = shift;
 	my $groupWrapper = shift;
@@ -108,9 +109,9 @@ sub _TestedForm {
 	my $d = DefaultInfo->new( $self->{"jobId"} );
 	$d->Init( $self->{"inCAM"} );
 
-	use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
+	use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit';
 
-	my $preUnit = PreUnit->new( $self->{"jobId"} );
+	my $preUnit = NCUnit->new( $self->{"jobId"} );
 
 	$preUnit->SetDefaultInfo($d);
 	$preUnit->InitDataMngr( $self->{"inCAM"} );
@@ -126,13 +127,42 @@ sub _TestedForm {
 
 }
 
+#sub _TestedForm {
+#	my $self         = shift;
+#	my $groupWrapper = shift;
+#
+#	use aliased 'Packages::Export::PreExport::FakeLayers';
+#
+#	my %types = FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, "panel", 1 );
+#
+#	my $d = DefaultInfo->new( $self->{"jobId"} );
+#	$d->Init( $self->{"inCAM"} );
+#
+#	use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
+#
+#	my $preUnit = PreUnit->new( $self->{"jobId"} );
+#
+#	$preUnit->SetDefaultInfo($d);
+#	$preUnit->InitDataMngr( $self->{"inCAM"} );
+#
+#	$preUnit->InitForm( $groupWrapper, $self->{"inCAM"} );
+#
+#	$groupWrapper->Init( $preUnit->GetForm() );
+#
+#	$preUnit->RefreshGUI();
+#	$preUnit->GetForm()->DisableControls();
+#
+#	return $preUnit->GetForm();
+#
+#}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "d262220" );
+	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "d262773" );
 
 	$test->MainLoop();
 }

@@ -43,8 +43,8 @@ sub new {
 
 	# this values are not represented  by controls
 	$self->{"comp"}    = undef;
-	$self->{"shrinkX"} = undef;
-	$self->{"shrinkY"} = undef;
+	$self->{"stretchX"} = undef;
+	$self->{"stretchY"} = undef;
 
 	$self->__SetLayout();
 
@@ -104,30 +104,30 @@ sub GetCompVal {
 	return $self->{"comp"};
 }
 
-sub SetShrinkXVal {
+sub SetStretchXVal {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"shrinkX"} = $val;
+	$self->{"stretchX"} = $val;
 }
 
-sub GetShrinkXVal {
+sub GetStretchXVal {
 	my $self = shift;
 
-	return $self->{"shrinkX"};
+	return $self->{"stretchX"};
 }
 
-sub SetShrinkYVal {
+sub SetStretchYVal {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"shrinkY"} = $val;
+	$self->{"stretchY"} = $val;
 }
 
-sub GetShrinkYVal {
+sub GetStretchYVal {
 	my $self = shift;
 
-	return $self->{"shrinkY"};
+	return $self->{"stretchY"};
 }
 
 sub __SetLayout {
@@ -180,8 +180,8 @@ sub SetLayerValues {
 
 	$self->{"mirrorChb"}->SetValue( $lInfo{"mirror"} );
 	$self->{"compTxt"}->SetValue( $lInfo{"comp"} );
-	$self->{"shrinkX"}->SetValue( $lInfo{"shrinkX"} );
-	$self->{"shrinkY"}->SetValue( $lInfo{"shrinkX"} );
+	$self->{"stretchX"}->SetValue( $lInfo{"stretchX"} );
+	$self->{"stretchY"}->SetValue( $lInfo{"stretchX"} );
 }
 
 sub GetLayerValues {
@@ -204,9 +204,9 @@ sub GetLayerValues {
 	}
 	$lInfo{"comp"} = $self->{"compTxt"}->GetValue();
 
-	$lInfo{"shrinkX"} = $self->{"shrinkXTxt"}->GetValue();
+	$lInfo{"stretchX"} = $self->{"shrinkXTxt"}->GetValue();
 
-	$lInfo{"shrinkY"} = $self->{"shrinkYTxt"}->GetValue();
+	$lInfo{"stretchY"} = $self->{"shrinkYTxt"}->GetValue();
 
 	return %lInfo;
 }

@@ -14,8 +14,8 @@ use warnings;
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
- 
- use aliased 'CamHelpers::CamDrilling';
+
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,25 +48,45 @@ sub OnPrepareGroupData {
 
 	my $groupData = NCGroupData->new();
 
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
 	$groupData->SetExportSingle(0);
-	
-	
-	my @plt = CamDrilling->GetPltNCLayers($inCAM, $jobId);
-	@plt = map {$_->{"gROWname"} } @plt;
-	
-	$groupData->SetPltLayers(\@plt);
-	
-	my @nplt = CamDrilling->GetNPltNCLayers($inCAM, $jobId );
-	@nplt = map {$_->{"gROWname"} } @nplt;
-	
-	$groupData->SetNPltLayers(\@nplt);
- 
+
+	my @plt = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
+	@plt = map { $_->{"gROWname"} } @plt;
+
+	$groupData->SetSingleModePltLayers( \@plt );
+
+	my @nplt = CamDrilling->GetNPltNCLayers( $inCAM, $jobId );
+	@nplt = map { $_->{"gROWname"} } @nplt;
+
+	$groupData->SetSingleModeNPltLayers( \@nplt );
+
+	my @NClayers = $self->__GetNCLayersSett($defaultInfo);
+	$groupData->SetAllModeLayers( \@NClayers );
+
 	return $groupData;
 }
- 
+
+sub __GetNCLayersSett {
+	my $self        = shift;
+	my $defaultInfo = shift;
+
+	my @NCLayers = $defaultInfo->GetNCLayers();
+
+	my @prepared = ();
+	foreach my $l (@NCLayers) {
+
+		my %lInfo = $defaultInfo->GetNCLSett($l);
+
+		push( @prepared, \%lInfo );
+	}
+
+	return @prepared;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

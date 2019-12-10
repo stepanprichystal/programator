@@ -32,6 +32,8 @@ use aliased 'Packages::Tooling::TolHoleOperation';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::ProductionPanel::PanelDimension';
 use aliased 'Helpers::JobHelper';
+use aliased 'Packages::Technology::DataComp::SigLayerComp';
+use aliased 'Packages::Technology::DataComp::NCLayerComp';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -80,6 +82,8 @@ sub new {
 	$self->{"pcbClass"}        = undef;    # pcb class of outer layer
 	$self->{"pcbClassInner"}   = undef;    # pcb class of inner layer
 	$self->{"pcbIsFlex"}       = undef;    # pcb is flex
+	$self->{"sigLayerComp"}    = undef;    # calculating signal layer compensation
+	$self->{"NCLayerComp"}    = undef;    # calculating signal layer compensation
 
 	return $self;
 }
@@ -126,7 +130,6 @@ sub GetNCLayers {
 
 	return @{ $self->{"NCLayers"} };
 }
-
 
 sub GetPcbClass {
 	my $self = shift;
@@ -246,7 +249,7 @@ sub GetDefSignalLSett {
 	my $etching = $self->GetDefaultEtchType( $l->{"gROWname"} );
 	my $plt     = 1;
 
-	if ( $etching eq EnumsGeneral->Etching_ONLY || $lPars{"outerCore"}  ) {
+	if ( $etching eq EnumsGeneral->Etching_ONLY || $lPars{"outerCore"} ) {
 		$plt = 0;
 	}
 
@@ -310,7 +313,7 @@ sub GetSignalLSett {
 		$lSett{"comp"} = 0;
 	}
 	else {
- 
+
 		my $comp = EtchOperation->GetCompensation( $cuThick, $class, $plt, $etchType );
 
 		# If layer is negative, set negative compensation
@@ -364,7 +367,7 @@ sub GetSignalLSett {
 	}
 
 	elsif ( $lPars{"sourceName"} =~ /^v\d+$/i ) {
- 
+
 		my $side = undef;
 
 		my $product = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"} );
@@ -390,17 +393,18 @@ sub GetSignalLSett {
 	}
 
 	# 7) Set Shrink
-	$lSett{"shrinkX"} = 0;
-	$lSett{"shrinkY"} = 0;
+	my %matComp = $self->{"sigLayerComp"}->GetLayerCompensation( $l->{"gROWname"} );
+	$lSett{"stretchX"} = $matComp{"x"};
+	$lSett{"stretchY"} = $matComp{"y"};
 
-	die "Layer name is not defined for layer:" . $self->{"gROWname"}      if ( !defined $lSett{"name"} );
-	die "Etching type is not defined for layer:" . $self->{"gROWname"}    if ( !defined $lSett{"etchingType"} );
-	die "Technology type is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"technologyType"} );
-	die "Compensation is not defined for layer:" . $self->{"gROWname"}    if ( !defined $lSett{"comp"} );
-	die "Polarity is not defined for layer:" . $self->{"gROWname"}        if ( !defined $lSett{"polarity"} );
-	die "Mirror is not defined for layer:" . $self->{"gROWname"}          if ( !defined $lSett{"mirror"} );
-	die "Shrink X is not defined for layer:" . $self->{"gROWname"}        if ( !defined $lSett{"shrinkX"} );
-	die "Shrink Y is not defined for layer:" . $self->{"gROWname"}        if ( !defined $lSett{"shrinkY"} );
+	die "Layer name is not defined for layer:" . $l->{"gROWname"}      if ( !defined $lSett{"name"} );
+	die "Etching type is not defined for layer:" . $l->{"gROWname"}    if ( !defined $lSett{"etchingType"} );
+	die "Technology type is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"technologyType"} );
+	die "Compensation is not defined for layer:" . $l->{"gROWname"}    if ( !defined $lSett{"comp"} );
+	die "Polarity is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"polarity"} );
+	die "Mirror is not defined for layer:" . $l->{"gROWname"}          if ( !defined $lSett{"mirror"} );
+	die "Shrink X is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"stretchX"} );
+	die "Shrink Y is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"stretchY"} );
 
 	return %lSett;
 }
@@ -457,19 +461,42 @@ sub GetNonSignalLSett {
 	$lSett{"comp"} = 0;
 
 	# 6) Set Shrink
-	$lSett{"shrinkX"} = 0;
-	$lSett{"shrinkY"} = 0;
+	$lSett{"stretchX"} = 0;
+	$lSett{"stretchY"} = 0;
 
-	die "Layer name is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"name"} );
-	die "Polarity is not defined for layer:" . $self->{"gROWname"}   if ( !defined $lSett{"polarity"} );
-	die "Mirror is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"mirror"} );
+	die "Layer name is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"name"} );
+	die "Polarity is not defined for layer:" . $l->{"gROWname"}   if ( !defined $lSett{"polarity"} );
+	die "Mirror is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"mirror"} );
 
-	die "Compensation is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"comp"} );
-	die "Shrink X is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"shrinkX"} );
-	die "Shrink Y is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"shrinkY"} );
+	die "Compensation is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"comp"} );
+	die "Shrink X is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"stretchX"} );
+	die "Shrink Y is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"stretchY"} );
 
 	return %lSett;
 }
+
+
+# Set stretch X and Y for NC layers
+sub GetNCLSett {
+	my $self = shift;
+	my $l    = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+ 
+	my %lSett = ( "name" => $l->{"gROWname"} );
+ 
+	my %matComp = $self->{"NCLayerComp"}->GetLayerCompensation( $l->{"gROWname"} );
+	$lSett{"stretchX"} = $matComp{"x"};
+	$lSett{"stretchY"} = $matComp{"y"};
+ 
+
+	die "Layer name is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"name"} );
+	die "Stretch X is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"stretchX"} );
+	die "Stretch Y is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"stretchY"} );
+
+	return %lSett;
+}
+
 
 sub GetStackup {
 	my $self = shift;
@@ -709,7 +736,7 @@ sub GetDefaultEtchType {
 
 	if ( $self->{"layerCnt"} == 2 ) {
 
-		my @platedNC = grep { $_->{"plated"} && !$_->{"technical"}} $self->GetNCLayers();
+		my @platedNC = grep { $_->{"plated"} && !$_->{"technical"} } $self->GetNCLayers();
 
 		if ( scalar(@platedNC) ) {
 
@@ -788,7 +815,7 @@ sub __Init {
 	$self->{"signalExtLayers"} = \@signalExtLayers;
 
 	my @NCLayers = CamJob->GetNCLayers( $inCAM, $self->{"jobId"} );
-	CamDrilling->AddNCLayerType(\@NCLayers);
+	CamDrilling->AddNCLayerType( \@NCLayers );
 	$self->{"NCLayers"} = \@NCLayers;
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $inCAM, $self->{"jobId"} );
@@ -845,6 +872,10 @@ sub __Init {
 	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $inCAM, $self->{"jobId"} );
 
 	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
+
+	$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"} );
+	
+	$self->{"NCLayerComp"} = NCLayerComp->new( $inCAM, $self->{"jobId"} );
 
 	$self->{"init"} = 1;
 

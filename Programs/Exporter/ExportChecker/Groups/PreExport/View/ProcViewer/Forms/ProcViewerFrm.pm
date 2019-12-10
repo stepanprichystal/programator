@@ -138,8 +138,8 @@ sub AddCategoryTitle {
 	my $groupClPolarTxt = Wx::StaticText->new( $groupClmnsPnl, -1, "Polar",,        [ -1, -1 ], [ 40, -1 ] );
 	my $groupClMirrTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "Mirror",,       [ -1, -1 ], [ 40, -1 ] );
 	my $groupClCompTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "Comp [µm]",,   [ -1, -1 ], [ 50, -1 ] );
-	my $groupClShrXTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "ShrinkX [%]",,  [ -1, -1 ], [ 50, -1 ] );
-	my $groupClShrYTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "ShrinkY [%]",,  [ -1, -1 ], [ 50, -1 ] );
+	my $groupClShrXTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "StretchX [%]",,  [ -1, -1 ], [ 50, -1 ] );
+	my $groupClShrYTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "StretchY [%]",,  [ -1, -1 ], [ 50, -1 ] );
 	my $technoClTxt     = Wx::StaticText->new( $groupClmnsPnl, -1, "Technology",,   [ -1, -1 ], [ 80, -1 ] );
 	my $technoDrillTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "Plt NC",,       [ -1, -1 ], [ 70, -1 ] );
 

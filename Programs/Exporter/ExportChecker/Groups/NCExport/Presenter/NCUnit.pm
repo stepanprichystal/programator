@@ -85,8 +85,9 @@ sub RefreshGUI {
 
 	#refresh group form
 	$self->{"form"}->SetExportSingle( $groupData->GetExportSingle() );
-	$self->{"form"}->SetPltLayers( $groupData->GetPltLayers() );
-	$self->{"form"}->SetNPltLayers( $groupData->GetNPltLayers() );
+	$self->{"form"}->SetAllModeLayers( $groupData->GetAllModeLayers() );
+	$self->{"form"}->SetSingleModePltLayers( $groupData->GetSingleModePltLayers() );
+	$self->{"form"}->SetSingleModeNPltLayers( $groupData->GetSingleModeNPltLayers() );
 	
 
 }
@@ -105,8 +106,9 @@ sub GetGroupData {
 	if ($frm) {
 		$groupData = $self->{"dataMngr"}->GetGroupData();
 		$groupData->SetExportSingle( $frm->GetExportSingle() );
-		$groupData->SetPltLayers( $frm->GetPltLayers() );
-		$groupData->SetNPltLayers( $frm->GetNPltLayers() );
+		$groupData->SetAllModeLayers( $frm->GetAllModeLayers() );
+		$groupData->SetSingleModePltLayers( $frm->GetSingleModePltLayers() );
+		$groupData->SetSingleModeNPltLayers( $frm->GetSingleModeNPltLayers() );
 		
 	}
 	else {

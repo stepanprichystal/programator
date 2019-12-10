@@ -42,8 +42,8 @@ sub OnExportGroupData {
 	my $exportData = NCData->new();
  
 	$exportData->SetExportSingle( $groupData->GetExportSingle() );
-	$exportData->SetPltLayers( $groupData->GetPltLayers() );
-	$exportData->SetNPltLayers( $groupData->GetNPltLayers() );
+	$exportData->SetSingleModePltLayers( $groupData->GetSingleModePltLayers() );
+	$exportData->SetSingleModeNPltLayers( $groupData->GetSingleModeNPltLayers() );
 	 
 	return $exportData;
 

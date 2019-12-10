@@ -69,8 +69,8 @@ sub OnCheckGroupData {
 	my $stepName  = "panel";
 
 	my $exportSingle = $groupData->GetExportSingle();
-	my $pltLayers    = $groupData->GetPltLayers();
-	my $npltLayers   = $groupData->GetNPltLayers();
+	my $pltLayers    = $groupData->GetSingleModePltLayers();
+	my $npltLayers   = $groupData->GetSingleModeNPltLayers();
 
 	# 1) Check inf export single and no layers selected
 	if ($exportSingle) {

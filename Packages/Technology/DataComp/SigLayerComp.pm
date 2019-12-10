@@ -13,7 +13,10 @@ use List::Util qw(first);
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Technology::DataComp::PanelComp::PanelComp';
 use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Helpers::JobHelper';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,66 +49,63 @@ sub GetLayerCompensation {
 	my $self     = shift;
 	my $sigLayer = shift;
 
+	my %comp = ( "x" => undef, "y" => undef );
+
 	if ( $self->{"layerCnt"} > 2 ) {
-		$self->__GetCompensationVV($sigLayer);
+		%comp = $self->__GetCompensationVV($sigLayer);
 
 	}
 	else {
 
-		$self->__GetCompensation2V($sigLayer);
+		%comp = $self->__GetCompensation2V($sigLayer);
 	}
 
+	$comp{"x"} = sprintf( "%.3f", $comp{"x"} );
+	$comp{"y"} = sprintf( "%.3f", $comp{"y"} );
+
+	return %comp;
 }
 
 sub __GetCompensation2V {
-	my $self    = shift;
+	my $self     = shift;
 	my $sigLayer = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my %comp = $self->{"panelComp"}->GetBaseMatComp();
+
+	return %comp;
 }
 
 sub __GetCompensationVV {
-	my $self    = shift;
-	my $NCLInfo = shift;
+	my $self     = shift;
+	my $sigLayer = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	my %comp = ( "x" => undef, "y" => undef );
+
 	my $coreNum     = undef;
 	my $coreMatKind = undef;
 
-	my %comp = ( "x" => undef, "y" => undef );
+	my %lPars = JobHelper->ParseSignalLayerName($sigLayer);
+	my $product = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
 
-	if ( $NCLInfo{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill ) {
+	if ( $product->GetProductType() eq StackEnums->Product_INPUT && !$product->GetIsParent() ) {
 
-		$coreNum =~ (/^v(\d+)$/)[0];
-		$coreMatKind = $self->{"stackupNC"}->GetCore($coreNum)->GetTextType();
-
-		%comp = $self->{"panelComp"}->GetCoreMatComp( $coreNum, $coreMatKind );
-
-	}
-	elsif ( $NCLInfo{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $NCLInfo{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill ) {
-
-		my @coreProducts = $self->{"stackupNC"}->GetNCCoreProduct();
-		my $NCCore = first { $_->ExistNCLayers( undef, undef, $NCLInfo{"type"}, 1 ) } @coreProducts;
-
-		my $c = ( map { $_->GetData() } grep { $_->GetData()->GetType() eq Enums->MaterialType_CORE } $NCCore->GetIProduct()->GetLayers() )[0];
+		my $c = ( map { $_->GetData() } grep { $_->GetData()->GetType() eq StackEnums->MaterialType_CORE } $product->GetLayers() )[0];
 
 		$coreNum     = $c->GetCoreNumber();
 		$coreMatKind = $c->GetTextType();
-
-		%comp = $self->{"panelComp"}->GetCoreMatComp( $coreNum, $coreMatKind );
+		%comp        = $self->{"panelComp"}->GetCoreMatComp( $coreNum, $coreMatKind );
 
 	}
 	else {
-
 		%comp = ( "x" => 0, "y" => 0 );
 	}
-
-	return \%comp;
+	return %comp;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -115,10 +115,26 @@ sub __GetCompensationVV {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Technology::DataComp::MatStability';
+	use aliased 'Packages::Technology::DataComp::SigLayerComp';
 
-	my $t = MatStability->new("PYRALUX");
-	die $t;
+	use aliased 'Packages::Export::PreExport::FakeLayers';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId    = "d222773";
+	my $stepName = "panel";
+
+	FakeLayers->CreateFakeLayers( $inCAM, $jobId, undef, 1 );
+
+	my $lc = SigLayerComp->new( $inCAM, $jobId );
+
+	my %comp1 = $lc->GetLayerCompensation("v2");
+
+	print "Comp j1 X:" . $comp1{"x"} . "; Y:" . $comp1{"y"} . "\n";
+
+	my %comp2 = $lc->GetLayerCompensation("v4");
+	print "Comp j2 X:" . $comp2{"x"} . "; Y:" . $comp2{"y"};
 
 }
 
