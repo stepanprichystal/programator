@@ -190,7 +190,7 @@ sub Build {
 	if ( $self->_IsRequire("tenting") ) {
 
 		my $val = "N";
-	 	
+
 		if ( $nifData{"tenting"} == 1 ) {
 			$val = "A";
 		}
@@ -238,26 +238,26 @@ sub Build {
 		$section->AddRow( "film_konektoru", $self->__GetGoldFilmTyp() );
 	}
 
+	# technologie
+	if ( $self->_IsRequire("technologie") ) {
+
+		my $technology = undef;
+
+		$technology = "G" if ( $nifData{"technology"} eq EnumsGeneral->Technology_GALVANICS );
+		$technology = "M" if ( $nifData{"technology"} eq EnumsGeneral->Technology_RESIST );
+		$technology = "J" if ( $nifData{"technology"} eq EnumsGeneral->Technology_OTHER );
+		$technology = "S" if ( $nifData{"technology"} eq EnumsGeneral->Technology_SCREENPRINT );
+
+		$section->AddRow( "technologie", $technology );
+	}
+
 	#prokoveni
 	if ( $self->_IsRequire("prokoveni") ) {
 
 		my $prokoveni = "N";
 		$prokoveni = "A" if ( $nifData{"technology"} eq EnumsGeneral->Technology_GALVANICS );
-		
-		$section->AddRow( "prokoveni", $prokoveni );
-	}
 
-	# technologie
-	if ( $self->_IsRequire("technologie") ) {
-	
-#		my $technology = undef;
-#		
-#		$technology = "G" if ( $nifData{"technology"} eq EnumsGeneral->Technology_GALVANICS );
-#		$technology = "M" if ( $nifData{"technology"} eq EnumsGeneral->Technology_RESIST );
-#		$technology = "J" if ( $nifData{"technology"} eq EnumsGeneral->Technology_OTHER );
-#		$technology = "S" if ( $nifData{"technology"} eq EnumsGeneral->Technology_SCREENPRINT );
-#	
-#		$section->AddRow( "technologie", $technology );
+		$section->AddRow( "prokoveni", $prokoveni );
 	}
 
 	#typ_dps

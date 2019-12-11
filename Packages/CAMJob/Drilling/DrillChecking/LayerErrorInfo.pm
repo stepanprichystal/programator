@@ -60,7 +60,15 @@ sub CheckNCLayers {
 	CamDrilling->AddNCLayerType( \@layers );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
 
-	# Add histogram and uni DTM
+	# 1) Check if layer names are set correctly, if no don't no continue in other checks
+
+	unless ( $self->CheckWrongNames( \@layers, $mess ) ) {
+
+		$result = 0;
+		return $result;
+	}
+
+	# Add histogram and uni DTM which is needet to advanced checking
 
 	foreach my $l (@layers) {
 
@@ -87,73 +95,64 @@ sub CheckNCLayers {
 
 	}
 
-	# 1) Check if tool parameters are set correctly
+	# 2) Check if tool parameters are set correctly,if not don't continue in other checks
 	unless ( $self->CheckToolParameters( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
 		$result = 0;
-
+		return $result;
 	}
-	else {
 
-		# 1) Check if some layer has wronng name
+	# 3) Check if layer is not empty
 
-		unless ( $self->CheckWrongNames( \@layers, $mess ) ) {
+	unless ( $self->CheckIsNotEmpty( \@layers, $stepName, $mess ) ) {
 
-			$result = 0;
-		}
+		$result = 0;
+	}
 
-		# 2) Check if layer is not empty
+	# 4) Check if layer not contain attribute nomenclature
 
-		unless ( $self->CheckIsNotEmpty( \@layers, $stepName, $mess ) ) {
+	unless ( $self->CheckAttributes( \@layers, $mess ) ) {
 
-			$result = 0;
-		}
+		$result = 0;
+	}
 
-		# 3) Check if layer not contain attribute nomenclature
+	# 5) Check if drill layers not contain invalid symbols..
 
-		unless ( $self->CheckAttributes( \@layers, $mess ) ) {
+	unless ( $self->CheckInvalidSymbols( \@layers, $mess ) ) {
 
-			$result = 0;
-		}
+		$result = 0;
+	}
 
-		# 4) Check if drill layers not contain invalid symbols..
+	# 6) Check if layer has to set right direction
 
-		unless ( $self->CheckInvalidSymbols( \@layers, $mess ) ) {
+	unless ( $self->CheckDirTop2Bot( $inCAM, $jobId, \@layers, $mess ) ) {
 
-			$result = 0;
-		}
+		$result = 0;
+	}
 
-		# 4) Check if layer has to set right direction
+	# 7) Check if layer has to set right direction
 
-		unless ( $self->CheckDirTop2Bot( $inCAM, $jobId, \@layers, $mess ) ) {
+	unless ( $self->CheckDirBot2Top( $inCAM, $jobId, \@layers, $mess ) ) {
 
-			$result = 0;
-		}
+		$result = 0;
+	}
 
-		# 5) Check if layer has to set right direction
+	# 8) Check if depth is correctly set
+	unless ( $self->CheckContainDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
-		unless ( $self->CheckDirBot2Top( $inCAM, $jobId, \@layers, $mess ) ) {
+		$result = 0;
+	}
 
-			$result = 0;
-		}
+	# 9) Check if depth is not set
+	unless ( $self->CheckContainNoDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
-		# 7) Check if depth is correctly set
-		unless ( $self->CheckContainDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
+		$result = 0;
+	}
 
-			$result = 0;
-		}
+	# 10) Checkdifference between drill and finish diameter
+	unless ( $self->CheckDiamterDiff( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
-		# 8) Check if depth is not set
-		unless ( $self->CheckContainNoDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
-
-			$result = 0;
-		}
-
-		# 10) Checkdifference between drill and finish diameter
-		unless ( $self->CheckDiamterDiff( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
-
-			$result = 0;
-		}
+		$result = 0;
 	}
 
 	return $result;
