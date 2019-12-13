@@ -10,6 +10,7 @@ use base ('Packages::TifFile::TifFile::TifFile');
 use strict;
 use warnings;
 use Data::Dumper;
+use List::Util qw(first);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -49,7 +50,6 @@ sub SetToolInfos {
 
 	$self->_Save();
 }
-
 
 # Set setting for each layer contain keys:
 # - name
@@ -164,7 +164,16 @@ sub GetNCLayerSett {
 	my $self  = shift;
 	my $lName = shift;
 
-	return @{ $self->{"tifData"}->{ $self->{"key"} }->{"LayerSett"} }->{$lName};
+	my $sett = undef;
+
+	if ( defined $self->{"tifData"}->{ $self->{"key"} }->{"LayerSett"} ) {
+
+		my @layers = @{ $self->{"tifData"}->{ $self->{"key"} }->{"LayerSett"} };
+
+		$sett = first { $_->{"name"} eq $lName } @layers;
+	}
+
+	return $sett;
 }
 
 #-------------------------------------------------------------------------------------------#

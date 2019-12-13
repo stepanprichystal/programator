@@ -76,13 +76,12 @@ sub InitForm {
 	$self->{"groupWrapper"} = $groupWrapper;
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	$self->{"form"} = PreUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo());
-	
+	$self->{"form"} = PreUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo() );
+
 	# init base class with event class
-	$self->{"eventClass"} = PreUnitFormEvt->new($self->{"form"});
+	$self->{"eventClass"} = PreUnitFormEvt->new( $self->{"form"} );
 
 	$self->_SetHandlers();
- 
 
 }
 
@@ -94,12 +93,9 @@ sub RefreshGUI {
 	#refresh group form
 	$self->{"form"}->SetSignalLayers( $groupData->GetSignalLayers() );
 	$self->{"form"}->SetOtherLayers( $groupData->GetOtherLayers() );
- 	#$self->{"form"}->SetTechnologyCS( $groupData->GetTechnologyCS() );
- 	#$self->{"form"}->SetTentingCS( $groupData->GetTentingCS() );
-	
- 
-}
+	$self->{"form"}->SetNCLayersSett( $groupData->GetNCLayersSett() );
 
+}
 
 sub GetGroupData {
 
@@ -113,14 +109,13 @@ sub GetGroupData {
 	#else return default group data, not processed by form
 
 	if ($frm) {
-		
+
 		$groupData = $self->{"dataMngr"}->GetGroupData();
-		
+
 		$groupData->SetSignalLayers( $frm->GetSignalLayers() );
 		$groupData->SetOtherLayers( $frm->GetOtherLayers() );
-		#$groupData->SetTechnologyCS( $frm->GetTechnologyCS() );	 
-		#$groupData->SetTentingCS( $frm->GetTentingCS() );
- 
+		$groupData->SetNCLayersSett( $frm->GetNCLayersSett() );
+
 	}
 	else {
 

@@ -14,7 +14,7 @@ use warnings;
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
-
+use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
@@ -75,7 +75,8 @@ sub __GetNCLayersSett {
 	my $self        = shift;
 	my $defaultInfo = shift;
 
-	my @NCLayers = $defaultInfo->GetNCLayers();
+	my @NCLayers = grep {$_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
+	
 
 	my @prepared = ();
 	foreach my $l (@NCLayers) {

@@ -464,17 +464,17 @@ sub GetDrilledNumber {
 	my $machine    = shift;
 	my @scanMarks  = @{ shift(@_) };
 	my %nullPoint  = %{ shift(@_) };
-	my $cuThickReq = shift // 1;
+	my $cuThick = shift;
+	my $coreNumber = shift;
  
 	die "No drilled number position defined" if(!defined $position);
+	die "No machine defined" if(!defined $machine);
 
+	# Add job id
 	my $numberStr = $jobId;
-
-	my $cuThick = JobHelper->GetBaseCuThick( $jobId, "c" );
-
-	print STDERR "\n\n ========== CT TUHICK $cuThick \n\n";
-
-	if ( $cuThickReq && defined $cuThick ) {
+ 
+ 	# Add Cu thickness
+	if (  defined $cuThick ) {
 
 		if ( $cuThick == 0 ) {
 			$numberStr .= "--";
@@ -499,6 +499,14 @@ sub GetDrilledNumber {
 		$numberStr .= " ";
 	}
 
+	# Add machine letter
+	$machine =~ m/machine_(\w)/;
+	$numberStr .= uc($1);
+	
+	# Add core number
+	$numberStr .= " J$coreNumber" if(defined $coreNumber);
+	
+
 	my $scanMark = "";
 
 	# select
@@ -514,10 +522,9 @@ sub GetDrilledNumber {
 		die "Wrong drilled number position: $position";
 	}
 
-	$numberStr = $self->GetScanMark( \@scanMarks, \%nullPoint, $scanMark ) . "M97," . $numberStr;
+	$numberStr = $self->GetScanMark( \@scanMarks, \%nullPoint, $scanMark ) . "M97," . $numberStr."\n";
 
-	$machine =~ m/machine_(\w)/;
-	$numberStr .= uc($1) . "\n";
+
 
 	return $numberStr;
 }

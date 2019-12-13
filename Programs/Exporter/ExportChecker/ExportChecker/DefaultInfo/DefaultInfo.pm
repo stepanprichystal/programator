@@ -83,7 +83,7 @@ sub new {
 	$self->{"pcbClassInner"}   = undef;    # pcb class of inner layer
 	$self->{"pcbIsFlex"}       = undef;    # pcb is flex
 	$self->{"sigLayerComp"}    = undef;    # calculating signal layer compensation
-	$self->{"NCLayerComp"}    = undef;    # calculating signal layer compensation
+	$self->{"NCLayerComp"}     = undef;    # calculating signal layer compensation
 
 	return $self;
 }
@@ -475,28 +475,25 @@ sub GetNonSignalLSett {
 	return %lSett;
 }
 
-
 # Set stretch X and Y for NC layers
 sub GetNCLSett {
 	my $self = shift;
 	my $l    = shift;
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
- 
+
 	my %lSett = ( "name" => $l->{"gROWname"} );
- 
+
 	my %matComp = $self->{"NCLayerComp"}->GetLayerCompensation( $l->{"gROWname"} );
 	$lSett{"stretchX"} = $matComp{"x"};
 	$lSett{"stretchY"} = $matComp{"y"};
- 
 
 	die "Layer name is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"name"} );
-	die "Stretch X is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"stretchX"} );
-	die "Stretch Y is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"stretchY"} );
+	die "Stretch X is not defined for layer:" . $l->{"gROWname"}  if ( !defined $lSett{"stretchX"} );
+	die "Stretch Y is not defined for layer:" . $l->{"gROWname"}  if ( !defined $lSett{"stretchY"} );
 
 	return %lSett;
 }
-
 
 sub GetStackup {
 	my $self = shift;
@@ -816,6 +813,7 @@ sub __Init {
 
 	my @NCLayers = CamJob->GetNCLayers( $inCAM, $self->{"jobId"} );
 	CamDrilling->AddNCLayerType( \@NCLayers );
+	CamDrilling->AddLayerStartStop( $inCAM, $self->{"jobId"}, \@NCLayers );
 	$self->{"NCLayers"} = \@NCLayers;
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $inCAM, $self->{"jobId"} );
@@ -874,7 +872,7 @@ sub __Init {
 	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
 
 	$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"} );
-	
+
 	$self->{"NCLayerComp"} = NCLayerComp->new( $inCAM, $self->{"jobId"} );
 
 	$self->{"init"} = 1;

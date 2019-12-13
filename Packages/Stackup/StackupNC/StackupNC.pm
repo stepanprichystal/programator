@@ -80,7 +80,13 @@ sub GetNCCoreProduct {
 
 	return $core;
 }
- 
+
+# Return all StackupNCproduct which have source Input product product
+sub GetNCCoreProducts {
+	my $self       = shift;
+	return @{ $self->{"NCCores"} };
+}
+
 
 sub GetNCProductByLayer{
 	my $self       = shift;

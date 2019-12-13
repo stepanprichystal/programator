@@ -13,6 +13,7 @@ use warnings;
 use File::Copy;
 use DateTime;
 use List::MoreUtils qw(uniq);
+use List::Util qw(first);
 
 #local library
 use aliased 'CamHelpers::CamLayer';
@@ -173,7 +174,7 @@ sub OnCheckGroupData {
 	# 7) Check if dps should be pattern, if tenting is realz unchecked
 	if ( $layerCnt >= 2 ) {
 		my $defEtch = $defaultInfo->GetDefaultEtchType("c");
-		my $formEtch = ( grep { $_->{"name"} eq "c" } @{$groupData->GetSignalLayers()} )[0]->{"etchingType"};
+		my $formEtch = ( grep { $_->{"name"} eq "c" } @{ $groupData->GetSignalLayers() } )[0]->{"etchingType"};
 
 		if ( $defEtch eq EnumsGeneral->Etching_PATTERN && $defEtch ne $formEtch ) {
 
@@ -628,6 +629,87 @@ sub OnCheckGroupData {
 			$dataMngr->_AddErrorResult( "Plg(c;s) vrstvy",
 										"V IS je požadavek na zaplněné otovry, ale nejsou připravené \"plgc\" a \"plgs\" vrstvy." );
 		}
+	}
+
+	# 23) Check scaling settings if match scale of signal layer and NC layers
+
+	my @NCLayers = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
+	my @sigLayerSett = @{ $groupData->GetSignalLayers() };
+
+	foreach my $NCLScale ( @{ $groupData->GetNCLayersSett() } ) {
+
+		if ( $NCLScale->{"stretchX"} != 0 || $NCLScale->{"stretchY"} != 0 ) {
+
+			my $NClInfo = first { $_->{"gROWname"} eq $NCLScale->{"name"} } @NCLayers;
+
+			my $SCuScale = first { $_->{"name"} eq $NClInfo->{"NCSigStart"} } @sigLayerSett;
+			my $ECuScale = first { $_->{"name"} eq $NClInfo->{"NCSigEnd"} } @sigLayerSett;
+
+			# Top and Bot Cu stretch must be equal
+			if ( $SCuScale->{"stretchX"} != $ECuScale->{"stretchX"} || $SCuScale->{"stretchY"} != $ECuScale->{"stretchY"} ) {
+
+				$dataMngr->_AddErrorResult(
+											"Stretch settings signal layers",
+											"Signálové vrstvy:"
+											  . $SCuScale->{"name"}
+											  . " (stretchX="
+											  . $SCuScale->{"stretchX"}
+											  . "; stretchY="
+											  . $SCuScale->{"stretchY"} . ") a "
+											  . $ECuScale->{"name"}
+											  . " (stretchX="
+											  . $ECuScale->{"stretchX"}
+											  . "; stretchY="
+											  . $ECuScale->{"stretchY"}
+											  . ") nemají stejné parametry roztažení motivu."
+				);
+
+			}
+
+			# Top  Cu stretch must be equal to NC layer stretch
+			if ( $SCuScale->{"stretchX"} != $NCLScale->{"stretchX"} || $SCuScale->{"stretchY"} != $NCLScale->{"stretchY"} ) {
+
+				$dataMngr->_AddErrorResult(
+											"Stretch settings signal/NC layers",
+											"Signálová vrstva:"
+											  . $SCuScale->{"name"}
+											  . " (stretchX="
+											  . $SCuScale->{"stretchX"}
+											  . "; stretchY="
+											  . $SCuScale->{"stretchY"}
+											  . ") a NC vrstva:"
+											  . $NCLScale->{"name"}
+											  . " (stretchX="
+											  . $NCLScale->{"stretchX"}
+											  . "; stretchY="
+											  . $NCLScale->{"stretchY"}
+											  . ") nemají stejné parametry roztažení motivu."
+				);
+			}
+
+			# Top  Cu stretch must be equal to NC layer stretch
+			if ( $ECuScale->{"stretchX"} != $NCLScale->{"stretchX"} || $ECuScale->{"stretchY"} != $NCLScale->{"stretchY"} ) {
+
+				$dataMngr->_AddErrorResult(
+											"Stretch settings signal/NC layers",
+											"Signálová vrstva:"
+											  . $ECuScale->{"name"}
+											  . " (stretchX="
+											  . $ECuScale->{"stretchX"}
+											  . "; stretchY="
+											  . $ECuScale->{"stretchY"}
+											  . ") a NC vrstva:"
+											  . $NCLScale->{"name"}
+											  . " (stretchX="
+											  . $NCLScale->{"stretchX"}
+											  . "; stretchY="
+											  . $NCLScale->{"stretchY"}
+											  . ") nemají stejné parametry roztažení motivu."
+				);
+			}
+
+		}
+
 	}
 }
 

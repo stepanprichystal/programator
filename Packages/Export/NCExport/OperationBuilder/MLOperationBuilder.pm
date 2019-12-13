@@ -393,7 +393,6 @@ sub __DefinePlatedOperations {
 	# - @plt_fcDrill
 
 	# Find cores, which has not blind or core drilling
-	my $noNCExist = 0;    # tell if  exist core, where is no plated NCoperation
 	for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
 
 		my $coreNum = $i + 1;
@@ -401,17 +400,17 @@ sub __DefinePlatedOperations {
 
 		# start/stop plated NC layers in core
 		my @ncLayers = ();
-		if ( $coreNC->ExistNCLayers( undef, undef, undef, 1 ) ) {
+		if (!$coreNC->ExistNCLayers( undef, undef, undef, 1 ) ) {
 
 			# Get core frame drilling for this specific core
 			my $vCore = first { $_->{"gROWname"} eq "v1j$coreNum" } @plt_fcDrill;
 
-			$opManager->AddOperationDef( "v$coreNum", [$vCore], $stackup->GetPressCount() );
+			$opManager->AddOperationDef( "v$coreNum", [$vCore], $stackup->GetPressCount() ) if(defined $vCore);
 		}
 	}
 
-	# If no specific core frame drilling, export universal v1
-	unless ( scalar( grep { $_->{"gROWname"} =~ /v1j\d+"/ } @plt_fcDrill ) ) {
+	# If no specific core frame drilling, and no core drilling export universal v1
+	if ( !scalar( grep { $_->{"gROWname"} =~ /v1j\d+/ } @plt_fcDrill ) && !scalar(@plt_cDrill) ) {
 
 		my $v1 = first { $_->{"gROWname"} eq "v1" } @plt_fcDrill;
 

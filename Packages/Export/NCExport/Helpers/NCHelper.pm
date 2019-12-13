@@ -381,6 +381,24 @@ sub ChangeDrilledNumber {
 	}
 }
 
+
+sub RemoveDrilledNumber {
+	my $self        = shift;
+	my $file        = shift;
+
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) ; $i++ ) {
+
+		my $l = @{ $file->{"body"} }[$i];
+
+		if ( $l->{"line"} =~ m/(m97,[a-f][\d]+)([\/\-\:\+]{0,2})(\D*)/i ) {
+  
+			splice @{ $file->{"body"} }, $i, 1;
+
+			last;
+		}
+	}
+}
+
 sub UpdateNCInfo {
 	my $self      = shift;
 	my $jobId     = shift;
@@ -462,7 +480,6 @@ sub __BuildNcInfo {
 	return $str;
 }
 
-
 sub StoreOperationInfoTif {
 	my $self          = shift;
 	my $inCAM         = shift;
@@ -521,13 +538,18 @@ sub StoreOperationInfoTif {
 		$opInf{"isRout"} = $isRout;
 
 		my $matThick;
-		if ( $layerCnt <= 2 ) {
-
-			$matThick = HegMethods->GetPcbMaterialThick($jobId);
+		if ( $layers[0]->{"gROWdrl_start"} =~ /(coverlay)|(bend)/ ) {
+			$matThick = 0;
 		}
 		else {
-			my $stackup = Stackup->new( $inCAM, $jobId );
-			$matThick = $stackup->GetThickByCuLayer( $layers[0]->{"NCSigStart"} ) / 1000;
+			if ( $layerCnt <= 2 ) {
+
+				$matThick = HegMethods->GetPcbMaterialThick($jobId);
+			}
+			else {
+				my $stackup = Stackup->new( $inCAM, $jobId );
+				$matThick = $stackup->GetThickByCuLayer( $layers[0]->{"NCSigStart"} ) / 1000;
+			}
 		}
 
 		# Set material thickness during operation
@@ -602,7 +624,7 @@ sub StoreNClayerSettTif {
 
 	my $tif = TifNCOperations->new($jobId);
 
-	$tif->SetNCLayerSett($layerSett)
+	$tif->SetNCLayerSett($layerSett);
 }
 
 #-------------------------------------------------------------------------------------------#

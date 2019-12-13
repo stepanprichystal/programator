@@ -33,6 +33,7 @@ use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
 use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::Export::PreExport::FakeLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -56,6 +57,8 @@ sub new {
 
 sub Run {
 	my $self = shift;
+
+	FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# move nptp hole from f and fsch to layer "d"
 	# "d" is standard NC layer, but so far we work with merged chains and holes in one layer
@@ -81,6 +84,9 @@ sub Run {
 	if ( !$self->{"exportSingle"} ) {
 		NpltDrillHelper->RestoreNpltDrill( $self->{"inCAM"}, $self->{"jobId"}, $cnt );
 	}
+
+	#  Remove fake layers after export
+	FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 	die $err if ($err);
 
@@ -202,11 +208,11 @@ sub __Run {
 		# Add information about nc operations (time consuming operation, this is reason why store to tif for later useage)
 		NCHelper->StoreOperationInfoTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"operationMngr"} )
 		  if ( !$self->{"exportSingle"} );
-		
+
 		# Add output settings info for nc layers
 		NCHelper->StoreNClayerSettTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"allModeLayers"} )
 		  if ( !$self->{"exportSingle"} );
-		  
+
 		# 4) Export physical nc files
 		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
 

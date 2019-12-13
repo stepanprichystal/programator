@@ -13,6 +13,7 @@ use Class::Interface;
 use strict;
 use warnings;
 use Wx;
+use List::Util qw(first);
 
 #local library
 use Widgets::Style;
@@ -47,7 +48,9 @@ sub new {
 
 	$self->__SetLayout();
 
-	#$self->Disable();
+	# PROPERTIES
+	# values passed other group
+	$self->{"NCLayerSett"} = [];
 
 	# EVENTS
 
@@ -227,6 +230,17 @@ sub DisableControls {
 # HANDLERS - HANDLE EVENTS ANOTHER GROUPS
 # =====================================================================
 
+sub OnNCGroupLayerScaleChanged {
+	my $self   = shift;
+	my $layerSett = shift;
+
+	my $l = first {$_->{"name"} eq $layerSett->{"name"} } @{$self->{"NCLayerSett"}}; 
+
+	# Update settings
+	$l->{"stretchX"} = $layerSett->{"stretchX"};
+	$l->{"stretchY"} = $layerSett->{"stretchY"};
+}
+
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
@@ -264,6 +278,18 @@ sub GetOtherLayers {
 	my @layers = $self->{"otherLayerList"}->GetLayerValues();
 
 	return \@layers;
+}
+
+sub SetNCLayersSett {
+	my $self = shift;
+	
+	$self->{"NCLayerSett"} = shift;
+}
+
+sub GetNCLayersSett {
+	my $self = shift;
+	
+	return $self->{"NCLayerSett"};
 }
 
 1;

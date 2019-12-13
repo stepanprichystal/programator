@@ -54,45 +54,40 @@ sub OnPrepareGroupData {
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
-
-	# Prepare technology CS
-	
-	
-	# Prepare tenting CS
-
-
 	# Prepare signal layer for settings
- 
-	my @sigLayers = $self->__GetSignalLayersSett( $defaultInfo );
+
+	my @sigLayers = $self->__GetSignalLayersSett($defaultInfo);
 	$groupData->SetSignalLayers( \@sigLayers );
-	
+
 	# Prepare other layer for settings
-	
-	my @otherLayers = $self->__GetOtherLayersSett( $defaultInfo );
+
+	my @otherLayers = $self->__GetOtherLayersSett($defaultInfo);
 	$groupData->SetOtherLayers( \@otherLayers );
+
+	my @NClayers = $self->__GetNCLayersSett($defaultInfo);
+	$groupData->SetNCLayersSett( \@NClayers );
 
 	return $groupData;
 }
 
 sub __GetSignalLayersSett {
-	my $self   = shift;
+	my $self        = shift;
 	my $defaultInfo = shift;
-	
+
 	my @signalLayers = ();
-	push(@signalLayers, $defaultInfo->GetSignalLayers());
-	push(@signalLayers, $defaultInfo->GetSignalExtLayers());	
+	push( @signalLayers, $defaultInfo->GetSignalLayers() );
+	push( @signalLayers, $defaultInfo->GetSignalExtLayers() );
 
 	# if No copper, remove layer C
-	
-	@signalLayers = () if($defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER);
+
+	@signalLayers = () if ( $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER );
 
 	my @prepared = ();
 
 	foreach my $l (@signalLayers) {
-		 
-		 my %lInfo = $defaultInfo->GetDefSignalLSett($l);
-		 
-	 
+
+		my %lInfo = $defaultInfo->GetDefSignalLSett($l);
+
 		push( @prepared, \%lInfo );
 	}
 
@@ -100,23 +95,38 @@ sub __GetSignalLayersSett {
 }
 
 sub __GetOtherLayersSett {
-	my $self   = shift;
+	my $self        = shift;
 	my $defaultInfo = shift;
-	
+
 	my @otherLayer = $defaultInfo->GetBoardBaseLayers();
 
-	@otherLayer =   grep { 
-	  	 $_->{"gROWlayer_type"} eq "solder_mask" 
-	  || $_->{"gROWlayer_type"} eq "silk_screen" 
-	  || $_->{"gROWname"} =~ /^((gold)|([gl]))[cs]$/ }
+	@otherLayer =
+	  grep { $_->{"gROWlayer_type"} eq "solder_mask" || $_->{"gROWlayer_type"} eq "silk_screen" || $_->{"gROWname"} =~ /^((gold)|([gl]))[cs]$/ }
 	  @otherLayer;
 
 	my @prepared = ();
 
 	foreach my $l (@otherLayer) {
-		 
-		 my %lInfo = $defaultInfo->GetNonSignalLSett($l);
- 
+
+		my %lInfo = $defaultInfo->GetNonSignalLSett($l);
+
+		push( @prepared, \%lInfo );
+	}
+
+	return @prepared;
+}
+
+sub __GetNCLayersSett {
+	my $self        = shift;
+	my $defaultInfo = shift;
+
+	my @NCLayers = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
+
+	my @prepared = ();
+	foreach my $l (@NCLayers) {
+
+		my %lInfo = $defaultInfo->GetNCLSett($l);
+
 		push( @prepared, \%lInfo );
 	}
 

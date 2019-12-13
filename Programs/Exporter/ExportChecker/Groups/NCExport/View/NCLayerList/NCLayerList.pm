@@ -156,6 +156,8 @@ sub __OnlayerSettChangedHndl {
 	my %currLSett = $self->GetLayerValue($lName);
 
 	Diag("NC layer name changed: $lName\n");
+	
+	$self->{"NCLayerSettChangedEvt"}->Do(\%currLSett);
 
 }
 

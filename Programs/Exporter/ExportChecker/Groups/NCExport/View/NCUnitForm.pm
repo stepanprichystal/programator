@@ -27,7 +27,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCH
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCLayerList::NCLayerList';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
-
+use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -64,7 +64,7 @@ sub new {
 	#$self->SetBackgroundColour($Widgets::Style::clrLightBlue);
 
 	# EVENTS
-	#$self->{'onTentingChange'} = Event->new();
+	$self->{'layerScaleSettChangedEvt'} = Event->new();
 
 	return $self;
 }
@@ -214,12 +214,12 @@ sub __SetLayoutAllMode {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'All mode settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
-	my @NC = ( @{ $self->{"plt"} }, @{ $self->{"nplt"} } );
+	my @NC =  ( @{ $self->{"plt"} }, @{ $self->{"nplt"} } );
 	my $NCLayerList = NCLayerList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@NC );
 
 	# SET EVENTS
-	#$NCLayerList->{"NCLayerSettChangedEvt"}->Add( sub { $self->{"NCLayerSettChangedEvt"}->Do(@_) } );
-
+	$NCLayerList->{"NCLayerSettChangedEvt"}->Add( sub { $self->{"layerScaleSettChangedEvt"}->Do(@_) } );
+ 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
@@ -314,9 +314,9 @@ sub GetExportSingle {
 sub GetAllModeLayers {
 	my $self = shift;
 
-	my $layers = $self->{"NCLayerList"}->GetLayerValues();
+	my @layers = $self->{"NCLayerList"}->GetLayerValues();
 
-	return $layers;
+	return \@layers;
 }
 
 sub SetAllModeLayers {

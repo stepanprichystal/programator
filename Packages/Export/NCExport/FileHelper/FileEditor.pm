@@ -54,6 +54,7 @@ sub EditAfterOpen {
 
 	# ================================================================
 	# 1) EDIT: edit all files, which are generated from V1
+	# Add message
 	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill ) {
 
 		my $m47Mess;
@@ -62,10 +63,20 @@ sub EditAfterOpen {
 
 			$m47Mess = "\n(M47, Vrtani okoli po " . $opItem->GetPressOrder() . ". lisovani.)";
 		}
-		elsif ( $opItem->{"name"} =~ /v1/ || $opItem->{"name"} =~ /j([0-9]+)/ ) {
+		elsif ( $layer->{"gROWname"} eq "v1" && ( $opItem->{"name"} =~ m/v1/ || $opItem->{"name"} =~ m/^j[0-9]+$/ ) ) {
 
-			# Add message to file
+			# Add message to file (one single program with drilling frame for all cores)
 			$m47Mess = "\n(M47, Vrtani okoli jadra.)";
+
+			# Delete "focus header", because it is not needed. (first drilling to empty laminate)
+			@{ $parseFile->{"header"} } = ("%%3000\n");
+		}
+		elsif ( $layer->{"gROWname"} =~ /^v1j([0-9]+)/ && ( $opItem->{"name"} =~ m/v\d+/ || $opItem->{"name"} =~ m/^j[0-9]+$/ ) ) {
+
+			my $coreNum = ( $opItem->{"name"} =~ m/[vj](\d+)/)[0];
+ 
+			# Add message to file (special program with drilling frame for specific core)
+			$m47Mess = "\n(M47, Vrtani okoli jadra J$coreNum.)";
 
 			# Delete "focus header", because it is not needed. (first drilling to empty laminate)
 			@{ $parseFile->{"header"} } = ("%%3000\n");
@@ -98,10 +109,10 @@ sub EditAfterOpen {
 	# - J<number of core> if opItem is core
 	if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill && $self->{"layerCnt"} > 2 ) {
 
-		my $stackup = Stackup->new($self->{"inCAM"},  $self->{"jobId"} );
+		my $stackup = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 		# case of blind drill (not last pressing) or burried (core drilling) or only frame drill (v1)
-		if ( $opItem->{"name"} =~ /c[0-9]+/ || $opItem->{"name"} =~ /v1/ || $opItem->{"name"} =~ /j[0-9]+/ ) {
+		if ( $layer->{"gROWname"} eq "v1" && ( $opItem->{"name"} =~ /^c[0-9]+$/ || $opItem->{"name"} =~ /^j[0-9]+$/ ) ) {
 
 			my $cuThickMark = "";
 			my $coreMark    = "";
@@ -109,49 +120,31 @@ sub EditAfterOpen {
 
 			my %pressInfo = $stackup->GetPressProducts();
 
-			# case of blind drill (not last pressing) or burried (core drilling)
+			# Case drilling after pressing
+			# Keep drilled number only if exist more than one pressing and it is frist pressing
 			if ( $opItem->{"name"} =~ /c[0-9]+/ ) {
 
-				if ( $opItem->GetPressOrder() != $stackup->GetPressCount() ) {
+				if ( !( $stackup->GetPressCount() > 1 && $opItem->GetPressOrder() == 1 ) ) {
 
-					my $press     = $pressInfo{ $opItem->GetPressOrder() };
-					my $topCuName = $press->GetTopCopperLayer();
-					$cuThick = $stackup->GetCuLayer($topCuName)->GetThick();
+					NCHelper->RemoveDrilledNumber($parseFile);
 				}
-
 			}
 
-			# case of  frame drill (v1)
-			if ( $opItem->{"name"} =~ /v1/ ) {
+			# case  burried (core drilling) add J<number of core> to drilled number
+			# if layer is: v1j\d drilled number is already included
+			if ( $opItem->{"name"} =~ m/^j[0-9]+$/ ) {
 
-				#take first cu on first core
+				my $coreNum = $1;
 
-				my @cores = $stackup->GetAllCores();
-				$cuThick = $cores[0]->GetTopCopperLayer()->GetThick();
+				if ( $coreNum > 0 ) {
 
-			}
-
-			# case  burried (core drilling)
-			if ( $opItem->{"name"} =~ /j[0-9]+/ ) {
-
-				# add J<number of core> if opItem is core behind pcb
-				if ( $opItem->{"name"} =~ m/j([0-9]+)/ ) {
-
-					my $coreNum = $1;
-
-					if ( $coreNum > 0 ) {
-
-						my @cores = $stackup->GetAllCores();
-						$cuThick = $cores[ $coreNum - 1 ]->GetTopCopperLayer()->GetThick();
-
-						$coreMark = "J" . $coreNum;
-
-					}
+					my @cores = $stackup->GetAllCores();
+					$cuThick  = $cores[ $coreNum - 1 ]->GetTopCopperLayer()->GetThick();
+					$coreMark = "J" . $coreNum;
 				}
 			}
 
 			$cuThickMark = Helper->__GetCuThickPanelMark($cuThick);
-
 			NCHelper->ChangeDrilledNumber( $parseFile, $cuThickMark, $coreMark );
 		}
 	}
@@ -220,10 +213,8 @@ sub EditAfterOpen {
 
 						($sigLayer) = $ncStart =~ /^coverlay(.*)/;
 					}
-					elsif (
-							$layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
-							|| $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
-					  )
+					elsif (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+							|| $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill )
 					{
 
 						($sigLayer) = $ncStart =~ /^stiff(.*)/;

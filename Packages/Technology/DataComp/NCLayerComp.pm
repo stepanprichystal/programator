@@ -13,6 +13,7 @@ use List::Util qw(first);
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Technology::DataComp::PanelComp::PanelComp';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
+use aliased 'Packages::Stackup::Enums' => "StackEnums";
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
@@ -80,7 +81,8 @@ sub __GetCompensation2V {
 
 	if (    $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
 		 || $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
-		 || $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill )
+		 || $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill
+		 || $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill )
 	{
 
 		%comp = $self->{"panelComp"}->GetBaseMatComp();
@@ -117,10 +119,10 @@ sub __GetCompensationVV {
 	}
 	elsif ( $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $NCLInfo->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill ) {
 
-		my @coreProducts = $self->{"stackupNC"}->GetNCCoreProduct();
+		my @coreProducts = $self->{"stackupNC"}->GetNCCoreProducts();
 		my $NCCore = first { $_->ExistNCLayers( undef, undef, $NCLInfo->{"type"}, 1 ) } @coreProducts;
 
-		my $c = ( map { $_->GetData() } grep { $_->GetData()->GetType() eq Enums->MaterialType_CORE } $NCCore->GetIProduct()->GetLayers() )[0];
+		my $c = ( map { $_->GetData() } grep { $_->GetData()->GetType() eq StackEnums->MaterialType_CORE } $NCCore->GetIProduct()->GetLayers() )[0];
 
 		$coreNum     = $c->GetCoreNumber();
 		$coreMatKind = $c->GetTextType();
