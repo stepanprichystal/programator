@@ -204,233 +204,233 @@ sub AddNCLayerType {
 		}
 		elsif ( $l->{"gROWname"} =~ /^sc[0-9]+$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bDrillTop;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_bDrillTop;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^ss[0-9]+$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bDrillBot;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_bDrillBot;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^mfill[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_nFillDrill;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_nFillDrill;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^scfill[0-9]+$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bFillDrillTop;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_bFillDrillTop;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^ssfill[0-9]+$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bFillDrillBot;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_bFillDrillBot;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^j[0-9]+$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_cDrill;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_cDrill;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^jfill[0-9]+$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_cFillDrill;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_cFillDrill;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 		}
 		elsif ( $l->{"gROWname"} =~ /^r[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_nMill;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_nMill;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^rzc[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bMillTop;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_bMillTop;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^rzs[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_bMillBot;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_bMillBot;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^v$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fDrill;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_fDrill;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 1;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^v1$/ || $l->{"gROWname"} =~ /^v1j\d+$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_fcDrill;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_fcDrill;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 1;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^dc$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_plt_dcDrill;
-			$l->{"plated"} = 1;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_dcDrill;
+			$l->{"plated"}    = 1;
 			$l->{"technical"} = 1;
 		}
 
 		# Non plated NC layers
 		elsif ( $l->{"gROWname"} =~ /^d[0-9]*$/ || $l->{"gROWname"} =~ /^fsch_d$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nDrill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_nDrill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^f[0-9]*$/ || $l->{"gROWname"} =~ /^f(sch)?(lm)?$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_nMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_nMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fzc[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_bMillTop;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bMillTop;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fzs[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_bMillBot;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bMillBot;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^rs[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_rsMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_rsMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fr[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_frMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_frMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^score$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_score;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_score;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^jfzc[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cbMillTop;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_cbMillTop;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^jfzs[0-9]*$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cbMillBot;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_cbMillBot;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fk$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_kMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_kMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^flc$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_lcMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_lcMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fls$/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_lsMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_lsMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^f_.*/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_fMillSpec;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_fMillSpec;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 		}
 
 		# new for flexi
 		elsif ( $l->{"gROWname"} =~ /^fcoverlayc\d?/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlycMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_cvrlycMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fcoverlays\d?/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_cvrlysMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_cvrlysMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fprepreg[12]/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_prepregMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_prepregMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fstiffc\d?/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_stiffcMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_stiffcMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fstiffs\d?/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_stiffsMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_stiffsMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fsoldc\d?/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_soldcMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_soldcMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
 		elsif ( $l->{"gROWname"} =~ /^fsolds\d?/ ) {
 
-			$l->{"type"}   = EnumsGeneral->LAYERTYPE_nplt_soldsMill;
-			$l->{"plated"} = 0;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_soldsMill;
+			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 		}
 
@@ -767,46 +767,39 @@ sub AddHistogramValues {
 # Return type of via filling in job, based on NC layers
 # If $fillType is not defined, return if at leas one type of viafill exist
 # Values for param $fillType:
-#	EnumsDrill->ViaFill_TOPTHROUGH
-#	EnumsDrill->ViaFill_TOPBLIND
-#	EnumsDrill->ViaFill_BOTBLIND
+#	EnumsDrill->ViaFill_OUTER  - check if any via fill NC layer start from very top or very bot stackup layer
+#	EnumsDrill->ViaFill_INNER- check if any via fill NC layer start from inner layer  of stackup layer
 sub GetViaFillExists {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $fillType = shift // undef;    # EnumsDrill->ViaFill_
 
-	my @ncLayers;
+	my @ncLayers = $self->GetNCLayersByTypes(
+											  $inCAM, $jobId,
+											  [
+												 EnumsGeneral->LAYERTYPE_plt_nFillDrill,    EnumsGeneral->LAYERTYPE_plt_bFillDrillTop,
+												 EnumsGeneral->LAYERTYPE_plt_bFillDrillBot, EnumsGeneral->LAYERTYPE_plt_cFillDrill
+											  ]
+	);
+	
+	$self->AddLayerStartStop($inCAM, $jobId, \@ncLayers);
 
 	if ( defined $fillType ) {
+ 
+		my $sigLayerCnt = CamJob->GetSignalLayerCnt($inCAM, $jobId);
 
-		if ( $fillType eq EnumsDrill->ViaFill_TOPTHROUGH ) {
+		if ( $fillType eq EnumsDrill->ViaFill_OUTER ) {
 
-			@ncLayers = $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_nFillDrill ] );
+			@ncLayers = grep { $_->{"NCSigStartOrder"} == 1 || $_->{"NCSigStartOrder"} ==  $sigLayerCnt} @ncLayers;
 		}
-		elsif ( $fillType eq EnumsDrill->ViaFill_TOPBLIND ) {
+		elsif ( $fillType eq EnumsDrill->ViaFill_INNER ) {
 
-			@ncLayers = $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ] );
-		}
-		elsif ( $fillType eq EnumsDrill->ViaFill_BOTBLIND ) {
-
-			@ncLayers = $self->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ] );
-
+			@ncLayers = grep { $_->{"NCSigStartOrder"} > 1 && $_->{"NCSigStartOrder"} < $sigLayerCnt} @ncLayers;
 		}
 	}
-	else {
-
-		# Check all via fill types
-
-		@ncLayers = $self->GetNCLayersByTypes(
-											   $inCAM, $jobId,
-											   [
-												  EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop,
-												  EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
-											   ]
-		);
-	}
-
+	
+	
 	return scalar(@ncLayers) ? 1 : 0;
 }
 
@@ -890,14 +883,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d152456";
+	my $jobId    = "d264954";
 	my $stepName = "o+1";
 
 	#my $layerName = "fstiffs";
 
-	my @layers = ( CamDrilling->GetPltNCLayers( $inCAM, $jobId ), CamDrilling->GetNPltNCLayers( $inCAM, $jobId ) );
-
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+ 
+	my $res = CamDrilling->GetViaFillExists( $inCAM, $jobId, EnumsDrill->ViaFill_OUTER );
 
 	die;
 

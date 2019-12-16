@@ -33,7 +33,6 @@ use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
 use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
-use aliased 'Packages::Export::PreExport::FakeLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -57,9 +56,6 @@ sub new {
 
 sub Run {
 	my $self = shift;
-
-	FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"} );
-
 	# move nptp hole from f and fsch to layer "d"
 	# "d" is standard NC layer, but so far we work with merged chains and holes in one layer
 	my $cnt = undef;
@@ -84,9 +80,6 @@ sub Run {
 	if ( !$self->{"exportSingle"} ) {
 		NpltDrillHelper->RestoreNpltDrill( $self->{"inCAM"}, $self->{"jobId"}, $cnt );
 	}
-
-	#  Remove fake layers after export
-	FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 	die $err if ($err);
 

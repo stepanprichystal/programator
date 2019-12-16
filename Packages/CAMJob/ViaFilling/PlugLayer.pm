@@ -18,52 +18,157 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'Packages::Stackup::StackupNC::StackupNC';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
 
 # Create via_plug layers based on NC via fill layers
-sub CreateCopperPlugLayers {
+sub CreateCopperPlugLayersAllSteps {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $annularRing = shift // 75;    # annular ring for via plug is 75um
+	my $emptyLayers = shift // 0;     # Create layer without any data
 
-	die "Unable to create plgc; plgs layers. There are no NC via fill layers." unless ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) );
+	die "Step panel doesn't exist" unless ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) );
 
-	my $plgTop = "plgc";
-	my $plgBot = "plgs";
+	die "Unable to create plug layers. There are no NC via fill layers." unless ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) );
 
-	CamMatrix->DeleteLayer( $inCAM, $jobId, $plgTop );
-	CamMatrix->DeleteLayer( $inCAM, $jobId, $plgBot );
+	my @plgLayers = ();
 
-	CamMatrix->CreateLayer( $inCAM, $jobId, $plgTop, "via_plug", "positive", 1, "c", "before" );
+	# 1) Remove all plg layers
+	my @currPlg = grep { $_->{"gROWname"} =~ /^plg[csv]\d*$/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-	my $sExist = CamHelper->LayerExists( $inCAM, $jobId, "s" );
-	CamMatrix->CreateLayer( $inCAM, $jobId, $plgBot, "via_plug", "positive", 1, ( $sExist ? "s" : "" ), "after" );
+	foreach my $plg (@currPlg) {
 
-	foreach my $l ( CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nFillDrill ) ) {
-
-		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-		CamLayer->CopySelOtherLayer( $inCAM, [ $plgTop, $plgBot ], 0, 2 * $annularRing );
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $plg->{"gROWname"} );
 	}
 
-	foreach my $l ( CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ) ) {
+	my @childs = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+	foreach my $step (@childs) {
 
-		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-		CamLayer->CopySelOtherLayer( $inCAM, [$plgTop], 0, 2 * $annularRing );
+		my @l = $self->CreateCopperPlugLayers( $inCAM, $jobId, $step->{"stepName"}, $annularRing, $emptyLayers );
+		push( @plgLayers, @l ) if ( scalar(@l) );
 	}
 
-	foreach my $l ( CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot ) ) {
+	return @plgLayers;
 
-		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
-		CamLayer->CopySelOtherLayer( $inCAM, [$plgBot], 0, 2 * $annularRing );
+}
+
+# Create via_plug layers based on NC via fill layers
+sub CreateCopperPlugLayers {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift;
+	my $annularRing = shift // 75;    # annular ring for via plug is 75um
+	my $emptyLayers = shift // 0;     # Create layer without any data
+
+	die "Unable to create plug layers. There are no NC via fill layers." unless ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) );
+
+	my @plgLayers = ();
+
+	CamHelper->SetStep( $inCAM, $step );
+
+	# 2) Create layer
+	if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) <= 2 ) {
+
+		my @plg = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
+
+		if (@plg) {
+
+			my $topL = "plgc";
+			my $botL = "plgs";
+			if ( !CamHelper->LayerExists( $inCAM, $jobId, $topL ) ) {
+				CamMatrix->CreateLayer( $inCAM, $jobId, $topL, "via_plug", "positive", 1, "c", "before" );
+				push( @plgLayers, $topL );
+			}
+
+			if ( !CamHelper->LayerExists( $inCAM, $jobId, $botL ) ) {
+				CamMatrix->CreateLayer( $inCAM, $jobId, $botL, "via_plug", "positive", 1, "s", "after" );
+				push( @plgLayers, $botL );
+			}
+
+			foreach my $l (@plg) {
+
+				if ( !$emptyLayers ) {
+
+					CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+					CamLayer->CopySelOtherLayer( $inCAM, [ $topL, $botL ], 0, 2 * $annularRing );
+				}
+			}
+		}
+	}
+	else {
+
+		my $stackup = StackupNC->new( $inCAM, $jobId );
+
+		my @NCPrs = grep { $_->GetIProduct->GetPlugging() } ( $stackup->GetNCPressProducts(), $stackup->GetNCInputProducts() );
+
+		foreach my $NCpr (@NCPrs) {
+
+			my $IProduct = $NCpr->GetIProduct();
+
+			my $topL = "plg" . $IProduct->GetTopCopperLayer();
+			my $botL = "plg" . $IProduct->GetBotCopperLayer();
+
+			# Create plgc layers for outer Cu of product
+			if ( !CamHelper->LayerExists( $inCAM, $jobId, $topL ) ) {
+				CamMatrix->CreateLayer( $inCAM, $jobId, $topL, "via_plug", "positive", 1, $IProduct->GetTopCopperLayer(), "before" );
+				push( @plgLayers, $topL );
+			}
+
+			if ( !CamHelper->LayerExists( $inCAM, $jobId, $botL ) ) {
+				CamMatrix->CreateLayer( $inCAM, $jobId, $botL, "via_plug", "positive", 1, $IProduct->GetBotCopperLayer(), "after" );
+				push( @plgLayers, $botL );
+			}
+
+			# a) Filled core drilling
+			my @cFillDrill = $NCpr->GetNCLayers( StackEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cFillDrill, 1 );
+			foreach my $l (@cFillDrill) {
+				if ( !$emptyLayers ) {
+					CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+					CamLayer->CopySelOtherLayer( $inCAM, [ $topL, $botL ], 0, 2 * $annularRing );
+				}
+			}
+
+			# b) Filled blind drill top
+			my @bFillDrillTop = $NCpr->GetNCLayers( StackEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, 1 );
+			foreach my $l (@bFillDrillTop) {
+				if ( !$emptyLayers ) {
+					CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+					CamLayer->CopySelOtherLayer( $inCAM, [$topL], 0, 2 * $annularRing );
+				}
+			}
+
+			# c) Filled blind drill bot
+			my @bFillDrillBot = $NCpr->GetNCLayers( StackEnums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot, 1 );
+			foreach my $l (@bFillDrillBot) {
+				if ( !$emptyLayers ) {
+					CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+					CamLayer->CopySelOtherLayer( $inCAM, [$botL], 0, 2 * $annularRing );
+				}
+			}
+
+			# d) Filled through drill
+			my @nFillDrill = $NCpr->GetNCLayers( StackEnums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill, 1 );
+			foreach my $l (@nFillDrill) {
+				if ( !$emptyLayers ) {
+					CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+					CamLayer->CopySelOtherLayer( $inCAM, [ $topL, $botL ], 0, 2 * $annularRing );
+				}
+			}
+		}
 	}
 
 	CamLayer->ClearLayers($inCAM);
-	
-	return 1;
+
+	return @plgLayers;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -80,16 +185,16 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d243758";
+	my $jobId = "d263960";
 
 	my $mess = "";
 
 	if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
 
-		my $result = PlugLayer->CreateCopperPlugLayers( $inCAM, $jobId );
+		my $result = PlugLayer->CreateCopperPlugLayersAllSteps( $inCAM, $jobId );
 
 	}
-  
+
 }
 
 1;

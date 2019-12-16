@@ -62,10 +62,10 @@ sub AddGroup {
 
 	# Add separator if any group exist
 	if ( $productType eq StackEnums->Product_INPUT && scalar( @{ $self->{"groupFrmInput"} } ) ) {
-		$self->AddSeparator(1, Wx::Colour->new( 200, 200, 200 ),2);
+		$self->AddSeparator(2, Wx::Colour->new( 200, 200, 200 ),4);
 	}
 	elsif ( $productType eq StackEnums->Product_PRESS && scalar( @{ $self->{"groupFrmPress"} } ) ) {
-		$self->AddSeparator(1, Wx::Colour->new( 200, 200, 200 ),2);
+		$self->AddSeparator(2, Wx::Colour->new( 200, 200, 200 ),4);
 	}
 
 	my $group = GroupFrm->new( $self, $productId, $productType );

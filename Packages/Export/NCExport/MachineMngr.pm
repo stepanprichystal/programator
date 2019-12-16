@@ -364,6 +364,9 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_cDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_cDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
+	
+	$t{ EnumsGeneral->LAYERTYPE_plt_cFillDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_cFillDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];

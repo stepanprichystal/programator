@@ -162,7 +162,11 @@ sub _TestedForm {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+<<<<<<< HEAD
 	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "d262773" );
+=======
+	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "d264954" );
+>>>>>>> refs/heads/Zaplnene_pohrbene
 
 	$test->MainLoop();
 }

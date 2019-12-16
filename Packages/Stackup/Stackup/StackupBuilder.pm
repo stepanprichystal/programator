@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Core of building multilayer pruduction process and 
+# Description: Core of building multilayer pruduction process and
 # building structure of stackup Input and Press products
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
@@ -52,16 +52,14 @@ sub new {
 	);
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@PltNC );
 
-	my @NCCoreDrill =
-	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill } @PltNC;
+	$_->{"usedInProduct"} = 0 foreach (@PltNC);    # Each NC can participate in single product. If is used bz product "usedInProduct" == 1
 
+ 
 	my @NCBlindDrill =
 	  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill } @PltNC;
 
 	$self->{"PltNC"} = \@PltNC;
-
-	$self->{"NCInclCoreDrill"} = \@NCCoreDrill;
-
+ 
 	$self->{"NCNoCoreDrill"} = \@NCBlindDrill;
 
 	return $self;
@@ -86,6 +84,8 @@ sub BuildStackupLamination {
 	$self->__SetProductOuterCore( \@productPress );
 
 	$self->__SetProductPlugging( \@productPress );
+
+	$self->__SetProductEmptyFoil( \@productInputs );
 
 	# 3) Build searching matrix of products by copper layer
 
@@ -162,8 +162,8 @@ sub __AddCoverlayLayers {
 		die "Coverlay adhesive ($name) thickness is not defined in IS "
 		  if ( !defined $thickAdh || $thickAdh eq "" );
 		die "Coverlay ($name) UDA id is not defined in IS " if ( !defined $id || $id eq "" );
-			die "Coverlay ($name) UDA qId is not defined in IS "
-		 if ( !defined $qId || $qId eq "" );
+		die "Coverlay ($name) UDA qId is not defined in IS "
+		  if ( !defined $qId || $qId eq "" );
 
 		$layerInfo->{"thick"}         = $thick * 1000000;
 		$layerInfo->{"adhesiveThick"} = $thickAdh;
@@ -252,9 +252,10 @@ sub __BuildProductInput {
 
 	my $currPId = 1;
 
-	$self->__IdentifyRigidFlexProduct( $pars, \$currPId );
-	$self->__IdentifyRigidProduct( $pars, \$currPId );
-	$self->__IdentifyFlexProduct( $pars, \$currPId );
+	$self->__IdentifyRigidFlexSemiProduct( $pars, \$currPId );
+	$self->__IdentifyRigidSemiProduct( $pars, \$currPId );
+	$self->__IdentifyRigidCoreProduct( $pars, \$currPId );
+	$self->__IdentifyFlexCoreProduct( $pars, \$currPId );
 
 	# 2) Sort Input product like theare are ordered in Stackup
 	my %mapId          = ();
@@ -305,12 +306,19 @@ sub __BuildProductInput {
 				push( @pChildLayers, ProductLayer->new( Enums->ProductL_MATERIAL, $pL ) );                 # Core
 				push( @pChildLayers, ProductLayer->new( Enums->ProductL_MATERIAL, $pChildBotCopper ) );    # Bot core copper
 
+				my @NCCoreDrill =
+				  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill }
+				  @{ $self->{"PltNC"} };
+			
 				my @pChildNClayers =
 				  grep {
-					( $_->{"NCSigStartOrder"} eq $pChildTopCopper->GetCopperNumber() && $_->{"NCSigEndOrder"} eq $pChildBotCopper->GetCopperNumber() )
+					!$_->{"usedInProduct"} && (    $_->{"NCSigStartOrder"} eq $pChildTopCopper->GetCopperNumber()
+												&& $_->{"NCSigEndOrder"} eq $pChildBotCopper->GetCopperNumber() )
 					  || (    $_->{"NCSigStartOrder"} eq $pChildBotCopper->GetCopperNumber()
-						   && $_->{"NCSigEndOrder"} eq $pChildTopCopper->GetCopperName() )
-				  } @{ $self->{"NCInclCoreDrill"} };
+						   && $_->{"NCSigEndOrder"} eq $pChildTopCopper->GetCopperNumber() )
+				  } @NCCoreDrill;
+
+				$_->{"usedInProduct"} = 1 foreach (@pChildNClayers);
 
 				my $childProduct = ProductInput->new(
 													  $pId . "." . $pIdChild,              $pChildTopCopper->GetCopperName(),
@@ -328,12 +336,6 @@ sub __BuildProductInput {
 		my $pTopCu = first { $_->GetType() eq Enums->MaterialType_COPPER } @layers;
 		my $pBotCu = first { $_->GetType() eq Enums->MaterialType_COPPER } reverse(@layers);
 
-		#		my @pNCPlated = grep {
-		#			     $_->{"NCSigStartOrder"} eq $pTopCu->GetCopperNumber()
-		#			  || $_->{"NCSigStartOrder"} eq $pBotCu->GetCopperNumber()
-		#
-		#		} @{$self->{"NCNoCoreDrill"};
-
 		# Find index where product starts
 		my $idx = first_index { defined $_->{"pId"} && $_->{"pId"} eq $pIdOri } @{$pars};
 
@@ -342,12 +344,22 @@ sub __BuildProductInput {
 
 			splice @{$pars}, $i, 1 if ( defined $pars->[$i]->{"pId"} && $pars->[$i]->{"pId"} eq $pIdOri );
 		}
+
+		my @pNClayers =
+		  grep {
+			!$_->{"usedInProduct"} && ( $_->{"NCSigStartOrder"} eq $pTopCu->GetCopperNumber() && $_->{"NCSigEndOrder"} eq $pBotCu->GetCopperNumber() )
+			  || (    $_->{"NCSigStartOrder"} eq $pBotCu->GetCopperNumber()
+				   && $_->{"NCSigEndOrder"} eq $pTopCu->GetCopperNumber() )
+		  } @{ $self->{"NCNoCoreDrill"} };
+
+		$_->{"usedInProduct"} = 1 foreach (@pNClayers);
+
 		my $product = ProductInput->new( $pId,
 										 $pTopCu->GetCopperName(),
 										 $pTopCu->GetCopperNumber(),
 										 $pBotCu->GetCopperName(),
 										 $pBotCu->GetCopperNumber(),
-										 \@pLayers, [] );
+										 \@pLayers, \@pNClayers );
 
 		# Insert new product
 		splice @{$pars}, $idx, 0, { "l" => $product, "t" => Enums->ProductL_PRODUCT };
@@ -364,7 +376,7 @@ sub __BuildProductInput {
 
 # Return extra layer count which will be added to core and create final input product
 # Consider input polotovars and its drilling on both side of flexible core (if Rigid flex)
-sub __IdentifyRigidFlexProduct {
+sub __IdentifyRigidFlexSemiProduct {
 	my $self      = shift;
 	my $pars      = shift;
 	my $currPId   = shift;
@@ -495,7 +507,91 @@ sub __IdentifyRigidFlexProduct {
 
 }
 
-sub __IdentifyRigidProduct {
+# Identifify semi product created by one or more cores + copper foils, defined by plated through (filled) drilling
+sub __IdentifyRigidSemiProduct {
+	my $self      = shift;
+	my $pars      = shift;
+	my $currPId   = shift;
+	my $extraLTop = undef;
+	my $extraLBot = undef;
+
+	my $lCnt = $self->{"stackup"}->GetCuLayerCnt();
+
+	return 0 if ( $lCnt < 8 );    # This type of product is possible at least 8l stackup
+
+	# 1) Identify through (blind drill) inside stackup
+	my @blindThrough = grep {
+		( $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill )
+
+		  && (    ( $_->{"NCSigStartOrder"} > 1 && $_->{"NCSigEndOrder"} <= $lCnt / 2 )
+			   || ( $_->{"NCSigStartOrder"} >= ( $lCnt / 2 ) + 1 && $_->{"NCSigEndOrder"} <= $lCnt ) )
+	} @{ $self->{"NCNoCoreDrill"} };
+
+	return 0 unless ( scalar(@blindThrough) );    # no drilling which define semi product was find
+
+	# 2) Identify layer which go through the most number of copper layers
+
+	@blindThrough = sort { $a->{"NCSigEndOrder"} - $a->{"NCSigStartOrder"} <=> $b->{"NCSigEndOrder"} - $b->{"NCSigStartOrder"} } @blindThrough;
+
+	# 3) identify which copper layer packages start + end
+
+	# Identify which stackup part TOP/BOT is NC layer located
+	my $NC = $blindThrough[0];
+
+	my $topProductSL = undef;
+	my $topProductEL = undef;
+
+	my $botProductSL = undef;
+	my $botProductEL = undef;
+
+	if ( $NC->{"NCSigStartOrder"} < $lCnt / 2 ) {
+
+		#top half stackup
+		$topProductSL = $NC->{"NCSigStartOrder"};
+		$topProductEL = $NC->{"NCSigEndOrder"};
+
+		#bot half stackup
+		$botProductSL = $lCnt - $topProductEL + 1;
+		$botProductEL = $lCnt - $topProductSL + 1;
+	}
+	else {
+
+		#top half stackup
+		$botProductSL = $NC->{"NCSigStartOrder"};
+		$botProductEL = $NC->{"NCSigEndOrder"};
+
+		#bot half stackup
+		$topProductSL = $lCnt - $botProductEL + 1;
+		$topProductEL = $lCnt - $botProductSL + 1;
+	}
+
+	# set top product
+	my $topProductSIdx = first_index { $_->{"l"}->GetType() eq Enums->MaterialType_COPPER && $_->{"l"}->GetCopperNumber() eq $topProductSL } @{$pars};
+	my $topProductEIdx =
+	  first_index { $_->{"l"}->GetType() eq Enums->MaterialType_COPPER && $_->{"l"}->GetCopperNumber() eq $topProductEL } @{$pars};
+
+	for ( my $i = $topProductSIdx ; $i <= $topProductEIdx ; $i++ ) {
+
+		$pars->[$i]->{"pId"} = $$currPId;
+	}
+
+	$$currPId++;
+
+	# set bot product
+	my $botProductSIdx = first_index { $_->{"l"}->GetType() eq Enums->MaterialType_COPPER && $_->{"l"}->GetCopperNumber() eq $botProductSL } @{$pars};
+	my $botProductEIdx =
+	  first_index { $_->{"l"}->GetType() eq Enums->MaterialType_COPPER && $_->{"l"}->GetCopperNumber() eq $botProductEL } @{$pars};
+
+	for ( my $i = $botProductSIdx ; $i <= $botProductEIdx ; $i++ ) {
+
+		$pars->[$i]->{"pId"} = $$currPId;
+	}
+
+	$$currPId++;
+
+}
+
+sub __IdentifyRigidCoreProduct {
 	my $self      = shift;
 	my $pars      = shift;
 	my $currPId   = shift;
@@ -530,7 +626,7 @@ sub __IdentifyRigidProduct {
 
 }
 
-sub __IdentifyFlexProduct {
+sub __IdentifyFlexCoreProduct {
 	my $self      = shift;
 	my $pars      = shift;
 	my $currPId   = shift;
@@ -665,41 +761,45 @@ sub __BuildProductPress {
 
 			if ( defined $pars->[$sLIdx] ) {
 
-				if (
-					 ( $pars->[$sLIdx]->{"t"} eq Enums->ProductL_MATERIAL && $pars->[$sLIdx]->{"l"}->GetType() eq Enums->MaterialType_COPPER )
-					 || (    $pars->[$sLIdx]->{"t"} eq Enums->ProductL_PRODUCT
-						  && $pars->[$sLIdx]->{"l"}->GetProductType() eq Enums->Product_INPUT
-						  && scalar( grep { $_->{"NCSigStartOrder"} eq $pars->[$sLIdx]->{"l"}->GetTopCopperNum() } @{ $self->{"NCNoCoreDrill"} } ) )
-				  )
-				{
+				if ( $pars->[$sLIdx]->{"t"} eq Enums->ProductL_MATERIAL && $pars->[$sLIdx]->{"l"}->GetType() eq Enums->MaterialType_COPPER ) {
 					last;
 				}
+
+				if (    $pars->[$sLIdx]->{"t"} eq Enums->ProductL_PRODUCT
+					 && $pars->[$sLIdx]->{"l"}->GetProductType() eq Enums->Product_INPUT )
+				{
+					my $pInput = $pars->[$sLIdx]->{"l"};
+					my @NC = grep { !$_->{"usedInProduct"} && $_->{"NCSigStartOrder"} eq $pInput->GetTopCopperNum() } @{ $self->{"NCNoCoreDrill"} };
+
+					last if ( scalar(@NC) );
+				}
+
 			}
 
 			if ( defined $pars->[$eLIdx] ) {
 
-				if (
-					( $pars->[$eLIdx]->{"t"} eq Enums->ProductL_MATERIAL && $pars->[$eLIdx]->{"l"}->GetType() eq Enums->MaterialType_COPPER )
-					|| (
-						   $pars->[$eLIdx]->{"t"} eq Enums->ProductL_PRODUCT
-						&& $pars->[$eLIdx]->{"l"}->GetProductType() eq Enums->Product_INPUT
-						&& scalar( grep { $_->{"NCSigStartOrder"} eq $pars->[$eLIdx]->{"l"}->GetBotCopperNum() } @{ $self->{"NCNoCoreDrill"} } )
-
-					)
-				  )
-				{
+				if ( $pars->[$eLIdx]->{"t"} eq Enums->ProductL_MATERIAL && $pars->[$eLIdx]->{"l"}->GetType() eq Enums->MaterialType_COPPER ) {
 					last;
 				}
-			}
 
-			if ( defined $pars->[ $sLIdx - 1 ] ) {
-				$sLIdx--;
-				$search = 1;
-			}
+				if (    $pars->[$eLIdx]->{"t"} eq Enums->ProductL_PRODUCT
+					 && $pars->[$eLIdx]->{"l"}->GetProductType() eq Enums->Product_INPUT )
+				{
+					my $pInput = $pars->[$eLIdx]->{"l"};
+					my @NC = grep { !$_->{"usedInProduct"} && $_->{"NCSigStartOrder"} eq $pInput->GetBotCopperNum() } @{ $self->{"NCNoCoreDrill"} };
 
-			if ( defined $pars->[ $eLIdx + 1 ] ) {
-				$eLIdx++;
-				$search = 1;
+					last if ( scalar(@NC) );
+				}
+
+				if ( defined $pars->[ $sLIdx - 1 ] ) {
+					$sLIdx--;
+					$search = 1;
+				}
+
+				if ( defined $pars->[ $eLIdx + 1 ] ) {
+					$eLIdx++;
+					$search = 1;
+				}
 			}
 
 			last unless ($search);
@@ -776,7 +876,7 @@ sub __BuildProductPress {
 
 		} @{ $self->{"NCNoCoreDrill"} };
 
-		#$_->{"pId"} = $curPressId foreach @{$pars}[ $sLIdx .. $eLIdx ];
+		$_->{"usedInProduct"} = 1 foreach (@pNCPlated);
 
 		my $product = ProductPress->new( $curPressId, $pTopCuName, $pTopCuOrder, $pBotCuName, $pBotCuOrder, \@pLayers, \@pNCPlated );
 		$product->AddExtraPressLayers( \@pExtraPressLayers ) if ( scalar(@pExtraPressLayers) );
@@ -856,6 +956,36 @@ sub __SetProductOuterCore {
 
 		}
 	}
+}
+
+# Set flag, coper foil in parent input product is not "exposed" during semi product production
+# But is exposed afterwards pressing this semiproduct with another semiproduct
+sub __SetProductEmptyFoil {
+	my $self          = shift;
+	my $productInputs = shift;
+
+	foreach my $parentInput ( @{$productInputs} ) {
+
+		my @lAll   = $parentInput->GetLayers();
+		my @lPrduc = $parentInput->GetLayers( Enums->ProductL_PRODUCT );
+
+		if ( $lAll[0]->GetType() eq Enums->ProductL_MATERIAL && $lAll[0]->GetData()->GetType() eq Enums->MaterialType_COPPER ) {
+
+			# Check if first nested product has same top copper as parent product
+			if ( $lPrduc[0]->GetData()->GetTopCopperLayer() eq $parentInput->GetTopCopperLayer() ) {
+				$parentInput->SetTopEmptyFoil(1);
+			}
+		}
+
+		if ( $lAll[-1]->GetType() eq Enums->ProductL_MATERIAL && $lAll[-1]->GetData()->GetType() eq Enums->MaterialType_COPPER ) {
+
+			# Check if first nested product has same top copper as parent product
+			if ( $lPrduc[-1]->GetData()->GetBotCopperLayer() eq $parentInput->GetBotCopperLayer() ) {
+				$parentInput->SetBotEmptyFoil(1);
+			}
+		}
+	}
+
 }
 
 sub __SetProductPlugging {
@@ -998,11 +1128,12 @@ sub __GenerateCopperProductMatrix {
 	my $currP  = shift;
 	my $matrix = shift;
 
-	if ( $currP->GetProductType() eq Enums->Product_PRESS ) {
+	#if ( $currP->GetProductType() eq Enums->Product_PRESS ) {
 
-		# Add TOP Press product Copper to matrix
-		$self->__AddCopperItems( $currP, Enums->SignalLayer_TOP, $matrix );
-	}
+	# Add TOP Press product Copper to matrix
+	$self->__AddCopperItems( $currP, Enums->SignalLayer_TOP, $matrix );
+
+	#}
 
 	# Process Inpput Products
 	foreach my $childP ( map { $_->GetData() } $currP->GetLayers( Enums->ProductL_PRODUCT ) ) {
@@ -1010,21 +1141,22 @@ sub __GenerateCopperProductMatrix {
 		$self->__GenerateCopperProductMatrix( $childP, $matrix );
 	}
 
-	if ( $currP->GetProductType() eq Enums->Product_INPUT && !$currP->GetIsParent() ) {
+	#	if ( $currP->GetProductType() eq Enums->Product_INPUT) {
+	#
+	#		# Add TOP Input product Copper to matrix
+	#		$self->__AddCopperItems( $currP, Enums->SignalLayer_TOP, $matrix );
+	#
+	#		# Add BOT Input product Copper to matrix
+	#		$self->__AddCopperItems( $currP, Enums->SignalLayer_BOT, $matrix );
+	#
+	#	}
 
-		# Add TOP Input product Copper to matrix
-		$self->__AddCopperItems( $currP, Enums->SignalLayer_TOP, $matrix );
+	#if ( $currP->GetProductType() eq Enums->Product_PRESS ) {
 
-		# Add BOT Input product Copper to matrix
-		$self->__AddCopperItems( $currP, Enums->SignalLayer_BOT, $matrix );
+	# Add BOT Input product Copper to matrix
+	$self->__AddCopperItems( $currP, Enums->SignalLayer_BOT, $matrix );
 
-	}
-
-	if ( $currP->GetProductType() eq Enums->Product_PRESS ) {
-
-		# Add BOT Input product Copper to matrix
-		$self->__AddCopperItems( $currP, Enums->SignalLayer_BOT, $matrix );
-	}
+	#}
 }
 
 sub __AddCopperItems {

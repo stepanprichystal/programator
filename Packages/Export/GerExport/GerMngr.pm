@@ -68,7 +68,7 @@ sub Run {
 	$self->__DeleteOldFiles();
 
 	# Create fake layers which will be exported, but are created automatically
-	FakeLayers->CreateFakeLayers( $inCAM, $jobId );
+	#FakeLayers->CreateFakeLayers( $inCAM, $jobId );
 
 	$self->{"gerberMngr"}->Run();
 	$self->{"pasteMngr"}->Run();
@@ -76,7 +76,7 @@ sub Run {
 	$self->{"jetprintMngr"}->Run();
 
 	#  Remove fake layers after export
-	FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
+	#FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
 
 }
 

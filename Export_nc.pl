@@ -28,6 +28,7 @@ FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 0 );
 
 
 
+my $jobId = "d264954";
 
 # Exportovat jednotlive vrstvy nebo vsechno
 my $exportSingle = 0;
