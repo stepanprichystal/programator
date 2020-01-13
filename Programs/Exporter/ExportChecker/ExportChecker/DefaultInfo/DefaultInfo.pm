@@ -438,19 +438,36 @@ sub GetNonSignalLSett {
 
 	# 2) Set mirror
 
-	# whatever with "c" is mirrored
-	if ( $l->{"gROWname"} =~ /^(gold)*[lgpm]*c2?(flex)?$/i ) {
+	# Top soloder mask and top gold connector is mirrored
+	if ( $l->{"gROWname"} =~ /^mc2?$/i || $l->{"gROWname"} =~ /^goldc$/i ) {
 
 		$lSett{"mirror"} = 1;
 
 	}
-
-	# whatever with "s" is not mirrored
-	elsif ( $l->{"gROWname"} =~ /^(gold)*[lgpm]*s2?(flex)?$/i ) {
+	 
+	# Bot soloder mask and bot gold connector is mirrored
+	elsif ( $l->{"gROWname"} =~ /^ms2?$/i || $l->{"gROWname"} =~ /^golds$/i ) {
 
 		$lSett{"mirror"} = 0;
 
 	}
+	
+	# Whatever TOP layer processed by screenprinting do not mirror
+	# Priprava sita:
+	# |____________|  Sito (sitem dolu)
+	#    -------      Fotocitliva pasta
+	#   __________    Emulze filmu
+	#   __________    Film
+	#  	==========    Deska
+	if ( $l->{"gROWname"} =~ /^[lgp]c2?$/i ||  $l->{"gROWname"} =~ /^mcflex$/i) {
+		$lSett{"mirror"} = 0;
+	}
+	
+	# Whatever BOT layer processed by screenprinting do mirror
+	if ( $l->{"gROWname"} =~ /^[lgp]s2?$/i ||  $l->{"gROWname"} =~ /^msflex$/i) {
+		$lSett{"mirror"} = 1;
+	}
+	
 
 	# 3) Set compensation
 

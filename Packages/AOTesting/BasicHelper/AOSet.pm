@@ -49,7 +49,14 @@ sub SetStage {
 
 	# get plated drill layers, which goes from <$layerName>
 	@drillLayer = grep { $_->{"gROWlayer_type"} eq "drill" } @pltLayer;
-
+	
+	# Remove blind drill
+	@drillLayer = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nFillDrill
+		&&  $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
+		&&  $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
+		&&  $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill
+	} @drillLayer;
+ 
 	@drillLayer = grep {
 		$_->{"NCSigStart"} eq $layerName
 		  || (
@@ -136,14 +143,15 @@ sub SetStage {
 	if ( $layerCnt <= 2 ) {
 
 		$cuThick = HegMethods->GetOuterCuThick( $jobId, $layerName );
-		$pcbThick = HegMethods->GetPcbMaterialThick($jobId);
+		$pcbThick = HegMethods->GetPcbMaterialThick($jobId)*1000;
+		 
 
 	}
 	else {
 
 		my %lPars = JobHelper->ParseSignalLayerName($layerName);
 		my $thick = $stackup->GetThickByCuLayer($lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"});
-		$pcbThick = sprintf( "%.3f", $thick / 1000);
+		$pcbThick = sprintf( "%.3f", $thick);
 	
 	}
 
