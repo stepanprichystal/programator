@@ -57,12 +57,15 @@ sub __BuildPressProducts {
 		my $outerCoreTop = $p->GetOuterCoreTop();
 		my $outerCoreBot = $p->GetOuterCoreBot();
 		my @pltNC        = $p->GetPltNCLayers();
+		my %tmp;
+		@tmp{ map { $_->{"gROWname"} } @pltNC } = ();
+		my @otherNC = grep { !exists $tmp{ $_->{"gROWname"} } } $p->GetNCLayers();
 
 		# Create group
 		my $g = $procViewerFrm->AddGroup( $p->GetId(), StackEnums->Product_PRESS );
 
 		# Create sub group
-		my $subG = $g->AddSubGroup( $p->GetId(), StackEnums->Product_PRESS, \@pltNC );
+		my $subG = $g->AddSubGroup( $p->GetId(), StackEnums->Product_PRESS, \@pltNC, \@otherNC );
 
 		foreach my $productL ( $p->GetLayers() ) {
 
@@ -76,8 +79,11 @@ sub __BuildPressProducts {
 
 				my $topProductCu = $lData->GetProductOuterMatLayer("first")->GetData();
 
-				if ( $lData->GetProductType() eq StackEnums->Product_INPUT
-					 && ( $lData->GetOuterCoreTop() || ( $topProductCu->GetType() eq StackEnums->MaterialType_COPPER && $topProductCu->GetIsFoil() && $lData->GetTopEmptyFoil() ) )
+				if (
+					 $lData->GetProductType() eq StackEnums->Product_INPUT
+					 && ( $lData->GetOuterCoreTop()
+						 || ( $topProductCu->GetType() eq StackEnums->MaterialType_COPPER && $topProductCu->GetIsFoil() && $lData->GetTopEmptyFoil() )
+					 )
 				  )
 				{
 
@@ -91,8 +97,11 @@ sub __BuildPressProducts {
 
 				my $botProductCu = $lData->GetProductOuterMatLayer("last")->GetData();
 
-				if ( $lData->GetProductType() eq StackEnums->Product_INPUT
-					 && ( $lData->GetOuterCoreBot() || ( $botProductCu->GetType() eq StackEnums->MaterialType_COPPER && $botProductCu->GetIsFoil() && $lData->GetBotEmptyFoil() ) )
+				if (
+					 $lData->GetProductType() eq StackEnums->Product_INPUT
+					 && ( $lData->GetOuterCoreBot()
+						 || ( $botProductCu->GetType() eq StackEnums->MaterialType_COPPER && $botProductCu->GetIsFoil() && $lData->GetBotEmptyFoil() )
+					 )
 				  )
 				{
 
@@ -176,8 +185,11 @@ sub __BuildInputProducts {
 			my $outerCoreTop = $nestP->GetOuterCoreTop();
 			my $outerCoreBot = $nestP->GetOuterCoreBot();
 			my @pltNC        = $nestP->GetPltNCLayers();
+			my %tmp;
+			@tmp{ map { $_->{"gROWname"} } @pltNC } = ();
+			my @otherNC = grep { !exists $tmp{ $_->{"gROWname"} } } $nestP->GetNCLayers();
 
-			my $subG = $g->AddSubGroup( $nestP->GetId(), StackEnums->Product_INPUT, \@pltNC );
+			my $subG = $g->AddSubGroup( $nestP->GetId(), StackEnums->Product_INPUT, \@pltNC, \@otherNC );
 
 			foreach my $productL ( $nestP->GetLayers() ) {
 
@@ -197,24 +209,24 @@ sub __BuildInputProducts {
 
 						if ( $lData->GetCopperName() eq $nestP->GetTopCopperLayer() ) {
 
-							my $cuFoil = $lData->GetIsFoil() && $nestP->GetIsParent() && $nestP->GetTopEmptyFoil() ? 1 : 0;
+							my $hideControls = $lData->GetIsFoil() && $nestP->GetTopEmptyFoil() ? 1 : 0;
 
 							my $coreShrink = !$nestP->GetIsParent() ? 1 : 0;
 
-							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreTop, 0,         $cuFoil, $cuThick, $coreShrink );
-							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreTop, $plugging, $cuFoil, $cuThick, $coreShrink )
+							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreTop, 0,         $hideControls, $cuThick, $coreShrink );
+							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreTop, $plugging, $hideControls, $cuThick, $coreShrink )
 							  if ($plugging);
 
 						}
 						elsif ( $lData->GetCopperName() eq $nestP->GetBotCopperLayer() ) {
 
-							my $cuFoil = $lData->GetIsFoil() && $nestP->GetIsParent() && $nestP->GetBotEmptyFoil() ? 1 : 0;
+							my $hideControls = $lData->GetIsFoil() && $nestP->GetBotEmptyFoil() ? 1 : 0;
 
 							my $coreShrink = !$nestP->GetIsParent() ? 1 : 0;
 
-							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreBot, $plugging, $cuFoil, $cuThick, $coreShrink )
+							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreBot, $plugging, $hideControls, $cuThick, $coreShrink )
 							  if ($plugging);
-							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreBot, 0, $cuFoil, $cuThick, $coreShrink );
+							$subG->AddCopperRow( $lData->GetCopperName(), $outerCoreBot, 0, $hideControls, $cuThick, $coreShrink );
 						}
 					}
 					elsif ( $lData->GetType() eq StackEnums->MaterialType_PREPREG ) {

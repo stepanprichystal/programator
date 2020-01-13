@@ -24,6 +24,7 @@ use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamSymbolArc';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::Stackup::StackupOperation';
@@ -64,41 +65,28 @@ sub PutCuToBendArea {
 	# put Cu only to rigid signal layer
 	my @layers = ();
 
-	my @lamPackages = StackupOperation->GetJoinedFlexRigidPackages($jobId);
+	my @lamPackages = StackupOperation->GetJoinedFlexRigidProducts( $inCAM, $jobId );
 
 	foreach my $lamPckg (@lamPackages) {
 
-		if (    $lamPckg->{"packageTop"}->{"coreType"} eq EnumsStack->CoreType_FLEX
-			 && $lamPckg->{"packageBot"}->{"coreType"} eq EnumsStack->CoreType_RIGID )
+		if (    $lamPckg->{"pTopCoreType"} eq EnumsStack->CoreType_FLEX
+			 && $lamPckg->{"pBotCoreType"} eq EnumsStack->CoreType_RIGID )
 		{
 
 			# find first Cu layer in BOT package
-			my $lName = undef;
-
-			for ( my $i = 0 ; $i < scalar( @{ $lamPckg->{"packageBot"}->{"layers"} } ) ; $i++ ) {
-				if ( $lamPckg->{"packageBot"}->{"layers"}->[$i]->GetType() eq EnumsStack->MaterialType_COPPER ) {
-					$lName = $lamPckg->{"packageBot"}->{"layers"}->[$i]->GetCopperName();
-					last;
-				}
-			}
+			my $lName = $lamPckg->{"pBot"}->GetTopCopperLayer();
 
 			die "Not a inner copper layer: $lName" if ( $lName !~ /^v\d+$/ );
 			push( @layers, [ $lName, CamMatrix->GetLayerPolarity( $inCAM, $jobId, $lName ) ] );
 
 		}
-		elsif (    $lamPckg->{"packageTop"}->{"coreType"} eq EnumsStack->CoreType_RIGID
-				&& $lamPckg->{"packageBot"}->{"coreType"} eq EnumsStack->CoreType_FLEX )
+		elsif (    $lamPckg->{"pTopCoreType"} eq EnumsStack->CoreType_RIGID
+				&& $lamPckg->{"pBotCoreType"} eq EnumsStack->CoreType_FLEX )
 		{
 
 			# find first Cu layer in TOP package
-			my $lName = undef;
 
-			for ( my $i = scalar( @{ $lamPckg->{"packageTop"}->{"layers"} } ) - 1 ; $i >= 0 ; $i-- ) {
-				if ( $lamPckg->{"packageTop"}->{"layers"}->[$i]->GetType() eq EnumsStack->MaterialType_COPPER ) {
-					$lName = $lamPckg->{"packageTop"}->{"layers"}->[$i]->GetCopperName();
-					last;
-				}
-			}
+			my $lName = $lamPckg->{"pTop"}->GetBotCopperLayer();
 
 			die "Not a inner copper layer: $lName" if ( $lName !~ /^v\d+$/ );
 
@@ -133,11 +121,10 @@ sub PutCuToBendArea {
 
 			foreach my $bendArea (@bendAreas) {
 
-				my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
-				my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
+				my @points = $bendArea->GetPoints();
 
 				#CamSymbolSurf->AddSurfaceSolidPattern( $inCAM, 1, 2000, 1 );
-				CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, $l->[1] );
+				CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points, 1, $l->[1] );
 				CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $clearance ), ( $l->[1] eq "positive" ? "negative" : "positive" ) );
 			}
 		}
@@ -190,10 +177,9 @@ sub UnMaskBendArea {
 
 	foreach my $bendArea (@bendAreas) {
 
-		my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
-		my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
+		my @points = $bendArea->GetPoints();
 
-		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1 );
+		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points, 1 );
 		CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $clearance ), "positive" );
 
 	}
@@ -284,6 +270,7 @@ sub UnmaskCoverlayMaskByBendArea {
 	push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} } );
 	push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMax"} } );
 	push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMin"} } );
+	push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );    # close polygon
 
 	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
 
@@ -294,11 +281,10 @@ sub UnmaskCoverlayMaskByBendArea {
 
 		CamLayer->WorkLayer( $inCAM, $l );
 
-		my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
-		my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
+		my @points = $bendArea->GetPoints();
 
 		#CamSymbolSurf->AddSurfaceSolidPattern( $inCAM, 1, 2000, 1 );
-		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, "negative" );
+		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points, 1, "negative" );
 		CamSymbol->AddPolyline( $inCAM, \@points, "s" . ( 2 * $clearance ), "negative" );
 
 	}
@@ -378,7 +364,7 @@ sub PrepareRoutCoverlay {
 			my $startFeat;
 			for ( my $i = scalar(@feats) - 1 ; $i >= 0 ; $i-- ) {
 
-				if ( $feats[$i]->{"att"}->{".string"} eq EnumsPins->PinString_ENDLINE ) {
+				if ( $feats[$i]->{"att"}->{".string"} eq EnumsPins->PinString_ENDLINEIN || $feats[$i]->{"att"}->{".string"} eq EnumsPins->PinString_ENDLINEOUT ) {
 
 					if ( !defined $startFeat ) {
 						$startFeat = ( $i + 1 > scalar(@feats) - 1 ) ? $feats[0] : $feats[ $i + 1 ];
@@ -388,7 +374,7 @@ sub PrepareRoutCoverlay {
 				}
 			}
 
-			@feats = grep { $_->{"att"}->{".string"} ne EnumsPins->PinString_ENDLINE } @feats;
+			@feats = grep { $_->{"att"}->{".string"} ne EnumsPins->PinString_ENDLINEIN || $_->{"att"}->{".string"} ne EnumsPins->PinString_ENDLINEOUT } @feats;
 
 			$draw->DrawRoute( \@feats, $routTool, "right", $startFeat, undef, [".string"] );
 
@@ -605,7 +591,7 @@ sub PrepareRoutTransitionZone {
 
 	# Rout tool info
 
-	my @packages = StackupOperation->GetJoinedFlexRigidPackages($jobId);
+	my @packages = StackupOperation->GetJoinedFlexRigidProducts( $inCAM, $jobId );
 
 	my $top2BotOrder = "";
 	my $bot2TopOrder = "";
@@ -638,8 +624,8 @@ sub PrepareRoutTransitionZone {
 
 	foreach my $joinPackgs (@packages) {
 
-		my $topPckgs = $joinPackgs->{"packageTop"};
-		my $botPckgs = $joinPackgs->{"packageBot"};
+		my $topProduct = $joinPackgs->{"pTop"};
+		my $botProduct = $joinPackgs->{"pBot"};
 
 		my $routDir;
 		my $routStart;
@@ -649,48 +635,48 @@ sub PrepareRoutTransitionZone {
 
 		if ( $routPart == 1 ) {
 
-			if ( $topPckgs->{"coreType"} eq StackEnums->CoreType_RIGID ) {
+			if ( $joinPackgs->{"pTopCoreType"} eq StackEnums->CoreType_RIGID ) {
 
-				$routName  = "jfzs" . $bot2TopOrder;
-				$routDir   = "bottom_to_top";
-				$routStart = $topPckgs->{"topCopperName"};
-				$routEnd   = $topPckgs->{"botCopperName"};
-				$packageThick += $_->GetThick() foreach ( @{ $topPckgs->{"layers"} } );
+				$routName     = "jfzs" . $bot2TopOrder;
+				$routDir      = "bottom_to_top";
+				$routStart    = $joinPackgs->{"pTop"}->GetTopCopperLayer();
+				$routEnd      = $joinPackgs->{"pTop"}->GetBotCopperLayer();
+				$packageThick = $joinPackgs->{"pTop"}->GetThick();
 
 				$bot2TopOrder++;
 
 			}
 			else {
 
-				$routName  = "jfzc" . $top2BotOrder;
-				$routDir   = "top_to_bottom";
-				$routStart = $botPckgs->{"topCopperName"};
-				$routEnd   = $botPckgs->{"botCopperName"};
-				$packageThick += $_->GetThick() foreach ( @{ $botPckgs->{"layers"} } );
+				$routName     = "jfzc" . $top2BotOrder;
+				$routDir      = "top_to_bottom";
+				$routStart    = $joinPackgs->{"pBot"}->GetTopCopperLayer();
+				$routEnd      = $joinPackgs->{"pBot"}->GetBotCopperLayer();
+				$packageThick = $joinPackgs->{"pBot"}->GetThick();
 
 				$top2BotOrder++;
 			}
 		}
 		else {
 
-			if ( $topPckgs->{"coreType"} eq StackEnums->CoreType_RIGID ) {
+			if ( $joinPackgs->{"pTopCoreType"} eq StackEnums->CoreType_RIGID ) {
 
-				$routName  = "fzc" . $top2BotOrder;
-				$routDir   = "top_to_bottom";
-				$routStart = $topPckgs->{"topCopperName"};
-				$routEnd   = $topPckgs->{"botCopperName"};
-				$packageThick += $_->GetThick() foreach ( @{ $topPckgs->{"layers"} } );
+				$routName     = "fzc" . $top2BotOrder;
+				$routDir      = "top_to_bottom";
+				$routStart    = $joinPackgs->{"pTop"}->GetTopCopperLayer();
+				$routEnd      = $joinPackgs->{"pTop"}->GetBotCopperLayer();
+				$packageThick = $joinPackgs->{"pTop"}->GetThick();
 
 				$top2BotOrder++;
 
 			}
 			else {
 
-				$routName  = "fzs" . $bot2TopOrder;
-				$routDir   = "bottom_to_top";
-				$routStart = $botPckgs->{"topCopperName"};
-				$routEnd   = $botPckgs->{"botCopperName"};
-				$packageThick += $_->GetThick() foreach ( @{ $botPckgs->{"layers"} } );
+				$routName     = "fzs" . $bot2TopOrder;
+				$routDir      = "bottom_to_top";
+				$routStart    = $joinPackgs->{"pBot"}->GetTopCopperLayer();
+				$routEnd      = $joinPackgs->{"pBot"}->GetBotCopperLayer();
+				$packageThick = $joinPackgs->{"pBot"}->GetThick();
 
 				$bot2TopOrder++;
 			}
@@ -716,10 +702,22 @@ sub PrepareRoutTransitionZone {
 			# transition
 			my %startP = $transZone->GetStartPoint();
 			my %endP   = $transZone->GetEndPoint();
+			my $feat   = $transZone->GetFeature();
 
-			CamSymbol->AddCurAttribute($inCAM, $jobId, "transition_zone");
-			CamSymbol->AddLine( $inCAM, \%startP, \%endP, "r200" );
-			CamSymbol->ResetCurAttributes($inCAM, $jobId);
+			CamSymbol->AddCurAttribute( $inCAM, $jobId, "transition_zone" );
+
+			if ( $feat->{"type"} eq "L" ) {
+
+				CamSymbol->AddLine( $inCAM, \%startP, \%endP, "r200" );
+
+			}
+			elsif ( $feat->{"type"} eq "A" ) {
+
+				CamSymbolArc->AddArcStartCenterEnd( $inCAM, \%startP, { "x" => $feat->{"xmid"}, "y" => $feat->{"ymid"} },
+													\%endP, $feat->{"newDir"}, "r200" );
+			}
+
+			CamSymbol->ResetCurAttributes( $inCAM, $jobId );
 			$featIdx++;
 
 			if ( CamFilter->SelectByFeatureIndexes( $inCAM, $jobId, [$featIdx] ) ) {
@@ -823,19 +821,17 @@ sub PrepareCoverlayTemplate {
 	CamMatrix->CreateLayer( $inCAM, $jobId, $lTmp, "rout", "positive", 0 );
 	CamLayer->WorkLayer( $inCAM, $lTmp );
 
- 
 	foreach my $reg ( $pinParser->GetRegisterPads() ) {
-		
-		CamSymbol->AddPad($inCAM, "r" . ( $diameter * 1000 ), { "x" => $reg->{"x1"}, "y" => $reg->{"y1"} } );
+
+		CamSymbol->AddPad( $inCAM, "r" . ( $diameter * 1000 ), { "x" => $reg->{"x1"}, "y" => $reg->{"y1"} } );
 	}
 
 	CamLayer->Contourize( $inCAM, $lTmp );
 	CamLayer->WorkLayer( $inCAM, $lTmp );
-	
-	
-			$inCAM->COM("sel_all_feat");
-			$inCAM->COM("chain_list_reset");
-	
+
+	$inCAM->COM("sel_all_feat");
+	$inCAM->COM("chain_list_reset");
+
 	$inCAM->COM(
 				 'chain_add',
 				 "layer" => $lTmp,
@@ -851,7 +847,7 @@ sub PrepareCoverlayTemplate {
 				 "mode"       => "concentric",
 				 "size"       => $toolSize,
 				 "feed"       => "0",
-				 "overlap"    => $toolSize/4,
+				 "overlap"    => $toolSize / 4,
 				 "pocket_dir" => "standard"
 	);
 	CamLayer->CopySelOtherLayer( $inCAM, [$routName] );

@@ -11,6 +11,7 @@ package Packages::CAMJob::FlexiLayers::CoverlayPinParser::PinBendArea;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
+use List::Util qw(first);
 
 #local library
 use aliased 'Connectors::TpvConnector::TpvMethods';
@@ -27,6 +28,8 @@ sub new {
 	bless $self;
 
 	$self->{"features"} = shift;
+	$self->{"pins"}     = shift;
+
 	return $self;
 }
 
@@ -35,90 +38,91 @@ sub GetFeatures {
 	return @{ $self->{"features"} };
 }
 
-# Return array of pin
-# Each pin contain features (side_pin_line1 side_pin_line2, end_pin_line, register_pin, cut_pin, solder_pin)
-# Features of specific pin has same value of grou_feat_id attribute
-sub GetPinsFeatures {
-	my $self = shift;
- 	 
-	my @pinsFeats = ();
+# Return specific pin
+sub GetPin {
+	my $self    = shift;
+	my $pinGUID = shift;
 
-	foreach my $featGroupId ($self->GetPinsGUID()) {
+	my $pin = first { $_->GetGUID() eq $pinGUID } @{ $self->{"pins"} };
 
-		my @feats = grep { $_->{"att"}->{"feat_group_id"} eq $featGroupId } @{ $self->{"features"} };
+	return $pin;
+}
 
-		push( @pinsFeats, \@feats );
-	}
-
-	return @pinsFeats;
-
+# Return all pins
+sub GetAllPins {
+	my $self    = shift;
+ 
+	return  @{ $self->{"pins"} };
 }
 
 # Return number of pin in bend area
-sub GetPinCnt {
-	my $self = shift;
+sub GetPinsCnt {
+	my $self        = shift;
+	my $holderType  = shift;
+	my $registerPad = shift;
 
-	my @feature = grep { defined $_->{"att"}->{"feat_group_id"} } @{ $self->{"features"} };
+	my @pins = @{ $self->{"pins"} };
 
-	my @featGroupId = uniq( map { $_->{"att"}->{"feat_group_id"} } @feature );
+	@pins = grep { $_->GetHolderType() eq $holderType } @pins   if ( defined $holderType );
+	@pins = grep { $_->GetRegisterPad() eq $registerPad } @pins if ( defined $registerPad );
 
-	return scalar(@featGroupId);
+	return scalar(@pins);
 }
 
 # Each pin is marked by feat_group_id attribute. Return all values of this attribute
 sub GetPinsGUID {
-	my $self = shift;
+	my $self        = shift;
+	my $holderType  = shift;
+	my $registerPad = shift;
 
-	my @feature = grep { defined $_->{"att"}->{"feat_group_id"} } @{ $self->{"features"} };
+	my @pins = @{ $self->{"pins"} };
 
-	@feature = grep { $_->{"att"}->{".string"} eq Enums->PinString_ENDLINE } @feature;
+	@pins = grep { $_->GetHolderType() eq $holderType } @pins   if ( defined $holderType );
+	@pins = grep { $_->GetRegisterPad() eq $registerPad } @pins if ( defined $registerPad );
 
-	my @featGroupId = uniq( map { $_->{"att"}->{"feat_group_id"} } @feature );
-
-	return @featGroupId;
+	return map { $_->GetGUID() } @pins;
 }
 
-# Return envelop points of pin (only features with .string att: PinString_SIDELINE2)
-sub GetPinEnvelop {
-	my $self    = shift;
-	my $pinGUID = shift;
-
-	my @feature = grep { defined $_->{"att"}->{"feat_group_id"} && $_->{"att"}->{"feat_group_id"} eq $pinGUID } @{ $self->{"features"} };
-
-	my @sideLines = grep { $_->{"att"}->{".string"} eq Enums->PinString_SIDELINE2 } @feature;
-
-	die " Pin \"Side lines\" count is not equal to two" if ( scalar(@sideLines) != 2 );
-
-	my @envelop = ();
-	push( @envelop, { "x" => $sideLines[0]->{"x1"}, "y" => $sideLines[0]->{"y1"} } );
-	push( @envelop, { "x" => $sideLines[0]->{"x2"}, "y" => $sideLines[0]->{"y2"} } );
-	push( @envelop, { "x" => $sideLines[1]->{"x1"}, "y" => $sideLines[1]->{"y1"} } );
-	push( @envelop, { "x" => $sideLines[1]->{"x2"}, "y" => $sideLines[1]->{"y2"} } );
-
-	return @envelop;
-}
-
+# Return array of points which form bend area polygon
+# Polygon is closed: first point coonrdinate == last point
+# Each point is defined by hash:
+# - x; y       = coordinate of next point
+# - xmid; ymid = coordinate of center of arc
+# - dir        = direction of arc (cw/ccw) Enums->Dir_CW;Enums->Dir_CW
 sub GetPoints {
 	my $self = shift;
 
 	my @polygonPoints = ();
+	my @features      = $self->GetFeatures();
+
+	# first point of polygon
+	push( @polygonPoints, { "x" => $features[0]->{"x1"}, "y" => $features[0]->{"y1"} } );
 
 	for ( my $i = 0 ; $i < scalar( @{ $self->{"features"} } ) ; $i++ ) {
 
-		my $line = $self->{"features"}->[$i];
+		my $f = $self->{"features"}->[$i];
 
-		my @arr = ( $line->{"x1"}, $line->{"y1"} );
-		push( @polygonPoints, \@arr );
+		my %p = ();
+		$p{"x"} = $f->{"x2"};
+		$p{"y"} = $f->{"y2"};
+		if ( $f->{"type"} eq "A" ) {
 
-		if ( $i == scalar( @{ $self->{"features"} } ) - 1 ) {
-
-			$line = $self->{"features"}->[0];
-			my @arrEnd = ( $line->{"x1"}, $line->{"y1"} );
-			push( @polygonPoints, \@arrEnd );
+			$p{"xmid"} = $f->{"xmid"};
+			$p{"ymid"} = $f->{"ymid"};
+			$p{"dir"}  = $f->{"newDir"};
 		}
+
+		push( @polygonPoints, \%p );
 	}
 
 	return @polygonPoints;
+}
+
+sub AddPin {
+	my $self = shift;
+	my $pin  = shift;
+
+	push( @{ $self->{"pins"} }, $pin );
 }
 
 #-------------------------------------------------------------------------------------------#

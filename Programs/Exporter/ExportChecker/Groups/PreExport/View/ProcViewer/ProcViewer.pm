@@ -17,6 +17,7 @@ use aliased 'Enums::EnumsDrill';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamJob';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::Forms::ProcViewerFrm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcBuilder::ProcBuilder2V';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcBuilder::ProcBuilderVV';
@@ -63,10 +64,14 @@ sub BuildForm {
 	if ( $self->{"defaultInfo"}->GetLayerCnt() <= 2 ) {
 		my @sigLayers       = $self->{"defaultInfo"}->GetSignalLayers();
 		my @boardBaseLayers = $self->{"defaultInfo"}->GetBoardBaseLayers();
-		my @pltNClayers     = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
+		my @NClayers        = CamJob->GetNCLayers( $inCAM, $jobId );
+		CamDrilling->AddNCLayerType(\@NClayers);
+		CamDrilling->AddLayerStartStop($inCAM, $jobId, \@NClayers);
+		
+
 
 		$procViewerBldr = ProcBuilder2V->new( $inCAM, $jobId );
-		$procViewerBldr->Build( $self->{"procViewFrm"}, \@sigLayers, \@boardBaseLayers, \@pltNClayers );
+		$procViewerBldr->Build( $self->{"procViewFrm"}, \@sigLayers, \@boardBaseLayers, \@NClayers );
 	}
 	elsif ( $self->{"defaultInfo"}->GetLayerCnt() > 2 ) {
 		my $stackup = $self->{"defaultInfo"}->GetStackup();

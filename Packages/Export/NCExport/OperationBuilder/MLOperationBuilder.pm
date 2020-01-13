@@ -683,17 +683,17 @@ sub __DefineNPlatedOperations {
 	$opManager->AddOperationDef( "fls", \@nplt_lsMill, -1 );
 
 	# 11) Operation name = fls - can contain layer
-	$opManager->AddOperationDef( "coverlayc", \@nplt_cvrlycMill, -1 );
+	$opManager->AddOperationDef( "cvrlyc", \@nplt_cvrlycMill, -1 );
 
 	# 11) Operation name = fls - can contain layer
-	$opManager->AddOperationDef( "coverlays", \@nplt_cvrlysMill, -1 );
+	$opManager->AddOperationDef( "cvrlys", \@nplt_cvrlysMill, -1 );
 
 	# 11) Operation name = fls - can contain layer
 	foreach my $l (@nplt_prepregMill) {
 
 		my ($prepregNum) = $l->{"gROWname"} =~ /^fprepreg(\d)$/;
 
-		$opManager->AddOperationDef( "prepreg" . $prepregNum, [$l], -1 );
+		$opManager->AddOperationDef( "prpg" . $prepregNum, [$l], -1 );
 	}
 
 	# 12) Operation name = fstiffc - can contain layer

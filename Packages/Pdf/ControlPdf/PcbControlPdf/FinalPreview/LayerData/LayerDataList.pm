@@ -321,11 +321,11 @@ sub __InitLayers {
 				my $position = $i == 1 || $i == scalar(@stackupL) - 2 ? "out" : "in";
 				my $viewType;
 
-				if ( $stackupL[ $i - 1 ]->GetCopperName() eq "c" ) {
+				if ( $stackupL[ $i -1 ]->GetType() eq EnumsStack->MaterialType_COPPER && $stackupL[ $i - 1 ]->GetCopperName() eq "c" ) {
 					$viewType = Enums->Visible_FROMTOP;
 
 				}
-				elsif ( $stackupL[ $i + 1 ]->GetCopperName() eq "s" ) {
+				elsif ( $stackupL[ $i + 1 ]->GetType() eq EnumsStack->MaterialType_COPPER &&  $stackupL[ $i + 1 ]->GetCopperName() eq "s" ) {
 					$viewType = Enums->Visible_FROMBOT;
 				}
 				else {

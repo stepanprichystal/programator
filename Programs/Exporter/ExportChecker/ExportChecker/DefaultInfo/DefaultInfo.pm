@@ -443,14 +443,14 @@ sub GetNonSignalLSett {
 	# 2) Set mirror
 
 	# whatever with "c" is mirrored
-	if ( $l->{"gROWname"} =~ /^(gold)*[lgpm]*c2?(flex)?$/i ) {
+	if ( $l->{"gROWname"} =~ /^(gold)*[lgpm]*c2?(flex)?(olec)?$/i ) {
 
 		$lSett{"mirror"} = 1;
 
 	}
 
 	# whatever with "s" is not mirrored
-	elsif ( $l->{"gROWname"} =~ /^(gold)*[lgpm]*s2?(flex)?$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^(gold)*[lgpm]*s2?(flex)?(olec)?$/i ) {
 
 		$lSett{"mirror"} = 0;
 
@@ -890,12 +890,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId     = "d240127";
+	my $jobId     = "d266089";
 	my $stepName  = "o+1";
 	my $layerName = "c";
 
-	my $d = DefaultInfo->new( $inCAM, $jobId );
-	$d->GetDefaultEtchType("c");
+	my $d = DefaultInfo->new( $jobId );
+	$d->Init($inCAM);
+	my $tech = $d->GetDefaultTechType("s");
+	
+	print $tech;
+	
+	
 }
 
 1;

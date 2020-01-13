@@ -52,12 +52,11 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
-	return 0 unless(scalar(@{$self->{"layers"}}));
+
+	return 0 unless ( scalar( @{ $self->{"layers"} } ) );
 
 	#  1) Create fake layers which will be exported, but are created automatically
 	#FakeLayers->CreateFakeLayers($inCAM, $jobId );
- 
 
 	# 2) Delete old format opfx files
 	$self->__DeleteOldFiles();
@@ -115,7 +114,8 @@ sub __InitOpfxCreator {
 
 			#	my $lInfo = ( grep { $_->{"name"} eq $l->{"gROWname"} } @{ $self->{"layers"} } )[0];
 
-			my $plotL = PlotLayer->new( $l->{"name"}, $l->{"polarity"}, $l->{"mirror"}, $l->{"comp"}, $l->{"pcbSize"}, $l->{"pcbLimits"} );
+			my $plotL = PlotLayer->new( $l->{"name"},     $l->{"polarity"}, $l->{"mirror"},  $l->{"comp"},
+										$l->{"stretchX"}, $l->{"stretchY"}, $l->{"pcbSize"}, $l->{"pcbLimits"} );
 
 			push( @plotLayers, $plotL );
 

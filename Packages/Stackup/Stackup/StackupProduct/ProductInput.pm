@@ -31,7 +31,9 @@ sub new {
 	$self->{"productType"} = Enums->Product_INPUT;
 
 	# Only child inputs
-
+	$self->{"emptyFoilTop"} = 0;	
+	$self->{"emptyFoilBot"} = 0;	
+	
 	return $self;
 }
 

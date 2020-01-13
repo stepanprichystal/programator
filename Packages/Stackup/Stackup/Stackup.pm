@@ -135,6 +135,20 @@ sub GetInputChildProducts {
 	return @inputCoreProduct;
 }
 
+
+# Return all existing product in stackup 
+# - product press, 
+# - product input - parent, 
+# - product input - leaf/core
+sub GetAllProducts {
+	my $self = shift;
+
+	my @allProduct = ();
+	$self->__GetAllProducts( $self->GetLastPress(), \@allProduct );
+	 
+	return @allProduct;
+}
+
 # Return total thick of this stackup in µm
 # Do not consider extra plating (drilled core, progress lamination)
 sub GetFinalThick {
@@ -231,7 +245,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d264954";
+	my $jobId = "d266089";
 	my $stackup = Stackup->new( $inCAM, $jobId );
 
 	#my $thick = $stackup->GetFinalThick();

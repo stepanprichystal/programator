@@ -143,6 +143,10 @@ sub Cz {
 	
 		$str = "Žlutá";
 		
+	}elsif($val eq "GreenSMDFlex"){
+	
+		$str = "Zelená flexi";
+		
 	}
 	
 	

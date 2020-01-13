@@ -29,6 +29,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
 use aliased 'Packages::CAMJob::Scheme::CustSchemeCheck';
@@ -632,18 +633,44 @@ sub OnCheckGroupData {
 	}
 
 	# 23) Check scaling settings if match scale of signal layer and NC layers
+	my @stretchCpls = ();
+	if ( $layerCnt <= 2 ) {
 
-	my @NCLayers = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
+		my @NCLayers = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
+
+		foreach my $NClInfo (@NCLayers) {
+			my $topCu = $NClInfo->{"NCSigStart"};
+			my $botCu = $NClInfo->{"NCSigEnd"};
+
+			push( @stretchCpls, { "nc" => $NClInfo, "topCu" => $topCu, "botCu" => $botCu } );
+		}
+	}
+	else {
+
+		my @products = $defaultInfo->GetStackup()->GetAllProducts();
+
+		foreach my $p (@products) {
+
+			foreach my $NC ( $p->GetNCLayers() ) {
+
+				my $topCu = JobHelper->BuildSignalLayerName( $p->GetTopCopperLayer(), $p->GetOuterCoreTop(), $p->GetPlugging() );
+				my $botCu = JobHelper->BuildSignalLayerName( $p->GetBotCopperLayer(), $p->GetOuterCoreBot(), $p->GetPlugging() );
+
+				push( @stretchCpls, { "nc" => $NC, "topCu" => $topCu, "botCu" => $botCu } );
+			}
+		}
+	}
+
 	my @sigLayerSett = @{ $groupData->GetSignalLayers() };
+	my @NCLayerSett  = @{ $groupData->GetNCLayersSett() };
+	foreach my $strechCpl (@stretchCpls) {
 
-	foreach my $NCLScale ( @{ $groupData->GetNCLayersSett() } ) {
+		my $NCLScale = first{$_->{"name"} eq  $strechCpl->{"nc"}->{"gROWname"} } @NCLayerSett;
 
 		if ( $NCLScale->{"stretchX"} != 0 || $NCLScale->{"stretchY"} != 0 ) {
 
-			my $NClInfo = first { $_->{"gROWname"} eq $NCLScale->{"name"} } @NCLayers;
-
-			my $SCuScale = first { $_->{"name"} eq $NClInfo->{"NCSigStart"} } @sigLayerSett;
-			my $ECuScale = first { $_->{"name"} eq $NClInfo->{"NCSigEnd"} } @sigLayerSett;
+			my $SCuScale = first { $_->{"name"} eq $strechCpl->{"topCu"} } @sigLayerSett;
+			my $ECuScale = first { $_->{"name"} eq $strechCpl->{"botCu"} } @sigLayerSett;
 
 			# Top and Bot Cu stretch must be equal
 			if ( $SCuScale->{"stretchX"} != $ECuScale->{"stretchX"} || $SCuScale->{"stretchY"} != $ECuScale->{"stretchY"} ) {

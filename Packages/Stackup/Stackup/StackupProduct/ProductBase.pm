@@ -39,7 +39,7 @@ sub new {
 
 	$self->{"layers"} = shift;
 
-	$self->{"PltNClayers"} = shift;
+	$self->{"NCLayers"} = shift;
 
 	$self->{"productType"} = undef;
 
@@ -102,7 +102,8 @@ sub GetProductType {
 sub GetIsPlated {
 	my $self = shift;
 
-	if ( scalar( @{ $self->{"PltNClayers"} } ) > 0 ) {
+	if ( scalar( $self->GetPltNCLayers() ) ) {
+
 		return 1;
 	}
 	else {
@@ -122,10 +123,20 @@ sub GetLayers {
 	return @l;
 }
 
+# Return Plated NC layers which influence stackup design
+# (plating frame drilling do not influence stackup)
 sub GetPltNCLayers {
 	my $self = shift;
 
-	return @{ $self->{"PltNClayers"} };
+	my @NC = grep { $_->{"plated"} && !$_->{"technical"} } $self->GetNCLayers();
+	return @NC;
+}
+
+# Return all NC layers which start/stop at product
+sub GetNCLayers {
+	my $self = shift;
+ 
+	  return @{ $self->{"NCLayers"} };
 }
 
 sub SetPlugging {
@@ -199,7 +210,6 @@ sub GetThick {
 	return $thick;
 }
 
-
 #-------------------------------------------------------------------------------------------#
 #  Special methods, working with nested products
 #-------------------------------------------------------------------------------------------#
@@ -224,7 +234,7 @@ sub GetProductOuterMatLayer {
 	elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
 
 		$topStackupL = $self->{"layers"}->[$idx];
-		$$sourceProduc = $self if(defined $sourceProduc);
+		$$sourceProduc = $self if ( defined $sourceProduc );
 	}
 
 	return $topStackupL;
@@ -248,7 +258,7 @@ sub RemoveProductOuterMatLayer {
 	elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
 
 		$lCut = splice @{ $self->{"layers"} }, $idx, 1;
-		$$sourceProduc = $self if(defined $sourceProduc);
+		$$sourceProduc = $self if ( defined $sourceProduc );
 	}
 
 	return $lCut;
@@ -260,7 +270,7 @@ sub RemoveProductOuterMatLayer {
 #sub GetExistOuterPlating{
 #	my $self         = shift;
 #	my $side          = shift;    # top/bot
-# 
+#
 #	die "Side of outer plating is not defined" unless ( defined $side );
 #
 # 	my $plating = $self->GetIsPlated();
@@ -275,7 +285,7 @@ sub RemoveProductOuterMatLayer {
 #
 #		$plating = 1 if($self->GetIsPlated());
 #	}
-#	
+#
 #	return $plating;
 #}
 

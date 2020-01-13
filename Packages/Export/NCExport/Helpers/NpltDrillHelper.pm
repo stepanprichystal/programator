@@ -11,6 +11,8 @@ use strict;
 use warnings;
 use File::Copy;
 use Try::Tiny;
+use List::Util qw(first);
+use Storable qw(dclone);
 
 #local library
 use aliased 'CamHelpers::CamHelper';
@@ -34,9 +36,10 @@ use aliased 'Packages::CAM::UniDTM::Enums' => 'EnumsDTM';
 #-------------------------------------------------------------------------------------------#
 
 sub SeparateNpltDrill {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self         = shift;
+	my $inCAM        = shift;
+	my $jobId        = shift;
+	my $NCLayersSett = shift;
 
 	my $movedPads = 0;
 
@@ -44,11 +47,11 @@ sub SeparateNpltDrill {
 
 	my $step = "panel";
 
-	$movedPads += $self->__CreateNpltDrill( $inCAM, $jobId, "f", "d" );
+	$movedPads += $self->__CreateNpltDrill( $inCAM, $jobId, "f", "d", undef, $NCLayersSett );
 
 	# fsch layer => pom
 
-	$movedPads += $self->__CreateNpltDrill( $inCAM, $jobId, "fsch", "fsch_d", 1 );
+	$movedPads += $self->__CreateNpltDrill( $inCAM, $jobId, "fsch", "fsch_d", 1, $NCLayersSett );
 
 	return $movedPads;
 
@@ -72,12 +75,13 @@ sub RestoreNpltDrill {
 }
 
 sub __CreateNpltDrill {
-	my $self        = shift;
-	my $inCAM       = shift;
-	my $jobId       = shift;
-	my $from        = shift;
-	my $to          = shift;
-	my $nonStandard = shift;
+	my $self         = shift;
+	my $inCAM        = shift;
+	my $jobId        = shift;
+	my $from         = shift;
+	my $to           = shift;
+	my $nonStandard  = shift;
+	my $NCLayersSett = shift;
 
 	my $movedPads = 0;
 
@@ -109,6 +113,14 @@ sub __CreateNpltDrill {
 	if ( $movedPads == 0 ) {
 
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $to );
+	}
+	else {
+
+		# Add NC layer settings for new layer (inherit from source layer)
+		my $lSet = dclone( first { $_->{"name"} eq $from } @{$NCLayersSett} );
+		$lSet->{"name"} = $to;
+		push( @{$NCLayersSett}, $lSet );
+
 	}
 
 	return $movedPads;
@@ -175,8 +187,8 @@ sub __MovePads {
 			CamLayer->MoveSelOtherLayer( $inCAM, $targetLayer );
 
 			# if some holes have tolerances, set DTM
-			my @holeTol = grep { ( $_->GetTolPlus() > 0 || $_->GetTolMinus() > 0 ) && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE }
-			  @uniDTMTools;
+			my @holeTol =
+			  grep { ( $_->GetTolPlus() > 0 || $_->GetTolMinus() > 0 ) && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } @uniDTMTools;
 
 			if (@holeTol) {
 

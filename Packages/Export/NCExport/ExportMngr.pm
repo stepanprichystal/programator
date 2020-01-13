@@ -56,11 +56,12 @@ sub new {
 
 sub Run {
 	my $self = shift;
+
 	# move nptp hole from f and fsch to layer "d"
 	# "d" is standard NC layer, but so far we work with merged chains and holes in one layer
 	my $cnt = undef;
 	if ( !$self->{"exportSingle"} ) {
-		$cnt = NpltDrillHelper->SeparateNpltDrill( $self->{"inCAM"}, $self->{"jobId"} );
+		$cnt = NpltDrillHelper->SeparateNpltDrill( $self->{"inCAM"}, $self->{"jobId"}, $self->{"allModeLayers"} );
 	}
 
 	my $err = undef;
@@ -203,7 +204,7 @@ sub __Run {
 		  if ( !$self->{"exportSingle"} );
 
 		# Add output settings info for nc layers
-		NCHelper->StoreNClayerSettTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"allModeLayers"} )
+		NCHelper->StoreNClayerSettTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"allModeLayers"}, $self->{"operationMngr"} )
 		  if ( !$self->{"exportSingle"} );
 
 		# 4) Export physical nc files

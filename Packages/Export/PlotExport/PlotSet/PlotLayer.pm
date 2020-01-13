@@ -10,82 +10,91 @@ use strict;
 use warnings;
 
 #local library
- 
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
- 
- sub new {
-	my $class     = shift;
-	my $self ={};
-	 
+sub new {
+	my $class = shift;
+	my $self  = {};
+
 	bless $self;
-	
- 	$self->{"name"} = shift;
- 	$self->{"polarity"} = shift;
-  	$self->{"mirror"} = shift;
- 	$self->{"compensation"} = shift;
- 	$self->{"pcbSize"} = shift;
-  	$self->{"pcbLimits"} = shift; # limits by frmames (big/small) taken from layer c
- 	# Helper propery, when create opfx
- 	
- 	$self->{"outputLayer"} = undef;  #name of final output layer, contain rotated, mirrored, comp data
- 
+
+	$self->{"name"}         = shift;
+	$self->{"polarity"}     = shift;
+	$self->{"mirror"}       = shift;
+	$self->{"compensation"} = shift;
+	$self->{"stretchX"}     = shift;
+	$self->{"stretchY"}     = shift;
+	$self->{"pcbSize"}      = shift;
+	$self->{"pcbLimits"}    = shift;    # limits by frmames (big/small) taken from layer c
+	                                    # Helper propery, when create opfx
+
+	$self->{"outputLayer"} = undef;     #name of final output layer, contain rotated, mirrored, comp data
+
 	return $self;
 }
 
-sub GetName{
+sub GetName {
 	my $self = shift;
-	
+
 	return $self->{"name"};
-	
-	
+
 }
 
-sub GetComp{
+sub GetComp {
 	my $self = shift;
-	
+
 	return $self->{"compensation"};
-	
+
 }
 
-sub Mirror{
+sub Mirror {
 	my $self = shift;
-	
+
 	return $self->{"mirror"};
-	
+
 }
 
-sub GetPolarity{
+sub GetPolarity {
 	my $self = shift;
-	
+
 	return $self->{"polarity"};
-	
+
 }
 
-sub GetWidth{
+sub GetStretchX {
 	my $self = shift;
-	
-	return $self->{"pcbSize"}->{"xSize"};	
+
+	return $self->{"stretchX"};
+
 }
 
-sub GetHeight{
+sub GetStretchY {
 	my $self = shift;
-	
-	return $self->{"pcbSize"}->{"ySize"};	
+
+	return $self->{"stretchY"};
+
 }
- 
- 
-sub GetLimits{
+
+sub GetWidth {
 	my $self = shift;
-	
-	return $self->{"pcbLimits"};	
-} 
- 
- 
- 
+
+	return $self->{"pcbSize"}->{"xSize"};
+}
+
+sub GetHeight {
+	my $self = shift;
+
+	return $self->{"pcbSize"}->{"ySize"};
+}
+
+sub GetLimits {
+	my $self = shift;
+
+	return $self->{"pcbLimits"};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

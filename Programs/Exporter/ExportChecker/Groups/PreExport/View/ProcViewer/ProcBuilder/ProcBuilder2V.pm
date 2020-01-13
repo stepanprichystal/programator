@@ -34,9 +34,9 @@ sub Build {
 	my $procViewerFrm   = shift;
 	my $signalLayers    = shift;
 	my $boardBaseLayers = shift;
-	my $pltNCLayers     = shift;
+	my $NCLayers        = shift;
 
-	$self->__BuildInputProducts( $procViewerFrm, $signalLayers, $boardBaseLayers, $pltNCLayers );
+	$self->__BuildInputProducts( $procViewerFrm, $signalLayers, $boardBaseLayers, $NCLayers );
 
 	$procViewerFrm->HideControls();
 
@@ -47,7 +47,7 @@ sub __BuildInputProducts {
 	my $procViewerFrm   = shift;
 	my $signalLayers    = shift;
 	my $boardBaseLayers = shift;
-	my $pltNCLayers     = shift;
+	my $NCLayers        = shift;
 
 	my $pcbType     = JobHelper->GetPcbType( $self->{"jobId"} );
 	my $baseCuThick = JobHelper->GetBaseCuThick( $self->{"jobId"} );
@@ -55,7 +55,14 @@ sub __BuildInputProducts {
 	$procViewerFrm->AddCategoryTitle( StackEnums->Product_INPUT, "Base product" );
 
 	my $plugging = scalar( grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @{$boardBaseLayers} ) ? 1 : 0;
-	my @pltNC = grep { !$_->{"technical"}} @{$pltNCLayers};
+
+	my @NC = grep { defined $_->{"NCSigStart"} } @{$NCLayers};    # Only layer which start/stop at signal layers
+	@NC = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } @NC;
+	
+	my @pltNC = grep { $_->{"plated"} && !$_->{"technical"} } @NC;
+	my %tmp;
+	@tmp{ map { $_->{"gROWname"} } @pltNC } = ();
+	my @otherNC = grep { !exists $tmp{ $_->{"gROWname"} } } @NC;
 
 	#	# if coverlays add extra group
 	#	if ( scalar( grep { $_->{"gROWlayer_type"} eq "coverlay" } @{$boardBaseLayers} ) ) {
@@ -85,10 +92,9 @@ sub __BuildInputProducts {
 	# Create group
 	my $g = $procViewerFrm->AddGroup( 1, StackEnums->Product_INPUT );
 
-	my $subG = $g->AddSubGroup( "1.1", StackEnums->Product_INPUT, \@pltNC );
+	my $subG = $g->AddSubGroup( "1.1", StackEnums->Product_INPUT, \@pltNC, \@otherNC);
 
 	# 2) Add TOP copper
- 
 
 	$subG->AddCopperRow( "c", 0, 0, 0, $baseCuThick, 1 );
 	$subG->AddCopperRow( "c", 0, 1, 0, $baseCuThick, 1 ) if ($plugging);

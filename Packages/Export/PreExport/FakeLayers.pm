@@ -53,13 +53,13 @@ sub CreateFakeLayers {
 	my @smOLECFake = $self->__CreateFakeSMOLECLayers( $inCAM, $jobId, $step, $emptyLayers );
 	my @coreDrillFake = $self->__CreateCoreDrillLayers( $inCAM, $jobId, $step, $emptyLayers );
 	my @plgFake = $self->__CreateFakePLGLayers( $inCAM, $jobId, $step, $emptyLayers );
-	
+
 	my @fake = ();
 	push( @fake, @smFake )     if (@smFake);
 	push( @fake, @outerFake )  if (@outerFake);
 	push( @fake, @smOLECFake ) if (@smOLECFake);
 	push( @fake, @plgFake )    if (@plgFake);
-	
+
 	foreach my $l (@fake) {
 
 		CamAttributes->SetLayerAttribute( $inCAM, "export_fake_layer", "yes", $jobId, $step, $l );
@@ -266,9 +266,8 @@ sub __CreateFakeOuterCoreLayers {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
+	my $step        = shift;
 	my $emptyLayers = shift // 0;    # Create layer without any data
-
-	my $step = "panel";
 
 	my @fakeLayers = ();
 
@@ -306,17 +305,32 @@ sub __CreateFakeOuterCoreLayers {
 
 			# Put surface over whole panel (full sopper)
 			if ( !$emptyLayers ) {
-				CamLayer->AffectLayers( $inCAM, \@layers );
+
+				# Add frame and fiduc for OLEC (take it from c2)
+				CamLayer->WorkLayer( $inCAM, "v2" );
+
+				my $f = FeatureFilter->new( $inCAM, $jobId, "v2" );
+				$f->SetProfile( EnumsFiltr->ProfileMode_OUTSIDE );
+				if ( $f->Select() ) {
+
+					CamLayer->CopySelOtherLayer( $inCAM, \@layers );
+
+				}
+				else {
+					die "No frame and fiducials was found in v2 layer outside profile";
+				}
+
+				# Add frame 100µm width around pcb (fr frame coordinate)
 				my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 				my @pointsLim = ();
 				push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );
 				push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} } );
 				push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMax"} } );
 				push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMin"} } );
+				push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );
 
+				CamLayer->AffectLayers( $inCAM, \@layers );
 				CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
-
-				# frame 100µm width around pcb (fr frame coordinate)
 				CamSymbol->AddPolyline( $inCAM, \@pointsLim, "r200", "negative", 1 );
 
 				# Put schmoll crosses
@@ -334,6 +348,30 @@ sub __CreateFakeOuterCoreLayers {
 						#CamSymbol->AddPad( $inCAM, "s12000", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
 						CamSymbol->AddPad( $inCAM, "schmoll_cross_10", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
 					}
+				}
+
+				# Put OLEC crosses
+
+				my $olecSym = undef;
+				if ( $IProduct->GetOuterCoreTop() ) {
+
+					$olecSym = "cross_inner_x";
+				}
+				elsif ( $IProduct->GetOuterCoreBot() ) {
+
+					$olecSym = "cross_inner";
+				}
+
+				my $fv = Features->new();
+				$fv->Parse( $inCAM, $jobId, $step, "v1" );
+
+				my @olecFeats = grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_IN$/ } $fv->GetFeatures();
+				die "All fiducial marks (four marks, attribut: OLEC_otvor_IN) were not found in layer: v1"
+				  unless ( scalar(@olecFeats) == 4 );
+
+				foreach my $c (@olecFeats) {
+					
+					CamSymbol->AddPad( $inCAM, $olecSym, { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
 				}
 
 				# Put info text
@@ -457,12 +495,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d262773";
-	my $jobId    = "d264954";
+	my $jobId = "d262773";
+
 	my $stepName = "panel";
 
-	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId );
-	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 1 );
+	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 0 );
 
 	print %types;
 }

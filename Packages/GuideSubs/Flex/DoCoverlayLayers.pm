@@ -160,7 +160,7 @@ sub __PrepareCoverlay {
 
 			my $errMess = "";
 
-			while ( !$pinParser->CheckBendArea($errMess) ) {
+			while ( !$pinParser->CheckBendArea(\$errMess) ) {
 
 				$messMngr->ShowModal( -1,
 									  EnumsGeneral->MessageType_ERROR,
@@ -240,7 +240,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d222769";
+	my $jobId = "d266566";
 
 	my $notClose = 0;
 

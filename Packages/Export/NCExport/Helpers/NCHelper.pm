@@ -11,7 +11,7 @@ use warnings;
 use File::Copy;
 use Try::Tiny;
 use List::MoreUtils qw(uniq);
-use List::Util qw[max min];
+use List::Util qw[max min first];
 
 #local library
 use aliased 'Enums::EnumsGeneral';
@@ -160,7 +160,6 @@ sub GetHeaderLayer {
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nDrill }    = 1010;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = 1020;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = 1020;
-
 
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop } = 1040;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot } = 1040;
@@ -384,17 +383,16 @@ sub ChangeDrilledNumber {
 	}
 }
 
-
 sub RemoveDrilledNumber {
-	my $self        = shift;
-	my $file        = shift;
+	my $self = shift;
+	my $file = shift;
 
 	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) ; $i++ ) {
 
 		my $l = @{ $file->{"body"} }[$i];
 
 		if ( $l->{"line"} =~ m/(m97,[a-f][\d]+)([\/\-\:\+]{0,2})(\D*)/i ) {
-  
+
 			splice @{ $file->{"body"} }, $i, 1;
 
 			last;
@@ -620,11 +618,34 @@ sub StoreOperationInfoTif {
 }
 
 sub StoreNClayerSettTif {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $layerSett = shift;
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $jobId         = shift;
+	my $layerSett     = shift;
+	my $operationMngr = shift;
 
+	# 1) Before store settings, check if layers which are merged have same scale settings
+ 
+	my @opItems = ();
+	foreach my $opItem ( $operationMngr->GetOperationItems() ) {
+
+		my @lSetts = ();
+
+		foreach my $l ( $opItem->GetSortedLayers() ) {
+			push( @lSetts, first { $_->{"name"} eq $l->{"gROWname"} } @{$layerSett} );
+		}
+
+		my @stretchX = uniq( map { $_->{"stretchX"} } @lSetts );
+		my @stretchY = uniq( map { $_->{"stretchY"} } @lSetts );
+
+		die "NC layers (" . join( "; ", map { $_->{"name"} } @lSetts ) . ") to merging has different \"StretchX\" parameter."
+		  if ( scalar(@stretchX) > 1 );
+		  
+		die "NC layers (" . join( "; ", map { $_->{"name"} } @lSetts ) . ") to merging has different \"StretchY\" parameter."
+		  if ( scalar(@stretchY) > 1 );
+	}
+
+	# 2) Store NC layer settings
 	my $tif = TifNCOperations->new($jobId);
 
 	$tif->SetNCLayerSett($layerSett);

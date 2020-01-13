@@ -53,7 +53,7 @@ sub PrepareTemplateLayers {
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
-	if ( ( $coverlayType{"top"} && $type eq EnumsGeneral->PcbType_RIGIDFLEXO ) || $coverlayType{"bot"} ) {
+	if (  CamHelper->LayerExists($inCAM, $jobId, "coverlaypins") ) {
 
 		$self->__PrepareTemplate( $inCAM, $jobId, $step, $messMngr );
 	}
@@ -136,7 +136,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d222769";
+	my $jobId = "d266566";
 
 	my $notClose = 0;
 

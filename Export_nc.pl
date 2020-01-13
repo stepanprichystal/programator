@@ -20,15 +20,14 @@ my $inCAM  = InCAM->new();
 my $export = NCExportTmp->new();
 
 #input parameters
-my $jobId = "d262773";
+ 
 
-
+ 
+my $jobId = "d222773";
 
 FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 0 );
 
 
-
-my $jobId = "d264954";
 
 # Exportovat jednotlive vrstvy nebo vsechno
 my $exportSingle = 0;

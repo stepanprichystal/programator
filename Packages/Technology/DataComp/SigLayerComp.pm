@@ -93,10 +93,11 @@ sub __GetCompensationVV {
 	my %lPars = JobHelper->ParseSignalLayerName($sigLayer);
 	my $product = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
 
-	if ( $product->GetProductType() eq StackEnums->Product_INPUT && !$product->GetIsParent() ) {
+	if ( $product->GetProductType() eq StackEnums->Product_INPUT ) {
 
-		my $c = ( map { $_->GetData() } grep { $_->GetData()->GetType() eq StackEnums->MaterialType_CORE } $product->GetLayers() )[0];
+		my $p = $product->GetIsParent() ? ( $product->GetLayers( StackEnums->ProductL_PRODUCT ) )[0]->GetData() : $product;
 
+		my $c = ( map { $_->GetData() } grep { $_->GetData()->GetType() eq StackEnums->MaterialType_CORE } $p->GetLayers() )[0];
 		$coreNum     = $c->GetCoreNumber();
 		$coreMatKind = $c->GetTextType();
 		%comp        = $self->{"panelComp"}->GetCoreMatComp( $coreNum, $coreMatKind );

@@ -83,7 +83,7 @@ sub GetSideByLayer {
 	my $side = "";
 
 	my $product = $stackup->GetProductByLayer($layerName);
- 
+
 	if ( $layerName eq $product->GetTopCopperLayer() ) {
 
 		$side = "top";
@@ -92,7 +92,7 @@ sub GetSideByLayer {
 
 		$side = "bot";
 	}
-	
+
 	return $side;
 }
 
@@ -242,139 +242,87 @@ sub StackupMatInStock {
 	return $result;
 }
 
-# Return array of couples
-# Couple contain top + bot "package" and its layers
-# Package is set of cores+prepregs+cu foil laminated in separately
-# Attention
-# - NoFlow prepregs are removed - bond bbetween package
-# - Not entirely implemnted couple: flex + flex package
-sub GetJoinedFlexRigidPackages {
+# Return array of packages created from stackup product joined by NoFlwo prepreg
+# Couple contain top + bot stackup products + type of cores inside each product
+# Each item contain keys:
+# - pTop = top stackup product
+# - pTopCoreType =  type of cores inside each product
+# - pBot = bot stackup product
+# - pBotCoreType =  type of cores inside each product
+sub GetJoinedFlexRigidProducts {
 	my $self    = shift;
+	my $inCAM   = shift;
 	my $pcbId   = shift;    #pcb id
 	my $stackup = shift;    # if not defined, stackup will e loaded
 
 	my $result = 1;
 
 	unless ($stackup) {
-		$stackup = StackupBase->new($pcbId);
+		$stackup = Stackup->new($inCAM, $pcbId);
 	}
 
 	my @laminatePckgsInf = ();
-
-	#	my @laminatePckgs = ();
-
-	my @layers = $stackup->GetAllLayers();
-
+ 
 	my $firstCore;
 	my $secondCore;
 
-	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+	foreach my $pressP ( $stackup->GetPressProducts(1) ) {
 
-		if ( $layers[$i]->GetType() eq Enums->MaterialType_CORE ) {
+		
+		my @layers = $pressP->GetLayers();
 
-			if ( !defined $firstCore ) {
-				$firstCore = $layers[$i]->GetCoreRigidType();
-			}
-			elsif ( !defined $secondCore ) {
+		for ( my $i = 1 ; $i < scalar(@layers) - 1 ; $i++ ) {
 
-				if ( !( $layers[$i]->GetCoreRigidType() eq Enums->CoreType_RIGID && $firstCore eq Enums->CoreType_RIGID ) ) {
+			my $lTypePrev = $layers[ $i - 1 ]->GetType();
+			my $lTypeNext = $layers[ $i + 1 ]->GetType();
 
-					$secondCore = $layers[$i]->GetCoreRigidType();
-				}
-			}
-		}
+			my $lType = $layers[$i]->GetType();
+			my $lData = $layers[$i]->GetData();
 
-		if ( defined $firstCore && $secondCore ) {
-
-			# Flex core was found second (after rigid core)
-			# Create "laminate package" info
-			my @packgLayersTop;
-			my @packgLayersBot;
-
-			if ( $firstCore eq Enums->CoreType_FLEX && $secondCore eq Enums->CoreType_RIGID ) {
-
-				# look index of flex core
-				my $flexIdx = undef;
-				for ( my $k = $i ; $k >= 0 ; $k-- ) {
-
-					if ( $layers[$k]->GetType() eq Enums->MaterialType_CORE && $layers[$k]->GetCoreRigidType() eq Enums->CoreType_FLEX ) {
-						$flexIdx = $k;
-						last;
-					}
-				}
-
-				# look layers up
-				@packgLayersTop = @layers[ $flexIdx - 1 .. $flexIdx + 1 ];
-				@packgLayersBot = @layers[ $flexIdx + 2 .. scalar(@layers) - 1 ];
-
-			}
-			elsif (    ( $secondCore eq Enums->CoreType_FLEX && $firstCore eq Enums->CoreType_RIGID )
-					|| ( $firstCore eq Enums->CoreType_FLEX && $secondCore eq Enums->CoreType_FLEX ) )
+			# Identify two products between Noflow prepreg
+			if (    $lType eq StackEnums->ProductL_MATERIAL
+				 && $lData->GetType() eq StackEnums->MaterialType_PREPREG
+				 && $lData->GetIsNoFlow()
+				 && $lTypePrev eq StackEnums->ProductL_PRODUCT
+				 && $lTypeNext eq StackEnums->ProductL_PRODUCT )
 			{
 
-				@packgLayersBot = @layers[ $i - 1 .. $i + 1 ];
+				my %infJoin = ();
 
-				# search up through stackup up next flex core or start of stackup
-				my $endIdx = 0;
-				for ( my $k = $i - 1 ; $k >= 0 ; $k-- ) {
+				# top product
+				my $topP = $layers[ $i - 1 ]->GetData();
+				$infJoin{"pTop"} = $topP;
 
-					if ( $layers[$k]->GetType() eq Enums->MaterialType_CORE && $layers[$k]->GetCoreRigidType() eq Enums->CoreType_FLEX ) {
-						$endIdx = $k;
-						$endIdx -= 1;    # include core copper
-						last;
-					}
+				# search for core
+				if ( $topP->GetProductType() eq StackEnums->Product_INPUT ) {
+					$infJoin{"pTopCoreType"} = $topP->GetCoreRigidType();
+				}
+				elsif ( $topP->GetProductType() eq StackEnums->Product_PRESS ) {
+					my $frstInput = ( $topP->GetLayers( StackEnums->ProductL_PRODUCT ) )[0];
+					$infJoin{"pTopCoreType"} = $frstInput->GetCoreRigidType();
 				}
 
-				# look layers down
-				@packgLayersTop = @layers[ $endIdx .. $i - 2 ];
+				# Bot product
+				my $botP = $layers[ $i +1 ]->GetData();
+				$infJoin{"pBot"} = $botP;
+
+				# search for core
+				if ( $botP->GetProductType() eq StackEnums->Product_INPUT ) {
+					$infJoin{"pBotCoreType"} = $botP->GetCoreRigidType();
+				}
+				elsif ( $botP->GetProductType() eq StackEnums->Product_PRESS ) {
+					my $frstInput = ( $botP->GetLayers( StackEnums->ProductL_PRODUCT ) )[0];
+					$infJoin{"pBotCoreType"} = $frstInput->GetCoreRigidType();
+				}
+
+				push( @laminatePckgsInf, \%infJoin );
 
 			}
 
-			# Remove noflow prepreg from layers
-			my @prepregs = grep { $_->GetType() eq Enums->MaterialType_PREPREG } ( @packgLayersTop, @packgLayersBot );
-			foreach my $p (@prepregs) {
-
-				my @all = @{ $p->{"prepregs"} };
-
-				for ( my $i = scalar( @{ $p->{"prepregs"} } ) - 1 ; $i >= 0 ; $i-- ) {
-
-					if ( $p->{"prepregs"}->[$i]->GetText() =~ /49np/i ) {
-
-						$p->{"thick"} -= $p->{"prepregs"}->[$i]->GetThick();
-
-						splice @{ $p->{"prepregs"} }, $i, 1;
-
-					}
-				}
-
-			}
-
-			my %infJoin = ();
-
-			my %infTop = ();
-			$infTop{"coreType"}      = $firstCore;
-			$infTop{"layers"}        = \@packgLayersTop;
-			$infTop{"topCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } @packgLayersTop )[0]->GetCopperName();
-			$infTop{"botCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } reverse @packgLayersTop )[0]->GetCopperName();
-			$infJoin{"packageTop"}   = \%infTop;
-
-			my %infBot = ();
-			$infBot{"coreType"}      = $secondCore;
-			$infBot{"layers"}        = \@packgLayersBot;
-			$infBot{"topCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } @packgLayersBot )[0]->GetCopperName();
-			$infBot{"botCopperName"} = ( grep { $_->GetType() eq Enums->MaterialType_COPPER } reverse @packgLayersBot )[0]->GetCopperName();
-			$infJoin{"packageBot"}   = \%infBot;
-
-			push( @laminatePckgsInf, \%infJoin );
-
-			$i--;
-			$firstCore  = undef;
-			$secondCore = undef;
 		}
 	}
 
 	return @laminatePckgsInf;
-
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -391,13 +339,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $mes   = "";
 
 	#	my $side;
-	#	my @package = StackupOperation->GetJoinedFlexRigidPackages("d222775");
+	my @package = StackupOperation->GetJoinedFlexRigidProducts($inCAM, "d266089");
 	#
-	#	my @package2 = StackupOperation->GetJoinedFlexRigidPackages2("d222777");
+	#	my @package2 = StackupOperation->GetJoinedFlexRigidProducts2("d222777");
 
-	print StackupOperation->StackupMatInStock( $inCAM, "d251561", undef, \$mes );
+	#print StackupOperation->StackupMatInStock( $inCAM, "d251561", undef, \$mes );
 
-	#print @package;
+	print @package;
 
 }
 

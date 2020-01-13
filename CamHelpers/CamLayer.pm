@@ -192,8 +192,6 @@ sub RemoveTempLayerPlus {
 	}
 }
 
- 
-
 # Display single layer and set as work layer
 sub SetLayerTypeLayer {
 	my $self  = shift;
@@ -487,13 +485,38 @@ sub MirrorLayerData {
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
+# Scale data
+# (only cooerdinates will be scaled at text and all symbols, Surface is completelz scaled)
+# Right step must be open and set
+# Requested data must be selected
+sub StretchLayerData {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $layer    = shift;
+	my $stretchX = shift;    # stretch at x axis percent / 100 (e.g.: Stretch by 1%, parameter value = 1.01)
+	my $stretchY = shift;    # stretch at y axis percent / 100 (e.g.: Stretch by 1%, parameter value = 1.01)
+	my $originX  = shift;
+	my $originY  = shift;
+ 
+	$inCAM->COM(
+				 "sel_transform",
+				 "oper"     => "scale",
+				 "x_scale"  => $stretchX,
+				 "y_scale"  => $stretchY,
+				 "x_anchor" => $originX,
+				 "y_anchor" => $originY,
+	);
+
+	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
+}
+
 # Do intersection between layers and return temp layer with result
 sub LayerIntersection {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $layer1 = shift;
 	my $layer2 = shift;
-	my $lim    = shift;    # area which is processed and result is only fro this area
+	my $lim    = shift;      # area which is processed and result is only fro this area
 
 	my $lTmp1 = GeneralHelper->GetGUID();
 	my $lTmp2 = GeneralHelper->GetGUID();

@@ -13,13 +13,15 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotExportTmp';
-
+use aliased 'Packages::Export::PreExport::FakeLayers';
  
-my $jobId    = "d152457";
+my $jobId    = "d262773";
  
  
 my $inCAM    = InCAM->new();
 
+
+FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 0 );
 
 #GET INPUT NIF INFORMATION
  

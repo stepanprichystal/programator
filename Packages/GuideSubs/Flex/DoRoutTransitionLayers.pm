@@ -92,11 +92,11 @@ sub __CreateRoutTransitionPart1 {
 
 	# Check if already exist layers jfzc, jfzs
 	my @routLayers = ();
-	my @packages   = StackupOperation->GetJoinedFlexRigidPackages($jobId);
+	my @packages   = StackupOperation->GetJoinedFlexRigidProducts($inCAM, $jobId);
 	foreach my $joinPackgs (@packages) {
 
-		my $topPckgs = $joinPackgs->{"packageTop"};
-		my $botPckgs = $joinPackgs->{"packageBot"};
+		my $topPckgs = $joinPackgs->{"productTop"};
+		my $botPckgs = $joinPackgs->{"productBot"};
 
 		if ( $topPckgs->{"coreType"} eq StackEnums->CoreType_RIGID ) {
 			push( @routLayers, "jfzs" );
@@ -140,7 +140,7 @@ sub __CreateRoutTransitionPart1 {
 		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
 
 		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",           2 );                 #2mm
-		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [µm]", $EXTENDTRANZONE );
+		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
 
 		my @params = ( $parTool, $parExtend );
 
@@ -178,11 +178,11 @@ sub __CreateRoutTransitionPart2 {
 
 	# Check if already exist layers fzc, fzs
 	my @routLayers = ();
-	my @packages   = StackupOperation->GetJoinedFlexRigidPackages($jobId);
+	my @packages   = StackupOperation->GetJoinedFlexRigidProducts($inCAM, $jobId);
 	foreach my $joinPackgs (@packages) {
 
-		my $topPckgs = $joinPackgs->{"packageTop"};
-		my $botPckgs = $joinPackgs->{"packageBot"};
+		my $topPckgs = $joinPackgs->{"productTop"};
+		my $botPckgs = $joinPackgs->{"productBot"};
 
 		if ( $topPckgs->{"coreType"} eq StackEnums->CoreType_RIGID ) {
 			push( @routLayers, "fzc" );
@@ -226,7 +226,7 @@ sub __CreateRoutTransitionPart2 {
 		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
 
 		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",           $routSize );                 #2mm
-		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [µm]", $EXTENDTRANZONE );
+		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
 
 		my @params = ( $parTool, $parExtend );
 
@@ -266,7 +266,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d251561";
+	my $jobId = "d266089";
 
 	my $notClose = 0;
 

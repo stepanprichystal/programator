@@ -20,6 +20,7 @@ use aliased 'Packages::CAMJob::FlexiLayers::BendAreaParser::BendArea';
 use aliased 'Packages::CAMJob::FlexiLayers::BendAreaParser::TransitionZone';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
+use aliased 'Enums::EnumsRout';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
@@ -73,10 +74,10 @@ sub CheckBendArea {
 		# 2) Check requested number of transition zone (2)
 		my @tZones = $bendArea->GetTransitionZones();
 
-		if ( scalar(@tZones) != 2 ) {
+		if ( scalar(@tZones) < 2 ) {
 
 			$$errMess .= "BendArea with features: " . join( "; ", map { $_->{"id"} } $bendArea->GetFeatures() ) . "\n";
-			$$errMess .= "Number of transition zone is not: 2 (current number is: " . scalar(@tZones) . ". Feature attribute:transition_zone .)\n";
+			$$errMess .= "Number of transition zone is less than: 2 (current number is: " . scalar(@tZones) . ". Feature attribute:transition_zone .)\n";
 			$result = 0;
 		}
 
@@ -84,9 +85,9 @@ sub CheckBendArea {
 
 		foreach my $tZone (@tZones) {
 
-			if ( $tZone->GetFeature()->{"type"} ne "L" ) {
+			if ( $tZone->GetFeature()->{"type"} !~ /^[LA]$/i ) {
 
-				$errMess .= "Only line features are allowed for transition zone (err feat id: " . $tZone->GetFeature()->{"id"} . ")\n";
+				$$errMess .= "Only line/arc features are allowed for transition zone (err feat id: " . $tZone->GetFeature()->{"id"} . ")\n";
 				$result = 0;
 			}
 		}
@@ -166,7 +167,7 @@ sub __LoadBendArea {
 				# switch direction
 				if ( $f->{"type"} eq "A" ) {
 
-					$f->{"newDir"} = $f->{"oriDir"} eq EnumsRout->Dir_CW ? EnumsRout->Dir_CCW : EnumsRout->Dir_CW;
+					$f->{"newDir"} = $f->{"newDir"} eq EnumsRout->Dir_CW ? EnumsRout->Dir_CCW : EnumsRout->Dir_CW;
 				}
 			}
 		}
