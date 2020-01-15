@@ -18,10 +18,10 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
 
 #input parameters
  
-my $jobId    = "d264842";
+my $jobId    = "d173732";
  
 my $poznamka = "";
-my $tenting  = 0;
+my $tenting  = 1;
 my $pressfit = 0;
 my $maska01  = 0;
 my $datacode  = "";

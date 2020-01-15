@@ -13,6 +13,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min];
 
 #local library
 use aliased 'CamHelpers::CamDrilling';
@@ -440,8 +441,12 @@ sub Build {
 	if ( $self->_IsRequire("prog_tenting") ) {
 
 		my $prog;
-
-		if ( $pcbClass >= 8 ) {
+		
+		my ($minHole, $minAr) = $self->__GetInfoDrill($stepName, [EnumsGeneral->LAYERTYPE_plt_nDrill]);
+		
+		# If min hole < 150µm OR Aspect ratio > 9 => tenting 2
+		if ( $minHole <= 150 ||  $minAr > 9 ) {
+	 
 			$prog = 2;
 		}
 		else {
@@ -452,6 +457,49 @@ sub Build {
 		$section->AddRow( "prog_tenting", $prog );
 	}
 
+}
+
+
+sub __GetInfoDrill {
+	my $self     = shift;
+	my $stepName = shift;
+	my $lTypes   = shift;
+
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
+	my $pcbThick = CamJob->GetFinalPcbThick($inCAM, $jobId);
+
+	my @holeTypes = ();    # all holes type of layers
+
+	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $lTypes );
+ 
+	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
+		my $lName = $layers[$i]->{"gROWname"};
+
+		#nuber of hole types
+		$inCAM->INFO( units => 'mm', entity_type => 'layer', entity_path => "$jobId/$stepName/$lName", data_type => 'TOOL', options => "break_sr" );
+		my @drillSizes = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
+
+		foreach my $t (@drillSizes) {
+			unless ( scalar( grep { $_ == $t } @holeTypes ) ) {
+				push( @holeTypes, $t );
+			}
+		}
+
+	}
+
+	#sort ASC
+	@holeTypes = sort { $a <=> $b } @holeTypes;
+
+	#min aspect ratio
+	my $aspectRatio = "";
+	if ( scalar(@holeTypes) ) {
+
+		$aspectRatio = sprintf "%0.2f", ( $pcbThick / $holeTypes[0] );
+	}
+
+	return ( min(@holeTypes), $aspectRatio );
 }
 
 #-------------------------------------------------------------------------------------------#
