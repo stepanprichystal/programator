@@ -164,6 +164,8 @@ sub __CreateFakeSMOLECLayers {
 	}
 
 	return @fakeLayers unless ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 );
+	
+	CamHelper->SetStep( $inCAM, $step );
 
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $fakeSM );
 	CamMatrix->CreateLayer( $inCAM, $jobId, $fakeSM, "solder_mask", "positive", 1 );
@@ -171,8 +173,7 @@ sub __CreateFakeSMOLECLayers {
 	$inCAM->COM( "merge_layers", "source_layer" => $sourceL, "dest_layer" => $fakeSM );
 
 	if ( !$emptyLayers ) {
-
-		CamLayer->WorkLayer( $inCAM, $sourceL );
+ 
 
 		# Rotate OLEC marks
 
@@ -388,7 +389,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d251321";
+	my $jobId    = "d267444";
 	my $stepName = "panel";
 
 	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
