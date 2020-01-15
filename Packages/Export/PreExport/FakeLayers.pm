@@ -84,11 +84,10 @@ sub RemoveFakeLayers {
 
 # Create fake layers for PCB where is second mask
 sub __CreateFakeSMLayers {
-	my $self        = shift;
-	my $inCAM       = shift;
-	my $jobId       = shift;
-	my $step        = shift;
- 
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
 
 	my %mask = HegMethods->GetSolderMaskColor2($jobId);
 
@@ -164,7 +163,7 @@ sub __CreateFakeSMOLECLayers {
 	}
 
 	return @fakeLayers unless ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 );
-	
+
 	CamHelper->SetStep( $inCAM, $step );
 
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $fakeSM );
@@ -173,7 +172,6 @@ sub __CreateFakeSMOLECLayers {
 	$inCAM->COM( "merge_layers", "source_layer" => $sourceL, "dest_layer" => $fakeSM );
 
 	if ( !$emptyLayers ) {
- 
 
 		# Rotate OLEC marks
 
@@ -238,10 +236,10 @@ sub __CreateFakeOuterCoreLayers {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
+	my $step        = shift;
 	my $emptyLayers = shift // 0;    # Create layer without any data
 
-	my $step = "panel";
-
+ 
 	my @fakeLayers = ();
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
@@ -292,7 +290,7 @@ sub __CreateFakeOuterCoreLayers {
 				CamSymbol->AddPolyline( $inCAM, \@pointsLim, "r200", "negative", 1 );
 
 				# Put schmoll crosses
-				if ( JobHelper->GetIsFlex($jobId) ) {
+				#if ( JobHelper->GetIsFlex($jobId) ) {
 
 					my $f = Features->new();
 					$f->Parse( $inCAM, $jobId, $step, "v2" );    # layer v2 should already exist in multilayer pcb
@@ -306,7 +304,7 @@ sub __CreateFakeOuterCoreLayers {
 						#CamSymbol->AddPad( $inCAM, "s12000", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
 						CamSymbol->AddPad( $inCAM, "schmoll_cross_10", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
 					}
-				}
+				#}
 
 				# Put info text
 
@@ -389,7 +387,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d267444";
+	my $jobId    = "d165365";
 	my $stepName = "panel";
 
 	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
