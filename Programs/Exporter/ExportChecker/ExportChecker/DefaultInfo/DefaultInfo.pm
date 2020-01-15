@@ -393,14 +393,14 @@ sub GetSignalLSett {
 	$lSett{"shrinkX"} = 0;
 	$lSett{"shrinkY"} = 0;
 
-	die "Layer name is not defined for layer:" . $self->{"gROWname"}      if ( !defined $lSett{"name"} );
-	die "Etching type is not defined for layer:" . $self->{"gROWname"}    if ( !defined $lSett{"etchingType"} );
-	die "Technology type is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"technologyType"} );
-	die "Compensation is not defined for layer:" . $self->{"gROWname"}    if ( !defined $lSett{"comp"} );
-	die "Polarity is not defined for layer:" . $self->{"gROWname"}        if ( !defined $lSett{"polarity"} );
-	die "Mirror is not defined for layer:" . $self->{"gROWname"}          if ( !defined $lSett{"mirror"} );
-	die "Shrink X is not defined for layer:" . $self->{"gROWname"}        if ( !defined $lSett{"shrinkX"} );
-	die "Shrink Y is not defined for layer:" . $self->{"gROWname"}        if ( !defined $lSett{"shrinkY"} );
+	die "Layer name is not defined for layer:" . $l->{"gROWname"}      if ( !defined $lSett{"name"} );
+	die "Etching type is not defined for layer:" . $l->{"gROWname"}    if ( !defined $lSett{"etchingType"} );
+	die "Technology type is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"technologyType"} );
+	die "Compensation is not defined for layer:" . $l->{"gROWname"}    if ( !defined $lSett{"comp"} );
+	die "Polarity is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"polarity"} );
+	die "Mirror is not defined for layer:" . $l->{"gROWname"}          if ( !defined $lSett{"mirror"} );
+	die "Shrink X is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"shrinkX"} );
+	die "Shrink Y is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"shrinkY"} );
 
 	return %lSett;
 }
@@ -439,14 +439,14 @@ sub GetNonSignalLSett {
 	# 2) Set mirror
 
 	# Top soloder mask and top gold connector is mirrored
-	if ( $l->{"gROWname"} =~ /^mc2?$/i || $l->{"gROWname"} =~ /^goldc$/i ) {
+	if ( $l->{"gROWname"} =~ /^mc2?(olec)?$/i || $l->{"gROWname"} =~ /^goldc$/i ) {
 
 		$lSett{"mirror"} = 1;
 
 	}
 	 
 	# Bot soloder mask and bot gold connector is mirrored
-	elsif ( $l->{"gROWname"} =~ /^ms2?$/i || $l->{"gROWname"} =~ /^golds$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^ms2?(olec)?$/i || $l->{"gROWname"} =~ /^golds$/i ) {
 
 		$lSett{"mirror"} = 0;
 
@@ -477,13 +477,13 @@ sub GetNonSignalLSett {
 	$lSett{"shrinkX"} = 0;
 	$lSett{"shrinkY"} = 0;
 
-	die "Layer name is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"name"} );
-	die "Polarity is not defined for layer:" . $self->{"gROWname"}   if ( !defined $lSett{"polarity"} );
-	die "Mirror is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"mirror"} );
+	die "Layer name is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"name"} );
+	die "Polarity is not defined for layer:" . $l->{"gROWname"}   if ( !defined $lSett{"polarity"} );
+	die "Mirror is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"mirror"} );
 
-	die "Compensation is not defined for layer:" . $self->{"gROWname"} if ( !defined $lSett{"comp"} );
-	die "Shrink X is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"shrinkX"} );
-	die "Shrink Y is not defined for layer:" . $self->{"gROWname"}     if ( !defined $lSett{"shrinkY"} );
+	die "Compensation is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"comp"} );
+	die "Shrink X is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"shrinkX"} );
+	die "Shrink Y is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"shrinkY"} );
 
 	return %lSett;
 }
