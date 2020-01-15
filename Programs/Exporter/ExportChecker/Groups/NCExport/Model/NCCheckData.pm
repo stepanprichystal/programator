@@ -42,6 +42,7 @@ use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
+use aliased 'Packages::CAMJob::ViaFilling::ViaFillingCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -610,7 +611,6 @@ sub OnCheckGroupData {
 			}
 		}
 	}
- 
 
 	# 22) Check if job viafill layer  are prepared if viafill in IS
 	my $viaFillType = $defaultInfo->GetPcbBaseInfo("zaplneni_otvoru");
@@ -675,8 +675,17 @@ sub OnCheckGroupData {
 		}
 
 	}
-	
-	
+
+	# 23) Check via fill distance to panel edge
+	if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
+
+		my $errMess = "";
+
+		unless ( ViaFillingCheck->CheckViaFillPnlEdgeDist( $inCAM, $jobId, \$errMess ) ) {
+			$dataMngr->_AddErrorResult( "Via fill close to panel edge", $errMess );
+		}
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#
