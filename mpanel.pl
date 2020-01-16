@@ -66,6 +66,8 @@ my $customer = getValueNoris($jobName, 'customer');
 		$znacky = "RACOM";
 }elsif ($customer =~ /[Tt][Rr][Aa][Nn][Ss]/) {
 		$znacky = "TRANSCON";
+}elsif ($customer =~ /elmatica/i) {
+		$znacky = "ELMATICA";
 }
 
 
@@ -236,7 +238,10 @@ if ($okoli == 5) {
 	} elsif ($znacky eq "WENDEL") {
 			$fid_schema = 'cust_wendel_5';
 	}elsif ($znacky eq "ELMATICA") {
-			$fid_schema = 'cust_elmatica_5';
+			$fid_schema = 'cust_elmatica_5-fid-1mm_hole3mm';	
+			die "Okoli pro ramecek 5mm cust_elmatica_5-fid-1mm_hole3mm neni nadefinovano.";
+	}elsif ($znacky eq "ELMATICA_bez_otvoru") {
+			$fid_schema = 'cust_elmatica_5';				
 	}elsif ($znacky eq "BMR") {
 			$fid_schema = 'cust_bmr_5';
 	} elsif ($znacky eq "BEZ_FIDUCIALU") {
@@ -275,8 +280,10 @@ elsif ($okoli == 10) {
 			$fid_schema = 'cust_smt_10';
 	} elsif ($znacky eq "KVARK_10") {
 			$fid_schema = 'cust_kvark_10';
-	} elsif ($znacky eq "ELMATICA") {
-			$fid_schema = 'cust_elmatica_10';
+	}elsif ($znacky eq "ELMATICA") {
+			$fid_schema = 'cust_elmatica_10-fid-1mm_hole3mm';		
+	}elsif ($znacky eq "ELMATICA_bez_otvoru") {
+			$fid_schema = 'cust_elmatica_10';	
 	} elsif ($znacky eq "PIERONKIEWICZ_10") {
 			$fid_schema = 'cust_pieronkiewicz_10';
 	} elsif ($znacky eq "BARDAS_10") {
@@ -305,8 +312,11 @@ elsif ($okoli == 7) {
 			$fid_schema = 'cust_applied_okoli_7';
 	} elsif ($znacky eq "TOROLA") {
 			$fid_schema = 'cust_torola_7';
-	} elsif ($znacky eq "ELMATICA") {
-			$fid_schema = 'cust_elmatica_7';
+	}elsif ($znacky eq "ELMATICA") {
+			$fid_schema = 'cust_elmatica_7-fid-1mm_hole3mm';
+			die "Okoli pro ramecek 5mm cust_elmatica_5-fid-1mm_hole3mm neni nadefinovano.";		
+	}elsif ($znacky eq "ELMATICA_bez_otvoru") {
+			$fid_schema = 'cust_elmatica_7';	
 	}elsif ($znacky eq "BMR") {
 			$fid_schema = 'cust_bmr_7';
 	}elsif ($znacky eq "C.SAM_7") {
@@ -447,7 +457,7 @@ unless ($znacky eq 'ATM' or $znacky eq 'RACOM') {
 ##########################################################################################################
 sub fill_znacky {
     $construct_znacky->delete(0,'end');
-    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL); 
+    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA ELMATICA_bez_otvoru PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL); 
     foreach my $className (sort @customerList) {
         $construct_znacky->insert('end',"$className");
     }
