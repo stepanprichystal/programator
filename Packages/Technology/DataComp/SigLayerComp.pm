@@ -123,20 +123,16 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d222773";
+	my $jobId    = "d267628";
 	my $stepName = "panel";
 
 	FakeLayers->CreateFakeLayers( $inCAM, $jobId, undef, 1 );
 
 	my $lc = SigLayerComp->new( $inCAM, $jobId );
 
-	my %comp1 = $lc->GetLayerCompensation("v2");
+	my %comp1 = $lc->GetLayerCompensation("c");
 
-	print "Comp j1 X:" . $comp1{"x"} . "; Y:" . $comp1{"y"} . "\n";
-
-	my %comp2 = $lc->GetLayerCompensation("v4");
-	print "Comp j2 X:" . $comp2{"x"} . "; Y:" . $comp2{"y"};
-
+	 
 }
 
 1;
