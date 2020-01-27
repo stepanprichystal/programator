@@ -286,20 +286,20 @@ sub __AddPilotHolesDefinition {
 
 	if ( $materialName =~ /AL_CORE|CU_CORE/i ) {
 
-		# hole 4-6.5 add pilot hole 0.8
+		# hole 4-6.5 add pilot hole 1.2mm
 		my @tools1 =
 		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE }
 		  @{ $self->{"tools"} };
-		$self->__AddPilotHoles( \@tools1, 800 );
+		$self->__AddPilotHoles( \@tools1, 1200 );
 	}
 	else {
 
-		# New version of pilot holes	7.5.2018
-		# hole 4-6.5 add pilot hole 0.8
+		# New version of pilot holes	27.1.2018
+		# hole 4-6.5 add pilot hole 1.2mm
 		my @tools1 =
 		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE }
 		  @{ $self->{"tools"} };
-		$self->__AddPilotHoles( \@tools1, 800 );
+		$self->__AddPilotHoles( \@tools1, 1200 );
 
 	}
 
