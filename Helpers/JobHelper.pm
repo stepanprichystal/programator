@@ -38,7 +38,7 @@ sub GetBaseCuThick {
 	}
 	else {
 
-		$cuThick = HegMethods->GetOuterCuThick( $jobId, $layerName );
+		$cuThick = HegMethods->GetOuterCuThick( $jobId );
 	}
 
 	return $cuThick;

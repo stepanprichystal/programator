@@ -110,7 +110,8 @@ sub Run {
 	CamAttributes->SetJobAttribute( $inCAM, $jobId, "pcb_class_inner", ( defined $innerClass ? $innerClass : 0 ) );
 
 	# 2) Set default Cu 18 if current Cu is lowered on 9
-	my $cuThick = JobHelper->GetBaseCuThick($jobId);
+	# Load Cu from IS for single and multilayer too, PCB because job hasn't had stackup at this time
+	my $cuThick =  HegMethods->GetOuterCuThick( $jobId); 
 	if ( $cuThick == 9 ) {
 		HegMethods->UpdateBaseCu( $jobId, 18 );
 	}
