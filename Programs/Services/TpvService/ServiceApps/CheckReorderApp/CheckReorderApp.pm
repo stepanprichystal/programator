@@ -196,7 +196,7 @@ sub __ProcessJob {
 		my $pnlExist    = CamHelper->StepExists( $inCAM, $jobId, "panel" );
 		my $reorderType = undef;
 
-		$reorderType = ReorderEnums->ReorderType_POOL             if ( $isPool && !$pnlExist && $orderId !~ /-01/ );
+		$reorderType = ReorderEnums->ReorderType_POOL             if ( $isPool && !$pnlExist);
 		$reorderType = ReorderEnums->ReorderType_POOLFORMERSTD    if ( $isPool && $pnlExist  && $orderId !~ /-01/ );
 		$reorderType = ReorderEnums->ReorderType_POOLFORMERMOTHER if ( $isPool && $pnlExist  && $orderId =~ /-01/ );
 		$reorderType = ReorderEnums->ReorderType_STD           if ( !$isPool && $pnlExist );
