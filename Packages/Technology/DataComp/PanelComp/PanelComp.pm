@@ -129,6 +129,7 @@ sub __GetCoreMaterialKind {
 	my $mKind = undef;
 	$mKind = "PYRALUX" if ( $mTxt =~ /pyralux/i );
 	$mKind = "IS400"   if ( $mTxt =~ /IS.*400/i );
+	$mKind = "PCL370HR"   if ( $mTxt =~ /PCL.*370.*HR/i );
 
 	die "Core material kind was not recognized from text: $mTxt" unless ( defined $mKind );
 

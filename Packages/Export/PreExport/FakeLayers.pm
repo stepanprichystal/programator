@@ -148,7 +148,7 @@ sub __CreateFakeSMOLECLayers {
 	my $mcExist = scalar( grep { $_->{"gROWname"} eq "mc" } @layers ) ? 1 : 0;
 	my $msExist = scalar( grep { $_->{"gROWname"} eq "ms" } @layers ) ? 1 : 0;
 
-	my $fakeSM = ();
+	my $fakeSM = undef;
 	my $sourceL;
 
 	if ( $mcExist && !$msExist ) {
@@ -168,7 +168,9 @@ sub __CreateFakeSMOLECLayers {
 		return @fakeLayers;
 	}
 
-	return @fakeLayers unless ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 );
+	return @fakeLayers unless ( defined $fakeSM );
+	
+	CamHelper->SetStep( $inCAM, $step );
 
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $fakeSM );
 	CamMatrix->CreateLayer( $inCAM, $jobId, $fakeSM, "solder_mask", "positive", 1 );
@@ -495,7 +497,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d262773";
+	my $jobId = "d268751";
 
 	my $stepName = "panel";
 

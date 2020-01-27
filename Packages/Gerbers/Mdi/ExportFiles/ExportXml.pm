@@ -121,7 +121,27 @@ sub __ExportXml {
 
 	if ( $stretchX != 0 || $stretchY != 0 ) {
 
-		$scalingMode = 2;                                               # Scale data by fixed value
+		$scalingMode = 2;    # Scale data by fixed value
+
+		# Scale only cores, which not have plated drilling
+		if ( $self->{"layerCnt"} > 2 ) {
+
+			my %lPars = JobHelper->ParseSignalLayerName($layerName);
+
+			my $p = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+			if ( $p->GetIsPlated() ) {
+				$scalingMode = 1;
+			}
+		}
+		else {
+
+			my @ncLayers = grep { !$_->{"technical"}} CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+
+			if ( scalar(@ncLayers) ) {
+				$scalingMode = 1;
+			}
+		}
+
 		$stretchXVal = sprintf( "%.5f", ( 100 + $stretchX ) / 100 );
 		$stretchYVal = sprintf( "%.5f", ( 100 + $stretchY ) / 100 );
 	}
@@ -233,7 +253,7 @@ sub __ExportXml {
 	# Fill xml
 
 	$templ->{"job_params"}->[0]->{"job_name"}->[0] = $jobId . $layerName . "_mdi";
- 
+
 	my $orderNum = HegMethods->GetPcbOrderNumber($jobId);
 	my $info     = HegMethods->GetInfoAfterStartProduce( $jobId . "-" . $orderNum );
 	my $parts    = 0;
@@ -311,7 +331,6 @@ sub __ExportXml {
 
 		XMLDecl => '<?xml version="1.0" encoding="utf-8"?>'
 	);
-
 
 	my $finalFile = EnumsPaths->Jobs_MDI . $self->{"jobId"} . $layerName . "_mdi.xml";
 
