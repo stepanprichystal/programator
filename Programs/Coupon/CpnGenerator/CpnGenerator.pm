@@ -23,6 +23,7 @@ use aliased 'Programs::Coupon::Helper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Programs::Coupon::CpnBuilder::MicrostripBuilders::SEBuilder';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip2B';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedMicrostrip';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline2T';
@@ -380,6 +381,8 @@ sub __GenerateSingle {
 
 			case EnumsImp->Model_COATED_MICROSTRIP { $modelBuilder = CoatedMicrostrip->new() }
 
+			  case EnumsImp->Model_COATED_MICROSTRIP_2B { $modelBuilder = CoatedMicrostrip2B->new() }
+
 			  case EnumsImp->Model_UNCOATED_MICROSTRIP { $modelBuilder = UncoatedMicrostrip->new() }
 
 			  case EnumsImp->Model_STRIPLINE { $modelBuilder = Stripline->new() }
@@ -530,15 +533,14 @@ sub __DrawOutlineRout {
 
 		}
 		elsif ( $type eq "v" ) {
-			
+
 			my $sign = $endP->{"y"} - $startP->{"y"} > 1 ? 1 : -1;
-			
-			CamSymbol->AddLine( $inCAM, { "x" => $curX, "y" => $curY }, { "x" => $curX, "y" => $curY + $sign * $slotLen }, "r200", "positive" )
-			  ;
+
+			CamSymbol->AddLine( $inCAM, { "x" => $curX, "y" => $curY }, { "x" => $curX, "y" => $curY + $sign * $slotLen }, "r200", "positive" );
 			$curY += $sign * ( $slotLen + $bridgesWidth + $toolw );
 		}
 	}
-	
+
 	return $inCAM->GetReply();
 
 }

@@ -49,19 +49,19 @@ sub new {
 	$self->{"lang"}      = shift;    # language of pdf, values cz/en
 	$self->{"infoToPdf"} = shift;
 
-
 	# PROPERTIES
 
-	$self->{"pdfStep"} = "pdf_" . $self->{"step"};
+	$self->{"pdfStep"}    = "pdf_" . $self->{"step"};
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";    # place where pdf is created
-	$self->{"outputPdf"} = OutputFinalPdf->new( $self->{"lang"} );
-	$self->{"params"} = StencilSerializer->new( $self->{"jobId"} )->LoadStenciLParams();
-	
+	$self->{"outputPdf"}  = OutputFinalPdf->new( $self->{"lang"} );
+	$self->{"params"}     = StencilSerializer->new( $self->{"jobId"} )->LoadStenciLParams();
+
 	$self->{"fillTemplate"} = FillTemplate->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"params"} );
 
 	$self->{"template"} = HtmlTemplate->new( $self->{"lang"} );
 
-	if ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP ) {
+	if ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP || $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT )
+	{
 		$self->{"preview"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP, $self->{"params"} );
 	}
 	else {
@@ -213,7 +213,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d152457";
+	my $jobId = "d268212";
 
 	#	foreach my $l ( CamJob->GetAllLayers( $inCAM, $jobId ) ) {
 	#
