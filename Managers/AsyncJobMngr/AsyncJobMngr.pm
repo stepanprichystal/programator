@@ -669,6 +669,7 @@ sub __OnClose {
 	}
 	elsif ( !$activeJobs ) {
 
+
 		# Close or servers, which are waiting or running
 		$self->{"serverMngr"}->SetDestroyOnDemand(0);
 

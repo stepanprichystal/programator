@@ -1,7 +1,10 @@
 
 # port which is used by Launcher app
-
 serverPort = 2010
+
+# if port is used, increment 1 in loop, untill free port is found
+# limit iof incrementaion (used port in same time)
+serverPortInc = 20
 
 
  

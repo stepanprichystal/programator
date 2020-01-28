@@ -15,6 +15,7 @@ use JSON;
 use Win32::Process;
 use Config;
 use Log::Log4perl qw(get_logger :levels);
+use IO::Socket::PortState qw(check_ports);
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -23,7 +24,6 @@ use aliased "Helpers::GeneralHelper";
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Other::AppConf';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Enums';
-
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -43,7 +43,7 @@ sub new {
 
 	$self->{"params"} = undef;        # helper array property, tmp file names, which contain papp parametr value in json
 	$self->{"runScrpit"}  = GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\AppLauncher\\Run.pl";
-	$self->{"serverPort"} = AppConf->GetValue("serverPort");
+	$self->{"serverPort"} = $self->__GetFreePort();
 	$self->{"jobId"}      = $ENV{"JOB"} || 0;
 
 	$self->{"waitFrmShow"}  = 0;
@@ -74,7 +74,7 @@ sub SetWaitingFrm {
 	my $self  = shift;
 	my $title = shift;
 	my $text  = shift;
-	my $close = shift; # close type WaitFrm_CLOSAUTO/WaitFrm_CLOSMAN
+	my $close = shift;    # close type WaitFrm_CLOSAUTO/WaitFrm_CLOSMAN
 
 	$self->{"waitFrmShow"}  = 1;
 	$self->{"waitFrmTitle"} = $title;
@@ -156,31 +156,22 @@ sub __RunWaitFrm {
 	}
 
 	# 1) store title and text to file
-	 
-	my %inf = ("title" => $self->{"waitFrmTitle"}, "text" => $self->{"waitFrmText"});
 
-	my $json = JSON->new()->allow_nonref();
-	my $serialized = $json->pretty->encode(\%inf);
-	my $fileName = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
- 
+	my %inf = ( "title" => $self->{"waitFrmTitle"}, "text" => $self->{"waitFrmText"} );
+
+	my $json       = JSON->new()->allow_nonref();
+	my $serialized = $json->pretty->encode( \%inf );
+	my $fileName   = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+
 	open( my $f, '>', $fileName );
 	print $f $serialized;
 	close $f;
- 
 
 	my $perl = $Config{perlpath};
 	my $processObj;
-	Win32::Process::Create(
-							$processObj,
-							$perl,
-							"perl "
-							  . GeneralHelper->Root()
-							  . "\\Packages\\InCAMHelpers\\AppLauncher\\RunWaitFrm.pl "
-							  . $fileName ,
-							1,
-							NORMAL_PRIORITY_CLASS,
-							"."
-	) || die "Failed to create run wait frm.\n";
+	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\AppLauncher\\RunWaitFrm.pl " . $fileName,
+							1, NORMAL_PRIORITY_CLASS, "." )
+	  || die "Failed to create run wait frm.\n";
 
 	$self->{"waitFrmPID"} = $processObj->GetProcessID();
 
@@ -200,6 +191,46 @@ sub __RunServer {
 	};
 }
 
+# Search for free port, which begins with number in config
+# Number of attempt is limited
+sub __GetFreePort {
+	my $self = shift;
+
+	my $port = undef;
+
+	my $host    = "localhost";
+	my $timeout = 0.001;
+
+	my $curPort = AppConf->GetValue("serverPort");
+	for ( my $i = 0 ; $i < AppConf->GetValue("serverPortInc") ; $i++ ) {
+	
+		my %porthash = (
+						 "tcp" => {
+									2010 => {
+											  name => 'export'
+									}
+						 }
+		);
+
+		check_ports( $host, $timeout, \%porthash );
+
+		if ( !$porthash{"tcp"}->{$curPort}->{"open"} ) {
+			$port = $curPort;
+			last;
+		}
+
+		$curPort++;
+
+	}
+
+	die "No free port is available. Tested port: "
+	  . AppConf->GetValue("serverPort") . " - "
+	  . ( AppConf->GetValue("serverPort") + AppConf->GetValue("serverPortInc") )
+	  unless ( defined $port );
+
+	return $port;
+}
+
 sub _AddParameter {
 	my $self = shift;
 	my $ref  = shift;
@@ -216,8 +247,6 @@ sub _AddParameter {
 	print $f $serialized;
 	close $f;
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

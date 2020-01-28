@@ -103,30 +103,31 @@ sub __CheckReorder {
 
 		my @mess1 = (
 			"Unable to run \"Exporter checker\":",
-			"There are re-orders for pcbid \"$jobId\" where \"Aktualni krok\" is one of: \"zpracovani-rucni\", \"checkReorder-error\", \"processReorder-error\" in Helios.",
-			"First process job by \"Reorder script\" (Packages\\Reorder\\ReorderApp\\RunReorder\\RunReorderApp.pl)");
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
+"There are re-orders for pcbid \"$jobId\" where \"Aktualni krok\" is one of: \"zpracovani-rucni\", \"checkReorder-error\", \"processReorder-error\" in Helios.",
+			"First process job by \"Reorder script\" (Packages\\Reorder\\ReorderApp\\RunReorder\\RunReorderApp.pl)"
+		);
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, \@mess1 );
 
-			$result = 0;
-		}
-
-		return $result;
+		$result = 0;
 	}
 
-	#-------------------------------------------------------------------------------------------#
-	#  Place for testing..
-	#-------------------------------------------------------------------------------------------#
+	return $result;
+}
 
-	#print @INC;
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
 
-	my ( $package, $filename, $line ) = caller;
-	if ( $filename =~ /DEBUG_FILE.pl/ ) {
+#print @INC;
 
-		#my $app = Programs::Exporter::AsyncJobMngr->new();
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		#$app->Test();
+	#my $app = Programs::Exporter::AsyncJobMngr->new();
 
-		#$app->MainLoop;
+	#$app->Test();
 
-	}
-	1;
+	#$app->MainLoop;
+
+}
+1;
