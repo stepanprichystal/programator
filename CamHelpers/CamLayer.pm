@@ -192,8 +192,6 @@ sub RemoveTempLayerPlus {
 	}
 }
 
- 
-
 # Display single layer and set as work layer
 sub SetLayerTypeLayer {
 	my $self  = shift;
@@ -463,27 +461,44 @@ sub RotateLayerData {
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
-# Mirror layer by x OR y axis
+# Mirror layer data by:
+# a) by x OR y axis if defined $axis
+# b) by anchor point if defined $anchor
 # Right step must be open and set
 # Requested data must be selected
 sub MirrorLayerData {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $layer = shift;
-	my $axis  = shift;
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $layer  = shift;
+	my $axis   = shift;    # x/y
+	my $anchor = shift;    # hash ref with key: "x", "y"
 
 	$self->WorkLayer( $inCAM, $layer );
 
-	if ( $axis eq "x" ) {
+	if ( defined $axis ) {
 
-		$inCAM->COM( "sel_transform", "oper" => "mirror\;rotate", "angle" => 180 );
+		if ( $axis eq "x" ) {
 
+			$inCAM->COM( "sel_transform", "oper" => "mirror\;rotate", "angle" => 180 );
+
+		}
+		elsif ( $axis eq "y" ) {
+
+			$inCAM->COM( "sel_transform", "oper" => "mirror" );
+
+		}
+	
 	}
-	elsif ( $axis eq "y" ) {
+	elsif ( defined $anchor ) {
 
-		$inCAM->COM( "sel_transform", "oper" => "mirror" );
-
+		$inCAM->COM( "sel_transform", "oper" => "mirror", "mode" => "anchor", "x_anchor" => $anchor->{"x"}, "y_anchor" => $anchor->{"y"} )
+		  ;
 	}
+	else {
+
+		die "Axis or anchor point must be defined";
+	}
+
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 

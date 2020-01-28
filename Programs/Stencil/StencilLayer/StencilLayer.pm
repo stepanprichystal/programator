@@ -119,6 +119,14 @@ sub __PrepareOriLayers {
 
 		# 2) Move to zero, test if left down corner is in zero
 		CamLayer->WorkLayer( $inCAM, $prepared );
+		
+		
+		# 3) mirror layer by y axis profile
+		if ( $par->GetStencilType() eq Enums->StencilType_TOPBOT && $lType eq "bot" ) {
+
+			CamLayer->MirrorLayerByProfCenter( $inCAM, $jobId, $step, $prepared, "y" );
+			CamLayer->WorkLayer( $inCAM, $prepared );
+		}
 
 		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step, 1 );
 
@@ -142,11 +150,6 @@ sub __PrepareOriLayers {
 
 		}
 
-		# 3) mirror layer by y axis profile
-		if ( $par->GetStencilType() eq Enums->StencilType_TOPBOT && $lType eq "bot" ) {
-
-			CamLayer->MirrorLayerByProfCenter( $inCAM, $jobId, $step, $prepared, "y" );
-		}
 
 		# 4) Rotate data 90° CW
 		if ( $pcbProf->{"isRotated"} ) {
