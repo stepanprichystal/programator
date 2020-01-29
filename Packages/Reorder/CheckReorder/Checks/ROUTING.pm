@@ -19,6 +19,7 @@ use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -75,18 +76,18 @@ sub Run {
 
 		my @steps = ();
 
-		if ($isPool) {
-
-			push( @steps, "o+1" );
-
-		}
-		else {
+		if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
 
 			if ( CamStepRepeat->GetStepAndRepeatDepth( $inCAM, $jobId, "panel" ) == 1 ) {
 
 				my @s = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 				push( @steps, map { $_->{"stepName"} } @s ) if ( scalar(@s) );
 			}
+
+		}
+		else {
+
+			push( @steps, "o+1" );
 		}
 
 		if ( scalar(@steps) ) {

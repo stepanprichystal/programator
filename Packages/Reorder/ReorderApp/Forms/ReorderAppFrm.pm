@@ -112,6 +112,22 @@ sub SetGaugeVal {
 	$self->{"progressTxt"}->SetLabel($val."%");
 }
 
+
+
+sub ErrorChecking{
+	my $self = shift;
+	my $errMess = shift;
+	
+	#$self->{"gaugeActual"} = $self->{"gaugeActual"};
+	$self->{"messMngr"}->ShowModal( $self->{"mainFrm"}, EnumsGeneral->MessageType_SYSTEMERROR, [$errMess] );
+	
+	$self->{"btnLocall"}->Disable();
+	$self->{"btnServer"}->Disable();
+ 
+	$self->{"gauge"}->SetValue( 100);
+ 
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Set layout
 #-------------------------------------------------------------------------------------------#

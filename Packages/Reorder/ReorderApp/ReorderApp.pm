@@ -11,6 +11,7 @@ use warnings;
 use threads;
 use threads::shared;
 use Wx;
+use Try::Tiny;
 
 #local library
 use aliased 'Packages::Reorder::ReorderApp::Forms::ReorderAppFrm';
@@ -22,6 +23,8 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsIS';
 use aliased 'Packages::Reorder::ReorderApp::ReorderPopup';
+use aliased 'Packages::Exceptions::BaseException';
+use aliased 'Packages::Reorder::Helper' => 'ReorderHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,6 +32,7 @@ use aliased 'Packages::Reorder::ReorderApp::ReorderPopup';
 
 my $CHECK_EVT : shared;        #evt reise when check progress
 my $CHECK_END_EVT : shared;    # evt raise when checking is done
+my $CHECKER_ERROR_EVT : shared;
 
 # ================================================================================
 # PUBLIC METHOD
@@ -67,8 +71,12 @@ sub new {
 	# if no order has aktualni_krok zpracovani-rucni, it means all has checkReorder-error.
 	# Thus allow only proces locally
 
-	$self->{"onlyLocally"} = scalar( grep { $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR 
-										||  $_->{"aktualni_krok"} eq  EnumsIS->CurStep_PROCESSREORDERERR } @orders ) ? 1 : 0;
+	$self->{"onlyLocally"} = scalar(
+		grep {
+			     $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR
+			  || $_->{"aktualni_krok"} eq EnumsIS->CurStep_PROCESSREORDERERR
+		} @orders
+	) ? 1 : 0;
 
 	$self->{"manChanges"} = [];    # not processed manual changes
 
@@ -117,7 +125,7 @@ sub __OnErrIndicatorHandler {
 
 		for ( my $i = 0 ; $i < scalar( @{ $self->{"manChanges"} } ) ; $i++ ) {
 
-			$str .=  "<b>".( $i + 1 ) . ")"."</b>". "\n" . $self->{"manChanges"}->[$i] . "\n\n";
+			$str .= "<b>" . ( $i + 1 ) . ")" . "</b>" . "\n" . $self->{"manChanges"}->[$i] . "\n\n";
 
 		}
 
@@ -151,7 +159,7 @@ sub __OnErrCriticIndicatorHandler {
 
 		for ( my $i = 0 ; $i < scalar( @{ $self->{"manChangesCritic"} } ) ; $i++ ) {
 
-			$str .=  "<b>".( $i + 1 ) . ")"."</b>". "\n" . $self->{"manChangesCritic"}->[$i] . "\n\n";
+			$str .= "<b>" . ( $i + 1 ) . ")" . "</b>" . "\n" . $self->{"manChangesCritic"}->[$i] . "\n\n";
 
 		}
 
@@ -188,6 +196,14 @@ sub __OnClosePopupHandler {
 
 }
 
+sub __CheckerErrorMessageHandler {
+	my ( $self, $frame, $event ) = @_;
+
+	my %d = %{ $event->GetData };
+
+	$self->{"form"}->ErrorChecking( $d{"mess"} );
+}
+
 # ================================================================================
 # PRIVATE METHODS
 # ================================================================================
@@ -200,6 +216,7 @@ sub __DoChecks {
 
 	$self->{"inCAM"}->ClientFinish();
 
+	#$self->__DoChecksAsyncWorker( $self->{"jobId"}, $self->{"launcher"}->GetServerPort() );
 	#start new process, where check job before export
 	my $worker = threads->create( sub { $self->__DoChecksAsyncWorker( $self->{"jobId"}, $self->{"launcher"}->GetServerPort() ) } );
 	$worker->set_thread_exit_only(1);
@@ -216,6 +233,10 @@ sub __SetHandlers {
 
 	$CHECK_END_EVT = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"form"}->{"mainFrm"}, -1, $CHECK_END_EVT, sub { $self->__CheckEndHandler(@_) } );
+
+	# Events when export checker fail
+	$CHECKER_ERROR_EVT = Wx::NewEventType;
+	Wx::Event::EVT_COMMAND( $self->{"form"}->{"mainFrm"}, -1, $CHECKER_ERROR_EVT, sub { $self->__CheckerErrorMessageHandler(@_) } );
 
 	$self->{"form"}->{"errIndClickEvent"}->Add( sub       { $self->__OnErrIndicatorHandler(@_) } );
 	$self->{"form"}->{"errCriticIndClickEvent"}->Add( sub { $self->__OnErrCriticIndicatorHandler(@_) } );
@@ -294,32 +315,55 @@ sub __DoChecksAsyncWorker {
 
 	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $serverPort );
 	$inCAM->ServerReady();
+	$inCAM->SupressToolkitException(1);
 
-	my $ch = CheckReorder->new( $inCAM, $jobId );
-	$self->{"total"} = $ch->GetItemCnt();
+	$inCAM->SetDisplay(0);
 
-	$self->{"processed"} = 0;
+	try {
 
-	$ch->{"onItemResult"}->Add( sub { $self->__OnCheckHandler( @_, ); } );
- 
- 	$inCAM->SetDisplay(0);
-	my @arr = $ch->RunChecks();
-	$inCAM->SetDisplay(1);
+		my $orderId = $self->{"orders"}->[-1]->{"reference_subjektu"};
+		my $reorderType = ReorderHelper->GetReorderType( $inCAM, $orderId );
 
-	my %res : shared = ();
+		die "Reorder type was not found for order id: $orderId" unless ( defined $reorderType );
 
-	$inCAM->ClientFinish();
+		my $ch = CheckReorder->new( $inCAM, $jobId, $orderId, $reorderType );
+		$ch->{"onItemResult"}->Add( sub { $self->__OnCheckHandler( @_, ); } );
 
-	my $threvent = new Wx::PlThreadEvent( -1, $CHECK_END_EVT, \%res );
-	Wx::PostEvent( $self->{"form"}->{"mainFrm"}, $threvent );
+		$self->{"total"}     = $ch->GetItemCnt();
+		$self->{"processed"} = 0;
+
+		my @arr = $ch->RunChecks();
+
+		my %res : shared = ();
+		my $threvent = new Wx::PlThreadEvent( -1, $CHECK_END_EVT, \%res );
+		Wx::PostEvent( $self->{"form"}->{"mainFrm"}, $threvent );
+
+	}
+	catch {
+
+		my $eMess = "Reorder app thread was unexpectedly exited\n\n";
+		my $e = BaseException->new( $eMess, $_ );
+
+		print STDERR $e;
+		my %res : shared = ();
+		$res{"mess"} = $e->Error();
+
+		my $threvent = new Wx::PlThreadEvent( -1, $CHECKER_ERROR_EVT, \%res );
+		Wx::PostEvent( $self->{"form"}->{"mainFrm"}, $threvent );
+
+	}
+	finally {
+
+		$inCAM->SetDisplay(1);
+		$inCAM->ClientFinish();
+	};
 
 }
 
 #this is raised by child process
 sub __OnCheckHandler {
-	my $self     = shift;
-	my $itemRes  = shift;
-
+	my $self    = shift;
+	my $itemRes = shift;
 
 	$self->{"processed"}++;
 

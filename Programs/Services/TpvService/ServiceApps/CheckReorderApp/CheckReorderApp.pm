@@ -36,6 +36,7 @@ use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::Check
 use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
 use aliased 'Packages::Reorder::CheckReorder::CheckReorder';
 use aliased 'Packages::Reorder::Enums' => 'ReorderEnums';
+use aliased 'Packages::Reorder::Helper' => 'ReorderHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -194,14 +195,8 @@ sub __ProcessJob {
 
 		my $isPool      = HegMethods->GetPcbIsPool($jobId);
 		my $pnlExist    = CamHelper->StepExists( $inCAM, $jobId, "panel" );
-		my $reorderType = undef;
-
-		$reorderType = ReorderEnums->ReorderType_POOL             if ( $isPool && !$pnlExist);
-		$reorderType = ReorderEnums->ReorderType_POOLFORMERSTD    if ( $isPool && $pnlExist  && $orderId !~ /-01/ );
-		$reorderType = ReorderEnums->ReorderType_POOLFORMERMOTHER if ( $isPool && $pnlExist  && $orderId =~ /-01/ );
-		$reorderType = ReorderEnums->ReorderType_STD           if ( !$isPool && $pnlExist );
-		$reorderType = ReorderEnums->ReorderType_STDFORMERPOOL if ( !$isPool && !$pnlExist );
-
+		my $reorderType = ReorderHelper->GetReorderType($inCAM, $orderId);
+  
 		die "Reorder type was not found for order id: $orderId" unless ( defined $reorderType );
 
 		# 3) Check if job is former pool and now is standard
