@@ -208,8 +208,10 @@ sub StackupMatInStock {
 
 				@mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId() );
 
-				# Check if material dimension are in tolerance +-2mm
-				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 2 } @mat;
+				# Check if material dimension are in tolerance +-2mm for width
+				# Check if material dimension are in tolerance +-10mm for height 
+				# (we use sometimes shorter version -10mm of standard prepregs because of stretching prepregs by temperature and pressure)
+				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 10 } @mat;
 
 			}
 
