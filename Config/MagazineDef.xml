@@ -16,6 +16,7 @@
    </tooloperation>
    <tooloperation name="NPlatedRout">
       <magazine material="AL_CORE">I9</magazine>
+      <magazine material="CU_CORE">I9</magazine>
       <magazine material="PYRALUX">I7</magazine>
       <magazine material="PYRALUX-FR4">I7</magazine>
    </tooloperation>
