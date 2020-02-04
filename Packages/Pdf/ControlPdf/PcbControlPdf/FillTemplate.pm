@@ -157,11 +157,11 @@ sub FillKeysData {
 	$template->SetKey( "MaskTopVal", $maskTopValEn, $maskTopValCz );
 
 	$template->SetKey( "LayerNumber", "Number of layers", "Počet vrstev" );
-	my $sigLayerCnt = CamJob->GetSignalLayerCnt($inCAM, $jobId);
-	
-	$sigLayerCnt = 0 if($pcbType eq EnumsGeneral->PcbType_NOCOPPER); # There are one signal layers in matrix
-	$sigLayerCnt = 1 if($pcbType eq EnumsGeneral->PcbType_1VFLEX); # There are two signal layers in matrix
- 
+	my $sigLayerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+
+	$sigLayerCnt = 0 if ( $pcbType eq EnumsGeneral->PcbType_NOCOPPER );    # There are one signal layers in matrix
+	$sigLayerCnt = 1 if ( $pcbType eq EnumsGeneral->PcbType_1VFLEX );      # There are two signal layers in matrix
+
 	$template->SetKey( "LayerNumberVal", $sigLayerCnt );
 
 	$template->SetKey( "MaskBot", "Solder mask bot", "Maska bot" );
@@ -268,6 +268,9 @@ sub FillKeysLayout {
 	$template->SetKey( "StiffenerDisp",    "display:none" );
 	$template->SetKey( "StiffenerValDisp", "display:none" );
 
+	$template->SetKey( "FlexSurfTopDisp", "display:none" );
+	$template->SetKey( "FlexSurfBotDisp", "display:none" );
+
 	my $pcbType = JobHelper->GetPcbType( $self->{"jobId"} );
 
 	# Set visibility of coverlay cells
@@ -282,6 +285,8 @@ sub FillKeysLayout {
 		$template->SetKey( "CoverlayTopValDisp", "display:block" );
 		$template->SetKey( "CoverlayBotDisp",    "display:block" );
 		$template->SetKey( "CoverlayBotValDisp", "display:block" );
+		$template->SetKey( "FlexSurfTopDisp",    "display:block" );
+		$template->SetKey( "FlexSurfBotDisp",    "display:block" );
 
 	}
 
@@ -293,6 +298,8 @@ sub FillKeysLayout {
 		$template->SetKey( "FlexMaskTopValDisp", "display:block" );
 		$template->SetKey( "FlexMaskBotDisp",    "display:block" );
 		$template->SetKey( "FlexMaskBotValDisp", "display:block" );
+		$template->SetKey( "FlexSurfTopDisp",    "display:block" );
+		$template->SetKey( "FlexSurfBotDisp",    "display:block" );
 	}
 
 	# Set visibility of stiffener mask cells
@@ -359,7 +366,7 @@ sub __GetPcbInfo {
 	my @stiffener = ();
 
 	foreach my $l ( grep { $_->{"gROWlayer_type"} eq "stiffener" } @boardBase ) {
-	
+
 		push( @stiffener, ( $l->{"gROWname"} =~ /^\w+([csv]\d*)$/ )[0] );
 	}
 
@@ -398,7 +405,7 @@ sub __GetStackupInfo {
 	else {
 
 		#get info from stackup
-		my $stackup = Stackup->new($self->{"inCAM"}, $self->{"jobId"} );
+		my $stackup = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
 		$inf{"thick"} = sprintf( "%.2f mm", $stackup->GetFinalThick() / 1000 );
 	}
 
