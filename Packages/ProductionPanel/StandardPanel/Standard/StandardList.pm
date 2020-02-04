@@ -118,8 +118,8 @@ sub GetStandards {
 			"bb"   => 41.6,
 			
 			# used prepreg size
-			"pW" => 307,
-			"pH" => 440
+			"pW" => 308,
+			"pH" => 492
 		)
 	);
 
@@ -156,6 +156,26 @@ sub GetStandards {
 			"active"      => 1,
 			"w"           => 295,
 			"h"           => 460,
+			"bl"  => 15,
+			"br" => 15,
+			"bt"   => 15,
+			"bb"   => 15
+		)
+	);
+	
+		# ======== Standard Single layer "New Big" ========
+
+	push(
+		@l,
+		Standard->new(
+			"name"    => Enums->Standard_297x508,
+			"pcbType" => Enums->PcbType_1V2V,
+			"pcbMat"  => Enums->PcbMat_FR4,
+
+			# Properties
+			"active"      => 1,
+			"w"           => 297,
+			"h"           => 508,
 			"bl"  => 15,
 			"br" => 15,
 			"bt"   => 15,

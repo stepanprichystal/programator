@@ -39,6 +39,14 @@ sub GetDimensionPanel {
 		$dimsPanel{'BorderBot'}   = 41.6;
 
 	}
+	elsif ( $panelSizeName eq EnumsProducPanel->SIZE_MULTILAYER_538 ) {
+		$dimsPanel{'PanelSizeX'}  = 308;
+		$dimsPanel{'PanelSizeY'}  = 538;
+		$dimsPanel{'BorderLeft'}  = 21;
+		$dimsPanel{'BorderRight'} = 21;
+		$dimsPanel{'BorderTop'}   = 41.6;
+		$dimsPanel{'BorderBot'}   = 41.6;
+	}
 	elsif ( $panelSizeName eq EnumsProducPanel->SIZE_STANDARD_SMALL ) {
 		$dimsPanel{'PanelSizeX'}  = 295;
 		$dimsPanel{'PanelSizeY'}  = 355;
@@ -56,6 +64,14 @@ sub GetDimensionPanel {
 		$dimsPanel{'BorderTop'}   = 15;
 		$dimsPanel{'BorderBot'}   = 15;
 
+	}
+	elsif ( $panelSizeName eq EnumsProducPanel->SIZE_STANDARD_508 ) {
+		$dimsPanel{'PanelSizeX'}  = 297;
+		$dimsPanel{'PanelSizeY'}  = 508;
+		$dimsPanel{'BorderLeft'}  = 15;
+		$dimsPanel{'BorderRight'} = 15;
+		$dimsPanel{'BorderTop'}   = 15;
+		$dimsPanel{'BorderBot'}   = 15;
 	}
 	else {
 		return (0);
@@ -97,30 +113,40 @@ sub GetPanelType {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	my $pnlType = undef;
-	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
-	my $h = abs( $lim{"yMin"} - $lim{"yMax"} );
+	my $pnlType  = undef;
+	my %lim      = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+	my $h        = abs( $lim{"yMin"} - $lim{"yMax"} );
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
-	if ( $layerCnt > 2 ) {
+	if ( $layerCnt <= 2 ) {
 
-		if ( $h > 450 ) {
-			$pnlType = EnumsProducPanel->SIZE_MULTILAYER_BIG;
+		if ( $h <= 355 ) {
+
+			$pnlType = EnumsProducPanel->SIZE_STANDARD_SMALL;
+
 		}
-		else {
-			$pnlType = EnumsProducPanel->SIZE_MULTILAYER_SMALL;
+		elsif ( $h <= 460 ) {
+
+			$pnlType = EnumsProducPanel->SIZE_STANDARD_BIG;
+
+		}
+		elsif ( $h <= 508 ) {
+			$pnlType = EnumsProducPanel->SIZE_STANDARD_508;
 		}
 
 	}
 	else {
-		if ( $h > 400 ) {
-			$pnlType = EnumsProducPanel->SIZE_STANDARD_BIG;
+		if ( $h <= 407 ) {
+			$pnlType = EnumsProducPanel->SIZE_MULTILAYER_SMALL;
 		}
-		else {
-			$pnlType = EnumsProducPanel->SIZE_STANDARD_SMALL;
+		elsif ( $h <= 487 ) {
+			$pnlType = EnumsProducPanel->SIZE_MULTILAYER_BIG;
+		}
+		elsif ( $h <= 538 ) {
+			$pnlType = EnumsProducPanel->SIZE_MULTILAYER_538;
 		}
 	}
-	
+
 	return $pnlType;
 }
 
@@ -137,10 +163,10 @@ sub GetPanelTypeByActiveArea {
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobName );
 
 	if ( $layerCnt > 2 ) {
-		@nameOfPanel = ( EnumsProducPanel->SIZE_MULTILAYER_SMALL, EnumsProducPanel->SIZE_MULTILAYER_BIG );
+		@nameOfPanel = ( EnumsProducPanel->SIZE_MULTILAYER_SMALL, EnumsProducPanel->SIZE_MULTILAYER_BIG, EnumsProducPanel->SIZE_MULTILAYER_538 );
 	}
 	else {
-		@nameOfPanel = ( EnumsProducPanel->SIZE_STANDARD_SMALL, EnumsProducPanel->SIZE_STANDARD_BIG );
+		@nameOfPanel = ( EnumsProducPanel->SIZE_STANDARD_SMALL, EnumsProducPanel->SIZE_STANDARD_BIG, EnumsProducPanel->SIZE_STANDARD_508 );
 	}
 
 	foreach my $name (@nameOfPanel) {
@@ -174,7 +200,6 @@ sub _CompareTolerance {
 	}
 }
 
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -183,13 +208,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased "Packages::ProductionPanel::PanelDimension";
 	use aliased 'Packages::InCAM::InCAM';
- 
 
 	my $jobId = "f77339";
 	my $inCAM = InCAM->new();
-	
-	my $type = PanelDimension->GetPanelType($inCAM, $jobId);
- 
+
+	my $type = PanelDimension->GetPanelType( $inCAM, $jobId );
 
 }
 
