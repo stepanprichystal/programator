@@ -58,7 +58,8 @@ use aliased 'Packages::Routing::RoutLayer::FlattenRout::CreateFsch';
 use aliased 'Packages::Routing::PilotHole';
 use aliased 'Packages::Routing::PlatedRoutAtt';
 use aliased 'Packages::Routing::PlatedRoutArea';
- 
+
+use aliased 'Packages::GuideSubs::SolderMask::DoUnmaskNC';
 use aliased 'Packages::GuideSubs::Scoring::DoFlattenScore';
 use aliased 'Packages::CAMJob::Stackup::StackupDefault';
 use aliased 'Packages::GuideSubs::Routing::CheckRout';
@@ -174,6 +175,9 @@ unless ($panelSizeCheck == 0) {
 		
 		# Copy all rout layers to solder mask
 		PreparationLayout->CopyRoutToSolderMask($inCAM, $jobName, 'o+1' );
+		
+		# Un mask throuh hole if BGA on the boards
+		DoUnmaskNC->UnMaskBGAThroughHole( $inCAM, $jobName );
 			
 		#22.5.2018 zaremovano, delalo chyby pøi kopírování mpanelu z jiné zakázky.		
 		#if ( CamHelper->StepExists( $inCAM, $jobName, 'mpanel' ) ) { 
