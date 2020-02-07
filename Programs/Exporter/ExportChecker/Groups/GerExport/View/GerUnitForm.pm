@@ -167,6 +167,7 @@ sub __SetLayoutJetprint {
 
 	my $exportChb   = Wx::CheckBox->new( $statBox, -1, "Export",      &Wx::wxDefaultPosition );
 	my $fiduc3p2Chb = Wx::CheckBox->new( $statBox, -1, "Fiduc 3.2mm", &Wx::wxDefaultPosition );
+	my $rotationChb = Wx::CheckBox->new( $statBox, -1, "Rotate 90°", &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 
@@ -174,10 +175,12 @@ sub __SetLayoutJetprint {
 
 	$szStatBox->Add( $exportChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $fiduc3p2Chb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $rotationChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 	$self->{"exportJetprintChb"} = $exportChb;
 	$self->{"fiduc3p2Chb"}       = $fiduc3p2Chb;
+	$self->{"rotationChb"}       = $rotationChb;
 
 	return $szStatBox;
 }
@@ -354,6 +357,7 @@ sub DisableControls {
 	if ( !$defaultInfo->LayerExist("pc") && !$defaultInfo->LayerExist("ps") ) {
 		$self->{"exportJetprintChb"}->Disable();
 		$self->{"fiduc3p2Chb"}->Disable();
+		$self->{"rotationChb"}->Disable();
 	}
 
 	# PASTE FILES
@@ -537,6 +541,7 @@ sub SetJetprintInfo {
 
 	$self->{"exportJetprintChb"}->SetValue( $info->{"exportGerbers"} );
 	$self->{"fiduc3p2Chb"}->SetValue( $info->{"fiduc3p2"} );
+	$self->{"rotationChb"}->SetValue( $info->{"rotation"} );
 }
 
 sub GetJetprintInfo {
@@ -556,6 +561,13 @@ sub GetJetprintInfo {
 	}
 	else {
 		$info{"fiduc3p2"} = 0;
+	}
+	
+	if ( $self->{"rotationChb"}->IsChecked() ) {
+		$info{"rotation"} = 1;
+	}
+	else {
+		$info{"rotation"} = 0;
 	}
 
 	return \%info;

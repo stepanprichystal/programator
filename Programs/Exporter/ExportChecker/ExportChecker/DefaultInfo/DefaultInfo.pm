@@ -80,6 +80,7 @@ sub new {
 	$self->{"pcbClass"}        = undef;    # pcb class of outer layer
 	$self->{"pcbClassInner"}   = undef;    # pcb class of inner layer
 	$self->{"pcbIsFlex"}       = undef;    # pcb is flex
+	$self->{"profLim"}         = undef;    # panel profile limits
 
 	return $self;
 }
@@ -126,7 +127,6 @@ sub GetNCLayers {
 
 	return @{ $self->{"NCLayers"} };
 }
-
 
 sub GetPcbClass {
 	my $self = shift;
@@ -246,7 +246,7 @@ sub GetDefSignalLSett {
 	my $etching = $self->GetDefaultEtchType( $l->{"gROWname"} );
 	my $plt     = 1;
 
-	if ( $etching eq EnumsGeneral->Etching_ONLY || $lPars{"outerCore"}  ) {
+	if ( $etching eq EnumsGeneral->Etching_ONLY || $lPars{"outerCore"} ) {
 		$plt = 0;
 	}
 
@@ -310,7 +310,7 @@ sub GetSignalLSett {
 		$lSett{"comp"} = 0;
 	}
 	else {
- 
+
 		my $comp = EtchOperation->GetCompensation( $cuThick, $class, $plt, $etchType );
 
 		# If layer is negative, set negative compensation
@@ -364,7 +364,7 @@ sub GetSignalLSett {
 	}
 
 	elsif ( $lPars{"sourceName"} =~ /^v\d+$/i ) {
- 
+
 		my $side = undef;
 
 		my $product = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"} );
@@ -444,14 +444,14 @@ sub GetNonSignalLSett {
 		$lSett{"mirror"} = 1;
 
 	}
-	 
+
 	# Bot soloder mask and bot gold connector is mirrored
 	elsif ( $l->{"gROWname"} =~ /^ms2?(olec)?$/i || $l->{"gROWname"} =~ /^golds$/i ) {
 
 		$lSett{"mirror"} = 0;
 
 	}
-	
+
 	# Whatever TOP layer processed by screenprinting do not mirror
 	# Priprava sita:
 	# |____________|  Sito (sitem dolu)
@@ -459,15 +459,14 @@ sub GetNonSignalLSett {
 	#   __________    Emulze filmu
 	#   __________    Film
 	#  	==========    Deska
-	if ( $l->{"gROWname"} =~ /^[lgp]c2?$/i ||  $l->{"gROWname"} =~ /^mcflex$/i) {
+	if ( $l->{"gROWname"} =~ /^[lgp]c2?$/i || $l->{"gROWname"} =~ /^mcflex$/i ) {
 		$lSett{"mirror"} = 0;
 	}
-	
+
 	# Whatever BOT layer processed by screenprinting do mirror
-	if ( $l->{"gROWname"} =~ /^[lgp]s2?$/i ||  $l->{"gROWname"} =~ /^msflex$/i) {
+	if ( $l->{"gROWname"} =~ /^[lgp]s2?$/i || $l->{"gROWname"} =~ /^msflex$/i ) {
 		$lSett{"mirror"} = 1;
 	}
-	
 
 	# 3) Set compensation
 
@@ -690,6 +689,21 @@ sub GetIsFlex {
 	return $self->{"pcbIsFlex"};
 }
 
+# Return panel profile limits
+# - xMin
+# - xMax
+# - yMin
+# - yMax
+sub GetProfileLimits {
+	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
+	return %{$self->{"profLim"}};
+}
+
+
+
 # Return default type of technology
 sub GetDefaultTechType {
 	my $self      = shift;
@@ -726,7 +740,7 @@ sub GetDefaultEtchType {
 
 	if ( $self->{"layerCnt"} == 2 ) {
 
-		my @platedNC = grep { $_->{"plated"} && !$_->{"technical"}} $self->GetNCLayers();
+		my @platedNC = grep { $_->{"plated"} && !$_->{"technical"} } $self->GetNCLayers();
 
 		if ( scalar(@platedNC) ) {
 
@@ -805,7 +819,7 @@ sub __Init {
 	$self->{"signalExtLayers"} = \@signalExtLayers;
 
 	my @NCLayers = CamJob->GetNCLayers( $inCAM, $self->{"jobId"} );
-	CamDrilling->AddNCLayerType(\@NCLayers);
+	CamDrilling->AddNCLayerType( \@NCLayers );
 	$self->{"NCLayers"} = \@NCLayers;
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $inCAM, $self->{"jobId"} );
@@ -862,6 +876,9 @@ sub __Init {
 	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $inCAM, $self->{"jobId"} );
 
 	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
+
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $self->{"jobId"}, $self->{"step"} );
+	$self->{"profLim"} = \%lim;
 
 	$self->{"init"} = 1;
 

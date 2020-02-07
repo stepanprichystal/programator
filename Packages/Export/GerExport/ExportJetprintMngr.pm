@@ -47,7 +47,7 @@ sub Run {
 			$specialFiduc = Enums->Fiducials_HOLE3P2;
 		}
 
-		my $export = ExportFiles->new( $self->{"inCAM"}, $self->{"jobId"}, $specialFiduc );
+		my $export = ExportFiles->new( $self->{"inCAM"}, $self->{"jobId"}, $specialFiduc, $self->{"jetInfo"}->{"rotation"} );
 		$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
 
 		$export->Run();

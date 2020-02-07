@@ -42,10 +42,10 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
-
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	my $specFiduc = shift;    # set, only if special fiduc marks
+	$self->{"rotation"} = shift;    # rotation data 90°°if panel is too height
 
 	$self->{"step"} = "panel";
 
@@ -147,10 +147,13 @@ sub __ExportLayers {
 		# 6) move data to zero point
 		$self->__MoveToZero( $l->{"gROWname"} );
 
-		# 7) mirror layer in y axis if ps
+		# 7) rotate layer
+		$self->__RotateLayer( $l->{"gROWname"}, \%lim );
+
+		# 8) mirror layer in y axis if ps
 		$self->__MirrorLayer( $l->{"gROWname"}, \%lim );
 
-		# 5) export gerbers
+		# 9) export gerbers
 		my $fiducDCode = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
 
 		#  reise result of export
@@ -329,7 +332,7 @@ sub __CompensateLayer {
 
 		die "Too thin features ($str) in silkscreen layer \"$layerName\". Min thickness of feature is 130µm";
 	}
- 
+
 	# 2) Compensate all features
 	my $class = $self->{"pcbClass"};
 
@@ -379,7 +382,7 @@ sub __PrepareFiducials {
 		$f->Parse( $inCAM, $jobId, $self->{"step"}, "v" );
 		my @holes3p2 = grep { $_->{"type"} eq "P" && $_->{"att"}->{".pnl_place"} =~ /^M-(.*)-c$/ } $f->GetFeatures();
 
-		die "No fiducial holes 3.2mm was found in layer \"v\"" unless(scalar(@holes3p2));
+		die "No fiducial holes 3.2mm was found in layer \"v\"" unless ( scalar(@holes3p2) );
 
 		# add point
 		CamLayer->WorkLayer( $inCAM, $layerName );
@@ -407,6 +410,21 @@ sub __MoveToZero {
 	}
 }
 
+# Rotate layer 90 degree cw and move to zero
+sub __RotateLayer {
+	my $self      = shift;
+	my $layerName = shift;
+	my $lim       = shift;
+
+	my $inCAM = $self->{"inCAM"};
+
+	if ( $self->{"rotation"} ) {
+
+		CamLayer->RotateLayerData( $inCAM, $layerName, 90, 0);
+		$inCAM->COM( "sel_move", "dx" => 0, "dy" => abs( $lim->{"xMax"} - $lim->{"xMin"} ) );
+	}
+}
+
 # if layer is multilayer, move data to zero point
 sub __MirrorLayer {
 	my $self      = shift;
@@ -419,7 +437,17 @@ sub __MirrorLayer {
 
 		CamLayer->MirrorLayerData( $inCAM, $layerName, "y" );
 
-		$inCAM->COM( "sel_move", "dx" => abs( $lim->{"xMax"} - $lim->{"xMin"} ), "dy" => 0 );
+		if ( $self->{"rotation"} ) {
+
+			$inCAM->COM( "sel_move", "dx" => abs( $lim->{"yMax"} - $lim->{"yMin"} ), "dy" => 0 );
+
+		}
+		else {
+
+			$inCAM->COM( "sel_move", "dx" => abs( $lim->{"xMax"} - $lim->{"xMin"} ), "dy" => 0 );
+
+		}
+
 	}
 }
 
@@ -430,7 +458,10 @@ sub __CreateJetprintStep {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"jetprintStep"} );
+
+	my @silkL = map {$_->{"gROWname"} } @{$self->{"layers"}};
+
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"jetprintStep"}, 0,  \@silkL);
 
 	CamHelper->SetStep( $inCAM, $self->{"jetprintStep"} );
 }
@@ -461,10 +492,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d241421";
+	my $jobId    = "d270114";
 	my $stepName = "panel";
 
-	my $export = ExportFiles->new( $inCAM, $jobId );
+	my $export = ExportFiles->new( $inCAM, $jobId, undef, 1 );
 
 	$export->Run();
 
