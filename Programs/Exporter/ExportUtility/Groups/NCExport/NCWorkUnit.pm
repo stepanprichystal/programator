@@ -4,6 +4,7 @@
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::Groups::NCExport::NCWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
+
 #3th party library
 use strict;
 use warnings;
@@ -23,11 +24,11 @@ use aliased 'Packages::Export::NCExport::ExportMngr';
 
 sub new {
 
-	my $class = shift;
+	my $class  = shift;
 	my $unitId = shift;
-	
-	my $self  = {};
- 
+
+	my $self = {};
+
 	$self = $class->SUPER::new($unitId);
 	bless $self;
 
@@ -39,29 +40,26 @@ sub new {
 }
 
 sub Init {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my $jobId      = shift;
-	
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
 	my $taskData = $self->{"taskData"};
- 
-	my $exportSingle = $taskData->GetExportSingle();
-	my $pltLayers = $taskData->GetPltLayers();
-	my $npltLayers = $taskData->GetNPltLayers();
-	
-	my $mngr = ExportMngr->new( $inCAM, $jobId, "panel", $exportSingle, $pltLayers, $npltLayers);
+
+	my $exportSingle  = $taskData->GetExportSingle();
+	my $pltLayers     = $taskData->GetSingleModePltLayers();
+	my $npltLayers    = $taskData->GetSingleModeNPltLayers();
+	my $modeAllLayers = $taskData->GetAllModeLayers();
+
+	my $mngr = ExportMngr->new( $inCAM, $jobId, "panel", $exportSingle, $modeAllLayers, $pltLayers, $npltLayers );
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
-	
+
 	$self->{"taskMngr"} = $mngr;
-	
+
 	$self->{"itemsCount"} = $mngr->TaskItemsCount();
-	
- 
+
 }
- 
- 
- 
- 
+
 1;
 
 #-------------------------------------------------------------------------------------------#

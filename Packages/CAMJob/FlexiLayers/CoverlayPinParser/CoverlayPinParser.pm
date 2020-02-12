@@ -13,6 +13,7 @@ package Packages::CAMJob::FlexiLayers::CoverlayPinParser::CoverlayPinParser;
 #3th party library
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Packages::Polygon::Features::PolyLineFeatures::PolyLineFeatures';
@@ -28,6 +29,7 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => 'EnumsFiltr';
 use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::Enums';
 use aliased 'Enums::EnumsRout';
+use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::Pin';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -68,7 +70,7 @@ sub CheckBendArea {
 	if (@wrong) {
 
 		$result = 0;
-		$errMess .=
+		$$errMess .=
 		  "Not all features in layer: " . $self->{"layer"} . " has attribute .string (features id: " . join( ";", map { $_->{"id"} } @wrong ) . ")";
 	}
 
@@ -146,7 +148,8 @@ sub GetSolderLines {
 sub GetEndLines {
 	my $self = shift;
 
-	return grep { $_->{"att"}->{".string"} eq Enums->PinString_ENDLINE } $self->GetFeatures();
+	return
+	  grep { $_->{"att"}->{".string"} eq Enums->PinString_ENDLINEIN || $_->{"att"}->{".string"} eq Enums->PinString_ENDLINEOUT } $self->GetFeatures();
 }
 
 sub __LoadBendArea {
@@ -167,11 +170,10 @@ sub __LoadBendArea {
 		CamMatrix->CopyLayer( $inCAM, $jobId, $self->{"layer"}, $step, $tmp, $step );
 		CamLayer->WorkLayer( $inCAM, $tmp );
 
-
-
 		my $f = FeatureFilter->new( $inCAM, $jobId, $tmp );
 
-		$f->AddIncludeAtt( ".string", Enums->PinString_ENDLINE );
+		$f->AddIncludeAtt( ".string", Enums->PinString_ENDLINEIN );
+		$f->AddIncludeAtt( ".string", Enums->PinString_ENDLINEOUT );
 		$f->AddIncludeAtt( ".string", Enums->PinString_SIDELINE1 );
 		$f->AddIncludeAtt( ".string", Enums->PinString_SIDELINE2 );
 		$f->AddIncludeAtt( ".string", Enums->PinString_BENDLINE );
@@ -240,15 +242,58 @@ sub __LoadBendArea {
 				# switch direction
 				if ( $f->{"type"} eq "A" ) {
 
-					$f->{"newDir"} = $f->{"oriDir"} eq EnumsRout->Dir_CW ? EnumsRout->Dir_CCW : EnumsRout->Dir_CW;
+					$f->{"newDir"} = $f->{"newDir"} eq EnumsRout->Dir_CW ? EnumsRout->Dir_CCW : EnumsRout->Dir_CW;
 				}
 			}
 		}
 
-		my $pinBendArea = PinBendArea->new( \@feats, \@tranZones );
+		# Parse bend area pins
+		my @pins = ();
+
+		# Each pin contain at least one of theses attributes
+		my @pinsFeats =
+		  grep {
+			     $_->{"att"}->{".string"} eq Enums->PinString_ENDLINEIN
+			  || $_->{"att"}->{".string"} eq Enums->PinString_ENDLINEOUT
+			  || $_->{"att"}->{".string"} eq Enums->PinString_REGISTER
+		  }
+
+		  grep { defined $_->{"att"}->{"feat_group_id"} } @feats;
+
+		my @pinsFeatsGUID = uniq( map { $_->{"att"}->{"feat_group_id"} } @pinsFeats );
+
+		foreach my $featGroupId (@pinsFeatsGUID) {
+
+			# @feats contains sorted pins line
+			my @allPinFeats = (grep { $_->{"att"}->{"feat_group_id"} eq $featGroupId } @helper, @feats);
+			my $holderType = Enums->PinHolder_NONE;
+			$holderType = Enums->PinHolder_IN if ( scalar( grep { $_->{"att"}->{".string"} eq Enums->PinString_ENDLINEIN } @allPinFeats ) );
+			$holderType = Enums->PinHolder_OUT
+			  if ( scalar( grep { $_->{"att"}->{".string"} eq Enums->PinString_ENDLINEOUT } @allPinFeats ) );
+			my $regPadExist = scalar( grep { $_->{"att"}->{".string"} ne Enums->PinString_REGISTER } @allPinFeats )? 1: 0;
+ 
+			my $pin = Pin->new( $featGroupId, $holderType, $regPadExist, \@allPinFeats );
+			push( @pins, $pin );
+		}
+
+		my $pinBendArea = PinBendArea->new( \@feats, \@pins );
 
 		push( @{ $self->{"pinBendAreas"} }, $pinBendArea );
 	}
+
+	# Pins of type "only Register pad" do not refer to any BendArea, add them to first existing area
+	my @pinsAll = grep { $_->{"att"}->{".string"} eq Enums->PinString_REGISTER } @helper;
+
+	my %tmp;
+	@tmp{ map { $_->GetPinsGUID() } $self->GetBendAreas() } = ();
+	my @regPins = grep { !exists $tmp{ $_->{"att"}->{"feat_group_id"} } } @pinsAll;
+
+	foreach my $regPinFeat (@regPins) {
+
+		my $pin = Pin->new( $regPinFeat->{"att"}->{"feat_group_id"}, Enums->PinHolder_NONE, 1, [$regPinFeat] );
+		$self->{"pinBendAreas"}->[0]->AddPin($pin);
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -260,7 +305,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::CoverlayPinParser';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d222775";
+	my $jobId = "d266089";
 	my $inCAM = InCAM->new();
 
 	my $step  = "o+1";
@@ -277,14 +322,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	}
 
 	my @areas = $parser->GetBendAreas();
-
-	foreach my $a (@areas) {
-
-		print $a->GetPinCnt() . "\n";
-
-		print $a->GetPinsFeatures();
-
-	}
+	die;
 
 }
 

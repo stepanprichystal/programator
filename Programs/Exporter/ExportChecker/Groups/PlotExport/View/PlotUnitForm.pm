@@ -222,8 +222,8 @@ sub OnPREGroupLayerSettChanged {
 	$row->SetPolarity( $layer->{"polarity"} );
 	$row->SetMirror( $layer->{"mirror"} );
 	$row->SetComp( $layer->{"comp"} );
-	$row->SetShrinkX( $layer->{"shrinkX"} );
-	$row->SetShrinkY( $layer->{"shrinkY"} );
+	$row->SetStretchX( $layer->{"stretchX"} );
+	$row->SetStretchY( $layer->{"stretchY"} );
 
 }
 

@@ -33,6 +33,7 @@ use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
 use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -42,13 +43,13 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"}        = shift;
-	$self->{"jobId"}        = shift;
-	$self->{"stepName"}     = shift;
-	$self->{"exportSingle"} = shift;
-
-	$self->{"requiredPlt"}  = shift;
-	$self->{"requiredNPlt"} = shift;
+	$self->{"inCAM"}           = shift;
+	$self->{"jobId"}           = shift;
+	$self->{"stepName"}        = shift;
+	$self->{"exportSingle"}    = shift;
+	$self->{"allModeLayers"}   = shift;
+	$self->{"singleModePltL"}  = shift;
+	$self->{"singleModeNPltL"} = shift;
 
 	return $self;
 }
@@ -60,7 +61,7 @@ sub Run {
 	# "d" is standard NC layer, but so far we work with merged chains and holes in one layer
 	my $cnt = undef;
 	if ( !$self->{"exportSingle"} ) {
-		$cnt = NpltDrillHelper->SeparateNpltDrill( $self->{"inCAM"}, $self->{"jobId"} );
+		$cnt = NpltDrillHelper->SeparateNpltDrill( $self->{"inCAM"}, $self->{"jobId"}, $self->{"allModeLayers"} );
 	}
 
 	my $err = undef;
@@ -118,29 +119,27 @@ sub __Init {
 	my @plt = CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"pltLayers"} = \@plt;
 
-	my @nplt =  CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	my @nplt = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"npltLayers"} = \@nplt;
-
-
 
 	# 2) Filter layers, if export single
 	if ( $self->{"exportSingle"} ) {
 
-		$self->__FilterLayers( $self->{"requiredPlt"}, $self->{"requiredNPlt"} );
+		$self->__FilterLayers( $self->{"singleModePltL"}, $self->{"singleModeNPltL"} );
 	}
-	
+
 	# 3) Add layer attributes
 	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"pltLayers"} );
 	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"npltLayers"} );
-	
-	foreach my $l  (@{$self->{"pltLayers"}}){
+
+	foreach my $l ( @{ $self->{"pltLayers"} } ) {
 		$l->{"UniDTM"} = UniDTM->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $l->{"gROWname"}, 1 );
 	}
-	
-	foreach my $l  (@{$self->{"npltLayers"}}){
+
+	foreach my $l ( @{ $self->{"npltLayers"} } ) {
 		$l->{"UniDTM"} = UniDTM->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $l->{"gROWname"}, 1 );
-	}	
- 
+	}
+
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
 
 	#create manager for choosing right machines
@@ -199,8 +198,13 @@ sub __Run {
 
 		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 3\n " );
 
-		# 3) update tif file with information about nc operations (time consuming operation, this is reason why store to tif for later useage)
+		# 3) update tif file
+		# Add information about nc operations (time consuming operation, this is reason why store to tif for later useage)
 		NCHelper->StoreOperationInfoTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"operationMngr"} )
+		  if ( !$self->{"exportSingle"} );
+
+		# Add output settings info for nc layers
+		NCHelper->StoreNClayerSettTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"allModeLayers"}, $self->{"operationMngr"} )
 		  if ( !$self->{"exportSingle"} );
 
 		# 4) Export physical nc files
@@ -227,10 +231,10 @@ sub __SetRoutFeedSpeed {
 
 	# If pcb is in status 'Ve vyrobe', 'Pozastavena', set rout speed
 	my $lastOrder = $self->{"jobId"} . "-" . HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
-	my $pcbStatus =  HegMethods->GetStatusOfOrder( $lastOrder, 0 );
-	if ( $pcbStatus == 4 || $pcbStatus == 12 || JobHelper->GetIsFlex($self->{"jobId"})) {
+	my $pcbStatus = HegMethods->GetStatusOfOrder( $lastOrder, 0 );
+	if ( $pcbStatus == 4 || $pcbStatus == 12 || JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 
-		my $info = HegMethods->GetInfoAfterStartProduce($lastOrder);
+		my $info    = HegMethods->GetInfoAfterStartProduce($lastOrder);
 		my $matKind = HegMethods->GetMaterialKind( $self->{"jobId"} );
 
 		die "pocet_prirezu is no defined in HEG for orderid: $lastOrder"
@@ -371,9 +375,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my @npltLayers = ("fprepreg1");
 
 	my $export = ExportMngr->new( $inCAM, $jobId, $step, $exportSingle, \@pltLayers, \@npltLayers );
-	
+
 	my $mngr = $export->GetOperationMngr();
-	
+
 	$export->Run( $inCAM, $jobId, $exportSingle, \@pltLayers, \@npltLayers );
 	die;
 

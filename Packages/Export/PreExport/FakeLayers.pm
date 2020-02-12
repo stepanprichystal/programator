@@ -29,6 +29,9 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => 'EnumsFiltr';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Polygon::PolygonFeatures';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,11 +51,14 @@ sub CreateFakeLayers {
 	my @smFake = $self->__CreateFakeSMLayers( $inCAM, $jobId, $step, $emptyLayers );
 	my @outerFake = $self->__CreateFakeOuterCoreLayers( $inCAM, $jobId, $step, $emptyLayers );
 	my @smOLECFake = $self->__CreateFakeSMOLECLayers( $inCAM, $jobId, $step, $emptyLayers );
+	my @coreDrillFake = $self->__CreateCoreDrillLayers( $inCAM, $jobId, $step, $emptyLayers );
+	my @plgFake = $self->__CreateFakePLGLayers( $inCAM, $jobId, $step, $emptyLayers );
 
 	my @fake = ();
 	push( @fake, @smFake )     if (@smFake);
 	push( @fake, @outerFake )  if (@outerFake);
 	push( @fake, @smOLECFake ) if (@smOLECFake);
+	push( @fake, @plgFake )    if (@plgFake);
 
 	foreach my $l (@fake) {
 
@@ -142,7 +148,7 @@ sub __CreateFakeSMOLECLayers {
 	my $mcExist = scalar( grep { $_->{"gROWname"} eq "mc" } @layers ) ? 1 : 0;
 	my $msExist = scalar( grep { $_->{"gROWname"} eq "ms" } @layers ) ? 1 : 0;
 
-	my $fakeSM = ();
+	my $fakeSM = undef;
 	my $sourceL;
 
 	if ( $mcExist && !$msExist ) {
@@ -162,8 +168,8 @@ sub __CreateFakeSMOLECLayers {
 		return @fakeLayers;
 	}
 
-	return @fakeLayers unless ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 );
-
+	return @fakeLayers unless ( defined $fakeSM );
+	
 	CamHelper->SetStep( $inCAM, $step );
 
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $fakeSM );
@@ -231,6 +237,30 @@ sub __CreateFakeSMOLECLayers {
 
 }
 
+# Fake layers, where soldermask is only from one side.
+# But OLEC machine need films from both side in order register films
+# For Multilayer PCB only (rest of PCB is exposed without cameras??)
+sub __CreateFakePLGLayers {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift;
+	my $emptyLayers = shift // 0;    # Create layer without any data
+
+	my @fakeLayers = ();
+
+	my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
+
+	if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
+
+		@fakeLayers = PlugLayer->CreateCopperPlugLayersAllSteps( $inCAM, $jobId, undef, $emptyLayers );
+
+	}
+
+	return @fakeLayers;
+
+}
+
 # Outer layers for PCB with outer core at stackup
 sub __CreateFakeOuterCoreLayers {
 	my $self        = shift;
@@ -275,22 +305,37 @@ sub __CreateFakeOuterCoreLayers {
 			}
 
 			# Put surface over whole panel (full sopper)
-			if ( !$emptyLayers ) {
-				CamLayer->AffectLayers( $inCAM, \@layers );
+if ( !$emptyLayers ) {
+
+				# Add frame and fiduc for OLEC (take it from c2)
+				CamLayer->WorkLayer( $inCAM, "v2" );
+
+				my $f = FeatureFilter->new( $inCAM, $jobId, "v2" );
+				$f->SetProfile( EnumsFiltr->ProfileMode_OUTSIDE );
+				if ( $f->Select() ) {
+
+					CamLayer->CopySelOtherLayer( $inCAM, \@layers );
+
+				}
+				else {
+					die "No frame and fiducials was found in v2 layer outside profile";
+				}
+
+				# Add frame 100µm width around pcb (fr frame coordinate)
 				my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 				my @pointsLim = ();
 				push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );
 				push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} } );
 				push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMax"} } );
 				push( @pointsLim, { "x" => $lim{"xMax"}, "y" => $lim{"yMin"} } );
+				push( @pointsLim, { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );
 
+				CamLayer->AffectLayers( $inCAM, \@layers );
 				CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
-
-				# frame 100µm width around pcb (fr frame coordinate)
 				CamSymbol->AddPolyline( $inCAM, \@pointsLim, "r200", "negative", 1 );
 
 				# Put schmoll crosses
-				#if ( JobHelper->GetIsFlex($jobId) ) {
+				if ( JobHelper->GetIsFlex($jobId) ) {
 
 					my $f = Features->new();
 					$f->Parse( $inCAM, $jobId, $step, "v2" );    # layer v2 should already exist in multilayer pcb
@@ -304,7 +349,31 @@ sub __CreateFakeOuterCoreLayers {
 						#CamSymbol->AddPad( $inCAM, "s12000", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
 						CamSymbol->AddPad( $inCAM, "schmoll_cross_10", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
 					}
-				#}
+				}
+
+				# Put OLEC crosses
+
+				my $olecSym = undef;
+				if ( $IProduct->GetOuterCoreTop() ) {
+
+					$olecSym = "cross_inner_x";
+				}
+				elsif ( $IProduct->GetOuterCoreBot() ) {
+
+					$olecSym = "cross_inner";
+				}
+
+				my $fv = Features->new();
+				$fv->Parse( $inCAM, $jobId, $step, "v1" );
+
+				my @olecFeats = grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_IN$/ } $fv->GetFeatures();
+				die "All fiducial marks (four marks, attribut: OLEC_otvor_IN) were not found in layer: v1"
+				  unless ( scalar(@olecFeats) == 4 );
+
+				foreach my $c (@olecFeats) {
+					
+					CamSymbol->AddPad( $inCAM, $olecSym, { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
+				}
 
 				# Put info text
 
@@ -334,6 +403,48 @@ sub __CreateFakeOuterCoreLayers {
 	return @fakeLayers;
 
 }
+
+
+sub __CreateCoreDrillLayers {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $step        = shift;
+	my $emptyLayers = shift // 0;    # Create layer without any data
+
+	my @fakeLayers = ();
+
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+
+	return @fakeLayers if ( $layerCnt <= 2 || !JobHelper->GetIsFlex($jobId) );
+
+	my $stackup = Stackup->new( $inCAM, $jobId );
+
+	my @products = $stackup->GetInputChildProducts();
+
+	foreach my $coreProdut ( sort { $b->GetCoreNumber() <=> $a->GetCoreNumber() } @products ) {
+
+		my $lName = "v1j" . $coreProdut->GetCoreNumber();
+
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
+		CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "drill", "positive", 1, "v1", "after" );
+		CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $lName, $coreProdut->GetTopCopperLayer(), $coreProdut->GetBotCopperLayer() );
+
+		push( @fakeLayers, $lName );
+	}
+
+	unless ($emptyLayers) {
+		CamHelper->SetStep( $inCAM, $step );
+
+		CamLayer->WorkLayer( $inCAM, "v1" );
+		CamLayer->CopySelOtherLayer( $inCAM, \@fakeLayers );
+
+		CamLayer->ClearLayers($inCAM);
+	}
+
+	return @fakeLayers;
+}
+
 
 sub __PutInfoText {
 	my $self  = shift;
@@ -387,12 +498,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d165365";
+	my $jobId    = "d262773";
 	my $stepName = "panel";
 
 	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
 
-	print %types;
+
 }
 
 1;

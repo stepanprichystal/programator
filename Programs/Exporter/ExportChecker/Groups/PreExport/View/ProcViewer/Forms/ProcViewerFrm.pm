@@ -62,10 +62,10 @@ sub AddGroup {
 
 	# Add separator if any group exist
 	if ( $productType eq StackEnums->Product_INPUT && scalar( @{ $self->{"groupFrmInput"} } ) ) {
-		$self->AddSeparator(1, Wx::Colour->new( 200, 200, 200 ),2);
+		$self->AddSeparator( 2, Wx::Colour->new( 200, 200, 200 ), 4 );
 	}
 	elsif ( $productType eq StackEnums->Product_PRESS && scalar( @{ $self->{"groupFrmPress"} } ) ) {
-		$self->AddSeparator(1, Wx::Colour->new( 200, 200, 200 ),2);
+		$self->AddSeparator( 2, Wx::Colour->new( 200, 200, 200 ), 4 );
 	}
 
 	my $group = GroupFrm->new( $self, $productId, $productType );
@@ -134,14 +134,15 @@ sub AddCategoryTitle {
 
 	my $groupClmnsPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, -1 ] );
 	$groupClmnsPnl->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
-	my $groupClThickTxt = Wx::StaticText->new( $groupClmnsPnl, -1, "EtchCu [µm]",, [ -1, -1 ], [ 50, -1 ] );
-	my $groupClPolarTxt = Wx::StaticText->new( $groupClmnsPnl, -1, "Polar",,        [ -1, -1 ], [ 40, -1 ] );
-	my $groupClMirrTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "Mirror",,       [ -1, -1 ], [ 40, -1 ] );
-	my $groupClCompTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "Comp [µm]",,   [ -1, -1 ], [ 50, -1 ] );
-	my $groupClShrXTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "ShrinkX [%]",,  [ -1, -1 ], [ 50, -1 ] );
-	my $groupClShrYTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "ShrinkY [%]",,  [ -1, -1 ], [ 50, -1 ] );
-	my $technoClTxt     = Wx::StaticText->new( $groupClmnsPnl, -1, "Technology",,   [ -1, -1 ], [ 80, -1 ] );
-	my $technoDrillTxt  = Wx::StaticText->new( $groupClmnsPnl, -1, "Plt NC",,       [ -1, -1 ], [ 70, -1 ] );
+	my $groupClThickTxt   = Wx::StaticText->new( $groupClmnsPnl, -1, "EtchCu [µm]",, [ -1, -1 ], [ 50, -1 ] );
+	my $groupClPolarTxt   = Wx::StaticText->new( $groupClmnsPnl, -1, "Polar",,        [ -1, -1 ], [ 40, -1 ] );
+	my $groupClMirrTxt    = Wx::StaticText->new( $groupClmnsPnl, -1, "Mirror",,       [ -1, -1 ], [ 40, -1 ] );
+	my $groupClCompTxt    = Wx::StaticText->new( $groupClmnsPnl, -1, "Comp [µm]",,   [ -1, -1 ], [ 50, -1 ] );
+	my $groupClShrXTxt    = Wx::StaticText->new( $groupClmnsPnl, -1, "StretchX [%]",, [ -1, -1 ], [ 50, -1 ] );
+	my $groupClShrYTxt    = Wx::StaticText->new( $groupClmnsPnl, -1, "StretchY [%]",, [ -1, -1 ], [ 50, -1 ] );
+	my $technoClTxt       = Wx::StaticText->new( $groupClmnsPnl, -1, "Technology",,   [ -1, -1 ], [ 75, -1 ] );
+	my $technoDrillTxt    = Wx::StaticText->new( $groupClmnsPnl, -1, "Plt NC",,       [ -1, -1 ], [ 35, -1 ] );
+	my $technoDrillOthTxt = Wx::StaticText->new( $groupClmnsPnl, -1, "Oth NC",,       [ -1, -1 ], [ 55, -1 ] );
 
 	# BUILD LAYOUT STRUCTURE
 	$groupTitleSz->Add( 0, 22, 0 );    #expander vertical
@@ -151,14 +152,15 @@ sub AddCategoryTitle {
 	$groupTitlePnl->SetSizer($groupTitleSz);
 
 	$groupClmnSz->Add( 0, 22, 0 );        #expander
-	$groupClmnSz->Add( $groupClThickTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 10 );
-	$groupClmnSz->Add( $groupClPolarTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
-	$groupClmnSz->Add( $groupClMirrTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
-	$groupClmnSz->Add( $groupClCompTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
-	$groupClmnSz->Add( $groupClShrXTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
-	$groupClmnSz->Add( $groupClShrYTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
-	$groupClmnSz->Add( $technoClTxt,     0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
-	$groupClmnSz->Add( $technoDrillTxt,  0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $groupClThickTxt,   0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 10 );
+	$groupClmnSz->Add( $groupClPolarTxt,   0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $groupClMirrTxt,    0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $groupClCompTxt,    0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $groupClShrXTxt,    0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $groupClShrYTxt,    0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $technoClTxt,       0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $technoDrillTxt,    0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
+	$groupClmnSz->Add( $technoDrillOthTxt, 0, &Wx::wxLEFT | &Wx::wxALIGN_CENTER_VERTICAL, 6 );
 
 	$groupClmnsPnl->SetSizer($groupClmnSz);
 
@@ -209,8 +211,8 @@ sub GetCopperFrms {
 
 				if (    $copperRowFrm->GetCopperName() eq $copperName
 					 && $copperRowFrm->GetOuterCore() eq $outerCore
-					 && $copperRowFrm->GetPlugging() eq $plugging 
-					 && !$copperRowFrm->GetCuFoilOnly())
+					 && $copperRowFrm->GetPlugging() eq $plugging
+					 && !$copperRowFrm->GetCuFoilOnly() )
 				{
 
 					$resRowFrm      = $copperRowFrm;
@@ -308,7 +310,7 @@ sub AddSeparator {
 
 	# DEFINE CONTROLS
 	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, $height ] );
-	$sepPnl->SetBackgroundColour($color) if(defined $color);
+	$sepPnl->SetBackgroundColour($color) if ( defined $color );
 
 	# BUILD LAYOUT STRUCTURE
 

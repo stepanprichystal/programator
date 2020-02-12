@@ -841,6 +841,7 @@ sub __DrawDashedRect {
 	}
 
 	CamSymbolSurf->AddSurfaceLinePattern( $inCAM, undef, undef, 45, 0, $segmentLen * 0.75, $segmentLen );
+	push(@coord, $coord[0]); # last point == first point
 	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@coord, 1, "negative" );
 
 }

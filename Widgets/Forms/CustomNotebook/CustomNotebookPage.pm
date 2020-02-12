@@ -107,7 +107,7 @@ sub AddContent {
 sub __SetLayout {
 	my $self = shift;
 
-	$self->SetBackgroundColour( Wx::Colour->new( 150, 0, 0 ) );
+	#$self->SetBackgroundColour( Wx::Colour->new( 150, 0, 0 ) );
 
 	# DEFINE SIZERS
 	my $szMain      = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -158,7 +158,7 @@ sub __SetLayout {
 
 	}
 
-	$containerPnl->SetBackgroundColour( Wx::Colour->new( 0, 255, 0 ) );
+	#$containerPnl->SetBackgroundColour( Wx::Colour->new( 0, 255, 0 ) );
 
 	# BUILD LAYOUT STRUCTURE
 	$containerPnl->SetSizer($containerSz);

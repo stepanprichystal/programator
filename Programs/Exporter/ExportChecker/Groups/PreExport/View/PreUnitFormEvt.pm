@@ -28,6 +28,8 @@ sub new {
 	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
+	my $ref = $wrapper->can('OnNCGroupLayerScaleChanged');
+	$self->_AddHandler( $ref , Enums->Event_nc_layerScale );
 
 	# Provided events
 	$self->_AddEvent( $wrapper->{'technologyChangedEvt'}, Enums->Event_pre_technology );

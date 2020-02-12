@@ -170,10 +170,17 @@ sub ProcessXml {
 
 	 
 
+	print STDERR $result;
+
 	$result =~ /STATE=(.*)START/;
 	my $res = $1;
 	$res =~ tr/&quot;//d;
-	if ( $res =~ m/^FAIL/ ) {
+	if ( !defined $res || $res eq ""){
+		
+		$res = "FAIL, unknown error. HEG return no value";
+
+	}elsif (   $res =~ m/^FAIL/ ) {
+		
 		$res = $res . "\n";
 		$result =~ /errorMessage=(.*)WHEN/;
 		my $error = $1;
@@ -182,6 +189,7 @@ sub ProcessXml {
 			$res = $res . $error;
 		}
 	}
+	
 	return $res;
 }
 
@@ -196,6 +204,8 @@ sub UpdateRecord {
 	 
 
 	my $sessionToken = LogOn();
+	
+	print STDERR "LogOn is not defined" if(!defined $sessionToken);
 
 	my $xml = CreateXml(
 						 classid   => $classid,

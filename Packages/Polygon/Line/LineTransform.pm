@@ -92,9 +92,7 @@ sub GetVerticalSegmentLine {
 	my $pEnd   = shift;
 	my $len    = shift;
 	my $side   = shift // "left";    # left/right side of original line which vericall line will be created on
-
-	die "side parameter is not implemented" if ( $side ne "left" );
-
+ 
 	my $x1 = $pStart->{"x"};
 	my $y1 = $pStart->{"y"};
 	my $x2 = $pEnd->{"x"};
@@ -134,7 +132,7 @@ sub GetVerticalSegmentLine {
 		my $oriLineP1 = { "x" => $x1, "y" => $y1 };
 		my $oriLineP2 = { "x" => $x2, "y" => $y2 };
 
-		my @res = $self->ParallelSegmentLine( $oriLineP1, $oriLineP2, $len, "left" );
+		my @res = $self->ParallelSegmentLine( $oriLineP1, $oriLineP2, $len, $side );
 
 		my $oriLineParalelP1 = $res[0];
 		my $oriLineParalelP2 = $res[1];

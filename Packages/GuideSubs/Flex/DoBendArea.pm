@@ -202,9 +202,9 @@ sub __CreateBendArea {
 			$errText .= "Nebyly označeny žádné features.\n";
 
 		}
-		elsif ( scalar( grep { $_->{"type"} ne "L" } @features ) ) {
+		elsif ( scalar( grep { $_->{"type"} !~ /^[LA]$/i } @features ) ) {
 			$tranZoneOk = 0;
-			$errText .= "Označené features nejsou typu \"line\"\n";
+			$errText .= "Označené features nejsou typu \"line\" nebo \"arc\"\n";
 		}
 		else {
 			CamAttributes->SetFeatuesAttribute( $inCAM, EnumsBend->BendArea_TRANZONEATT );
@@ -233,7 +233,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d222737";
+	my $jobId = "d266089";
 
 	my $notClose = 0;
 

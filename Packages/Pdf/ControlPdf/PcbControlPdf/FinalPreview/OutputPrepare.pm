@@ -152,7 +152,6 @@ sub __PrepareRIGIDMAT {
 	$layer->SetOutputLayer($lName);
 }
 
-
 sub __PrepareFLEXMAT {
 	my $self  = shift;
 	my $layer = shift;
@@ -180,7 +179,6 @@ sub __PrepareFLEXMAT {
 	$layer->SetOutputLayer($lName);
 }
 
-
 sub __PrepareOUTERCU {
 	my $self  = shift;
 	my $layer = shift;
@@ -202,7 +200,6 @@ sub __PrepareOUTERCU {
 	}
 }
 
-
 sub __PrepareINNERCU {
 	my $self  = shift;
 	my $layer = shift;
@@ -223,7 +220,6 @@ sub __PrepareINNERCU {
 		$layer->SetOutputLayer($lName);
 	}
 }
-
 
 sub __PrepareOUTERSURFACE {
 	my $self  = shift;
@@ -273,7 +269,6 @@ sub __PrepareOUTERSURFACE {
 	}
 }
 
-
 sub __PrepareGOLDFINGER {
 	my $self  = shift;
 	my $layer = shift;
@@ -310,7 +305,6 @@ sub __PrepareGOLDFINGER {
 	}
 }
 
-
 sub __PrepareGRAFIT {
 	my $self  = shift;
 	my $layer = shift;
@@ -333,7 +327,6 @@ sub __PrepareGRAFIT {
 
 	}
 }
-
 
 sub __PreparePEELABLE {
 	my $self  = shift;
@@ -400,7 +393,6 @@ sub __PreparePEELABLE {
 	}
 }
 
-
 sub __PrepareMASK {
 	my $self  = shift;
 	my $layer = shift;
@@ -429,12 +421,25 @@ sub __PrepareMASK {
 
 		$layer->SetOutputLayer($lName);
 
-		if ( defined $self->{"bendAreaL"} ) {
+		my $oRigidFlexType = JobHelper->GetORigidFlexType( $self->{"jobId"} ) if ( $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXO );
 
+		if (
+			CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "bend" )
+			&& (
+				$self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI
+				|| (    $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXO
+					 && $oRigidFlexType eq "flextop"
+					 && $self->{"viewType"} eq Enums->View_FROMBOT )
+				|| (    $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXO
+					 && $oRigidFlexType eq "flexbot"
+					 && $self->{"viewType"} eq Enums->View_FROMTOP )
+
+			)
+		  )
+		{
 			CamLayer->WorkLayer( $inCAM, $self->{"bendAreaL"} );
 			$inCAM->COM( "merge_layers", "source_layer" => $self->{"bendAreaL"}, "dest_layer" => $lName );
 		}
-
 	}
 }
 
@@ -485,11 +490,14 @@ sub __PrepareCOVERLAY {
 
 	my $cvrL = ( grep { $_->{"gROWname"} =~ /^coverlay/ } $layer->GetSingleLayers() )[0];
 
-	$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{ $cvrL->{"gROWname"} }, "dest_layer" => $lName );
+	$inCAM->COM(
+				 "merge_layers",
+				 "source_layer" => $self->{"coverlaysL"}->{ $cvrL->{"gROWname"} },
+				 "dest_layer"   => $lName
+	);
 	$layer->SetOutputLayer($lName);
 
 }
-
 
 sub __PrepareSILK {
 	my $self  = shift;
@@ -511,7 +519,6 @@ sub __PrepareSILK {
 	}
 }
 
-
 sub __PreparePLTDEPTHNC {
 	my $self  = shift;
 	my $layer = shift;
@@ -526,7 +533,14 @@ sub __PreparePLTDEPTHNC {
 
 	my $lName = GeneralHelper->GetGUID();
 
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	$inCAM->COM(
+				 'create_layer',
+				 layer     => $lName,
+				 context   => 'misc',
+				 type      => 'document',
+				 polarity  => 'positive',
+				 ins_layer => ''
+	);
 
 	# compensate
 	foreach my $l (@layers) {
@@ -574,7 +588,6 @@ sub __PreparePLTDEPTHNC {
 
 }
 
-
 sub __PrepareNPLTDEPTHNC {
 	my $self  = shift;
 	my $layer = shift;
@@ -588,7 +601,14 @@ sub __PrepareNPLTDEPTHNC {
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	$inCAM->COM(
+				 'create_layer',
+				 layer     => $lName,
+				 context   => 'misc',
+				 type      => 'document',
+				 polarity  => 'positive',
+				 ins_layer => ''
+	);
 
 	# compensate
 	foreach my $l (@layers) {
@@ -639,7 +659,6 @@ sub __PrepareNPLTDEPTHNC {
 
 }
 
-
 sub __PreparePLTTHROUGHNC {
 	my $self  = shift;
 	my $layer = shift;
@@ -653,7 +672,14 @@ sub __PreparePLTTHROUGHNC {
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	$inCAM->COM(
+				 'create_layer',
+				 layer     => $lName,
+				 context   => 'misc',
+				 type      => 'document',
+				 polarity  => 'positive',
+				 ins_layer => ''
+	);
 
 	my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
 
@@ -713,7 +739,6 @@ sub __PreparePLTTHROUGHNC {
 
 }
 
-
 sub __PrepareNPLTTHROUGHNC {
 	my $self  = shift;
 	my $layer = shift;
@@ -727,7 +752,14 @@ sub __PrepareNPLTTHROUGHNC {
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	$inCAM->COM(
+				 'create_layer',
+				 layer     => $lName,
+				 context   => 'misc',
+				 type      => 'document',
+				 polarity  => 'positive',
+				 ins_layer => ''
+	);
 
 	my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
 
@@ -792,7 +824,8 @@ sub __PrepareNPLTTHROUGHNC {
 
 		my @t = grep { $_->GetCyclic() } @t1;
 
-		my @outFeatsId = map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() && !$_->GetIsInside() } $unitRTM->GetMultiChainSeqList();
+		my @outFeatsId =
+		  map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() && !$_->GetIsInside() } $unitRTM->GetMultiChainSeqList();
 
 		#my @outline = $unitRTM->GetOutlineChains();
 		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
@@ -838,7 +871,6 @@ sub __PrepareNPLTTHROUGHNC {
 	$layer->SetOutputLayer($lName);
 }
 
-
 sub __PrepareVIAFILL {
 	my $self  = shift;
 	my $layer = shift;
@@ -851,7 +883,14 @@ sub __PrepareVIAFILL {
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	$inCAM->COM(
+				 'create_layer',
+				 layer     => $lName,
+				 context   => 'misc',
+				 type      => 'document',
+				 polarity  => 'positive',
+				 ins_layer => ''
+	);
 
 	# compensate
 	foreach my $l (@layers) {
@@ -860,7 +899,11 @@ sub __PrepareVIAFILL {
 	}
 
 	CamLayer->WorkLayer( $inCAM, $lName );
-	$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
+	$inCAM->COM(
+				 "sel_resize",
+				 "size"       => -100,
+				 "corner_ctl" => "no"
+	);
 
 	$layer->SetOutputLayer($lName);
 
@@ -880,13 +923,21 @@ sub __PrepareSTIFFENER {
 	my $lName = GeneralHelper->GetGUID();
 
 	# 1) Create full surface by profile
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	$inCAM->COM(
+				 'create_layer',
+				 layer     => $lName,
+				 context   => 'misc',
+				 type      => 'document',
+				 polarity  => 'positive',
+				 ins_layer => ''
+	);
 
 	my @pointsLim = ();
 	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMin"} } );
 	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMax"} } );
 	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMax"} } );
 	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMin"} } );
+	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMin"} } );    # last point = first point
 
 	CamLayer->WorkLayer( $inCAM, $lName );
 	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
@@ -901,9 +952,14 @@ sub __PrepareSTIFFENER {
 	my $stiffRoutL = ( grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs )[0];
 	my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
 	CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
-	$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $lName, "invert" => "yes" );
+	$inCAM->COM(
+				 "merge_layers",
+				 "source_layer" => $lTmp,
+				 "dest_layer"   => $lName,
+				 "invert"       => "yes"
+	);
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
- 
+
 	$layer->SetOutputLayer($lName);
 
 }
@@ -1030,6 +1086,7 @@ sub __GetOverlayCoverlays {
 		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMax"} } );
 		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMax"} } );
 		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMin"} } );
+		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMin"} } );    # last point = first point
 
 		CamLayer->WorkLayer( $inCAM, $lName );
 		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
@@ -1074,7 +1131,6 @@ sub __GetOverlayCoverlays {
 
 		CamLayer->WorkLayer( $inCAM, $lName );
 		CamLayer->Contourize( $inCAM, $lName, "x_or_y", "0" );
-		
 
 		$coverLayers{ $cvrL->{"gROWname"} } = $lName;
 	}
@@ -1155,8 +1211,6 @@ sub __OptimizeLayers {
 		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
 	}
 
- 
-
 	# clip area around profile
 	$inCAM->COM(
 		"clip_area_end",
@@ -1171,12 +1225,23 @@ sub __OptimizeLayers {
 		"feat_types"  => "line\;pad;surface;arc;text",
 		"pol_types"   => "positive\;negative"
 	);
-	$inCAM->COM( "affected_layer", "mode" => "all", "affected" => "no" );
+	$inCAM->COM(
+				 "affected_layer",
+				 "mode"     => "all",
+				 "affected" => "no"
+	);
 
 	# 2) Create frame 5mm behind profile. Frame define border of layer data
 
 	my $lName = GeneralHelper->GetGUID();
-	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
+	$inCAM->COM(
+				 'create_layer',
+				 "layer"     => $lName,
+				 "context"   => 'misc',
+				 "type"      => 'document',
+				 "polarity"  => 'positive',
+				 "ins_layer" => ''
+	);
 	CamLayer->WorkLayer( $inCAM, $lName );
 
 	# frame width 2mm
@@ -1184,10 +1249,22 @@ sub __OptimizeLayers {
 
 	my @coord = ();
 
-	my %p1 = ( "x" => $self->{"profileLim"}->{"xMin"} - $frame, "y" => $self->{"profileLim"}->{"yMin"} - $frame );
-	my %p2 = ( "x" => $self->{"profileLim"}->{"xMin"} - $frame, "y" => $self->{"profileLim"}->{"yMax"} + $frame );
-	my %p3 = ( "x" => $self->{"profileLim"}->{"xMax"} + $frame, "y" => $self->{"profileLim"}->{"yMax"} + $frame );
-	my %p4 = ( "x" => $self->{"profileLim"}->{"xMax"} + $frame, "y" => $self->{"profileLim"}->{"yMin"} - $frame );
+	my %p1 = (
+			   "x" => $self->{"profileLim"}->{"xMin"} - $frame,
+			   "y" => $self->{"profileLim"}->{"yMin"} - $frame
+	);
+	my %p2 = (
+			   "x" => $self->{"profileLim"}->{"xMin"} - $frame,
+			   "y" => $self->{"profileLim"}->{"yMax"} + $frame
+	);
+	my %p3 = (
+			   "x" => $self->{"profileLim"}->{"xMax"} + $frame,
+			   "y" => $self->{"profileLim"}->{"yMax"} + $frame
+	);
+	my %p4 = (
+			   "x" => $self->{"profileLim"}->{"xMax"} + $frame,
+			   "y" => $self->{"profileLim"}->{"yMin"} - $frame
+	);
 	push( @coord, \%p1 );
 	push( @coord, \%p2 );
 	push( @coord, \%p3 );

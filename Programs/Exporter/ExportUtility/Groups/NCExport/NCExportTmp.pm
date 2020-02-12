@@ -65,7 +65,7 @@ sub Run {
 	my $unit = Unit->new($jobId);
 	$unit->SetDefaultInfo( $self->{"defaultInfo"} );
 	$unit->InitDataMngr($inCAM);
-	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
+	#$unit->CheckBeforeExport( $inCAM, \$resultMngr );
 
 	unless ( $resultMngr->Succes() ) {
 

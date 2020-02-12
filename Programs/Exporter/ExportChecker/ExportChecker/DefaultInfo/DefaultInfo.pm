@@ -32,6 +32,8 @@ use aliased 'Packages::Tooling::TolHoleOperation';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::ProductionPanel::PanelDimension';
 use aliased 'Helpers::JobHelper';
+use aliased 'Packages::Technology::DataComp::SigLayerComp';
+use aliased 'Packages::Technology::DataComp::NCLayerComp';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -80,7 +82,10 @@ sub new {
 	$self->{"pcbClass"}        = undef;    # pcb class of outer layer
 	$self->{"pcbClassInner"}   = undef;    # pcb class of inner layer
 	$self->{"pcbIsFlex"}       = undef;    # pcb is flex
+	$self->{"sigLayerComp"}    = undef;    # calculating signal layer compensation
+	$self->{"NCLayerComp"}     = undef;    # calculating signal layer compensation
 	$self->{"profLim"}         = undef;    # panel profile limits
+
 
 	return $self;
 }
@@ -390,8 +395,9 @@ sub GetSignalLSett {
 	}
 
 	# 7) Set Shrink
-	$lSett{"shrinkX"} = 0;
-	$lSett{"shrinkY"} = 0;
+	my %matComp = $self->{"sigLayerComp"}->GetLayerCompensation( $l->{"gROWname"} );
+	$lSett{"stretchX"} = $matComp{"x"};
+	$lSett{"stretchY"} = $matComp{"y"};
 
 	die "Layer name is not defined for layer:" . $l->{"gROWname"}      if ( !defined $lSett{"name"} );
 	die "Etching type is not defined for layer:" . $l->{"gROWname"}    if ( !defined $lSett{"etchingType"} );
@@ -399,8 +405,9 @@ sub GetSignalLSett {
 	die "Compensation is not defined for layer:" . $l->{"gROWname"}    if ( !defined $lSett{"comp"} );
 	die "Polarity is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"polarity"} );
 	die "Mirror is not defined for layer:" . $l->{"gROWname"}          if ( !defined $lSett{"mirror"} );
-	die "Shrink X is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"shrinkX"} );
-	die "Shrink Y is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"shrinkY"} );
+	die "Shrink X is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"stretchX"} );
+	die "Shrink Y is not defined for layer:" . $l->{"gROWname"}        if ( !defined $lSett{"stretchY"} );
+
 
 	return %lSett;
 }
@@ -473,19 +480,42 @@ sub GetNonSignalLSett {
 	$lSett{"comp"} = 0;
 
 	# 6) Set Shrink
-	$lSett{"shrinkX"} = 0;
-	$lSett{"shrinkY"} = 0;
+	$lSett{"stretchX"} = 0;
+	$lSett{"stretchY"} = 0;
 
 	die "Layer name is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"name"} );
 	die "Polarity is not defined for layer:" . $l->{"gROWname"}   if ( !defined $lSett{"polarity"} );
 	die "Mirror is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"mirror"} );
 
 	die "Compensation is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"comp"} );
-	die "Shrink X is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"shrinkX"} );
-	die "Shrink Y is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"shrinkY"} );
+	die "Shrink X is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"stretchX"} );
+	die "Shrink Y is not defined for layer:" . $l->{"gROWname"}     if ( !defined $lSett{"stretchY"} );
 
 	return %lSett;
 }
+
+
+# Set stretch X and Y for NC layers
+sub GetNCLSett {
+	my $self = shift;
+	my $l    = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
+	my %lSett = ( "name" => $l->{"gROWname"} );
+
+	my %matComp = $self->{"NCLayerComp"}->GetLayerCompensation( $l->{"gROWname"} );
+	$lSett{"stretchX"} = $matComp{"x"};
+	$lSett{"stretchY"} = $matComp{"y"};
+
+	die "Layer name is not defined for layer:" . $l->{"gROWname"} if ( !defined $lSett{"name"} );
+	die "Stretch X is not defined for layer:" . $l->{"gROWname"}  if ( !defined $lSett{"stretchX"} );
+	die "Stretch Y is not defined for layer:" . $l->{"gROWname"}  if ( !defined $lSett{"stretchY"} );
+
+	return %lSett;
+}
+
+
 
 sub GetStackup {
 	my $self = shift;
@@ -820,6 +850,7 @@ sub __Init {
 
 	my @NCLayers = CamJob->GetNCLayers( $inCAM, $self->{"jobId"} );
 	CamDrilling->AddNCLayerType( \@NCLayers );
+	CamDrilling->AddLayerStartStop( $inCAM, $self->{"jobId"}, \@NCLayers );
 	$self->{"NCLayers"} = \@NCLayers;
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $inCAM, $self->{"jobId"} );
@@ -876,9 +907,15 @@ sub __Init {
 	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $inCAM, $self->{"jobId"} );
 
 	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
+	
+
+	$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"} );
+
+	$self->{"NCLayerComp"} = NCLayerComp->new( $inCAM, $self->{"jobId"} );
 
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $self->{"jobId"}, $self->{"step"} );
 	$self->{"profLim"} = \%lim;
+
 
 	$self->{"init"} = 1;
 
@@ -895,12 +932,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId     = "d240127";
+	my $jobId     = "d266089";
 	my $stepName  = "o+1";
 	my $layerName = "c";
 
-	my $d = DefaultInfo->new( $inCAM, $jobId );
-	$d->GetDefaultEtchType("c");
+	my $d = DefaultInfo->new( $jobId );
+	$d->Init($inCAM);
+	my $tech = $d->GetDefaultTechType("s");
+	
+	print $tech;
+	
+	
 }
 
 1;

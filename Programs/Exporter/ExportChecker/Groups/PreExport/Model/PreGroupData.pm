@@ -53,30 +53,18 @@ sub GetOtherLayers {
 	return $self->{"data"}->{"otherLayers"};
 }
 
-## Tenting
-#sub SetTentingCS {
-#	my $self  = shift;
-#	$self->{"data"}->{"tentingCS"} = shift;
-#}
-#
-#sub GetTentingCS {
-#	my $self  = shift;
-#	return $self->{"data"}->{"tentingCS"};
-#}
-#
-#
-## Technology
-#sub SetTechnologyCS {
-#	my $self  = shift;
-#	
-#	$self->{"data"}->{"technologyCS"} = shift;
-#}
-#
-#sub GetTechnologyCS {
-#	my $self  = shift;
-#	
-#	return $self->{"data"}->{"technologyCS"};
-#}
+
+#NC layer scale settings
+sub SetNCLayersSett {
+	my $self = shift;
+	$self->{"data"}->{"NCLayerSett"} = shift;
+}
+
+sub GetNCLayersSett {
+	my $self = shift;
+	return $self->{"data"}->{"NCLayerSett"};
+}
+ 
  
 
 #-------------------------------------------------------------------------------------------#

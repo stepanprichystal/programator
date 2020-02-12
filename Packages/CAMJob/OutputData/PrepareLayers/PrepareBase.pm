@@ -220,6 +220,7 @@ sub __PrepareFILLEDHOLES {
 		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill
 	} @lFilled;
 
 	my %lFilledMatrix = ();

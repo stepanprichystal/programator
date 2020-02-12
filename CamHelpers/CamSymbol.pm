@@ -14,62 +14,12 @@ use List::Util qw[sum];
 
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Packages::Polygon::Enums' => 'EnumsPoly';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
-#sub AddText {
-#	my $self       = shift;
-#	my $inCAM      = shift;
-#	my $text       = shift;
-#	my $position   = shift;
-#	my $textHeight = shift;    # font size in mm
-#	my $lineWidth  = shift;    # font size in mm
-#
-#	# optional
-#	my $mirror   = shift;
-#	my $polarity = shift;
-#	my $angle    = shift;
-#
-#	if ($mirror) {
-#		$mirror = "yes";
-#	}
-#	else {
-#		$mirror = "no";
-#	}
-#
-#	unless ($polarity) {
-#		$polarity = "positive";
-#	}
-#
-#	unless ($angle) {
-#		$angle = 0;
-#	}
-#
-#	$inCAM->COM(
-#				 "add_text",
-#				 "type"      => "string",
-#				 "polarity"  => $polarity,
-#				 "x"         => $position->{"x"},
-#				 "y"         => $position->{"y"},
-#				 "text"      => $text,
-#				 "fontname"  => "standard",
-#				 "height"    => $textHeight,
-#				 "style"     => "regular",
-#				 "width"     => "normal",
-#				 "mirror"    => $mirror,
-#				 "angle"     => $angle,
-#				 "direction" => "ccw",
-#				 "w_factor"  => $lineWidth,
-#				 "attributes"  => 'yes',
-##				 "x_size"    => $textHeight,
-##				 "y_size"    => $textWidth
-#	);
-#
-#
-#
-#
-#}
+ 
 #Return hash, kyes are "top"/"bot", values are 0/1
 sub AddText {
 	my $self       = shift;
@@ -123,12 +73,20 @@ sub AddText {
 
 }
 
+# Draw polyline
+# (arc shape is supported)
 sub AddPolyline {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my @coord    = @{ shift(@_) };    #hash x, y
-	my $symbol   = shift;
-	my $polarity = shift;
+	my $self  = shift;
+	my $inCAM = shift;
+
+	# Each point is defined by hash:
+	# - x; y       = coordinate of next point
+	# - xmid; ymid = coordinate of center of arc (if arc)
+	# - dir        = direction of arc (cw/ccw)   (if arc)
+	# Polygon points has to by closed (first point coordinate == last point coordinate)
+	my @coord        = @{ shift(@_) };
+	my $symbol       = shift;
+	my $polarity     = shift;
 	my $closePolygon = shift;
 
 	if ( scalar(@coord) < 3 ) {
@@ -137,15 +95,31 @@ sub AddPolyline {
 
 	$inCAM->COM("add_polyline_strt");
 
-	foreach my $c (@coord) {
+	foreach my $p (@coord) {
 
-		$inCAM->COM( "add_polyline_xy", "x" => $c->{"x"}, "y" => $c->{"y"} );
+		if ( defined $p->{"xmid"} && defined $p->{"ymid"} && defined $p->{"dir"} ) {
+
+			$inCAM->COM(
+						 "add_polyline_crv",
+						 "xe" => $p->{"x"},
+						 "ye" => $p->{"y"},
+						 "xc" => $p->{"xmid"},
+						 "yc" => $p->{"ymid"},
+						 "cw" => ( $p->{"dir"} eq EnumsPoly->Dir_CW ? "yes" : "no" )
+			);
+
+		}
+		else {
+
+			$inCAM->COM( "add_polyline_xy", "x" => $p->{"x"}, "y" => $p->{"y"} );
+		}
+
 	}
 
-	if($closePolygon){
+	if ($closePolygon) {
 		$inCAM->COM( "add_polyline_xy", "x" => $coord[0]->{"x"}, "y" => $coord[0]->{"y"} );
 	}
-	
+
 	$inCAM->COM(
 				 "add_polyline_end",
 				 "polarity"      => $polarity,
@@ -186,13 +160,13 @@ sub AddPad {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $symbol   = shift;
-	my $pos      = shift;    #hash x, y
+	my $pos      = shift;        #hash x, y
 	my $mirror   = shift;
-	my $polarity = shift;    #
-	my $angle = shift // 0;
-	my $resize = shift // 0;
-	my $xscale = shift // 1;
-	my $yscale = shift // 1;
+	my $polarity = shift;        #
+	my $angle    = shift // 0;
+	my $resize   = shift // 0;
+	my $xscale   = shift // 1;
+	my $yscale   = shift // 1;
 
 	$polarity = defined $polarity ? $polarity : 'positive';
 
@@ -367,7 +341,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'CamHelpers::CamSymbol';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobName   = "f13608";
+	my $jobName   = "d266089";
 	my $layerName = "c";
 
 	my $inCAM = InCAM->new();
@@ -396,9 +370,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	@points = ( \%point1, \%point2, \%point3, \%point4 );
 
-	CamSymbol->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000 );
-
-	CamSymbol->AddSurfacePolyline( $inCAM, \@points, 1 )
+ 
+	CamSymbol->AddPolyline( $inCAM, \@points, "r200", "positive",1 )
 
 }
 

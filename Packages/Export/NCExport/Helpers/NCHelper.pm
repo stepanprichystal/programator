@@ -11,7 +11,7 @@ use warnings;
 use File::Copy;
 use Try::Tiny;
 use List::MoreUtils qw(uniq);
-use List::Util qw[max min];
+use List::Util qw[max min first];
 
 #local library
 use aliased 'Enums::EnumsGeneral';
@@ -50,9 +50,10 @@ sub SortLayersByRules {
 
 	my %priority = ();
 
-# plated layer are merged together
-	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill } = 0;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }  = 0;
+	# plated layer are merged together
+	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill }    = 0;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }     = 0;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_cFillDrill } = 0;
 
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } = 1020;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } = 1020;
@@ -152,27 +153,24 @@ sub GetHeaderLayer {
 	my %priority = ();
 
 	# plated layer are merged together
-	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill } = 0;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }  = 0;
-
+	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill }    = 0;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }     = 0;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_cFillDrill } = 0;
 
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nDrill }    = 1010;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = 1020;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = 1020;
-	
-
 
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop } = 1040;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot } = 1040;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }    = 1050;
-	
+
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } = 1040;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } = 1040;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }    = 1050;
 
 	$priority{ EnumsGeneral->LAYERTYPE_plt_fcDrill } = 1090;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }    = 1090;
-
+	$priority{ EnumsGeneral->LAYERTYPE_plt_fDrill }  = 1090;
 
 	# nplated layer are merged together
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }   = 2060;
@@ -385,6 +383,23 @@ sub ChangeDrilledNumber {
 	}
 }
 
+sub RemoveDrilledNumber {
+	my $self = shift;
+	my $file = shift;
+
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) ; $i++ ) {
+
+		my $l = @{ $file->{"body"} }[$i];
+
+		if ( $l->{"line"} =~ m/(m97,[a-f][\d]+)([\/\-\:\+]{0,2})(\D*)/i ) {
+
+			splice @{ $file->{"body"} }, $i, 1;
+
+			last;
+		}
+	}
+}
+
 sub UpdateNCInfo {
 	my $self      = shift;
 	my $jobId     = shift;
@@ -524,13 +539,18 @@ sub StoreOperationInfoTif {
 		$opInf{"isRout"} = $isRout;
 
 		my $matThick;
-		if ( $layerCnt <= 2 ) {
-
-			$matThick = HegMethods->GetPcbMaterialThick($jobId);
+		if ( $layers[0]->{"gROWdrl_start"} =~ /(coverlay)|(bend)/ ) {
+			$matThick = 0;
 		}
 		else {
-			my $stackup = Stackup->new( $inCAM, $jobId);
-			$matThick = $stackup->GetThickByCuLayer( $layers[0]->{"NCSigStart"} )/1000;
+			if ( $layerCnt <= 2 ) {
+
+				$matThick = HegMethods->GetPcbMaterialThick($jobId);
+			}
+			else {
+				my $stackup = Stackup->new( $inCAM, $jobId );
+				$matThick = $stackup->GetThickByCuLayer( $layers[0]->{"NCSigStart"} ) / 1000;
+			}
 		}
 
 		# Set material thickness during operation
@@ -544,7 +564,7 @@ sub StoreOperationInfoTif {
 			foreach my $layer (@layers) {
 
 				my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer->{"gROWname"}, 1 );
-				my $tool = $unitDTM->GetMinTool( EnumsDrill->TypeProc_CHAIN, 1 ); # slot tool, default (no special)
+				my $tool = $unitDTM->GetMinTool( EnumsDrill->TypeProc_CHAIN, 1 );    # slot tool, default (no special)
 
 				# tool type chain doesn't have exist
 				next if ( !defined $tool );
@@ -554,11 +574,17 @@ sub StoreOperationInfoTif {
 				}
 			}
 		}
- 
 
 		# Set operation layers
 		@layers = map { $_->{"gROWname"} } @layers;
 		$opInf{"layers"} = \@layers;
+
+		# Set stretch value for NC layer
+		my @stretchX = ();
+		my @stretchY = ();
+
+		#		my @stretchX = ();
+		#my @stretchY = ();
 
 		push( @op, \%opInf );
 
@@ -589,6 +615,40 @@ sub StoreOperationInfoTif {
 
 	$tif->SetToolInfos( \%toolInfo );
 
+}
+
+sub StoreNClayerSettTif {
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $jobId         = shift;
+	my $layerSett     = shift;
+	my $operationMngr = shift;
+
+	# 1) Before store settings, check if layers which are merged have same scale settings
+ 
+	my @opItems = ();
+	foreach my $opItem ( $operationMngr->GetOperationItems() ) {
+
+		my @lSetts = ();
+
+		foreach my $l ( $opItem->GetSortedLayers() ) {
+			push( @lSetts, first { $_->{"name"} eq $l->{"gROWname"} } @{$layerSett} );
+		}
+
+		my @stretchX = uniq( map { $_->{"stretchX"} } @lSetts );
+		my @stretchY = uniq( map { $_->{"stretchY"} } @lSetts );
+
+		die "NC layers (" . join( "; ", map { $_->{"name"} } @lSetts ) . ") to merging has different \"StretchX\" parameter."
+		  if ( scalar(@stretchX) > 1 );
+		  
+		die "NC layers (" . join( "; ", map { $_->{"name"} } @lSetts ) . ") to merging has different \"StretchY\" parameter."
+		  if ( scalar(@stretchY) > 1 );
+	}
+
+	# 2) Store NC layer settings
+	my $tif = TifNCOperations->new($jobId);
+
+	$tif->SetNCLayerSett($layerSett);
 }
 
 #-------------------------------------------------------------------------------------------#

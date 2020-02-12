@@ -27,8 +27,8 @@ use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $parent    = shift;
+	my $class       = shift;
+	my $parent      = shift;
 	my $productId   = shift;
 	my $productType = shift;
 
@@ -38,16 +38,16 @@ sub new {
 
 	# Items references
 	# PROPERTIES
-	$self->{"subGroups"} = [];
+	$self->{"subGroups"}   = [];
 	$self->{"productId"}   = $productId;
 	$self->{"productType"} = $productType;
 
 	$self->__SetLayout();
 
 	#EVENTS
-	$self->{"sigLayerSettChangedEvt"}  = Event->new();
-	$self->{"technologyChangedEvt"} = Event->new();
-	$self->{"etchingChangedEvt"}    = Event->new();
+	$self->{"sigLayerSettChangedEvt"} = Event->new();
+	$self->{"technologyChangedEvt"}   = Event->new();
+	$self->{"etchingChangedEvt"}      = Event->new();
 
 	return $self;
 
@@ -57,22 +57,21 @@ sub AddSubGroup {
 	my $self        = shift;
 	my $producId    = shift;
 	my $productType = shift;
-	my $pltNC = shift;
+	my $pltNC       = shift;
+	my $otherNC     = shift;
 
 	if ( scalar( @{ $self->{"subGroups"} } ) ) {
 		$self->__AddSeparator();
 	}
 
-
-
-	my $subGroup = GroupSubFrm->new( $self, $producId, $productType, $pltNC);
+	my $subGroup = GroupSubFrm->new( $self, $producId, $productType, $pltNC, $otherNC );
 	$self->{"szSubGroups"}->Add( $subGroup, 0, &Wx::wxALL | &Wx::wxEXPAND, 0 );
 
 	push( @{ $self->{"subGroups"} }, $subGroup );
 
-	$subGroup->{"sigLayerSettChangedEvt"}->Add( sub  { $self->{"sigLayerSettChangedEvt"}->Do(@_) } );
-	$subGroup->{"technologyChangedEvt"}->Add( sub { $self->{"technologyChangedEvt"}->Do(@_) } );
-	$subGroup->{"etchingChangedEvt"}->Add( sub    { $self->{"etchingChangedEvt"}->Do(@_) } );
+	$subGroup->{"sigLayerSettChangedEvt"}->Add( sub { $self->{"sigLayerSettChangedEvt"}->Do(@_) } );
+	$subGroup->{"technologyChangedEvt"}->Add( sub   { $self->{"technologyChangedEvt"}->Do(@_) } );
+	$subGroup->{"etchingChangedEvt"}->Add( sub      { $self->{"etchingChangedEvt"}->Do(@_) } );
 
 	#$self->AddItemToQueue($row);
 
@@ -89,8 +88,10 @@ sub __SetLayout {
 	my $self = shift;
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
 	#my $szCol1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szCol2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
 	#my $szCol3 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	my $groupHeadSz = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -136,18 +137,16 @@ sub __AddSeparator {
 
 	# DEFINE SIZERS
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	 
 
 	# DEFINE CONTROLS
-	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, 1] );
+	my $sepPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ -1, 1 ] );
 	$sepPnl->SetBackgroundColour( Wx::Colour->new( 200, 200, 200 ) );
 
 	# BUILD LAYOUT STRUCTURE
-	$szMain->Add(  ( $self->{"productType"} eq StackEnums->Product_INPUT ? 6 : 0 ),0,0); # Expander
-	$szMain->Add($sepPnl,1); # Expander
-	$self->{"szSubGroups"}->Add( $szMain, 0, &Wx::wxEXPAND | &Wx::wxTOP | &Wx::wxBOTTOM, 4  );
-	
-	
+	$szMain->Add( ( $self->{"productType"} eq StackEnums->Product_INPUT ? 6 : 0 ), 0, 0 );    # Expander
+	$szMain->Add( $sepPnl, 1 );                                                               # Expander
+	$self->{"szSubGroups"}->Add( $szMain, 0, &Wx::wxEXPAND | &Wx::wxTOP | &Wx::wxBOTTOM, 4 );
+
 }
 
 #-------------------------------------------------------------------------------------------#

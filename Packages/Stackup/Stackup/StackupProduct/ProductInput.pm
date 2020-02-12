@@ -31,7 +31,9 @@ sub new {
 	$self->{"productType"} = Enums->Product_INPUT;
 
 	# Only child inputs
-
+	$self->{"emptyFoilTop"} = 0;	
+	$self->{"emptyFoilBot"} = 0;	
+	
 	return $self;
 }
 
@@ -94,6 +96,19 @@ sub GetChildProducts {
 	return @childs;
 }
 
+
+sub GetTopEmptyFoil {
+	my $self = shift;
+
+	return $self->{"emptyFoilTop"};
+}
+
+sub GetBotEmptyFoil {
+	my $self = shift;
+
+	return $self->{"emptyFoilBot"};
+}
+
 sub SetTopOuterCore {
 	my $self = shift;
 
@@ -108,6 +123,22 @@ sub SetBotOuterCore {
 	#die "Only child input product allow set full copper" if ( $self->GetIsParent() );
 
 	$self->{"outerCoreBot"} = shift;
+}
+
+sub SetTopEmptyFoil {
+	my $self = shift;
+
+	#die "Only child input product allow set full copper" if ( $self->GetIsParent() );
+
+	$self->{"emptyFoilTop"} = shift;
+}
+
+sub SetBotEmptyFoil {
+	my $self = shift;
+
+	#die "Only child input product allow set full copper" if ( $self->GetIsParent() );
+
+	$self->{"emptyFoilBot"} = shift;
 }
 
 #-------------------------------------------------------------------------------------------#

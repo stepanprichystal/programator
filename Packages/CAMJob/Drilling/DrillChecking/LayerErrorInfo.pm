@@ -167,6 +167,9 @@ sub CheckIsNotEmpty {
 
 	my $result = 1;
 
+	# remove core frame drilling generated before export (theses layers are empty for quicker creation)
+	@layers = grep {$_->{"gROWname"} !~ /v1j\d+/} @layers;
+
 	foreach my $l (@layers) {
 
 		# if panel is not step, NC layer can be empty
@@ -263,6 +266,7 @@ sub CheckInvalidSymbols {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
@@ -347,6 +351,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );	
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
@@ -382,7 +387,7 @@ sub CheckDirTop2Bot {
 
 			# check for core driling, which start/end in same layer
 
-			if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
+			if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill ) {
 
 				if ( $startL == $endL ) {
 					$result = 0;
@@ -408,18 +413,7 @@ sub CheckDirTop2Bot {
 		}
 	}
 
-	# Check for filled layers from top, if start in first layer
-	my @layers3 = $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nFillDrill, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop ] );
-
-	foreach my $l (@layers3) {
-
-		my $lName = $l->{"gROWname"};
-
-		if ( $l->{"NCSigStartOrder"} != 1 ) {
-			$result = 0;
-			$$mess .= "Filled blind layer from top: $lName, has to start in layer \"c\" (now start in: " . $l->{"gROWdrl_name"} . ")\n";
-		}
-	}
+ 
 
 	# Check plated through blind layer if start and end not in c/s layer
 	my @layers4 = grep { $_->{"gROWname"} =~ /\d/ } $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
@@ -455,6 +449,7 @@ sub CheckDirBot2Top {
 	my @t = ();
 
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
@@ -624,6 +619,7 @@ sub CheckContainNoDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
@@ -669,6 +665,7 @@ sub CheckToolDiameter {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
@@ -748,6 +745,7 @@ sub CheckDiamterDiff {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );

@@ -83,8 +83,8 @@ sub SetLayerValue {
 	$row->SetPolarityVal( $l->{"polarity"} );
 	$row->SetMirrorVal( $l->{"mirror"} );
 	$row->SetCompVal( $l->{"comp"} );
-	$row->SetShrinkXVal( $l->{"shrinkX"} );
-	$row->SetShrinkYVal( $l->{"shrinkY"} );
+	$row->SetStretchXVal( $l->{"stretchX"} );
+	$row->SetStretchYVal( $l->{"stretchY"} );
 }
 
 sub GetLayerValues {
@@ -114,8 +114,8 @@ sub GetLayerValue {
 	$lInfo{"polarity"} = $row->GetPolarityVal();
 	$lInfo{"mirror"}   = $row->GetMirrorVal();
 	$lInfo{"comp"}   = $row->GetCompVal();
-	$lInfo{"shrinkX"}   = $row->GetShrinkXVal();
-	$lInfo{"shrinkY"}   = $row->GetShrinkYVal();
+	$lInfo{"stretchX"}   = $row->GetStretchXVal();
+	$lInfo{"stretchY"}   = $row->GetStretchYVal();
 	 
 	return %lInfo;
 }

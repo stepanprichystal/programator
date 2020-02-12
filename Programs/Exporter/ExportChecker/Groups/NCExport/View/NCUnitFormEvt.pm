@@ -1,9 +1,10 @@
 #-------------------------------------------------------------------------------------------#
-# Description: This class define "outside" handlers and events, 
+# Description: This class define "outside" handlers and events,
 # which is possible cooperate with.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitFormEvt;
+use base ("Programs::Exporter::ExportChecker::Groups::UnitFormEvtBase");
 
 #3th party library
 use strict;
@@ -24,25 +25,22 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	my $frm = $self->{"form"};
+	my $wrapper = $self->{"wrapper"};
 
 	# Provided handlers
 
-
 	# Provided events
-	
-	 
+	$self->_AddEvent( $wrapper->{'layerScaleSettChangedEvt'}, Enums->Event_nc_layerScale );
+
+
 	return $self;
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
 
 }
 

@@ -16,7 +16,7 @@ use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::StackupBase::StackupBase';
-
+use aliased 'Packages::Stackup::Enums' => "StackEnums";
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -43,8 +43,6 @@ sub GetBaseCuThick {
 
 	return $cuThick;
 }
-
-
 
 #Return 1 if stackup for pcb exist
 sub StackupExist {
@@ -303,7 +301,7 @@ sub GetIsFlex {
 	my $isFlex = 0;
 
 	my $type = $self->GetPcbType($jobId);
-	
+
 	if (    $type eq EnumsGeneral->PcbType_1VFLEX
 		 || $type eq EnumsGeneral->PcbType_2VFLEX
 		 || $type eq EnumsGeneral->PcbType_MULTIFLEX
@@ -314,6 +312,33 @@ sub GetIsFlex {
 	}
 
 	return $isFlex;
+}
+
+# Return info if flex core is placed very or botttom at stackup
+# Return value = felxtop/flexbot
+sub GetORigidFlexType {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my $type    = undef;
+	my $stackup = StackupBase->new($jobId);
+
+	my @allC = $stackup->GetAllCores();
+
+	if ( $allC[0]->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
+		$type = "flextop";
+
+	}
+	elsif ( $allC[-1]->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
+
+		$type = "flexbot";
+	}
+	else {
+
+		die "Neither top nor bot core is not flex";
+
+	}
+	return $type;
 }
 
 # Return signal layers which are covered by coverlay (source is IS)
@@ -406,13 +431,12 @@ sub BuildSignalLayerName {
 	return $name;
 }
 
-
 sub ParseSignalLayerName {
 	my $self        = shift;
 	my $copperLName = shift;
 
 	my %lInfo = ();
- 
+
 	$lInfo{"sourceName"} = ( $copperLName =~ /([csv]\d*)/ )[0];
 	$lInfo{"outerCore"}  = $copperLName =~ /outer([csv]\d*)/ ? 1 : 0;
 	$lInfo{"plugging"}   = $copperLName =~ /plg([csv]\d*)/ ? 1 : 0;

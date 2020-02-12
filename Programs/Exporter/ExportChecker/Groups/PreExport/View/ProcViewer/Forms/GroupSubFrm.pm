@@ -35,6 +35,7 @@ sub new {
 	my $productId   = shift;
 	my $productType = shift;
 	my $pltNC       = shift;
+	my $otherNC     = shift;
 
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
 
@@ -46,7 +47,7 @@ sub new {
 	$self->{"productId"}   = $productId;
 	$self->{"productType"} = $productType;
 
-	$self->__SetLayout($pltNC);
+	$self->__SetLayout( $pltNC, $otherNC );
 
 	#EVENTS
 	$self->{"sigLayerSettChangedEvt"} = Event->new();
@@ -88,7 +89,7 @@ sub AddCopperRow {
 	my $cuThick    = shift;
 	my $coreShrink = shift;
 
-	my $row = RowCopperFrm->new( $self, $copperName, $outerCore, $plugging, $cuFoil, $cuThick, $coreShrink);
+	my $row = RowCopperFrm->new( $self, $copperName, $outerCore, $plugging, $cuFoil, $cuThick, $coreShrink );
 	$self->{"szRows"}->Add( $row, 0, &Wx::wxALL, 0 );
 	push( @{ $self->{"copperRows"} }, $row );
 
@@ -131,7 +132,6 @@ sub AddCoreRow {
 
 sub AddCoverlayRow {
 	my $self       = shift;
-	my $type       = shift;
 	my $extraPress = shift;
 
 	my $text = "<= Coverlay lamination after press" if ($extraPress);
@@ -239,14 +239,16 @@ sub HideSubGroupTechnology {
 }
 
 sub __SetLayout {
-	my $self  = shift;
-	my $pltNC = shift;    # Show/hode technology controls
+	my $self    = shift;
+	my $pltNC   = shift;    # Show/hode technology controls
+	my $otherNC = shift;
 
-	my $szMain    = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRows    = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szRigh    = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $cntrlsSz  = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szNCDrill = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szMain         = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRows         = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szRigh         = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $cntrlsSz       = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szNCDrill      = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szNCOtherDrill = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE PANELS
 	my $rightPnl = Wx::Panel->new( $self, -1, [ -1, -1 ], [ 140, -1 ], );
@@ -286,27 +288,38 @@ sub __SetLayout {
 	my $tentingCb = Wx::ComboBox->new( $rightPnl, -1, $pltType[0], &Wx::wxDefaultPosition, [ 75, 23 ], \@pltType, &Wx::wxCB_READONLY );
 
 	# NC drill
-
 	foreach my $ncL ( @{$pltNC} ) {
 
 		my $ncTxt = Wx::StaticText->new( $rightPnl, -1, "• " . $ncL->{"gROWname"} );
-		$szNCDrill->Add( $ncTxt, 0, &Wx::wxLEFT, 10 );                      # expander
+		$szNCDrill->Add( $ncTxt, 0, &Wx::wxLEFT, 8 );    # expander
 
 	}
+	$szNCDrill->Add( 40, 10, &Wx::wxLEFT, 0 );    # expander
+
+	# NC other
+	foreach my $ncL ( @{$otherNC} ) {
+
+		my $ncTxt = Wx::StaticText->new( $rightPnl, -1, "• " . $ncL->{"gROWname"} );
+		$szNCOtherDrill->Add( $ncTxt, 0, &Wx::wxLEFT, 8 );    # expander
+
+	}
+	$szNCOtherDrill->Add( 40, 0, &Wx::wxLEFT, 0 );    # expander
 
 	#$groupHeadSz->Add( $groupHeadTxt, 1, &Wx::wxALIGN_CENTER_VERTICAL | &Wx::wxALIGN_CENTER | &Wx::wxALIGN_CENTER_HORIZONTAL, 0 );
-	$groupHeadSz->Add( 0, 0, 1 );                                           # expander
+	$groupHeadSz->Add( 0, 0, 1 );                          # expander
 	$groupHeadSz->Add( $groupHeadTxt, 1, &Wx::wxALIGN_CENTER_VERTICAL, 0 );
-	$groupHeadSz->Add( 0, 0, 1 );                                           # expander
+	$groupHeadSz->Add( 0, 0, 1 );                          # expander
 
 	$groupHeadPnl->SetSizer($groupHeadSz);
 
 	$cntrlsSz->Add( $technologyCb, 0, &Wx::wxALL, 1 );
 	$cntrlsSz->Add( $tentingCb,    0, &Wx::wxALL, 1 );
 
-	$szRigh->Add( $cntrlsSz,  0, &Wx::wxLEFT, 2 );
-	$szRigh->Add( $szNCDrill, 0, &Wx::wxALL,  0 );
-	$szRigh->Add( 0, 50, 0 );                                              # Expander (min height of right panel)
+	$szRigh->Add( $cntrlsSz,       0, &Wx::wxLEFT, 2 );
+	$szRigh->Add( $szNCDrill,      0, &Wx::wxALL,  0 );
+	$szRigh->Add( $szNCOtherDrill, 0, &Wx::wxALL,  0 );
+
+	$szRigh->Add( 0, 50, 0 );                              # Expander (min height of right panel)
 
 	$szMain->Add( $groupHeadPnl, 0, &Wx::wxEXPAND | &Wx::wxLEFT, ( $self->{"productType"} eq StackEnums->Product_INPUT ? 6 : 0 ) );
 	$szMain->Add( $szRows, 0, &Wx::wxLEFT, 8 );

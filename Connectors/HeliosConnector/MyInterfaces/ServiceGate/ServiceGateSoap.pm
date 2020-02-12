@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Class::Std::Fast::Storable;
 use Scalar::Util qw(blessed);
+use Data::Dump qw(dump);
 use base qw(SOAP::WSDL::Client::Base);
 
 use Connectors::HeliosConnector::MyInterfaces::Data::DataSoap;
@@ -20,6 +21,9 @@ sub START {
     $result =~ m{GetInfoResult>(.*?)</GetInfoResult};
     
     my $pool = join '', $1, '/ServiceGate.asmx';
+    
+    print STDERR "Service utl:$pool";
+    
     $_[0]->set_proxy($pool) if not $_[2]->{proxy};
     $_[0]->set_class_resolver('Connectors::HeliosConnector::MyTypemaps::ServiceGate')
         if not $_[2]->{class_resolver};
@@ -31,6 +35,8 @@ sub LogOn {
     die "LogOn must be called as object method (\$self is <$self>)" if not blessed($self);
     
     print STDERR "\n\n ====================== LogOn function 1 =======================\n\n";
+    print STDERR dump($body);
+    
     
     return $self->SUPER::call({
         operation => 'LogOn',
@@ -57,6 +63,10 @@ sub LogOn {
 sub ProcessXml {
     my ($self, $body, $header) = @_;
     die "ProcessXml must be called as object method (\$self is <$self>)" if not blessed($self);
+    
+     print STDERR "\n\n ====================== Process XML function 1 =======================\n\n";
+      print STDERR dump($body);
+    
     return $self->SUPER::call({
         operation => 'ProcessXml',
         soap_action => 'http://lcs.cz/webservices/ProcessXml',
@@ -82,6 +92,10 @@ sub ProcessXml {
 sub LogOff {
     my ($self, $body, $header) = @_;
     die "LogOff must be called as object method (\$self is <$self>)" if not blessed($self);
+    
+    print STDERR "\n\n ====================== LogOff XML function 1 =======================\n\n";
+     print STDERR dump($body);
+    
     return $self->SUPER::call({
         operation => 'LogOff',
         soap_action => 'http://lcs.cz/webservices/LogOff',

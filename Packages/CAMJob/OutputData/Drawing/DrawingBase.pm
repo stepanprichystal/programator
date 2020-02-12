@@ -681,6 +681,9 @@ sub _AddPcbThickDim {
 sub _AddDetailDraw {
 	my $self       = shift;
 	my $surfPoints = shift;
+	
+	push(@{$surfPoints}, $surfPoints->[0]->Copy()); # close surface => Add end point (same as first point)
+	
 
 	my $pcbSurf = PrimitiveSurfPoly->new( $surfPoints, SurfaceLinePattern->new( 1, $self->{"drawOutlineWidth"}, 45, 0, 20, 1500 ) );
 	$self->{"drawing"}->AddPrimitive($pcbSurf);

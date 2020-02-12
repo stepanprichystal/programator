@@ -345,7 +345,7 @@ sub __GetFiducials {
 
 	my $drillLayer = undef;
 
-	if ( $layerName =~ /^((outer)(plg))?v\d+$/ ) {
+	if ( $layerName =~ /^((outer)|(plg))?v\d+$/ ||  $layerName =~ /^outer[cs]$/ ) {
 
 		$drillLayer = "v1";
 
@@ -583,7 +583,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d264450";
+	my $jobId    = "d266089";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';

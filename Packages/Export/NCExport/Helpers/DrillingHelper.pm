@@ -52,6 +52,7 @@ sub GetPltNCLayerInfo {
 	my @nDrill        = ();    #normall through holes plated
 	my @nFillDrill    = ();    #filed through holes plated
 	my @cDrill        = ();    #core plated
+	my @cFillDrill    = ();    #fill core plated
 	my @bDrillTop     = ();    #blind holes top
 	my @bDrillBot     = ();    #blind holes bot
 	my @bFillDrillTop = ();    #filled blind holes top
@@ -99,6 +100,9 @@ sub GetPltNCLayerInfo {
 			push( @cDrill, $l );
 
 		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill ) {
+			push( @cFillDrill, $l );
+		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
 			push( @nMill, $l );
 
@@ -127,6 +131,7 @@ sub GetPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_plt_nDrill }        = \@nDrill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }    = \@nFillDrill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_cDrill }        = \@cDrill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_cFillDrill }    = \@cFillDrill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bDrillTop }     = \@bDrillTop;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bDrillBot }     = \@bDrillBot;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } = \@bFillDrillTop;
@@ -287,11 +292,11 @@ sub GetNPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }  = \@nplt_cvrlycMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }  = \@nplt_cvrlysMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } = \@nplt_prepregMill;
-	
+
 	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } = \@nplt_stiffcMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } = \@nplt_stiffsMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_soldcMill } = \@nplt_soldcMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_soldsMill } = \@nplt_soldsMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_soldcMill }  = \@nplt_soldcMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_soldsMill }  = \@nplt_soldsMill;
 
 	return %info;
 }

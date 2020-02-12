@@ -269,7 +269,11 @@ sub CheckToolDiameter {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );

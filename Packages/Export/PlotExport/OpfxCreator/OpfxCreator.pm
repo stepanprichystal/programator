@@ -83,7 +83,7 @@ sub Export {
 	# Delete plot step
 	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"plotStep"} ) ) {
 
-		$inCAM->COM( "delete_entity", "job" => $jobId, "type" => "step", "name" => $self->{"plotStep"} );
+		#$inCAM->COM( "delete_entity", "job" => $jobId, "type" => "step", "name" => $self->{"plotStep"} );
 	}
 
 }
@@ -98,6 +98,20 @@ sub __PrepareLayer {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
+	# Change text at dynamic layer attribute
+	CamLayer->WorkLayer( $inCAM, $plotLayer->GetName() );
+	my $fnum = FeatureFilter->new( $inCAM, $jobId, $plotLayer->GetName() );
+
+	$fnum->SetFeatureTypes( "text" => 1 );
+	$fnum->AddIncludeAtt( ".pnl_place", "T-Job-layer+top_IN" );
+	$fnum->AddIncludeAtt( ".pnl_place", "T-Job-layer+bot_IN" );
+	$fnum->SetIncludeAttrCond( FilterEnums->Logic_OR);
+
+	if ( $fnum->Select() > 0 ) {
+
+		CamLayer->Contourize( $inCAM, $plotLayer->GetName() );
+	}
 
 	my $lName = GeneralHelper->GetGUID();
 	$plotLayer->{"outputLayer"} = $lName;
@@ -159,6 +173,27 @@ sub __PrepareLayer {
 		}
 	}
 
+	# 7) Stretch layer
+	if ( $plotLayer->GetStretchX() != 0 || $plotLayer->GetStretchY() != 0 ) {
+
+		my $stretchXVal = ( 100 + $plotLayer->GetStretchX() ) / 100;
+		my $stretchYVal = ( 100 + $plotLayer->GetStretchY() ) / 100;
+
+		my %pLim    = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"plotStep"} );
+		my $originX = abs( $pLim{"xMax"} - $pLim{"xMin"} ) / 2;
+		my $originY = abs( $pLim{"yMax"} - $pLim{"yMin"} ) / 2;
+
+		# Stretch data only inside profile (no OLEC frame+fiduc)
+		my $f = FeatureFilter->new( $inCAM, $jobId, $lName );
+		$f->SetProfile( FilterEnums->ProfileMode_INSIDE );
+		$f->Select();
+
+		CamLayer->StretchLayerData( $self->{"inCAM"}, $lName, $stretchXVal, $stretchYVal, $originX, $originY );
+
+		CamLayer->WorkLayer( $self->{"inCAM"}, $lName );
+
+	}
+
 	# 3) Copy all "camera" marks to separate layer. We want to avoid resizing
 	my $marksSeparated = 0;    # if marks separated, store layer name
 
@@ -198,16 +233,15 @@ sub __PrepareLayer {
 
 		CamLayer->CompensateLayerData( $inCAM, $lName, $plotLayer->GetComp() );
 	}
-	
+
 	# return back markings
-	if ( $marksSeparated ) {
-		
+	if ($marksSeparated) {
+
 		CamLayer->WorkLayer( $inCAM, $marksSeparated );
 		CamLayer->MoveSelOtherLayer( $inCAM, $lName );
-		CamMatrix->DeleteLayer($inCAM, $jobId,$marksSeparated);
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $marksSeparated );
 		CamLayer->WorkLayer( $inCAM, $lName );
 	}
-	
 
 	# 7) change polarity
 

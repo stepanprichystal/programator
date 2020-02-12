@@ -138,7 +138,7 @@ sub __GetFileNameByLayer {
 		$en{"pc"}    = "plt";
 		$en{"pc2"}   = "plt2";
 		$en{"ps"}    = "plb";
-		$en{"ps2"}    = "plb2";
+		$en{"ps2"}   = "plb2";
 		$en{"mc"}    = "smt";
 		$en{"ms"}    = "smb";
 		$en{"c"}     = "top";
@@ -188,6 +188,9 @@ sub __GetFileNameByLayer {
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill ) {
 		$name = "pth_core_" . $l->{"NCSigStartOrder"} . "-" . $l->{"NCSigEndOrder"};
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill && $outputType eq EnumsOut->Type_FILLEDHOLES ) {
+		$name = "filled_pth_core_" . $l->{"NCSigStartOrder"} . "-" . $l->{"NCSigEndOrder"};
 	}
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill ) {
 		$name = "mill_pth";

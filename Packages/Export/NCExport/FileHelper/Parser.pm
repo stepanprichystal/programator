@@ -62,7 +62,6 @@ sub ConvertToArray {
 # 4) Footer - from target file
 # 4) Footer - from source file
 sub MergeTwoFiles {
-
 	my $self        = shift;
 	my %sourceFile  = %{ shift(@_) };
 	my %targetFile  = %{ shift(@_) };
@@ -181,10 +180,12 @@ sub ParseFile {
 		if ( $i < 0 ) { next; }
 
 		#permited : M47,\P:
-		# allowed : M47, some text,  empty lines
+		# allowed : M47, some text;  empty lines; M49,SUTO
 		$line = $lines[$i];
 
-		if ( $line =~ /^[\t\n\r]*$/ || ( $line =~ /M47,\s*.*/ && $line !~ /M47,\s*\\P/i ) ) {
+		if ( $line =~ /^[\t\n\r]*$/ 
+		|| ( $line =~ /M47,\s*.*/ && $line !~ /M47,\s*\\P/i )
+		|| ( $line =~ /M49,SUTO.*/) ) {
 
 			#Ok, this line belongs to body
 			$bodyStart = $i;

@@ -49,6 +49,9 @@ sub RunTask {
 	};
 	if ( my $e = $@ ) {
 
+		# Some groups create "Fake layers" which should be removed after group finish, remove if exception
+		FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
+
 		my $baseE = BaseException->new( "Export utility thread (jobId: " . ${ $self->{"pcbId"} } . ") was unexpectedly exited", $e );
 
 		$self->_TaskResultEvent( ResultEnums->ItemResult_Fail, $baseE->Error() );
@@ -87,6 +90,8 @@ sub __RunTask {
 		}
 
 		# 2) Process groups
+		
+		FakeLayers->CreateFakeLayers( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
 
 		for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
 
@@ -108,8 +113,7 @@ sub __RunTask {
 			};
 			if ( my $e = $@ ) {
 
-				# Some groups create "Fake layers" which should be removed after group finish, remove if exception
-				FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
+				
 
 				my $baseE = BaseException->new( "Processing of group: " . UnitEnums->GetTitle($unitId) . " was unexpectedly aborted", $e );
 
@@ -121,6 +125,8 @@ sub __RunTask {
 			$self->_GroupTaskEvent( Enums->EventType_GROUP_END, $unitId );
 
 		}
+		 
+		FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
 
 		# 3) Close job
 

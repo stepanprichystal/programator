@@ -13,6 +13,7 @@ use List::Util qw[sum];
 #loading of locale modules
 
 use aliased 'Enums::EnumsPaths';
+use aliased 'Packages::Polygon::Enums' => 'EnumsPoly';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -44,15 +45,27 @@ sub AddSurfaceCircle {
 
 }
 
+# Draw surface polyline
+# (arc shape is supported)
 sub AddSurfacePolyline {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my @points   = @{ shift(@_) };    #hash x, y
-	my $pattern  = shift;
-	my $polarity = shift;             #
+	my $self  = shift;
+	my $inCAM = shift;
 
-	if ( scalar(@points) < 3 ) {
-		die "Minimal count of surface points is 3.\n";
+	# Each point is defined by hash:
+	# - x; y       = coordinate of next point
+	# - xmid; ymid = coordinate of center of arc (if arc)
+	# - dir        = direction of arc (cw/ccw)   (if arc)
+	# Polygon points has to by closed (first point coordinate == last point coordinate)
+	my @points   = @{ shift(@_) };
+	my $pattern  = shift;
+	my $polarity = shift;
+
+	if ( scalar(@points) < 4 ) {
+		die "Minimal count of surface points is 4.\n";
+	}
+	
+	if ( $points[0]->{"x"} !=  $points[scalar(@points)-1]->{"x"} || $points[0]->{"y"} !=  $points[scalar(@points)-1]->{"y"}  ) {
+		die "First and last polygon point coordinate has to by equal.\n";
 	}
 
 	# if pattern is not defined, use solid pattern
@@ -62,7 +75,7 @@ sub AddSurfacePolyline {
 
 	$polarity = defined $polarity ? $polarity : 'positive';
 
-	push( @points, $points[0] );    # push first poin to last in order close poly gon
+	#push( @points, $points[0] );    # push first poin to last in order close poly gon
 
 	$inCAM->COM( "add_surf_strt", "surf_type" => "feature" );
 
@@ -72,7 +85,23 @@ sub AddSurfacePolyline {
 	for ( my $i = 1 ; $i < scalar(@points) ; $i++ ) {
 
 		my $p = $points[$i];
-		$inCAM->COM( "add_surf_poly_seg", "x" => $p->{"x"}, "y" => $p->{"y"} );
+
+		if ( defined $p->{"xmid"} && defined $p->{"ymid"} && defined $p->{"dir"} ) {
+
+			$inCAM->COM(
+						 "add_surf_poly_crv",
+						 "xe" => $p->{"x"},
+						 "ye" => $p->{"y"},
+						 "xc" => $p->{"xmid"},
+						 "yc" => $p->{"ymid"},
+						 "cw" => ( $p->{"dir"} eq EnumsPoly->Dir_CW ? "yes" : "no" )
+			);
+
+		}
+		else {
+			$inCAM->COM( "add_surf_poly_seg", "x" => $p->{"x"}, "y" => $p->{"y"} );
+		}
+
 	}
 
 	$inCAM->COM("add_surf_poly_end");
@@ -156,7 +185,7 @@ sub AddSurfaceSymbolPattern {
 	$outline_draw   = $outline_draw   ? "yes" : 'no';
 	$outline_invert = $outline_invert ? "yes" : 'no';
 	$cut_prims      = $cut_prims      ? "yes" : 'no';
- 
+
 	$inCAM->COM(
 				 'add_surf_fill',
 				 "type"           => "pattern",
@@ -217,8 +246,6 @@ sub SurfaceCrossHatchPattern {
 	);
 }
 
-
-
 sub AddSurfaceFillSolid {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -265,8 +292,8 @@ sub AddSurfaceFillSolid {
 		"consider_feat" => $consider_feat,
 		"feat_margin"   => $feat_margin,
 
-		"dest"  => "affected_layers",
-		"layer" => ".affected",
+		"dest"       => "affected_layers",
+		"layer"      => ".affected",
 		"attributes" => 'yes'
 	);
 
@@ -281,10 +308,10 @@ sub AddSurfaceFillSymbol {
 	my $outline_draw   = shift;
 	my $outline_width  = shift;        # outline width in µm
 	my $outline_invert = shift // 0;
-	
-	my $symbol         = shift;
-	my $dx             = shift;
-	my $dy             = shift;
+
+	my $symbol = shift;
+	my $dx     = shift;
+	my $dy     = shift;
 
 	$outline_draw   = $outline_draw   ? "yes" : 'no';
 	$outline_invert = $outline_invert ? "yes" : 'no';
@@ -326,8 +353,8 @@ sub AddSurfaceFillSymbol {
 		"consider_feat" => $consider_feat,
 		"feat_margin"   => $feat_margin,
 
-		"dest"  => "affected_layers",
-		"layer" => ".affected",
+		"dest"       => "affected_layers",
+		"layer"      => ".affected",
 		"attributes" => 'yes'
 	);
 
@@ -348,32 +375,18 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	$inCAM->COM("sel_delete");
 
-	#	my %pos = ( "x" => 0, "y" => 0 );
-	#
-	#	my @colWidths = ( 70, 60, 60 );
-	#
-	#	my @row1 = ( "Tool [mm]", "Depth [mm]", "Tool angle" );
-	#	my @row2 = ( 2000, 1.2, );
-	#
-	#	my @rows = ( \@row1, \@row2 );
-	#
-	#	CamSymbol->AddTable( $inCAM, \%pos, \@colWidths, 10, 5, 2, \@rows );
-	#
-	#	my %posTitl = ( "x" => 0, "y" => scalar(@rows) * 10 + 5 );
+	my @points = ();
+	my %point1 = ( "x" => 0, "y" => 0 );
+	my %point2 = ( "x" => 100, "y" => 0 );
+	my %point3 = ( "x" => 100, "y" => 100 );
+	my %point4 = ( "x" => 0, "y" => 100 );
+	my %point5 = ( "x" => 0, "y" => 0 );
 
-#	my @points = ();
-#	my %point1 = ( "x" => 0, "y" => 0 );
-#	my %point2 = ( "x" => 100, "y" => 0 );
-#	my %point3 = ( "x" => 100, "y" => 100 );
-#	my %point4 = ( "x" => 0, "y" => 100 );
-#
-#	@points = ( \%point1, \%point2, \%point3, \%point4 );
-#
-#	CamSymbolSurf->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000 );
+	@points = ( \%point1, \%point2, \%point3, \%point4, \%point5 );
 
-	CamSymbolSurf->AddSurfaceFillSymbol( $inCAM, 0, 0, 0, "r50", "2", "2", 0,0,0,0,1,0   );
-	
-	
+	#CamSymbolSurf->AddSurfaceLinePattern( $inCAM, 1, 100, undef, 45, 50, 1000 );
+
+	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@points )
 
 }
 

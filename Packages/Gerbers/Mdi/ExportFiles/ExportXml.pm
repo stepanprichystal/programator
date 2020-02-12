@@ -65,20 +65,18 @@ sub Export {
 	my $fiducDCode = shift;
 	my $pnlDim     = shift;    # real limits of physical layer data / panel dimension
 
-	my $mirror   = undef;
-	my $polarity = undef;
-	my $etching  = undef;
-
 	# Find layer settings in TIF file
 	my $lTIF = $self->{"tifFile"}->GetLayer( $l->{"gROWname"} );
 
 	die "Output layer settings was not found in tif file for layer: " . $l->{"gROWname"} unless ( defined $lTIF );
 
-	$mirror   = $lTIF->{'mirror'};
-	$polarity = $lTIF->{'polarity'};
-	$etching  = $lTIF->{'etchingType'};
+	my $mirror   = $lTIF->{'mirror'};
+	my $polarity = $lTIF->{'polarity'};
+	my $etching  = $lTIF->{'etchingType'};
+	my $stretchX = $lTIF->{'stretchX'};
+	my $stretchY = $lTIF->{'stretchY'};
 
-	$self->__ExportXml( $l->{"gROWname"}, $mirror, $polarity, $etching, $fiducDCode, $pnlDim );
+	$self->__ExportXml( $l->{"gROWname"}, $mirror, $polarity, $stretchX, $stretchY, $etching, $fiducDCode, $pnlDim );
 }
 
 sub __ExportXml {
@@ -86,6 +84,8 @@ sub __ExportXml {
 	my $layerName  = shift;
 	my $mirror     = shift;
 	my $polarity   = shift;
+	my $stretchX   = shift;
+	my $stretchY   = shift;
 	my $etching    = shift;
 	my $fiducDCode = shift;
 	my $pnlDim     = shift;
@@ -113,6 +113,40 @@ sub __ExportXml {
 	my $lowerlimit = -0.04;
 	my $upper      = 0.02;
 	my $upperlimit = 0.04;
+
+	# Default parameters for stretch and scale
+	my $scalingMode = 1;    # Scale data by measured value from MDI CCD
+	my $stretchXVal = 0;
+	my $stretchYVal = 0;
+
+	if ( $stretchX != 0 || $stretchY != 0 ) {
+
+		$scalingMode = 2;    # Scale data by fixed value
+
+		# Scale only cores, which not have plated drilling
+		if ( $self->{"layerCnt"} > 2 ) {
+
+			my %lPars = JobHelper->ParseSignalLayerName($layerName);
+
+			my $p = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+			if ( $p->GetIsPlated() ) {
+				$scalingMode = 1;
+			}
+		}
+		else {
+
+			my @ncLayers = grep { !$_->{"technical"}} CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+
+			if ( scalar(@ncLayers) ) {
+				$scalingMode = 1;
+			}
+		}
+
+		$stretchXVal = sprintf( "%.5f", ( 100 + $stretchX ) / 100 );
+		$stretchYVal = sprintf( "%.5f", ( 100 + $stretchY ) / 100 );
+	}
+
+	$templ->{"job_params"}->[0]->{"scale_preset"}->[0]->{"x"} = $stretchXVal;
 
 	# Signal layers c, s
 	if ( $layerName =~ /^[cs]$/ ) {
@@ -219,7 +253,6 @@ sub __ExportXml {
 	# Fill xml
 
 	$templ->{"job_params"}->[0]->{"job_name"}->[0] = $jobId . $layerName . "_mdi";
-	$templ->{"job_params"}->[0]->{"job_name"}->[0] =~ s/outer//;    # remove "outer" from outer core fake layers
 
 	my $orderNum = HegMethods->GetPcbOrderNumber($jobId);
 	my $info     = HegMethods->GetInfoAfterStartProduce( $jobId . "-" . $orderNum );
@@ -262,6 +295,10 @@ sub __ExportXml {
 		}
 	}
 
+	$templ->{"job_params"}->[0]->{"scaling_mode"}->[0]        = $scalingMode;
+	$templ->{"job_params"}->[0]->{"scale_preset"}->[0]->{"x"} = $stretchXVal;
+	$templ->{"job_params"}->[0]->{"scale_preset"}->[0]->{"y"} = $stretchYVal;
+
 	$templ->{"job_params"}->[0]->{"mirror"}->[0]->{"x"} = 0;
 	$templ->{"job_params"}->[0]->{"mirror"}->[0]->{"y"} = $mirrorY;
 
@@ -296,7 +333,7 @@ sub __ExportXml {
 	);
 
 	my $finalFile = EnumsPaths->Jobs_MDI . $self->{"jobId"} . $layerName . "_mdi.xml";
-	 
+
 	FileHelper->WriteString( $finalFile, $xmlString );
 
 	unless ( -e $finalFile ) {

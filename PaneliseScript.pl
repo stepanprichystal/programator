@@ -125,7 +125,8 @@ if(CamHelper->LayerExists( $inCAM, $jobName, 'm' ) ==1 ){
 unless(CamHelper->LayerExists( $inCAM, $jobName, 'plgc' ) == 1 or CamHelper->LayerExists( $inCAM, $jobName, 'plgs' ) == 1){
 		if ( CamDrilling->GetViaFillExists( $inCAM, $jobName ) ) {
 
-				my $result = PlugLayer->CreateCopperPlugLayers( $inCAM, $jobName );
+				# Bude se generovat pred exportem
+				my $result = PlugLayer->CreateCopperPlugLayers( $inCAM, $jobName , "o+1");
 
 		}
 }

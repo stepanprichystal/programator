@@ -20,8 +20,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitForm';
-
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Model::NifDataMngr';
+use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitFormEvt';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCPrepareData';
@@ -29,6 +28,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCExpor
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroupData';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -73,6 +73,9 @@ sub InitForm {
 
 	my $parent = $groupWrapper->GetParentForGroup();
 	$self->{"form"} = NCUnitForm->new( $parent, $inCAM, $self->{"jobId"} );
+	
+	# init base class with event class
+	$self->{"eventClass"} = NCUnitFormEvt->new( $self->{"form"} );
 
 	$self->_SetHandlers();
 
@@ -85,8 +88,9 @@ sub RefreshGUI {
 
 	#refresh group form
 	$self->{"form"}->SetExportSingle( $groupData->GetExportSingle() );
-	$self->{"form"}->SetPltLayers( $groupData->GetPltLayers() );
-	$self->{"form"}->SetNPltLayers( $groupData->GetNPltLayers() );
+	$self->{"form"}->SetAllModeLayers( $groupData->GetAllModeLayers() );
+	$self->{"form"}->SetSingleModePltLayers( $groupData->GetSingleModePltLayers() );
+	$self->{"form"}->SetSingleModeNPltLayers( $groupData->GetSingleModeNPltLayers() );
 	
 
 }
@@ -105,8 +109,9 @@ sub GetGroupData {
 	if ($frm) {
 		$groupData = $self->{"dataMngr"}->GetGroupData();
 		$groupData->SetExportSingle( $frm->GetExportSingle() );
-		$groupData->SetPltLayers( $frm->GetPltLayers() );
-		$groupData->SetNPltLayers( $frm->GetNPltLayers() );
+		$groupData->SetAllModeLayers( $frm->GetAllModeLayers() );
+		$groupData->SetSingleModePltLayers( $frm->GetSingleModePltLayers() );
+		$groupData->SetSingleModeNPltLayers( $frm->GetSingleModeNPltLayers() );
 		
 	}
 	else {
