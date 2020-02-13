@@ -63,6 +63,7 @@ sub Build {
 			push( @points, Point->new( $origin->X(),                           $origin->Y() + $padText->GetNegRectH() ) );
 			push( @points, Point->new( $origin->X() + $padText->GetNegRectW(), $origin->Y() + $padText->GetNegRectH() ) );
 			push( @points, Point->new( $origin->X() + $padText->GetNegRectW(), $origin->Y() ) );
+			push( @points, Point->new( $origin->X(),                           $origin->Y() ) );
 
 			my $pTextNeg = PrimitiveSurfPoly->new(
 				\@points,

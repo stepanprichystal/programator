@@ -24,7 +24,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
-
+use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -135,7 +135,7 @@ sub __ExportXml {
 		}
 		else {
 
-			my @ncLayers = grep { !$_->{"technical"}} CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+			my @ncLayers = grep { !$_->{"technical"} } CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 			if ( scalar(@ncLayers) ) {
 				$scalingMode = 1;
@@ -251,8 +251,13 @@ sub __ExportXml {
 	}
 
 	# Fill xml
+	my $fileName = $layerName;
 
-	$templ->{"job_params"}->[0]->{"job_name"}->[0] = $jobId . $layerName . "_mdi";
+	if ( $fileName =~ /outer/ ) {
+		$fileName = Helper->ConverOuterName2FileName( $layerName, $self->{"layerCnt"} );
+	}
+
+	$templ->{"job_params"}->[0]->{"job_name"}->[0] = $jobId . $fileName . "_mdi";
 
 	my $orderNum = HegMethods->GetPcbOrderNumber($jobId);
 	my $info     = HegMethods->GetInfoAfterStartProduce( $jobId . "-" . $orderNum );
@@ -332,7 +337,7 @@ sub __ExportXml {
 		XMLDecl => '<?xml version="1.0" encoding="utf-8"?>'
 	);
 
-	my $finalFile = EnumsPaths->Jobs_MDI . $self->{"jobId"} . $layerName . "_mdi.xml";
+	my $finalFile = EnumsPaths->Jobs_MDI . $self->{"jobId"} . $fileName . "_mdi.xml";
 
 	FileHelper->WriteString( $finalFile, $xmlString );
 

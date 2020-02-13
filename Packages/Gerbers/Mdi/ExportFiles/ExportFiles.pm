@@ -152,7 +152,13 @@ sub __ExportLayers {
 		$self->{"exportXml"}->Export( $l, $fiducDCode, \%pnlDim );
 
 		# 8) Copy file to mdi folder after exportig xml template
-		my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $l->{"gROWname"} . "_mdi.ger";
+		my $fileName = $l->{"gROWname"};
+
+		if ( $fileName =~ /outer/ ) {
+			$fileName = Helper->ConverOuterName2FileName( $l->{"gROWname"}, $self->{"layerCnt"} );
+		}
+
+		my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $fileName . "_mdi.ger";
 		copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
 		unlink($tmpFile);
 
@@ -345,7 +351,7 @@ sub __GetFiducials {
 
 	my $drillLayer = undef;
 
-	if ( $layerName =~ /^((outer)|(plg))?v\d+$/ ||  $layerName =~ /^outer[cs]$/ ) {
+	if ( $layerName =~ /^((outer)|(plg))?v\d+$/ || $layerName =~ /^outer[cs]$/ ) {
 
 		$drillLayer = "v1";
 
@@ -496,7 +502,7 @@ sub __CompensateLayer {
 	my $class = $self->{"pcbClass"};
 
 	# Find layer settings in TIF file
-	my $lTIF = $self->{"tifFile"}->GetLayer( $layerName );
+	my $lTIF = $self->{"tifFile"}->GetLayer($layerName);
 
 	die "Output layer settings was not found in tif file for layer: " . $layerName unless ( defined $lTIF );
 
@@ -583,12 +589,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d266089";
+	my $jobId    = "d270787";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
 	FakeLayers->CreateFakeLayers( $inCAM, $jobId, undef, 1 );
- 
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
@@ -600,8 +605,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	);
 
 	$export->Run( \%type );
-	
-		FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
+
+	FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
 
 }
 

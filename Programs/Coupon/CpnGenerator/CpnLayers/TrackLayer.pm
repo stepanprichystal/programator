@@ -164,6 +164,7 @@ sub Build {
 			push( @coord, Point->new( $cpnSingleLayout->GetCpnSingleWidth(), $lim{"yMax"} ) );
 			push( @coord, Point->new( $lim{"xMax"},                          $lim{"yMax"} ) );
 			push( @coord, Point->new( $lim{"xMax"},                          0 ) );
+			push( @coord, Point->new( $cpnSingleLayout->GetCpnSingleWidth(), 0 ) );
 
 			$self->{"drawing"}->AddPrimitive( PrimitiveSurfPoly->new( \@coord, undef, $self->_InvertPolar(DrawEnums->Polar_NEGATIVE, $layerLayout) ) );
 		}

@@ -55,6 +55,7 @@ sub Build {
 	push( @points, Point->new( $origin->X() - 0.2,          $origin->Y() + $textH + 0.2 ) );
 	push( @points, Point->new( $origin->X() + 0.2 + $textW, $origin->Y() + $textH + 0.2 ) );
 	push( @points, Point->new( $origin->X() + 0.2 + $textW, $origin->Y() - 0.2 ) );
+	push( @points, Point->new( $origin->X() - 0.2,          $origin->Y() - 0.2 ) );
 
 	my $pTextNeg = PrimitiveSurfPoly->new(
 		\@points,

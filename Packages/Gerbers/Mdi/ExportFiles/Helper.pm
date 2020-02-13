@@ -23,6 +23,7 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamSymbolSurf';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -61,7 +62,34 @@ sub GetDefaultLayerTypes {
 	return %mdiInfo;
 }
 
- 
+# Convert layer type outer<layer name> to filename exported fotr MDI
+sub ConverOuterName2FileName {
+	my $self     = shift;
+	my $lName    = shift;
+	my $layerCnt = shift;
+
+	my $fileName = undef;
+
+	my %lPars = JobHelper->ParseSignalLayerName($lName);
+
+	die "Layer: $lName is not outer type" if ( !$lPars{"outerCore"} );
+
+	if ( $lPars{"sourceName"} =~ /^v\d+/ ) {
+
+		$fileName = $lPars{"sourceName"};
+	}
+	elsif ( $lPars{"sourceName"} eq "c" ) {
+
+		$fileName = "v1";
+	}
+	elsif ( $lPars{"sourceName"} eq "s" ) {
+
+		$fileName = "v" . $layerCnt;
+	}
+
+	return $fileName;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

@@ -394,8 +394,8 @@ sub GetTypeOfPcb {
 
 }
 
-#Return scalar value of pcb type
-# - Vicevrstvy, oboustranny, ...
+#Return
+
 sub GetPcbSurface {
 	my $self  = shift;
 	my $pcbId = shift;
