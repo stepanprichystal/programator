@@ -127,9 +127,9 @@ sub __GetCoreMaterialKind {
 	my $mTxt = shift;
 
 	my $mKind = undef;
-	$mKind = "PYRALUX" if ( $mTxt =~ /pyralux/i );
-	$mKind = "IS400"   if ( $mTxt =~ /IS.*400/i );
-	$mKind = "PCL370HR"   if ( $mTxt =~ /PCL.*370.*HR/i );
+	$mKind = "PYRALUX"  if ( $mTxt =~ /pyralux/i );
+	$mKind = "IS400"    if ( $mTxt =~ /IS.*400/i );
+	$mKind = "PCL370HR" if ( $mTxt =~ /PCL.*370.*HR/i );
 
 	die "Core material kind was not recognized from text: $mTxt" unless ( defined $mKind );
 
@@ -156,14 +156,12 @@ sub __GetPanelXYScale {
 		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI )
 	{
 
-		
 		my ( $xPPM, $YPPM ) = $self->{"matStability"}->GetMatStability( $matKind, $matThick, $cuThick, $cuUsage );
-		
-		$xPer =  0+$xPPM/10000;
-		$Yper = 0+$YPPM/10000;
+
+		$xPer = 0 + $xPPM / 10000;
+		$Yper = 0 + $YPPM / 10000;
 
 	}
-
 
 	return ( $xPer, $Yper );
 }
@@ -174,10 +172,16 @@ sub __Get2vCuUsage {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $botL = "s" if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
-	my %usage = CamCopperArea->GetCuArea( 0, 0, $inCAM, $jobId, "panel", "c", $botL );
+	my $u = 0;
 
-	return $usage{"percentage"};
+	if ( $self->{"layerCnt"} > 0 ) {
+
+		my $botL = "s" if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
+		my %usage = CamCopperArea->GetCuArea( 0, 0, $inCAM, $jobId, "panel", "c", $botL );
+		$u = $usage{"percentage"};
+	}
+
+	return $u;
 }
 
 #-------------------------------------------------------------------------------------------#

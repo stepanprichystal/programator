@@ -909,7 +909,7 @@ sub __Init {
 	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
 	
 
-	$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"} );
+	$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"} ) ;
 
 	$self->{"NCLayerComp"} = NCLayerComp->new( $inCAM, $self->{"jobId"} );
 
