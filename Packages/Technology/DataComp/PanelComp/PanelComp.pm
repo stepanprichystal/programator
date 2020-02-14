@@ -121,7 +121,7 @@ sub GetBaseMatComp {
 	return ( "x" => $comp[0], "y" => $comp[1] );
 }
 
-# Translate core material text to IS material kind
+# Translate core material text to IS material kind (core material can by diffrent from nmaterial in IS)
 sub __GetCoreMaterialKind {
 	my $self = shift;
 	my $mTxt = shift;
@@ -131,8 +131,9 @@ sub __GetCoreMaterialKind {
 	$mKind = "IS400"    if ( $mTxt =~ /IS.*400/i );
 	$mKind = "PCL370HR" if ( $mTxt =~ /PCL.*370.*HR/i );
 
-	die "Core material kind was not recognized from text: $mTxt" unless ( defined $mKind );
+	$mKind = HegMethods->GetMaterialKind($self->{"jobId"}) if ( !defined $mKind );    # Take defaul material from IS
 
+ 
 	return $mKind;
 }
 

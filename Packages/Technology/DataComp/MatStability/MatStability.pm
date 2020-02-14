@@ -37,6 +37,11 @@ sub GetMatStability {
 	my $cuThick  = shift;    # µm
 	my $cuUsage  = shift;    # %
 
+	die "Material kind is not defined"         unless ( defined $matKind );
+	die "Material thickness is not defined"    unless ( defined $matThick );
+	die "Material cu thickness is not defined" unless ( defined $cuThick );
+	die "Material cu ussage is not defined"    unless ( defined $cuUsage );
+	
 	# 0) Load material stability
 	unless ( defined $self->{"tables"} ) {
 
