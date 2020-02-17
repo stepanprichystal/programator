@@ -21,6 +21,7 @@ use aliased 'Packages::Stackup::StackupBase::Layer::CoverlayLayer';
 use aliased 'Packages::Stackup::Stackup::StackupProduct::ProductPress';
 use aliased 'Packages::Stackup::Stackup::StackupProduct::ProductInput';
 use aliased 'Packages::Stackup::Stackup::StackupProduct::ProductLayer';
+use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -50,8 +51,23 @@ sub BuildStackupLamination {
 	my $sigLMatrixCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 	my $sigLStckpCnt = $self->{"stackup"}->GetCuLayerCnt();
 
+	# Do some elementar check of signal layers and NC layers in matrix
+
 	die "Signal layer cnt in matrix ($sigLMatrixCnt) didn't match witch signal layer cnt in stackup file ($sigLStckpCnt)"
 	  if ( $sigLMatrixCnt != $sigLStckpCnt );
+
+	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+
+	CamDrilling->AddNCLayerType( \@layers );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+
+	my $NCCheck = 1;
+	my $mess = "";
+	$NCCheck = 0 if ( !LayerErrorInfo->CheckWrongNames( \@layers, \$mess ) );
+	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, \@layers, \$mess ) );
+	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, \@layers, \$mess ) );
+
+	die "NC layer error: $mess " unless ($NCCheck);
 
 	# 1) Check if there is any covelay in matrix and insert it to stackup layers
 	$self->__AddCoverlayLayers();
@@ -1193,8 +1209,7 @@ sub __GenerateCopperProductMatrix {
 	}
 
 	# Add BOT Input product Copper to matrix
-	if ( !( $currP->GetProductType() eq Enums->Product_INPUT && ( $cuLCnt == 0 || $currP->GetTopEmptyFoil() || $currP->GetBotEmptyFoil() ) ) )
-	{
+	if ( !( $currP->GetProductType() eq Enums->Product_INPUT && ( $cuLCnt == 0 || $currP->GetTopEmptyFoil() || $currP->GetBotEmptyFoil() ) ) ) {
 		$self->__AddCopperItems( $currP, Enums->SignalLayer_BOT, $matrix );
 	}
 }

@@ -168,7 +168,7 @@ sub CheckIsNotEmpty {
 	my $result = 1;
 
 	# remove core frame drilling generated before export (theses layers are empty for quicker creation)
-	@layers = grep {$_->{"gROWname"} !~ /v1j\d+/} @layers;
+	@layers = grep { $_->{"gROWname"} !~ /v1j\d+/ } @layers;
 
 	foreach my $l (@layers) {
 
@@ -351,7 +351,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
-	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );	
+	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
@@ -383,19 +383,17 @@ sub CheckDirTop2Bot {
 		my $startL = $l->{"NCSigStartOrder"};
 		my $endL   = $l->{"NCSigEndOrder"};
 
-		if ( $startL >= $endL ) {
+		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill ) {
 
-			# check for core driling, which start/end in same layer
-
-			if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill || $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill ) {
-
-				if ( $startL == $endL ) {
-					$result = 0;
-					$$mess .=
-"Vrstva: $lName, má špatně nastavený vrták v metrixu u vrtání jádra. Vrták nesmí začínat a končit na stejné vrstvě.\n";
-				}
-
+			# core drilling has to go though 2 layers only
+			if ( $endL - $startL != 1 ) {
+				$result = 0;
+				$$mess .=
+				    "Vrstva: $lName, má špatně nastavený vrták v metrixu u vrtání jádra. "
+				  . "Vrták nesmí začínat a končit na stejné vrstvě"
+				  . " a musí být natažený na signálových vrstvách jádra. \n";
 			}
+
 		}
 
 	}
@@ -412,8 +410,6 @@ sub CheckDirTop2Bot {
 			$$mess .= "Blind layer: $lName, can not end in matrix in layer: \"s\"\n";
 		}
 	}
-
- 
 
 	# Check plated through blind layer if start and end not in c/s layer
 	my @layers4 = grep { $_->{"gROWname"} =~ /\d/ } $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
@@ -808,11 +804,24 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113609";
+	my $jobId = "d269578";
 
 	my $mess = "";
 
-	my $result = LayerErrorInfo->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
+	#my $result = LayerErrorInfo->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
+
+	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+	my $result = 1;
+
+	CamDrilling->AddNCLayerType( \@layers );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+	$result = 0 if ( !LayerErrorInfo->CheckWrongNames( \@layers, \$mess ) );
+	$result = 0 if ( $result && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, \@layers, \$mess ) );
+	$result = 0 if ( $result && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, \@layers, \$mess ) );
+
+	unless ($result) {
+		print STDERR " $mess \n";
+	}
 
 	print STDERR "Result is $result \n";
 
