@@ -153,8 +153,8 @@ sub GetCoreByCuLayer {
 
 	my @thickList = @{ $self->{"layers"} };
 	my $cuLayer   = $self->GetCuLayer($layerName);
-	
-	die "Copper is not \"core\" copper, but copper foil" if($cuLayer->GetIsFoil());
+
+	die "Copper is not \"core\" copper, but copper foil" if ( $cuLayer->GetIsFoil() );
 
 	my $core = undef;
 
@@ -165,8 +165,7 @@ sub GetCoreByCuLayer {
 			last;
 		}
 	}
- 
- 
+
 	return $core;
 }
 
@@ -198,7 +197,7 @@ sub __CreateStackup {
 	#set info about layers of stackup
 	$self->__SetStackupLayers();
 
- 	#set other stackup property
+	#set other stackup property
 	$self->__SetOtherProperty();
 
 }
@@ -277,44 +276,63 @@ sub __SetStackupLayers {
 			my $noFlowType = undef;
 
 			if ( $parsedLayers[$i]->GetIsNoFlow() ) {
-				$noFlowType = Enums->NoFlowPrepreg_P2;
+				$noFlowType = Enums->NoFlowPrepreg_P2;    # Default type is type P2
 
 				# find preview core
-				my $corePrevInfo = ( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers[ ( $i - 2 ) .. ( $i - 1 ) ] )[-1];
+				#				my $corePrevInfo = ( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers[ ( $i - 2 ) .. ( $i - 1 ) ] )[-1];
+				#
+				#				# find next core
+				#				my $coreNextInfo = ( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers[ ( $i + 1 ) .. ( $i + 2 ) ] )[0];
 
-				# find next core
-				my $coreNextInfo = ( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers[ ( $i + 1 ) .. ( $i + 2 ) ] )[0];
+				# Type of noflow prepreg will be set according coverlay present
+				#				if (
+				#					 (
+				#					      defined $corePrevInfo
+				#					   && $corePrevInfo->GetType() eq Enums->MaterialType_CORE
+				#					   && $corePrevInfo->GetCoreRigidType() eq Enums->CoreType_FLEX
+				#					 )
+				#					 || (    defined $coreNextInfo
+				#						  && $coreNextInfo->GetType() eq Enums->MaterialType_CORE
+				#						  && $coreNextInfo->GetCoreRigidType() eq Enums->CoreType_FLEX )
+				#				  )
+				#				{
+				#
+				#					$noFlowType = Enums->NoFlowPrepreg_P1;
+				#				}
 
-				if (
-					 (
-					      defined $corePrevInfo
-					   && $corePrevInfo->GetType() eq Enums->MaterialType_CORE
-					   && $corePrevInfo->GetCoreRigidType() eq Enums->CoreType_FLEX
-					 )
-					 || (    defined $coreNextInfo
-						  && $coreNextInfo->GetType() eq Enums->MaterialType_CORE
-						  && $coreNextInfo->GetCoreRigidType() eq Enums->CoreType_FLEX )
-				  )
-				{
-
-					$noFlowType = Enums->NoFlowPrepreg_P1;
-				}
 			}
 
-			# 2) Decide if create new prepreg parent
+			# 2) Determine if no flow prepreg is laminated on flex core
+			my $flexPress = 0;
+			$flexPress = 1
+			  if (    defined $parsedLayers[ $i - 2 ]
+				   && $parsedLayers[ $i - 2 ]->GetType() eq Enums->MaterialType_CORE
+				   && $parsedLayers[ $i - 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX );
+
+			# check if prepreg  above flex core
+			$flexPress = 1
+			  if (    defined $parsedLayers[ $i + 2 ]
+				   && $parsedLayers[ $i + 2 ]->GetType() eq Enums->MaterialType_CORE
+				   && $parsedLayers[ $i + 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX );
+
+			# 3) Decide if create new prepreg parent
 			my $newParent = 0;
 
-			#			if ( defined $curParentPrpg && $curParentPrpg->GetIsNoFlow() && !defined $noFlowType ) {
-			#				die;
-			#			}
 			$newParent = 1 if ( !defined $curParentPrpg );
 			$newParent = 1 if ( defined $curParentPrpg && $curParentPrpg->GetIsNoFlow() != $parsedLayers[$i]->GetIsNoFlow() );
 			$newParent = 1
-			  if (
-				      defined $curParentPrpg
+			  if (    defined $curParentPrpg
 				   && $curParentPrpg->GetIsNoFlow()
 				   && $parsedLayers[$i]->GetIsNoFlow()
-				   && $curParentPrpg->GetNoFlowType() ne $noFlowType
+				   && $curParentPrpg->GetNoFlowType() ne $noFlowType );
+
+			# Every noflow prepreg which is next on flex core is always single (no more prepregs merged into one parent)
+			# check if prepreg  under flex core
+			$newParent = 1
+			  if ( defined $curParentPrpg
+				   && $curParentPrpg->GetIsNoFlow()
+				   && $parsedLayers[$i]->GetIsNoFlow()
+				   && $curParentPrpg->GetFlexPress != $flexPress
 			  );
 
 			if ($newParent) {
@@ -334,6 +352,7 @@ sub __SetStackupLayers {
 				$curParentPrpg->{"parent"}   = 1;
 				$curParentPrpg->{"noFlow"}   = $parsedLayers[$i]->GetIsNoFlow();
 				$curParentPrpg->{"noFlowType"} = $noFlowType if ( $parsedLayers[$i]->GetIsNoFlow() );
+				$curParentPrpg->{"flexPress"} = $flexPress if ( $parsedLayers[$i]->GetIsNoFlow() );
 
 			}
 
@@ -341,6 +360,7 @@ sub __SetStackupLayers {
 			my $childPrpgInfo = $parsedLayers[$i];
 
 			$childPrpgInfo->{"noFlowType"} = $noFlowType if ( $childPrpgInfo->GetIsNoFlow() );
+			$childPrpgInfo->{"flexPress"} = $flexPress if ( $childPrpgInfo->GetIsNoFlow() );
 
 			$curParentPrpg->AddChildPrepreg($childPrpgInfo);
 

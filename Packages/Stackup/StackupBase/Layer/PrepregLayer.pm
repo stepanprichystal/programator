@@ -39,6 +39,8 @@ sub new {
 	$self->{"noFlow"} = 0;     # no flow prepreg for RigidFlex
 
 	$self->{"noFlowType"} = undef;    # no flow prepreg for RigidFlex
+	
+	$self->{"flexPress"} = undef;    # indicate if prepreg is laminated on flex core separately (preparing input product)
 
 	# no flow prepreg can contain coverlay
 	# Coverlay pieces has same height as prepreg and are placed into pre-milled prepreg windows
@@ -81,6 +83,16 @@ sub GetNoFlowType {
 	return $self->{"noFlowType"};
 }
 
+sub GetFlexPress {
+	my $self = shift;
+
+	die "Prepreg is not NoFLow " unless ( $self->GetIsNoFlow() );
+
+	return $self->{"flexPress"};
+}
+
+
+
 sub GetCoverlay {
 	my $self = shift;
 
@@ -102,7 +114,9 @@ sub AddCoverlay {
 	my $cvrl = shift;
 
 	die "Prepreg is not NoFLow " unless ( $self->GetIsNoFlow() );
-	die "Prepreg is not type P1 " unless ( $self->GetNoFlowType() eq Enums->NoFlowPrepreg_P1);
+	#die "Prepreg is not type P1 " unless ( $self->GetNoFlowType() eq Enums->NoFlowPrepreg_P1);
+	
+	$self->{"noFlowType"} = Enums->NoFlowPrepreg_P1; # Change type of prepregs to P1
 
 	$self->{"inclCoverlay"} = $cvrl;
 }
