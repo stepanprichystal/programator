@@ -325,8 +325,6 @@ sub __DefinePlatedOperations {
 	# - @plt_nDrill
 	# - @plt_fDrill
 	# - @plt_bDrillTop
-	# - @plt_nFillDrill
-	# - @plt_bFillDrillTop
 
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
@@ -346,10 +344,7 @@ sub __DefinePlatedOperations {
 		# blind drilling start from top in layer <$drillStartTop>
 		my @blindTop = grep { $_->{"NCSigStartOrder"} == $startTop } @plt_bDrillTop;
 		push( @layers, @blindTop );
-
-	 
-		# filled blind drilling "mfill" start from top in layer <$drillStartTop>
-		push( @layers, grep { $_->{"NCSigStartOrder"} == $startTop } @plt_bFillDrillTop );
+ 
 
 		if ( $pressOrder == $stackup->GetPressCount() && !$viaFillOuter ) {
 
