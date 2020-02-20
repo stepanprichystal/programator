@@ -94,7 +94,7 @@ unless ($ENV{JOB}) {
 	$jobName = "$ENV{JOB}";
 }
 
-
+#$jobName= "d271906";
 
 my $inCAM = InCAM->new();
 my @errorMessageArr = ();
@@ -122,14 +122,14 @@ if(CamHelper->LayerExists( $inCAM, $jobName, 'm' ) ==1 ){
 
 
 # Check and create PLGC and PLGS
-unless(CamHelper->LayerExists( $inCAM, $jobName, 'plgc' ) == 1 or CamHelper->LayerExists( $inCAM, $jobName, 'plgs' ) == 1){
-		if ( CamDrilling->GetViaFillExists( $inCAM, $jobName ) ) {
-
-				# Bude se generovat pred exportem
-				my $result = PlugLayer->CreateCopperPlugLayers( $inCAM, $jobName , "o+1");
-
-		}
-}
+#unless(CamHelper->LayerExists( $inCAM, $jobName, 'plgc' ) == 1 or CamHelper->LayerExists( $inCAM, $jobName, 'plgs' ) == 1){
+#		if ( CamDrilling->GetViaFillExists( $inCAM, $jobName ) ) {
+#
+#				# Bude se generovat pred exportem
+#				my $result = PlugLayer->CreateCopperPlugLayers( $inCAM, $jobName , "o+1");
+#
+#		}
+#}
 
 
 
