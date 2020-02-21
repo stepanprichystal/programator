@@ -56,16 +56,18 @@ sub BuildStackupLamination {
 	die "Signal layer cnt in matrix ($sigLMatrixCnt) didn't match witch signal layer cnt in stackup file ($sigLStckpCnt)"
 	  if ( $sigLMatrixCnt != $sigLStckpCnt );
 
-	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+	my @NCLayers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
 
-	CamDrilling->AddNCLayerType( \@layers );
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+	CamDrilling->AddNCLayerType( \@NCLayers );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@NCLayers );
+	@NCLayers = grep {defined $_->{"NCSigStart"}} @NCLayers;
+	
 
 	my $NCCheck = 1;
 	my $mess = "";
-	$NCCheck = 0 if ( !LayerErrorInfo->CheckWrongNames( \@layers, \$mess ) );
-	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, \@layers, \$mess ) );
-	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, \@layers, \$mess ) );
+	$NCCheck = 0 if ( !LayerErrorInfo->CheckWrongNames( \@NCLayers, \$mess ) );
+	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, \@NCLayers, \$mess ) );
+	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, \@NCLayers, \$mess ) );
 
 	die "NC layer error: $mess " unless ($NCCheck);
 
