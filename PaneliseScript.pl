@@ -2352,8 +2352,8 @@ sub _RunCheckListCoupon{
  		 $inCAM -> COM('chklist_open',chklist=>'checks');
  		 $inCAM -> COM('chklist_show',chklist=>'checks',nact=>'1',pinned=>'no',pinned_enabled=>'yes');
  		 
- 		 my $erfModel_outer = 'Class_' . $constClass . '_OUT';
- 		 my $erfModel_inner = 'Class_' . $constClass_inner . '_IN';
+ 		 my $erfModel_outer = 'Class_' . $constClass . '_Out';
+ 		 my $erfModel_inner = 'Class_' . $constClass_inner . '_In';
  		 
  		 $inCAM -> COM('chklist_erf',chklist=>'checks', erf=> $erfModel_inner, nact=>'2');
  		 $inCAM -> COM('chklist_erf',chklist=>'checks', erf=> $erfModel_outer, nact=>'3');
