@@ -198,7 +198,11 @@ sub GetInfoDimensions {
 
 	my $cmd = "select top 1
 				 d.nasobnost_panelu,
-				 d.nasobnost
+				 d.nasobnost,
+				 d.kus_x,
+				 d.kus_y,
+				 d.panel_x,
+				 d.panel_y
 				 
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
@@ -1136,6 +1140,31 @@ sub UpdateBaseCu {
 
 }
 
+# Update single x dimension
+sub UpdatePCBDim {
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $dimType     = shift;    # "kus_x"/"kus_y"/"panel_x"/"panel_y"
+	my $dim         = shift;
+	my $childThread = shift;
+
+	if ($childThread) {
+
+		my $result = $self->__SystemCall( "UpdateSingleDimension", $pcbId, $dim );
+
+		return $result;
+	}
+	else {
+
+		#use Connectors::HeliosConnector::HelperWriter;
+		require Connectors::HeliosConnector::HelperWriter;
+
+		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $dim, $dimType );
+
+		return $res;
+	}
+}
+
 # update column pooling in pcb order
 sub UpdatePooling {
 	my $self        = shift;
@@ -1816,28 +1845,28 @@ sub GetMatInfo {
 
 # Return material info by material reference
 sub GetMatInfoByUDA {
-	my $self    = shift;
-	my $qId     = shift;
-	my $id      = shift;
-	my $id2     = shift;
+	my $self = shift;
+	my $qId  = shift;
+	my $id   = shift;
+	my $id2  = shift;
 
 	my @params = ();
 	push( @params, SqlParameter->new( "__qId", Enums->SqlDbType_INT, $qId ) ) if ( defined $qId );
 	push( @params, SqlParameter->new( "__id",  Enums->SqlDbType_INT, $id ) )  if ( defined $id );
-	push( @params, SqlParameter->new( "__id2", Enums->SqlDbType_INT, $id2 ) )  if ( defined $id2 );
+	push( @params, SqlParameter->new( "__id2", Enums->SqlDbType_INT, $id2 ) ) if ( defined $id2 );
 
 	my $where = "";
 	if ( defined $id ) {
 
 		$where .= " uda.dps_id = __id";
 	}
-	
-	if ( defined $qId  ) {
+
+	if ( defined $qId ) {
 
 		$where .= " and uda.dps_qid = __qId";
 	}
-	
-	if ( defined $id2  ) {
+
+	if ( defined $id2 ) {
 
 		$where .= " and uda.dps_id2 = __id2";
 	}
@@ -1852,7 +1881,7 @@ sub GetMatInfoByUDA {
  				 uda.dps_druh
 				FROM lcs.kmenova_karta_skladu kks
 				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
-				WHERE ".$where;
+				WHERE " . $where;
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 	if (@result) {
@@ -2130,7 +2159,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfo( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->GetMatInfoByUDA(13,1, 4);
+	my $mat = HegMethods->GetMatInfoByUDA( 13, 1, 4 );
 
 	dump($mat);
 	die;

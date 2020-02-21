@@ -109,6 +109,28 @@ sub Run {
 		my $nifMngr = NifMngr->new( $inCAM, $jobId, \%exportNifData );
 
 		$nifMngr->Run();
+
+		# Sometimes dimensions are switeched (new reorder dimensions are loaded to IS, but switched)
+		my $dimIS = HegMethods->GetInfoDimensions($jobId);
+
+		# Switch dimension of single pieces
+		if ( abs( $dimIS->{"kus_x"} - $dim{"single_y"} ) < 1 && abs( $dimIS->{"kus_y"} - $dim{"single_x"} ) < 1 ) {
+
+			HegMethods->UpdatePCBDim( $jobId, "kus_x", $dim{"single_x"} );
+			HegMethods->UpdatePCBDim( $jobId, "kus_y", $dim{"single_y"} );
+
+		}
+
+		# Switch dimension of single pieces
+		if ( defined $dim{"nasobnost_panelu"} && $dim{"nasobnost_panelu"} ne "" ) {
+			
+			if ( abs( $dimIS->{"panel_x"} - $dim{"panel_y"} ) < 1 && abs( $dimIS->{"panel_y"} - $dim{"panel_x"} ) < 1 ) {
+
+				HegMethods->UpdatePCBDim( $jobId, "panel_x", $dim{"panel_x"} );
+				HegMethods->UpdatePCBDim( $jobId, "panel_y", $dim{"panel_y"} );
+			}
+		}
+
 	}
 
 	return $result;
