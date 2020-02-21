@@ -29,6 +29,8 @@ use aliased 'Packages::Stackup::Enums' => "StackEnums";
 use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -220,7 +222,7 @@ sub __CreateRoutTransitionPart2 {
 	}
 
 	my @newRoutLayers = ();
-	my $routLayerOk = 0;
+	my $routLayerOk   = 0;
 	while ( !$routLayerOk ) {
 
 		# Rout tool info
@@ -257,7 +259,7 @@ sub __CreateRoutTransitionPart2 {
 		$routLayerOk = 1 if ( $messMngr->Result() == 1 );
 
 	}
- 
+
 	return $result;
 }
 
@@ -306,16 +308,23 @@ sub __IsolateSigLayer {
 								  ]
 			);
 
-			my $routComp = CamLayer->RoutCompensation( $inCAM, $routL, "document" );
-			CamLayer->WorkLayer( $inCAM, $routComp );
+			# Remove former clearances fro msignal layers
 			
 			my $stringAtr = "transition_rout_clearance";
-			
+			my @lNames = map { $_->{"gROWname"} } @sigLayers;
+
+			CamLayer->AffectLayers( $inCAM, \@lNames );
+			if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".string", $stringAtr ) ) {
+				$inCAM->COM("sel_delete");
+			}
+
+			my $routComp = CamLayer->RoutCompensation( $inCAM, $routL, "document" );
+			CamLayer->WorkLayer( $inCAM, $routComp );
 			CamAttributes->SetFeatuesAttribute( $inCAM, ".string", $stringAtr );
-			
 
 			my @pSig = map { $_->{"gROWname"} } grep { $_->{"gROWpolarity"} eq "positive" } @sigLayers;
 			my @nSig = map { $_->{"gROWname"} } grep { $_->{"gROWpolarity"} eq "negative" } @sigLayers;
+
 			if (@pSig) {
 
 				CamLayer->CopySelOtherLayer( $inCAM, \@pSig, 1 );
@@ -329,8 +338,7 @@ sub __IsolateSigLayer {
 
 			CamMatrix->DeleteLayer( $inCAM, $jobId, $routComp );
 
-			my @disp = map { $_->{"gROWname"} } @sigLayers;
-			CamLayer->DisplayLayers( $inCAM, \@disp );
+			CamLayer->DisplayLayers( $inCAM, \@lNames );
 
 			$messMngr->ShowModal(
 								  -1,
@@ -342,9 +350,9 @@ sub __IsolateSigLayer {
 									   . ", jestli je Cu správně odizolovaná od frézy: $routL "
 								  ]
 			);
-			
+
 			$inCAM->PAUSE("Zkontroluj signalove vrstvy");
-			
+
 			CamLayer->ClearLayers($inCAM);
 		}
 
