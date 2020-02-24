@@ -13,6 +13,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 
@@ -23,6 +24,7 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'CamHelpers::CamNCHooks';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -39,6 +41,8 @@ sub new {
 	$self->{"stepName"}     = shift;
 	$self->{"layerCnt"}     = shift;
 	$self->{"exportSingle"} = shift;
+
+	$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
 
 	return $self;
 }
@@ -73,8 +77,8 @@ sub EditAfterOpen {
 		}
 		elsif ( $layer->{"gROWname"} =~ /^v1j([0-9]+)/ && ( $opItem->{"name"} =~ m/v\d+/ || $opItem->{"name"} =~ m/^j[0-9]+$/ ) ) {
 
-			my $coreNum = ( $opItem->{"name"} =~ m/[vj](\d+)/)[0];
- 
+			my $coreNum = ( $opItem->{"name"} =~ m/[vj](\d+)/ )[0];
+
 			# Add message to file (special program with drilling frame for specific core)
 			$m47Mess = "\n(M47, Vrtani okoli jadra J$coreNum.)";
 
@@ -358,6 +362,41 @@ sub EditBeforeSave {
 	if ( scalar( $opItem->GetSortedLayers() ) > 1 ) {
 
 		NCHelper->RenumberToolASC($parseFile);
+	}
+
+	# =============================================================
+	# 4) If CCD is active, add M47 in ordert to stop machine and let user add pad
+
+	if (    $opItem->GetHeaderLayer()->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nDrill
+		 || $opItem->GetHeaderLayer()->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill
+		 || $opItem->GetHeaderLayer()->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill )
+	{
+
+		# Search if header is active (no brackets)
+		my $messageCnt = 0;
+		my $bracket = first { $_ =~ /[\(\)]/ } @{ $parseFile->{"header"} };
+
+		unless ( defined $bracket ) {
+
+			my $l;
+
+			if (    $self->{"pcbType"} eq EnumsGeneral->PcbType_1VFLEX
+				 || $self->{"pcbType"} eq EnumsGeneral->PcbType_2VFLEX
+				 || $self->{"pcbType"} eq EnumsGeneral->PcbType_MULTIFLEX )
+			{
+
+				$l = "\nM47, Oddelej pripravek pro navadeni a pridej bilou vrtaci podlozku\n";
+
+			}
+			else {
+
+				$l = "\nM47, Pridani frezovaci podlozky po navedeni CCD\n";
+			}
+
+			push( @{ $parseFile->{"header"} }, $l );
+
+		}
+
 	}
 
 }

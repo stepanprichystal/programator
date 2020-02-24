@@ -24,6 +24,7 @@ use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::CoverlayPinParser
 use aliased 'Packages::CAMJob::FlexiLayers::FlexiBendArea';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -54,8 +55,6 @@ sub PreparePrepregLayers {
 	return 0 if ( $type ne EnumsGeneral->PcbType_RIGIDFLEXI && $type ne EnumsGeneral->PcbType_RIGIDFLEXO );
 
 	CamHelper->SetStep( $inCAM, $step );
-
-	my $stackup = Stackup->new($inCAM, $jobId);
 
 	# Prepreg No1
 
@@ -90,11 +89,17 @@ sub __PreparePreregNo1 {
 		return 0 if ( $messMngr->Result() == 0 );
 	}
 
-	my $pins = 1;
+
+	# Search for prepreg type 1 in stackup
+	my $stackup = Stackup->new( $inCAM, $jobId );
+	my @P1 = grep { $_->GetType() eq StackEnums->MaterialType_PREPREG && $_->GetIsNoFlow() && $_->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 }
+	  $stackup->GetAllLayers();
+
+	return 0 unless ( scalar(@P1) );
 
 	# When only top coverlay on outer RigidFlex (without pins)
-	if ( !CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" )) 
-	{
+		my $pins = 1;
+	if ( !CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" ) ) {
 		$pins = 0;
 	}
 
@@ -279,7 +284,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d266504";
+	my $jobId = "d269208";
 
 	my $notClose = 0;
 

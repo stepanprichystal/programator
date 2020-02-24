@@ -31,6 +31,8 @@ use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::Tooling::CountersinkHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -170,7 +172,7 @@ sub __CreateRoutTransitionPart1 {
 	}
 
 	# Do isolation of signal layers from rout layer
-	$self->__IsolateSigLayer( $inCAM, $jobId, \@newRoutLayers, $messMngr );
+	$self->__IsolateSigLayer( $inCAM, $jobId, $step, \@newRoutLayers, $messMngr );
 
 	return $result;
 
@@ -268,6 +270,7 @@ sub __IsolateSigLayer {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
+	my $step       = shift;
 	my @routLayers = @{ shift(@_) };
 	my $messMngr   = shift;
 
@@ -309,7 +312,7 @@ sub __IsolateSigLayer {
 			);
 
 			# Remove former clearances fro msignal layers
-			
+
 			my $stringAtr = "transition_rout_clearance";
 			my @lNames = map { $_->{"gROWname"} } @sigLayers;
 
@@ -318,8 +321,24 @@ sub __IsolateSigLayer {
 				$inCAM->COM("sel_delete");
 			}
 
+			# Prepare clearance from rout layer
+			my $clearance = 500;                                               # 500µm  is clearance of cu from rout tool
+			my $unitDTM   = UniDTM->new( $inCAM, $jobId, $step, $routL, 0 );
+			my $t         = ( $unitDTM->GetUniqueTools() )[0];
+
+			my $tRadiusReal = undef;
+
+			if ( $t->GetSpecial() ) {
+				$tRadiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $t->GetDrillSize(), $t->GetAngle(), $t->GetDepth() * 1000 );    # in µm
+			}
+			else {
+				$tRadiusReal = $t->GetDrillSize() / 2;                                                                                      # in µm
+			}
+
 			my $routComp = CamLayer->RoutCompensation( $inCAM, $routL, "document" );
 			CamLayer->WorkLayer( $inCAM, $routComp );
+			$inCAM->COM( "sel_change_sym", "symbol" => "r" . ( $tRadiusReal * 2 + 2 * $clearance ) );    # 600/2 is clearance of cu from rout tool
+
 			CamAttributes->SetFeatuesAttribute( $inCAM, ".string", $stringAtr );
 
 			my @pSig = map { $_->{"gROWname"} } grep { $_->{"gROWpolarity"} eq "positive" } @sigLayers;
