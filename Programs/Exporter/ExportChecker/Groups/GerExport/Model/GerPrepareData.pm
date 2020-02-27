@@ -312,7 +312,7 @@ sub __GetJetprintInfo {
 		%lim = $defaultInfo->GetProfileLimits();
 	}
 
-	my $maxJetprintLen = 500;    # 500 mm height panel
+	my $maxJetprintLen = 600;    # 600 mm height panel
 	$jetInfo{"rotation"} = 1 if ( ($lim{"yMax"} - $lim{"yMin"} ) > $maxJetprintLen );
 
 	return %jetInfo;

@@ -40,10 +40,12 @@ sub RoutPocketCheckDir {
 
 	my $result = 1;
 
-	CamHelper->SetStep( $inCAM, $step );
+	
 
 	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $ncLayerType );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+
+	CamHelper->SetStep( $inCAM, $step ) if(scalar(@layers));
 
 	foreach my $l (@layers) {
 
