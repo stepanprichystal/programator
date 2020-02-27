@@ -3,61 +3,44 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::TableRowDef;
+package  Packages::Other::TableDrawing::IDrawingBuilder;
 
 #3th party library
 use strict;
 use warnings;
-use List::Util qw(first);
+
+#use File::Copy;
 
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
-use aliased 'Packages::Other::TableDrawing::Enums';
 
 #-------------------------------------------------------------------------------------------#
-#  Public method
+#  Interface
 #-------------------------------------------------------------------------------------------#
 
-sub new {
-	my $class = shift;
-	my $self  = {};
-	bless $self;
+use Class::Interface;
+&interface;
 
-	$self->{"idx"}         = shift;
-	$self->{"key"}         = shift;
-	$self->{"height"}      = shift;
-	$self->{"borderStyle"} = shift // BorderStyle->new();
+sub GetUnits;
 
-	return $self;
-}
+sub GetCoordSystem;
 
-sub GetIndex {
-	my $self = shift;
+sub GetCanvasSize;
 
-	return $self->{"idx"};
+sub GetCanvasMargin;
 
-}
+sub Init;
 
-sub GetKey {
-	my $self = shift;
+sub DrawRectangle;
 
-	return $self->{"key"};
+sub DrawTextLine;
 
-}
+sub DrawTextParagraph;
 
-sub GetHeight {
-	my $self = shift;
+sub DrawSolidStroke;
 
-	return $self->{"height"};
+sub DrawDashedStroke;
 
-}
-
-sub GetBorderStyle {
-	my $self = shift;
-
-	return $self->{"borderStyle"};
-
-}
+sub Finish;
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

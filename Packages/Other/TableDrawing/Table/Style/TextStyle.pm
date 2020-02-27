@@ -3,16 +3,17 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::TableRowDef;
+package Packages::Other::TableDrawing::Table::Style::TextStyle;
 
 #3th party library
 use strict;
 use warnings;
-use List::Util qw(first);
+
+#use File::Copy;
 
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::Enums';
+use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -23,39 +24,70 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"idx"}         = shift;
-	$self->{"key"}         = shift;
-	$self->{"height"}      = shift;
-	$self->{"borderStyle"} = shift // BorderStyle->new();
+	$self->{"textType"}   = shift;
+	$self->{"size"}       = shift;
+	$self->{"color"}      = shift // Color->new( 0, 0, 0 );
+	$self->{"font"}       = shift // Enums->Font_NORMAL;
+	$self->{"fontFamily"} = shift // Enums->FontFamily_ARIAL;
+	$self->{"HAlign"}     = shift // Enums->TextHAlign_LEFT;
+	$self->{"VAlign"}     = shift // Enums->TextVAlign_TOP;
+	$self->{"margin"}     = shift // 0;
 
 	return $self;
 }
 
-sub GetIndex {
+sub GetTextType {
 	my $self = shift;
 
-	return $self->{"idx"};
+	return $self->{"textType"};
 
 }
 
-sub GetKey {
+sub GetSize {
 	my $self = shift;
 
-	return $self->{"key"};
+	return $self->{"size"};
 
 }
 
-sub GetHeight {
+sub GetColor {
 	my $self = shift;
 
-	return $self->{"height"};
+	return $self->{"color"};
 
 }
 
-sub GetBorderStyle {
+sub GetFont {
 	my $self = shift;
 
-	return $self->{"borderStyle"};
+	return $self->{"font"};
+
+}
+
+sub GetFontFamily {
+	my $self = shift;
+
+	return $self->{"fontFamily"};
+}
+
+sub GetHAlign {
+	my $self = shift;
+
+	return $self->{"HAlign"};
+
+}
+
+sub GetVAlign {
+	my $self = shift;
+
+	return $self->{"VAlign"};
+
+}
+
+sub GetMargin {
+	my $self = shift;
+
+	return $self->{"margin"};
 
 }
 

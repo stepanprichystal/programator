@@ -3,17 +3,16 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::TableRowDef;
+package Packages::Other::TableDrawing::Table::Style::BackgStyle;
 
 #3th party library
 use strict;
 use warnings;
-use List::Util qw(first);
+
+#use File::Copy;
 
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::Enums';
-
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -23,39 +22,23 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"idx"}         = shift;
-	$self->{"key"}         = shift;
-	$self->{"height"}      = shift;
-	$self->{"borderStyle"} = shift // BorderStyle->new();
+	$self->{"backgStyle"} = shift;
+	$self->{"backgColor"} = shift;
 
 	return $self;
 }
 
-sub GetIndex {
+sub GetBackgStyle {
 	my $self = shift;
 
-	return $self->{"idx"};
+	return $self->{"backgStyle"};
 
 }
 
-sub GetKey {
+sub GetBackgColor {
 	my $self = shift;
 
-	return $self->{"key"};
-
-}
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"height"};
-
-}
-
-sub GetBorderStyle {
-	my $self = shift;
-
-	return $self->{"borderStyle"};
+	return $self->{"backgColor"};
 
 }
 

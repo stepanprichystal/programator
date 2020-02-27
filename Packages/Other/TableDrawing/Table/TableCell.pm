@@ -3,7 +3,7 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NifExport::SectionBuilders::ISectionBuilder;
+package Packages::Other::TableDrawing::Table::TableCell;
 
 #3th party library
 use strict;
@@ -11,6 +11,7 @@ use warnings;
 use List::Util qw(first);
 
 #local library
+use aliased 'Packages::Other::TableDrawing::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -21,65 +22,74 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"sectionType"} = shift;
-
-	$self->{"columns"}  = [];
-	$self->{"startCol"} = undef;
-	$self->{"endCol"}   = undef;
-	$self->{"isActive"} = 0;
+	$self->{"posX"}        = shift;
+	$self->{"posY"}        = shift;
+	$self->{"text"}        = shift;
+	$self->{"textStyle"}   = shift;
+	$self->{"backgStyle"}  = shift;
+	$self->{"borderStyle"} = shift;
+	$self->{"xPosCnt"}     = shift;    # number of merged cells
+	$self->{"yPosCnt"}     = shift;    # number of merged cells
 
 	return $self;
 }
 
-sub GetType {
+sub GetText {
 	my $self = shift;
 
-	return $self->{"sectionType"};
+	return $self->{"text"};
 
 }
 
-sub SetIsActive {
+sub GetTextStyle {
 	my $self = shift;
 
-	$self->{"isActive"} = shift;
+	return $self->{"textStyle"};
+
 }
 
-sub GetIsActive {
+sub GetBackgStyle {
 	my $self = shift;
 
-	return $self->{"isActive"};
+	return $self->{"backgStyle"};
 
 }
 
-sub AddColumn {
-	my $self  = shift;
-	my $key   = shift;
-	my $width = shift;
-
-	die "Key is not defined"   unless ( defined $key );
-	die "Width is not defined" unless ( defined $width );
-
-	die "Column with key: $key alreadzexists" if ( first { $_->GetKey() eq $key } @{ $self->{"columns"} } );
-
-	my $col = SectionCol->new( $key, $width );
-
-	push( @{ $self->{"columns"} }, $col );
-
-	return $col;
-}
-
-
-sub GetColumn {
+sub GetBorderStyle {
 	my $self = shift;
-	my $key  = shift;
 
-	my $col = first { $_->GetKey() eq $key } @{ $self->{"columns"} };
-
-	return $col;
-
+	return $self->{"borderStyle"};
 }
 
+sub GetIsMerged {
+	my $self = shift;
 
+	return ( $self->{"xPosCnt"} > 1 || $self->{"yPosCnt"} > 1 ) ? 1 : 0;
+}
+
+sub GetPosX {
+	my $self = shift;
+
+	return $self->{"posX"};
+}
+
+sub GetPosY {
+	my $self = shift;
+
+	return $self->{"posY"};
+}
+
+sub GetXPosCnt {
+	my $self = shift;
+
+	return $self->{"xPosCnt"};
+}
+
+sub GetYPosCnt {
+	my $self = shift;
+
+	return $self->{"yPosCnt"};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
