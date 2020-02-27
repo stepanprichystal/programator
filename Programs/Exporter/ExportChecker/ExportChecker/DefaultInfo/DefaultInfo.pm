@@ -446,14 +446,14 @@ sub GetNonSignalLSett {
 	# 2) Set mirror
 
 	# Top soloder mask and top gold connector is mirrored
-	if ( $l->{"gROWname"} =~ /^mc2?(olec)?$/i || $l->{"gROWname"} =~ /^goldc$/i ) {
+	if ( $l->{"gROWname"} =~ /^[pm]c2?(olec)?$/i || $l->{"gROWname"} =~ /^goldc$/i ) {
 
 		$lSett{"mirror"} = 1;
 
 	}
 
 	# Bot soloder mask and bot gold connector is mirrored
-	elsif ( $l->{"gROWname"} =~ /^ms2?(olec)?$/i || $l->{"gROWname"} =~ /^golds$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^[pm]s2?(olec)?$/i || $l->{"gROWname"} =~ /^golds$/i ) {
 
 		$lSett{"mirror"} = 0;
 
@@ -466,12 +466,12 @@ sub GetNonSignalLSett {
 	#   __________    Emulze filmu
 	#   __________    Film
 	#  	==========    Deska
-	if ( $l->{"gROWname"} =~ /^[lgp]c2?$/i || $l->{"gROWname"} =~ /^mcflex$/i ) {
+	if ( $l->{"gROWname"} =~ /^[lg]c2?$/i || $l->{"gROWname"} =~ /^mcflex$/i ) {
 		$lSett{"mirror"} = 0;
 	}
 
 	# Whatever BOT layer processed by screenprinting do mirror
-	if ( $l->{"gROWname"} =~ /^[lgp]s2?$/i || $l->{"gROWname"} =~ /^msflex$/i ) {
+	if ( $l->{"gROWname"} =~ /^[lg]s2?$/i || $l->{"gROWname"} =~ /^msflex$/i ) {
 		$lSett{"mirror"} = 1;
 	}
 

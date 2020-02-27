@@ -137,6 +137,13 @@ sub CheckNCLayers {
 		$result = 0;
 	}
 
+	# 8) Check if layer has to set right direction
+
+	unless ( $self->CheckDrillStartStop( $inCAM, $jobId, \@layers, $mess ) ) {
+
+		$result = 0;
+	}
+
 	# 8) Check if depth is correctly set
 	unless ( $self->CheckContainDepth( $inCAM, $jobId, $stepName, \@layers, $mess ) ) {
 
@@ -156,7 +163,6 @@ sub CheckNCLayers {
 	}
 
 	return $result;
-
 }
 
 sub CheckIsNotEmpty {
@@ -175,11 +181,6 @@ sub CheckIsNotEmpty {
 		# if panel is not step, NC layer can be empty
 		if ( $stepName ne "panel" && defined $l->{"type"} ) {
 			next;
-		}
-
-		if ( $l->{"fHist"}->{"total"} == 0 ) {
-			$result = 0;
-			$$mess .= "NC layer: " . $l->{"gROWname"} . " is empty (doesn't contain any symbols).\n";
 		}
 	}
 
@@ -330,6 +331,7 @@ sub CheckWrongNames {
 			$result = 0;
 			$$mess .= "NC layer: " . $l->{"gROWname"} . " has wrong name. This is not standard NC layer name. Repair it.\n";
 		}
+
 	}
 
 	return $result;
@@ -500,6 +502,43 @@ sub CheckDirBot2Top {
 		if ( $l->{"NCSigStart"} ne "s" ) {
 			$result = 0;
 			$$mess .= "Filled blind layer from bot: $lName, has to start in layer \"s\" (now start in: " . $l->{"NCSigStart"} . ")\n";
+		}
+	}
+
+	return $result;
+}
+
+sub CheckDrillStartStop {
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my @layers = @{ shift(@_) };
+	my $mess   = shift;
+
+	my $result = 1;
+
+	# 1) This helper drill shouldn't go through signal layers
+	my @t = ();
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
+
+	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
+
+	foreach my $l (@layers1) {
+
+		my $lName = $l->{"gROWname"};
+
+		# not def means top2bot
+		if ( $l->{"NCThroughSig"} ) {
+			$result = 0;
+			$$mess .= "Layer $lName can't start or stop or go through signal layers in matrix.\n";
 		}
 	}
 
@@ -804,24 +843,24 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d269578";
+	my $jobId = "d272450";
 
 	my $mess = "";
 
-	#my $result = LayerErrorInfo->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
+	my $result = LayerErrorInfo->CheckNCLayers( $inCAM, $jobId, "panel", undef, \$mess );
 
-	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
-	my $result = 1;
-
-	CamDrilling->AddNCLayerType( \@layers );
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
-	$result = 0 if ( !LayerErrorInfo->CheckWrongNames( \@layers, \$mess ) );
-	$result = 0 if ( $result && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, \@layers, \$mess ) );
-	$result = 0 if ( $result && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, \@layers, \$mess ) );
-
-	unless ($result) {
-		print STDERR " $mess \n";
-	}
+	#	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+	#	my $result = 1;
+	#
+	#	CamDrilling->AddNCLayerType( \@layers );
+	#	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+	#	$result = 0 if ( !LayerErrorInfo->CheckWrongNames( \@layers, \$mess ) );
+	#	$result = 0 if ( $result && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, \@layers, \$mess ) );
+	#	$result = 0 if ( $result && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, \@layers, \$mess ) );
+	#
+	#	unless ($result) {
+	#		print STDERR " $mess \n";
+	#	}
 
 	print STDERR "Result is $result \n";
 
