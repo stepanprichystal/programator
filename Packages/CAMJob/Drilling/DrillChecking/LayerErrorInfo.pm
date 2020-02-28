@@ -523,8 +523,6 @@ sub CheckDrillStartStop {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
