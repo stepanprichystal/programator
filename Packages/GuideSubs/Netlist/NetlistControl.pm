@@ -21,6 +21,8 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
 use aliased 'CamHelpers::CamNetlist';
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -58,68 +60,112 @@ sub DoControl {
 		@steps = ("o+1");
 	}
 
+	my @troubleL = $self->__IdentifyTroubleLayers( $inCAM, $jobId );
+
 	my $nc = NetlistCompare->new( $inCAM, $jobId );
 
 	for ( my $i = 0 ; $i < scalar(@steps) ; $i++ ) {
 
 		my $s = $steps[$i];
 
-		my $report = undef;
+		my $report        = undef;
+		my $repeatTesting = 1;
 
-		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $s ) ) {
+		while ($repeatTesting) {
 
-			$report = $nc->ComparePanel($s);
+			if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $s ) ) {
 
-		}
-		else {
-
-			if ( $s eq "o+1" && $O1_pnlExist ) {
-				$report = $nc->Compare1Up( "o+1", "o+1_panel" );
+				$report = $nc->ComparePanel($s);
 			}
 			else {
-				$report = $nc->Compare1Up($s);
-			}
-		}
 
-		if ( $report->Result() ) {
-
-			my @mess = (
-						 "Netlistová kontrola stepu: \"$s\" proběhla <b>ÚSPĚŠNĚ</b>.",
-						 , " - kontrolované stepy:  " . $report->GetStepRef() . " (originál) vs " . $report->GetStep() . " (upravený)"
-			);
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Nezavírat job", "Ok" ] );
-
-			if ( defined $$notClose ) {
-
-				$$notClose = $messMngr->Result() == 0 ? 1 : 0;
+				if ( $s eq "o+1" && $O1_pnlExist ) {
+					$report = $nc->Compare1Up( "o+1", "o+1_panel" );
+				}
+				else {
+					$report = $nc->Compare1Up($s);
+				}
 			}
 
-			CamHelper->SetStep( $inCAM, $s );
+			if ( $report->Result() ) {
 
-			$inCAM->COM( 'rv_tab_empty', report => 'netlist_compare', is_empty => 'yes' );
-			CamNetlist->RemoveNetlistSteps( $inCAM, $jobId, $s );
+				$result = 1;
+				my @mess = (
+							 "Netlistová kontrola stepu: \"$s\" proběhla <b>ÚSPĚŠNĚ</b>.",
+							 , " - kontrolované stepy:  " . $report->GetStepRef() . " (originál) vs " . $report->GetStep() . " (upravený)"
+				);
 
-		}
-		else {
+				if ($repeatTesting) {
+					 push(@mess, "\n<r>Problémové vrstvy: ". join( "; ", map { $_->{"gROWname"} } @troubleL ). " budou zpět nastaveny jako \"board\".</r>" );
+				}
 
-			$result = 0;
+				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Nezavírat job", "Ok" ] );
 
-			my @mess = (
-						 "Dps <b>NEPROŠLA</b> netlistovou kontrolou pro step: \"$s\"!",
-						 " - " . $report->GetShorts() . " shorts, " . $report->GetBrokens() . " brokens",
-						 ,
-						 " - kontrolované stepy:  " . $report->GetStepRef() . " (originál) vs " . $report->GetStep() . " (upravený)",
-						 " - Pro informaci o způsobu kontroly netlistů => OneNote - Netlist kontrola"
-			);
+				if ( defined $$notClose ) {
 
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+					$$notClose = $messMngr->Result() == 0 ? 1 : 0;
+				}
+
+				CamHelper->SetStep( $inCAM, $s );
+
+				$inCAM->COM( 'rv_tab_empty', report => 'netlist_compare', is_empty => 'yes' );
+				CamNetlist->RemoveNetlistSteps( $inCAM, $jobId, $s );
+
+				# Set trouble layers back as board
+				if ($repeatTesting) {
+					$repeatTesting = 0;
+					foreach my $l (@troubleL) {
+						CamLayer->SetLayerContextLayer( $inCAM, $jobId, $l->{"gROWname"}, "board" );
+					}
+				}
+
+			}
+			else {
+
+				$result = 0;
+
+				my @mess = (
+							 "Dps <b>NEPROŠLA</b> netlistovou kontrolou pro step: \"$s\"!",
+							 " - " . $report->GetShorts() . " shorts, " . $report->GetBrokens() . " brokens",
+							 ,
+							 " - kontrolované stepy:  " . $report->GetStepRef() . " (originál) vs " . $report->GetStep() . " (upravený)",
+							 " - Pro informaci o způsobu kontroly netlistů => OneNote - Netlist kontrola"
+				);
+
+				if (@troubleL) {
+					push( @mess, "\n" );
+					push( @mess,
+						      "V jobu byly nalezeny NC vrstvy, které můžou způsobit přerušení: "
+							. join( "; ", map { $_->{"gROWname"} } @troubleL )
+							. "." );
+					push( @mess, "Chceš nastavit dočasně vrstvy jako \"non board\" a spustit netlist test znovu?" );
+					push( @mess, "\n<r>Pozor, u hloubkové frézy s úhlovým vrtákem. Fyzicky může opravdu zasahovat do motivu!</r>" );
+
+					$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR,
+										  \@mess, [ "Ne, ukončit test", "Ano, nastavit \"non board\" a zkusit znovu" ] );
+
+					if ( $messMngr->Result() == 0 ) {
+
+						$repeatTesting = 0;
+					}
+					else {
+
+						foreach my $l (@troubleL) {
+							CamLayer->SetLayerContextLayer( $inCAM, $jobId, $l->{"gROWname"}, "misc" );
+						}
+					}
+
+				}
+
+			}
+
 		}
 	}
 
 	return $result;
 }
 
-# check if exist helper panel "o+1_panel"
+# check if exist helper panel " o + 1_panel "
 sub __CheckO1Panel {
 	my $self     = shift;
 	my $inCAM    = shift;
@@ -146,7 +192,7 @@ sub __CheckO1Panel {
 		unless ($$pnlExist) {
 
 			my @mess =
-			  (   "Step \"o+1\" namá stejné rozměry jako \"$ref\", tedy \"o+1\" je flatennovaný panel.\n"
+			  (   " Step \"o+1\" namá stejné rozměry jako \"$ref\", tedy \"o+1\" je flatennovaný panel.\n"
 				. "Pomocný panel \"o+1_panel\ ale neexistuje, nelze porovnat netlisty. Vytvoř ho nebo porovnej alespoň \"o+1_single\" s \"$ref\""
 			  );
 
@@ -171,6 +217,26 @@ sub __RemoveNetlistSteps {
 	}
 }
 
+# Return NC layers which can cause trouble
+# Depths with angle tool, stencil NC layers which go through signal layers..
+sub __IdentifyTroubleLayers {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	my @troubleL = CamDrilling->GetNCLayersByTypes(
+													$inCAM, $jobId,
+													[
+													   EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bMillBot,
+													   EnumsGeneral->LAYERTYPE_nplt_lcMill,   EnumsGeneral->LAYERTYPE_nplt_lsMill,
+													]
+	);
+
+	@troubleL = grep { $_->{"gROWcontext"} eq "board" } @troubleL;
+
+	return @troubleL;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -183,7 +249,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d229465";
+	my $jobId = "d269726";
 
 	my $notClose = 0;
 

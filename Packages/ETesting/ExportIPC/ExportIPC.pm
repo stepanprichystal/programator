@@ -370,7 +370,6 @@ sub __CreateEtStep {
 			$inCAM->COM( 'affected_layer', name => "", mode => "all", affected => "no" );
 			CamStep->CreateProfileByLayer( $inCAM, $endStepName, $profL );
 			CamMatrix->DeleteLayer( $inCAM, $jobId, $profL );
-
 		}
 
 		CamHelper->SetStep( $inCAM, $stepToTest );
@@ -452,6 +451,19 @@ sub __CleanLayers {
 	$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => ".drill\;.rout_plated\;.smd", "attr_vals" => "plated\;\;\;" );
 	CamLayer->ClearLayers($inCAM);
 
+	# Countourize special szmbos which do problem on ET
+	CamLayer->AffectLayers( $inCAM, \@lNames );
+
+	if ( CamFilter->BySymbols( $inCAM, ["bfr*"] ) ) {
+		$inCAM->COM(
+					 "sel_contourize",
+					 "accuracy"         => "6.35",
+					 "break_to_islands" => "yes"
+		);
+	}
+	
+	CamLayer->ClearLayers($inCAM);
+
 	# Clean Rout before plating
 	my @pltMill = map { $_->{"gROWname"} } CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nMill );
 
@@ -459,6 +471,18 @@ sub __CleanLayers {
 
 		CamLayer->AffectLayers( $inCAM, \@pltMill );
 		CamLayer->DeleteFeatures($inCAM) if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".pilot_hole" ) );
+	}
+
+	# Clear helper layer which go throug signal layer im matrix
+	my @stencilNC =
+	  map { $_->{"gROWname"} }
+	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_lcMill, EnumsGeneral->LAYERTYPE_nplt_lsMill ] );
+
+	if (@stencilNC) {
+
+		CamLayer->AffectLayers( $inCAM, \@stencilNC );
+		CamLayer->DeleteFeatures($inCAM);
+		CamLayer->ClearLayers($inCAM);
 	}
 
 	# Clean NPTH depth routing with angel
@@ -606,7 +630,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d251561";
+	my $jobId = "d269726";
 	my $inCAM = InCAM->new();
 
 	my $step = "panel";
