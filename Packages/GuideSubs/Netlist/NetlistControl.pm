@@ -70,6 +70,7 @@ sub DoControl {
 
 		my $report        = undef;
 		my $repeatTesting = 1;
+		my $trblLCreated  = 0;
 
 		while ($repeatTesting) {
 
@@ -90,13 +91,17 @@ sub DoControl {
 			if ( $report->Result() ) {
 
 				$result = 1;
+				$repeatTesting = 0;
 				my @mess = (
 							 "Netlistová kontrola stepu: \"$s\" proběhla <b>ÚSPĚŠNĚ</b>.",
 							 , " - kontrolované stepy:  " . $report->GetStepRef() . " (originál) vs " . $report->GetStep() . " (upravený)"
 				);
 
-				if ($repeatTesting) {
-					 push(@mess, "\n<r>Problémové vrstvy: ". join( "; ", map { $_->{"gROWname"} } @troubleL ). " budou zpět nastaveny jako \"board\".</r>" );
+				if ($trblLCreated) {
+					push( @mess,
+						      "\n<r>Problémové vrstvy: "
+							. join( "; ", map { $_->{"gROWname"} } @troubleL )
+							. " budou zpět nastaveny jako \"board\".</r>" );
 				}
 
 				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, [ "Nezavírat job", "Ok" ] );
@@ -110,14 +115,6 @@ sub DoControl {
 
 				$inCAM->COM( 'rv_tab_empty', report => 'netlist_compare', is_empty => 'yes' );
 				CamNetlist->RemoveNetlistSteps( $inCAM, $jobId, $s );
-
-				# Set trouble layers back as board
-				if ($repeatTesting) {
-					$repeatTesting = 0;
-					foreach my $l (@troubleL) {
-						CamLayer->SetLayerContextLayer( $inCAM, $jobId, $l->{"gROWname"}, "board" );
-					}
-				}
 
 			}
 			else {
@@ -135,9 +132,9 @@ sub DoControl {
 				if (@troubleL) {
 					push( @mess, "\n" );
 					push( @mess,
-						      "V jobu byly nalezeny NC vrstvy, které můžou způsobit přerušení: "
+						      "V jobu byly nalezeny NC vrstvy, které můžou způsobit přerušení: <b>"
 							. join( "; ", map { $_->{"gROWname"} } @troubleL )
-							. "." );
+							. "</b>." );
 					push( @mess, "Chceš nastavit dočasně vrstvy jako \"non board\" a spustit netlist test znovu?" );
 					push( @mess, "\n<r>Pozor, u hloubkové frézy s úhlovým vrtákem. Fyzicky může opravdu zasahovat do motivu!</r>" );
 
@@ -150,6 +147,8 @@ sub DoControl {
 					}
 					else {
 
+						$trblLCreated = 1;
+
 						foreach my $l (@troubleL) {
 							CamLayer->SetLayerContextLayer( $inCAM, $jobId, $l->{"gROWname"}, "misc" );
 						}
@@ -160,6 +159,15 @@ sub DoControl {
 			}
 
 		}
+
+		# Set trouble layers back as board
+		if ($trblLCreated) {
+			
+			foreach my $l (@troubleL) {
+				CamLayer->SetLayerContextLayer( $inCAM, $jobId, $l->{"gROWname"}, "board" );
+			}
+		}
+
 	}
 
 	return $result;
