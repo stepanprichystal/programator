@@ -49,7 +49,7 @@ sub GetUnChainFeatures {
 }
 
 
-sub CopyRoutToSolderMask {
+sub UnMaskNpltRout {
 	my $self = shift;
 	my $inCAM = shift;
 	my $jobId = shift;

@@ -135,14 +135,18 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
 	use aliased 'Packages::InCAM::InCAM';
+	#use aliased 'Packages::Reorder::ChangeReorder::Helper';
+	use aliased 'Packages::Reorder::Enums';
 
 	use Data::Dump qw(dump);
 
 	my $inCAM   = InCAM->new();
-	my $jobId   = "d152457";
-	my $orderId = "d152457-03";
+	my $jobId   = "d272564";
+	my $orderId = "d272564-01";
 
-	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId );
+	#my $type = Helper->GetReorderType($inCAM, $orderId);
+
+	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId, Enums->ReorderType_POOLFORMERSTD );
 
 	my $errMess = "";
 	my @arr     = $ch->RunChanges( \$errMess );
