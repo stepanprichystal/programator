@@ -90,7 +90,7 @@ sub DoControl {
 
 			if ( $report->Result() ) {
 
-				$result = 1;
+				$result        = 1;
 				$repeatTesting = 0;
 				my @mess = (
 							 "Netlistová kontrola stepu: \"$s\" proběhla <b>ÚSPĚŠNĚ</b>.",
@@ -119,7 +119,8 @@ sub DoControl {
 			}
 			else {
 
-				$result = 0;
+				$result        = 0;
+				$repeatTesting = 0;
 
 				my @mess = (
 							 "Dps <b>NEPROŠLA</b> netlistovou kontrolou pro step: \"$s\"!",
@@ -129,7 +130,14 @@ sub DoControl {
 							 " - Pro informaci o způsobu kontroly netlistů => OneNote - Netlist kontrola"
 				);
 
-				if (@troubleL) {
+				if ($trblLCreated) {
+					push( @mess,
+						      "\n<r>Problémové vrstvy: "
+							. join( "; ", map { $_->{"gROWname"} } @troubleL )
+							. " budou zpět nastaveny jako \"board\".</r>" );
+				}
+
+				if ( @troubleL && !$trblLCreated ) {
 					push( @mess, "\n" );
 					push( @mess,
 						      "V jobu byly nalezeny NC vrstvy, které můžou způsobit přerušení: <b>"
@@ -141,18 +149,19 @@ sub DoControl {
 					$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR,
 										  \@mess, [ "Ne, ukončit test", "Ano, nastavit \"non board\" a zkusit znovu" ] );
 
-					if ( $messMngr->Result() == 0 ) {
+					if ( $messMngr->Result() == 1 ) {
 
-						$repeatTesting = 0;
-					}
-					else {
-
-						$trblLCreated = 1;
+						$trblLCreated  = 1;
+						$repeatTesting = 1;
 
 						foreach my $l (@troubleL) {
 							CamLayer->SetLayerContextLayer( $inCAM, $jobId, $l->{"gROWname"}, "misc" );
 						}
 					}
+				}
+				else {
+
+					$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
 
 				}
 
@@ -162,7 +171,7 @@ sub DoControl {
 
 		# Set trouble layers back as board
 		if ($trblLCreated) {
-			
+
 			foreach my $l (@troubleL) {
 				CamLayer->SetLayerContextLayer( $inCAM, $jobId, $l->{"gROWname"}, "board" );
 			}
@@ -257,7 +266,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d269726";
+	my $jobId = "d272278";
 
 	my $notClose = 0;
 
