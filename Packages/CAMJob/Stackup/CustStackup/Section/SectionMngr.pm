@@ -1,9 +1,9 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, allow build nif section
+# Description:
+
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::TableRowDef;
+package Packages::CAMJob::Stackup::CustStackup::Section::SectionMngr;
 
 #3th party library
 use strict;
@@ -11,59 +11,65 @@ use warnings;
 use List::Util qw(first);
 
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
-use aliased 'Packages::Other::TableDrawing::Enums';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::Section::Section';
 
 #-------------------------------------------------------------------------------------------#
-#  Public method
+#  Interface
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $self  = {};
+	my $self = shift;
+	$self = {};
 	bless $self;
 
-	$self->{"idx"}         = shift;
-	$self->{"key"}         = shift;
-	$self->{"height"}      = shift;
-	$self->{"backgStyle"}  = shift;
-	$self->{"borderStyle"} = shift ;
+	$self->{"sections"} = [];
 
 	return $self;
 }
 
-sub GetIndex {
+sub AddSection {
 	my $self = shift;
+	my $type = shift;
 
-	return $self->{"idx"};
+	die "Section type is not defined" unless ( defined $type );
+
+	die "Section type: $type was already added" if ( first { $_->GetType() eq $type } @{ $self->{"sections"} } );
+
+	my $section = Section->new($type);
+
+	push( @{ $self->{"sections"} }, $section );
+
+	return $section;
 
 }
 
-sub GetKey {
+sub GetSection {
 	my $self = shift;
+	my $type = shift;
 
-	return $self->{"key"};
+	my $section = first { $_->GetType() eq $type } @{ $self->{"sections"} };
+
+	die "Section: $type doesn't exist" unless ( defined $section );
+
+	return $section;
 
 }
 
-sub GetHeight {
+sub GetAllSections {
 	my $self = shift;
 
-	return $self->{"height"};
+	return @{ $self->{"sections"} };
 
 }
 
-sub GetBackgStyle {
+sub GetColumnCnt {
 	my $self = shift;
 
-	return $self->{"backgStyle"};
+	my $total = 0;
+	 
+	$total += $_ foreach(map { $_->GetColumnCnt() } @{ $self->{"sections"} });
 
-}
-
-sub GetBorderStyle {
-	my $self = shift;
-
-	return $self->{"borderStyle"};
+	return $total;
 
 }
 

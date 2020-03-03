@@ -45,12 +45,13 @@ sub AddColDef {
 	my $self        = shift;
 	my $key         = shift;
 	my $width       = shift;
+	my $backgStyle  = shift;
 	my $borderStyle = shift;
 
 	die "Col with key: $key already exists" if ( defined first { $_->GetKey() eq $key } @{ $self->{"collsDef"} } );
 
 	my $pos = scalar( @{ $self->{"collsDef"} } );
-	my $colDef = TableCollDef->new( $pos, $key, $width, $borderStyle );
+	my $colDef = TableCollDef->new( $pos, $key, $width, $backgStyle, $borderStyle );
 	push( @{ $self->{"collsDef"} }, $colDef );
 
 	my @rows = (undef) x $self->GetRowCnt();
@@ -65,12 +66,13 @@ sub AddRowDef {
 	my $self        = shift;
 	my $key         = shift;
 	my $height      = shift;
+	my $backgStyle  = shift;
 	my $borderStyle = shift;
 
 	die "Row with key: $key already exists" if ( defined first { $_->GetKey() eq $key } @{ $self->{"rowsDef"} } );
 
 	my $pos = scalar( @{ $self->{"rowsDef"} } );
-	my $rowDef = TableRowDef->new( $pos, $key, $height, $borderStyle );
+	my $rowDef = TableRowDef->new( $pos, $key, $height, $backgStyle, $borderStyle );
 	push( @{ $self->{"rowsDef"} }, $rowDef );
 
 	foreach my $col ( @{ $self->{"matrix"} } ) {

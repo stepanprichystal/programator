@@ -1,71 +1,36 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, allow build nif section
+# Description: Nif Builder is responsible for creation nif file depend on pcb type
+# Builder for pcb no copper
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::TableCollDef;
+package Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrVV;
+use base('Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase');
 
+ 
 #3th party library
 use strict;
 use warnings;
 
-#use File::Copy;
-
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
-use aliased 'Packages::Other::TableDrawing::Enums';
+
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+
 #-------------------------------------------------------------------------------------------#
-#  Public method
+#  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
-
-	$self->{"idx"}   = shift;
-	$self->{"key"}   = shift;
-	$self->{"width"} = shift;
-	$self->{"backgStyle"}  = shift ;
-	$self->{"borderStyle"} = shift ;
 
 	return $self;
 }
 
-sub GetIndex {
-	my $self = shift;
+ 
 
-	return $self->{"idx"};
-
-}
-
-sub GetKey {
-	my $self = shift;
-
-	return $self->{"key"};
-
-}
-
-sub GetWidth {
-	my $self = shift;
-
-	return $self->{"width"};
-
-}
-
-sub GetBackgStyle {
-	my $self = shift;
-
-	return $self->{"backgStyle"};
-
-}
-
-sub GetBorderStyle {
-	my $self = shift;
-
-	return $self->{"borderStyle"};
-
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

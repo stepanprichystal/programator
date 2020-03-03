@@ -1,54 +1,53 @@
-#-------------------------------------------------------------------------------------------#
-# Description:
 
+#-------------------------------------------------------------------------------------------#
+# Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Stackup::CustStackup;
+package Packages::CAMJob::Stackup::CustStackup::Section::SectionCol;
 
 #3th party library
 use strict;
 use warnings;
 
+#use File::Copy;
+
 #local library
 
 #-------------------------------------------------------------------------------------------#
-#  Interface
+#  Public method
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+	my $self  = {};
 	bless $self;
 
-	$self->{"sections"} = [];
+	$self->{"key"}         = shift;
+	$self->{"width"}       = shift;
+	$self->{"borderStyle"} = shift;
 
 	return $self;
 }
 
-sub AddSection {
+sub GetKey {
 	my $self = shift;
-	my $type = shift;
 
-	die "Section type is not defined" unless ( defined $type );
-
-	die "Section type: $type was already added" if ( first { $_->GetType() eq $type } @{ $self->{"sections"} } );
-
-	my $section = Section->new($type);
-
-	push( @{ $self->{"sections"} }, $section );
-
-	return $section;
+	return $self->{"key"};
 
 }
 
-sub GetSection {
+sub GetWidth {
 	my $self = shift;
-	my $type = shift;
 
-	my $section = first { $_->GetType() eq $type } @{ $self->{"sections"} };
+	return $self->{"width"};
 
-	return $section;
+}
 
+sub GetBorderStyle{
+	my $self = shift;
+	
+	
+	return $self->{"borderStyle"};
 }
 
 #-------------------------------------------------------------------------------------------#

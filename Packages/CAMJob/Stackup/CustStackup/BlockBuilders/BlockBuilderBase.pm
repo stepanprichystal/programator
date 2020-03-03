@@ -3,7 +3,7 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::TableCollDef;
+package Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BlockBuilderBase;
 
 #3th party library
 use strict;
@@ -12,10 +12,9 @@ use warnings;
 #use File::Copy;
 
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
-use aliased 'Packages::Other::TableDrawing::Enums';
+
 #-------------------------------------------------------------------------------------------#
-#  Public method
+#  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
@@ -23,48 +22,13 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"idx"}   = shift;
-	$self->{"key"}   = shift;
-	$self->{"width"} = shift;
-	$self->{"backgStyle"}  = shift ;
-	$self->{"borderStyle"} = shift ;
+	$self->{"inCAM"}  = shift;
+	$self->{"jobId"}  = shift;
+	$self->{"tblMain"}  = shift;
+	$self->{"stackupMngr"} = shift;
+	$self->{"sectionMngr"} = shift;
 
 	return $self;
-}
-
-sub GetIndex {
-	my $self = shift;
-
-	return $self->{"idx"};
-
-}
-
-sub GetKey {
-	my $self = shift;
-
-	return $self->{"key"};
-
-}
-
-sub GetWidth {
-	my $self = shift;
-
-	return $self->{"width"};
-
-}
-
-sub GetBackgStyle {
-	my $self = shift;
-
-	return $self->{"backgStyle"};
-
-}
-
-sub GetBorderStyle {
-	my $self = shift;
-
-	return $self->{"borderStyle"};
-
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -3,7 +3,7 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NifExport::SectionBuilders::ISectionBuilder;
+package Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::IBuilderMngr;
 
 #3th party library
 use strict;
@@ -20,9 +20,9 @@ use warnings;
 use Class::Interface;
 &interface;    
 
-sub Build;     
+sub BuildSections;     
  
-
+sub BuildBlocks;  
 
  
  

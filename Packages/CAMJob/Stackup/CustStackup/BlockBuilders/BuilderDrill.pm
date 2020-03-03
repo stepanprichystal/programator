@@ -3,7 +3,11 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NifExport::SectionBuilders::ISectionBuilder;
+package Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderDrill;
+use base('Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BlockBuilderBase');
+
+use Class::Interface;
+&implements('Packages::CAMJob::Stackup::CustStackup::BlockBuilders::IBlockBuilder');
 
 #3th party library
 use strict;
@@ -14,16 +18,21 @@ use warnings;
 
 
 #-------------------------------------------------------------------------------------------#
-#  Interface
+#  Package methods
 #-------------------------------------------------------------------------------------------#
 
-use Class::Interface;
-&interface;    
+sub new {
+	my $class = shift;
+	my $self  = $class->SUPER::new(@_);
+	bless $self;
 
-sub Build;     
+	return $self;
+}   
  
 
-
+sub Build{
+	
+}
  
  
 #-------------------------------------------------------------------------------------------#

@@ -139,7 +139,14 @@ sub __DrawTable {
 
 		my %collLim = $table->GetCollLimits($colDef);
 
-		$self->__DrawBorder( $drawBuilder, $colDef->GetBorderStyle(), \%collLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		if ( $colDef->GetBorderStyle() ) {
+			$self->__DrawBorder( $drawBuilder, $colDef->GetBorderStyle(), \%collLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		}
+
+		if ( defined $colDef->GetBackgStyle() ) {
+
+			$self->__DrawBackground( $drawBuilder, $colDef->GetBackgStyle(), \%collLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		}
 	}
 
 	# 2) Draw row border
@@ -148,7 +155,13 @@ sub __DrawTable {
 		my %rowLim = $table->GetRowLimits($rowDef);
 
 		# 1) draw cell border
-		$self->__DrawBorder( $drawBuilder, $rowDef->GetBorderStyle(), \%rowLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		if ( $rowDef->GetBorderStyle() ) {
+			$self->__DrawBorder( $drawBuilder, $rowDef->GetBorderStyle(), \%rowLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		}
+
+		if ( $rowDef->GetBackgStyle() ) {
+			$self->__DrawBackground( $drawBuilder, $rowDef->GetBackgStyle(), \%rowLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		}
 	}
 
 	# 3) Draw cells
@@ -159,10 +172,14 @@ sub __DrawTable {
 		my %cellLim = $table->GetCellLimits($cell);
 
 		# 1) Draw cell background
-		$self->__DrawCellBackground( $drawBuilder, $cell, \%cellLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		if ( $cell->GetBackgStyle() ) {
+			$self->__DrawBackground( $drawBuilder, $cell->GetBackgStyle(), \%cellLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		}
 
 		# 2) draw cell border
-		$self->__DrawBorder( $drawBuilder, $cell->GetBorderStyle(), \%cellLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		if ( $cell->GetBorderStyle() ) {
+			$self->__DrawBorder( $drawBuilder, $cell->GetBorderStyle(), \%cellLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+		}
 
 		# 3) draw cell text
 		if ( defined $cell->GetText() ) {
@@ -175,11 +192,11 @@ sub __DrawTable {
 
 }
 
-sub __DrawCellBackground {
+sub __DrawBackground {
 	my $self        = shift;
 	my $drawBuilder = shift;
-	my $cell        = shift;
-	my %celLim      = %{ shift(@_) };
+	my $backgStyle  = shift;
+	my %backLim     = %{ shift(@_) };
 	my %lim         = %{ shift(@_) };
 	my $scaleX      = shift;
 	my $scaleY      = shift;
@@ -188,7 +205,7 @@ sub __DrawCellBackground {
 
 	my %coord = $self->__PrepareBoxCoord( $drawBuilder->GetCoordSystem(),
 										  $drawBuilder->GetCanvasMargin(),
-										  \%celLim, \%lim, $scaleX, $scaleY, $originX, $originY );
+										  \%backLim, \%lim, $scaleX, $scaleY, $originX, $originY );
 
 	my $rW = abs( $coord{"RT"}->{"x"} - $coord{"LT"}->{"x"} );
 	my $rH = abs( $coord{"LT"}->{"y"} - $coord{"LB"}->{"y"} );
@@ -210,7 +227,7 @@ sub __DrawCellBackground {
 
 	}
 
-	$drawBuilder->DrawRectangle( $startX, $startY, $rW, $rH, $cell->GetBackgStyle() );
+	$drawBuilder->DrawRectangle( $startX, $startY, $rW, $rH, $backgStyle );
 
 }
 
@@ -341,7 +358,6 @@ sub __DrawBorder {
 		}
 	}
 }
- 
 
 sub __PrepareBoxCoord {
 	my $self         = shift;
@@ -454,17 +470,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	# Add cell
 	my $c1TextStyle = TextStyle->new( Enums->TextStyle_PARAGRAPH, 3, undef, undef, undef, undef, undef, 2 );
-	
-	my $paragraph="erci ent ulluptat vel eum zzriure feuguero core conseni
+
+	my $paragraph = "erci ent ulluptat vel eum zzriure feuguero core conseni
 +s adignim irilluptat praessit la con henit velis dio ex enim ex ex eu
 +guercilit il enismol eseniam, suscing essequis nit iliquip erci blam 
 +dolutpatisi.
 Orpero do odipit ercilis ad er augait ing ex elit autatio od minisis a
 +mconsequam";
-	
-	$tMain->AddCell( 0, 0, 3, undef, $paragraph, $c1TextStyle, BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 255, 0,   0 ) ) );
-	$tMain->AddCell( 1, 1, undef, undef, undef,    undef,        BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 0,   255, 0 ) ) );
-	$tMain->AddCell( 2, 2, undef, undef, undef,    undef,        BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 0,   0,   255 ) ) );
+
+	$tMain->AddCell( 0, 0, 3,     undef, $paragraph, $c1TextStyle, BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 255, 0,   0 ) ) );
+	$tMain->AddCell( 1, 1, undef, undef, undef,      undef,        BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 0,   255, 0 ) ) );
+	$tMain->AddCell( 2, 2, undef, undef, undef,      undef,        BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 0,   0,   255 ) ) );
 
 	my $c3BackStyle = BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 100, 100, 100 ) );
 	my $c3BorderStyle = BorderStyle->new();

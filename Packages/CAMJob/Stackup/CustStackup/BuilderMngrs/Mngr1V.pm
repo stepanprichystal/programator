@@ -1,20 +1,29 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, allow build nif section
+# Description: Nif Builder is responsible for creation nif file depend on pcb type
+# Builder for pcb no copper
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NifExport::SectionBuilders::ISectionBuilder;
+package Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::Mngr1V;
+use base('Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::BuilderMngrBase');
+
+use Class::Interface;
+&implements('Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::IBuilderMngr');
 
 #3th party library
 use strict;
 use warnings;
 
-#use File::Copy;
-
 #local library
 
+use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderTitle';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderBody';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderThick';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderDrill';
+ 
+
 #-------------------------------------------------------------------------------------------#
-#  Public method
+#  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
@@ -22,26 +31,23 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"key"}   = shift;
-	$self->{"width"} = shift;
-
 	return $self;
 }
 
-sub GetKey {
+sub BuildSections {
 	my $self = shift;
-
-	return $self->{"key"};
-
+	my $sectionMngr = shift;
+	
+ 
+	
 }
 
-sub GetWidth {
+
+sub BuildBlocks {
 	my $self = shift;
 
-	return $self->{"width"};
-
+	 
 }
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

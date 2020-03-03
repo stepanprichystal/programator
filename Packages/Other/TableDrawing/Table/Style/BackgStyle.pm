@@ -13,6 +13,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::Other::TableDrawing::Enums';
+use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -22,8 +23,8 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"backgStyle"} = shift;
-	$self->{"backgColor"} = shift;
+	$self->{"backgStyle"} = shift // Enums->BackgStyle_NONE;
+	$self->{"backgColor"} = shift // Color->new();
 
 	return $self;
 }

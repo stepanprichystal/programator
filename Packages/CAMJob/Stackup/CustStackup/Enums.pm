@@ -1,5 +1,5 @@
 
-package Packages::CAMJob::Stackup::Enums;
+package Packages::CAMJob::Stackup::CustStackup::Enums;
 
 use constant {
 			   Section_BEGIN       => "section_begin",          # Begining of table with material text

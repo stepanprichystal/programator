@@ -4,13 +4,15 @@
 # creation nif file depend on pcb type
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NifExport::NifBuilders::NifBuilderBase;
+package Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::BuilderMngrBase;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
+use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
+use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -21,36 +23,36 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	#require rows in nif section
-	$self->{"require"} = shift;
+	$self->{"inCAM"}   = shift;
+	$self->{"jobId"}   = shift;
+	$self->{"tblMain"} = shift;
 
 	return $self;
 }
 
-sub Init {
-	my $self = shift;
-
-	$self->{"inCAM"}       = shift;
-	$self->{"jobId"}       = shift;
-	$self->{"tblDrawing"}  = shift;
-	 
-
-}
-
 sub _AddBlock {
-	my $self = shift;
-	
-	
+	my $self  = shift;
+	my $block = shift;
+
+	$block->Build();
 }
 
+sub _CreateSectionClmns {
+	my $self        = shift;
+	my $sectionMngr = shift;
 
-sub _CreateSectionClmns{
-	my $self = shift;
- 
-	
-	
+	my @columns = map { $_->GetAllColumns() } $sectionMngr->GetAllSections();
+
+	foreach my $col (@columns) {
+
+		my $border = BorderStyle->new();
+		$border->AddEdgeStyle( "left", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.5, Color->new( 0, 200, 0 ) );
+		$col->{"borderStyle"} = $border;
+
+		$self->{"tblMain"}->AddColDef( $col->GetKey(), $col->GetWidth(), $col->GetBackgStyle(), $col->GetBorderStyle() );
+	}
+
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

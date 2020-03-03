@@ -29,10 +29,12 @@ $clmn1BorderStyle->AddEdgeStyle( "bot",   Enums->EdgeStyle_SOLIDSTROKE, 2, Color
 $clmn1BorderStyle->AddEdgeStyle( "left",  Enums->EdgeStyle_SOLIDSTROKE, 2, Color->new( 0,   255, 0 ) );
 $clmn1BorderStyle->AddEdgeStyle( "right", Enums->EdgeStyle_DASHED,      2, Color->new( 0,   255, 100 ), 2, 5 );
 
-$tMain->AddColDef( "zone_0", 5, $clmn1BorderStyle );
+$tMain->AddColDef( "zone_0", 5, undef, $clmn1BorderStyle );
 
-$tMain->AddColDef( "zone_a", 10 );
-$tMain->AddColDef( "zone_b", 20 );
+my $c2BackStyle = BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 200, 100, 50 ) );
+
+$tMain->AddColDef( "zone_a", 10, $c2BackStyle );
+$tMain->AddColDef( "zone_b", 20,  );
 $tMain->AddColDef( "zone_c", 30 );
 
 # Add rows
@@ -42,8 +44,10 @@ $row1BorderStyle->AddEdgeStyle( "bot",   Enums->EdgeStyle_SOLIDSTROKE, 2, Color-
 $row1BorderStyle->AddEdgeStyle( "left",  Enums->EdgeStyle_SOLIDSTROKE, 2, Color->new( 0,   255, 0 ) );
 $row1BorderStyle->AddEdgeStyle( "right", Enums->EdgeStyle_DASHED,      2, Color->new( 0,   255, 100 ), 2, 5 );
 
-$tMain->AddRowDef( "row_1", 10, $row1BorderStyle );
-$tMain->AddRowDef( "row_2", 20 );
+$tMain->AddRowDef( "row_1", 10, undef, $row1BorderStyle );
+my $r2BackStyle = BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 100, 50, 25 ) );
+
+$tMain->AddRowDef( "row_2", 20, $r2BackStyle );
 $tMain->AddRowDef( "row_3", 30 );
 $tMain->AddRowDef( "row_4", 40 );
 

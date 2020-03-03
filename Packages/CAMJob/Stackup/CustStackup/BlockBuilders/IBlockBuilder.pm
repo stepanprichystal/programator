@@ -3,7 +3,7 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NifExport::SectionBuilders::ISectionBuilder;
+package Packages::CAMJob::Stackup::CustStackup::BlockBuilders::IBlockBuilder;
 
 #3th party library
 use strict;

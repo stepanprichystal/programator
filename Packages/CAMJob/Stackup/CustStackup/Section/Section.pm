@@ -3,7 +3,7 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NifExport::SectionBuilders::ISectionBuilder;
+package Packages::CAMJob::Stackup::CustStackup::Section::Section;
 
 #3th party library
 use strict;
@@ -11,6 +11,7 @@ use warnings;
 use List::Util qw(first);
 
 #local library
+use aliased 'Packages::CAMJob::Stackup::CustStackup::Section::SectionCol';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -59,9 +60,11 @@ sub AddColumn {
 	die "Key is not defined"   unless ( defined $key );
 	die "Width is not defined" unless ( defined $width );
 
-	die "Column with key: $key alreadzexists" if ( first { $_->GetKey() eq $key } @{ $self->{"columns"} } );
+ 	my $intKey = $self->__GetColInKey($key);
+ 
+	die "Column with key: $key; in section: ".$self->GetType()." already exists" if ( first { $_->GetKey() eq $intKey } @{ $self->{"columns"} } );
 
-	my $col = SectionCol->new( $key, $width );
+	my $col = SectionCol->new($intKey, $width );
 
 	push( @{ $self->{"columns"} }, $col );
 
@@ -72,14 +75,35 @@ sub AddColumn {
 sub GetColumn {
 	my $self = shift;
 	my $key  = shift;
-
-	my $col = first { $_->GetKey() eq $key } @{ $self->{"columns"} };
+	
+	my $intKey = $self->__GetColInKey($key);
+	 
+	my $col = first { $_->GetKey() eq $intKey } @{ $self->{"columns"} };
 
 	return $col;
 
 }
 
+sub GetAllColumns {
+	my $self = shift;
+	my $key  = shift;
+	
+	return @{ $self->{"columns"} }; 
+}
 
+sub GetColumnCnt {
+	my $self = shift;
+ 
+	return scalar( $self->GetAllColumns()); 
+}
+
+sub __GetColInKey{
+	my $self = shift;
+	my $colKey = shift;
+	
+	return $self->GetType()."__".$colKey;
+	#return $colKey;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
