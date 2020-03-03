@@ -114,8 +114,8 @@ sub GetStandards {
 			"h"           => 538,
 			"bl"  => 21,
 			"br" => 21,
-			"bt"   => 41.6,
-			"bb"   => 41.6,
+			"bt"   => 36.5,
+			"bb"   => 36.5,
 			
 			# used prepreg size
 			"pW" => 308,
