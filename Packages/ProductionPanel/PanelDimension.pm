@@ -44,8 +44,8 @@ sub GetDimensionPanel {
 		$dimsPanel{'PanelSizeY'}  = 538;
 		$dimsPanel{'BorderLeft'}  = 21;
 		$dimsPanel{'BorderRight'} = 21;
-		$dimsPanel{'BorderTop'}   = 41.6;
-		$dimsPanel{'BorderBot'}   = 41.6;
+		$dimsPanel{'BorderTop'}   = 36.5;
+		$dimsPanel{'BorderBot'}   = 36.5;
 	}
 	elsif ( $panelSizeName eq EnumsProducPanel->SIZE_STANDARD_SMALL ) {
 		$dimsPanel{'PanelSizeX'}  = 295;
