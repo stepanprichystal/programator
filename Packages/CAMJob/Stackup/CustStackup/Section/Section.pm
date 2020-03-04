@@ -53,31 +53,33 @@ sub GetIsActive {
 }
 
 sub AddColumn {
-	my $self  = shift;
-	my $key   = shift;
-	my $width = shift;
+	my $self    = shift;
+	my $key     = shift;
+	my $width   = shift;
+	my $backgStyle = shift;
+	my $rowStyle = shift;
+	my $position = shift;    # if postition is defined, column is inserted on this postition
 
 	die "Key is not defined"   unless ( defined $key );
 	die "Width is not defined" unless ( defined $width );
 
- 	my $intKey = $self->__GetColInKey($key);
- 
-	die "Column with key: $key; in section: ".$self->GetType()." already exists" if ( first { $_->GetKey() eq $intKey } @{ $self->{"columns"} } );
+	my $intKey = $self->__GetColInKey($key);
 
-	my $col = SectionCol->new($intKey, $width );
+	die "Column with key: $key; in section: " . $self->GetType() . " already exists" if ( first { $_->GetKey() eq $intKey } @{ $self->{"columns"} } );
+
+	my $col = SectionCol->new( $intKey, $width, $backgStyle, $rowStyle );
 
 	push( @{ $self->{"columns"} }, $col );
 
 	return $col;
 }
 
-
 sub GetColumn {
 	my $self = shift;
 	my $key  = shift;
-	
+
 	my $intKey = $self->__GetColInKey($key);
-	 
+
 	my $col = first { $_->GetKey() eq $intKey } @{ $self->{"columns"} };
 
 	return $col;
@@ -87,22 +89,22 @@ sub GetColumn {
 sub GetAllColumns {
 	my $self = shift;
 	my $key  = shift;
-	
-	return @{ $self->{"columns"} }; 
+
+	return @{ $self->{"columns"} };
 }
 
 sub GetColumnCnt {
 	my $self = shift;
- 
-	return scalar( $self->GetAllColumns()); 
+
+	return scalar( $self->GetAllColumns() );
 }
 
-sub __GetColInKey{
-	my $self = shift;
+sub __GetColInKey {
+	my $self   = shift;
 	my $colKey = shift;
-	
-	return $self->GetType()."__".$colKey;
-	#return $colKey;
+
+	#return $self->GetType()."__".$colKey;
+	return $colKey;
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -7,7 +7,6 @@
 package Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngr2V;
 use base('Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase');
 
- 
 #3th party library
 use strict;
 use warnings;
@@ -16,6 +15,7 @@ use warnings;
 
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Stackup::Enums' => 'StackEnums';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,8 +29,14 @@ sub new {
 	return $self;
 }
 
- 
+sub GetLayerCnt {
+	my $self = shift;
 
+	my $lCnt = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+
+	return $lCnt;
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

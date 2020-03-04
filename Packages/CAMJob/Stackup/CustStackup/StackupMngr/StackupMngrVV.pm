@@ -26,11 +26,19 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
+	$self->{"stackup"} = Stackup->new($self->{"inCAM"}, $self->{"jobId"});
+
 	return $self;
 }
 
  
-
+sub GetLayerCnt{
+	my $self = shift;
+	
+	
+	return $self->{"stackup"}->GetCuLayerCnt();
+	
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

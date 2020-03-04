@@ -13,6 +13,7 @@ use warnings;
 #local library
 use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
+use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,13 +44,17 @@ sub _CreateSectionClmns {
 
 	my @columns = map { $_->GetAllColumns() } $sectionMngr->GetAllSections();
 
-	foreach my $col (@columns) {
+	foreach my $sec ( $sectionMngr->GetAllSections(1) ) {
 
-		my $border = BorderStyle->new();
-		$border->AddEdgeStyle( "left", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.5, Color->new( 0, 200, 0 ) );
-		$col->{"borderStyle"} = $border;
+		foreach my $col ( $sec->GetAllColumns() ) {
 
-		$self->{"tblMain"}->AddColDef( $col->GetKey(), $col->GetWidth(), $col->GetBackgStyle(), $col->GetBorderStyle() );
+			my $border = BorderStyle->new();
+			$border->AddEdgeStyle( "left", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1, Color->new( 0, 200, 0 ) );
+			$col->{"borderStyle"} = $border;
+
+			$self->{"tblMain"}->AddColDef( $sec->GetType() . "__" . $col->GetKey(), $col->GetWidth(), $col->GetBackgStyle(), $col->GetBorderStyle() )
+			  ;
+		}
 	}
 
 }

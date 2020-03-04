@@ -41,13 +41,24 @@ sub Build {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	$self->__BuildRow1();
+
+	$self->__BuildRow2();
+}
+
+sub __BuildRow1 {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	my $tblMain   = $self->{"tblMain"};
 	my $stckpMngr = $self->{"stackupMngr"};
 	my $secMngr   = $self->{"sectionMngr"};
 
 	# Define first title row
-	my $rowTitleBackg = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 192, 0, 0 ) );
-	$tblMain->AddRowDef( "row_title", 25, $rowTitleBackg );
+	my $rowTitleBackg = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( Enums->Clr_TITLEBACKG) );
+	$tblMain->AddRowDef( "row_title", 3.87, $rowTitleBackg );
 
 	# Add title
 	my $titleStr = "";
@@ -70,6 +81,10 @@ sub Build {
 		$titleStr .= "Double sided flex";
 	}
 
+	if ( $pcbType eq EnumsGeneral->PcbType_MULTIFLEX ) {
+		$titleStr .= "Multilayer flex";
+	}
+
 	if ( $pcbType eq EnumsGeneral->PcbType_MULTI ) {
 		$titleStr .= "Multi layer PCB";
 	}
@@ -89,12 +104,12 @@ sub Build {
 	# CELL DEF: Add left cell with title
 
 	my $c1TxtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-									 3, Color->new( 200, 200, 200 ),
-									 undef, undef,
+									 2.3, Color->new( 255, 255, 255 ),
+									 TblDrawEnums->Font_BOLD, undef,
 									 TblDrawEnums->TextHAlign_LEFT,
 									 TblDrawEnums->TextVAlign_CENTER );
 
-	my $secBegin = $secMngr->GetSection( Enums->Section_BEGIN );
+	my $secBegin = $secMngr->GetSection( Enums->Sec_BEGIN );
 
 	$tblMain->AddCell( 0, 0, $secBegin->GetColumnCnt() + 1, undef, $titleStr, $c1TxtStyle );
 
@@ -102,7 +117,7 @@ sub Build {
 
 	my $c2TxtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 									 3, Color->new( 200, 200, 200 ),
-									 undef, undef,
+									 TblDrawEnums->Font_BOLD, undef,
 									 TblDrawEnums->TextHAlign_RIGHT,
 									 TblDrawEnums->TextVAlign_CENTER );
 
@@ -112,8 +127,108 @@ sub Build {
 	my $date = sprintf "%02.f.%02.f.%04.f", localtime->mday(), ( localtime->mon() + 1 ), ( localtime->year() + 1900 );
 	my $c2Str = "Date:" . $date;
 
-	  $tblMain->AddCell( $c2xStart, 0, $c2xpos, undef, $c2Str, $c2TxtStyle );
+	$tblMain->AddCell( $c2xStart, 0, $c2xpos, undef, $c2Str, $c2TxtStyle );
 
+}
+
+sub __BuildRow2 {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $tblMain   = $self->{"tblMain"};
+	my $stckpMngr = $self->{"stackupMngr"};
+	my $secMngr   = $self->{"sectionMngr"};
+
+	my @secLetters = ( 'A', 'B', 'C', 'D', 'E' );
+	 
+	my $pcbType    = $stckpMngr->GetPcbType();
+
+	# Define first title row
+	my $rowStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 191, 191, 191 ) );
+	my $row = $tblMain->AddRowDef( "row_main_head", 3.87, $rowStyle );
+
+	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+								   2, Color->new( 0, 0, 0 ),
+								   TblDrawEnums->Font_BOLD, undef,
+								   TblDrawEnums->TextHAlign_LEFT,
+								   TblDrawEnums->TextVAlign_CENTER );
+
+	# Sec_BEGIN
+	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
+
+	if ( $sec_BEGIN->GetIsActive() ) {
+
+		my $txt = $stckpMngr->GetLayerCnt() . " layer stackup";
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+	}
+
+	# Sec_A_MAIN
+	my $sec_A_MAIN = $secMngr->GetSection( Enums->Sec_A_MAIN );
+
+	if ( $sec_A_MAIN->GetIsActive() ) {
+
+		my $txt = "SECTION ";
+		if (    $pcbType eq EnumsGeneral->PcbType_1VFLEX
+			 || $pcbType eq EnumsGeneral->PcbType_2VFLEX
+			 || $pcbType eq EnumsGeneral->PcbType_MULTIFLEX )
+		{
+
+			$txt .= "FLEX";
+		}
+		else {
+			$txt .= "RIGID";
+		}
+		$txt .= " (" . ( shift @secLetters ) . ")";
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+
+	}
+
+	# Sec_B_FLEX
+	my $sec_B_FLEX = $secMngr->GetSection( Enums->Sec_B_FLEX );
+
+	if ( $sec_B_FLEX->GetIsActive() ) {
+
+		my $txt = "SECTION FLEX (" . ( shift @secLetters ) . ")";
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+
+	}
+
+	# Sec_C_RIGIDFLEX
+	my $sec_C_RIGIDFLEX = $secMngr->GetSection( Enums->Sec_C_RIGIDFLEX );
+
+	if ( $sec_C_RIGIDFLEX->GetIsActive() ) {
+
+		my $txt = "SECTION RIGID (" . ( shift @secLetters ) . ")";
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_C_RIGIDFLEX, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+
+	}
+
+	# Sec_D_FLEXTAIL
+	my $sec_D_FLEXTAIL = $secMngr->GetSection( Enums->Sec_D_FLEXTAIL );
+
+	if ( $sec_D_FLEXTAIL->GetIsActive() ) {
+
+		my $txt = "SECTION FLEXTAIL (" . ( shift @secLetters ) . ")";
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+
+	}
+
+	# Sec_E_STIFFENER
+	my $sec_E_STIFFENER = $secMngr->GetSection( Enums->Sec_E_STIFFENER );
+
+	if ( $sec_E_STIFFENER->GetIsActive() ) {
+
+		my $txt = "SECTION STIFFENER (" . ( shift @secLetters ) . ")";
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -15,6 +15,8 @@ use List::Util qw(first);
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Helpers::JobHelper';
+use aliased 'Enums::EnumsGeneral';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -30,11 +32,12 @@ sub new {
 
 	my @boardBase = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	my @NCLayers = CamJob->GetNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	CamDrilling->AddNCLayerType(   \@NCLayers );
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
 
 	$self->{"boardBaseLayers"} = \@boardBase;
 	$self->{"NCLayers"}        = \@NCLayers;
-	
+
 	$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
 
 	return $self;
@@ -75,10 +78,31 @@ sub GetExistPCBot {
 	return defined $mc ? 1 : 0;
 }
 
-sub GetPcbType{
+sub GetPcbType {
 	my $self = shift;
-	
+
 	return $self->{"pcbType"};
+}
+
+sub GetPlatedNC {
+	my $self = shift;
+
+	my @NC = grep { $_->{"plated"} && !$_->{"technical"} } @{ $self->{"NCLayers"} };
+
+	my @sorted = ();
+
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill     && $_->{"NCSigStartOrder"} == 1 } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $_->{"NCSigStartOrder"} == 1 } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill     && $_->{"NCSigStartOrder"} > 1 } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $_->{"NCSigStartOrder"} > 1 } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NC );
+
+	return @sorted;
 }
 
 #-------------------------------------------------------------------------------------------#

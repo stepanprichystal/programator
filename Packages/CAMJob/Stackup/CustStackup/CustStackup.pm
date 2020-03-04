@@ -22,6 +22,7 @@ use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsDra
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Section::SectionMngr';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -69,7 +70,8 @@ sub Build {
 	#		$builderMngr = BuilderMngrVV->new();
 	#	}
 	elsif (    $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO
-			|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI )
+			|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI
+			|| $pcbType eq EnumsGeneral->PcbType_MULTI )
 	{
 
 		$builderMngr = MngrRigidFlex->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"} );
@@ -81,9 +83,9 @@ sub Build {
 
 	# 3) Define section style by builder and init sectiopn columns
 
-	my $secMngr = $self->__GetSectionMngr();
+	my $secMngr = SectionMngr->new();
+	
 	$builderMngr->BuildSections($secMngr);
-
 	$builderMngr->BuildBlocks($secMngr);
 }
 
@@ -111,52 +113,6 @@ sub Output {
 	return $result;
 }
 
-sub __GetSectionMngr {
-	my $self = shift;
-
-	my $secMngr = SectionMngr->new();
-
-	my $colCont = 0;
-
-	#	my %stles = ();
-	#			   Section_BEGIN       => "section_begin",          # Begining of table with material text
-	#			   Section_A_MAIN      => "section_A_Main",         # Main stackup section with layer names and drilling
-	#			   Section_B_FLEX      => "section_B_Flex",         # Flex part of RigidFlex pcb
-	#			   Section_C_RIGIDFLEX => "section_C_RigidFlex",    # Second Rigid part of RigidFLex
-	#			   Section_D_FLEXTAIL  => "section_D_FlexTail",     # Flexible tail of rigid flex section
-	#			   Section_E_STIFFENER => "section_E_STIFFENER",    # Flex with stiffeners
-	#			   Section_END         => "section_end"             # End of table
-
-	# Section_BEGIN
-
-	my $secBEGIN = $secMngr->AddSection( Enums->Section_BEGIN );
-	$secBEGIN->AddColumn( "matTitle", 23 );
-	$secBEGIN->AddColumn( "cuUsage",  10 );
-
-	# Section_A_MAIN
-
-	my $secA_MAIN = $secMngr->AddSection( Enums->Section_A_MAIN );
-	$secA_MAIN->AddColumn( "leftEdge",  1.6 );    # left margin
-	$secA_MAIN->AddColumn( "matType",   16 );     # material type
-	$secA_MAIN->AddColumn( "matThick",  12 );     # material type
-	$secA_MAIN->AddColumn( "rightEdge", 1.6 );    # left margin
-
-	# Section_B_FLEX
-
-	my $sec_B_FLEX = $secMngr->AddSection( Enums->Section_B_FLEX );
-	$sec_B_FLEX->AddColumn( "matType",  1.6 );    # left margin
-	$sec_B_FLEX->AddColumn( "matThick", 16 );     # material type
-
-	# Section_C_RIGIDFLEX
-
-	my $sec_C_RIGIDFLEX = $secMngr->AddSection( Enums->Section_C_RIGIDFLEX );
-	$sec_C_RIGIDFLEX->AddColumn( "leftEdge",  1.6 );    # left margin
-	$sec_C_RIGIDFLEX->AddColumn( "middle",    16 );     # material type
-	$sec_C_RIGIDFLEX->AddColumn( "rightEdge", 1.6 );    # left margin
-
-	return $secMngr;
-
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

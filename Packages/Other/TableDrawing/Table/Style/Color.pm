@@ -13,6 +13,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::Other::TableDrawing::Enums';
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -22,9 +23,26 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"R"} = shift // 255;
-	$self->{"G"} = shift // 255;
-	$self->{"B"} = shift // 255;
+	if ( @_ == 1 ) {
+
+		# overload - color defined as string (3 numbers separated by coma)
+		my $str = shift;
+		$str =~ s/\s//g;
+		my @rgb = split( ",", $str );
+
+		$self->{"R"} = $rgb[0] // 255;
+		$self->{"G"} = $rgb[1] // 255;
+		$self->{"B"} = $rgb[2] // 255;
+
+	}
+	elsif ( @_ == 3 ) {
+
+		# overload - color defined three separated values
+
+		$self->{"R"} = shift // 255;
+		$self->{"G"} = shift // 255;
+		$self->{"B"} = shift // 255;
+	}
 
 	return $self;
 }

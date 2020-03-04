@@ -21,9 +21,10 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-
+ 
 	$self->{"key"}         = shift;
 	$self->{"width"}       = shift;
+	$self->{"backgStyle"} = shift;
 	$self->{"borderStyle"} = shift;
 
 	return $self;
@@ -41,6 +42,13 @@ sub GetWidth {
 
 	return $self->{"width"};
 
+}
+
+sub GetBackgStyle{
+	my $self = shift;
+	
+	
+	return $self->{"backgStyle"};
 }
 
 sub GetBorderStyle{

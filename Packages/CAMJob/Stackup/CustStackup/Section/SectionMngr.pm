@@ -43,6 +43,37 @@ sub AddSection {
 
 }
 
+sub GetColumnPos {
+	my $self    = shift;
+	my $secType = shift;
+	my $colKey  = shift;
+
+	my $pos      = 0;
+	my $posFound = 0;
+
+	for ( my $i = 0 ; $i < scalar( @{ $self->{"sections"} } ) ; $i++ ) {
+
+		my @colls = $self->{"sections"}->[$i]->GetAllColumns();
+
+		for ( my $j = 0 ; $j < scalar(@colls) ; $j++ ) {
+
+			if ( $self->{"sections"}->[$i]->GetType() eq $secType && $colls[$j]->GetKey() eq $colKey ) {
+
+				$posFound = 1;
+				last;
+			}
+			$pos++;
+		}
+
+		last if ($posFound);
+	}
+	
+	die "Column: $colKey doesn't exist in section: $secType" if(!$posFound);
+
+	return $pos;
+
+}
+
 sub GetSection {
 	my $self = shift;
 	my $type = shift;
@@ -57,8 +88,21 @@ sub GetSection {
 
 sub GetAllSections {
 	my $self = shift;
+	my $activeOnly = shift // 0;
 
-	return @{ $self->{"sections"} };
+	my @sec = @{ $self->{"sections"} };
+
+	@sec = grep { $_->GetIsActive() } @sec if ($activeOnly);
+
+	return @sec;
+
+}
+
+sub GetSectionsCnt {
+	my $self = shift;
+	my $activeOnly = shift // 0;
+
+	return scalar( $self->GetAllSections($activeOnly) );
 
 }
 
@@ -66,8 +110,8 @@ sub GetColumnCnt {
 	my $self = shift;
 
 	my $total = 0;
-	 
-	$total += $_ foreach(map { $_->GetColumnCnt() } @{ $self->{"sections"} });
+
+	$total += $_ foreach ( map { $_->GetColumnCnt() } @{ $self->{"sections"} } );
 
 	return $total;
 

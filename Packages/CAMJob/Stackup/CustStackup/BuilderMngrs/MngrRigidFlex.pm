@@ -22,6 +22,7 @@ use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderThick
 use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderDrill';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrVV';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,18 +47,33 @@ sub BuildSections {
 	my $sectionMngr = shift;
 
 	my $stackupMngr = $self->{"stackupMngr"};
+	
+	Helper->DefaultSectionsLayout($sectionMngr, $stackupMngr);
 
-	my $blockBEGIN = $sectionMngr->GetSection( Enums->Section_BEGIN );
-	$blockBEGIN->SetIsActive(1);
+	# 1) Set section visibility
 
-	my $blockA_MAIN = $sectionMngr->GetSection( Enums->Section_A_MAIN );
-	$blockA_MAIN->SetIsActive(1);
+	my $sec_BEGIN = $sectionMngr->GetSection( Enums->Sec_BEGIN );
+	$sec_BEGIN->SetIsActive(1);
 
-	my $blockB_FLEX = $sectionMngr->GetSection( Enums->Section_B_FLEX );
-	$blockB_FLEX->SetIsActive(1);
+	my $sec_A_MAIN = $sectionMngr->GetSection( Enums->Sec_A_MAIN );
+	$sec_A_MAIN->SetIsActive(1);
 
-	my $blockC_RIGIDFLEX = $sectionMngr->GetSection( Enums->Section_C_RIGIDFLEX );
-	$blockC_RIGIDFLEX->SetIsActive(1);
+	my $sec_B_FLEX = $sectionMngr->GetSection( Enums->Sec_B_FLEX );
+	$sec_B_FLEX->SetIsActive(1);
+
+	my $sec_C_RIGIDFLEX = $sectionMngr->GetSection( Enums->Sec_C_RIGIDFLEX );
+	$sec_C_RIGIDFLEX->SetIsActive(1);
+
+	my $sec_D_FLEXTAIL = $sectionMngr->GetSection( Enums->Sec_D_FLEXTAIL );
+	$sec_D_FLEXTAIL->SetIsActive(1);
+
+	my $sec_E_STIFFENER = $sectionMngr->GetSection( Enums->Sec_E_STIFFENER );
+	$sec_E_STIFFENER->SetIsActive(1);
+
+	# 2) Add extra columns
+ 
+
+	# 3) Create columns
 
 	$self->_CreateSectionClmns($sectionMngr);
 
@@ -87,8 +103,6 @@ sub BuildBlocks {
 
 	$self->_AddBlock( BuilderDrill->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"}, $stackupMngr, $sectionMngr ) );
 
-
-	 
 }
 
 #-------------------------------------------------------------------------------------------#
