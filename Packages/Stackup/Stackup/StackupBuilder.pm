@@ -56,16 +56,18 @@ sub BuildStackupLamination {
 	die "Signal layer cnt in matrix ($sigLMatrixCnt) didn't match witch signal layer cnt in stackup file ($sigLStckpCnt)"
 	  if ( $sigLMatrixCnt != $sigLStckpCnt );
 
-	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+	my @NCLayers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
 
-	CamDrilling->AddNCLayerType( \@layers );
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+	CamDrilling->AddNCLayerType( \@NCLayers );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@NCLayers );
+	@NCLayers = grep {defined $_->{"NCSigStart"}} @NCLayers;
+	
 
 	my $NCCheck = 1;
 	my $mess = "";
-	$NCCheck = 0 if ( !LayerErrorInfo->CheckWrongNames( \@layers, \$mess ) );
-	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, \@layers, \$mess ) );
-	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, \@layers, \$mess ) );
+	$NCCheck = 0 if ( !LayerErrorInfo->CheckWrongNames( \@NCLayers, \$mess ) );
+	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, \@NCLayers, \$mess ) );
+	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, \@NCLayers, \$mess ) );
 
 	die "NC layer error: $mess " unless ($NCCheck);
 
@@ -233,12 +235,11 @@ sub __AddCoverlayLayers {
 				if (
 					 !(
 						   $self->{"stackup"}->{"layers"}->[$prprgIdx]->GetType() eq Enums->MaterialType_PREPREG
-						&& $self->{"stackup"}->{"layers"}->[$prprgIdx]->GetIsNoFlow()
-						&& $self->{"stackup"}->{"layers"}->[$prprgIdx]->GetNoFlowType() eq Enums->NoFlowPrepreg_P1
+						&& $self->{"stackup"}->{"layers"}->[$prprgIdx]->GetIsNoFlow() 
 					 )
 				  )
 				{
-					die "Above copper:$sigL has to be NoFlow prepreg type: P1 to include coverlay layer: " . $cvrL[$i];
+					die "Above copper:$sigL has to be NoFlow prepreg to include coverlay layer: " . $cvrL[$i];
 				}
 
 				$self->{"stackup"}->{"layers"}->[$prprgIdx]->AddCoverlay($layerInfo);
@@ -692,7 +693,7 @@ sub __IdentifyFlexCoreProduct {
 			if (
 				 defined $P1Top
 				 && (    $P1Top->{"l"}->GetType() ne Enums->MaterialType_PREPREG
-					  || $P1Top->{"l"}->GetNoFlowType() ne Enums->NoFlowPrepreg_P1 )
+					  || !$P1Top->{"l"}->GetIsNoFlow())
 			  )
 			{
 				die "Top layer is not NoFlow P1";
@@ -700,7 +701,7 @@ sub __IdentifyFlexCoreProduct {
 			if (
 				 defined $P1Bot
 				 && (    $P1Top->{"l"}->GetType() ne Enums->MaterialType_PREPREG
-					  || $P1Top->{"l"}->GetNoFlowType() ne Enums->NoFlowPrepreg_P1 )
+					  || !$P1Top->{"l"}->GetIsNoFlow())
 			  )
 			{
 				die "Bot layer is not NoFlow P1";

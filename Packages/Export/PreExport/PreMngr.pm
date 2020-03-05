@@ -16,6 +16,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Export::PreExport::LayerInvert';
 use aliased 'Packages::CAMJob::Scheme::SchemeFrame::SchemeFrame';
 use aliased 'CamHelpers::CamHelper';
@@ -23,6 +24,9 @@ use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Export::PreExport::Enums';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
+use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
+use aliased 'Packages::CAMJob::Stackup::StackupConvertor';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -50,6 +54,7 @@ sub new {
 sub Run {
 	my $self  = shift;
 	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	my $isChanged = 0;    # tell if something was changed in pcb
 
@@ -61,8 +66,6 @@ sub Run {
 	$self->__PatternFrame( \$isChanged );
 
 	$self->_OnItemResult($resultItemFrames);
-
-
 
 	# if job is changed, save it
 	if ($isChanged) {
@@ -81,7 +84,6 @@ sub Run {
 
 	# 2) Save info to tif file
 	my $resultItemDif = $self->_GetNewItem("Dif file");
-	
 
 	# Load old values
 	my $tif       = TifLayers->new( $self->{"jobId"} );
@@ -105,9 +107,31 @@ sub Run {
 	}
 
 	$tif->SetOtherLayers( \%otherLayers );
-	
 	$self->_OnItemResult($resultItemDif);
 
+	# 3) Edit stackup if RigidFlex
+
+	my $pcbType = JobHelper->GetPcbType( $self->{"jobId"} );
+
+	if ( $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO || $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
+
+		# remove all multicall stackup for curent job
+		# (there could be more than one stackup (slightly different name) for one job)
+		my @oldStackups = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" );
+		unlink($_) foreach (@oldStackups);
+
+		my $convertor = StackupConvertor->new( $inCAM, $jobId );
+		my $res = $convertor->DoConvert();
+
+		my $resultStack = $self->_GetNewItem("Edit RigidFlex stackup");
+
+		unless ($res) {
+			$resultStack->AddError("Failed to create MultiCal xml stackup");
+		}
+
+		$self->_OnItemResult($resultStack);
+	}
+ 
 }
 
 sub __PatternFrame {

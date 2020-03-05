@@ -9,6 +9,7 @@ use utf8;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
+use List::Util qw(first);
 
 #local library
 use aliased 'Managers::MessageMngr::MessageMngr';
@@ -23,10 +24,15 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::CoverlayPinParser';
 use aliased 'Packages::CAMJob::FlexiLayers::FlexiBendArea';
 use aliased 'Packages::Stackup::Stackup::Stackup';
-
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::Stackup::Enums' => "StackEnums";
 use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
 use aliased 'Packages::Stackup::StackupOperation';
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamAttributes';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::Tooling::CountersinkHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -38,7 +44,7 @@ push( @messHead, "<g>Průvodce vytvořením vrstev pro zahloubení v tranzitní 
 push( @messHead, "<g>==========================================================</g>\n" );
 
 my $ROUTOVERLAP    = 0.2;    # 0.2mm Overlap of routs whcich go from top and from bot during routing PCB flexible part
-my $EXTENDTRANZONE = 0.5;    # 0.5mm transition rout slots will be exteneded on both ends
+my $EXTENDTRANZONE = 1.0;    # 1.0mm transition rout slots will be exteneded on both ends
 
 # Set impedance lines
 sub PrepareRoutLayers {
@@ -92,7 +98,7 @@ sub __CreateRoutTransitionPart1 {
 
 	# Check if already exist layers jfzc, jfzs
 	my @routLayers = ();
-	my @packages   = StackupOperation->GetJoinedFlexRigidProducts($inCAM, $jobId);
+	my @packages = StackupOperation->GetJoinedFlexRigidProducts( $inCAM, $jobId );
 	foreach my $joinPackgs (@packages) {
 
 		my $topPckgs = $joinPackgs->{"productTop"};
@@ -126,11 +132,12 @@ sub __CreateRoutTransitionPart1 {
 		$recreate = 0 if ( $messMngr->Result() == 1 );
 	}
 
-	my $routLayerOk = 0;
+	my @newRoutLayers = ();
+	my $routLayerOk   = 0;
 	while ( !$routLayerOk ) {
 
 		# Rout tool info
-		my $routSize = 2;
+		my $routSize         = 2;
 		my $toolMagazineInfo = "d2.0a30";
 		my $toolComp         = "none";
 
@@ -139,22 +146,22 @@ sub __CreateRoutTransitionPart1 {
 		push( @mess, "----------------------------------------------------\n" );
 		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
 
-		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",           2 );                 #2mm
+		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",          2 );                 #2mm
 		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
 
 		my @params = ( $parTool, $parExtend );
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
 
-		my @routLayers = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 1, $parTool->GetResultValue(1),
+		@newRoutLayers = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 1, $parTool->GetResultValue(1),
 																   $toolMagazineInfo, $toolComp, $recreate, $ROUTOVERLAP,
 																   $parExtend->GetResultValue(1) );
 
-		CamLayer->DisplayLayers( $inCAM, \@routLayers );
+		CamLayer->DisplayLayers( $inCAM, \@newRoutLayers );
 		$inCAM->PAUSE("Zkontroluj pripravene frezovaci vrstvy a uprav co je treba.");
 
 		@mess = (@messHead);
-		push( @mess, "Vytvoření první hloubkové frézy (" . join( "; ", @routLayers ) . ") tranzitní zóny" );
+		push( @mess, "Vytvoření první hloubkové frézy (" . join( "; ", @newRoutLayers ) . ") tranzitní zóny" );
 		push( @mess, "----------------------------------------------------\n" );
 		push( @mess, "\nJsou frézovací vrstvy ok?" );
 
@@ -162,9 +169,13 @@ sub __CreateRoutTransitionPart1 {
 
 		$routLayerOk = 1 if ( $messMngr->Result() == 1 );
 
-		return $result;
-
 	}
+
+	# Do isolation of signal layers from rout layer
+	$self->__IsolateSigLayer( $inCAM, $jobId, $step, \@newRoutLayers, $messMngr );
+
+	return $result;
+
 }
 
 sub __CreateRoutTransitionPart2 {
@@ -178,7 +189,7 @@ sub __CreateRoutTransitionPart2 {
 
 	# Check if already exist layers fzc, fzs
 	my @routLayers = ();
-	my @packages   = StackupOperation->GetJoinedFlexRigidProducts($inCAM, $jobId);
+	my @packages = StackupOperation->GetJoinedFlexRigidProducts( $inCAM, $jobId );
 	foreach my $joinPackgs (@packages) {
 
 		my $topPckgs = $joinPackgs->{"productTop"};
@@ -212,11 +223,12 @@ sub __CreateRoutTransitionPart2 {
 		$recreate = 0 if ( $messMngr->Result() == 1 );
 	}
 
-	my $routLayerOk = 0;
+	my @newRoutLayers = ();
+	my $routLayerOk   = 0;
 	while ( !$routLayerOk ) {
 
 		# Rout tool info
-		my $routSize = 2;
+		my $routSize         = 2;
 		my $toolMagazineInfo = undef;
 		my $toolComp         = "right";
 
@@ -225,22 +237,22 @@ sub __CreateRoutTransitionPart2 {
 		push( @mess, "----------------------------------------------------\n" );
 		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
 
-		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",           $routSize );                 #2mm
+		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",          $routSize );         #2mm
 		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
 
 		my @params = ( $parTool, $parExtend );
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
 
-		my @routLayers = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 2, $parTool->GetResultValue(1),
+		@newRoutLayers = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 2, $parTool->GetResultValue(1),
 																   $toolMagazineInfo, $toolComp, $recreate, $ROUTOVERLAP,
 																   $parExtend->GetResultValue(1) );
 
-		CamLayer->DisplayLayers( $inCAM, \@routLayers );
+		CamLayer->DisplayLayers( $inCAM, \@newRoutLayers );
 		$inCAM->PAUSE("Zkontroluj pripravene frezovaci vrstvy a uprav co je treba.");
 
 		@mess = (@messHead);
-		push( @mess, "Vytvoření druhé hloubkové frézy (" . join( "; ", @routLayers ) . ") tranzitní zóny" );
+		push( @mess, "Vytvoření druhé hloubkové frézy (" . join( "; ", @newRoutLayers ) . ") tranzitní zóny" );
 		push( @mess, "----------------------------------------------------\n" );
 		push( @mess, "\nJsou frézovací vrstvy ok?" );
 
@@ -248,7 +260,120 @@ sub __CreateRoutTransitionPart2 {
 
 		$routLayerOk = 1 if ( $messMngr->Result() == 1 );
 
-		return $result;
+	}
+
+	return $result;
+}
+
+# Do isolation of signal layers from rout layer
+sub __IsolateSigLayer {
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
+	my $step       = shift;
+	my @routLayers = @{ shift(@_) };
+	my $messMngr   = shift;
+
+	# Copy negative rout to all affected signal layer
+	if ( scalar(@routLayers) ) {
+
+		my @allLayers = CamJob->GetAllLayers( $inCAM, $jobId );
+
+		foreach my $routL (@routLayers) {
+
+			my %lInfo = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, $routL, 0, 0, 1 );
+
+			my @sigLayers = ();
+
+			if ( $lInfo{"gROWdrl_dir"} eq "top2bot" ) {
+
+				for ( my $i = $lInfo{"NCStartOrder"} ; $i <= $lInfo{"NCEndOrder"} ; $i++ ) {
+
+					push( @sigLayers, first { $_->{"gROWrow"} eq $i } @allLayers );
+				}
+
+			}
+			else {
+				for ( my $i = $lInfo{"NCEndOrder"} ; $i <= $lInfo{"NCStartOrder"} ; $i++ ) {
+
+					push( @sigLayers, first { $_->{"gROWrow"} eq $i } @allLayers );
+				}
+			}
+
+			$messMngr->ShowModal(
+								  -1,
+								  EnumsGeneral->MessageType_INFORMATION,
+								  [
+									 @messHead,
+									 "Do signálových vrstev: "
+									   . join( "; ", map { $_->{"gROWname"} } @sigLayers )
+									   . " bude zkopírována negativně frézovací vrstva: $routL."
+								  ]
+			);
+
+			# Remove former clearances fro msignal layers
+
+			my $stringAtr = "transition_rout_clearance";
+			my @lNames = map { $_->{"gROWname"} } @sigLayers;
+
+			CamLayer->AffectLayers( $inCAM, \@lNames );
+			if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".string", $stringAtr ) ) {
+				$inCAM->COM("sel_delete");
+			}
+
+			# Prepare clearance from rout layer
+			my $clearance = 500;                                               # 500µm  is clearance of cu from rout tool
+			my $unitDTM   = UniDTM->new( $inCAM, $jobId, $step, $routL, 0 );
+			my $t         = ( $unitDTM->GetUniqueTools() )[0];
+
+			my $tRadiusReal = undef;
+
+			if ( $t->GetSpecial() ) {
+				$tRadiusReal = CountersinkHelper->GetHoleRadiusByToolDepth( $t->GetDrillSize(), $t->GetAngle(), $t->GetDepth() * 1000 );    # in µm
+			}
+			else {
+				$tRadiusReal = $t->GetDrillSize() / 2;                                                                                      # in µm
+			}
+
+			my $routComp = CamLayer->RoutCompensation( $inCAM, $routL, "document" );
+			CamLayer->WorkLayer( $inCAM, $routComp );
+			$inCAM->COM( "sel_change_sym", "symbol" => "r" . ( $tRadiusReal * 2 + 2 * $clearance ) );    # 600/2 is clearance of cu from rout tool
+
+			CamAttributes->SetFeatuesAttribute( $inCAM, ".string", $stringAtr );
+
+			my @pSig = map { $_->{"gROWname"} } grep { $_->{"gROWpolarity"} eq "positive" } @sigLayers;
+			my @nSig = map { $_->{"gROWname"} } grep { $_->{"gROWpolarity"} eq "negative" } @sigLayers;
+
+			if (@pSig) {
+
+				CamLayer->CopySelOtherLayer( $inCAM, \@pSig, 1 );
+
+			}
+			if (@nSig) {
+
+				CamLayer->CopySelOtherLayer( $inCAM, \@nSig, 0 );
+
+			}
+
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $routComp );
+
+			CamLayer->DisplayLayers( $inCAM, \@lNames );
+
+			$messMngr->ShowModal(
+								  -1,
+								  EnumsGeneral->MessageType_INFORMATION,
+								  [
+									 @messHead,
+									 "Zkontroluj signálové vrstvy: "
+									   . join( "; ", map { $_->{"gROWname"} } @sigLayers )
+									   . ", jestli je Cu správně odizolovaná od frézy: $routL "
+								  ]
+			);
+
+			$inCAM->PAUSE("Zkontroluj signalove vrstvy");
+
+			CamLayer->ClearLayers($inCAM);
+		}
 
 	}
 
@@ -266,7 +391,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d266089";
+	my $jobId = "d269208";
 
 	my $notClose = 0;
 

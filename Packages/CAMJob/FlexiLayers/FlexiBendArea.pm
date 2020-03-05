@@ -577,7 +577,7 @@ sub PrepareRoutTransitionZone {
 	my $toolComp          = shift;            # right / left / none
 	my $recreate          = shift // 1;       # recreate rout layer with used name
 	my $roolOverlap       = shift // 0.25;    # 0,25mm # define depth  overlap of rout tool in transition zone
-	my $extendZone        = shift // 0.5;     # 0,5mm transition rout slots will be exteneded on both ends
+	my $extendZone        = shift // 1.0;     # 1.0mm transition rout slots will be exteneded on both ends
 	my $defDepthRoutPart1 = shift // 0.23;    # Default depth for first routing (part 1). If package is to thin, rout to half of package
 	my $minMatRest        = shift // 0.15;    # 150µm is minimal material thickness after routing
 

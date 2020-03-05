@@ -1001,7 +1001,7 @@ sub __GetOverlayBendArea {
 			CamLayer->WorkLayer( $inCAM, $bendNegL );
 		}
 
-		$inCAM->COM( "sel_change_sym", "symbol" => "r0", "reset_angle" => "no" );
+		$inCAM->COM( "sel_change_sym", "symbol" => "r2", "reset_angle" => "no" ); # r2 is puprose, in order to assure, polzgon will be filled properly
 		CamLayer->Contourize( $inCAM, $bendNegL, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
 		CamLayer->WorkLayer( $inCAM, $bendNegL );
 
@@ -1050,6 +1050,15 @@ sub __GetOverlayBendArea {
 
 			$outputParser->Clear();
 		}
+	}
+
+	# TEMPORARY DELETE
+	if ( $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXO || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
+		my $testL = "negaviteBend".$self->{"viewType"};
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $testL );
+		my $tStep = $self->{"pdfStep"};
+		$tStep =~ s/pdf_//;
+		CamMatrix->CopyLayer( $inCAM, $jobId, $bendNegL, $self->{"pdfStep"}, $testL, $tStep );
 	}
 
 	return $bendNegL;

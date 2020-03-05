@@ -103,6 +103,13 @@ sub DoConvert {
 				$attrEl{"pos"}  = $lPos;
 				$attrEl{"qId"}  = $lPrepreg->GetQId();
 				$attrEl{"type"} = "Prepreg";
+				
+				# Add info about prepregs type
+				if($l->GetIsNoFlow()){
+					
+					$attrEl{"group"}= $l->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 ? 1 : 2;
+				}
+				
 
 				$lPos++;
 
