@@ -67,6 +67,7 @@ sub GetAllByPcbId {
 				 d.zakaznicke_cislo,
 				 d.zlaceni,
 				 d.lak_typ,
+				 d.stiffener,
 				 dn.kus_x n_kus_x,
 				 dn.kus_y n_kus_y,
 				 dn.panel_x n_mpanel_x,
@@ -90,6 +91,7 @@ sub GetAllByPcbId {
 				 d.material,
 				 m.nazev_subjektu material_nazev,
 				 d.material_coverlay,
+				 d.material_stiffener,
 				 d.poznamka_zakaznik poznamka_web,
 				 n.poznamka n_poznamka_zak,
 				 z.kusy_pozadavek pocet,
@@ -2078,6 +2080,44 @@ sub GetPcbCoverlayMat {
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
 				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_coverlay
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 left outer join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if (@result) {
+
+		return $result[0];
+	}
+	else {
+		return undef;
+	}
+}
+
+# Return information of stiffener material in PCB
+# This is temporary in order get information from IS
+# but normally this information should be in stackup file
+sub GetPcbStiffenerMat {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				
+				 d.material_stiffener,
+				 kks.reference_subjektu material_stiffener_reference,
+				kks.reference_subjektu,
+				kks.nazev_subjektu,
+				kks.vyska tloustka,
+				 uda.dps_id,
+  				 uda.dps_id2,
+ 				 uda.dps_qid
+				
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_stiffener
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 left outer join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";

@@ -27,7 +27,7 @@ $newCustStckp->Build();
 
 # Init Draw Builder
 my @media  = ( 297, 210 );
-my $margin = 0;
+my $margin = 5;
 my $p      = 'c:/Export/Test/test.pdf';
 unlink($p);
 

@@ -93,8 +93,8 @@ sub AddCell {
 	my $rowCnt      = shift // 1;
 	my $text        = shift;
 	my $textStyle   = shift;
-	my $backgStyle  = shift // BackgStyle->new();
-	my $borderStyle = shift // BorderStyle->new();
+	my $backgStyle  = shift ;
+	my $borderStyle = shift ;
 
 	#die "End col ($endCol) must be greater than star col ($startCol)" if ( $endCol < $startCol );
 	#die "End row ($endRow) must be greater than star row ($startRow)" if ( $endRow < $startRow );

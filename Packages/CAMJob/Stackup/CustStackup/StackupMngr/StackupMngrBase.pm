@@ -16,6 +16,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,13 +33,14 @@ sub new {
 
 	my @boardBase = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	my @NCLayers = CamJob->GetNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	CamDrilling->AddNCLayerType(   \@NCLayers );
+	CamDrilling->AddNCLayerType( \@NCLayers );
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
 
 	$self->{"boardBaseLayers"} = \@boardBase;
 	$self->{"NCLayers"}        = \@NCLayers;
 
-	$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
+	$self->{"pcbType"}   = JobHelper->GetPcbType( $self->{"jobId"} );
+	$self->{"pcbInfoIS"} = ( HegMethods->GetAllByPcbId( $self->{"jobId"} ) )[0];
 
 	return $self;
 }
@@ -52,10 +54,19 @@ sub GetExistSMTop {
 
 }
 
-sub GetExistSMBot {
+sub GetExistSMFlexTop {
 	my $self = shift;
 
-	my $mc = first { $_->{"gROWname"} eq "ms" } @{ $self->{"boardBaseLayers"} };
+	my $mc = first { $_->{"gROWname"} eq "mcflex" } @{ $self->{"boardBaseLayers"} };
+
+	return defined $mc ? 1 : 0;
+
+}
+
+sub GetExistSMBFlexot {
+	my $self = shift;
+
+	my $mc = first { $_->{"gROWname"} eq "msflex" } @{ $self->{"boardBaseLayers"} };
 
 	return defined $mc ? 1 : 0;
 
@@ -103,6 +114,31 @@ sub GetPlatedNC {
 	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NC );
 
 	return @sorted;
+}
+
+sub GetGetExistStiff {
+	my $self     = shift;
+	my $side = shift; # top/bot
+	my $stifInfo = shift;    # reference for storing info
+	
+	my $l = $side eq "top" ? "stiffc" : "stiffs";
+
+	my $exist = defined (first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} }) ? 1 : 0;
+
+	if ($exist) {
+
+		my $matInfo = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
+
+		if ( defined $stifInfo ) {
+			$stifInfo->{"adhesiveText"} = "3M tape";
+			$stifInfo->{"adhesiveThick"} = 50;                               # ? is not store
+			$stifInfo->{"stiffText"}     = $matInfo->{"nazev_subjektu"};     # ? is not store
+			$stifInfo->{"stiffThick"}    = $matInfo->{"tloustka"} * 1000;    # µm
+		}
+	}
+
+	return $exist;
+
 }
 
 #-------------------------------------------------------------------------------------------#

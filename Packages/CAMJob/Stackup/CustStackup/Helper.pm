@@ -20,7 +20,7 @@ use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
 use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
-
+use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -30,61 +30,64 @@ sub DefaultSectionsLayout {
 	my $secMngr     = shift;
 	my $stackupMngr = shift;
 
-	my $colCont = 0;
 
-	my $leftEdgeBackg  = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 0, 0,   255 ) );
-	my $rightEdgeBackg = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 0, 255, 255 ) );
-	my $ncBackg  = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 100, 0,   255 ) );
+
+	# Define styles
+
+	my $leftEdgeBackg  = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 0,   0,   255 ) );
+	my $rightEdgeBackg = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 0,   255, 255 ) );
+	my $ncBackg        = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 100, 0,   255 ) );
+	my $matTitleBackg  = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new(EnumsStyle->Clr_LEFTCLMNBACK ) );
 
 	# Sec_BEGIN
 
 	my $secBEGIN = $secMngr->AddSection( Enums->Sec_BEGIN );
-	$secBEGIN->AddColumn( "matTitle", 20.7 );
-	$secBEGIN->AddColumn( "cuUsage",  10 );
+	$secBEGIN->AddColumn( "matTitle", EnumsStyle->ClmnWidth_matname, $matTitleBackg);
+	$secBEGIN->AddColumn( "cuUsage",  EnumsStyle->ClmnWidth_culayer );
 
 	# Sec_A_MAIN
 
 	my $secA_MAIN = $secMngr->AddSection( Enums->Sec_A_MAIN );
-	$secA_MAIN->AddColumn( "leftEdge", 1.6,  $leftEdgeBackg );
-	$secA_MAIN->AddColumn( "matType",  16 );
-	$secA_MAIN->AddColumn( "matThick", 10 );
-	$secA_MAIN->AddColumn( "NC_left_gap", 1.15 );
+	$secA_MAIN->AddColumn( "leftEdge", EnumsStyle->ClmnWidth_overlap, $leftEdgeBackg );
+	$secA_MAIN->AddColumn( "matType",  EnumsStyle->ClmnWidth_mattype );
+	$secA_MAIN->AddColumn( "matThick", EnumsStyle->ClmnWidth_matthick );
+	$secA_MAIN->AddColumn( "NCStartCol", EnumsStyle->ClmnWidth_ncdrill );
 
 	my @NC = $stackupMngr->GetPlatedNC();
 
 	foreach my $nc (@NC) {
 
-		$secA_MAIN->AddColumn( $nc->{"gROWname"},          1.15, $ncBackg, undef );    # material type
-		$secA_MAIN->AddColumn( $nc->{"gROWname"} . "_gap", 1.15, undef, undef );    # material type
+		$secA_MAIN->AddColumn( $nc->{"gROWname"},          EnumsStyle->ClmnWidth_ncdrill, $ncBackg, undef );    # material type
+		$secA_MAIN->AddColumn( $nc->{"gROWname"} . "_gap", EnumsStyle->ClmnWidth_ncdrill, undef,    undef );    # material type
 	}
 
-	$secA_MAIN->AddColumn( "rightEdge", 1.6, $rightEdgeBackg );
+	$secA_MAIN->AddColumn( "rightEdge", EnumsStyle->ClmnWidth_overlap, $rightEdgeBackg );
 
 	# Sec_B_FLEX
 
 	my $sec_B_FLEX = $secMngr->AddSection( Enums->Sec_B_FLEX );
-	$sec_B_FLEX->AddColumn( "matType",  16 );
-	$sec_B_FLEX->AddColumn( "matThick", 10 );
+	$sec_B_FLEX->AddColumn( "matType",  EnumsStyle->ClmnWidth_mattype );
+	$sec_B_FLEX->AddColumn( "matThick", EnumsStyle->ClmnWidth_matthick );
 
 	# Sec_C_RIGIDFLEX
 
 	my $sec_C_RIGIDFLEX = $secMngr->AddSection( Enums->Sec_C_RIGIDFLEX );
-	$sec_C_RIGIDFLEX->AddColumn( "leftEdge",  1.6,  $leftEdgeBackg );
-	$sec_C_RIGIDFLEX->AddColumn( "matType",   20 );
-	$sec_C_RIGIDFLEX->AddColumn( "rightEdge", 1.6, $rightEdgeBackg );
+	$sec_C_RIGIDFLEX->AddColumn( "leftEdge",  EnumsStyle->ClmnWidth_overlap, $leftEdgeBackg );
+	$sec_C_RIGIDFLEX->AddColumn( "matType",   EnumsStyle->ClmnWidth_mattype );
+	$sec_C_RIGIDFLEX->AddColumn( "rightEdge", EnumsStyle->ClmnWidth_overlap, $rightEdgeBackg );
 
 	# Sec_D_FLEXTAIL
 
 	my $sec_D_FLEXTAIL = $secMngr->AddSection( Enums->Sec_D_FLEXTAIL );
-	$sec_D_FLEXTAIL->AddColumn( "leftEdge", 1.6,  $leftEdgeBackg );
-	$sec_D_FLEXTAIL->AddColumn( "matType",  16 );
-	$sec_D_FLEXTAIL->AddColumn( "matThick", 10 );
+	$sec_D_FLEXTAIL->AddColumn( "leftEdge", EnumsStyle->ClmnWidth_overlap, $leftEdgeBackg );
+	$sec_D_FLEXTAIL->AddColumn( "matType",  EnumsStyle->ClmnWidth_mattype );
+	$sec_D_FLEXTAIL->AddColumn( "matThick", EnumsStyle->ClmnWidth_matthick );
 
 	# Sec_E_STIFFENER
 
 	my $sec_E_STIFFENER = $secMngr->AddSection( Enums->Sec_E_STIFFENER );
-	$sec_E_STIFFENER->AddColumn( "matType",  16 );
-	$sec_E_STIFFENER->AddColumn( "matThick", 10 );
+	$sec_E_STIFFENER->AddColumn( "matType",  EnumsStyle->ClmnWidth_mattype );
+	$sec_E_STIFFENER->AddColumn( "matThick", EnumsStyle->ClmnWidth_matthick );
 
 }
 

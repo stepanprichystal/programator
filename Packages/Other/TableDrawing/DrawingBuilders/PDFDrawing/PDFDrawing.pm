@@ -48,6 +48,7 @@ sub new {
 	}
 
 	$self->{"pdf"} = undef;
+	$self->{"counter"} = 1;
 
 	return $self;
 }
@@ -124,8 +125,10 @@ sub DrawRectangle {
 	my $height     = shift;
 	my $backgStyle = shift;
 
-	my $box = $self->{"page"}->gfx(1);    # Render first (text is rendered on top of it)
 
+	my $box = $self->{"page"}->gfx();    # Render first (text is rendered on top of it)
+
+	$self->{"counter"}++;
 	if ( $backgStyle->GetBackgStyle() eq EnumsDraw->BackgStyle_SOLIDCLR ) {
 		my $clr = $backgStyle->GetBackgColor()->GetHexCode();
 		$box->fillcolor($clr);

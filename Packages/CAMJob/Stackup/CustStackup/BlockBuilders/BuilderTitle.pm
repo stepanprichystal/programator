@@ -18,6 +18,7 @@ use Time::localtime;
 #local library
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
 use aliased 'Packages::Other::TableDrawing::Table::Style::TextStyle';
 use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
@@ -57,8 +58,8 @@ sub __BuildRow1 {
 	my $secMngr   = $self->{"sectionMngr"};
 
 	# Define first title row
-	my $rowTitleBackg = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( Enums->Clr_TITLEBACKG) );
-	$tblMain->AddRowDef( "row_title", 3.87, $rowTitleBackg );
+	my $rowTitleBackg = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_TITLEBACKG) );
+	$tblMain->AddRowDef( "row_title", EnumsStyle->RowHeight_TITLE, $rowTitleBackg );
 
 	# Add title
 	my $titleStr = "";
@@ -104,7 +105,7 @@ sub __BuildRow1 {
 	# CELL DEF: Add left cell with title
 
 	my $c1TxtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-									 2.3, Color->new( 255, 255, 255 ),
+									 EnumsStyle->TxtSize_TITLE, Color->new( 255, 255, 255 ),
 									 TblDrawEnums->Font_BOLD, undef,
 									 TblDrawEnums->TextHAlign_LEFT,
 									 TblDrawEnums->TextVAlign_CENTER );
@@ -116,7 +117,7 @@ sub __BuildRow1 {
 	# CELL DEF: Add right cell with date
 
 	my $c2TxtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-									 3, Color->new( 200, 200, 200 ),
+									 EnumsStyle->TxtSize_TITLE, Color->new( 255, 255, 255 ),
 									 TblDrawEnums->Font_BOLD, undef,
 									 TblDrawEnums->TextHAlign_RIGHT,
 									 TblDrawEnums->TextVAlign_CENTER );
@@ -147,10 +148,10 @@ sub __BuildRow2 {
 
 	# Define first title row
 	my $rowStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 191, 191, 191 ) );
-	my $row = $tblMain->AddRowDef( "row_main_head", 3.87, $rowStyle );
+	my $row = $tblMain->AddRowDef( "row_main_head", EnumsStyle->RowHeight_TITLE, $rowStyle );
 
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-								   2, Color->new( 0, 0, 0 ),
+								   EnumsStyle->TxtSize_MAINHEAD, Color->new( 0, 0, 0 ),
 								   TblDrawEnums->Font_BOLD, undef,
 								   TblDrawEnums->TextHAlign_LEFT,
 								   TblDrawEnums->TextVAlign_CENTER );

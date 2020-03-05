@@ -36,6 +36,13 @@ sub new {
 	return $self;
 }
 
+
+sub SetColor {
+	my $self = shift;
+
+	$self->{"color"} = shift;
+}
+
 sub GetTextType {
 	my $self = shift;
 
