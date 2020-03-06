@@ -15,7 +15,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 
 use aliased "Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETUnit"  => "Unit";
 use aliased "Programs::Exporter::ExportUtility::Groups::ETExport::ETWorkUnit" => "UnitExport";
-
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 use aliased 'Packages::ItemResult::ItemResultMngr';
 use aliased 'Enums::EnumsGeneral';

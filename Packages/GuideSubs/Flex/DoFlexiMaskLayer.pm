@@ -30,9 +30,9 @@ use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
 #-------------------------------------------------------------------------------------------#
 
 my @messHead = ();
-push( @messHead, "<g>=====================================</g>" );
-push( @messHead, "<g>Průvodce vytvořením vrstvy pro flexi masku</g>" );
-push( @messHead, "<g>=====================================</g>\n" );
+push( @messHead, "<g>============================================</g>" );
+push( @messHead, "<g>Průvodce vytvořením vrstvy pro UV flex masku</g>" );
+push( @messHead, "<g>============================================</g>\n" );
 
 my $OVERLAP2RIGID = 500;    # Overlap of flexi solder mask to rigid boards
 
@@ -126,7 +126,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d266089";
+	my $jobId = "d274012";
 
 	my $notClose = 0;
 

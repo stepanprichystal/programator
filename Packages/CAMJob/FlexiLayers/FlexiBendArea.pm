@@ -202,7 +202,7 @@ sub PrepareFlexMask {
 
 	my $result = 1;
 
-	my $parser = BendAreaParser->new( $inCAM, $jobId, $step );
+	my $parser = BendAreaParser->new( $inCAM, $jobId, $step, undef, 2*$overlap );
 	my $errMess = "";
 	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
 
@@ -218,28 +218,28 @@ sub PrepareFlexMask {
 
 	CamLayer->WorkLayer( $inCAM, $layer );
 
-	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
-	my @pointsLim = ();
+#	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+#	my @pointsLim = ();
 
-	my $flexClearance = 2000;    # 2000µm from PCB profile
-
-	push( @pointsLim, { "x" => $lim{"xMin"} - $flexClearance / 1000, "y" => $lim{"yMin"} - $flexClearance / 1000 } );
-	push( @pointsLim, { "x" => $lim{"xMin"} - $flexClearance / 1000, "y" => $lim{"yMax"} + $flexClearance / 1000 } );
-	push( @pointsLim, { "x" => $lim{"xMax"} + $flexClearance / 1000, "y" => $lim{"yMax"} + $flexClearance / 1000 } );
-	push( @pointsLim, { "x" => $lim{"xMax"} + $flexClearance / 1000, "y" => $lim{"yMin"} - $flexClearance / 1000 } );
-
-	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
-
-	CamLayer->ClipAreaByProf( $inCAM, $layer, $flexClearance );
-	CamLayer->WorkLayer( $inCAM, $layer );
+#	my $flexClearance = 2000;    # 2000µm from PCB profile
+#
+#	push( @pointsLim, { "x" => $lim{"xMin"} - $flexClearance / 1000, "y" => $lim{"yMin"} - $flexClearance / 1000 } );
+#	push( @pointsLim, { "x" => $lim{"xMin"} - $flexClearance / 1000, "y" => $lim{"yMax"} + $flexClearance / 1000 } );
+#	push( @pointsLim, { "x" => $lim{"xMax"} + $flexClearance / 1000, "y" => $lim{"yMax"} + $flexClearance / 1000 } );
+#	push( @pointsLim, { "x" => $lim{"xMax"} + $flexClearance / 1000, "y" => $lim{"yMin"} - $flexClearance / 1000 } );
+#
+#	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
+#
+#	CamLayer->ClipAreaByProf( $inCAM, $layer, $flexClearance );
+#	CamLayer->WorkLayer( $inCAM, $layer );
 
 	foreach my $bendArea (@bendAreas) {
 
-		my @points = map { { "x" => $_->[0], "y" => $_->[1] } } $bendArea->GetPoints();
-		my @pointsSurf = @points[ 0 .. scalar(@points) - 2 ];
+		my @pointsSurf = $bendArea->GetPoints();
+		 
+		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, "positive" );
 
-		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, "negative" );
-		CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $overlap ), "negative" );
+		#CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $overlap ), "negative" );
 	}
 
 	CamLayer->ClearLayers($inCAM);

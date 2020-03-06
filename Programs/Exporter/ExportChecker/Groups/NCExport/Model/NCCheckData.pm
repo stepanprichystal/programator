@@ -686,6 +686,41 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# 24) Check if fiducial holes in panel are not covered by stiffener or coverlay
+	my @specL = grep {
+		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+	} $defaultInfo->GetNCLayers();
+
+	if ( $defaultInfo->StepExist("mpanel") && scalar(@specL) ) {
+
+		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "mpanel", "c" );
+
+		if ( defined $attHist{".fiducial_name"} ) {
+
+			foreach my $l (@specL) {
+
+				my %lAttHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "mpanel", $l->{"gROWname"} );
+
+				if ( !defined $lAttHist{".fiducial_name"})  {
+
+					$dataMngr->_AddWarningResult(
+						"Zakryté fiduciální značky",
+						"Ve stepu: \"mpanel\" byly nalezeny fiduciální značky ve vrstvě: \"c\". Vypadá to, že nejsou odkryté ve vrstvě: "
+						  . $l->{"gROWname"}
+						  . " (nebyl nalezen pad s atributem .fiducial_name)"
+
+					);
+
+				}
+
+			}
+
+		}
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#
