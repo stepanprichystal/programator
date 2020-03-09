@@ -10,12 +10,14 @@ package Packages::CAM::UniRTM::UniChain::UniChainSeq;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
+use List::Util qw(first);
 
 #local library
 use aliased 'Packages::CAM::UniRTM::Enums';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
 use aliased 'Enums::EnumsRout';
 use aliased 'Packages::CAM::UniRTM::Helper';
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -105,8 +107,16 @@ sub IsOutline {
 		 && $self->GetCyclic()
 		 && $self->GetDirection() eq EnumsRout->Dir_CW )
 	{
+		# Outline recoginised based on shape and compensation
 
 		return 1;
+
+	}
+	elsif ( defined first { defined $_->{"att"}->{".foot_down"} } $self->GetFeatures() ) {
+
+		# outline resognized based on foot down attribute
+		return 1;
+
 	}
 	else {
 

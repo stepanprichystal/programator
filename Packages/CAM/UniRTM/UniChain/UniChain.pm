@@ -146,14 +146,6 @@ sub GetComp {
 
  
 
-sub SetFootDown {
-	my $self = shift;
-	my $foot = shift;
-
-	$self->{"footDown"} = $foot;
-
-}
-
 sub SetIsInside {
 	my $self     = shift;
 	my $isInside = shift;

@@ -106,7 +106,8 @@ sub OutlineToolIsLast {
 
 		foreach my $chSeq ( $ch->GetChainSequences() ) {
 
-			if ( $chSeq->IsOutline() && !$outlineStart ) {
+			
+			if ( ($chSeq->IsOutline()   ) && !$outlineStart ) {
  				
  				$outlineStart = 1; 
 				next;
