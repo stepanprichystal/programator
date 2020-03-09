@@ -92,11 +92,20 @@ sub Run {
 
 			my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
 
-			if ( abs( $lim{"yMax"} - $lim{"yMin"} ) == 407 ) {
+			my $pnlH = abs( $lim{"yMax"} - $lim{"yMin"} );
+
+			use constant tol => 2;
+			if ( abs( $pnlH - 407 ) < tol ) {
 				$schema = '4v-407';
 			}
-			else {
+			elsif ( abs( $pnlH - 485 ) < tol ) {
 				$schema = '4v-485';
+			}
+			elsif ( abs( $pnlH - 538 ) < tol ) {
+				$schema = '4v-538';
+			}
+			else {
+				die "Schema was not found for panel height: $pnlH mm.";
 			}
 		}
 		$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => "panel", "pcb" => $steps[0]->{"stepName"}, "scheme" => $schema );

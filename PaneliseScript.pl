@@ -1073,8 +1073,16 @@ sub _Panelize {
 			
 			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
 					my ($xPanelSize,$yPanelSize) = _GetSizeOfPcb($jobName, 'panel');
-							unless ($yPanelSize == 407) {
+					
+							# Tolerance 2mm
+							if (abs($yPanelSize - 407) < 2) {
+									$schema = '4v-407';
+							}elsif (abs($yPanelSize - 485) < 2) {
 									$schema = '4v-485';
+							}elsif (abs($yPanelSize - 538) < 2 ) {
+									$schema = '4v-538';
+							}else{
+								die "Schema was not found for panel size: $yPanelSize";
 							}
 			}
 			
