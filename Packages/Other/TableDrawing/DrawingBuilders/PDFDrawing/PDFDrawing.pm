@@ -134,6 +134,9 @@ sub DrawRectangle {
 		$box->fillcolor($clr);
 
 		#$box->fillcolor('#0000ff');
+	}else{
+		
+		$box->fillcolor('#ffffff');
 	}
 
 	$box->rect( $sX / $self->{"unitConv"}, $sY / $self->{"unitConv"}, $width / $self->{"unitConv"}, $height / $self->{"unitConv"} );

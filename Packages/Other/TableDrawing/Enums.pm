@@ -2,8 +2,8 @@
 package Packages::Other::TableDrawing::Enums;
 
 use constant {
-	 CoordSystem_LEFTTOP => "CoordSystem_LeftTop",    # Origin is located in left top corner of "canvas" (x raise right, y raise top)
-	 CoordSystem_LEFTBOT => "CoordSystem_LeftBOT",    # Origin is located in left bot corner of "canvas" (x raise right, y raise bot)
+			   CoordSystem_LEFTTOP => "CoordSystem_LeftTop",    # Origin is located in left top corner of "canvas" (x raise right, y raise top)
+			   CoordSystem_LEFTBOT => "CoordSystem_LeftBOT",    # Origin is located in left bot corner of "canvas" (x raise right, y raise bot)
 };
 
 use constant {
@@ -49,8 +49,14 @@ use constant {
 };
 
 use constant {
-			   DrawPriority_CELLABOVE  => "DrawPriority_CELLABOVE",
-			   DrawPriority_CELLBELOWE => "DrawPriority_CELLBELOWE",
+			   DrawPriority_TABBORDER  => "DrawPriority_TABBORDER",     # table frame
+			   DrawPriority_COLLBACKG  => "DrawPriority_COLLBACKG",     # column background
+			   DrawPriority_COLLBORDER => "DrawPriority_COLLBORDER",    # column border
+			   DrawPriority_ROWBACKG   => "DrawPriority_ROWBACKG",      # row background
+			   DrawPriority_ROWBORDER  => "DrawPriority_ROWBORDER",     # row border
+			   DrawPriority_CELLBACKG  => "DrawPriority_CELLBACKG",     # cell background
+			   DrawPriority_CELLBORDER => "DrawPriority_CELLBORDER",    # cell border
+			   DrawPriority_CELLTEXT   => "DrawPriority_CELLTEXT",      # cell text
 };
 
 1;

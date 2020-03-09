@@ -17,6 +17,8 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::NifFile::NifFile';
+use aliased 'Helpers::ValueConvertor';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,52 +43,47 @@ sub new {
 
 	$self->{"pcbType"}   = JobHelper->GetPcbType( $self->{"jobId"} );
 	$self->{"pcbInfoIS"} = ( HegMethods->GetAllByPcbId( $self->{"jobId"} ) )[0];
+	$self->{"nifFile"}   = NifFile->new( $self->{"jobId"} );
 
 	return $self;
 }
 
-sub GetExistSMTop {
+sub GetExistSM {
 	my $self = shift;
+	my $side = shift;    # top/bot
+	my $info = shift;    # reference to store additional information
 
-	my $mc = first { $_->{"gROWname"} eq "mc" } @{ $self->{"boardBaseLayers"} };
+	my $l = $side eq "top" ? "mc" : "ms";
 
-	return defined $mc ? 1 : 0;
+	my $smExist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
 
+	if ( $smExist && defined $info ) {
+
+		my %mask = $self->__GetMaskColor();
+		$info->{"color"} = ValueConvertor->GetMaskCodeToColor( $mask{$side} );
+	}
+
+	return $smExist;
 }
 
-sub GetExistSMFlexTop {
+sub GetExistSMFlex {
 	my $self = shift;
+	my $side = shift;    # top/bot
+	my $info = shift;    # reference to store additional information
 
-	my $mc = first { $_->{"gROWname"} eq "mcflex" } @{ $self->{"boardBaseLayers"} };
+	my $l = $side eq "top" ? "mcflex" : "msflex";
 
-	return defined $mc ? 1 : 0;
+	my $smExist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
 
-}
+	if ( $smExist && defined $info ) {
 
-sub GetExistSMBFlexot {
-	my $self = shift;
+		$info->{"text"}  = "UV Green";
+		$info->{"thick"} = 25;
 
-	my $mc = first { $_->{"gROWname"} eq "msflex" } @{ $self->{"boardBaseLayers"} };
+	}
 
-	return defined $mc ? 1 : 0;
+	return $smExist;
 
-}
-
-sub GetExistPCTop {
-	my $self = shift;
-
-	my $mc = first { $_->{"gROWname"} eq "pc" } @{ $self->{"boardBaseLayers"} };
-
-	return defined $mc ? 1 : 0;
-
-}
-
-sub GetExistPCBot {
-	my $self = shift;
-
-	my $mc = first { $_->{"gROWname"} eq "ps" } @{ $self->{"boardBaseLayers"} };
-
-	return defined $mc ? 1 : 0;
 }
 
 sub GetPcbType {
@@ -116,21 +113,21 @@ sub GetPlatedNC {
 	return @sorted;
 }
 
-sub GetGetExistStiff {
+sub GetExistStiff {
 	my $self     = shift;
-	my $side = shift; # top/bot
+	my $side     = shift;    # top/bot
 	my $stifInfo = shift;    # reference for storing info
-	
+
 	my $l = $side eq "top" ? "stiffc" : "stiffs";
 
-	my $exist = defined (first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} }) ? 1 : 0;
+	my $exist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
 
 	if ($exist) {
 
 		my $matInfo = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
 
 		if ( defined $stifInfo ) {
-			$stifInfo->{"adhesiveText"} = "3M tape";
+			$stifInfo->{"adhesiveText"}  = "3M tape";
 			$stifInfo->{"adhesiveThick"} = 50;                               # ? is not store
 			$stifInfo->{"stiffText"}     = $matInfo->{"nazev_subjektu"};     # ? is not store
 			$stifInfo->{"stiffThick"}    = $matInfo->{"tloustka"} * 1000;    # µm
@@ -139,6 +136,38 @@ sub GetGetExistStiff {
 
 	return $exist;
 
+}
+
+
+
+# Decide of get mask color ftom NIF/Helios
+sub __GetMaskColor {
+	my $self       = shift;
+	my $secondMask = shift;
+
+	my $jobId   = $self->{"jobId"};
+	my $nifFile = NifFile->new($jobId);
+
+	my %mask = ();
+
+	if ( $nifFile->Exist() ) {
+
+		# use nif file
+		%mask = $nifFile->GetSolderMaskColor();
+
+		# check if exist second mask in IS
+		if ($secondMask) {
+
+			%mask = HegMethods->GetSolderMaskColor2($jobId);
+		}
+	}
+	else {
+		# use nif norris
+		%mask = $secondMask ? HegMethods->GetSolderMaskColor2($jobId) : HegMethods->GetSolderMaskColor($jobId);
+
+	}
+
+	return %mask;
 }
 
 #-------------------------------------------------------------------------------------------#

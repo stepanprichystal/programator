@@ -21,8 +21,10 @@ use aliased 'Packages::Other::TableDrawing::DrawingBuilders::GeometryHelper';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsDrawBldr';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Section::SectionMngr';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
-
-
+use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
+use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+use aliased 'Packages::Other::TableDrawing::Enums'                  => 'TblDrawEnums';
+use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -35,7 +37,16 @@ sub new {
 	$self->{"inCAM"}      = shift;
 	$self->{"jobId"}      = shift;
 	$self->{"tblDrawing"} = TableDrawing->new( TblDrawEnums->Units_MM );
-	$self->{"tblMain"}    = $self->{"tblDrawing"}->AddTable("Main");
+
+	my $borderStyle = BorderStyle->new();
+	$borderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_HEADMAINBACK ) );
+	$borderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_HEADMAINBACK ) );
+	$borderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_HEADMAINBACK ) );
+	$borderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_HEADMAINBACK ) );
+
+	$self->{"tblMain"} = $self->{"tblDrawing"}->AddTable("Main", undef, $borderStyle);
+	
+	$self->{"tblMain"}->{"renderOrderEvt"}->Add(sub { $self->__OnRenderPriorityHndl(@_) } );
 	return $self;
 }
 
@@ -84,7 +95,7 @@ sub Build {
 	# 3) Define section style by builder and init sectiopn columns
 
 	my $secMngr = SectionMngr->new();
-	
+
 	$builderMngr->BuildSections($secMngr);
 	$builderMngr->BuildBlocks($secMngr);
 }
@@ -113,6 +124,15 @@ sub Output {
 	return $result;
 }
 
+
+# Set object (borders, backgrounds,...) render priority
+sub __OnRenderPriorityHndl{
+	my $self = shift;
+	my $priority = shift;
+	
+	
+	 $priority->{TblDrawEnums->DrawPriority_COLLBORDER} = 100;
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

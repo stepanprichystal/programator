@@ -19,6 +19,7 @@ use aliased 'Packages::Other::TableDrawing::Enums';
 use aliased 'Packages::Other::TableDrawing::Table::Style::TextStyle';
 use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
 use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -31,12 +32,14 @@ sub new {
 
 	$self->{"key"}           = shift;
 	$self->{"origin"}        = shift // { "x" => 0, "y" => 0 };
-	$self->{"drawPriority"}  = shift;
+	$self->{"borderStyle"}   = shift;
 	$self->{"overwriteCell"} = shift // 0;
 
 	$self->{"matrix"}   = [];
 	$self->{"collsDef"} = [];
 	$self->{"rowsDef"}  = [];
+	
+	$self->{"renderOrderEvt"}       = Event->new();
 
 	return $self;
 }
@@ -93,8 +96,8 @@ sub AddCell {
 	my $rowCnt      = shift // 1;
 	my $text        = shift;
 	my $textStyle   = shift;
-	my $backgStyle  = shift ;
-	my $borderStyle = shift ;
+	my $backgStyle  = shift;
+	my $borderStyle = shift;
 
 	#die "End col ($endCol) must be greater than star col ($startCol)" if ( $endCol < $startCol );
 	#die "End row ($endRow) must be greater than star row ($startRow)" if ( $endRow < $startRow );
@@ -137,10 +140,39 @@ sub AddCell {
 	}
 }
 
+sub GetRenderPriority {
+	my $self = shift;
+	
+	my %prior = ();
+
+	$prior{ Enums->DrawPriority_COLLBACKG }  = 1;    # column background
+	$prior{ Enums->DrawPriority_COLLBORDER } = 2;    # column border
+	$prior{ Enums->DrawPriority_ROWBACKG }   = 3;    # row background
+	$prior{ Enums->DrawPriority_ROWBORDER }  = 4;    # row border
+	$prior{ Enums->DrawPriority_CELLBACKG }  = 5;    # cell background
+	$prior{ Enums->DrawPriority_CELLBORDER } = 6;    # cell border
+	$prior{ Enums->DrawPriority_CELLTEXT }   = 7;    # cell text
+	$prior{ Enums->DrawPriority_TABBORDER }  = 8;    # table frame
+	
+	if( $self->{"renderOrderEvt"}->Handlers()){
+		
+		$self->{"renderOrderEvt"}->Do(\%prior);
+	}
+ 
+	return %prior;
+}
+
 sub GetOrigin {
 	my $self = shift;
 
 	return $self->{"origin"};
+}
+
+sub GetBorderStyle {
+	my $self = shift;
+
+	return $self->{"borderStyle"};
+
 }
 
 sub GetDrawPriority {

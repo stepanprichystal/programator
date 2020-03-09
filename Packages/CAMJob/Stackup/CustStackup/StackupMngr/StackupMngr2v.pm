@@ -38,6 +38,30 @@ sub GetLayerCnt {
 
 }
 
+sub GetExistCvrl {
+	my $self = shift;
+	my $side = shift;    # top/bot
+	my $info = shift;    # reference for storing info
+
+	my $l = $side eq "top" ? "cvrlc" : "cvrls";
+
+	my $exist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
+
+	if ($exist) {
+
+		my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
+
+		if ( defined $stifInfo ) {
+			$stifInfo->{"adhesiveText"}  = "";
+			$stifInfo->{"adhesiveThick"} = $matInfo->{"tloustka_lepidlo"} * 1000;
+			$stifInfo->{"cvrlText"}      = $matInfo->{"nazev_subjektu"};            # ? is not store
+			$stifInfo->{"cvrlThick"}     = $matInfo->{"tloustka"} * 1000;           # µm
+		}
+	}
+ 
+	return $exist;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
