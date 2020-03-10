@@ -16,6 +16,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::Stackup::Enums';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -28,24 +29,22 @@ sub new {
 	$self->{"adhesiveThick"} = shift;
 
 	#only if materialType is copper
-	$self->{"method"}    = undef;  
-	
-	
-	
-	return $self;  
+	$self->{"method"} = undef;
+
+	return $self;
 }
 
 # Thickness of adhesive in µm
-sub GetAdhesiveThick{
+sub GetAdhesiveThick {
 	my $self = shift;
-	
+
 	return $self->{"adhesiveThick"};
 }
 
 # Return method of laminating coverlay
 # Coverlay_SELECTIVE - bikini method
 # Coverlay_FULL - full coverlaz sheet is laminated
-sub GetMethod{
+sub GetMethod {
 	my $self = shift;
 	return $self->{"method"};
 }
@@ -53,16 +52,19 @@ sub GetMethod{
 # Override method GetThick
 # If Method is Coverlay_SELECTIVE, coverlay has 0µm thickness
 # because is inserted into NoFlw prepreg window (prepreg has same thickness as coverlay)
-sub GetThick{
+sub GetThick {
 	my $self = shift;
-	
+	my $thickInStackup = shift // 1;
+
 	my $thick = $self->SUPER::GetThick();
-	
-	$thick = 0 if($self->GetMethod() eq Enums->Coverlay_SELECTIVE);
-	
-	return $thick; 
+
+	if ($thickInStackup) {
+
+		$thick = 0 if ( $self->GetMethod() eq Enums->Coverlay_SELECTIVE );
+	}
+
+	return $thick;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

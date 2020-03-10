@@ -8,8 +8,9 @@ package Packages::Stackup::Stackup::StackupBuilder;
 #3th party library
 use strict;
 use warnings;
-use List::MoreUtils qw(uniq first_index);
+use List::MoreUtils qw(uniq first_index last_index);
 use List::Util qw(first min);
+use Storable qw(dclone);
 
 #local library
 use aliased 'Enums::EnumsGeneral';
@@ -36,6 +37,14 @@ sub new {
 	$self->{"jobId"}   = shift;
 	$self->{"stackup"} = shift;
 
+	my @boardBase = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	my @NCLayers = CamJob->GetNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	CamDrilling->AddNCLayerType( \@NCLayers );
+	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
+
+	$self->{"boardBaseLayers"} = \@boardBase;
+	$self->{"NCLayers"}        = \@NCLayers;
+
 	# PROPERTIES
 
 	return $self;
@@ -56,16 +65,11 @@ sub BuildStackupLamination {
 	die "Signal layer cnt in matrix ($sigLMatrixCnt) didn't match witch signal layer cnt in stackup file ($sigLStckpCnt)"
 	  if ( $sigLMatrixCnt != $sigLStckpCnt );
 
-	my @layers = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
-
-	CamDrilling->AddNCLayerType( \@layers );
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
-
 	my $NCCheck = 1;
-	my $mess = "";
-	$NCCheck = 0 if ( !LayerErrorInfo->CheckWrongNames( \@layers, \$mess ) );
-	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, \@layers, \$mess ) );
-	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, \@layers, \$mess ) );
+	my $mess    = "";
+	$NCCheck = 0 if ( !LayerErrorInfo->CheckWrongNames( $self->{"NCLayers"}, \$mess ) );
+	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirBot2Top( $inCAM, $jobId, $self->{"NCLayers"}, \$mess ) );
+	$NCCheck = 0 if ( $NCCheck && !LayerErrorInfo->CheckDirTop2Bot( $inCAM, $jobId, $self->{"NCLayers"}, \$mess ) );
 
 	die "NC layer error: $mess " unless ($NCCheck);
 
@@ -73,7 +77,7 @@ sub BuildStackupLamination {
 	$self->__AddCoverlayLayers();
 
 	# 2) Prepare NC layers, which go through stackup
-	my @NCLayers = CamJob->GetNCLayers( $inCAM, $jobId );
+	my @NCLayers = @{ dclone( $self->{"NCLayers"} ) };
 
 	# Each NC can participate in single product.
 	# If they are used by product during build stackup set "usedInProduct" == 1
@@ -187,9 +191,12 @@ sub __AddCoverlayLayers {
 		$layerInfo->{"adhesiveThick"} = $thickAdh;
 		$layerInfo->{"text"}          = ( $name =~ /LF\s*(\d{4})/i )[0];
 		$layerInfo->{"typetext"}      = "Pyralux " . ( $name =~ /Coverlay\s+(\w+)\s*/i )[0];
-		$layerInfo->{"method"}        = Enums->Coverlay_SELECTIVE;
-		$layerInfo->{"id"}            = $id;
-		$layerInfo->{"qId"}           = $qId;
+		$layerInfo->{"method"} =
+		  defined( first { $_->{"gROWname"} eq "coverlaypins" } @{ $self->{"boardBaseLayers"} } )
+		  ? Enums->Coverlay_SELECTIVE
+		  : Enums->Coverlay_FULL;
+		$layerInfo->{"id"}  = $id;
+		$layerInfo->{"qId"} = $qId;
 
 		my $idx = first_index { $_->GetType() eq Enums->MaterialType_COPPER && $_->GetCopperName() eq $sigL }
 		@{ $self->{"stackup"}->{"layers"} };
@@ -685,22 +692,24 @@ sub __IdentifyFlexCoreProduct {
 
 		if ( $pars->[$i]->{"l"}->GetCoreRigidType() eq Enums->CoreType_FLEX ) {
 
-			# - Flex Core with extra prepregs P1 from both side
-			my $P1Top = $pars->[ $i - 2 ];
-			my $P1Bot = $pars->[ $i + 2 ];
+			# - Flex Core with extra prepregs P1 from both side (or coverlay from one side and prepreg from other side)
+			my $P1Top = $i - 2 >= 0 ? $pars->[ $i - 2 ] : undef;
+			my $P1Bot = $i + 2 < scalar( @{$pars} ) ? $pars->[ $i + 2 ] : undef;
 
 			if (
 				 defined $P1Top
 				 && (    $P1Top->{"l"}->GetType() ne Enums->MaterialType_PREPREG
 					  || $P1Top->{"l"}->GetNoFlowType() ne Enums->NoFlowPrepreg_P1 )
+				 && $P1Top->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
 			  )
 			{
 				die "Top layer is not NoFlow P1";
 			}
 			if (
 				 defined $P1Bot
-				 && (    $P1Top->{"l"}->GetType() ne Enums->MaterialType_PREPREG
-					  || $P1Top->{"l"}->GetNoFlowType() ne Enums->NoFlowPrepreg_P1 )
+				 && (    $P1Bot->{"l"}->GetType() ne Enums->MaterialType_PREPREG
+					  || $P1Bot->{"l"}->GetNoFlowType() ne Enums->NoFlowPrepreg_P1 )
+				 && $P1Bot->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
 			  )
 			{
 				die "Bot layer is not NoFlow P1";
@@ -756,12 +765,14 @@ sub __BuildProductPress {
 					  && $inputProducts[0]->GetCoreRigidType() eq Enums->CoreType_RIGID )
 			  )
 			{
-
 				$topPIdx = first_index {
-					$_->{"t"} eq Enums->ProductL_PRODUCT && $_->{"l"}->GetCoreRigidType() eq Enums->CoreType_FLEX
+					$_->{"t"} eq Enums->ProductL_PRODUCT
 				}
 				@{$pars};
-				$botPIdx = $topPIdx;
+				$botPIdx = last_index {
+					$_->{"t"} eq Enums->ProductL_PRODUCT
+				}
+				@{$pars};
 
 			}
 			else {

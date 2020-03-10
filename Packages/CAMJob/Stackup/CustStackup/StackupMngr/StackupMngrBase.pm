@@ -66,25 +66,7 @@ sub GetExistSM {
 	return $smExist;
 }
 
-sub GetExistSMFlex {
-	my $self = shift;
-	my $side = shift;    # top/bot
-	my $info = shift;    # reference to store additional information
 
-	my $l = $side eq "top" ? "mcflex" : "msflex";
-
-	my $smExist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
-
-	if ( $smExist && defined $info ) {
-
-		$info->{"text"}  = "UV Green";
-		$info->{"thick"} = 25;
-
-	}
-
-	return $smExist;
-
-}
 
 sub GetPcbType {
 	my $self = shift;
@@ -124,13 +106,20 @@ sub GetExistStiff {
 
 	if ($exist) {
 
-		my $matInfo = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
-
 		if ( defined $stifInfo ) {
+			
+			my $matInfo = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
+			
 			$stifInfo->{"adhesiveText"}  = "3M tape";
 			$stifInfo->{"adhesiveThick"} = 50;                               # ? is not store
-			$stifInfo->{"stiffText"}     = $matInfo->{"nazev_subjektu"};     # ? is not store
-			$stifInfo->{"stiffThick"}    = $matInfo->{"tloustka"} * 1000;    # µm
+			
+	 
+			my @n = split(/\s/, $matInfo->{"nazev_subjektu"});
+			shift(@n) if($n[0] =~ /^Lam/i);
+			
+			$stifInfo->{"stiffText"}     = $n[0];     # ? is not store
+			$n[2] =~ s/,/\./;
+			$stifInfo->{"stiffThick"}    = int($n[2] * 1000);    # µm
 		}
 	}
 

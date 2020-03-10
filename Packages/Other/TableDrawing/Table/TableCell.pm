@@ -22,8 +22,7 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"posX"}        = shift;
-	$self->{"posY"}        = shift;
+	$self->{"id"}          = shift;
 	$self->{"text"}        = shift;
 	$self->{"textStyle"}   = shift;
 	$self->{"backgStyle"}  = shift;
@@ -32,6 +31,11 @@ sub new {
 	$self->{"yPosCnt"}     = shift;    # number of merged cells
 
 	return $self;
+}
+
+sub GetId {
+	my $self = shift;
+	return $self->{"id"};
 }
 
 sub GetText {
@@ -65,18 +69,6 @@ sub GetIsMerged {
 	my $self = shift;
 
 	return ( $self->{"xPosCnt"} > 1 || $self->{"yPosCnt"} > 1 ) ? 1 : 0;
-}
-
-sub GetPosX {
-	my $self = shift;
-
-	return $self->{"posX"};
-}
-
-sub GetPosY {
-	my $self = shift;
-
-	return $self->{"posY"};
 }
 
 sub GetXPosCnt {

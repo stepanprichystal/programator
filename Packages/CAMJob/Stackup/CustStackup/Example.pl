@@ -13,7 +13,8 @@ use aliased 'Packages::InCAM::InCAM';
 
 
 my $inCAM = InCAM->new();
-my $jobId    = "d270787";
+my $jobId    = "d152456"; #Outer RigidFLex TOP
+#my $jobId    = "d270787"; #Outer RigidFLex BOT
 #my $jobId    = "d261919";
 
 

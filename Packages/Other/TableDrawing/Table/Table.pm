@@ -39,6 +39,8 @@ sub new {
 	$self->{"collsDef"} = [];
 	$self->{"rowsDef"}  = [];
 	
+	$self->{"lastCellId"} = 0;
+	
 	$self->{"renderOrderEvt"}       = Event->new();
 
 	return $self;
@@ -114,7 +116,9 @@ sub AddCell {
 
 	die "Text style must be defined if text is set (cell: [$startCol, $startRow]" if ( defined $text && !defined $textStyle );
 
-	my $cell = TableCell->new( $startCol, $startRow, $text, $textStyle, $backgStyle, $borderStyle, $collCnt, $rowCnt );
+	my $cellId = $self->{"lastCellId"};
+	$self->{"lastCellId"} ++;
+	my $cell = TableCell->new( $cellId, $text, $textStyle, $backgStyle, $borderStyle, $collCnt, $rowCnt );
 
 	for ( my $i = $startCol ; $i < $startCol + $collCnt ; $i++ ) {
 
@@ -238,6 +242,36 @@ sub GetAllCells {
 
 	return @cells;
 }
+
+sub GetCellPos  {
+	my $self = shift;
+	my $cell = shift;
+	
+	
+	my $find = 0;
+ 
+	
+	for(my $i= 0;  $i < scalar(@{$self->{"matrix"}}); $i++){
+	
+		for(my $j= 0;  $j < scalar(@{$self->{"matrix"}->[$i]}); $j++){
+			
+			if($self->{"matrix"}->[$i]->GetId())
+			
+		}
+		
+		
+		
+	}
+	
+	
+	
+
+	my %pos = ();
+	
+
+	return $self->{"posX"};
+}
+ 
 
 sub GetCellLimits {
 	my $self    = shift;

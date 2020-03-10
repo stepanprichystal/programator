@@ -44,13 +44,10 @@ sub new {
 	return $self;
 }
 
- 
- 
-
 sub BuildRowsStackupOuter {
 	my $self      = shift;
 	my $outerSide = shift;
- 
+
 	my $tblMain   = $self->{"tblMain"};
 	my $stckpMngr = $self->{"stackupMngr"};
 	my $secMngr   = $self->{"sectionMngr"};
@@ -72,17 +69,6 @@ sub BuildRowsStackupOuter {
 	push( @{ $topOuter[0] }, cvrlAdh ) if ( $topSpec{cvrlAdh} );    # Coverlay adhesive alway on top Cu
 	push( @{ $topOuter[0] }, smFlex )  if ( $topSpec{smFlex} );     # Solder mask Flex alway on top Cu
 
-	if ( $topSpec{cvrlAdh} ) {
-
-		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
-
-			# Stiffener is on top Cu or above coverlay + coverlay adh
-			if ( !scalar( grep { $_ eq cvrlAdh && $_ eq cvrl } @{ $topOuter[$i] } ) ) {
-				push( @{ $topOuter[$i] }, stiffAdh );
-			}
-		}
-	}
-
 	# Add cvrl above cvrlAdh
 	if ( $topSpec{cvrl} ) {
 
@@ -93,6 +79,22 @@ sub BuildRowsStackupOuter {
 				push( @{ $topOuter[ $i + 1 ] }, cvrl );
 			}
 		}
+	}
+
+	if ( $topSpec{cvrlAdh} ) {
+
+		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
+
+			# Stiffener is on top Cu or above coverlay + coverlay adh
+			if ( !scalar( grep { $_ eq cvrlAdh || $_ eq cvrl } @{ $topOuter[$i] } ) ) {
+				push( @{ $topOuter[$i] }, stiffAdh );
+				last;
+			}
+		}
+	}
+	else {
+
+		push( @{ $topOuter[0] }, stiffAdh );    # Put stiffener adhesive on top cu
 	}
 
 	# Add stiff above stiffAdh
@@ -107,22 +109,23 @@ sub BuildRowsStackupOuter {
 		}
 	}
 
+	@topOuter = reverse(@topOuter) if ( $outerSide eq "top" );
+
 	my %t = ();
 	for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
 
-		next unless(scalar(@{ $topOuter[$i] }));
+		next unless ( scalar( @{ $topOuter[$i] } ) );
 
 		my $row = $tblMain->AddRowDef( $outerSide . "outer" . ( $i + 1 ), EnumsStyle->RowHeight_STANDARD );
 
-		foreach my $l  (@{ $topOuter[$i] }){
-			$t{$l} = $row
-		} 
+		foreach my $l ( @{ $topOuter[$i] } ) {
+			$t{$l} = $row;
+		}
 	}
-	
+
 	return %t;
 
 }
- 
 
 1;
 

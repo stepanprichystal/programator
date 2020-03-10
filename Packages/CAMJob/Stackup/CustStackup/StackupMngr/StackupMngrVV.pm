@@ -10,6 +10,7 @@ use base('Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase')
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 
@@ -37,6 +38,19 @@ sub GetLayerCnt {
 
 }
 
+# Return stackup layers(exceot top/bottom coverlay)
+sub GetStackupLayers{
+	my $self = shift;
+
+	my @l  =$self->{"stackup"}->GetAllLayers();
+	
+	shift(@l) if($l[0]->GetType() eq StackEnums->MaterialType_COVERLAY);
+	pop(@l) if($l[-1]->GetType() eq StackEnums->MaterialType_COVERLAY);
+
+	return @l;
+	
+}
+
 sub GetExistCvrl {
 	my $self = shift;
 	my $side = shift;    # top/bot
@@ -60,8 +74,9 @@ sub GetExistCvrl {
 
 				$info->{"adhesiveText"}  = "";
 				$info->{"adhesiveThick"} = $l[$i]->GetAdhesiveThick();
-				$info->{"cvrlText"}      = $l[$i]->GetText();
-				$info->{"cvrlThick"}     = $l[$i]->GetThick();
+				$info->{"cvrlText"}      = $l[$i]->GetTextType() ." ". $l[$i]->GetText();
+				$info->{"cvrlThick"}     =  $l[$i]->GetThick(0) - $l[$i]->GetAdhesiveThick(); # Return real thickness from base class (not consider if covelraz is selective)
+				$info->{"selective"}     = $l[$i]->GetMethod() eq StackEnums->Coverlay_SELECTIVE?1:0;
 
 			}
 			last;
@@ -69,6 +84,26 @@ sub GetExistCvrl {
 	}
 
 	return $exist;
+}
+
+sub GetExistSMFlex {
+	my $self = shift;
+	my $side = shift;    # top/bot
+	my $info = shift;    # reference to store additional information
+
+	my $l = $side eq "top" ? "mcflex" : "msflex";
+
+	my $smExist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
+
+	if ( $smExist && defined $info ) {
+
+		$info->{"text"}  = "UV Green";
+		$info->{"thick"} = 25;
+
+	}
+
+	return $smExist;
+
 }
 
 #-------------------------------------------------------------------------------------------#

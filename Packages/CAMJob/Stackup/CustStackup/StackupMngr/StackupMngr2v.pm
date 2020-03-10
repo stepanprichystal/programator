@@ -49,16 +49,19 @@ sub GetExistCvrl {
 
 	if ($exist) {
 
-		my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
-
 		if ( defined $stifInfo ) {
+
+			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
+
 			$stifInfo->{"adhesiveText"}  = "";
 			$stifInfo->{"adhesiveThick"} = $matInfo->{"tloustka_lepidlo"} * 1000;
-			$stifInfo->{"cvrlText"}      = $matInfo->{"nazev_subjektu"};            # ? is not store
-			$stifInfo->{"cvrlThick"}     = $matInfo->{"tloustka"} * 1000;           # µm
+			$stifInfo->{"cvrlText"}      = $matInfo->{"nazev_subjektu"};                                    # ? is not store
+			$stifInfo->{"cvrlThick"}     = $matInfo->{"tloustka"} * 1000 - $stifInfo->{"adhesiveThick"};    # µm
+			$stifInfo->{"selective"} = 0;    # Selective coverlay can bz onlz at RigidFLex pcb
+
 		}
 	}
- 
+
 	return $exist;
 }
 
