@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:  
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Other::TableDrawing::RenderDrawing;
@@ -160,14 +160,7 @@ sub __RenderBorderCell {
 		if ( $cell->GetBorderStyle() ) {
 			$self->__DrawBorder( $drawBuilder, $cell->GetBorderStyle(), \%cellLim, $tblsLim, $scaleX, $scaleY, $originX, $originY );
 		}
-
-		# 3) draw cell text
-		if ( defined $cell->GetText() ) {
-
-			my %cellLimTxt = $table->GetCellLimits( $cell, $cell->GetTextStyle()->GetMargin() );
-
-			$self->__DrawText( $drawBuilder, $cell->GetText(), $cell->GetTextStyle(), \%cellLimTxt, $tblsLim, $scaleX, $scaleY, $originX, $originY );
-		}
+ 
 	}
 
 }
@@ -249,7 +242,7 @@ sub __RenderTextCell {
 	my $scaleY      = shift;
 	my $originX     = shift;
 	my $originY     = shift;
- 
+
 	# 3) Draw cells
 	my @cels = $table->GetAllCells();
 
@@ -349,6 +342,25 @@ sub __DrawText {
 									$textStyle->GetFontFamily(),
 									$textStyle->GetVAlign(),
 									$textStyle->GetHAlign() );
+
+	}
+	elsif ( $textStyle->GetTextType() eq Enums->TextStyle_MULTILINE ) {
+
+		my @textLines = split( "\n", $text );
+
+		if ( $drawBuilder->GetCoordSystem() eq Enums->CoordSystem_LEFTBOT ) {
+
+			# X axis reise to right, Y axis raise to top
+
+			@textLines = reverse(@textLines);
+
+		}
+
+		$drawBuilder->DrawTextMultiLine( $startX, $startY, $rW, $rH, \@textLines, $textStyle->GetSize(), $scaleX, $scaleY, $textStyle->GetColor(),
+										 $textStyle->GetFont(),
+										 $textStyle->GetFontFamily(),
+										 $textStyle->GetVAlign(),
+										 $textStyle->GetHAlign() );
 
 	}
 	elsif ( $textStyle->GetTextType() eq Enums->TextStyle_PARAGRAPH ) {

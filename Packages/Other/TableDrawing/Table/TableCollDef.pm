@@ -23,7 +23,7 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"idx"}   = shift;
+	$self->{"id"}   = shift;
 	$self->{"key"}   = shift;
 	$self->{"width"} = shift;
 	$self->{"backgStyle"}  = shift ;
@@ -32,10 +32,10 @@ sub new {
 	return $self;
 }
 
-sub GetIndex {
+sub GetId {
 	my $self = shift;
 
-	return $self->{"idx"};
+	return $self->{"id"};
 
 }
 

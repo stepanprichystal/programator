@@ -35,6 +35,7 @@ use constant {
 
 use constant {
 			   TextStyle_LINE      => "TextStyle_line",         # none color
+			   TextStyle_MULTILINE => "TextStyle_multiline",    # none color
 			   TextStyle_PARAGRAPH => "TextStyle_paragraph",    # none color
 };
 

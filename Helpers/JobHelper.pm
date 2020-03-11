@@ -319,9 +319,10 @@ sub GetIsFlex {
 sub GetORigidFlexType {
 	my $self  = shift;
 	my $jobId = shift;
+	my $stackup = shift // StackupBase->new($jobId);;
 
 	my $type    = undef;
-	my $stackup = StackupBase->new($jobId);
+	 
 
 	my @allC = $stackup->GetAllCores();
 

@@ -13,9 +13,10 @@ use aliased 'Packages::InCAM::InCAM';
 
 
 my $inCAM = InCAM->new();
-my $jobId    = "d152456"; #Outer RigidFLex TOP
-#my $jobId    = "d270787"; #Outer RigidFLex BOT
-#my $jobId    = "d261919";
+#my $jobId    = "d152456"; #Outer RigidFLex TOP
+my $jobId    = "d270787"; #Outer RigidFLex BOT
+#my $jobId    = "d261919"; # standard vv
+#my $jobId = "d266566";
 
 
 # 1) Init customer stackup class

@@ -57,8 +57,8 @@ sub DefaultSectionsLayout {
 
 	foreach my $nc (@NC) {
 
-		$secA_MAIN->AddColumn( $nc->{"gROWname"},          EnumsStyle->ClmnWidth_ncdrill, $ncBackg, undef );    # material type
-		$secA_MAIN->AddColumn( $nc->{"gROWname"} . "_gap", EnumsStyle->ClmnWidth_ncdrill, undef,    undef );    # material type
+		$secA_MAIN->AddColumn( "nc_".$nc->{"gROWname"},          EnumsStyle->ClmnWidth_ncdrill, $ncBackg, undef );    # material type
+		$secA_MAIN->AddColumn( "nc_".$nc->{"gROWname"} . "_gap", EnumsStyle->ClmnWidth_ncdrill, undef,    undef );    # material type
 	}
 
 	$secA_MAIN->AddColumn( "rightEdge", EnumsStyle->ClmnWidth_overlap, $rightEdgeBackg );
@@ -79,7 +79,7 @@ sub DefaultSectionsLayout {
 	# Sec_D_FLEXTAIL
 
 	my $sec_D_FLEXTAIL = $secMngr->AddSection( Enums->Sec_D_FLEXTAIL );
-	$sec_D_FLEXTAIL->AddColumn( "leftEdge", EnumsStyle->ClmnWidth_overlap, $leftEdgeBackg );
+	 
 	$sec_D_FLEXTAIL->AddColumn( "matType",  EnumsStyle->ClmnWidth_mattype );
 	$sec_D_FLEXTAIL->AddColumn( "matThick", EnumsStyle->ClmnWidth_matthick );
 

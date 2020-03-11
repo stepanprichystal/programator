@@ -47,7 +47,7 @@ sub new {
 		die;
 	}
 
-	$self->{"pdf"} = undef;
+	$self->{"pdf"}     = undef;
 	$self->{"counter"} = 1;
 
 	return $self;
@@ -125,7 +125,6 @@ sub DrawRectangle {
 	my $height     = shift;
 	my $backgStyle = shift;
 
-
 	my $box = $self->{"page"}->gfx();    # Render first (text is rendered on top of it)
 
 	$self->{"counter"}++;
@@ -134,8 +133,9 @@ sub DrawRectangle {
 		$box->fillcolor($clr);
 
 		#$box->fillcolor('#0000ff');
-	}else{
-		
+	}
+	else {
+
 		$box->fillcolor('#ffffff');
 	}
 
@@ -238,6 +238,34 @@ sub DrawTextLine {
 	$txt->text($text)        if ( $textHAlign eq EnumsDraw->TextHAlign_LEFT );
 	$txt->text_center($text) if ( $textHAlign eq EnumsDraw->TextHAlign_CENTER );
 	$txt->text_right($text)  if ( $textHAlign eq EnumsDraw->TextHAlign_RIGHT );
+
+}
+
+sub DrawTextMultiLine {
+	my $self           = shift;
+	my $boxStartX      = shift;
+	my $boxStartY      = shift;
+	my $boxW           = shift;
+	my $boxH           = shift;
+	my $textLines      = shift;
+	my $size           = shift;    # not scaled
+	my $scaleX         = shift;
+	my $scaleY         = shift;
+	my $textClr        = shift;
+	my $textFont       = shift;
+	my $textFontFamily = shift;
+	my $textVAlign     = shift;
+	my $textHAlign     = shift;
+
+	my $lH = $boxH / scalar( @{$textLines} );
+
+	my $curPos = $boxStartY;
+	for ( my $i = 0 ; $i < scalar( @{$textLines} ) ; $i++ ) {
+
+		$self->DrawTextLine( $boxStartX, $curPos,  $boxW,     $lH,             $textLines->[$i], $size, $scaleX,
+							 $scaleY,    $textClr, $textFont, $textFontFamily, $textVAlign,      $textHAlign );
+		$curPos += $lH;
+	}
 
 }
 

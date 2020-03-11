@@ -8,8 +8,8 @@ package Packages::Other::TableDrawing::Table::Table;
 #3th party library
 use strict;
 use warnings;
-use List::MoreUtils qw(uniq);
 use List::Util qw(first);
+use List::MoreUtils qw(uniq first_index);
 
 #local library
 use aliased 'Packages::Other::TableDrawing::Table::TableCell';
@@ -38,10 +38,10 @@ sub new {
 	$self->{"matrix"}   = [];
 	$self->{"collsDef"} = [];
 	$self->{"rowsDef"}  = [];
-	
+
 	$self->{"lastCellId"} = 0;
-	
-	$self->{"renderOrderEvt"}       = Event->new();
+
+	$self->{"renderOrderEvt"} = Event->new();
 
 	return $self;
 }
@@ -55,8 +55,8 @@ sub AddColDef {
 
 	die "Col with key: $key already exists" if ( defined first { $_->GetKey() eq $key } @{ $self->{"collsDef"} } );
 
-	my $pos = scalar( @{ $self->{"collsDef"} } );
-	my $colDef = TableCollDef->new( $pos, $key, $width, $backgStyle, $borderStyle );
+	my $id = scalar( @{ $self->{"collsDef"} } );
+	my $colDef = TableCollDef->new( $id, $key, $width, $backgStyle, $borderStyle );
 	push( @{ $self->{"collsDef"} }, $colDef );
 
 	my @rows = (undef) x $self->GetRowCnt();
@@ -74,16 +74,29 @@ sub AddRowDef {
 	my $backgStyle  = shift;
 	my $borderStyle = shift;
 
-	die "Row with key: $key already exists" if ( defined first { $_->GetKey() eq $key } @{ $self->{"rowsDef"} } );
+	return $self->InsertRowDef( $key, scalar( @{ $self->{"rowsDef"} } ), $height, $backgStyle, $borderStyle );
 
-	my $pos = scalar( @{ $self->{"rowsDef"} } );
-	my $rowDef = TableRowDef->new( $pos, $key, $height, $backgStyle, $borderStyle );
-	push( @{ $self->{"rowsDef"} }, $rowDef );
+}
+
+sub InsertRowDef {
+	my $self        = shift;
+	my $key         = shift;
+	my $pos         = shift;
+	my $height      = shift;
+	my $backgStyle  = shift;
+	my $borderStyle = shift;
+
+	die "Row with key: $key already exists" if ( defined first { $_->GetKey() eq $key } @{ $self->{"rowsDef"} } );
+	die "Position ($pos) must be in range: 0 - " . scalar( @{ $self->{"rowsDef"} } ) if ( $pos > scalar( @{ $self->{"rowsDef"} } ) );
+
+	my $id = scalar( @{ $self->{"rowsDef"} } );
+	my $rowDef = TableRowDef->new( $id, $key, $height, $backgStyle, $borderStyle );
+
+	splice @{ $self->{"rowsDef"} }, $pos, 0, $rowDef;
 
 	foreach my $col ( @{ $self->{"matrix"} } ) {
 
-		push( @{$col}, undef );
-
+		splice @{$col}, $pos, 0, undef;
 	}
 
 	return $rowDef;
@@ -116,8 +129,15 @@ sub AddCell {
 
 	die "Text style must be defined if text is set (cell: [$startCol, $startRow]" if ( defined $text && !defined $textStyle );
 
+	die "Text style object type is wrong" if ( defined $textStyle && !$textStyle->isa("Packages::Other::TableDrawing::Table::Style::TextStyle") );
+
+	die "Backg style object type is wrong" if ( defined $backgStyle && !$backgStyle->isa("Packages::Other::TableDrawing::Table::Style::BackgStyle") );
+	
+	die "Border style object type is wrong"
+	  if ( defined $borderStyle && !$borderStyle->isa("Packages::Other::TableDrawing::Table::Style::BorderStyle") );
+
 	my $cellId = $self->{"lastCellId"};
-	$self->{"lastCellId"} ++;
+	$self->{"lastCellId"}++;
 	my $cell = TableCell->new( $cellId, $text, $textStyle, $backgStyle, $borderStyle, $collCnt, $rowCnt );
 
 	for ( my $i = $startCol ; $i < $startCol + $collCnt ; $i++ ) {
@@ -146,7 +166,7 @@ sub AddCell {
 
 sub GetRenderPriority {
 	my $self = shift;
-	
+
 	my %prior = ();
 
 	$prior{ Enums->DrawPriority_COLLBACKG }  = 1;    # column background
@@ -157,12 +177,12 @@ sub GetRenderPriority {
 	$prior{ Enums->DrawPriority_CELLBORDER } = 6;    # cell border
 	$prior{ Enums->DrawPriority_CELLTEXT }   = 7;    # cell text
 	$prior{ Enums->DrawPriority_TABBORDER }  = 8;    # table frame
-	
-	if( $self->{"renderOrderEvt"}->Handlers()){
-		
-		$self->{"renderOrderEvt"}->Do(\%prior);
+
+	if ( $self->{"renderOrderEvt"}->Handlers() ) {
+
+		$self->{"renderOrderEvt"}->Do( \%prior );
 	}
- 
+
 	return %prior;
 }
 
@@ -191,17 +211,39 @@ sub GetCollsDef {
 	return @{ $self->{"collsDef"} };
 }
 
+
+sub GetCollByKey {
+	my $self = shift;
+	my $key = shift;
+	
+	my $collDef = first {$_->GetKey() eq $key} @{ $self->{"collsDef"} };
+	
+	die "Collumn definition (key: $key) was not found" unless(defined $collDef);
+	
+	return $collDef;
+}
+
 sub GetRowsDef {
 	my $self = shift;
 
 	return @{ $self->{"rowsDef"} };
 }
 
+sub GetRowByKey {
+	my $self = shift;
+	my $key = shift;
+	
+	my $rowDef = first {$_->GetKey() eq $key} @{ $self->{"rowsDef"} };
+	
+	die "Row definition (key: $key) was not found" unless(defined $rowDef);
+	
+	return $rowDef;
+}
+
 sub GetColCnt {
 	my $self = shift;
 
 	return scalar( @{ $self->{"matrix"} } );
-
 }
 
 sub GetRowCnt {
@@ -215,6 +257,24 @@ sub GetRowCnt {
 
 	return $row;
 
+}
+
+sub GetCollDefPos {
+	my $self    = shift;
+	my $collDef = shift;
+
+	my $pos = first_index { $_->GetId() eq $collDef->GetId() } @{ $self->{"collsDef"} };
+
+	return $pos;
+}
+
+sub GetRowDefPos {
+	my $self   = shift;
+	my $rowDef = shift;
+
+	my $pos = first_index { $_->GetId() eq $rowDef->GetId() } @{ $self->{"rowsDef"} };
+
+	return $pos;
 }
 
 sub GetWidth {
@@ -243,43 +303,44 @@ sub GetAllCells {
 	return @cells;
 }
 
-sub GetCellPos  {
+sub GetCellPos {
 	my $self = shift;
 	my $cell = shift;
-	
-	
-	my $find = 0;
- 
-	
-	for(my $i= 0;  $i < scalar(@{$self->{"matrix"}}); $i++){
-	
-		for(my $j= 0;  $j < scalar(@{$self->{"matrix"}->[$i]}); $j++){
-			
-			if($self->{"matrix"}->[$i]->GetId())
-			
+
+	my $findCell = 0;
+	my $posX     = undef;
+	my $posY     = undef;
+
+	for ( my $i = 0 ; $i < scalar( @{ $self->{"matrix"} } ) ; $i++ ) {
+
+		for ( my $j = 0 ; $j < scalar( @{ $self->{"matrix"}->[$i] } ) ; $j++ ) {
+
+			next unless ( defined $self->{"matrix"}->[$i]->[$j] );
+
+			if ( $self->{"matrix"}->[$i]->[$j]->GetId() eq $cell->GetId() ) {
+				$findCell = 1;
+				$posX     = $i;
+				$posY     = $j;
+				last;
+			}
 		}
-		
-		
-		
+		last if ($findCell);
 	}
-	
-	
-	
 
-	my %pos = ();
-	
+	my %pos = ( "colPos" => $posX, "rowPos" => $posY );
 
-	return $self->{"posX"};
+	return %pos;
 }
- 
 
 sub GetCellLimits {
 	my $self    = shift;
 	my $cell    = shift;
 	my $margins = shift;
 
-	my $col = $cell->GetPosX();
-	my $row = $cell->GetPosY();
+	my %pos = $self->GetCellPos($cell);
+
+	my $col = $pos{"colPos"};
+	my $row = $pos{"rowPos"};
 
 	my %lim = ();
 
@@ -317,8 +378,8 @@ sub GetCollLimits {
 	#  x limits
 	my %lim = ();
 
-	if ( $collDef->GetIndex() > 0 ) {
-		$lim{"xMin"} += $_->GetWidth() for ( @{ $self->{"collsDef"} }[ 0 .. ( $collDef->GetIndex() - 1 ) ] );
+	if ( $self->GetCollDefPos($collDef) > 0 ) {
+		$lim{"xMin"} += $_->GetWidth() for ( @{ $self->{"collsDef"} }[ 0 .. ( $self->GetCollDefPos($collDef) - 1 ) ] );
 	}
 	else {
 		$lim{"xMin"} = 0;
@@ -345,8 +406,8 @@ sub GetRowLimits {
 
 	# y limits
 
-	if ( $rowDef->GetIndex() > 0 ) {
-		$lim{"yMin"} += $_->GetHeight() for ( @{ $self->{"rowsDef"} }[ 0 .. ( $rowDef->GetIndex() - 1 ) ] );
+	if ( $self->GetRowDefPos($rowDef) > 0 ) {
+		$lim{"yMin"} += $_->GetHeight() for ( @{ $self->{"rowsDef"} }[ 0 .. ( $self->GetRowDefPos($rowDef) - 1 ) ] );
 	}
 	else {
 		$lim{"yMin"} = 0;

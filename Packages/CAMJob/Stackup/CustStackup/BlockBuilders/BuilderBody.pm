@@ -1,4 +1,3 @@
-
 #-------------------------------------------------------------------------------------------#
 # Description: Nif Builder is responsible for creation nif file depend on pcb type
 # Builder for pcb no copper
@@ -25,6 +24,8 @@ use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderBodyHelper';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -76,19 +77,26 @@ sub __BuildHead {
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 	if ( $sec_BEGIN->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $row->GetIndex(), undef, undef, "Material text", $txtStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "cuUsage" ),  $row->GetIndex(), undef, undef, "Cu usage",      $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Material text", $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "cuUsage" ), $tblMain->GetRowDefPos($row), undef, undef, "Cu usage", $txtStyle );
 	}
 
 	# Sec_A_MAIN ---------------------------------------------
 	my $sec_A_MAIN = $secMngr->GetSection( Enums->Sec_A_MAIN );
 	if ( $sec_A_MAIN->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),  $row->GetIndex(), undef, undef, "Material",  $txtStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ), $row->GetIndex(), undef, undef, "Thickness", $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, "Material",
+						   $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Thickness", $txtStyle );
 
 		if ( scalar( $stckpMngr->GetPlatedNC() ) ) {
-			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "NCStartCol" ), $row->GetIndex(), undef, undef, "Plated drill", $txtStyle );
+			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "NCStartCol" ),
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, "Plated drill", $txtStyle );
 		}
 	}
 
@@ -96,8 +104,11 @@ sub __BuildHead {
 	my $sec_B_FLEX = $secMngr->GetSection( Enums->Sec_B_FLEX );
 	if ( $sec_B_FLEX->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ),  $row->GetIndex(), undef, undef, "Material",  $txtStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ), $row->GetIndex(), undef, undef, "Thickness", $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, "Material",
+						   $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Thickness", $txtStyle );
 	}
 
 	# Sec_C_RIGIDFLEX ---------------------------------------------
@@ -110,8 +121,12 @@ sub __BuildHead {
 	my $sec_D_FLEXTAIL = $secMngr->GetSection( Enums->Sec_D_FLEXTAIL );
 	if ( $sec_D_FLEXTAIL->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ),  $row->GetIndex(), undef, undef, "Material",  $txtStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ), $row->GetIndex(), undef, undef, "Thickness", $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Material", $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Thickness", $txtStyle );
 	}
 
 	# Sec_E_STIFFENER ---------------------------------------------
@@ -119,13 +134,43 @@ sub __BuildHead {
 
 	if ( $sec_E_STIFFENER->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ),  $row->GetIndex(), undef, undef, "Material",  $txtStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ), $row->GetIndex(), undef, undef, "Thickness", $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Material", $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Thickness", $txtStyle );
 	}
 
 }
 
 sub __BuildStackup {
+	my $self  = shift;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $tblMain   = $self->{"tblMain"};
+	my $stckpMngr = $self->{"stackupMngr"};
+	my $secMngr   = $self->{"sectionMngr"};
+
+	# 1) Add gap row above stackup
+	my $topGap = $tblMain->AddRowDef( "bodyTopGap", EnumsStyle->RowHeight_STANDARD );
+
+	# 2) Build stackup layers
+	$self->__BuildStackupDetail();
+
+	# 4) Add gap row below stackup
+	my $botGap = $tblMain->AddRowDef( "bodyBotGap", EnumsStyle->RowHeight_STANDARD );
+
+	# 3) Add gaps bewtwwen layers
+	$self->{"stckpBody"}->AddMaterialLayerGaps( $topGap, $botGap );
+
+	# 4) Add plating drills
+	$self->{"stckpBody"}->AddPlatedDrilling();
+
+}
+
+sub __BuildStackupDetail {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -156,19 +201,35 @@ sub __BuildStackup {
 										   TblDrawEnums->TextHAlign_LEFT,
 										   TblDrawEnums->TextVAlign_CENTER );
 
-	# 1) Add gap row above stackup
-	$tblMain->AddRowDef( "bodyTopGap", EnumsStyle->RowHeight_STANDARD );
-
 	# 1) Prepare special outer layers
 	# Merge slecial outer layers to same row is it is needed
 	my %topOuterRows = $self->{"stckpBody"}->BuildRowsStackupOuter("top");
-
 
 	# LAYER: Top SM
 	my $maskTopInfo = {};
 	if ( $stckpMngr->GetExistSM( "top", $maskTopInfo ) ) {
 
-		$self->__DrawMatSM( $topOuterRows{ BuilderBodyHelper->sm }, $maskTopInfo->{"color"}, dclone($txtTitleStyle), dclone($txtStandardStyle) );
+		my $coverFlexCore = 0;
+
+		my $pcbType = $stckpMngr->GetPcbType();
+
+		if (    $pcbType eq EnumsGeneral->PcbType_1VFLEX
+			 || $pcbType eq EnumsGeneral->PcbType_2VFLEX
+			 || $pcbType eq EnumsGeneral->PcbType_MULTIFLEX )
+		{
+			$coverFlexCore = 1;
+		}
+		elsif (
+
+			$pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO && JobHelper->GetORigidFlexType( $self->{"jobId"}, $stckpMngr->GetStackup() ) eq "flextop"
+		  )
+		{
+			$coverFlexCore = 1;
+		}
+
+		$self->__DrawMatSM( $topOuterRows{ BuilderBodyHelper->sm },
+							$maskTopInfo->{"color"},
+							$coverFlexCore, dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
 
 	# LAYER: TOP FLEX MASK UV
@@ -183,7 +244,7 @@ sub __BuildStackup {
 
 	# LAYER: TOP stiffener adhesive
 	my $stiffTopInfo = {};
-	if ( $stckpMngr->GetExistStiff("top", $stiffTopInfo) ) {
+	if ( $stckpMngr->GetExistStiff( "top", $stiffTopInfo ) ) {
 
 		$self->__DrawMatStiffAdh( $topOuterRows{ BuilderBodyHelper->stiffAdh },
 								  $stiffTopInfo->{"adhesiveText"},
@@ -192,7 +253,7 @@ sub __BuildStackup {
 	}
 
 	# LAYER: TOP stiffener
-	if ( $stckpMngr->GetExistStiff( "top"   ) ) {
+	if ( $stckpMngr->GetExistStiff("top") ) {
 
 		$self->__DrawMatStiff( $topOuterRows{ BuilderBodyHelper->stiff },
 							   $stiffTopInfo->{"stiffText"},
@@ -202,42 +263,162 @@ sub __BuildStackup {
 
 	# LAYER: TOP coverlay adhesive
 	my $cvrlOuterTopInfo = {};
-	if ( $stckpMngr->GetExistCvrl("top", $cvrlOuterTopInfo) ) {
+	if ( $stckpMngr->GetExistCvrl( "top", $cvrlOuterTopInfo ) ) {
 
-		$self->__DrawCoverlayAdhOuter( $topOuterRows{ BuilderBodyHelper->cvrlAdh },
-									   $cvrlOuterTopInfo->{"adhesiveText"},
-									   $cvrlOuterTopInfo->{"adhesiveThick"},
-									   $cvrlOuterTopInfo->{"selective"},
-									   dclone($txtTitleStyle), dclone($txtStandardStyle) );
+		$self->__DrawMatCoverlayAdhOuter( $topOuterRows{ BuilderBodyHelper->cvrlAdh },
+										  $cvrlOuterTopInfo->{"adhesiveText"},
+										  $cvrlOuterTopInfo->{"adhesiveThick"},
+										  $cvrlOuterTopInfo->{"selective"},
+										  dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
 
 	# LAYER: TOP coverlay
 	if ( $stckpMngr->GetExistCvrl("top") ) {
 
-		$self->__DrawCoverlayOuter( $topOuterRows{ BuilderBodyHelper->cvrl },
-									$cvrlOuterTopInfo->{"cvrlText"},
-									$cvrlOuterTopInfo->{"cvrlThick"},
-									$cvrlOuterTopInfo->{"selective"},
-									dclone($txtTitleStyle), dclone($txtStandardStyle) );
+		$self->__DrawMatCoverlayOuter(
+									   $topOuterRows{ BuilderBodyHelper->cvrl }, $cvrlOuterTopInfo->{"cvrlText"},
+									   $cvrlOuterTopInfo->{"cvrlThick"},         $cvrlOuterTopInfo->{"selective"},
+									   dclone($txtTitleStyle),                   dclone($txtStandardStyle)
+		);
 	}
 
 	# 2) Prepare signal layers
-	if($stckpMngr->GetLayerCnt() <= 2){
-		
-		
-	}else{
-		
-	 foreach my $l  ($stckpMngr->GetStackupLayers()){
-	 
-	 	
-	 
-	 
-	 }	
-		
-		
+	if ( $stckpMngr->GetLayerCnt() <= 2 ) {
+
 	}
+	else {
 
+		my $stackup = $stckpMngr->GetStackup();
+		my @layers  = $stackup->GetAllLayers();
+		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
+			my $l = $layers[$i];
+
+			if ( $l->GetType() eq StackEnums->MaterialType_COPPER ) {
+
+				my $row = $tblMain->AddRowDef( "copper_" . $l->GetCopperNumber(), EnumsStyle->RowHeight_STANDARD );
+
+				my %lPars = JobHelper->ParseSignalLayerName( $l->GetCopperName() );
+				my $p = $stackup->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+				my $isFlex = 0;
+				my $c = !$l->GetIsFoil() ? $stackup->GetCoreByCuLayer( $l->GetCopperName ) : undef;
+				if ( defined $c && $c->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
+					$isFlex = 1;
+				}
+
+				my $text = "Standard";
+				if ($isFlex) {
+
+					$text .= $c->GetText() =~ m/(r)\s+\d+\/\d+/i ? " (RA)" : " (ED)";
+
+				}
+
+				$self->__DrawMatCopper(
+										$row,                   $text,                 $l->GetThick(),  $p->GetIsPlated(),
+										$l->GetCopperNumber(),  $l->GetUssage() * 100, $l->GetIsFoil(), $isFlex,
+										dclone($txtTitleStyle), dclone($txtCuStyle),   dclone($txtStandardStyle)
+				);
+
+			}
+			elsif ( $l->GetType() eq StackEnums->MaterialType_PREPREG ) {
+
+				my @types = ();
+				my $text = $stckpMngr->GetPrepregTitle( $l, \@types );
+
+				my $prpgTxtTitleStyle = $txtTitleStyle;
+
+				if ( scalar(@types) > 1 ) {
+					$prpgTxtTitleStyle = TextStyle->new( TblDrawEnums->TextStyle_MULTILINE,
+														 EnumsStyle->TxtSize_STANDARD,
+														 Color->new( 0, 0, 0 ),
+														 undef, undef,
+														 TblDrawEnums->TextHAlign_LEFT,
+														 TblDrawEnums->TextVAlign_CENTER );
+
+					foreach my $t (@types) {
+
+						$text .= "\n - $t";
+					}
+				}
+
+				# Do distinguish between Noflow Prepreg 1 which insluding coverlay and others prepregs
+				if ( $l->GetIsNoFlow() && $l->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 && $l->GetIsCoverlayIncl() ) {
+
+					# find copper layer which is coverlaysticked to
+					# Add coverlay + adhesive
+					my $cuLayerSide = undef;
+
+					if ( $i - 1 >= 0 && $layers[ $i - 1 ]->GetType() eq StackEnums->MaterialType_COPPER ) {
+						$cuLayerSide = $stackup->GetSideByCuLayer( $layers[ $i - 1 ]->GetCopperName() );
+					}
+					elsif ( $i + 1 < scalar(@layers) && $layers[ $i + 1 ]->GetType() eq StackEnums->MaterialType_COPPER ) {
+						$cuLayerSide = $stackup->GetSideByCuLayer( $layers[ $i + 1 ]->GetCopperName() );
+					}
+					else {
+						die "No coverlay copper layer was found";
+					}
+
+					my $rowCvrl    = $tblMain->AddRowDef( "prepreg_cvrl_$i",     scalar(@types) * EnumsStyle->RowHeight_STANDARD );
+					my $rowCvrlAdh = $tblMain->AddRowDef( "prepreg_cvrl_adh_$i", scalar(@types) * EnumsStyle->RowHeight_STANDARD );
+
+					$self->__DrawMatPrepreg( ( $cuLayerSide eq "top" ? $rowCvrlAdh : $rowCvrl ),
+											 $text, $l->GetThick(), 1, StackEnums->NoFlowPrepreg_P1,
+											 1, $prpgTxtTitleStyle, dclone($txtStandardStyle) );
+					$self->__DrawMatPrepreg( ( $cuLayerSide eq "top" ? $rowCvrl : $rowCvrlAdh ),
+											 $text, $l->GetThick(), 1, StackEnums->NoFlowPrepreg_P1,
+											 0, $prpgTxtTitleStyle, dclone($txtStandardStyle) );
+
+					my $cvrlInInfo = $stckpMngr->GetCvrlInfo( $l->GetCoverlay() );
+
+					# coverlay adhesive incl
+
+					$self->__DrawMatCoverlayAdhOuter(
+													  $cuLayerSide eq "top" ? $rowCvrlAdh : $rowCvrl, $cvrlInInfo->{"adhesiveText"},
+													  $cvrlInInfo->{"adhesiveThick"}, $cvrlInInfo->{"selective"},
+													  dclone($txtTitleStyle),         dclone($txtStandardStyle)
+					);
+
+					# Coverlay included in noflow prepreg
+
+					$self->__DrawMatCoverlayOuter( $cuLayerSide eq "top" ? $rowCvrl : $rowCvrlAdh,
+												   $cvrlInInfo->{"cvrlText"},
+												   $cvrlInInfo->{"cvrlThick"},
+												   $cvrlInInfo->{"selective"},
+												   dclone($txtTitleStyle), dclone($txtStandardStyle) );
+				}
+				else {
+
+					my $rowPrpg = $tblMain->AddRowDef( "prepreg_$i", scalar(@types) * EnumsStyle->RowHeight_STANDARD );
+					$self->__DrawMatPrepreg( $rowPrpg, $text, $l->GetThick(), $l->GetIsNoFlow(), ( $l->GetIsNoFlow() ? $l->GetNoFlowType() : undef ),
+											 1, $prpgTxtTitleStyle, dclone($txtStandardStyle) );
+				}
+
+			}
+			elsif ( $l->GetType() eq StackEnums->MaterialType_CORE ) {
+
+				my $rowHeight = undef;
+
+				if ( $l->GetCoreRigidType() eq StackEnums->CoreType_RIGID ) {
+					$rowHeight = EnumsStyle->RowHeight_CORERIGID;
+				}
+				elsif ( $l->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
+					$rowHeight = EnumsStyle->RowHeight_COREFLEX;
+				}
+
+				my $row = $tblMain->AddRowDef( "core_" . $l->GetCoreNumber(), $rowHeight );
+
+				$self->__DrawMatCore(
+					$row, $l->GetTextType(), $l->GetThick(), ( $l->GetCoreRigidType() eq StackEnums->CoreType_FLEX ? 1 : 0 ),
+
+					dclone($txtTitleStyle), dclone($txtStandardStyle)
+				);
+
+			}
+
+		}
+
+	}
 
 	# Prepare special bottom outer layers
 	# Merge slecial outer layers to same row is it is needed
@@ -247,7 +428,27 @@ sub __BuildStackup {
 	my $maskBotInfo = {};
 	if ( $stckpMngr->GetExistSM( "bot", $maskBotInfo ) ) {
 
-		$self->__DrawMatSM( $botOuterRows{ BuilderBodyHelper->sm }, $maskBotInfo->{"color"}, dclone($txtTitleStyle), dclone($txtStandardStyle) );
+		my $coverFlexCore = 0;
+
+		my $pcbType = $stckpMngr->GetPcbType();
+
+		if (    $pcbType eq EnumsGeneral->PcbType_1VFLEX
+			 || $pcbType eq EnumsGeneral->PcbType_2VFLEX
+			 || $pcbType eq EnumsGeneral->PcbType_MULTIFLEX )
+		{
+			$coverFlexCore = 1;
+		}
+		elsif (
+
+			$pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO && JobHelper->GetORigidFlexType( $self->{"jobId"}, $stckpMngr->GetStackup() ) eq "flexbot"
+		  )
+		{
+			$coverFlexCore = 1;
+		}
+
+		$self->__DrawMatSM( $botOuterRows{ BuilderBodyHelper->sm },
+							$maskBotInfo->{"color"},
+							$coverFlexCore, dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
 
 	# LAYER: BOT FLEX MASK UV
@@ -262,7 +463,7 @@ sub __BuildStackup {
 
 	# LAYER: BOT stiffener adhesive
 	my $stiffBotInfo = {};
-	if ( $stckpMngr->GetExistStiff("bot", $stiffBotInfo) ) {
+	if ( $stckpMngr->GetExistStiff( "bot", $stiffBotInfo ) ) {
 
 		$self->__DrawMatStiffAdh( $botOuterRows{ BuilderBodyHelper->stiffAdh },
 								  $stiffBotInfo->{"adhesiveText"},
@@ -273,38 +474,34 @@ sub __BuildStackup {
 	# 2) Add material rows
 
 	# LAYER: BOT stiffener
-	if ( $stckpMngr->GetExistStiff( "bot") ) {
+	if ( $stckpMngr->GetExistStiff("bot") ) {
 
 		$self->__DrawMatStiff( $botOuterRows{ BuilderBodyHelper->stiff },
 							   $stiffBotInfo->{"stiffText"},
 							   $stiffBotInfo->{"stiffThick"},
 							   dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
-	
-	 # LAYER: BOT coverlay adhesive
-	my $cvrlOuterBotInfo = {};
-	if ( $stckpMngr->GetExistCvrl("bot", $cvrlOuterBotInfo) ) {
 
-		$self->__DrawCoverlayAdhOuter( $botOuterRows{ BuilderBodyHelper->cvrlAdh },
-									   $cvrlOuterBotInfo->{"adhesiveText"},
-									   $cvrlOuterBotInfo->{"adhesiveThick"},
-									   $cvrlOuterBotInfo->{"selective"},
-									   dclone($txtTitleStyle), dclone($txtStandardStyle) );
+	# LAYER: BOT coverlay adhesive
+	my $cvrlOuterBotInfo = {};
+	if ( $stckpMngr->GetExistCvrl( "bot", $cvrlOuterBotInfo ) ) {
+
+		$self->__DrawMatCoverlayAdhOuter( $botOuterRows{ BuilderBodyHelper->cvrlAdh },
+										  $cvrlOuterBotInfo->{"adhesiveText"},
+										  $cvrlOuterBotInfo->{"adhesiveThick"},
+										  $cvrlOuterBotInfo->{"selective"},
+										  dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
 
 	# LAYER: Top coverlay
 	if ( $stckpMngr->GetExistCvrl("bot") ) {
 
-		$self->__DrawCoverlayOuter( $botOuterRows{ BuilderBodyHelper->cvrl },
-									$cvrlOuterBotInfo->{"cvrlText"},
-									$cvrlOuterBotInfo->{"cvrlThick"},
-									$cvrlOuterBotInfo->{"selective"},
-									dclone($txtTitleStyle), dclone($txtStandardStyle) );
+		$self->__DrawMatCoverlayOuter(
+									   $botOuterRows{ BuilderBodyHelper->cvrl }, $cvrlOuterBotInfo->{"cvrlText"},
+									   $cvrlOuterBotInfo->{"cvrlThick"},         $cvrlOuterBotInfo->{"selective"},
+									   dclone($txtTitleStyle),                   dclone($txtStandardStyle)
+		);
 	}
-	
-
-	# 3) Add gap row below stackup
-	$tblMain->AddRowDef( "bodyBotGap", EnumsStyle->RowHeight_STANDARD );
 
 }
 
@@ -331,7 +528,9 @@ sub __DrawMatStiff {
 	if ( $sec_BEGIN->GetIsActive() ) {
 
 		# stiffener
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $row->GetIndex(), undef, undef, $matText, $txtTitleStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matText, $txtTitleStyle );
 	}
 
 	# Sec_E_STIFFENER ---------------------------------------------
@@ -341,9 +540,11 @@ sub __DrawMatStiff {
 
 		# stiffener
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ),
-						   $row->GetIndex(), undef, undef, "Stiffener", $txtStandardStyle, $stiffBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Stiffener", $txtStandardStyle, $stiffBackgStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
-						   $row->GetIndex(), undef, undef, int($matThick), $txtStandardStyle, $stiffBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, int($matThick), $txtStandardStyle, $stiffBackgStyle );
 
 	}
 
@@ -371,8 +572,8 @@ sub __DrawMatStiffAdh {
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 	if ( $sec_BEGIN->GetIsActive() ) {
 
-		# adhesive
-		#$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $row->GetIndex(), undef, undef, $matText, $txtTitleStyle );
+   # adhesive
+   #$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $tblMain->GetRowDefPos($row), undef, undef, $matText, $txtTitleStyle );
 	}
 
 	# Sec_E_STIFFENER ---------------------------------------------
@@ -382,9 +583,11 @@ sub __DrawMatStiffAdh {
 
 		# adhesive
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ),
-						   $row->GetIndex(), undef, undef, "Adhesive", $txtStandardStyle, $adhesiveBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Adhesive", $txtStandardStyle, $adhesiveBackgStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
-						   $row->GetIndex(), undef, undef, int($matThick), $txtStandardStyle, $adhesiveBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, int($matThick), $txtStandardStyle, $adhesiveBackgStyle );
 	}
 
 }
@@ -413,9 +616,11 @@ sub __DrawMatSMFlex {
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_B_FLEX, -1, 1 );
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ),
-						   $row->GetIndex(), undef, undef, "Flexible SM", $txtStandardStyle, $matBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Flexible SM", $txtStandardStyle, $matBackgStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ),
-						   $row->GetIndex(), undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
 	}
 
 	# Sec_D_FLEXTAIL ---------------------------------------------
@@ -427,7 +632,7 @@ sub __DrawMatSMFlex {
 	}
 }
 
-sub __DrawCoverlayAdhOuter {
+sub __DrawMatCoverlayAdhOuter {
 	my $self             = shift;
 	my $row              = shift;
 	my $matText          = shift;
@@ -449,7 +654,7 @@ sub __DrawCoverlayAdhOuter {
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 	if ( $sec_BEGIN->GetIsActive() ) {
 
-		#$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $row->GetIndex(), undef, undef, $matText, $txtTitleStyle );
+   #$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $tblMain->GetRowDefPos($row), undef, undef, $matText, $txtTitleStyle );
 	}
 
 	# Sec_A_MAIN ---------------------------------------------
@@ -459,9 +664,11 @@ sub __DrawCoverlayAdhOuter {
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_A_MAIN, 0, 0 );
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),
-						   $row->GetIndex(), undef, undef, "Adhesive", $txtStandardStyle, $matBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Adhesive", $txtStandardStyle, $matBackgStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
-						   $row->GetIndex(), undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
 	}
 
 	# $sec_B_FLEX ---------------------------------------------
@@ -471,9 +678,11 @@ sub __DrawCoverlayAdhOuter {
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_B_FLEX, -1, 1 );
 		if ($selective) {
 			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ),
-							   $row->GetIndex(), undef, undef, "Adhesive", $txtStandardStyle, $matBackgStyle );
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, "Adhesive", $txtStandardStyle, $matBackgStyle );
 			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ),
-							   $row->GetIndex(), undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
 		}
 
 	}
@@ -493,10 +702,11 @@ sub __DrawCoverlayAdhOuter {
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_D_FLEXTAIL, -1, 0 );
 		if ($selective) {
 			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ),
-							   $row->GetIndex(), undef, undef, "Adhesive", $txtStandardStyle, $matBackgStyle );
-			$tblMain->AddCell(
-				$secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
-				$row->GetIndex(), undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, "Adhesive", $txtStandardStyle, $matBackgStyle );
+			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
 		}
 	}
 
@@ -510,7 +720,7 @@ sub __DrawCoverlayAdhOuter {
 
 }
 
-sub __DrawCoverlayOuter {
+sub __DrawMatCoverlayOuter {
 	my $self             = shift;
 	my $row              = shift;
 	my $matText          = shift;
@@ -532,7 +742,9 @@ sub __DrawCoverlayOuter {
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 	if ( $sec_BEGIN->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $row->GetIndex(), undef, undef, $matText, $txtTitleStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matText, $txtTitleStyle );
 	}
 
 	# Sec_A_MAIN ---------------------------------------------
@@ -542,9 +754,11 @@ sub __DrawCoverlayOuter {
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_A_MAIN, 0, 0 );
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),
-						   $row->GetIndex(), undef, undef, "Coverlay", $txtStandardStyle, $matBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Coverlay", $txtStandardStyle, $matBackgStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
-						   $row->GetIndex(), undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
 	}
 
 	# $sec_B_FLEX ---------------------------------------------
@@ -554,9 +768,11 @@ sub __DrawCoverlayOuter {
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_B_FLEX, -1, 1 );
 		if ($selective) {
 			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ),
-							   $row->GetIndex(), undef, undef, "Coverlay", $txtStandardStyle, $matBackgStyle );
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, "Coverlay", $txtStandardStyle, $matBackgStyle );
 			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ),
-							   $row->GetIndex(), undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
 		}
 
 	}
@@ -576,10 +792,11 @@ sub __DrawCoverlayOuter {
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_D_FLEXTAIL, -1, 0 );
 		if ($selective) {
 			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ),
-							   $row->GetIndex(), undef, undef, "Coverlay", $txtStandardStyle, $matBackgStyle );
-			$tblMain->AddCell(
-				$secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
-				$row->GetIndex(), undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, "Coverlay", $txtStandardStyle, $matBackgStyle );
+			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
 		}
 	}
 
@@ -597,6 +814,7 @@ sub __DrawMatSM {
 	my $self             = shift;
 	my $row              = shift;
 	my $matText          = shift;
+	my $coverFlexCore    = shift;    # indicate if solder mask is directly on flex core
 	my $txtTitleStyle    = shift;
 	my $txtStandardStyle = shift;
 
@@ -613,7 +831,9 @@ sub __DrawMatSM {
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 	if ( $sec_BEGIN->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $row->GetIndex(), undef, undef, $matText, $txtTitleStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matText, $txtTitleStyle );
 	}
 
 	# Sec_A_MAIN ---------------------------------------------
@@ -623,9 +843,20 @@ sub __DrawMatSM {
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_A_MAIN, 0, 0 );
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),
-						   $row->GetIndex(), undef, undef, "Solder mask", $txtStandardStyle, $matBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Solder mask", $txtStandardStyle, $matBackgStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
-						   $row->GetIndex(), undef, undef, "25", $txtStandardStyle, $matBackgStyle );
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "25", $txtStandardStyle, $matBackgStyle );
+	}
+
+	# $sec_B_FLEX ---------------------------------------------
+	my $sec_B_FLEX = $secMngr->GetSection( Enums->Sec_B_FLEX );
+	if ( $sec_B_FLEX->GetIsActive() ) {
+		if ($coverFlexCore) {
+			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_B_FLEX, 0, 0 );
+		}
+
 	}
 
 	# Sec_C_RIGIDFLEX ---------------------------------------------
@@ -636,19 +867,13 @@ sub __DrawMatSM {
 
 	}
 
-	# $sec_B_FLEX ---------------------------------------------
-	my $sec_B_FLEX = $secMngr->GetSection( Enums->Sec_B_FLEX );
-	if ( $sec_B_FLEX->GetIsActive() ) {
-
-		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_B_FLEX, 0, 0 );
-
-	}
-
 	# Sec_D_FLEXTAIL ---------------------------------------------
 	my $sec_D_FLEXTAIL = $secMngr->GetSection( Enums->Sec_D_FLEXTAIL );
 	if ( $sec_D_FLEXTAIL->GetIsActive() ) {
 
-		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_D_FLEXTAIL, 0, 0 );
+		if ($coverFlexCore) {
+			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_D_FLEXTAIL, 0, 0 );
+		}
 	}
 
 	# Sec_E_STIFFENER ---------------------------------------------
@@ -656,17 +881,25 @@ sub __DrawMatSM {
 
 	if ( $sec_E_STIFFENER->GetIsActive() ) {
 
-		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_E_STIFFENER, 0, 0 );
+		if ($coverFlexCore) {
+			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_E_STIFFENER, 0, 0 );
+		}
 	}
 
 }
 
-sub __DrawMatCu {
+sub __DrawMatCopper {
 	my $self             = shift;
 	my $row              = shift;
-	my $stackupPos       = shift;
+	my $matText          = shift;
+	my $matThick         = shift;
+	my $isPlated         = shift;
+	my $lNumber          = shift;
+	my $cuUssage         = shift;
+	my $foil             = shift;
+	my $flex             = shift;
 	my $txtTitleStyle    = shift;
-	my $txtCuLayerStyle  = shift;
+	my $txtCuStyle       = shift;
 	my $txtStandardStyle = shift;
 
 	my $tblMain   = $self->{"tblMain"};
@@ -674,42 +907,53 @@ sub __DrawMatCu {
 	my $secMngr   = $self->{"sectionMngr"};
 
 	# 1) Define styles
-	$txtStandardStyle->SetColor( Color->new( 0, 0, 0 ) );
+	$txtStandardStyle->SetColor( Color->new( 255, 255, 255 ) );
 
-	my $matBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_HEADSUBBACK ) );
+	my $matBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_COPPER ) );
 
 	# Sec_BEGIN ---------------------------------------------
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 	if ( $sec_BEGIN->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $row->GetIndex(), undef, undef, "Material text", $txtTitleStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "cuUsage" ), $row->GetIndex(), undef, undef, "Cu usage", $txtCuLayerStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matText, $txtTitleStyle );
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "cuUsage" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "L" . $lNumber . ( defined $cuUssage ? " (" . int($cuUssage) . "%)" : "" ),
+						   $txtTitleStyle );
 	}
 
 	# Sec_A_MAIN ---------------------------------------------
 	my $sec_A_MAIN = $secMngr->GetSection( Enums->Sec_A_MAIN );
 	if ( $sec_A_MAIN->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),  $row->GetIndex(), undef, undef, "Material",  $txtStandardStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ), $row->GetIndex(), undef, undef, "Thickness", $txtStandardStyle );
+		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_A_MAIN, 0, 0 );
 
-		if ( scalar( $stckpMngr->GetPlatedNC() ) ) {
-			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "NCStartCol" ),
-							   $row->GetIndex(), undef, undef, "Plated drill", $txtStandardStyle );
-		}
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Copper" . ( $foil ? " foil" : "" ),
+						   $txtStandardStyle, $matBackgStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matThick . ( $isPlated ? "+25 Plt" : "" ),
+						   $txtStandardStyle, $matBackgStyle );
 	}
 
-	# Sec_B_FLEX ---------------------------------------------
+	# $sec_B_FLEX ---------------------------------------------
 	my $sec_B_FLEX = $secMngr->GetSection( Enums->Sec_B_FLEX );
 	if ( $sec_B_FLEX->GetIsActive() ) {
-
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ),  $row->GetIndex(), undef, undef, "Material",  $txtStandardStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ), $row->GetIndex(), undef, undef, "Thickness", $txtStandardStyle );
+		if ($flex) {
+			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_B_FLEX, 0, 0 );
+		}
 	}
 
 	# Sec_C_RIGIDFLEX ---------------------------------------------
 	my $sec_C_RIGIDFLEX = $secMngr->GetSection( Enums->Sec_C_RIGIDFLEX );
 	if ( $sec_C_RIGIDFLEX->GetIsActive() ) {
+
+		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_C_RIGIDFLEX, 0, 0 );
 
 	}
 
@@ -717,10 +961,9 @@ sub __DrawMatCu {
 	my $sec_D_FLEXTAIL = $secMngr->GetSection( Enums->Sec_D_FLEXTAIL );
 	if ( $sec_D_FLEXTAIL->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ),
-						   $row->GetIndex(), undef, undef, "Material", $txtStandardStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
-						   $row->GetIndex(), undef, undef, "Thickness", $txtStandardStyle );
+		if ($flex) {
+			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_D_FLEXTAIL, 0, 0 );
+		}
 	}
 
 	# Sec_E_STIFFENER ---------------------------------------------
@@ -728,10 +971,152 @@ sub __DrawMatCu {
 
 	if ( $sec_E_STIFFENER->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ),
-						   $row->GetIndex(), undef, undef, "Material", $txtStandardStyle );
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
-						   $row->GetIndex(), undef, undef, "Thickness", $txtStandardStyle );
+		if ($flex) {
+			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_E_STIFFENER, 0, 0 );
+		}
+	}
+
+}
+
+sub __DrawMatPrepreg {
+	my $self             = shift;
+	my $row              = shift;
+	my $matText          = shift;
+	my $matThick         = shift;
+	my $isNoFLow         = shift;
+	my $noFlowType       = shift;
+	my $displayType      = shift;
+	my $txtTitleStyle    = shift;
+	my $txtStandardStyle = shift;
+
+	my $tblMain   = $self->{"tblMain"};
+	my $stckpMngr = $self->{"stackupMngr"};
+	my $secMngr   = $self->{"sectionMngr"};
+
+	# 1) Define styles
+	$txtStandardStyle->SetColor( Color->new( 255, 255, 255 ) );
+
+	my $matBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_PREPREG ) );
+
+	# Sec_BEGIN ---------------------------------------------
+	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
+	if ( $sec_BEGIN->GetIsActive() ) {
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matText, $txtTitleStyle );
+	}
+
+	# Sec_A_MAIN ---------------------------------------------
+	my $sec_A_MAIN = $secMngr->GetSection( Enums->Sec_A_MAIN );
+	if ( $sec_A_MAIN->GetIsActive() ) {
+
+		my $stdVV = $stckpMngr->GetPcbType() eq EnumsGeneral->PcbType_MULTI || $stckpMngr->GetPcbType() eq EnumsGeneral->PcbType_MULTIFLEX ? 1 : 0;
+
+		# clear marigns of prepreg when standard multilayer
+		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_A_MAIN, $stdVV ? 1 : 0, $stdVV ? -1 : 0 );
+		my $typeTxt = ( $isNoFLow ? "NoFlow prepreg " . ( $noFlowType eq StackEnums->NoFlowPrepreg_P1 ? "1" : "2" ) : "Prepreg" );
+
+		if ($displayType) {
+
+			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, $typeTxt, $txtStandardStyle, $matBackgStyle );
+			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, int($matThick), $txtStandardStyle, $matBackgStyle );
+
+		}
+	}
+
+	# Sec_C_RIGIDFLEX ---------------------------------------------
+	my $sec_C_RIGIDFLEX = $secMngr->GetSection( Enums->Sec_C_RIGIDFLEX );
+	if ( $sec_C_RIGIDFLEX->GetIsActive() ) {
+
+		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_C_RIGIDFLEX, 0, 0 );
+
+	}
+
+}
+
+sub __DrawMatCore {
+	my $self             = shift;
+	my $row              = shift;
+	my $matText          = shift;
+	my $matThick         = shift;
+	my $isFlex           = shift;
+	my $txtTitleStyle    = shift;
+	my $txtStandardStyle = shift;
+
+	my $tblMain   = $self->{"tblMain"};
+	my $stckpMngr = $self->{"stackupMngr"};
+	my $secMngr   = $self->{"sectionMngr"};
+
+	# 1) Define styles
+	$txtStandardStyle->SetColor( $isFlex ? Color->new( 0, 0, 0 ) : Color->new( 255, 255, 255 ) );
+
+	my $matBackgStyle =
+	  BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( $isFlex ? EnumsStyle->Clr_COREFLEX : EnumsStyle->Clr_CORERIGID ) );
+
+	# Sec_BEGIN ---------------------------------------------
+	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
+	if ( $sec_BEGIN->GetIsActive() ) {
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matText, $txtTitleStyle );
+	}
+
+	# Sec_A_MAIN ---------------------------------------------
+	my $sec_A_MAIN = $secMngr->GetSection( Enums->Sec_A_MAIN );
+	if ( $sec_A_MAIN->GetIsActive() ) {
+
+		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_A_MAIN, 0, 0 );
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, ( $isFlex ? "Flex" : "Rigid" ) . " core",
+						   $txtStandardStyle, $matBackgStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matThick, $txtStandardStyle, $matBackgStyle );
+	}
+
+	# $sec_B_FLEX ---------------------------------------------
+	my $sec_B_FLEX = $secMngr->GetSection( Enums->Sec_B_FLEX );
+	if ( $sec_B_FLEX->GetIsActive() ) {
+
+		if ($isFlex) {
+			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_B_FLEX, 0, 0 );
+		}
+
+	}
+
+	# Sec_C_RIGIDFLEX ---------------------------------------------
+	my $sec_C_RIGIDFLEX = $secMngr->GetSection( Enums->Sec_C_RIGIDFLEX );
+	if ( $sec_C_RIGIDFLEX->GetIsActive() ) {
+
+		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_C_RIGIDFLEX, 0, 0 );
+
+	}
+
+	# Sec_D_FLEXTAIL ---------------------------------------------
+	my $sec_D_FLEXTAIL = $secMngr->GetSection( Enums->Sec_D_FLEXTAIL );
+	if ( $sec_D_FLEXTAIL->GetIsActive() ) {
+
+		if ($isFlex) {
+			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_D_FLEXTAIL, 0, 0 );
+		}
+	}
+
+	# Sec_E_STIFFENER ---------------------------------------------
+	my $sec_E_STIFFENER = $secMngr->GetSection( Enums->Sec_E_STIFFENER );
+
+	if ( $sec_E_STIFFENER->GetIsActive() ) {
+
+		if ($isFlex) {
+			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_E_STIFFENER, 0, 0 );
+		}
 	}
 
 }
@@ -755,7 +1140,7 @@ sub __FillRowBackg {
 
 	for ( my $i = $startPos ; $i <= $endPos ; $i++ ) {
 
-		$tblMain->AddCell( $i, $row->GetIndex(), undef, undef, undef, undef, $backgStyle );
+		$tblMain->AddCell( $i, $tblMain->GetRowDefPos($row), undef, undef, undef, undef, $backgStyle );
 
 	}
 

@@ -61,12 +61,11 @@ sub GetExistSM {
 
 		my %mask = $self->__GetMaskColor();
 		$info->{"color"} = ValueConvertor->GetMaskCodeToColor( $mask{$side} );
+
 	}
 
 	return $smExist;
 }
-
-
 
 sub GetPcbType {
 	my $self = shift;
@@ -79,16 +78,27 @@ sub GetPlatedNC {
 
 	my @NC = grep { $_->{"plated"} && !$_->{"technical"} } @{ $self->{"NCLayers"} };
 
+	my $sigLCnt = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+
 	my @sorted = ();
 
+	# Sorting normal through frilling
 	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill     && $_->{"NCSigStartOrder"} == 1 } @NC );
 	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $_->{"NCSigStartOrder"} == 1 } @NC );
 	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill     && $_->{"NCSigStartOrder"} > 1 } @NC );
 	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $_->{"NCSigStartOrder"} > 1 } @NC );
-	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop } @NC );
-	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } @NC );
-	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot } @NC );
-	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } @NC );
+
+	# sorting blind drill from top (first drill which start at top layer)
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop     && $_->{"NCSigStartOrder"} == 1 } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop && $_->{"NCSigStartOrder"} == 1 } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop     && $_->{"NCSigStartOrder"} > 1 } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop && $_->{"NCSigStartOrder"} > 1 } @NC );
+
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot     && $_->{"NCSigStartOrder"} == $sigLCnt } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot && $_->{"NCSigStartOrder"} == $sigLCnt } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot     && $_->{"NCSigStartOrder"} < $sigLCnt } @NC );
+	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot && $_->{"NCSigStartOrder"} < $sigLCnt } @NC );
+
 	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill } @NC );
 	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NC );
 
@@ -107,27 +117,24 @@ sub GetExistStiff {
 	if ($exist) {
 
 		if ( defined $stifInfo ) {
-			
+
 			my $matInfo = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
-			
+
 			$stifInfo->{"adhesiveText"}  = "3M tape";
-			$stifInfo->{"adhesiveThick"} = 50;                               # ? is not store
-			
-	 
-			my @n = split(/\s/, $matInfo->{"nazev_subjektu"});
-			shift(@n) if($n[0] =~ /^Lam/i);
-			
-			$stifInfo->{"stiffText"}     = $n[0];     # ? is not store
+			$stifInfo->{"adhesiveThick"} = 50;          # ? is not store
+
+			my @n = split( /\s/, $matInfo->{"nazev_subjektu"} );
+			shift(@n) if ( $n[0] =~ /^Lam/i );
+
+			$stifInfo->{"stiffText"} = $n[0];           # ? is not store
 			$n[2] =~ s/,/\./;
-			$stifInfo->{"stiffThick"}    = int($n[2] * 1000);    # µm
+			$stifInfo->{"stiffThick"} = int( $n[2] * 1000 );    # µm
 		}
 	}
 
 	return $exist;
 
 }
-
-
 
 # Decide of get mask color ftom NIF/Helios
 sub __GetMaskColor {

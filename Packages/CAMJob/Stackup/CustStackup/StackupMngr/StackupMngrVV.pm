@@ -38,27 +38,43 @@ sub GetLayerCnt {
 
 }
 
-# Return stackup layers(exceot top/bottom coverlay)
-sub GetStackupLayers{
+sub GetStackup {
 	my $self = shift;
 
-	my @l  =$self->{"stackup"}->GetAllLayers();
-	
-	shift(@l) if($l[0]->GetType() eq StackEnums->MaterialType_COVERLAY);
-	pop(@l) if($l[-1]->GetType() eq StackEnums->MaterialType_COVERLAY);
+	return $self->{"stackup"};
+}
+
+# Return stackup layers(exceot top/bottom coverlay)
+sub GetStackupLayers {
+	my $self = shift;
+
+	my @l = $self->{"stackup"}->GetAllLayers();
+
+	shift(@l) if ( $l[0]->GetType() eq StackEnums->MaterialType_COVERLAY );
+	pop(@l)   if ( $l[-1]->GetType() eq StackEnums->MaterialType_COVERLAY );
 
 	return @l;
-	
+
 }
 
 sub GetExistCvrl {
-	my $self = shift;
-	my $side = shift;    # top/bot
-	my $info = shift;    # reference for storing info
+	my $self   = shift;
+	my $side   = shift;    # top/bot
+	my $info   = shift;    # reference for storing info
+	my $stckpL = shift;
 
 	my $exist = 0;
 
 	my @l = $self->{"stackup"}->GetAllLayers();
+
+	my $sigName = undef;
+	if ( $side eq "top" ) {
+		$sigName = "c";
+	}
+	elsif ( $side eq "bot" ) {
+		$sigName = "s";
+	}
+
 	@l = reverse(@l) if ( $side eq "bot" );
 
 	for ( my $i = 0 ; $i < scalar(@l) ; $i++ ) {
@@ -66,18 +82,12 @@ sub GetExistCvrl {
 		if (    $l[$i]->GetType() eq StackEnums->MaterialType_COVERLAY
 			 && defined $l[ $i + 1 ]
 			 && $l[ $i + 1 ]->GetType() eq StackEnums->MaterialType_COPPER
-			 && $l[ $i + 1 ]->GetCopperName() eq ( $side eq "top" ? "c" : "s" ) )
+			 && $l[ $i + 1 ]->GetCopperName() eq $sigName )
 		{
 			$exist = 1;
 
 			if ( defined $info ) {
-
-				$info->{"adhesiveText"}  = "";
-				$info->{"adhesiveThick"} = $l[$i]->GetAdhesiveThick();
-				$info->{"cvrlText"}      = $l[$i]->GetTextType() ." ". $l[$i]->GetText();
-				$info->{"cvrlThick"}     =  $l[$i]->GetThick(0) - $l[$i]->GetAdhesiveThick(); # Return real thickness from base class (not consider if covelraz is selective)
-				$info->{"selective"}     = $l[$i]->GetMethod() eq StackEnums->Coverlay_SELECTIVE?1:0;
-
+				$self->GetCvrlInfo( $l[$i], $info );
 			}
 			last;
 		}
@@ -86,10 +96,25 @@ sub GetExistCvrl {
 	return $exist;
 }
 
+sub GetCvrlInfo {
+	my $self   = shift;
+	my $stckpL = shift;
+	my $info   = shift // {};
+
+	$info->{"adhesiveText"}  = "";
+	$info->{"adhesiveThick"} = $stckpL->GetAdhesiveThick();
+	$info->{"cvrlText"}      = $stckpL->GetTextType() . " " . $stckpL->GetText();
+	$info->{"cvrlThick"} =
+	  $stckpL->GetThick(0) - $stckpL->GetAdhesiveThick();    # Return real thickness from base class (not consider if covelraz is selective)
+	$info->{"selective"} = $stckpL->GetMethod() eq StackEnums->Coverlay_SELECTIVE ? 1 : 0;
+
+	return $info;
+}
+
 sub GetExistSMFlex {
 	my $self = shift;
-	my $side = shift;    # top/bot
-	my $info = shift;    # reference to store additional information
+	my $side = shift;                                        # top/bot
+	my $info = shift;                                        # reference to store additional information
 
 	my $l = $side eq "top" ? "mcflex" : "msflex";
 
@@ -103,6 +128,44 @@ sub GetExistSMFlex {
 	}
 
 	return $smExist;
+
+}
+
+sub GetPrepregTitle {
+	my $self  = shift;
+	my $l     = shift;
+	my $types = shift;
+
+	my $t = $l->GetTextType();
+	$t =~ s/\s//g;
+	my %childPCnt = ();
+
+	foreach my $childP ( $l->GetAllPrepregs() ) {
+
+		my $type = $childP->GetText();
+		$type =~ s/\s//g;
+		if ( $type !~ m/^(\d+)\s*(\[.*\])*/i ) {
+			die "Prepreg text:" . $l->GetText() . " doesn't have valid format";
+		}
+
+		# add gap if there is bracket
+		$type =~ s/\[/ [/;
+
+		if ( defined $childPCnt{$type} ) {
+			$childPCnt{$type}++;
+		}
+		else {
+			$childPCnt{$type} = 1;
+		}
+	}
+
+	if ( scalar( keys %childPCnt ) == 1 ) {
+		$t .= " (" . join( "+", map { $childPCnt{$_} . "x" . $_ } keys %childPCnt ) . ")";
+	}
+
+	push( @{$types}, map { $childPCnt{$_} . "x" . $_ } keys %childPCnt );
+
+	return $t;
 
 }
 

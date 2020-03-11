@@ -48,7 +48,9 @@ use constant {
 			   RowHeight_TITLE    => 8,
 			   RowHeight_MAINHEAD => 8,
 			   RowHeight_STANDARD => 4.5,
-			   RowHeight_MATGAP   => 0.7
+			   RowHeight_MATGAP   => 0.6,
+			    RowHeight_CORERIGID => 9.3,
+			    RowHeight_COREFLEX => 4.5,
 };
 
 1;

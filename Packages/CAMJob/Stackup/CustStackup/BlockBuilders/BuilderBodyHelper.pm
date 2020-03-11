@@ -116,7 +116,7 @@ sub BuildRowsStackupOuter {
 
 		next unless ( scalar( @{ $topOuter[$i] } ) );
 
-		my $row = $tblMain->AddRowDef( $outerSide . "outer" . ( $i + 1 ), EnumsStyle->RowHeight_STANDARD );
+		my $row = $tblMain->AddRowDef( "outer_$outerSide" . "_" . ( $i + 1 ), EnumsStyle->RowHeight_STANDARD );
 
 		foreach my $l ( @{ $topOuter[$i] } ) {
 			$t{$l} = $row;
@@ -125,6 +125,98 @@ sub BuildRowsStackupOuter {
 
 	return %t;
 
+}
+
+sub AddMaterialLayerGaps {
+	my $self     = shift;
+	my $startRow = shift;
+	my $endRow   = shift;
+
+	my $tblMain   = $self->{"tblMain"};
+	my $stckpMngr = $self->{"stackupMngr"};
+	my $secMngr   = $self->{"sectionMngr"};
+
+	my $sRow = $tblMain->GetRowDefPos($startRow);
+	my $eRow = $tblMain->GetRowDefPos($endRow);
+
+	my @rows = $tblMain->GetRowsDef();
+
+	my $nameNext  = undef;
+	my $matGapNum = 1;
+	for ( my $i = $eRow - 1 ; $i > $sRow ; $i-- ) {
+
+		my $name = $rows[$i]->GetKey();
+		$nameNext = $rows[ $i + 1 ]->GetKey();
+
+		my $addGapAbove = 1;
+
+		if (    ( $name =~ /^copper_/ && defined $nameNext && $nameNext =~ /^core_/ )
+			 || ( $name =~ /^core_/ && defined $nameNext && $nameNext =~ /^copper_/ ) )
+		{
+			$addGapAbove = 0;
+		}
+
+		if (    ( $name =~ /^prepreg_cvrl_adh/ && defined $nameNext && $nameNext =~ /^prepreg_cvr/ )
+			 || ( $name =~ /^prepreg_cvr/ && defined $nameNext && $nameNext =~ /^prepreg_cvrl_adh/ ) )
+		{
+			$addGapAbove = 0;
+		}
+		if ( $name =~ /^outer_/ && defined $nameNext && $nameNext =~ /^outer_/ ) {
+			$addGapAbove = 0;
+		}
+
+		if ($addGapAbove) {
+
+			$tblMain->InsertRowDef( "matGap_$matGapNum", $i + 1, EnumsStyle->RowHeight_MATGAP );
+			$matGapNum++;
+
+		}
+
+	}
+
+}
+
+sub AddPlatedDrilling {
+	my $self = shift;
+
+	my $tblMain   = $self->{"tblMain"};
+	my $stckpMngr = $self->{"stackupMngr"};
+	my $secMngr   = $self->{"sectionMngr"};
+
+	return 0 unless ( $secMngr->GetSection( Enums->Sec_A_MAIN )->GetIsActive() );
+
+	my $txtStandardStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+										   EnumsStyle->TxtSize_STANDARD,
+										   Color->new( 255, 255, 255 ),
+										   TblDrawEnums->Font_BOLD, undef,
+										   TblDrawEnums->TextHAlign_CENTER,
+										   TblDrawEnums->TextVAlign_TOP );
+
+	my $backgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_NCDRILL ) );
+
+	# Sorted plated drilling
+	my @NC = $stckpMngr->GetPlatedNC();
+
+	my @colls = $tblMain->GetCollsDef();
+	my @rows  = $tblMain->GetRowsDef();
+
+	my @letters = ( "A" .. "Z");
+	foreach my $ncL (@NC) {
+
+		my $start = $ncL->{"gROWdrl_dir"} eq "bot2top" ? $ncL->{"NCSigEndOrder"}   : $ncL->{"NCSigStartOrder"};
+		my $end   = $ncL->{"gROWdrl_dir"} eq "bot2top" ? $ncL->{"NCSigStartOrder"} : $ncL->{"NCSigEndOrder"};
+
+		my $sRowPos = $tblMain->GetRowDefPos( $tblMain->GetRowByKey("copper_$start") );
+		my $eRowPos = $tblMain->GetRowDefPos( $tblMain->GetRowByKey("copper_$end") );
+
+		my $colPos = $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "nc_" . $ncL->{"gROWname"} );
+
+		my $let = shift @letters;
+
+		$tblMain->AddCell( $colPos, $sRowPos, 1,
+						   $eRowPos - $sRowPos+1,  $let, $txtStandardStyle, $backgStyle );
+
+	}
 }
 
 1;

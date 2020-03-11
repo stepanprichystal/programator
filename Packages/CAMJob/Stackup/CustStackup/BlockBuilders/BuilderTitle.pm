@@ -162,7 +162,7 @@ sub __BuildRow2 {
 	if ( $sec_BEGIN->GetIsActive() ) {
 
 		my $txt = $stckpMngr->GetLayerCnt() . " layer stackup";
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
 	}
 
 	# Sec_A_MAIN
@@ -183,7 +183,7 @@ sub __BuildRow2 {
 		}
 		$txt .= " (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
 
 	}
 
@@ -194,7 +194,7 @@ sub __BuildRow2 {
 
 		my $txt = "SECTION FLEX (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
 
 	}
 
@@ -205,7 +205,7 @@ sub __BuildRow2 {
 
 		my $txt = "SECTION RIGID (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_C_RIGIDFLEX, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_C_RIGIDFLEX, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
 
 	}
 
@@ -216,7 +216,7 @@ sub __BuildRow2 {
 
 		my $txt = "SECTION FLEXTAIL (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
 
 	}
 
@@ -227,7 +227,7 @@ sub __BuildRow2 {
 
 		my $txt = "SECTION STIFFENER (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ), $row->GetIndex(), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
 
 	}
 }
