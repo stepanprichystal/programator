@@ -20,7 +20,7 @@ my $inCAM  = InCAM->new();
 my $export = NCExportTmp->new();
 
 #input parameters
-my $jobId = "d146753";
+my $jobId = "d273152";
  
 
  

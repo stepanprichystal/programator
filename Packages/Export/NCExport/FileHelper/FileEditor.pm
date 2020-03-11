@@ -372,11 +372,11 @@ sub EditBeforeSave {
 		 || $opItem->GetHeaderLayer()->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill )
 	{
 
-		# Search if header is active (no brackets)
+		# Search if header is active (no brackets) + header is more than one line
 		my $messageCnt = 0;
 		my $bracket = first { $_ =~ /[\(\)]/ } @{ $parseFile->{"header"} };
 
-		unless ( defined $bracket ) {
+		if ( !defined $bracket &&  scalar(@{ $parseFile->{"header"} }) > 1) {
 
 			my $l;
 
