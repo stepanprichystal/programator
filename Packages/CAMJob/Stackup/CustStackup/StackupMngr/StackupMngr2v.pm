@@ -38,6 +38,14 @@ sub GetLayerCnt {
 
 }
 
+sub GetStackupLayers{
+	my $self = shift;
+	
+	my @sigL = grep { $_->{"gROWname"} =~ /^[cs]$/} @{$self->{"boardBaseLayers"}};
+	
+	return @sigL;
+}
+
 sub GetExistCvrl {
 	my $self = shift;
 	my $side = shift;    # top/bot
@@ -64,6 +72,21 @@ sub GetExistCvrl {
 
 	return $exist;
 }
+
+sub GetMaterialName{
+	my $self = shift;
+	
+	return $self->{"pcbInfoIS"}->{"material_nazev"};
+}
+
+sub GetCuThickness{
+	my $self = shift;
+	my $sigLayer = shift;
+	
+	return $self->{"defaultInfo"}->GetBaseCuThick($sigLayer);
+}
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

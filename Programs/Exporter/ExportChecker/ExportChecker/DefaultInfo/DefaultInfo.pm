@@ -42,12 +42,13 @@ use aliased 'Packages::Technology::DataComp::NCLayerComp';
 sub new {
 	my $class = shift;
 	my $jobId = shift;
+	my $step = shift // "panel";
 
 	my $self = {};
 	bless $self;
 
 	$self->{"jobId"} = $jobId;
-	$self->{"step"}  = "panel";
+	$self->{"step"}  = $step;
 	$self->{"init"}  = 0;
 
 	# Defaul values
@@ -859,7 +860,7 @@ sub __Init {
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $self->{"jobId"} );
 
-	$self->{"platedRoutExceed"} = PlatedRoutArea->PlatedAreaExceed( $inCAM, $self->{'jobId'}, "panel" );
+	$self->{"platedRoutExceed"} = PlatedRoutArea->PlatedAreaExceed( $inCAM, $self->{'jobId'}, $self->{"step"} );
 
 	$self->{"rsExist"} = CamDrilling->NCLayerExists( $inCAM, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 

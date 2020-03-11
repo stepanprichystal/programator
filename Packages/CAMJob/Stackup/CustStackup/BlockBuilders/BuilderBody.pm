@@ -157,7 +157,7 @@ sub __BuildStackup {
 	my $topGap = $tblMain->AddRowDef( "bodyTopGap", EnumsStyle->RowHeight_STANDARD );
 
 	# 2) Build stackup layers
-	$self->__BuildStackupDetail();
+	$self->__BuildStackupLayers();
 
 	# 4) Add gap row below stackup
 	my $botGap = $tblMain->AddRowDef( "bodyBotGap", EnumsStyle->RowHeight_STANDARD );
@@ -170,7 +170,7 @@ sub __BuildStackup {
 
 }
 
-sub __BuildStackupDetail {
+sub __BuildStackupLayers {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -285,6 +285,28 @@ sub __BuildStackupDetail {
 	# 2) Prepare signal layers
 	if ( $stckpMngr->GetLayerCnt() <= 2 ) {
 
+		my @layers  = $stckpMngr->GetStackupLayers();
+		
+		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+			
+				my $l = $layers[$i];
+ 
+				my $row = $tblMain->AddRowDef( "copper_" . ($i+1), EnumsStyle->RowHeight_STANDARD );
+
+				my $matName = $stckpMngr->GetMaterialName();
+				
+				my $text = "Standard";
+				
+				if($matName =~ m/^lam\s+(.*)\s+\d+\/\d+/){
+					$text .= $matName =~ m/(r)\s+\d+\/\d+/i ? " (RA)" : " (ED)";
+				}
+	 
+				$self->__DrawMatCopper(
+										$row,                   $text,                 $stckpMngr->GetCuThickness($l->{"gROWname"}),  $stckpMngr->GetIsFlex($l->{"gROWname"}),
+										$i+1,  0, $l->GetIsFoil(), $stckpMngr->GetIsFlex(),
+										dclone($txtTitleStyle), dclone($txtCuStyle),   dclone($txtStandardStyle)
+				);
+			}
 	}
 	else {
 
@@ -297,10 +319,7 @@ sub __BuildStackupDetail {
 			if ( $l->GetType() eq StackEnums->MaterialType_COPPER ) {
 
 				my $row = $tblMain->AddRowDef( "copper_" . $l->GetCopperNumber(), EnumsStyle->RowHeight_STANDARD );
-
-				my %lPars = JobHelper->ParseSignalLayerName( $l->GetCopperName() );
-				my $p = $stackup->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
-
+  
 				my $isFlex = 0;
 				my $c = !$l->GetIsFoil() ? $stackup->GetCoreByCuLayer( $l->GetCopperName ) : undef;
 				if ( defined $c && $c->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
@@ -315,7 +334,7 @@ sub __BuildStackupDetail {
 				}
 
 				$self->__DrawMatCopper(
-										$row,                   $text,                 $l->GetThick(),  $p->GetIsPlated(),
+										$row,                   $text,                 $l->GetThick(),   $stckpMngr->GetIsPLated($l->{"gROWname"}),
 										$l->GetCopperNumber(),  $l->GetUssage() * 100, $l->GetIsFoil(), $isFlex,
 										dclone($txtTitleStyle), dclone($txtCuStyle),   dclone($txtStandardStyle)
 				);

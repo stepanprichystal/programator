@@ -19,6 +19,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Helpers::ValueConvertor';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -33,17 +34,15 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	my @boardBase = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	my @NCLayers = CamJob->GetNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	CamDrilling->AddNCLayerType( \@NCLayers );
-	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
-
-	$self->{"boardBaseLayers"} = \@boardBase;
-	$self->{"NCLayers"}        = \@NCLayers;
-
-	$self->{"pcbType"}   = JobHelper->GetPcbType( $self->{"jobId"} );
 	$self->{"pcbInfoIS"} = ( HegMethods->GetAllByPcbId( $self->{"jobId"} ) )[0];
 	$self->{"nifFile"}   = NifFile->new( $self->{"jobId"} );
+
+	$self->{"defualtInfo"} = DefaultInfo->new( $self->{"jobId"} );
+	$self->{"defualtInfo"}->Init( $self->{"inCAM"} );
+
+	$self->{"boardBaseLayers"} = $self->{"defualtInfo"}->GetBoardBaseLayers();
+	$self->{"NCLayers"}        = $self->{"defualtInfo"}->GetNCBaseLayers();
+	$self->{"pcbType"}         = $self->{"defualtInfo"}->GetPcbType();
 
 	return $self;
 }
@@ -164,6 +163,27 @@ sub __GetMaskColor {
 	}
 
 	return %mask;
+}
+
+sub GetIsPlated {
+	my $self     = shift;
+	my $sigLayer = shift;
+
+	my %sett = $self->{"defualtInfo"}->GetDefSignalLSett($sigLayer);
+
+	my $isPlated = 0;
+
+	if ( $sett{"technologyType"} eq EnumsGeneral->Technology_GALVANICS ) {
+		$isPlated = 1;
+	}
+	return $isPlated;
+
+}
+
+sub GetIsFlex {
+	my $self = shift;
+
+	return $self->{"defualtInfo"}->GetIsFlex();
 }
 
 #-------------------------------------------------------------------------------------------#

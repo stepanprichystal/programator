@@ -26,7 +26,7 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"stackup"} = $self->{"defualtInfo"}->GetStackup();
 
 	return $self;
 }
