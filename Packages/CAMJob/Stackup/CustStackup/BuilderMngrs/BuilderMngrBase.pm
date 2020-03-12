@@ -48,9 +48,9 @@ sub _CreateSectionClmns {
 
 		foreach my $col ( $sec->GetAllColumns() ) {
 
-			my $border = BorderStyle->new();
-			$border->AddEdgeStyle( "left", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1, Color->new( 0, 200, 0 ) );
-			$col->{"borderStyle"} = $border;
+#			my $border = BorderStyle->new();
+#			$border->AddEdgeStyle( "left", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1, Color->new( 0, 200, 0 ) );
+#			$col->{"borderStyle"} = $border;
 
 			$self->{"tblMain"}->AddColDef( $sec->GetType() . "__" . $col->GetKey(), $col->GetWidth(), $col->GetBackgStyle(), $col->GetBorderStyle() )
 			  ;

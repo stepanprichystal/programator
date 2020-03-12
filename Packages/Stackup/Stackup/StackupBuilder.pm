@@ -188,7 +188,7 @@ sub __AddCoverlayLayers {
 		  if ( !defined $qId || $qId eq "" );
 
 		$layerInfo->{"thick"}         = $thick * 1000000;
-		$layerInfo->{"adhesiveThick"} = $thickAdh;
+		$layerInfo->{"adhesiveThick"} = $thickAdh * 1000000;
 		$layerInfo->{"text"}          = ( $name =~ /LF\s*(\d{4})/i )[0];
 		$layerInfo->{"typetext"}      = "Pyralux " . ( $name =~ /Coverlay\s+(\w+)\s*/i )[0];
 		$layerInfo->{"method"} =

@@ -47,13 +47,13 @@ sub Build {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	$self->__BuildHead();
+	$self->__BuildHeadRow();
 
-	$self->__BuildStackup();
+	$self->__BuildStackupRows();
 
 }
 
-sub __BuildHead {
+sub __BuildHeadRow {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -71,21 +71,31 @@ sub __BuildHead {
 								   EnumsStyle->TxtSize_TITLE, Color->new( 0, 0, 0 ),
 								   undef, undef,
 								   TblDrawEnums->TextHAlign_LEFT,
-								   TblDrawEnums->TextVAlign_CENTER );
+								   TblDrawEnums->TextVAlign_CENTER, 1 );
+								   
+	
+								   
+	my $borderStyle = $self->{"secBorderStyle"};
 
 	# Sec_BEGIN ---------------------------------------------
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 	if ( $sec_BEGIN->GetIsActive() ) {
 
+
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
 						   $tblMain->GetRowDefPos($row),
 						   undef, undef, "Material text", $txtStyle );
+						   
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "cuUsage" ), $tblMain->GetRowDefPos($row), undef, undef, "Cu usage", $txtStyle );
 	}
 
 	# Sec_A_MAIN ---------------------------------------------
 	my $sec_A_MAIN = $secMngr->GetSection( Enums->Sec_A_MAIN );
 	if ( $sec_A_MAIN->GetIsActive() ) {
+		
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "leftEdge" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, undef, undef, undef, $borderStyle );
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, "Material",
 						   $txtStyle );
@@ -96,7 +106,7 @@ sub __BuildHead {
 		if ( scalar( $stckpMngr->GetPlatedNC() ) ) {
 			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "NCStartCol" ),
 							   $tblMain->GetRowDefPos($row),
-							   undef, undef, "Plated drill", $txtStyle );
+							   undef, undef, "Plt drill", $txtStyle );
 		}
 	}
 
@@ -105,7 +115,7 @@ sub __BuildHead {
 	if ( $sec_B_FLEX->GetIsActive() ) {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, "Material",
-						   $txtStyle );
+						   $txtStyle, undef, $borderStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ),
 						   $tblMain->GetRowDefPos($row),
 						   undef, undef, "Thickness", $txtStyle );
@@ -115,6 +125,10 @@ sub __BuildHead {
 	my $sec_C_RIGIDFLEX = $secMngr->GetSection( Enums->Sec_C_RIGIDFLEX );
 	if ( $sec_C_RIGIDFLEX->GetIsActive() ) {
 
+				$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_C_RIGIDFLEX, "leftEdge" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, undef, undef, undef, $borderStyle );
+
 	}
 
 	# Sec_D_FLEXTAIL ---------------------------------------------
@@ -123,7 +137,7 @@ sub __BuildHead {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ),
 						   $tblMain->GetRowDefPos($row),
-						   undef, undef, "Material", $txtStyle );
+						   undef, undef, "Material", $txtStyle, undef, $borderStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
 						   $tblMain->GetRowDefPos($row),
 						   undef, undef, "Thickness", $txtStyle );
@@ -136,15 +150,27 @@ sub __BuildHead {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ),
 						   $tblMain->GetRowDefPos($row),
-						   undef, undef, "Material", $txtStyle );
+						   undef, undef, "Material", $txtStyle, undef, $borderStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
 						   $tblMain->GetRowDefPos($row),
 						   undef, undef, "Thickness", $txtStyle );
 	}
+	
+	# Sec_END
+	my $sec_END = $secMngr->GetSection( Enums->Sec_END );
+
+	if ( $sec_END->GetIsActive() ) {
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_END, "end" ),
+						   $tblMain->GetRowDefPos($row),
+						  undef,
+						   undef, undef, $txtStyle, undef, $borderStyle );
+
+	}
 
 }
 
-sub __BuildStackup {
+sub __BuildStackupRows {
 	my $self  = shift;
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -154,13 +180,13 @@ sub __BuildStackup {
 	my $secMngr   = $self->{"sectionMngr"};
 
 	# 1) Add gap row above stackup
-	my $topGap = $tblMain->AddRowDef( "bodyTopGap", EnumsStyle->RowHeight_STANDARD );
+	my $topGap = $tblMain->AddRowDef( "bodyTopGap", EnumsStyle->RowHeight_STANDARD*1.2 );
 
 	# 2) Build stackup layers
 	$self->__BuildStackupLayers();
 
 	# 4) Add gap row below stackup
-	my $botGap = $tblMain->AddRowDef( "bodyBotGap", EnumsStyle->RowHeight_STANDARD );
+	my $botGap = $tblMain->AddRowDef( "bodyBotGap", EnumsStyle->RowHeight_STANDARD*1.2 );
 
 	# 3) Add gaps bewtwwen layers
 	$self->{"stckpBody"}->AddMaterialLayerGaps( $topGap, $botGap );
@@ -187,19 +213,19 @@ sub __BuildStackupLayers {
 										Color->new( 0, 0, 0 ),
 										undef, undef,
 										TblDrawEnums->TextHAlign_LEFT,
-										TblDrawEnums->TextVAlign_CENTER );
+										TblDrawEnums->TextVAlign_CENTER,0.5 );
 	my $txtCuStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 									 EnumsStyle->TxtSize_STANDARD,
 									 Color->new( 0, 0, 0 ),
 									 TblDrawEnums->Font_BOLD, undef,
 									 TblDrawEnums->TextHAlign_LEFT,
-									 TblDrawEnums->TextVAlign_CENTER );
+									 TblDrawEnums->TextVAlign_CENTER,1 );
 	my $txtStandardStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 										   EnumsStyle->TxtSize_STANDARD,
 										   Color->new( 255, 255, 255 ),
 										   TblDrawEnums->Font_BOLD, undef,
 										   TblDrawEnums->TextHAlign_LEFT,
-										   TblDrawEnums->TextVAlign_CENTER );
+										   TblDrawEnums->TextVAlign_CENTER,0.5 );
 
 	# 1) Prepare special outer layers
 	# Merge slecial outer layers to same row is it is needed
@@ -286,27 +312,47 @@ sub __BuildStackupLayers {
 	if ( $stckpMngr->GetLayerCnt() <= 2 ) {
 
 		my @layers  = $stckpMngr->GetStackupLayers();
-		
-		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
-			
-				my $l = $layers[$i];
- 
-				my $row = $tblMain->AddRowDef( "copper_" . ($i+1), EnumsStyle->RowHeight_STANDARD );
+		my $matName = $stckpMngr->GetMaterialName();
 
-				my $matName = $stckpMngr->GetMaterialName();
-				
-				my $text = "Standard";
-				
-				if($matName =~ m/^lam\s+(.*)\s+\d+\/\d+/){
-					$text .= $matName =~ m/(r)\s+\d+\/\d+/i ? " (RA)" : " (ED)";
-				}
-	 
-				$self->__DrawMatCopper(
-										$row,                   $text,                 $stckpMngr->GetCuThickness($l->{"gROWname"}),  $stckpMngr->GetIsFlex($l->{"gROWname"}),
-										$i+1,  0, $l->GetIsFoil(), $stckpMngr->GetIsFlex(),
-										dclone($txtTitleStyle), dclone($txtCuStyle),   dclone($txtStandardStyle)
-				);
+		# Draw copper layers
+		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
+			my $l = $layers[$i];
+
+			my $row = $tblMain->AddRowDef( "copper_" . ( $i + 1 ), EnumsStyle->RowHeight_STANDARD );
+
+			my $text = "Standard";
+
+			if ( $matName =~ m/lam.*\s+(.*)\s+\d+\/\d+/i ) {
+				$text .= $matName =~ m/(r)\s+\d+\/\d+/i ? " (RA)" : " (ED)";
 			}
+
+			$self->__DrawMatCopper(
+									$row,                                           $text,
+									$stckpMngr->GetCuThickness( $l->{"gROWname"} ), $stckpMngr->GetIsPlated( $l  ),
+									$i + 1,                                         0,
+									0,                                $stckpMngr->GetIsFlex(),
+									dclone($txtTitleStyle),                         dclone($txtCuStyle),
+									dclone($txtStandardStyle)
+			);
+		}
+
+		# Draw core
+		my $row = $tblMain->InsertRowDef( "core_1", $tblMain->GetRowCnt() - scalar(@layers)+1, EnumsStyle->RowHeight_STANDARD );
+
+		die "Wrong format of material name:$matName " unless ( $matName =~ m/lam.*\s+(.*)\s+\d+\/\d+\w{0,2}\s+(\d+,\d+)/i );
+
+		my $text  = $1;
+		my $thick = $2;
+		$thick =~ s/,/\./;
+		$thick *= 1000;
+
+		$self->__DrawMatCore(
+			$row, $text, $thick, $stckpMngr->GetIsFlex(),
+
+			dclone($txtTitleStyle), dclone($txtStandardStyle)
+		);
+
 	}
 	else {
 
@@ -319,7 +365,7 @@ sub __BuildStackupLayers {
 			if ( $l->GetType() eq StackEnums->MaterialType_COPPER ) {
 
 				my $row = $tblMain->AddRowDef( "copper_" . $l->GetCopperNumber(), EnumsStyle->RowHeight_STANDARD );
-  
+
 				my $isFlex = 0;
 				my $c = !$l->GetIsFoil() ? $stackup->GetCoreByCuLayer( $l->GetCopperName ) : undef;
 				if ( defined $c && $c->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
@@ -334,32 +380,35 @@ sub __BuildStackupLayers {
 				}
 
 				$self->__DrawMatCopper(
-										$row,                   $text,                 $l->GetThick(),   $stckpMngr->GetIsPLated($l->{"gROWname"}),
-										$l->GetCopperNumber(),  $l->GetUssage() * 100, $l->GetIsFoil(), $isFlex,
-										dclone($txtTitleStyle), dclone($txtCuStyle),   dclone($txtStandardStyle)
+										$row,                   $text,
+										$l->GetThick(),         $stckpMngr->GetIsPlated( {"gROWname" => $l->GetCopperName()}),
+										$l->GetCopperNumber(),  $l->GetUssage() * 100,
+										$l->GetIsFoil(),        $isFlex,
+										dclone($txtTitleStyle), dclone($txtCuStyle),
+										dclone($txtStandardStyle)
 				);
 
 			}
 			elsif ( $l->GetType() eq StackEnums->MaterialType_PREPREG ) {
 
 				my @types = ();
-				my $text = $stckpMngr->GetPrepregTitle( $l, \@types );
+				my $quality = $stckpMngr->GetPrepregTitle( $l, \@types );
 
-				my $prpgTxtTitleStyle = $txtTitleStyle;
-
-				if ( scalar(@types) > 1 ) {
-					$prpgTxtTitleStyle = TextStyle->new( TblDrawEnums->TextStyle_MULTILINE,
+		 
+				#if ( scalar(@types) > 1 ) {
+					my $prpgTxtTitleStyle = TextStyle->new( TblDrawEnums->TextStyle_MULTILINE,
 														 EnumsStyle->TxtSize_STANDARD,
 														 Color->new( 0, 0, 0 ),
 														 undef, undef,
 														 TblDrawEnums->TextHAlign_LEFT,
-														 TblDrawEnums->TextVAlign_CENTER );
-
+														 TblDrawEnums->TextVAlign_CENTER, 0.5 );
+					 
+					my $text = "";
 					foreach my $t (@types) {
 
-						$text .= "\n - $t";
+						$text .= $quality. " $t\n";
 					}
-				}
+				#}
 
 				# Do distinguish between Noflow Prepreg 1 which insluding coverlay and others prepregs
 				if ( $l->GetIsNoFlow() && $l->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 && $l->GetIsCoverlayIncl() ) {
@@ -941,7 +990,7 @@ sub __DrawMatCopper {
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "cuUsage" ),
 						   $tblMain->GetRowDefPos($row),
 						   undef, undef, "L" . $lNumber . ( defined $cuUssage ? " (" . int($cuUssage) . "%)" : "" ),
-						   $txtTitleStyle );
+						   $txtCuStyle );
 	}
 
 	# Sec_A_MAIN ---------------------------------------------

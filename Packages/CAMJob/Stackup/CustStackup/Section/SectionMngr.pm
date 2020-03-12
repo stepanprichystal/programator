@@ -51,13 +51,15 @@ sub GetColumnPos {
 	my $pos      = 0;
 	my $posFound = 0;
 
-	for ( my $i = 0 ; $i < scalar( @{ $self->{"sections"} } ) ; $i++ ) {
+	my @sec = $self->GetAllSections(1);
 
-		my @colls = $self->{"sections"}->[$i]->GetAllColumns();
+	for ( my $i = 0 ; $i < scalar( @sec ) ; $i++ ) {
+
+		my @colls = $sec[$i]->GetAllColumns();
 
 		for ( my $j = 0 ; $j < scalar(@colls) ; $j++ ) {
 
-			if ( $self->{"sections"}->[$i]->GetType() eq $secType && $colls[$j]->GetKey() eq $colKey ) {
+			if ($sec[$i]->GetType() eq $secType && $colls[$j]->GetKey() eq $colKey ) {
 
 				$posFound = 1;
 				last;
@@ -67,8 +69,8 @@ sub GetColumnPos {
 
 		last if ($posFound);
 	}
-	
-	die "Column: $colKey doesn't exist in section: $secType" if(!$posFound);
+
+	die "Column: $colKey doesn't exist in section: $secType" if ( !$posFound );
 
 	return $pos;
 
@@ -108,10 +110,11 @@ sub GetSectionsCnt {
 
 sub GetColumnCnt {
 	my $self = shift;
+	my $activeOnly = shift // 0;
 
 	my $total = 0;
 
-	$total += $_ foreach ( map { $_->GetColumnCnt() } @{ $self->{"sections"} } );
+	$total += $_ foreach ( map { $_->GetColumnCnt() } $self->GetAllSections($activeOnly) );
 
 	return $total;
 

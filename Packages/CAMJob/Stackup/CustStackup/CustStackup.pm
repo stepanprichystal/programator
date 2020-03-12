@@ -14,7 +14,8 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::MngrRigidFlex';
-use aliased 'Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::Mngr1V';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::MngrVV';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::Mngr2V';
 use aliased 'Packages::Other::TableDrawing::TableDrawing';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::GeometryHelper';
@@ -23,8 +24,9 @@ use aliased 'Packages::CAMJob::Stackup::CustStackup::Section::SectionMngr';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
 use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
-use aliased 'Packages::Other::TableDrawing::Enums'                  => 'TblDrawEnums';
+use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -39,14 +41,14 @@ sub new {
 	$self->{"tblDrawing"} = TableDrawing->new( TblDrawEnums->Units_MM );
 
 	my $borderStyle = BorderStyle->new();
-	$borderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_HEADMAINBACK ) );
-	$borderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_HEADMAINBACK ) );
-	$borderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_HEADMAINBACK ) );
-	$borderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_HEADMAINBACK ) );
+	$borderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
+	$borderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
+	$borderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
+	$borderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
 
-	$self->{"tblMain"} = $self->{"tblDrawing"}->AddTable("Main", undef, $borderStyle);
-	
-	$self->{"tblMain"}->{"renderOrderEvt"}->Add(sub { $self->__OnRenderPriorityHndl(@_) } );
+	$self->{"tblMain"} = $self->{"tblDrawing"}->AddTable( "Main", undef, $borderStyle );
+
+	$self->{"tblMain"}->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
 	return $self;
 }
 
@@ -65,24 +67,15 @@ sub Build {
 		 || $pcbType eq EnumsGeneral->PcbType_2VFLEX )
 	{
 
-		$builderMngr = Mngr1V->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"} );
+		$builderMngr = Mngr2V->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"} );
 	}
+	elsif ( $pcbType eq EnumsGeneral->PcbType_MULTI ) {
 
-	#	elsif (    $pcbType eq EnumsGeneral->PcbType_2V
-	#			|| $pcbType eq EnumsGeneral->PcbType_2VFLEX )
-	#	{
-	#
-	#		$builderMngr = BuilderMngr2V->new();
-	#	}
-	#	elsif (    $pcbType eq EnumsGeneral->PcbType_MULTI
-	#			|| $pcbType eq EnumsGeneral->PcbType_2VFLEX )
-	#	{
-	#
-	#		$builderMngr = BuilderMngrVV->new();
-	#	}
+		$builderMngr = MngrVV->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"} );
+	
+	}
 	elsif (    $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO
-			|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI
-			|| $pcbType eq EnumsGeneral->PcbType_MULTI )
+			|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI )
 	{
 
 		$builderMngr = MngrRigidFlex->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"} );
@@ -124,15 +117,24 @@ sub Output {
 	return $result;
 }
 
-
 # Set object (borders, backgrounds,...) render priority
-sub __OnRenderPriorityHndl{
-	my $self = shift;
+sub __OnRenderPriorityHndl {
+	my $self     = shift;
 	my $priority = shift;
-	
-	
-	 $priority->{TblDrawEnums->DrawPriority_COLLBORDER} = 100;
+
+	$priority->{ TblDrawEnums->DrawPriority_COLLBORDER } = 1;
+	$priority->{ TblDrawEnums->DrawPriority_COLLBACKG }  = 2;
+	$priority->{ TblDrawEnums->DrawPriority_ROWBACKG }   = 3;
 }
+
+# DrawPriority_TABBORDER  => "DrawPriority_TABBORDER",     # table frame
+#			   DrawPriority_COLLBACKG  => "DrawPriority_COLLBACKG",     # column background
+#			   DrawPriority_COLLBORDER => "DrawPriority_COLLBORDER",    # column border
+#			   DrawPriority_ROWBACKG   => "DrawPriority_ROWBACKG",      # row background
+#			   DrawPriority_ROWBORDER  => "DrawPriority_ROWBORDER",     # row border
+#			   DrawPriority_CELLBACKG  => "DrawPriority_CELLBACKG",     # cell background
+#			   DrawPriority_CELLBORDER => "DrawPriority_CELLBORDER",    # cell border
+#			   DrawPriority_CELLTEXT   => "DrawPriority_CELLTEXT",      # cell text
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

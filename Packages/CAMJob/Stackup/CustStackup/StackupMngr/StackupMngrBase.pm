@@ -19,6 +19,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Helpers::ValueConvertor';
+use aliased 'Packages::CAMJob::Technology::LayerSettings';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 
 #-------------------------------------------------------------------------------------------#
@@ -37,20 +38,24 @@ sub new {
 	$self->{"pcbInfoIS"} = ( HegMethods->GetAllByPcbId( $self->{"jobId"} ) )[0];
 	$self->{"nifFile"}   = NifFile->new( $self->{"jobId"} );
 
-	$self->{"defualtInfo"} = DefaultInfo->new( $self->{"jobId"} );
-	$self->{"defualtInfo"}->Init( $self->{"inCAM"} );
+	$self->{"defaultInfo"} = DefaultInfo->new( $self->{"jobId"} );
+	$self->{"defaultInfo"}->Init( $self->{"inCAM"} );
 
-	$self->{"boardBaseLayers"} = $self->{"defualtInfo"}->GetBoardBaseLayers();
-	$self->{"NCLayers"}        = $self->{"defualtInfo"}->GetNCBaseLayers();
-	$self->{"pcbType"}         = $self->{"defualtInfo"}->GetPcbType();
+	my @boardBase = $self->{"defaultInfo"}->GetBoardBaseLayers();
+	$self->{"boardBaseLayers"} = \@boardBase;
+	
+	my @NClayers = $self->{"defaultInfo"}->GetNCLayers();
+	$self->{"NCLayers"} = \@NClayers;
+	
+	$self->{"pcbType"}  = $self->{"defaultInfo"}->GetPcbType();
 
 	return $self;
 }
 
 sub GetExistSM {
 	my $self = shift;
-	my $side = shift;    # top/bot
-	my $info = shift;    # reference to store additional information
+	my $side = shift;                                             # top/bot
+	my $info = shift;                                             # reference to store additional information
 
 	my $l = $side eq "top" ? "mc" : "ms";
 
@@ -64,6 +69,26 @@ sub GetExistSM {
 	}
 
 	return $smExist;
+}
+
+sub GetExistSMFlex {
+	my $self = shift;
+	my $side = shift;                                        # top/bot
+	my $info = shift;                                        # reference to store additional information
+
+	my $l = $side eq "top" ? "mcflex" : "msflex";
+
+	my $smExist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
+
+	if ( $smExist && defined $info ) {
+
+		$info->{"text"}  = "UV Green";
+		$info->{"thick"} = 25;
+
+	}
+
+	return $smExist;
+
 }
 
 sub GetPcbType {
@@ -169,7 +194,7 @@ sub GetIsPlated {
 	my $self     = shift;
 	my $sigLayer = shift;
 
-	my %sett = $self->{"defualtInfo"}->GetDefSignalLSett($sigLayer);
+	my %sett = $self->{"defaultInfo"}->GetDefSignalLSett($sigLayer);
 
 	my $isPlated = 0;
 
@@ -183,7 +208,7 @@ sub GetIsPlated {
 sub GetIsFlex {
 	my $self = shift;
 
-	return $self->{"defualtInfo"}->GetIsFlex();
+	return $self->{"defaultInfo"}->GetIsFlex();
 }
 
 #-------------------------------------------------------------------------------------------#

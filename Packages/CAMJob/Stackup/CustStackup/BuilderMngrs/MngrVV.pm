@@ -4,7 +4,7 @@
 # Builder for pcb no copper
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::MngrRigidFlex;
+package Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::MngrVV;
 use base('Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::BuilderMngrBase');
 
 use Class::Interface;
@@ -59,16 +59,16 @@ sub BuildSections {
 	$sec_A_MAIN->SetIsActive(1);
 
 	my $sec_B_FLEX = $sectionMngr->GetSection( Enums->Sec_B_FLEX );
-	$sec_B_FLEX->SetIsActive(1);
+	$sec_B_FLEX->SetIsActive(0);
 
 	my $sec_C_RIGIDFLEX = $sectionMngr->GetSection( Enums->Sec_C_RIGIDFLEX );
-	$sec_C_RIGIDFLEX->SetIsActive(1);
+	$sec_C_RIGIDFLEX->SetIsActive(0);
 
 	my $sec_D_FLEXTAIL = $sectionMngr->GetSection( Enums->Sec_D_FLEXTAIL );
-	$sec_D_FLEXTAIL->SetIsActive(1);
+	$sec_D_FLEXTAIL->SetIsActive(0);
 
 	my $sec_E_STIFFENER = $sectionMngr->GetSection( Enums->Sec_E_STIFFENER );
-	$sec_E_STIFFENER->SetIsActive(1);
+	$sec_E_STIFFENER->SetIsActive(0);
 	
 	my $sec_END = $sectionMngr->GetSection( Enums->Sec_END );
 	$sec_END->SetIsActive(1);

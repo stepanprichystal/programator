@@ -11,11 +11,13 @@ use base('Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase')
 use strict;
 use warnings;
 use List::Util qw(first);
+use List::MoreUtils qw(uniq);
 
 #local library
 
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -26,7 +28,7 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"stackup"} = $self->{"defualtInfo"}->GetStackup();
+	$self->{"stackup"} = $self->{"defaultInfo"}->GetStackup();
 
 	return $self;
 }
@@ -111,26 +113,6 @@ sub GetCvrlInfo {
 	return $info;
 }
 
-sub GetExistSMFlex {
-	my $self = shift;
-	my $side = shift;                                        # top/bot
-	my $info = shift;                                        # reference to store additional information
-
-	my $l = $side eq "top" ? "mcflex" : "msflex";
-
-	my $smExist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
-
-	if ( $smExist && defined $info ) {
-
-		$info->{"text"}  = "UV Green";
-		$info->{"thick"} = 25;
-
-	}
-
-	return $smExist;
-
-}
-
 sub GetPrepregTitle {
 	my $self  = shift;
 	my $l     = shift;
@@ -159,14 +141,58 @@ sub GetPrepregTitle {
 		}
 	}
 
-	if ( scalar( keys %childPCnt ) == 1 ) {
-		$t .= " (" . join( "+", map { $childPCnt{$_} . "x" . $_ } keys %childPCnt ) . ")";
-	}
+	#	if ( scalar( keys %childPCnt ) == 1 ) {
+	#		$t .= join( "+", map { $childPCnt{$_} . "x" . $_ } keys %childPCnt );
+	#	}
 
 	push( @{$types}, map { $childPCnt{$_} . "x" . $_ } keys %childPCnt );
 
 	return $t;
 
+}
+
+sub GetTG {
+	my $self = shift;
+
+	my $matKind = HegMethods->GetMaterialKind( $self->{"jobId"}, 1 );
+
+	my $minTG = undef;
+
+	if ( $matKind =~ /tg\s*(\d+)/i ) {
+
+		# single kinf of stackup materials
+
+		$minTG = $1;
+	}
+	elsif ( $matKind =~ /.*-.*/ ) {
+
+		# hybrid material stackups
+
+		my @mat = uniq( map { $_->GetTextType() } $self->{"stackup"}->GetAllCores() );
+		
+		for(my $i= 0; $i < scalar(@mat); $i++){
+			
+			$mat[$i] =~ s/\s//;
+		}
+		
+		
+
+		my %types = ();
+		$types{"DE104"}    = 135;
+		$types{"IS400"}    = 150;
+		$types{"PCL370HR"} = 180;
+		$types{"PYRALUX"}  = 220;
+ 
+		foreach my $m (@mat) {
+
+			my $matKey = first { $m =~ /$_/i } keys %types;
+			if ( defined $matKey && ( !defined $minTG || $types{$matKey} < $minTG ) ) {
+				$minTG = $types{$matKey};
+			}
+		}
+	}
+
+	return $minTG;
 }
 
 #-------------------------------------------------------------------------------------------#

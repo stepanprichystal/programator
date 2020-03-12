@@ -22,6 +22,8 @@ use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
 use aliased 'Packages::Other::TableDrawing::Table::Style::TextStyle';
 use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
+use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 
 #-------------------------------------------------------------------------------------------#
@@ -58,7 +60,7 @@ sub __BuildRow1 {
 	my $secMngr   = $self->{"sectionMngr"};
 
 	# Define first title row
-	my $rowTitleBackg = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_TITLEBACKG) );
+	my $rowTitleBackg = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_TITLEBACKG ) );
 	$tblMain->AddRowDef( "row_title", EnumsStyle->RowHeight_TITLE, $rowTitleBackg );
 
 	# Add title
@@ -108,11 +110,11 @@ sub __BuildRow1 {
 									 EnumsStyle->TxtSize_TITLE, Color->new( 255, 255, 255 ),
 									 TblDrawEnums->Font_BOLD, undef,
 									 TblDrawEnums->TextHAlign_LEFT,
-									 TblDrawEnums->TextVAlign_CENTER );
+									 TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	my $secBegin = $secMngr->GetSection( Enums->Sec_BEGIN );
 
-	$tblMain->AddCell( 0, 0, $secBegin->GetColumnCnt() + 1, undef, $titleStr, $c1TxtStyle );
+	$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "leftMargin" ), 0, $secBegin->GetColumnCnt() + 1, undef, $titleStr, $c1TxtStyle );
 
 	# CELL DEF: Add right cell with date
 
@@ -120,10 +122,10 @@ sub __BuildRow1 {
 									 EnumsStyle->TxtSize_TITLE, Color->new( 255, 255, 255 ),
 									 TblDrawEnums->Font_BOLD, undef,
 									 TblDrawEnums->TextHAlign_RIGHT,
-									 TblDrawEnums->TextVAlign_CENTER );
+									 TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	my $c2xStart = $secBegin->GetColumnCnt() + 1;
-	my $c2xpos   = $secMngr->GetColumnCnt() - 1 - $c2xStart;
+	my $c2xpos   = $secMngr->GetColumnCnt(1)  - $c2xStart;
 
 	my $date = sprintf "%02.f.%02.f.%04.f", localtime->mday(), ( localtime->mon() + 1 ), ( localtime->year() + 1900 );
 	my $c2Str = "Date:" . $date;
@@ -143,26 +145,39 @@ sub __BuildRow2 {
 	my $secMngr   = $self->{"sectionMngr"};
 
 	my @secLetters = ( 'A', 'B', 'C', 'D', 'E' );
-	 
-	my $pcbType    = $stckpMngr->GetPcbType();
+
+	my $pcbType = $stckpMngr->GetPcbType();
 
 	# Define first title row
+
 	my $rowStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( 191, 191, 191 ) );
 	my $row = $tblMain->AddRowDef( "row_main_head", EnumsStyle->RowHeight_TITLE, $rowStyle );
 
+	my $txtStyleTitle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+										EnumsStyle->TxtSize_MAINHEAD,
+										Color->new( 0, 0, 0 ),
+										TblDrawEnums->Font_BOLD, undef,
+										TblDrawEnums->TextHAlign_LEFT,
+										TblDrawEnums->TextVAlign_CENTER, 0.5 );
+
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-								   EnumsStyle->TxtSize_MAINHEAD, Color->new( 0, 0, 0 ),
+								   EnumsStyle->TxtSize_MAINHEAD,
+								   Color->new( 0, 0, 0 ),
 								   TblDrawEnums->Font_BOLD, undef,
-								   TblDrawEnums->TextHAlign_LEFT,
-								   TblDrawEnums->TextVAlign_CENTER );
+								   TblDrawEnums->TextHAlign_CENTER,
+								   TblDrawEnums->TextVAlign_CENTER, 0.5 );
+
+	my $borderStyle = $self->{"secBorderStyle"};
 
 	# Sec_BEGIN
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 
 	if ( $sec_BEGIN->GetIsActive() ) {
-
-		my $txt = $stckpMngr->GetLayerCnt() . " layer stackup";
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
+		
+		my $tg = $stckpMngr->GetTG();
+		
+		my $txt = $stckpMngr->GetLayerCnt() . " layer stackup".(defined $tg ? "; Tg $tg°" : "");
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyleTitle );
 	}
 
 	# Sec_A_MAIN
@@ -183,7 +198,10 @@ sub __BuildRow2 {
 		}
 		$txt .= " (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "leftEdge" ),
+						   $tblMain->GetRowDefPos($row),
+						   $sec_A_MAIN->GetColumnCnt(),
+						   undef, $txt, $txtStyle, undef, $borderStyle );
 
 	}
 
@@ -194,7 +212,10 @@ sub __BuildRow2 {
 
 		my $txt = "SECTION FLEX (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   $sec_B_FLEX->GetColumnCnt(),
+						   undef, $txt, $txtStyle, undef, $borderStyle );
 
 	}
 
@@ -205,7 +226,10 @@ sub __BuildRow2 {
 
 		my $txt = "SECTION RIGID (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_C_RIGIDFLEX, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_C_RIGIDFLEX, "leftEdge" ),
+						   $tblMain->GetRowDefPos($row),
+						   $sec_C_RIGIDFLEX->GetColumnCnt(),
+						   undef, $txt, $txtStyle, undef, $borderStyle );
 
 	}
 
@@ -216,7 +240,10 @@ sub __BuildRow2 {
 
 		my $txt = "SECTION FLEXTAIL (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   $sec_D_FLEXTAIL->GetColumnCnt(),
+						   undef, $txt, $txtStyle, undef, $borderStyle );
 
 	}
 
@@ -227,9 +254,25 @@ sub __BuildRow2 {
 
 		my $txt = "SECTION STIFFENER (" . ( shift @secLetters ) . ")";
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   $sec_E_STIFFENER->GetColumnCnt(),
+						   undef, $txt, $txtStyle, undef, $borderStyle );
 
 	}
+
+	# Sec_END
+	my $sec_END = $secMngr->GetSection( Enums->Sec_END );
+
+	if ( $sec_END->GetIsActive() ) {
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_END, "end" ),
+						   $tblMain->GetRowDefPos($row),
+						  undef,
+						   undef, undef, $txtStyle, undef, $borderStyle );
+
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

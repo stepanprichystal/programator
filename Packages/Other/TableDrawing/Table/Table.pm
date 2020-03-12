@@ -116,11 +116,14 @@ sub AddCell {
 
 	#die "End col ($endCol) must be greater than star col ($startCol)" if ( $endCol < $startCol );
 	#die "End row ($endRow) must be greater than star row ($startRow)" if ( $endRow < $startRow );
+	if ( $startCol + 1 > $self->GetColCnt() ) {
+		die "Start column index ($startCol) is grater than column count (" . ( $self->GetColCnt() ) . ")";
+	}
 
-	die "Start column index ($startCol) is grater than column count (" . ( $self->GetColCnt() ) . ")"
-	  if ( $startCol + 1 > $self->GetColCnt() );
-	die "End column index (" . $startCol + $collCnt . ") is grater than column count (" . ( $self->GetColCnt() ) . ")"
-	  if ( $startCol + $collCnt > $self->GetColCnt() );
+	if ( $startCol + $collCnt > $self->GetColCnt() ) {
+		die "End column index (" . $startCol + $collCnt . ") is grater than column count (" . ( $self->GetColCnt() ) . ")"
+
+	}
 
 	die "Start row index ($startRow) is grater than row count (" . ( $self->GetRowCnt() ) . ")"
 	  if ( $startRow + 1 > $self->GetRowCnt() );
@@ -132,7 +135,7 @@ sub AddCell {
 	die "Text style object type is wrong" if ( defined $textStyle && !$textStyle->isa("Packages::Other::TableDrawing::Table::Style::TextStyle") );
 
 	die "Backg style object type is wrong" if ( defined $backgStyle && !$backgStyle->isa("Packages::Other::TableDrawing::Table::Style::BackgStyle") );
-	
+
 	die "Border style object type is wrong"
 	  if ( defined $borderStyle && !$borderStyle->isa("Packages::Other::TableDrawing::Table::Style::BorderStyle") );
 
@@ -211,15 +214,14 @@ sub GetCollsDef {
 	return @{ $self->{"collsDef"} };
 }
 
-
 sub GetCollByKey {
 	my $self = shift;
-	my $key = shift;
-	
-	my $collDef = first {$_->GetKey() eq $key} @{ $self->{"collsDef"} };
-	
-	die "Collumn definition (key: $key) was not found" unless(defined $collDef);
-	
+	my $key  = shift;
+
+	my $collDef = first { $_->GetKey() eq $key } @{ $self->{"collsDef"} };
+
+	die "Collumn definition (key: $key) was not found" unless ( defined $collDef );
+
 	return $collDef;
 }
 
@@ -231,12 +233,12 @@ sub GetRowsDef {
 
 sub GetRowByKey {
 	my $self = shift;
-	my $key = shift;
-	
-	my $rowDef = first {$_->GetKey() eq $key} @{ $self->{"rowsDef"} };
-	
-	die "Row definition (key: $key) was not found" unless(defined $rowDef);
-	
+	my $key  = shift;
+
+	my $rowDef = first { $_->GetKey() eq $key } @{ $self->{"rowsDef"} };
+
+	die "Row definition (key: $key) was not found" unless ( defined $rowDef );
+
 	return $rowDef;
 }
 
@@ -367,6 +369,8 @@ sub GetCellLimits {
 		$lim{"yMin"} += $margins;
 		$lim{"yMax"} -= $margins;
 	}
+	
+	
 
 	return %lim;
 }

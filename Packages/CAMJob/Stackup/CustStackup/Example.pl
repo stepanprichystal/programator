@@ -14,9 +14,10 @@ use aliased 'Packages::InCAM::InCAM';
 
 my $inCAM = InCAM->new();
 #my $jobId    = "d152456"; #Outer RigidFLex TOP
-my $jobId    = "d270787"; #Outer RigidFLex BOT
-#my $jobId    = "d261919"; # standard vv
+#my $jobId    = "d270787"; #Outer RigidFLex BOT
+my $jobId    = "d261919"; # standard vv
 #my $jobId = "d266566";
+#my $jobId = "d267628" ; # flex 2v + stiff
 
 
 # 1) Init customer stackup class
@@ -28,7 +29,7 @@ $newCustStckp->Build();
 # 3) Generate output by some drawer
 
 # Init Draw Builder
-my @media  = ( 297, 210 );
+my @media  = ( 397, 310 );
 my $margin = 5;
 my $p      = 'c:/Export/Test/test.pdf';
 unlink($p);

@@ -12,6 +12,10 @@ use warnings;
 #use File::Copy;
 
 #local library
+use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
+use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -22,11 +26,15 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}  = shift;
-	$self->{"jobId"}  = shift;
-	$self->{"tblMain"}  = shift;
+	$self->{"inCAM"}       = shift;
+	$self->{"jobId"}       = shift;
+	$self->{"tblMain"}     = shift;
 	$self->{"stackupMngr"} = shift;
 	$self->{"sectionMngr"} = shift;
+
+	# Left border of section
+	$self->{"secBorderStyle"} = BorderStyle->new();
+	$self->{"secBorderStyle"}->AddEdgeStyle( "left", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
 
 	return $self;
 }

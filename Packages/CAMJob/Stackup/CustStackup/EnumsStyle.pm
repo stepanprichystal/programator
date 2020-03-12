@@ -10,6 +10,7 @@ use constant {
 			   Clr_HEADMAINBACK   => "191, 191, 191",
 			   Clr_HEADSUBBACK    => "217, 217, 217",
 			   Clr_LEFTCLMNBACK   => "242, 242, 242",
+			   Clr_SECTIONBORDER   => "160, 160, 160",
 			   Clr_SOLDERMASK     => "59, 113, 41",
 			   Clr_SOLDERMASKFLEX => "112, 173, 71",
 			   Clr_SILKSCREEN     => "200, 200, 200",
@@ -25,10 +26,10 @@ use constant {
 
 # Text size [mm]
 use constant {
-			   TxtSize_TITLE    => 3.4,
-			   TxtSize_MAINHEAD => 3.4,
-			   TxtSize_SUBHEAD  => 3.4,
-			   TxtSize_STANDARD => 3.4,
+			   TxtSize_TITLE    => 3.5,
+			   TxtSize_MAINHEAD => 3.5,
+			   TxtSize_SUBHEAD  => 3.5,
+			   TxtSize_STANDARD => 3.5,
 };
 
 # Stackup column widths [mm]
@@ -39,18 +40,19 @@ use constant {
 			   ClmnWidth_overlap  => 4.5,
 			   ClmnWidth_mattype  => 31,
 			   ClmnWidth_matthick => 22,
-			   ClmnWidth_ncdrill  => 3.7
+			   ClmnWidth_ncdrill  => 3.7,
+			    ClmnWidth_end  => 6,
 };
 
 # Stackup row heights [mm]
 
 use constant {
-			   RowHeight_TITLE    => 8,
-			   RowHeight_MAINHEAD => 8,
-			   RowHeight_STANDARD => 4.5,
+			   RowHeight_TITLE    => 9,
+			   RowHeight_MAINHEAD => 9,
+			   RowHeight_STANDARD => 4.6,
 			   RowHeight_MATGAP   => 0.6,
-			    RowHeight_CORERIGID => 9.3,
-			    RowHeight_COREFLEX => 4.5,
+			    RowHeight_CORERIGID => 9.5,
+			    RowHeight_COREFLEX => 4.6,
 };
 
 1;

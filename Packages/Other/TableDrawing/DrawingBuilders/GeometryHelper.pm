@@ -22,7 +22,7 @@ sub ScaleDrawingInCanvasSize {
 	my $drawBuilder = shift;
 	my $keepRatio = shift // 1;
 
-	my ( $canvasW, $canvasH ) = $drawBuilder->GetCanvasSize();
+	my ( $canvasW, $canvasH ) = $drawBuilder->GetCanvasSize(1);
 
 	my %lim = $tblDrawing->GetOriLimits();
 

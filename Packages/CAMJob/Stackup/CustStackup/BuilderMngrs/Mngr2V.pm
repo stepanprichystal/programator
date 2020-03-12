@@ -4,7 +4,7 @@
 # Builder for pcb no copper
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::MngrRigidFlex;
+package Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::Mngr2V;
 use base('Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::BuilderMngrBase');
 
 use Class::Interface;
@@ -20,7 +20,7 @@ use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderTitle
 use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderBody';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderThick';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderDrill';
-use aliased 'Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrVV';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngr2V';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Helper';
 
@@ -37,7 +37,7 @@ sub new {
 	my $self = $class->SUPER::new( $inCAM, $jobId, $tblDrawing );
 	bless $self;
 
-	$self->{"stackupMngr"} = StackupMngrVV->new( $inCAM, $jobId );
+	$self->{"stackupMngr"} = StackupMngr2V->new( $inCAM, $jobId );
 
 	return $self;
 }
@@ -59,13 +59,13 @@ sub BuildSections {
 	$sec_A_MAIN->SetIsActive(1);
 
 	my $sec_B_FLEX = $sectionMngr->GetSection( Enums->Sec_B_FLEX );
-	$sec_B_FLEX->SetIsActive(1);
+	$sec_B_FLEX->SetIsActive(0);
 
 	my $sec_C_RIGIDFLEX = $sectionMngr->GetSection( Enums->Sec_C_RIGIDFLEX );
-	$sec_C_RIGIDFLEX->SetIsActive(1);
+	$sec_C_RIGIDFLEX->SetIsActive(0);
 
 	my $sec_D_FLEXTAIL = $sectionMngr->GetSection( Enums->Sec_D_FLEXTAIL );
-	$sec_D_FLEXTAIL->SetIsActive(1);
+	$sec_D_FLEXTAIL->SetIsActive(0);
 
 	my $sec_E_STIFFENER = $sectionMngr->GetSection( Enums->Sec_E_STIFFENER );
 	$sec_E_STIFFENER->SetIsActive(1);
