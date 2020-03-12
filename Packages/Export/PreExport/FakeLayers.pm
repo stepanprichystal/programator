@@ -142,6 +142,8 @@ sub __CreateFakeSMOLECLayers {
 	my $emptyLayers = shift // 0;    # Create layer without any data
 
 	my @fakeLayers = ();
+	
+	return @fakeLayers if ( !JobHelper->GetIsFlex($jobId) );
 
 	my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
 

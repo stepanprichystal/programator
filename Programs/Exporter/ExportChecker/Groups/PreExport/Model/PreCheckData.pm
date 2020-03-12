@@ -738,6 +738,19 @@ sub OnCheckGroupData {
 		}
 
 	}
+	
+ 
+	
+	# TODO 24) Kontola jestli neni pouzit panel, ktery nemame jiz na sklade
+	
+	my %prof = $defaultInfo->GetProfileLimits();
+	if(abs($prof{"yMax"} - $prof{"yMin"}) == 460 && $defaultInfo->GetBaseCuThick() == 18 && $defaultInfo->GetPcbThick() == 1000){
+		
+		$dataMngr->_AddErrorResult(
+											"Pozor, materiálů nelze použít",
+											"Pozor nelze použít přířez 295*460*1mm 18/18 informace od vedouciho. Použij nový velký panel");
+				
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
