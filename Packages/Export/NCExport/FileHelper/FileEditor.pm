@@ -136,7 +136,7 @@ sub EditAfterOpen {
 
 			# case  burried (core drilling) add J<number of core> to drilled number
 			# if layer is: v1j\d drilled number is already included
-			if ( $opItem->{"name"} =~ m/^j[0-9]+$/ ) {
+			if ( $opItem->{"name"} =~ m/^j([0-9]+)$/ ) {
 
 				my $coreNum = $1;
 
