@@ -20,6 +20,7 @@ use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Packages::ProductionPanel::PanelDimension';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -127,6 +128,7 @@ sub StackupMatInStock {
 	my $inCAM   = shift;
 	my $pcbId   = shift;    #pcb id
 	my $stackup = shift;    # if not defined, stackup will e loaded
+	my $orderArea = shift; # if defined, area is considered with avalaible amount on stock
 	my $errMess = shift;    # if err, missin materials in stock
 
 	my $result = 1;
@@ -172,12 +174,17 @@ sub StackupMatInStock {
 
 		}
 		else {
+			my $amount    = sprintf( "%.2f", $mat[0]->{"stav_skladu"} );
+			my $requested = sprintf( "%.2f", $mat[0]->{"pocet_poptavano_vyroba"} );
+			my $avalaible = sprintf( "%.2f", $amount - $requested - (defined $orderArea ? $orderArea : 0) );
 
-			if ( $mat[0]->{"stav_skladu"} == 0 ) {
+			if ( $avalaible <= 0 ) {
 
 				$result = 0;
-				$$errMess .= "- Material quantity of " . $mat[0]->{"nazev_mat"} . "  is 0m2 in IS stock\n";
-
+				$$errMess .= "- Avalaible material quantity (" . $mat[0]->{"nazev_mat"} . ") is: " . $avalaible . "m2 in IS stock.\n";
+				$$errMess .= "(real amount is: " . $amount . "m2; requested by production is: " . $requested . "m2";
+				$$errMess .= "; request by order:$orderArea m2" if(defined $orderArea);
+				$$errMess .= ")\n";
 			}
 		}
 	}
@@ -209,7 +216,7 @@ sub StackupMatInStock {
 				@mat = HegMethods->GetPrepregStoreInfo( $m->GetQId(), $m->GetId() );
 
 				# Check if material dimension are in tolerance +-2mm for width
-				# Check if material dimension are in tolerance +-10mm for height 
+				# Check if material dimension are in tolerance +-10mm for height
 				# (we use sometimes shorter version -10mm of standard prepregs because of stretching prepregs by temperature and pressure)
 				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 10 } @mat;
 
@@ -232,10 +239,17 @@ sub StackupMatInStock {
 		}
 		else {
 
-			if ( $mat[0]->{"stav_skladu"} == 0 ) {
+			my $amount    = sprintf( "%.2f", $mat[0]->{"stav_skladu"} );
+			my $requested = sprintf( "%.2f", $mat[0]->{"pocet_poptavano_vyroba"} );
+			my $avalaible = sprintf( "%.2f", $amount - $requested - (defined $orderArea ? $orderArea : 0));
+
+			if ( $avalaible <= 0 ) {
 
 				$result = 0;
-				$$errMess .= "- Material quantity of " . $mat[0]->{"nazev_mat"} . "  is 0m2 in IS stock\n";
+				$$errMess .= "- Avalaible material quantity (" . $mat[0]->{"nazev_mat"} . ") is: " . $avalaible . "m2 in IS stock.\n";
+				$$errMess .= "(real amount is: " . $amount . "m2; requested by production is: " . $requested . "m2";			
+				$$errMess .= "; request by order:$orderArea m2" if(defined $orderArea);
+				$$errMess .= ")\n";
 
 			}
 		}
@@ -260,17 +274,16 @@ sub GetJoinedFlexRigidProducts {
 	my $result = 1;
 
 	unless ($stackup) {
-		$stackup = Stackup->new($inCAM, $pcbId);
+		$stackup = Stackup->new( $inCAM, $pcbId );
 	}
 
 	my @laminatePckgsInf = ();
- 
+
 	my $firstCore;
 	my $secondCore;
 
 	foreach my $pressP ( $stackup->GetPressProducts(1) ) {
 
-		
 		my @layers = $pressP->GetLayers();
 
 		for ( my $i = 1 ; $i < scalar(@layers) - 1 ; $i++ ) {
@@ -305,7 +318,7 @@ sub GetJoinedFlexRigidProducts {
 				}
 
 				# Bot product
-				my $botP = $layers[ $i +1 ]->GetData();
+				my $botP = $layers[ $i + 1 ]->GetData();
 				$infJoin{"pBot"} = $botP;
 
 				# search for core
@@ -336,18 +349,27 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::StackupOperation';
 	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::CAMJob::Dim::JobDim';
 
 	my $inCAM = InCAM->new();
 	my $mes   = "";
 
 	#	my $side;
-	my @package = StackupOperation->GetJoinedFlexRigidProducts($inCAM, "d266089");
+	#my @package = StackupOperation->GetJoinedFlexRigidProducts( $inCAM, "d266089" );
 	#
 	#	my @package2 = StackupOperation->GetJoinedFlexRigidProducts2("d222777");
 
-	#print StackupOperation->StackupMatInStock( $inCAM, "d251561", undef, \$mes );
+	my $orderId       = "d272796-01";
+	my $inf           = HegMethods->GetInfoAfterStartProduce($orderId);
+	my %dimsPanelHash = JobDim->GetDimension( $inCAM, "d272796" );
+	my %lim           = CamJob->GetProfileLimits2( $inCAM, "d272796", "panel" );
 
-	print @package;
+	my $pArea = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
+	my $area = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
+
+	 StackupOperation->StackupMatInStock( $inCAM, "d272796", undef,$area, \$mes );
+	 
+	 print $mes;
 
 }
 

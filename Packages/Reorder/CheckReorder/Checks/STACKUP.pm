@@ -17,6 +17,7 @@ use List::MoreUtils qw(uniq);
 #local library
 use aliased 'Packages::Scoring::ScoreFlatten';
 use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -44,7 +45,7 @@ sub Run {
 	my $inCAM       = $self->{"inCAM"};
 	my $jobId       = $self->{"jobId"};
 	my $reorderType = $self->{"reorderType"};
-	
+
 	if ( $reorderType eq Enums->ReorderType_STD ) {
 
 		my $materialKind = HegMethods->GetMaterialKind($jobId);
@@ -88,10 +89,15 @@ sub Run {
 			}
 
 			# 3) Test if stackup material is on stock
+			my $inf           = HegMethods->GetInfoAfterStartProduce( $self->{"orderId"} );
+			my %dimsPanelHash = JobDim->GetDimension( $inCAM, $jobId );
+			my %lim           = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+			my $pArea         = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
+			my $area          = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
 
 			my $errMes = "";
 
-			my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $stackup, \$errMes );
+			my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $stackup, $area, \$errMes );
 
 			unless ($matOk) {
 				$self->_AddChange( "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes", 1 );

@@ -30,6 +30,7 @@ use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Helpers::JobHelper';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
 use aliased 'Packages::CAMJob::Scheme::CustSchemeCheck';
@@ -519,11 +520,21 @@ sub OnCheckGroupData {
 	# 14) Test if stackup material is on stock
 	if ( $layerCnt > 2 ) {
 
+		my @affectOrder = HegMethods->GetOrdersByState( $self->{"jobId"}, 2 );    # Orders on Predvzrobni priprava
+		my $area = undef;
+		if ( scalar(@affectOrder) ) {
+			my $inf           = HegMethods->GetInfoAfterStartProduce( $affectOrder[0]->{"reference_subjektu"} );
+			my %dimsPanelHash = JobDim->GetDimension( $inCAM, $jobId );
+			my %lim           = $defaultInfo->GetProfileLimits();
+			my $pArea         = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
+			$area = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
+		}
+
 		# a) test id material in helios, match material in stackup
 		my $stackup = $defaultInfo->GetStackup();
 
 		my $errMes = "";
-		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $defaultInfo->GetStackup(), \$errMes );
+		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $defaultInfo->GetStackup(), $area, \$errMes );
 
 		unless ($matOk) {
 
@@ -665,7 +676,7 @@ sub OnCheckGroupData {
 	my @NCLayerSett  = @{ $groupData->GetNCLayersSett() };
 	foreach my $strechCpl (@stretchCpls) {
 
-		my $NCLScale = first{$_->{"name"} eq  $strechCpl->{"nc"}->{"gROWname"} } @NCLayerSett;
+		my $NCLScale = first { $_->{"name"} eq $strechCpl->{"nc"}->{"gROWname"} } @NCLayerSett;
 
 		if ( $NCLScale->{"stretchX"} != 0 || $NCLScale->{"stretchY"} != 0 ) {
 
@@ -738,18 +749,15 @@ sub OnCheckGroupData {
 		}
 
 	}
-	
- 
-	
+
 	# TODO 24) Kontola jestli neni pouzit panel, ktery nemame jiz na sklade
-	
+
 	my %prof = $defaultInfo->GetProfileLimits();
-	if(abs($prof{"yMax"} - $prof{"yMin"}) == 460 && $defaultInfo->GetBaseCuThick() == 18 && $defaultInfo->GetPcbThick() == 1000){
-		
-		$dataMngr->_AddErrorResult(
-											"Pozor, materiálů nelze použít",
-											"Pozor nelze použít přířez 295*460*1mm 18/18 informace od vedouciho. Použij nový velký panel");
-				
+	if ( abs( $prof{"yMax"} - $prof{"yMin"} ) == 460 && $defaultInfo->GetBaseCuThick() == 18 && $defaultInfo->GetPcbThick() == 1000 ) {
+
+		$dataMngr->_AddErrorResult( "Pozor, materiálů nelze použít",
+									"Pozor nelze použít přířez 295*460*1mm 18/18 informace od vedouciho. Použij nový velký panel" );
+
 	}
 }
 

@@ -169,7 +169,7 @@ sub GetInfoAfterStartProduce {
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
 	my $cmd = "select top 1
-			 
+			 	 z.kusy_pozadavek,
 				 z.pocet_prirezu,
 				 z.prirezu_navic
 				 
@@ -1796,6 +1796,7 @@ sub GetMatStoreInfo {
 					sklad.reference_subjektu, 
 					sklad.nazev_subjektu, 
 					ss.pocet_disp as stav_skladu, 
+					ss.pocet_poptavano_vyroba,
 					uda.dps_id, 
 					uda.dps_id2, 
 					uda.dps_qid
