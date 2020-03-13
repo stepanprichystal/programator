@@ -48,6 +48,8 @@ sub new {
 	$self->{"NCLayers"} = \@NClayers;
 	
 	$self->{"pcbType"}  = $self->{"defaultInfo"}->GetPcbType();
+	
+	$self->{"isMatKinds"} = HegMethods->GetAllMatKinds();
 
 	return $self;
 }
@@ -146,6 +148,7 @@ sub GetExistStiff {
 
 			$stifInfo->{"adhesiveText"}  = "3M tape";
 			$stifInfo->{"adhesiveThick"} = 50;          # ? is not store
+			$stifInfo->{"adhesiveTg"} = 
 
 			my @n = split( /\s/, $matInfo->{"nazev_subjektu"} );
 			shift(@n) if ( $n[0] =~ /^Lam/i );
@@ -153,6 +156,8 @@ sub GetExistStiff {
 			$stifInfo->{"stiffText"} = $n[0];           # ? is not store
 			$n[2] =~ s/,/\./;
 			$stifInfo->{"stiffThick"} = int( $n[2] * 1000 );    # µm
+			
+			
 		}
 	}
 
@@ -209,6 +214,49 @@ sub GetIsFlex {
 	my $self = shift;
 
 	return $self->{"defaultInfo"}->GetIsFlex();
+}
+
+
+sub _GetSpecLayerTg {
+	my $self = shift;
+
+	 
+
+	my $minTG = undef;
+
+	# 1) Get min TG of PCB
+	if ( $matKind =~ /tg\s*(\d+)/i ) {
+
+		# single kinf of stackup materials
+
+		$minTG = $1;
+	}
+	elsif ( $matKind =~ /.*-.*/ ) {
+
+		# hybrid material stackups
+
+		my @mat = uniq( map { $_->GetTextType() } $self->{"stackup"}->GetAllCores() );
+		
+		for(my $i= 0; $i < scalar(@mat); $i++){
+			
+			$mat[$i] =~ s/\s//;
+		}
+ 
+		foreach my $m (@mat) {
+
+			my $matKey = first { $m =~ /$_/i } keys %{$self->{"isMatKinds"}};
+			next unless(defined $matKey);
+			
+			if ( !defined $minTG || $self->{"isMatKinds"}->{$matKey} < $minTG ) {
+				$minTG = $self->{"isMatKinds"}->{$matKey};
+			}
+		}
+	}
+	
+	# 2) Get min TG of estra layers (stiffeners/double coated tapes etc..)
+	my $specTg = $self->_GetSpecLayerTg();
+
+	return $minTG;
 }
 
 #-------------------------------------------------------------------------------------------#

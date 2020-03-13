@@ -1818,28 +1818,28 @@ sub GetMatInfo {
 
 # Return material info by material reference
 sub GetMatInfoByUDA {
-	my $self    = shift;
-	my $qId     = shift;
-	my $id      = shift;
-	my $id2     = shift;
+	my $self = shift;
+	my $qId  = shift;
+	my $id   = shift;
+	my $id2  = shift;
 
 	my @params = ();
 	push( @params, SqlParameter->new( "__qId", Enums->SqlDbType_INT, $qId ) ) if ( defined $qId );
 	push( @params, SqlParameter->new( "__id",  Enums->SqlDbType_INT, $id ) )  if ( defined $id );
-	push( @params, SqlParameter->new( "__id2", Enums->SqlDbType_INT, $id2 ) )  if ( defined $id2 );
+	push( @params, SqlParameter->new( "__id2", Enums->SqlDbType_INT, $id2 ) ) if ( defined $id2 );
 
 	my $where = "";
 	if ( defined $id ) {
 
 		$where .= " uda.dps_id = __id";
 	}
-	
-	if ( defined $qId  ) {
+
+	if ( defined $qId ) {
 
 		$where .= " and uda.dps_qid = __qId";
 	}
-	
-	if ( defined $id2  ) {
+
+	if ( defined $id2 ) {
 
 		$where .= " and uda.dps_id2 = __id2";
 	}
@@ -1854,7 +1854,7 @@ sub GetMatInfoByUDA {
  				 uda.dps_druh
 				FROM lcs.kmenova_karta_skladu kks
 				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
-				WHERE ".$where;
+				WHERE " . $where;
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 	if (@result) {
@@ -2133,6 +2133,37 @@ sub GetPcbStiffenerMat {
 	}
 }
 
+# Get all ReOrders
+# Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
+sub GetAllMatKinds {
+	my $self = shift;
+
+	my @params = ();
+
+	my $cmd = "SELECT
+       			data_val,
+       			disp_val
+				FROM lcs.editstyles
+				WHERE name = 'ddlb_22_material_druh'";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	my @mats =();
+	for(my $i= 0; $i < scalar(@result); $i++){
+	 
+		
+		my %inf = ();
+		$inf{"name"} = $result[$i]{'data_val'};
+		$inf{"tg"} = ($result[$i]{'disp_val'} =~ /tg\s*(\d+)/i)[0];
+		
+		push(@mats, \%inf);
+		
+	}
+	
+	
+
+	return @mats;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -2170,9 +2201,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfo( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->GetMatInfoByUDA(13,1, 4);
+	my @mats = HegMethods->GetAllMatKinds(   );
 
-	dump($mat);
+	dump(@mats);
 	die;
 }
 

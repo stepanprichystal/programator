@@ -158,6 +158,7 @@ sub GetTG {
 
 	my $minTG = undef;
 
+	# 1) Get min TG of PCB
 	if ( $matKind =~ /tg\s*(\d+)/i ) {
 
 		# single kinf of stackup materials
@@ -174,23 +175,20 @@ sub GetTG {
 			
 			$mat[$i] =~ s/\s//;
 		}
-		
-		
-
-		my %types = ();
-		$types{"DE104"}    = 135;
-		$types{"IS400"}    = 150;
-		$types{"PCL370HR"} = 180;
-		$types{"PYRALUX"}  = 220;
  
 		foreach my $m (@mat) {
 
-			my $matKey = first { $m =~ /$_/i } keys %types;
-			if ( defined $matKey && ( !defined $minTG || $types{$matKey} < $minTG ) ) {
-				$minTG = $types{$matKey};
+			my $matKey = first { $m =~ /$_/i } keys %{$self->{"isMatKinds"}};
+			next unless(defined $matKey);
+			
+			if ( !defined $minTG || $self->{"isMatKinds"}->{$matKey} < $minTG ) {
+				$minTG = $self->{"isMatKinds"}->{$matKey};
 			}
 		}
 	}
+	
+	# 2) Get min TG of estra layers (stiffeners/double coated tapes etc..)
+	my $specTg = $self->_GetSpecLayerTg();
 
 	return $minTG;
 }
