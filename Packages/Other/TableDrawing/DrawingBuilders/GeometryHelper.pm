@@ -36,7 +36,7 @@ sub ScaleDrawingInCanvasSize {
 
 	if ( $canvasH < ( $lim{"yMax"} - $lim{"yMin"} ) * $scaleY ) {
 
-		$scaleY = $canvasW / ( $lim{"yMax"} - $lim{"yMin"} * $scaleY );
+		$scaleY = $canvasH / ( $lim{"yMax"} - $lim{"yMin"} * $scaleY );
 		$scaleX = $scaleY if($keepRatio);;
 	}
 

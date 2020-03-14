@@ -9,8 +9,8 @@ package Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase;
 #3th party library
 use strict;
 use warnings;
-use List::Util qw(first);
-
+use List::Util qw(first min);
+ 
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
@@ -43,21 +43,22 @@ sub new {
 
 	my @boardBase = $self->{"defaultInfo"}->GetBoardBaseLayers();
 	$self->{"boardBaseLayers"} = \@boardBase;
-	
+
 	my @NClayers = $self->{"defaultInfo"}->GetNCLayers();
 	$self->{"NCLayers"} = \@NClayers;
-	
-	$self->{"pcbType"}  = $self->{"defaultInfo"}->GetPcbType();
-	
-	$self->{"isMatKinds"} = HegMethods->GetAllMatKinds();
+
+	$self->{"pcbType"} = $self->{"defaultInfo"}->GetPcbType();
+
+	 
+	$self->{"isMatKinds"} = {HegMethods->GetAllMatKinds()};
 
 	return $self;
 }
 
 sub GetExistSM {
 	my $self = shift;
-	my $side = shift;                                             # top/bot
-	my $info = shift;                                             # reference to store additional information
+	my $side = shift;    # top/bot
+	my $info = shift;    # reference to store additional information
 
 	my $l = $side eq "top" ? "mc" : "ms";
 
@@ -75,8 +76,8 @@ sub GetExistSM {
 
 sub GetExistSMFlex {
 	my $self = shift;
-	my $side = shift;                                        # top/bot
-	my $info = shift;                                        # reference to store additional information
+	my $side = shift;    # top/bot
+	my $info = shift;    # reference to store additional information
 
 	my $l = $side eq "top" ? "mcflex" : "msflex";
 
@@ -148,7 +149,7 @@ sub GetExistStiff {
 
 			$stifInfo->{"adhesiveText"}  = "3M tape";
 			$stifInfo->{"adhesiveThick"} = 50;          # ? is not store
-			$stifInfo->{"adhesiveTg"} = 
+			$stifInfo->{"adhesiveTg"}    = undef;
 
 			my @n = split( /\s/, $matInfo->{"nazev_subjektu"} );
 			shift(@n) if ( $n[0] =~ /^Lam/i );
@@ -156,8 +157,13 @@ sub GetExistStiff {
 			$stifInfo->{"stiffText"} = $n[0];           # ? is not store
 			$n[2] =~ s/,/\./;
 			$stifInfo->{"stiffThick"} = int( $n[2] * 1000 );    # µm
-			
-			
+			$stifInfo->{"stiffTg"}    = undef;
+
+			# Try to get TG of stiffener adhesive
+			my $matKey = first { $stifInfo->{"stiffText"} =~ /$_/i } keys %{ $self->{"isMatKinds"} };
+			if ( defined $matKey ) {
+				$stifInfo->{"stiffTg"} = $self->{"isMatKinds"}->{$matKey};
+			}
 		}
 	}
 
@@ -216,47 +222,27 @@ sub GetIsFlex {
 	return $self->{"defaultInfo"}->GetIsFlex();
 }
 
-
+# Return TG of layer stiffener, adhesive, ...
 sub _GetSpecLayerTg {
 	my $self = shift;
 
-	 
+	my @allTg = ();
 
-	my $minTG = undef;
+	my $infStiffTop = {};
+	if ( $self->GetExistStiff( "top", $infStiffTop ) ) {
 
-	# 1) Get min TG of PCB
-	if ( $matKind =~ /tg\s*(\d+)/i ) {
-
-		# single kinf of stackup materials
-
-		$minTG = $1;
+		push( @allTg, $infStiffTop->{"adhesiveTg"} ) if ( defined $infStiffTop->{"adhesiveTg"} );
+		push( @allTg, $infStiffTop->{"stiffTg"} )    if ( defined $infStiffTop->{"stiffTg"} );
 	}
-	elsif ( $matKind =~ /.*-.*/ ) {
 
-		# hybrid material stackups
+	my $infStiffBot = {};
+	if ( $self->GetExistStiff( "bot", $infStiffBot ) ) {
 
-		my @mat = uniq( map { $_->GetTextType() } $self->{"stackup"}->GetAllCores() );
-		
-		for(my $i= 0; $i < scalar(@mat); $i++){
-			
-			$mat[$i] =~ s/\s//;
-		}
- 
-		foreach my $m (@mat) {
-
-			my $matKey = first { $m =~ /$_/i } keys %{$self->{"isMatKinds"}};
-			next unless(defined $matKey);
-			
-			if ( !defined $minTG || $self->{"isMatKinds"}->{$matKey} < $minTG ) {
-				$minTG = $self->{"isMatKinds"}->{$matKey};
-			}
-		}
+		push( @allTg, $infStiffBot->{"adhesiveTg"} ) if ( defined $infStiffBot->{"adhesiveTg"} );
+		push( @allTg, $infStiffBot->{"stiffTg"} )    if ( defined $infStiffBot->{"stiffTg"} );
 	}
-	
-	# 2) Get min TG of estra layers (stiffeners/double coated tapes etc..)
-	my $specTg = $self->_GetSpecLayerTg();
 
-	return $minTG;
+	return min(@allTg);
 }
 
 #-------------------------------------------------------------------------------------------#

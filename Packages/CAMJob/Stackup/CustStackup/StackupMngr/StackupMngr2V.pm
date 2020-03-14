@@ -10,7 +10,7 @@ use base('Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase')
 #3th party library
 use strict;
 use warnings;
-use List::Util qw(first);
+use List::Util qw(first min);
 
 #local library
 
@@ -103,20 +103,27 @@ sub GetCuThickness {
 sub GetTG{
 	my $self = shift;
 	
+	
+	# 1) Get min TG of PCB	
 	my $matKind = HegMethods->GetMaterialKind($self->{"jobId"}, 1);
 	
-	my $tg = undef;
+	my $minTG = undef;
 	
-	if($matKind =~ /tg\s(\d+)/){
+	if($matKind =~ /tg\s*(\d+)/i){
 		# single kinf of stackup materials
 		
-		$tg = $1;
-	}elsif($matKind =~ /Pyralux/i){
-		
-		$tg = 220;
+		$minTG = $1;
+	} 
+ 
+	# 2) Get min TG of estra layers (stiffeners/double coated tapes etc..)
+	my $specTg = $self->_GetSpecLayerTg();
+	
+	if(defined $minTG && defined $specTg){
+		$minTG = min( ($minTG,$specTg) )
 	}
+	
 	 
-	return $tg;
+	return $minTG;
 }
 
 #-------------------------------------------------------------------------------------------#

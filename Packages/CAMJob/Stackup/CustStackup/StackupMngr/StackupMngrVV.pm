@@ -10,7 +10,7 @@ use base('Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase')
 #3th party library
 use strict;
 use warnings;
-use List::Util qw(first);
+use List::Util qw(first min);
 use List::MoreUtils qw(uniq);
 
 #local library
@@ -189,6 +189,10 @@ sub GetTG {
 	
 	# 2) Get min TG of estra layers (stiffeners/double coated tapes etc..)
 	my $specTg = $self->_GetSpecLayerTg();
+	
+	if(defined $minTG && defined $specTg){
+		min( ($minTG,$specTg) )
+	}
 
 	return $minTG;
 }

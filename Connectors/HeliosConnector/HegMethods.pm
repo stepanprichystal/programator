@@ -2147,21 +2147,18 @@ sub GetAllMatKinds {
 				WHERE name = 'ddlb_22_material_druh'";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	my @mats =();
+	my %mats ={};
 	for(my $i= 0; $i < scalar(@result); $i++){
 	 
 		
 		my %inf = ();
-		$inf{"name"} = $result[$i]{'data_val'};
-		$inf{"tg"} = ($result[$i]{'disp_val'} =~ /tg\s*(\d+)/i)[0];
-		
-		push(@mats, \%inf);
+		$mats{$result[$i]{'data_val'}} = ($result[$i]{'disp_val'} =~ /tg\s*(\d+)/i)[0];
 		
 	}
 	
 	
 
-	return @mats;
+	return %mats;
 }
 
 #-------------------------------------------------------------------------------------------#

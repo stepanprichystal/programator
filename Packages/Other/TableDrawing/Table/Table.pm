@@ -237,7 +237,9 @@ sub GetRowByKey {
 
 	my $rowDef = first { $_->GetKey() eq $key } @{ $self->{"rowsDef"} };
 
-	die "Row definition (key: $key) was not found" unless ( defined $rowDef );
+	unless ( defined $rowDef ){
+	die "Row definition (key: $key) was not found" ;
+	}
 
 	return $rowDef;
 }
