@@ -50,22 +50,69 @@ sub new {
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
+	
+	# Optional pre-loaded parametrs
+	
+	$self->{"pcbType"}          = shift;
+	$self->{"pcbIsFlex"}        = shift;
+	$self->{"pcbClass"}         = shift;
+	$self->{"pcbClassInner"}    = shift;
+	$self->{"layerCnt"}         = shift;
+	$self->{"sigLayerComp"}     = shift;
+	$self->{"NCLayers"}         = shift;
+	$self->{"platedRoutExceed"} = shift;
+	$self->{"surface"}          = shift;
+	$self->{"stackupNC"}        = shift;
 
-	$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
-  
-	my @NCLayers = CamJob->GetNCLayers( $inCAM, $self->{"jobId"} );
-	CamDrilling->AddNCLayerType( \@NCLayers );
-	CamDrilling->AddLayerStartStop( $inCAM, $self->{"jobId"}, \@NCLayers );
-	$self->{"NCLayers"} = \@NCLayers;
+	unless ( defined $self->{"pcbType"} ) {
+		$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
+	}
 
-	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $inCAM, $self->{"jobId"} );
-	$self->{"pcbClassInner"} = CamJob->GetJobPcbClassInner( $inCAM, $self->{"jobId"} );
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $self->{"jobId"} );
-	$self->{"platedRoutExceed"} = PlatedRoutArea->PlatedAreaExceed( $inCAM, $self->{'jobId'}, $self->{"step"} );
-	$self->{"rsExist"}   = CamDrilling->NCLayerExists( $inCAM, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
-	$self->{"surface"}   = HegMethods->GetPcbSurface( $self->{"jobId"} );
-	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
-	$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"} ) ;
+	unless ( defined $self->{"pcbIsFlex"} ) {
+		$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
+	}
+
+	unless ( defined $self->{"pcbClass"} ) {
+
+		$self->{"pcbClass"} = CamJob->GetJobPcbClass( $inCAM, $self->{"jobId"} );
+	}
+
+	unless ( defined $self->{"pcbClassInner"} ) {
+		$self->{"pcbClassInner"} = CamJob->GetJobPcbClass( $inCAM, $self->{"jobId"} );
+	}
+
+	unless ( defined $self->{"layerCnt"} ) {
+
+		$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $self->{"jobId"} );
+	}
+
+	unless ( defined $self->{"sigLayerComp"} ) {
+		$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"} );
+	}
+
+	unless ( defined $self->{"NCLayers"} ) {
+		my @NCLayers = CamJob->GetNCLayers( $inCAM, $self->{"jobId"} );
+		CamDrilling->AddNCLayerType( \@NCLayers );
+		CamDrilling->AddLayerStartStop( $inCAM, $self->{"jobId"}, \@NCLayers );
+		$self->{"NCLayers"} = \@NCLayers;
+	}
+
+	unless ( defined $self->{"platedRoutExceed"} ) {
+		$self->{"platedRoutExceed"} = PlatedRoutArea->PlatedAreaExceed( $inCAM, $self->{'jobId'}, $self->{"step"} );
+	}
+
+	unless ( defined $self->{"surface"} ) {
+		$self->{"surface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
+	}
+
+	unless ( defined $self->{"stackupNC"} ) {
+		if ( $self->{"layerCnt"} > 2 ) {
+
+			$self->{"stackupNC"} = StackupNC->new( $inCAM, $self->{'jobId'} );
+		}
+	}
+	
+	$self->{"rsExist"} = CamDrilling->NCLayerExists( $inCAM, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 
 	$self->{"init"} = 1;
 }
@@ -161,7 +208,7 @@ sub GetSignalLSett {
 
 		$lSett{"comp"} = $comp;
 
-		Diag( "Layer: " . $lSett{"name"} . "; Cu thick: $cuThick; Class: $class; Plated: $plt; EthingType: $etchType" );
+		#Diag( "Layer: " . $lSett{"name"} . "; Cu thick: $cuThick; Class: $class; Plated: $plt; EthingType: $etchType" );
 
 	}
 
@@ -204,7 +251,7 @@ sub GetSignalLSett {
 
 		my $side = undef;
 
-		my $product = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"} );
+		my $product = $self->{"stackupNC"}->GetProductByLayer( $lPars{"sourceName"} );
 
 		if ( $lPars{"sourceName"} eq $product->GetTopCopperLayer() ) {
 
@@ -386,6 +433,7 @@ sub GetDefaultEtchType {
 		if ( scalar(@platedNC) ) {
 
 			my @viaFill = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill } @platedNC;
+			
 
 			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || scalar(@viaFill) ) {
 				$etchType = EnumsGeneral->Etching_PATTERN;
@@ -461,9 +509,6 @@ sub __GetPcbClassInner {
 	return $self->{"pcbClassInner"};
 }
 
- 
- 
-
 sub __GetNCLayers {
 	my $self = shift;
 
@@ -487,9 +532,9 @@ sub __GetBaseCuThick {
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	my $cuThick;
-	if ($self->{"layerCnt"}  > 2 ) {
+	if ( $self->{"layerCnt"} > 2 ) {
 
-		$cuThick = $self->{"stackup"}->GetCuLayer($layerName)->GetThick();
+		$cuThick = $self->{"stackupNC"}->GetCuLayer($layerName)->GetThick();
 	}
 	else {
 
@@ -505,20 +550,7 @@ sub __GetBaseCuThick {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
-	use aliased 'Packages::InCAM::InCAM';
-
-	my $inCAM = InCAM->new();
-
-	my $jobId     = "d266089";
-	my $stepName  = "o+1";
-	my $layerName = "c";
-
-	my $d = DefaultInfo->new($jobId);
-	$d->Init($inCAM);
-	my $tech = $d->GetDefaultTechType("s");
-
-	print $tech;
+ 
 
 }
 

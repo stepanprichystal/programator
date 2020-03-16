@@ -10,7 +10,7 @@ package Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase;
 use strict;
 use warnings;
 use List::Util qw(first min);
- 
+
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
@@ -20,7 +20,6 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'Packages::CAMJob::Technology::LayerSettings';
-use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -34,23 +33,24 @@ sub new {
 	#require rows in nif section
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift;
 
 	$self->{"pcbInfoIS"} = ( HegMethods->GetAllByPcbId( $self->{"jobId"} ) )[0];
 	$self->{"nifFile"}   = NifFile->new( $self->{"jobId"} );
 
-	$self->{"defaultInfo"} = DefaultInfo->new( $self->{"jobId"} );
-	$self->{"defaultInfo"}->Init( $self->{"inCAM"} );
+	$self->{"layerSett"} = LayerSettings->new( $self->{"jobId"}, $self->{"step"} );
+	$self->{"layerSett"}->Init( $self->{"inCAM"} );
 
-	my @boardBase = $self->{"defaultInfo"}->GetBoardBaseLayers();
-	$self->{"boardBaseLayers"} = \@boardBase;
+	$self->{"boardBaseLayers"} = [ CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} ) ];
 
-	my @NClayers = $self->{"defaultInfo"}->GetNCLayers();
-	$self->{"NCLayers"} = \@NClayers;
+	my @NCLayers = CamJob->GetNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	CamDrilling->AddNCLayerType( \@NCLayers );
+	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
+	$self->{"NCLayers"} = \@NCLayers;
 
-	$self->{"pcbType"} = $self->{"defaultInfo"}->GetPcbType();
-
-	 
-	$self->{"isMatKinds"} = {HegMethods->GetAllMatKinds()};
+	$self->{"pcbType"}    = JobHelper->GetPcbType( $self->{"jobId"} );
+	$self->{"isFlex"}     = JobHelper->GetIsFlex( $self->{"jobId"} );
+	$self->{"isMatKinds"} = { HegMethods->GetAllMatKinds() };
 
 	return $self;
 }
@@ -205,7 +205,7 @@ sub GetIsPlated {
 	my $self     = shift;
 	my $sigLayer = shift;
 
-	my %sett = $self->{"defaultInfo"}->GetDefSignalLSett($sigLayer);
+	my %sett = $self->{"layerSett"}->GetDefSignalLSett($sigLayer);
 
 	my $isPlated = 0;
 
@@ -219,7 +219,13 @@ sub GetIsPlated {
 sub GetIsFlex {
 	my $self = shift;
 
-	return $self->{"defaultInfo"}->GetIsFlex();
+	return $self->{"isFlex"};
+}
+
+sub GetBoardBaseLayers {
+	my $self = shift;
+
+	return @{ $self->{"boardBaseLayers"} };
 }
 
 # Return TG of layer stiffener, adhesive, ...

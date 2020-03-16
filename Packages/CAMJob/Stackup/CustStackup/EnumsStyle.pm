@@ -26,10 +26,10 @@ use constant {
 
 # Text size [mm]
 use constant {
-			   TxtSize_TITLE    => 3.5,
-			   TxtSize_MAINHEAD => 3.5,
-			   TxtSize_SUBHEAD  => 3.5,
-			   TxtSize_STANDARD => 3.5,
+			   TxtSize_TITLE    => 3.6,
+			   TxtSize_MAINHEAD => 3.6,
+			   TxtSize_SUBHEAD  => 3.6,
+			   TxtSize_STANDARD => 3.4,
 };
 
 # Stackup column widths [mm]
@@ -49,8 +49,8 @@ use constant {
 use constant {
 			   RowHeight_TITLE    => 9,
 			   RowHeight_MAINHEAD => 9,
-			   RowHeight_STANDARD => 4.6,
-			   RowHeight_MATGAP   => 0.6,
+			   RowHeight_STANDARD => 5,
+			   RowHeight_MATGAP   => 0.7,
 			    RowHeight_CORERIGID => 9.5,
 			    RowHeight_COREFLEX => 4.6,
 };

@@ -2147,7 +2147,7 @@ sub GetAllMatKinds {
 				WHERE name = 'ddlb_22_material_druh'";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	my %mats ={};
+	my %mats =();
 	for(my $i= 0; $i < scalar(@result); $i++){
 	 
 		

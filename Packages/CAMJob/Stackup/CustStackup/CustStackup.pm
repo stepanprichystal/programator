@@ -38,6 +38,8 @@ sub new {
 
 	$self->{"inCAM"}      = shift;
 	$self->{"jobId"}      = shift;
+	$self->{"step"}       = shift // "panel";
+	
 	$self->{"tblDrawing"} = TableDrawing->new( TblDrawEnums->Units_MM );
 
 	my $borderStyle = BorderStyle->new();
@@ -67,18 +69,18 @@ sub Build {
 		 || $pcbType eq EnumsGeneral->PcbType_2VFLEX )
 	{
 
-		$builderMngr = Mngr2V->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"} );
+		$builderMngr = Mngr2V->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"tblMain"} );
 	}
 	elsif ( $pcbType eq EnumsGeneral->PcbType_MULTI ) {
 
-		$builderMngr = MngrVV->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"} );
-	
+		$builderMngr = MngrVV->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"},$self->{"tblMain"} );
+
 	}
 	elsif (    $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO
 			|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI )
 	{
 
-		$builderMngr = MngrRigidFlex->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"} );
+		$builderMngr = MngrRigidFlex->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"},$self->{"tblMain"} );
 	}
 	else {
 

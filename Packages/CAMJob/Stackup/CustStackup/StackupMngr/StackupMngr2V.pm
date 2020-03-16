@@ -52,7 +52,7 @@ sub GetStackupLayers {
 	if ( $self->GetPcbType() eq EnumsGeneral->PcbType_1VFLEX ) {
 		@sigL = grep { $_->{"gROWname"} eq "c" } @sigL;
 	}
-	
+
 	return @sigL;
 }
 
@@ -93,36 +93,33 @@ sub GetMaterialName {
 }
 
 sub GetCuThickness {
-	my $self     = shift;
-	my $sigLayer = shift;
-
-	return $self->{"defaultInfo"}->GetBaseCuThick($sigLayer);
-}
-
-
-sub GetTG{
 	my $self = shift;
 	
-	
-	# 1) Get min TG of PCB	
-	my $matKind = HegMethods->GetMaterialKind($self->{"jobId"}, 1);
-	
+	return HegMethods->GetOuterCuThick( $self->{"jobId"} );
+}
+
+sub GetTG {
+	my $self = shift;
+
+	# 1) Get min TG of PCB
+	my $matKind = HegMethods->GetMaterialKind( $self->{"jobId"}, 1 );
+
 	my $minTG = undef;
-	
-	if($matKind =~ /tg\s*(\d+)/i){
+
+	if ( $matKind =~ /tg\s*(\d+)/i ) {
+
 		# single kinf of stackup materials
-		
+
 		$minTG = $1;
-	} 
- 
+	}
+
 	# 2) Get min TG of estra layers (stiffeners/double coated tapes etc..)
 	my $specTg = $self->_GetSpecLayerTg();
-	
-	if(defined $minTG && defined $specTg){
-		$minTG = min( ($minTG,$specTg) )
+
+	if ( defined $minTG && defined $specTg ) {
+		$minTG = min( ( $minTG, $specTg ) );
 	}
-	
-	 
+
 	return $minTG;
 }
 

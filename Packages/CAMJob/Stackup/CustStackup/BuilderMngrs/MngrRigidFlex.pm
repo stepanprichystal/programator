@@ -32,12 +32,13 @@ sub new {
 	my $class      = shift;
 	my $inCAM      = shift;
 	my $jobId      = shift;
+	my $step       = shift;
 	my $tblDrawing = shift;
 
-	my $self = $class->SUPER::new( $inCAM, $jobId, $tblDrawing );
+	my $self = $class->SUPER::new( $inCAM, $jobId, $step,$tblDrawing );
 	bless $self;
 
-	$self->{"stackupMngr"} = StackupMngrVV->new( $inCAM, $jobId );
+	$self->{"stackupMngr"} = StackupMngrVV->new( $inCAM, $jobId, $step );
 
 	return $self;
 }

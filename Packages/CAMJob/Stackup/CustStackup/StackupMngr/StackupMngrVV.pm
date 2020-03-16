@@ -18,6 +18,8 @@ use List::MoreUtils qw(uniq);
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -28,7 +30,7 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"stackup"} = $self->{"defaultInfo"}->GetStackup();
+	$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 	return $self;
 }
@@ -170,41 +172,74 @@ sub GetTG {
 		# hybrid material stackups
 
 		my @mat = uniq( map { $_->GetTextType() } $self->{"stackup"}->GetAllCores() );
-		
-		for(my $i= 0; $i < scalar(@mat); $i++){
-			
+
+		for ( my $i = 0 ; $i < scalar(@mat) ; $i++ ) {
+
 			$mat[$i] =~ s/\s//;
 		}
- 
+
 		foreach my $m (@mat) {
 
-			my $matKey = first { $m =~ /$_/i } keys %{$self->{"isMatKinds"}};
-			next unless(defined $matKey);
-			
+			my $matKey = first { $m =~ /$_/i } keys %{ $self->{"isMatKinds"} };
+			next unless ( defined $matKey );
+
 			if ( !defined $minTG || $self->{"isMatKinds"}->{$matKey} < $minTG ) {
 				$minTG = $self->{"isMatKinds"}->{$matKey};
 			}
 		}
 	}
-	
+
 	# 2) Get min TG of estra layers (stiffeners/double coated tapes etc..)
 	my $specTg = $self->_GetSpecLayerTg();
-	
-	if(defined $minTG && defined $specTg){
-		min( ($minTG,$specTg) )
+
+	if ( defined $minTG && defined $specTg ) {
+		$minTG = min( ( $minTG, $specTg ) );
 	}
 
 	return $minTG;
 }
- 
 
-#-------------------------------------------------------------------------------------------#
-#  Place for testing..
-#-------------------------------------------------------------------------------------------#
-my ( $package, $filename, $line ) = caller;
-if ( $filename =~ /DEBUG_FILE.pl/ ) {
+sub GetIsInnerLayerEmpty {
+	my $self  = shift;
+	my $lName = shift;
 
+	my @steps = ();
+	
+	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
+
+	if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} ) ) {
+
+		@steps = CamStepRepeat->GetUniqueDeepestSR( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
+		CamStepRepeat->RemoveCouponSteps( \@steps );
+		@steps = map { $_->{"stepName"} } @steps;
+	}
+	else {
+		@steps = ("o+1");
+	}
+
+	my $isEmpty = 1;
+	my $f       = Features->new();
+	foreach my $step (@steps) {
+		
+		$f->Parse( $inCAM, $jobId, $step, $lName, 0, 0 );
+
+		if( first {!defined $_->{"attr"}->{".string"}} grep { $_->{"polarity"} eq "P" } $f->GetFeatures()){
+			$isEmpty = 0;
+			last;
+		}
+	}
+	
+	return $isEmpty;
 }
 
-1;
+	#-------------------------------------------------------------------------------------------#
+	#  Place for testing..
+	#-------------------------------------------------------------------------------------------#
+	my ( $package, $filename, $line ) = caller;
+	if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	}
+
+	1;
 
