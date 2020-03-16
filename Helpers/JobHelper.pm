@@ -26,6 +26,7 @@ sub GetBaseCuThick {
 	my $self      = shift;
 	my $jobId     = shift;
 	my $layerName = shift;
+	
 
 	my $cuThick;
 

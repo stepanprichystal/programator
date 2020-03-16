@@ -22,15 +22,8 @@ use aliased 'Packages::Routing::PlatedRoutArea';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStep';
-use aliased 'CamHelpers::CamAttributes';
-use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
-use aliased 'Packages::Other::CustomerNote';
-use aliased 'Packages::Tooling::PressfitOperation';
-use aliased 'Packages::Tooling::TolHoleOperation';
-use aliased 'Packages::Stackup::StackupOperation';
-use aliased 'Packages::ProductionPanel::PanelDimension';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Technology::DataComp::SigLayerComp';
 use aliased 'Packages::Technology::DataComp::NCLayerComp';
@@ -59,16 +52,7 @@ sub Init {
 	my $inCAM = shift;
 
 	$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
-
-	my @baseLayers = CamJob->GetBoardBaseLayers( $inCAM, $self->{"jobId"} );
-	$self->{"baseLayers"} = \@baseLayers;
-
-	my @signalLayers = CamJob->GetSignalLayer( $inCAM, $self->{"jobId"} );
-	$self->{"signalLayers"} = \@signalLayers;
-
-	my @signalExtLayers = CamJob->GetSignalExtLayer( $inCAM, $self->{"jobId"} );
-	$self->{"signalExtLayers"} = \@signalExtLayers;
-
+  
 	my @NCLayers = CamJob->GetNCLayers( $inCAM, $self->{"jobId"} );
 	CamDrilling->AddNCLayerType( \@NCLayers );
 	CamDrilling->AddLayerStartStop( $inCAM, $self->{"jobId"}, \@NCLayers );
@@ -150,15 +134,15 @@ sub GetSignalLSett {
 	my $class = undef;    # Signal layer construction class
 
 	if ( $lPars{"sourceName"} =~ /^v\d+$/ ) {
-		$class = $self->GetPcbClassInner();
+		$class = $self->__GetPcbClassInner();
 	}
 	else {
-		$class = $self->GetPcbClass();
+		$class = $self->__GetPcbClass();
 	}
 
-	my $cuThick = $self->GetBaseCuThick( $lPars{"sourceName"} );
+	my $cuThick = $self->__GetBaseCuThick( $lPars{"sourceName"} );
 
-	if ( $self->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER || $lPars{"plugging"} ) {
+	if ( $self->__GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER || $lPars{"plugging"} ) {
 
 		$lSett{"comp"} = 0;
 	}
@@ -397,7 +381,7 @@ sub GetDefaultEtchType {
 
 	if ( $self->{"layerCnt"} == 2 ) {
 
-		my @platedNC = grep { $_->{"plated"} && !$_->{"technical"} } $self->GetNCLayers();
+		my @platedNC = grep { $_->{"plated"} && !$_->{"technical"} } $self->__GetNCLayers();
 
 		if ( scalar(@platedNC) ) {
 
@@ -456,7 +440,7 @@ sub GetDefaultEtchType {
 	return $etchType;
 }
 
-sub GetPcbClass {
+sub __GetPcbClass {
 	my $self = shift;
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
@@ -464,32 +448,23 @@ sub GetPcbClass {
 	return $self->{"pcbClass"};
 }
 
-sub GetPcbClassInner {
+sub __GetPcbClassInner {
 	my $self = shift;
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	# take class from "outer" if not defined
 	if ( !defined $self->{"pcbClassInner"} || $self->{"pcbClassInner"} == 0 ) {
-		return $self->GetPcbClass();
+		return $self->__GetPcbClass();
 	}
 
 	return $self->{"pcbClassInner"};
 }
 
-# Tohle odstranit
-
-sub GetBoardBaseLayers {
-	my $self = shift;
-
-	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
-
-	return @{ $self->{"baseLayers"} };
-}
-
+ 
  
 
-sub GetNCLayers {
+sub __GetNCLayers {
 	my $self = shift;
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
@@ -497,7 +472,7 @@ sub GetNCLayers {
 	return @{ $self->{"NCLayers"} };
 }
 
-sub GetPcbType {
+sub __GetPcbType {
 	my $self = shift;
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
@@ -505,17 +480,16 @@ sub GetPcbType {
 	return $self->{"pcbType"};
 }
 
-sub GetBaseCuThick {
+sub __GetBaseCuThick {
 	my $self      = shift;
 	my $layerName = shift;
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	my $cuThick;
-	if ( HegMethods->GetBasePcbInfo( $self->{"jobId"} )->{"pocet_vrstev"} > 2 ) {
+	if ($self->{"layerCnt"}  > 2 ) {
 
 		$cuThick = $self->{"stackup"}->GetCuLayer($layerName)->GetThick();
-
 	}
 	else {
 
