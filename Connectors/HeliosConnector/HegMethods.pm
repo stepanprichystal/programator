@@ -89,6 +89,7 @@ sub GetAllByPcbId {
 				 dn.poznamka_zakaznik n_poznamka_web,
 				 d.material,
 				 m.nazev_subjektu material_nazev,
+				 m.reference_subjektu material_reference_subjektu,
 				 d.material_coverlay,
 				 d.poznamka_zakaznik poznamka_web,
 				 n.poznamka n_poznamka_zak,
@@ -1704,16 +1705,16 @@ sub GetPcbsInProduceMDI {
 }
 
 # Return store information about prepreg defined by multical ids
-sub GetCopperStoreInfo {
+sub GetCopperStoreInfoByUDA {
 	my $self = shift;
 	my $id   = shift;    # prepreg thick id
 
-	return $self->GetMatStoreInfo( EnumsIS->MatType_COPPER, undef, $id );
+	return $self->GetMatStoreInfoByUDA( EnumsIS->MatType_COPPER, undef, $id );
 
 }
 
 # Return store information about prepreg defined by multical ids
-sub GetPrepregStoreInfo {
+sub GetPrepregStoreInfoByUDA {
 	my $self     = shift;
 	my $qId      = shift;    # quality id (DR4, IS400, ..)
 	my $id       = shift;
@@ -1725,12 +1726,12 @@ sub GetPrepregStoreInfo {
 
 	$type = EnumsIS->MatType_PREPREGFLEX if ($flex);
 
-	return $self->GetMatStoreInfo( $type, $qId, $id, undef, undef, $matXsize, $matYsize );
+	return $self->GetMatStoreInfoByUDA( $type, $qId, $id, undef, undef, $matXsize, $matYsize );
 
 }
 
 # Return store information about core defined by multical ids
-sub GetCoreStoreInfo {
+sub GetCoreStoreInfoByUDA {
 	my $self     = shift;
 	my $qId      = shift;    # quality id (DR4, IS400, ..)
 	my $id       = shift;    # core thick id
@@ -1738,13 +1739,13 @@ sub GetCoreStoreInfo {
 	my $matXsize = shift;    # in mm
 	my $matYsize = shift;    # in mm
 
-	return $self->GetMatStoreInfo( EnumsIS->MatType_CORE, $qId, $id, $id2, undef, $matXsize, $matYsize );
+	return $self->GetMatStoreInfoByUDA( EnumsIS->MatType_CORE, $qId, $id, $id2, undef, $matXsize, $matYsize );
 }
 
 # Return infro from actual store from CNC store about material (copper, core, prepreg types only)
 # qId, Id, Id2 are from UDA table and are refer to Multicall file "ml.xml",
 # where are defined materials and qid
-sub GetMatStoreInfo {
+sub GetMatStoreInfoByUDA {
 	my $self      = shift;
 	my $matType   = shift;
 	my $qId       = shift;
@@ -1817,32 +1818,7 @@ sub GetMatStoreInfo {
 	return @result;
 }
 
-# Return material info by material reference
-sub GetMatInfo {
-	my $self         = shift;
-	my $matReference = shift;
 
-	my @params = ( SqlParameter->new( "__matReference", Enums->SqlDbType_VARCHAR, $matReference ) );
-
-	my $cmd = "SELECT 
-				kks.reference_subjektu,
-				kks.nazev_subjektu,
-				kks.vyska,
-				 uda.dps_id,
-  				 uda.dps_id2,
- 				 uda.dps_qid
-				FROM lcs.kmenova_karta_skladu kks
-				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
-				WHERE kks.reference_subjektu = __matReference";
-
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	if (@result) {
-		return $result[0];
-	}
-	else {
-		return 0;
-	}
-}
 
 # Return material info by material reference
 sub GetMatInfoByUDA {
@@ -1883,6 +1859,64 @@ sub GetMatInfoByUDA {
 				FROM lcs.kmenova_karta_skladu kks
 				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
 				WHERE " . $where;
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	if (@result) {
+		return $result[0];
+	}
+	else {
+		return 0;
+	}
+}
+
+# Return infro from actual store from CNC store for material by material reference
+sub GetMatStoreInfo {
+	my $self         = shift;
+	my $matReference = shift;
+
+	my @params = ( SqlParameter->new( "__matReference", Enums->SqlDbType_VARCHAR, $matReference ) );
+
+my $cmd = "SELECT 
+					kks.reference_subjektu,
+					kks.nazev_subjektu as nazev_mat,
+					ss.pocet_disp as stav_skladu, 
+					ss.pocet_poptavano_vyroba 
+			 
+					
+				FROM lcs.kmenova_karta_skladu kks
+					join lcs.stav_sk ss on ss.zdroj = kks.cislo_subjektu
+					join lcs.subjekty sklad on sklad.cislo_subjektu= ss.sklad
+			 
+				WHERE kks.reference_subjektu = __matReference AND sklad.reference_subjektu = 130 ";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+		if (@result) {
+		return $result[0];
+	}
+	else {
+		return 0;
+	}
+
+ 
+}
+
+# Return material info by material reference
+sub GetMatInfo {
+	my $self         = shift;
+	my $matReference = shift;
+
+	my @params = ( SqlParameter->new( "__matReference", Enums->SqlDbType_VARCHAR, $matReference ) );
+
+	my $cmd = "SELECT 
+				kks.reference_subjektu,
+				kks.nazev_subjektu,
+				kks.vyska,
+				 uda.dps_id,
+  				 uda.dps_id2,
+ 				 uda.dps_qid
+				FROM lcs.kmenova_karta_skladu kks
+				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
+				WHERE kks.reference_subjektu = __matReference";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 	if (@result) {
@@ -2157,10 +2191,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	#	my @matTop = HegMethods->GetPrepregStoreInfo( 10, 1 , undef, undef, 1);
+	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->GetMatInfoByUDA( 13, 1, 4 );
+	my $mat = HegMethods->GetMatStoreInfo( "0305000031" );
 
 	dump($mat);
 	die;

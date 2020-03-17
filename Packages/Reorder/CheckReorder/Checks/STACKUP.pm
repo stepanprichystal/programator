@@ -23,8 +23,8 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardExt';
-use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::Reorder::Enums';
+use aliased ' Packages::CAMJob::Material::MaterialInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -97,7 +97,7 @@ sub Run {
 
 			my $errMes = "";
 
-			my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $stackup, $area, \$errMes );
+			my $matOk = MaterialInfo->StackupMatInStock( $inCAM, $jobId, $stackup, $area, \$errMes );
 
 			unless ($matOk) {
 				$self->_AddChange( "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes", 1 );

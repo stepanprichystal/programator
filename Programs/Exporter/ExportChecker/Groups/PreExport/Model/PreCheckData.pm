@@ -32,6 +32,7 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::Stackup::StackupOperation';
+use aliased 'Packages::CAMJob::Material::MaterialInfo';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
 use aliased 'Packages::CAMJob::Scheme::CustSchemeCheck';
 use aliased 'Packages::CAMJob::Matrix::LayerNamesCheck';
@@ -518,23 +519,33 @@ sub OnCheckGroupData {
 	}
 
 	# 14) Test if stackup material is on stock
-	if ( $layerCnt > 2 ) {
+	my @affectOrder = HegMethods->GetOrdersByState( $self->{"jobId"}, 2 );    # Orders on Predvzrobni priprava
+	my $area = undef;
+	if ( scalar(@affectOrder) ) {
+		my $inf           = HegMethods->GetInfoAfterStartProduce( $affectOrder[0]->{"reference_subjektu"} );
+		my %dimsPanelHash = JobDim->GetDimension( $inCAM, $jobId );
+		my %lim           = $defaultInfo->GetProfileLimits();
+		my $pArea         = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
+		$area = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
+	}
 
-		my @affectOrder = HegMethods->GetOrdersByState( $self->{"jobId"}, 2 );    # Orders on Predvzrobni priprava
-		my $area = undef;
-		if ( scalar(@affectOrder) ) {
-			my $inf           = HegMethods->GetInfoAfterStartProduce( $affectOrder[0]->{"reference_subjektu"} );
-			my %dimsPanelHash = JobDim->GetDimension( $inCAM, $jobId );
-			my %lim           = $defaultInfo->GetProfileLimits();
-			my $pArea         = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
-			$area = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
+	if ( $layerCnt <= 2 ) {
+
+		my $errMes = "";
+		my $matOk = MaterialInfo->BaseMatInStock( $jobId, $area, \$errMes );
+
+		unless ($matOk) {
+			$dataMngr->_AddErrorResult( "Base material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
 		}
+
+	}
+	else {
 
 		# a) test id material in helios, match material in stackup
 		my $stackup = $defaultInfo->GetStackup();
 
 		my $errMes = "";
-		my $matOk = StackupOperation->StackupMatInStock( $inCAM, $jobId, $defaultInfo->GetStackup(), $area, \$errMes );
+		my $matOk = MaterialInfo->StackupMatInStock( $inCAM, $jobId, $defaultInfo->GetStackup(), $area, \$errMes );
 
 		unless ($matOk) {
 
