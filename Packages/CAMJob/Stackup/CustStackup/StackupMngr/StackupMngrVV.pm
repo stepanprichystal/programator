@@ -103,16 +103,24 @@ sub GetExistCvrl {
 sub GetCvrlInfo {
 	my $self   = shift;
 	my $stckpL = shift;
-	my $info   = shift // {};
+	my $inf   = shift // {};
 
-	$info->{"adhesiveText"}  = "";
-	$info->{"adhesiveThick"} = $stckpL->GetAdhesiveThick();
-	$info->{"cvrlText"}      = $stckpL->GetTextType() . " " . $stckpL->GetText();
-	$info->{"cvrlThick"} =
+	$inf->{"adhesiveText"}  = "";
+	$inf->{"adhesiveThick"} = $stckpL->GetAdhesiveThick();
+	$inf->{"cvrlText"}      = $stckpL->GetTextType() . " " . $stckpL->GetText();
+	$inf->{"cvrlThick"} =
 	  $stckpL->GetThick(0) - $stckpL->GetAdhesiveThick();    # Return real thickness from base class (not consider if covelraz is selective)
-	$info->{"selective"} = $stckpL->GetMethod() eq StackEnums->Coverlay_SELECTIVE ? 1 : 0;
+	$inf->{"selective"} = $stckpL->GetMethod() eq StackEnums->Coverlay_SELECTIVE ? 1 : 0;
 
-	return $info;
+	die "Cvrl adhesive material name was not found at material:" . $stckpL->GetText()
+	  unless ( defined $inf->{"adhesiveText"} );
+	die "Coverlay adhesive material thick was not found at material:" . $stckpL->GetText()
+	  unless ( defined $inf->{"adhesiveThick"} );
+	die "Coverlay material name was not found at material:" . $stckpL->GetText()          unless ( defined $inf->{"cvrlText"} );
+	die "Coverlay thickness was not found at material:" . $stckpL->GetText()              unless ( defined $inf->{"cvrlThick"} );
+	die "Coverlay type (selective or not)was not found at material:" . $stckpL->GetText() unless ( defined $inf->{"selective"} );
+
+	return $inf;
 }
 
 sub GetPrepregTitle {
@@ -204,9 +212,9 @@ sub GetIsInnerLayerEmpty {
 	my $lName = shift;
 
 	my @steps = ();
-	
-	my $inCAM  = $self->{"inCAM"};
-	my $jobId  = $self->{"jobId"};
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} ) ) {
 
@@ -221,25 +229,108 @@ sub GetIsInnerLayerEmpty {
 	my $isEmpty = 1;
 	my $f       = Features->new();
 	foreach my $step (@steps) {
-		
+
 		$f->Parse( $inCAM, $jobId, $step, $lName, 0, 0 );
 
-		if( first {!defined $_->{"attr"}->{".string"}} grep { $_->{"polarity"} eq "P" } $f->GetFeatures()){
+		if ( defined first { !defined $_->{"attr"}->{".string"} } grep { $_->{"polarity"} eq "P" } $f->GetFeatures() ) {
 			$isEmpty = 0;
 			last;
 		}
 	}
-	
+
 	return $isEmpty;
 }
 
-	#-------------------------------------------------------------------------------------------#
-	#  Place for testing..
-	#-------------------------------------------------------------------------------------------#
-	my ( $package, $filename, $line ) = caller;
-	if ( $filename =~ /DEBUG_FILE.pl/ ) {
+# Real PCB thickness
+sub GetThickness {
+	my $self = shift;
 
+	return $self->{"stackup"}->GetFinalThick();
+
+}
+
+sub GetNominalThickness {
+	my $self = shift;
+
+	return $self->{"stackup"}->GetNominalThickness();
+
+}
+
+sub GetThicknessStiffener {
+	my $self = shift;
+
+	my $t = $self->GetThicknessFlex();
+
+	my $topStiff = {};
+	if ( $self->GetExistStiff( "top", $topStiff ) ) {
+
+		$t += $topStiff->{"adhesiveThick"};
+		$t += $topStiff->{"stiffThick"};
 	}
 
-	1;
+	my $botStiff = {};
+	if ( $self->GetExistStiff( "bot", $botStiff ) ) {
+
+		$t += $botStiff->{"adhesiveThick"};
+		$t += $botStiff->{"stiffThick"};
+	}
+
+	return $t;
+}
+
+sub GetThicknessFlex {
+	my $self = shift;
+
+	my $t = 0;
+
+	my @layers = $self->{"stackup"}->GetAllLayers();
+
+	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
+		my $l = $layers[$i];
+
+		if ( $l->GetType() eq StackEnums->MaterialType_COPPER ) {
+
+			next if ( $self->GetIsInnerLayerEmpty( $l->GetCopperName() ) );
+
+			my $isFlex = 0;
+			my $c = !$l->GetIsFoil() ? $self->{"stackup"}->GetCoreByCuLayer( $l->GetCopperName ) : undef;
+			if ( defined $c && $c->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
+				$isFlex = 1;
+			}
+
+			my $lInfo = first { $_->{"gROWname"} eq $l->GetCopperName() } $self->GetBoardBaseLayers();
+
+			$t += $l->GetThick();
+			$t += 25 if ( $self->GetIsPlated($lInfo) );
+
+		}
+		elsif ( $l->GetType() eq StackEnums->MaterialType_PREPREG ) {
+
+			# Do distinguish between Noflow Prepreg 1 which insluding coverlay and others prepregs
+			if ( $l->GetIsNoFlow() && $l->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 ) {
+
+				$t += $l->GetThick();
+			}
+
+		}
+		elsif ( $l->GetType() eq StackEnums->MaterialType_CORE ) {
+
+			$t += $l->GetThick() if ( $l->GetCoreRigidType() eq StackEnums->CoreType_FLEX );
+
+		}
+	}
+
+	return $t;
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+}
+
+1;
 

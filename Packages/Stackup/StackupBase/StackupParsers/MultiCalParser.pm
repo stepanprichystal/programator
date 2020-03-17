@@ -74,6 +74,14 @@ sub ParseStackup {
 	);
 
 	close($fStackupXml);
+	
+	if(defined $xml->{"soll"} && $xml->{"soll"} ne ""){
+		
+		my $nom = $xml->{"soll"};
+		$nom =~ s/,/\./;
+		$nom *=1000;
+		$self->{"nominalThick"} = $nom;
+	}
 
 	my @elements = @{ $xml->{element} };
 
@@ -112,7 +120,7 @@ sub ParseStackup {
 
 		$element = $elements[$i];
 		$elType  = $element->{type};
- 
+
 		#$layerInfo->{"type"} = $elType;
 
 		if ( GeneralHelper->RegexEquals( Enums->MaterialType_COPPER, $elType ) ) {
@@ -144,8 +152,9 @@ sub ParseStackup {
 			$layerInfo->{"typetext"} = $info->{typetext};
 			$layerInfo->{"id"}       = $element->{id};
 			$layerInfo->{"qId"}      = $element->{qId};
+
 			# prepreg is noflow if contains text "no flow"
-			$layerInfo->{"noFlow"}   = $layerInfo->{"typetext"} =~ /((no)|(low)).*flow/i ? 1 : 0;
+			$layerInfo->{"noFlow"} = $layerInfo->{"typetext"} =~ /((no)|(low)).*flow/i ? 1 : 0;
 
 			push( @thickList, $layerInfo );
 
@@ -170,15 +179,23 @@ sub ParseStackup {
 		}
 
 	}
- 
 
 	return @thickList;
 }
 
-#-------------------------------------------------------------------------------------------#
-#  Place for testing..
-#-------------------------------------------------------------------------------------------#
-my ( $package, $filename, $line ) = caller;
+sub GetNominalThick {
+	my $self = shift;
+
+
+	return $self->{"nominalThick"};
+}
+
+
+
+  #-------------------------------------------------------------------------------------------#
+  #  Place for testing..
+  #-------------------------------------------------------------------------------------------#
+  my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 }

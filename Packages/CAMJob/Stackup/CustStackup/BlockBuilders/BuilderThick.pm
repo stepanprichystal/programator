@@ -87,7 +87,7 @@ sub __BuildHeadRow {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
 						   $tblMain->GetRowDefPos($row),
-						   undef, undef, "Thickness", $txtStyle, undef, );
+						   undef, undef, "Thick [µm]", $txtStyle, undef, );
 
 	}
 
@@ -101,7 +101,7 @@ sub __BuildHeadRow {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ),
 						   $tblMain->GetRowDefPos($row),
-						   undef, undef, "Thickness", $txtStyle );
+						   undef, undef, "Thick [µm]", $txtStyle );
 	}
 
 	# Sec_C_RIGIDFLEX ---------------------------------------------
@@ -124,7 +124,7 @@ sub __BuildHeadRow {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
 						   $tblMain->GetRowDefPos($row),
-						   undef, undef, "Thickness", $txtStyle );
+						   undef, undef, "Thick [µm]", $txtStyle );
 	}
 
 	# Sec_E_STIFFENER ---------------------------------------------
@@ -138,18 +138,17 @@ sub __BuildHeadRow {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
 						   $tblMain->GetRowDefPos($row),
-						   undef, undef, "Thickness", $txtStyle );
+						   undef, undef, "Thick [µm]", $txtStyle );
 	}
-	
-		# Sec_END
+
+	# Sec_END
 	my $sec_END = $secMngr->GetSection( Enums->Sec_END );
 
 	if ( $sec_END->GetIsActive() ) {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_END, "end" ),
 						   $tblMain->GetRowDefPos($row),
-						  undef,
-						   undef, undef, $txtStyle, undef, $borderStyle );
+						   undef, undef, undef, $txtStyle, undef, $borderStyle );
 
 	}
 
@@ -182,7 +181,7 @@ sub __BuildThickRows {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
 						   $tblMain->GetRowDefPos($rowComp),
-						   undef, undef, "Computed", $txtStyle );
+						   undef, undef, "Estimated", $txtStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
 						   $tblMain->GetRowDefPos($rowReq),
 						   undef, undef, "Requested", $txtStyle );
@@ -192,12 +191,15 @@ sub __BuildThickRows {
 	my $sec_A_MAIN = $secMngr->GetSection( Enums->Sec_A_MAIN );
 	if ( $sec_A_MAIN->GetIsActive() ) {
 
+		my $cThick = $self->{"helper"}->GetComputedThick( Enums->Sec_A_MAIN );
+		my $rThick = $self->{"helper"}->GetRequiredThick( Enums->Sec_A_MAIN );
+
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
 						   $tblMain->GetRowDefPos($rowComp),
-						   undef, undef, $self->{"helper"}->GetCompThickness( Enums->Sec_A_MAIN ), $txtStyle );
+						   undef, undef, ( defined $cThick ? int($cThick) : "-" ), $txtStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
 						   $tblMain->GetRowDefPos($rowReq),
-						   undef, undef, $self->{"helper"}->GetReqThickness( Enums->Sec_A_MAIN ), $txtStyle );
+						   undef, undef, ( defined $rThick ? int($rThick) : "-" ), $txtStyle );
 
 	}
 
@@ -205,24 +207,30 @@ sub __BuildThickRows {
 	my $sec_B_FLEX = $secMngr->GetSection( Enums->Sec_B_FLEX );
 	if ( $sec_B_FLEX->GetIsActive() ) {
 
+		my $cThick = $self->{"helper"}->GetComputedThick( Enums->Sec_B_FLEX );
+		my $rThick = $self->{"helper"}->GetRequiredThick( Enums->Sec_B_FLEX );
+
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ),
 						   $tblMain->GetRowDefPos($rowComp),
-						   undef, undef, $self->{"helper"}->GetCompThickness( Enums->Sec_B_FLEX ), $txtStyle );
+						   undef, undef, ( defined $cThick ? int($cThick) : "-" ), $txtStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_B_FLEX, "matThick" ),
 						   $tblMain->GetRowDefPos($rowReq),
-						   undef, undef, $self->{"helper"}->GetReqThickness( Enums->Sec_B_FLEX ), $txtStyle );
+						   undef, undef, ( defined $rThick ? int($rThick) : "-" ), $txtStyle );
 	}
 
 	# Sec_D_FLEXTAIL ---------------------------------------------
 	my $sec_D_FLEXTAIL = $secMngr->GetSection( Enums->Sec_D_FLEXTAIL );
 	if ( $sec_D_FLEXTAIL->GetIsActive() ) {
 
+		my $cThick = $self->{"helper"}->GetComputedThick( Enums->Sec_D_FLEXTAIL );
+		my $rThick = $self->{"helper"}->GetRequiredThick( Enums->Sec_D_FLEXTAIL );
+
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
 						   $tblMain->GetRowDefPos($rowComp),
-						   undef, undef, $self->{"helper"}->GetCompThickness( Enums->Sec_D_FLEXTAIL ), $txtStyle );
+						   undef, undef, ( defined $cThick ? int($cThick) : "-" ), $txtStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_D_FLEXTAIL, "matThick" ),
 						   $tblMain->GetRowDefPos($rowReq),
-						   undef, undef, $self->{"helper"}->GetReqThickness( Enums->Sec_D_FLEXTAIL ), $txtStyle );
+						   undef, undef, ( defined $rThick ? int($rThick) : "-" ), $txtStyle );
 	}
 
 	# Sec_E_STIFFENER ---------------------------------------------
@@ -230,12 +238,15 @@ sub __BuildThickRows {
 
 	if ( $sec_E_STIFFENER->GetIsActive() ) {
 
+		my $cThick = $self->{"helper"}->GetComputedThick( Enums->Sec_E_STIFFENER );
+		my $rThick = $self->{"helper"}->GetRequiredThick( Enums->Sec_E_STIFFENER );
+
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
 						   $tblMain->GetRowDefPos($rowComp),
-						   undef, undef, $self->{"helper"}->GetCompThickness( Enums->Sec_E_STIFFENER ), $txtStyle );
+						   undef, undef, ( defined $cThick ? int($cThick) : "-" ), $txtStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
 						   $tblMain->GetRowDefPos($rowReq),
-						   undef, undef, $self->{"helper"}->GetReqThickness( Enums->Sec_E_STIFFENER ), $txtStyle );
+						   undef, undef, ( defined $rThick ? int($rThick) : "-" ), $txtStyle );
 	}
 
 }

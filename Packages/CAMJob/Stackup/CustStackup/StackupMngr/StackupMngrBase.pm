@@ -68,6 +68,7 @@ sub GetExistSM {
 
 		my %mask = $self->__GetMaskColor();
 		$info->{"color"} = ValueConvertor->GetMaskCodeToColor( $mask{$side} );
+		$info->{"thick"} = 20;
 
 	}
 
@@ -145,25 +146,46 @@ sub GetExistStiff {
 
 		if ( defined $stifInfo ) {
 
-			my $matInfo = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
+			my $mInf = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
 
-			$stifInfo->{"adhesiveText"}  = "3M tape";
+			$stifInfo->{"adhesiveText"}  = "3M 467MP tape";
 			$stifInfo->{"adhesiveThick"} = 50;          # ? is not store
-			$stifInfo->{"adhesiveTg"}    = undef;
+			$stifInfo->{"adhesiveTg"}    = 204;
 
-			my @n = split( /\s/, $matInfo->{"nazev_subjektu"} );
-			shift(@n) if ( $n[0] =~ /^Lam/i );
+			my @n = split(/\s/, $mInf->{"nazev_subjektu"});
+			shift(@n) if($n[0] =~ /lam/i);
+			
+			$stifInfo->{"stiffText"} = $n[0];
+			my $t = $mInf->{"vyska"};
+			$t =~ s/,/\./;
+			$t *= 1000000;
 
-			$stifInfo->{"stiffText"} = $n[0];           # ? is not store
-			$n[2] =~ s/,/\./;
-			$stifInfo->{"stiffThick"} = int( $n[2] * 1000 );    # µm
+			# If not core, copper thickness are included in material height
+			if ( $mInf->{"dps_type"} !~ /core/i ) {
+
+				if ( $mInf->{"nazev_subjektu"} =~ m/(\d+\/\d+)/ ) {
+					my @cu = split( "/", $1 );
+					$t -= $cu[0] if ( defined $cu[0] );
+					$t -= $cu[1] if ( defined $cu[1] );
+				}
+			}
+
+			$stifInfo->{"stiffThick"} = $t;      # µm
 			$stifInfo->{"stiffTg"}    = undef;
 
 			# Try to get TG of stiffener adhesive
-			my $matKey = first { $stifInfo->{"stiffText"} =~ /$_/i } keys %{ $self->{"isMatKinds"} };
+			my $matKey = first { $mInf->{"nazev_subjektu"} =~ /$_/i } keys %{ $self->{"isMatKinds"} };
 			if ( defined $matKey ) {
 				$stifInfo->{"stiffTg"} = $self->{"isMatKinds"}->{$matKey};
 			}
+
+			die "Stiffener adhesive material name was not found at material:" . $mInf->{"nazev_subjektu"}
+			  unless ( defined $stifInfo->{"adhesiveText"} );
+			die "Stiffener adhesive material thick was not found at material:" . $mInf->{"nazev_subjektu"}
+			  unless ( defined $stifInfo->{"adhesiveThick"} );
+			die "Stiffener material name was not found at material:" . $mInf->{"nazev_subjektu"} unless ( defined $stifInfo->{"stiffText"} );
+			die "Stiffener thickness was not found at material:" . $mInf->{"nazev_subjektu"}     unless ( defined $stifInfo->{"stiffThick"} );
+			die "Stiffener TG was not found at material:" . $mInf->{"nazev_subjektu"}            unless ( defined $stifInfo->{"stiffTg"} );
 		}
 	}
 

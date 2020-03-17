@@ -55,7 +55,6 @@ sub new {
 	# Defaul values
 	$self->{"pcbType"}         = undef;
 	$self->{"layerCnt"}        = undef;
-	$self->{"stackup"}         = undef;
 	$self->{"stackupNC"}       = undef;
 	$self->{"pattern"}         = undef;
 	$self->{"tenting"}         = undef;
@@ -229,7 +228,7 @@ sub GetBaseCuThick {
 	my $cuThick;
 	if ( HegMethods->GetBasePcbInfo( $self->{"jobId"} )->{"pocet_vrstev"} > 2 ) {
 
-		$cuThick = $self->{"stackup"}->GetCuLayer($layerName)->GetThick();
+		$cuThick = $self->{"stackupNC"}->GetCuLayer($layerName)->GetThick();
 
 	}
 	else {
@@ -291,7 +290,7 @@ sub GetStackup {
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
-	return $self->{"stackup"};
+	return $self->{"stackupNC"};
 }
 
 # Return if step exist Doesn't load from income for each request
@@ -558,7 +557,6 @@ sub __Init {
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
-		$self->{"stackup"} = Stackup->new( $inCAM, $self->{'jobId'} );
 		$self->{"stackupNC"} = StackupNC->new( $inCAM, $self->{'jobId'} );
 	}
 

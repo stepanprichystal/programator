@@ -23,7 +23,8 @@ use Class::Interface;
 # Return array of parsed stackup items 
 sub ParseStackup;     
  
-
+# Get nominal thickness drequested bz customer 
+sub GetNominalThick;
 
  
  

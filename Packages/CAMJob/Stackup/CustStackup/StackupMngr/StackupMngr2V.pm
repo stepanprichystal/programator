@@ -59,7 +59,7 @@ sub GetStackupLayers {
 sub GetExistCvrl {
 	my $self = shift;
 	my $side = shift;    # top/bot
-	my $info = shift;    # reference for storing info
+	my $inf  = shift;    # reference for storing info
 
 	my $l = $side eq "top" ? "coverlayc" : "coverlays";
 
@@ -67,18 +67,27 @@ sub GetExistCvrl {
 
 	if ($exist) {
 
-		if ( defined $info ) {
+		if ( defined $inf ) {
 
 			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
 
-			my $thick    = $matInfo->{"tloustka"} * 1000000;
-			my $thickAdh = $matInfo->{"tloustka_lepidlo"} * 1000000;
+			my $thick    = $matInfo->{"vyska"} * 1000000;
+			my $thickAdh = $matInfo->{"doplnkovy_rozmer"} * 1000000;
 
-			$info->{"adhesiveText"}  = "";
-			$info->{"adhesiveThick"} = $thickAdh;
-			$info->{"cvrlText"}      = ( $matInfo->{"nazev_subjektu"} =~ /(LF\s\d+)/ )[0];    # ? is not store
-			$info->{"cvrlThick"}     = $thick - $thickAdh;
-			$info->{"selective"}     = 0;                                                     # Selective coverlay can bz onlz at RigidFLex pcb
+			$inf->{"adhesiveText"}  = "";
+			$inf->{"adhesiveThick"} = $thickAdh;
+			$inf->{"cvrlText"}      = ( $matInfo->{"nazev_subjektu"} =~ /(LF\s\d+)/ )[0];    # ? is not store
+			$inf->{"cvrlThick"}     = $thick - $thickAdh;
+			$inf->{"selective"}     = 0;                                                     # Selective coverlay can bz onlz at RigidFLex pcb
+
+			die "Cvrl adhesive material name was not found at material:" . $matInfo->{"nazev_subjektu"}
+			  unless ( defined $inf->{"adhesiveText"} );
+			die "Coverlay adhesive material thick was not found at material:" . $matInfo->{"nazev_subjektu"}
+			  unless ( defined $inf->{"adhesiveThick"} );
+			die "Coverlay material name was not found at material:" . $matInfo->{"nazev_subjektu"} unless ( defined $inf->{"cvrlText"} );
+			die "Coverlay thickness was not found at material:" . $matInfo->{"nazev_subjektu"}     unless ( defined $inf->{"cvrlThick"} );
+			die "Coverlay type (selective or not)was not found at material:" . $matInfo->{"nazev_subjektu"}
+			  unless ( defined $inf->{"selective"} );
 
 		}
 	}
@@ -88,13 +97,12 @@ sub GetExistCvrl {
 
 sub GetMaterialName {
 	my $self = shift;
-
 	return $self->{"pcbInfoIS"}->{"material_nazev"};
 }
 
 sub GetCuThickness {
 	my $self = shift;
-	
+
 	return HegMethods->GetOuterCuThick( $self->{"jobId"} );
 }
 
@@ -121,6 +129,107 @@ sub GetTG {
 	}
 
 	return $minTG;
+}
+
+sub GetThicknessStiffener {
+	my $self = shift;
+	my $t    = $self->GetThickness();
+
+	my $topStiff = {};
+	if ( $self->GetExistStiff( "top", $topStiff ) ) {
+
+		$t += $topStiff->{"adhesiveThick"};
+		$t += $topStiff->{"stiffThick"};
+	}
+
+	my $botStiff = {};
+	if ( $self->GetExistStiff( "bot", $botStiff ) ) {
+
+		$t += $botStiff->{"adhesiveThick"};
+		$t += $botStiff->{"stiffThick"};
+	}
+
+	return $t;
+
+}
+
+# Real PCB thickness
+sub GetThickness {
+	my $self = shift;
+
+	my $matInfo = HegMethods->GetPcbMat( $self->{"jobId"} );
+	my $m       = $matInfo->{"vyska"};
+
+	die "Material thickness (specifikace/vyska) is not defined for material: " . $self->{"pcbInfoIS"}->{"material_nazev"} unless ( defined $m );
+
+	my $t = $m;
+
+	$t =~ s/,/\./;
+	$t *= 1000000;
+
+	# Remove cu from base material thickness
+	if ( $matInfo->{"dps_type"} !~ /core/i ) {
+
+		if ( $matInfo->{"nazev_subjektu"} =~ m/(\d+\/\d+)/ ) {
+			my @cu = split( "/", $1 );
+			$t -= $cu[0] if ( defined $cu[0] );
+			$t -= $cu[1] if ( defined $cu[1] );
+		}
+	}
+
+	# Add cu by real pcb type
+	my $cu = $self->GetCuThickness();
+
+	if (    $self->GetPcbType() eq EnumsGeneral->PcbType_1VFLEX
+		 || $self->GetPcbType() eq EnumsGeneral->PcbType_1V )
+	{
+		# note 1V flex is prepared from double sided material
+
+		$t += $cu;
+	}
+	elsif (    $self->GetPcbType() eq EnumsGeneral->PcbType_2VFLEX
+			|| $self->GetPcbType() eq EnumsGeneral->PcbType_2V )
+	{
+		$t += 2 * $cu;
+	}
+
+	if ( $self->{"layerSett"}->GetDefaultTechType() eq EnumsGeneral->Technology_GALVANICS ) {
+		$t += 2 * 25;
+	}
+
+	# Consider coverlay
+
+	my $topCvrl = {};
+	if ( $self->GetExistCvrl( "top", $topCvrl ) ) {
+
+		$t += $topCvrl->{"adhesiveThick"};
+		$t += $topCvrl->{"cvrlThick"};
+	}
+
+	my $botCvrl = {};
+	if ( $self->GetExistCvrl( "bot", $botCvrl ) ) {
+
+		$t += $botCvrl->{"adhesiveThick"};
+		$t += $botCvrl->{"cvrlThick"};
+	}
+
+	return $t;
+
+}
+
+# Thickness requested by customer
+sub GetNominalThickness {
+	my $self = shift;
+
+	my $t = $self->{"pcbInfoIS"}->{"material_tloustka"};
+	if ( defined $t && $t ne "" ) {
+
+		$t =~ s/,/\./;
+		$t *= 1000;
+	}
+
+	return $t;
+
 }
 
 #-------------------------------------------------------------------------------------------#

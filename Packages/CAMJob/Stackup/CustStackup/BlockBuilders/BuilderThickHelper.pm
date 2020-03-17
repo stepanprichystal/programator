@@ -14,7 +14,7 @@ use Storable qw(dclone);
 
 #local library
 use aliased 'Enums::EnumsGeneral';
- 
+use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -25,26 +25,49 @@ sub new {
 	my $self  = {};
 	bless $self;
 
- 
 	$self->{"stackupMngr"} = shift;
 	$self->{"sectionMngr"} = shift;
-  
+
 	return $self;
 }
 
-sub GetCompThickness{
-	my $self = shift;
+sub GetComputedThick {
+	my $self    = shift;
 	my $section = shift;
+
+	my $t = undef;
 	
-	return 1000;
+	if ( $section eq Enums->Sec_A_MAIN ) {
+
+		$t = $self->{"stackupMngr"}->GetThickness();
+	
+	}elsif ( $section eq Enums->Sec_B_FLEX || $section eq Enums->Sec_D_FLEXTAIL) {
+		
+		# Only Rigid flex
+		$t = $self->{"stackupMngr"}->GetThicknessFlex(0);
+	
+	}elsif ( $section eq Enums->Sec_E_STIFFENER) {
+		
+		$t = $self->{"stackupMngr"}->GetThicknessStiffener();
+	}
+	
+
+	return $t;
 }
 
-sub GetReqThickness{
-	my $self = shift;
+sub GetRequiredThick {
+	my $self    = shift;
 	my $section = shift;
-	
-	return 1000;
+
+	my $t = undef;
+
+	if ( $section eq Enums->Sec_A_MAIN ) {
+
+		$t = $self->{"stackupMngr"}->GetNominalThickness();
+	}
+
+	return $t;
 }
- 
+
 1;
 

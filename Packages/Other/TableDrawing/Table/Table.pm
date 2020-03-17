@@ -336,6 +336,16 @@ sub GetCellPos {
 	return %pos;
 }
 
+# Return cell on specific position
+sub GetCellByPos {
+	my $self = shift;
+	my $colPos = shift;
+	my $rowPos = shift;
+	
+	return $self->{"matrix"}->[$colPos]->[$rowPos];
+ 
+}
+
 sub GetCellLimits {
 	my $self    = shift;
 	my $cell    = shift;

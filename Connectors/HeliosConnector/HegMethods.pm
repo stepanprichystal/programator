@@ -1800,9 +1800,11 @@ sub GetMatInfo {
 				kks.reference_subjektu,
 				kks.nazev_subjektu,
 				kks.vyska,
+				kks.doplnkovy_rozmer,
 				 uda.dps_id,
   				 uda.dps_id2,
- 				 uda.dps_qid
+ 				 uda.dps_qid,
+ 				  uda.dps_type
 				FROM lcs.kmenova_karta_skladu kks
 				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
 				WHERE kks.reference_subjektu = __matReference";
@@ -1813,6 +1815,84 @@ sub GetMatInfo {
 	}
 	else {
 		return 0;
+	}
+}
+
+# Return information of coverlay material in PCB
+sub GetPcbMat {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+	
+				 kks.reference_subjektu material_coverlay_reference
+				
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
+
+	my $res = undef;
+
+	if ( defined $matReference ) {
+		$res = $self->GetMatInfo($matReference);
+	}
+}
+
+# Return information of coverlay material in PCB
+sub GetPcbCoverlayMat {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+	
+				 kks.reference_subjektu material_coverlay_reference
+				
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_coverlay
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
+
+	my $res = undef;
+
+	if ( defined $matReference ) {
+		$res = $self->GetMatInfo($matReference);
+	}
+}
+
+# Return information of stiffener material in PCB
+sub GetPcbStiffenerMat {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				
+				kks.reference_subjektu
+				 
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_stiffener
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
+
+	my $res = undef;
+
+	if ( defined $matReference ) {
+		$res = $self->GetMatInfo($matReference);
 	}
 }
 
@@ -2056,83 +2136,6 @@ sub GetImpedancExist {
 
 }
 
-# Return information of coverlay material in PCB
-# This is temporary in order get information from IS
-# but normally this information should be in stackup file
-sub GetPcbCoverlayMat {
-	my $self  = shift;
-	my $pcbId = shift;
-
-	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
-
-	my $cmd = "select top 1
-				
-				 d.material_coverlay,
-				 kks.reference_subjektu material_coverlay_reference,
-				kks.reference_subjektu,
-				kks.nazev_subjektu,
-				kks.vyska tloustka,
-				kks.doplnkovy_rozmer tloustka_lepidlo,
-				 uda.dps_id,
-  				 uda.dps_id2,
- 				 uda.dps_qid
-				
-				 from lcs.desky_22 d with (nolock)
-				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
-				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_coverlay
-				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 left outer join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
-
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-
-	if (@result) {
-
-		return $result[0];
-	}
-	else {
-		return undef;
-	}
-}
-
-# Return information of stiffener material in PCB
-# This is temporary in order get information from IS
-# but normally this information should be in stackup file
-sub GetPcbStiffenerMat {
-	my $self  = shift;
-	my $pcbId = shift;
-
-	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
-
-	my $cmd = "select top 1
-				
-				 d.material_stiffener,
-				 kks.reference_subjektu material_stiffener_reference,
-				kks.reference_subjektu,
-				kks.nazev_subjektu,
-				kks.vyska tloustka,
-				 uda.dps_id,
-  				 uda.dps_id2,
- 				 uda.dps_qid
-				
-				 from lcs.desky_22 d with (nolock)
-				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
-				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_stiffener
-				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 left outer join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
-
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-
-	if (@result) {
-
-		return $result[0];
-	}
-	else {
-		return undef;
-	}
-}
-
 # Get all ReOrders
 # Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
 sub GetAllMatKinds {
@@ -2147,16 +2150,16 @@ sub GetAllMatKinds {
 				WHERE name = 'ddlb_22_material_druh'";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	my %mats =();
-	for(my $i= 0; $i < scalar(@result); $i++){
-	 
-		
+	my %mats = ();
+	for ( my $i = 0 ; $i < scalar(@result) ; $i++ ) {
+
 		my %inf = ();
-		$mats{$result[$i]{'data_val'}} = ($result[$i]{'disp_val'} =~ /tg\s*(\d+)/i)[0];
-		
+		$mats{ $result[$i]{'data_val'} } = ( $result[$i]{'disp_val'} =~ /tg\s*(\d+)/i )[0];
+
 	}
 	
-	
+	# Add extra material DE104 = FR4
+	$mats{"DE104"} = $mats{"FR4"};
 
 	return %mats;
 }
@@ -2198,7 +2201,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfo( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my @mats = HegMethods->GetAllMatKinds(   );
+	my @mats = HegMethods->GetAllMatKinds();
 
 	dump(@mats);
 	die;

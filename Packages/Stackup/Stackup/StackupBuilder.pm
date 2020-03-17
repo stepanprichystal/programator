@@ -174,8 +174,8 @@ sub __AddCoverlayLayers {
 		$layerInfo->{"type"} = Enums->MaterialType_COVERLAY;
 
 		my $name     = $matInfo->{"nazev_subjektu"};
-		my $thick    = $matInfo->{"tloustka"};
-		my $thickAdh = $matInfo->{"tloustka_lepidlo"};
+		my $thick    = $matInfo->{"vyska"};
+		my $thickAdh = $matInfo->{"doplnkovy_rozmer"};
 		my $id       = $matInfo->{"dps_id"};
 		my $qId      = $matInfo->{"dps_qid"};
 
