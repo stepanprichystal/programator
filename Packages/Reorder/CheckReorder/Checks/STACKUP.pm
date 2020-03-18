@@ -24,7 +24,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardExt';
 use aliased 'Packages::Reorder::Enums';
-use aliased ' Packages::CAMJob::Material::MaterialInfo';
+use aliased 'Packages::CAMJob::Material::MaterialInfo';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
