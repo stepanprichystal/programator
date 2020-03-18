@@ -51,6 +51,9 @@ sub new {
 	$self->{"pcbType"}    = JobHelper->GetPcbType( $self->{"jobId"} );
 	$self->{"isFlex"}     = JobHelper->GetIsFlex( $self->{"jobId"} );
 	$self->{"isMatKinds"} = { HegMethods->GetAllMatKinds() };
+	
+	$self->{"adhReduction"} = 0.75; # Adhesives are reduced by 25% after pressing (copper gaps are filled with adhesive)
+	$self->{"SMReduction"} = 0.50; # SM are reduced by 50% after processing (copper gaps are filled with SM)
 
 	return $self;
 }
@@ -243,6 +246,8 @@ sub GetIsFlex {
 
 	return $self->{"isFlex"};
 }
+
+
 
 sub GetBoardBaseLayers {
 	my $self = shift;

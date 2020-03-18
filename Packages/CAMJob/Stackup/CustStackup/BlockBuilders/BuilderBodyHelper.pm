@@ -81,20 +81,22 @@ sub BuildRowsStackupOuter {
 		}
 	}
 
-	if ( $topSpec{cvrlAdh} ) {
+	if ( $topSpec{stiffAdh} ) {
+		if ( $topSpec{cvrlAdh} ) {
 
-		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
+			for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
 
-			# Stiffener is on top Cu or above coverlay + coverlay adh
-			if ( !scalar( grep { $_ eq cvrlAdh || $_ eq cvrl } @{ $topOuter[$i] } ) ) {
-				push( @{ $topOuter[$i] }, stiffAdh );
-				last;
+				# Stiffener is on top Cu or above coverlay + coverlay adh
+				if ( !scalar( grep { $_ eq cvrlAdh || $_ eq cvrl } @{ $topOuter[$i] } ) ) {
+					push( @{ $topOuter[$i] }, stiffAdh );
+					last;
+				}
 			}
 		}
-	}
-	else {
+		else {
 
-		push( @{ $topOuter[0] }, stiffAdh );    # Put stiffener adhesive on top cu
+			push( @{ $topOuter[0] }, stiffAdh );    # Put stiffener adhesive on top cu
+		}
 	}
 
 	# Add stiff above stiffAdh
@@ -200,7 +202,7 @@ sub AddPlatedDrilling {
 	my @colls = $tblMain->GetCollsDef();
 	my @rows  = $tblMain->GetRowsDef();
 
-	my @letters = ( "A" .. "Z");
+	my @letters = ( "A" .. "Z" );
 	foreach my $ncL (@NC) {
 
 		my $start = $ncL->{"gROWdrl_dir"} eq "bot2top" ? $ncL->{"NCSigEndOrder"}   : $ncL->{"NCSigStartOrder"};
@@ -213,8 +215,7 @@ sub AddPlatedDrilling {
 
 		my $let = shift @letters;
 
-		$tblMain->AddCell( $colPos, $sRowPos, 1,
-						   $eRowPos - $sRowPos+1,  $let, $txtStandardStyle, $backgStyle );
+		$tblMain->AddCell( $colPos, $sRowPos, 1, $eRowPos - $sRowPos + 1, $let, $txtStandardStyle, $backgStyle );
 
 	}
 }

@@ -23,6 +23,7 @@ use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderDrill
 use aliased 'Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngr2V';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Helper';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,7 +39,7 @@ sub new {
 	my $self = $class->SUPER::new( $inCAM, $jobId, $step, $tblDrawing );
 	bless $self;
 
-	$self->{"stackupMngr"} = StackupMngr2V->new( $inCAM, $jobId, $step);
+	$self->{"stackupMngr"} = StackupMngr2V->new( $inCAM, $jobId, $step );
 
 	return $self;
 }
@@ -67,9 +68,14 @@ sub BuildSections {
 
 	my $sec_D_FLEXTAIL = $sectionMngr->GetSection( Enums->Sec_D_FLEXTAIL );
 	$sec_D_FLEXTAIL->SetIsActive(0);
-
+	
 	my $sec_E_STIFFENER = $sectionMngr->GetSection( Enums->Sec_E_STIFFENER );
-	$sec_E_STIFFENER->SetIsActive(1);
+	if ( $stackupMngr->GetExistStiff("top") || $stackupMngr->GetExistStiff("bot") ) {
+		$sec_E_STIFFENER->SetIsActive(1);
+	}
+	else {
+		$sec_E_STIFFENER->SetIsActive(0);
+	}
 
 	my $sec_END = $sectionMngr->GetSection( Enums->Sec_END );
 	$sec_END->SetIsActive(1);
@@ -103,8 +109,9 @@ sub BuildBlocks {
 	$self->_AddBlock( BuilderThick->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"}, $stackupMngr, $sectionMngr ) );
 
 	# Add total thickness of stackup
-
-	$self->_AddBlock( BuilderDrill->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"}, $stackupMngr, $sectionMngr ) );
+	if ( scalar( $stackupMngr->GetPlatedNC() ) ) {
+		$self->_AddBlock( BuilderDrill->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"}, $stackupMngr, $sectionMngr ) );
+	}
 
 }
 

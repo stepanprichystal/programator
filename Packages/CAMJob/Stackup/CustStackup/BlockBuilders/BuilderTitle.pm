@@ -64,9 +64,13 @@ sub __BuildRow1 {
 	$tblMain->AddRowDef( "row_title", EnumsStyle->RowHeight_TITLE, $rowTitleBackg );
 
 	# Add title
-	my $titleStr = "";
+	my $titleStr = "Type: ";
 
 	my $pcbType = $stckpMngr->GetPcbType();
+
+	if ( $pcbType eq EnumsGeneral->PcbType_NOCOPPER ) {
+		$titleStr .= "No copper PCB";
+	}
 
 	if ( $pcbType eq EnumsGeneral->PcbType_1V ) {
 		$titleStr .= "One sided PCB";
@@ -100,9 +104,15 @@ sub __BuildRow1 {
 		$titleStr .= "Inner RigidFlex";
 	}
 
+	# Add flex type
+	if($stckpMngr->GetIsFlex()){
+		$titleStr .= " (".$stckpMngr->GetFlexPCBCode().")";
+	}
+
+
 	# Add job Id
 
-	$titleStr .= "; " . uc($jobId);
+	$titleStr .= "; Id: " . uc($jobId);
 
 	# CELL DEF: Add left cell with title
 
@@ -125,7 +135,7 @@ sub __BuildRow1 {
 									 TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	my $c2xStart = $secBegin->GetColumnCnt() + 1;
-	my $c2xpos   = $secMngr->GetColumnCnt(1)  - $c2xStart;
+	my $c2xpos   = $secMngr->GetColumnCnt(1) - $c2xStart;
 
 	my $date = sprintf "%02.f.%02.f.%04.f", localtime->mday(), ( localtime->mon() + 1 ), ( localtime->year() + 1900 );
 	my $c2Str = "Date:" . $date;
@@ -173,10 +183,10 @@ sub __BuildRow2 {
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 
 	if ( $sec_BEGIN->GetIsActive() ) {
-		
+
 		my $tg = $stckpMngr->GetTG();
-		
-		my $txt = $stckpMngr->GetLayerCnt() . " layer stackup".(defined $tg ? "; Tg $tg°" : "");
+
+		my $txt = $stckpMngr->GetLayerCnt() . " layer stackup" . ( defined $tg ? "; Tg $tg°" : "" );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $tblMain->GetRowDefPos($row), undef, undef, $txt, $txtStyleTitle );
 	}
 
@@ -268,8 +278,7 @@ sub __BuildRow2 {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_END, "end" ),
 						   $tblMain->GetRowDefPos($row),
-						  undef,
-						   undef, undef, $txtStyle, undef, $borderStyle );
+						   undef, undef, undef, $txtStyle, undef, $borderStyle );
 
 	}
 

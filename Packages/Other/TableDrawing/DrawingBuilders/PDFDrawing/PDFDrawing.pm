@@ -32,10 +32,18 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"units"}      = shift;
-	$self->{"mediaSize"}  = shift;
-	$self->{"margin"}     = shift // 0;
-	$self->{"outputPath"} = shift;
+	$self->{"units"}        = shift;
+
+	$self->{"outputPath"}   = shift;        # Set if new PDF shoudl be created
+	$self->{"existPdfPath"} = shift;        # Set if update existing PDF
+	
+	$self->{"mediaSize"}    = shift;        # Set onl if new PDF page
+	$self->{"margin"}       = shift // 0;
+	$self->{"rotate"}       = shift; # 90/180/270
+	
+	
+	
+	
 
 	$self->{"coord"} = EnumsDraw->CoordSystem_LEFTBOT;
 
@@ -89,9 +97,30 @@ sub GetCanvasMargin {
 sub Init {
 	my $self = shift;
 
-	die "PDF file already exists" if ( -e $self->{"outputPath"} );
+	# Init PDF page
+	if ( $self->{"existPdfPath"} ) {
 
-	$self->{"pdf"} = PDF::API2->new( -file => $self->{"outputPath"} );
+		# Existing PDF file
+
+		die "PDF file: " . $self->{"existPdfPath"} . " doesn't exists" unless ( -e $self->{"existPdfPath"} );
+		$self->{"pdf"}  = PDF::API2->open( $self->{"existPdfPath"} );
+		$self->{"page"} = $self->{"pdf"}->openpage(1);
+		my @m = $self->{"page"}->get_mediabox;    # pdf limits in points
+
+		$self->{"mediaSize"} = [ abs( $m[2] - $m[0] ) * $self->{"unitConv"}, abs( $m[3] - $m[1] ) * $self->{"unitConv"} ];
+	}
+	else {
+
+		# New PDF file
+
+		die "PDF file already exists" if ( -e $self->{"outputPath"} );
+		die 'Media size is not defined' unless ( defined $self->{"mediaSize"} );
+		$self->{"pdf"} = PDF::API2->new( -file => $self->{"outputPath"} );
+		$self->{"page"} = $self->{"pdf"}->page();
+
+		$self->{"page"}->mediabox( $self->{"mediaSize"}->[0] / $self->{"unitConv"}, $self->{"mediaSize"}->[1] / $self->{"unitConv"} );
+
+	}
 
 	# Init some fonts
 
@@ -107,9 +136,6 @@ sub Init {
 														  EnumsDraw->Font_ITALIC => $self->{"pdf"}->corefont( 'Times-Italic', -encoding => 'latin1' ),
 						 },
 	};
-
-	$self->{"page"} = $self->{"pdf"}->page();
-	$self->{"page"}->mediabox( $self->{"mediaSize"}->[0] / $self->{"unitConv"}, $self->{"mediaSize"}->[1] / $self->{"unitConv"} );
 
 	#$self->{"page"}->bleedbox( $self->{"mediaSize"}->[0] / $self->{"unitConv"}, $self->{"mediaSize"}->[1] / $self->{"unitConv"} );
 	#$self->{"page"}->cropbox( $self->{"mediaSize"}->[0] / $self->{"unitConv"}, $self->{"mediaSize"}->[1] / $self->{"unitConv"} );
@@ -314,7 +340,18 @@ sub DrawTextParagraph {
 
 sub Finish {
 	my $self = shift;
-	$self->{"pdf"}->save();
+
+	if($self->{"rotate"}){
+		
+		$self->{"page"}->rotate($self->{"rotate"});
+	}
+
+	if($self->{"existPdfPath"}){
+		$self->{"pdf"}->update();
+	}else{
+		$self->{"pdf"}->save();
+	}
+	
 }
 
 #-------------------------------------------------------------------------------------------#

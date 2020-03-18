@@ -254,7 +254,8 @@ sub __BuildStackupLayers {
 		}
 
 		$self->__DrawMatSM( $topOuterRows{ BuilderBodyHelper->sm },
-							$maskTopInfo->{"color"}, $maskTopInfo->{"color"},
+							$maskTopInfo->{"color"},
+							$maskTopInfo->{"thick"},
 							$coverFlexCore, dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
 
@@ -312,7 +313,7 @@ sub __BuildStackupLayers {
 	if ( $stckpMngr->GetLayerCnt() <= 2 ) {
 
 		my @layers  = $stckpMngr->GetStackupLayers();
-		my $matName = $stckpMngr->GetMaterialName();
+		my %matInf = $stckpMngr->GetBaseMatInfo();
 
 		# Draw copper layers
 		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
@@ -322,11 +323,11 @@ sub __BuildStackupLayers {
 			my $row = $tblMain->AddRowDef( "copper_" . ( $i + 1 ), EnumsStyle->RowHeight_STANDARD );
 
 			my $text = "Standard";
-
-			if ( $matName =~ m/lam.*\s+(.*)\s+\d+\/\d+/i ) {
-				$text .= $matName =~ m/(r)\s+\d+\/\d+/i ? " (RA)" : " (ED)";
+			
+			if(defined $matInf{"cuType"}){
+				$text .= " (".$matInf{"cuType"}.")";
 			}
-
+	 
 			$self->__DrawMatCopper( $row, $text,
 									$stckpMngr->GetCuThickness( $l->{"gROWname"} ),
 									$stckpMngr->GetIsPlated($l),
@@ -335,17 +336,13 @@ sub __BuildStackupLayers {
 		}
 
 		# Draw core
-		my $row = $tblMain->InsertRowDef( "core_1", $tblMain->GetRowCnt() - scalar(@layers) + 1, EnumsStyle->RowHeight_STANDARD );
-
-		die "Wrong format of material name:$matName " unless ( $matName =~ m/lam.*\s+(.*)\s+\d+\/\d+\w{0,2}\s+(\d+,\d+)/i );
-
-		my $text  = $1;
-		my $thick = $2;
-		$thick =~ s/,/\./;
-		$thick *= 1000;
+		my $rowPos = $tblMain->GetRowCnt();
+		$rowPos -= 1 if ( scalar(@layers) == 2 );
+		my $row = $tblMain->InsertRowDef( "core_1", $rowPos, EnumsStyle->RowHeight_STANDARD );
+ 
 
 		$self->__DrawMatCore(
-			$row, $text, $thick, $stckpMngr->GetIsFlex(),
+			$row, $matInf{"matText"}, $matInf{"baseMatThick"}, $stckpMngr->GetIsFlex(), 0,
 
 			dclone($txtTitleStyle), dclone($txtStandardStyle)
 		);
@@ -483,7 +480,7 @@ sub __BuildStackupLayers {
 				my $row = $tblMain->AddRowDef( "core_" . $l->GetCoreNumber(), $rowHeight );
 
 				$self->__DrawMatCore(
-					$row, $l->GetTextType(), $l->GetThick(), ( $l->GetCoreRigidType() eq StackEnums->CoreType_FLEX ? 1 : 0 ),
+					$row, $l->GetTextType(), $l->GetThick(), ( $l->GetCoreRigidType() eq StackEnums->CoreType_FLEX ? 1 : 0 ), 1,
 
 					dclone($txtTitleStyle), dclone($txtStandardStyle)
 				);
@@ -521,7 +518,7 @@ sub __BuildStackupLayers {
 		}
 
 		$self->__DrawMatSM( $botOuterRows{ BuilderBodyHelper->sm },
-							$maskBotInfo->{"color"},
+							$maskBotInfo->{"color"},$maskBotInfo->{"thick"},
 							$coverFlexCore, dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
 
@@ -648,7 +645,7 @@ sub __DrawMatStiffAdh {
 
 		# Check if there isn't already some material title (mask/flexmask)
 		unless ( defined $tblMain->GetCellByPos( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $tblMain->GetRowDefPos($row) ) ) {
-			
+
 			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
 							   $tblMain->GetRowDefPos($row),
 							   undef, undef, $matText, $txtTitleStyle );
@@ -894,7 +891,7 @@ sub __DrawMatSM {
 	my $self             = shift;
 	my $row              = shift;
 	my $matText          = shift;
-	my $matThick          = shift;
+	my $matThick         = shift;
 	my $coverFlexCore    = shift;    # indicate if solder mask is directly on flex core
 	my $txtTitleStyle    = shift;
 	my $txtStandardStyle = shift;
@@ -1150,6 +1147,7 @@ sub __DrawMatCore {
 	my $matText          = shift;
 	my $matThick         = shift;
 	my $isFlex           = shift;
+	my $core           = shift;
 	my $txtTitleStyle    = shift;
 	my $txtStandardStyle = shift;
 
@@ -1178,9 +1176,12 @@ sub __DrawMatCore {
 
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_A_MAIN, 0, 0 );
 
+		my $text = ( $isFlex ? "Flex" : "Rigid" );
+		$text .=  ( $core ? " core" : " laminate" );
+
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),
 						   $tblMain->GetRowDefPos($row),
-						   undef, undef, ( $isFlex ? "Flex" : "Rigid" ) . " core",
+						   undef, undef, $text,
 						   $txtStandardStyle, $matBackgStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
 						   $tblMain->GetRowDefPos($row),

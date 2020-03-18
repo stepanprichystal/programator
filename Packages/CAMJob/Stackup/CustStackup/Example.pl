@@ -14,10 +14,16 @@ use aliased 'Packages::InCAM::InCAM';
 
 my $inCAM = InCAM->new();
 #my $jobId    = "d152456"; #Outer RigidFLex TOP
-my $jobId    = "d270787"; #Outer RigidFLex BOT
-#my $jobId    = "d261919"; # standard vv
-#my $jobId = "d266566";
+#my $jobId    = "d270787"; #Outer RigidFLex BOT
+#my $jobId    = "d261919"; # standard vv 10V
+#my $jobId = "d274753"; # standard vv 8V
+my $jobId = "d274986"; # standard vv 4V
+#my $jobId = "d266566"; # inner flex
+#my $jobId = "d146753"; # 1v flex
 #my $jobId = "d267628" ; # flex 2v + stiff
+#my $jobId = "d064915"; # neplat
+#my $jobId = "d275112"; # standard 1v
+#my $jobId = "d275162"; # standard 2v
 
 
 # 1) Init customer stackup class
@@ -29,12 +35,23 @@ $newCustStckp->Build();
 # 3) Generate output by some drawer
 
 # Init Draw Builder
-my @media  = ( 297, 210 );
-my $margin = 5;
-my $p      = 'c:/Export/Test/test.pdf';
-unlink($p);
+my $a4W = 210; #mm
+my $a4H = 290; #mm
 
-my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, \@media, $margin, $p );
+
+my ($w, $h) = $newCustStckp->GetSize();
+my $rotation = $h*1.3 < $w && $w > $a4W ? 270 : undef; 
+my $canvasX = $rotation ? $a4H : $a4W;
+my $canvasY = $rotation ? $a4W : $a4H;
+my $margin = 15;
+
+
+my $p      = 'c:/Export/Test/test.pdf';
+
+unlink($p);
+my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [$canvasX, $canvasY], $margin, $rotation );
+#my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, undef, $p, [$canvasX, $canvasY], $margin, $rotation );
+ 
  
 # Gemerate output
 

@@ -10,7 +10,7 @@ use base('Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase')
 #3th party library
 use strict;
 use warnings;
-use List::Util qw(first min);
+use List::Util qw(first min max);
 
 #local library
 
@@ -37,6 +37,13 @@ sub GetLayerCnt {
 
 	my $lCnt = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
+	if ( $self->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER ) {
+		$lCnt = 0;
+	}
+	if ( $self->GetPcbType() eq EnumsGeneral->PcbType_1VFLEX ) {
+		$lCnt = 1;
+	}
+
 	return $lCnt;
 
 }
@@ -54,6 +61,52 @@ sub GetStackupLayers {
 	}
 
 	return @sigL;
+}
+
+sub GetBaseMatInfo {
+	my $self = shift;
+
+	my %inf = ();
+
+	my $matInf = HegMethods->GetPcbMat( $self->{"jobId"} );
+
+	my $matName = $matInf->{"nazev_subjektu"};
+
+	# Parse material name
+	my @parsedMat = split( /\s/, $matName );
+	shift @parsedMat if ( $parsedMat[0] =~ /lam/i );
+	$inf{"matText"} = $parsedMat[0];
+
+	# Parse mat thick  + remove Cu thickness if material is type of Laminate (core material thickness not include Cu thickness)
+	$inf{"baseMatThick"} = $matInf->{"vyska"} * 1000000;
+
+	if ( $matInf->{"dps_type"} !~ /core/i ) {
+
+		if ( $matInf->{"nazev_subjektu"} =~ m/(\d+\/\d+)/ ) {
+			my @cu = split( "/", $1 );
+			$inf{"baseMatThick"} -= $cu[0] if ( defined $cu[0] );
+			$inf{"baseMatThick"} -= $cu[1] if ( defined $cu[1] );
+		}
+	}
+
+	# Parse Cu thick
+	$inf{"cuThick"} = undef;
+	if ( $matInf->{"nazev_subjektu"} =~ m/(\d+)\/(\d+)/ ) {
+		$inf{"cuThick"} = max( $1, $2 );
+	}
+
+	# Parse Cu type ED/RA
+	$inf{"cuType"} = undef;
+	if ( $matName =~ m/(ap)|(cg)/i ) {
+		$inf{"cuType"} = $matName =~ m/ap/i ? "RA" : "ED";
+	}
+
+	die "Material text was not found at material: $matName"         unless ( defined $inf{"matText"} );
+	die "Base mat thick was not found at material: $matName"        unless ( defined $inf{"baseMatThick"} );
+	die "Material cu thickness was not found at material: $matName" unless ( defined $inf{"cuThick"} );
+
+	return %inf;
+
 }
 
 sub GetExistCvrl {
@@ -95,11 +148,6 @@ sub GetExistCvrl {
 	return $exist;
 }
 
-sub GetMaterialName {
-	my $self = shift;
-	return $self->{"pcbInfoIS"}->{"material_nazev"};
-}
-
 sub GetCuThickness {
 	my $self = shift;
 
@@ -138,14 +186,14 @@ sub GetThicknessStiffener {
 	my $topStiff = {};
 	if ( $self->GetExistStiff( "top", $topStiff ) ) {
 
-		$t += $topStiff->{"adhesiveThick"};
+		$t += $topStiff->{"adhesiveThick"} * $self->{"adhReduction"};
 		$t += $topStiff->{"stiffThick"};
 	}
 
 	my $botStiff = {};
 	if ( $self->GetExistStiff( "bot", $botStiff ) ) {
 
-		$t += $botStiff->{"adhesiveThick"};
+		$t += $botStiff->{"adhesiveThick"} * $self->{"adhReduction"};
 		$t += $botStiff->{"stiffThick"};
 	}
 
@@ -197,19 +245,32 @@ sub GetThickness {
 		$t += 2 * 25;
 	}
 
-	# Consider coverlay
+	# consider solder mask
+	my $topSM = {};
+	if ( $self->GetExistSM( "top", $topSM ) ) {
 
-	my $topCvrl = {};
+		$t += $topSM->{"thick"} * $self->{"SMReduction"};
+	}
+
+	my $botSM = {};
+	if ( $self->GetExistSM( "bot", $botSM ) ) {
+
+		$t += $botSM->{"thick"} * $self->{"SMReduction"};
+	}
+
+	# Consider coverlay
+	my $adhReduction = 0.75;    # Adhesives are reduced by 25% after pressing (copper gaps are filled with adhesive)
+	my $topCvrl      = {};
 	if ( $self->GetExistCvrl( "top", $topCvrl ) ) {
 
-		$t += $topCvrl->{"adhesiveThick"};
+		$t += $topCvrl->{"adhesiveThick"} * $adhReduction;
 		$t += $topCvrl->{"cvrlThick"};
 	}
 
 	my $botCvrl = {};
 	if ( $self->GetExistCvrl( "bot", $botCvrl ) ) {
 
-		$t += $botCvrl->{"adhesiveThick"};
+		$t += $botCvrl->{"adhesiveThick"} * $adhReduction;
 		$t += $botCvrl->{"cvrlThick"};
 	}
 
@@ -230,6 +291,24 @@ sub GetNominalThickness {
 
 	return $t;
 
+}
+
+sub GetFlexPCBCode {
+	my $self = shift;
+
+	my $pcbType = $self->GetPcbType();
+	my $code    = undef;
+	if ( $pcbType eq EnumsGeneral->PcbType_1VFLEX ) {
+		$code = "1F";
+	}
+	elsif ( $pcbType eq EnumsGeneral->PcbType_2VFLEX ) {
+		$code = "2F";
+	}
+	elsif ( $pcbType eq EnumsGeneral->PcbType_MULTIFLEX ) {
+		$code = $self->GetLayerCnt() . "F";
+	}
+
+	return $code;
 }
 
 #-------------------------------------------------------------------------------------------#

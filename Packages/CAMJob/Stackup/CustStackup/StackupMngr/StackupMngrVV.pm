@@ -14,7 +14,7 @@ use List::Util qw(first min);
 use List::MoreUtils qw(uniq);
 
 #local library
-
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -31,6 +31,7 @@ sub new {
 	bless $self;
 
 	$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"inLayerEmpty"} = { $self->__SetIsInnerLayerEmpty() };
 
 	return $self;
 }
@@ -103,7 +104,7 @@ sub GetExistCvrl {
 sub GetCvrlInfo {
 	my $self   = shift;
 	my $stckpL = shift;
-	my $inf   = shift // {};
+	my $inf    = shift // {};
 
 	$inf->{"adhesiveText"}  = "";
 	$inf->{"adhesiveThick"} = $stckpL->GetAdhesiveThick();
@@ -183,7 +184,7 @@ sub GetTG {
 
 		for ( my $i = 0 ; $i < scalar(@mat) ; $i++ ) {
 
-			$mat[$i] =~ s/\s//;
+			$mat[$i] =~ s/\s//g;
 		}
 
 		foreach my $m (@mat) {
@@ -211,6 +212,13 @@ sub GetIsInnerLayerEmpty {
 	my $self  = shift;
 	my $lName = shift;
 
+	return $self->{"inLayerEmpty"}->{$lName};
+
+}
+
+sub __SetIsInnerLayerEmpty {
+	my $self = shift;
+
 	my @steps = ();
 
 	my $inCAM = $self->{"inCAM"};
@@ -226,26 +234,55 @@ sub GetIsInnerLayerEmpty {
 		@steps = ("o+1");
 	}
 
-	my $isEmpty = 1;
-	my $f       = Features->new();
-	foreach my $step (@steps) {
+	my %inLayers = ();
+	my @layers   = $self->GetStackupLayers();
 
-		$f->Parse( $inCAM, $jobId, $step, $lName, 0, 0 );
+	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
-		if ( defined first { !defined $_->{"attr"}->{".string"} } grep { $_->{"polarity"} eq "P" } $f->GetFeatures() ) {
-			$isEmpty = 0;
-			last;
+		my $l = $layers[$i];
+
+		if ( $l->GetType() eq StackEnums->MaterialType_COPPER ) {
+
+			my $isEmpty = 1;
+			my $f       = Features->new();
+			foreach my $step (@steps) {
+
+				$f->Parse( $inCAM, $jobId, $step, $l->GetCopperName(), 0, 0 );
+
+				if ( defined first { !defined $_->{"attr"}->{".string"} } grep { $_->{"polarity"} eq "P" } $f->GetFeatures() ) {
+					$isEmpty = 0;
+					last;
+				}
+			}
+
+			$inLayers{ $l->GetCopperName() } = $isEmpty;
+
 		}
 	}
 
-	return $isEmpty;
+	return %inLayers;
 }
 
 # Real PCB thickness
 sub GetThickness {
 	my $self = shift;
 
-	return $self->{"stackup"}->GetFinalThick();
+	my $t = $self->{"stackup"}->GetFinalThick();
+
+	# consider solder mask
+	my $topSM = {};
+	if ( $self->GetExistSM( "top", $topSM ) ) {
+
+		$t += $topSM->{"thick"} * $self->{"SMReduction"};
+	}
+
+	my $botSM = {};
+	if ( $self->GetExistSM( "bot", $botSM ) ) {
+
+		$t += $botSM->{"thick"} * $self->{"SMReduction"};
+	}
+
+	return $t;
 
 }
 
@@ -264,14 +301,14 @@ sub GetThicknessStiffener {
 	my $topStiff = {};
 	if ( $self->GetExistStiff( "top", $topStiff ) ) {
 
-		$t += $topStiff->{"adhesiveThick"};
+		$t += $topStiff->{"adhesiveThick"} * $self->{"adhReduction"};
 		$t += $topStiff->{"stiffThick"};
 	}
 
 	my $botStiff = {};
 	if ( $self->GetExistStiff( "bot", $botStiff ) ) {
 
-		$t += $botStiff->{"adhesiveThick"};
+		$t += $botStiff->{"adhesiveThick"} * $self->{"adhReduction"};
 		$t += $botStiff->{"stiffThick"};
 	}
 
@@ -322,6 +359,52 @@ sub GetThicknessFlex {
 	}
 
 	return $t;
+}
+
+sub GetFlexPCBCode {
+	my $self = shift;
+
+	my $pcbType = $self->GetPcbType();
+	my $code    = undef;
+	if (    $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO
+		 || $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI )
+	{
+
+		my @layers    = $self->GetStackupLayers();
+		my @codeParts = ();
+		my $curPart   = undef;
+		my $cuPartCnt = 0;
+		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
+			my $l = $layers[$i];
+
+			if ( $l->GetType() eq StackEnums->MaterialType_COPPER && !$self->GetIsInnerLayerEmpty( $l->GetCopperName ) ) {
+
+				my $c = !$l->GetIsFoil() ? $self->GetStackup()->GetCoreByCuLayer( $l->GetCopperName ) : undef;
+				my $isFlex = ( defined $c && $c->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) ? 1 : 0;
+				my $newPart = $isFlex ? "F" : "Ri";
+
+				if ( !defined $curPart ) {
+					$curPart = $newPart;
+				}
+				elsif ( defined $curPart && $curPart ne $newPart ) {
+
+					push( @codeParts, $cuPartCnt . $curPart );
+
+					$curPart   = $newPart;
+					$cuPartCnt = 0;
+				}
+
+				$cuPartCnt++;
+			}
+		}
+
+		push( @codeParts, $cuPartCnt . $curPart );
+
+		$code = join( "-", @codeParts );
+	}
+
+	return $code;
 }
 
 #-------------------------------------------------------------------------------------------#

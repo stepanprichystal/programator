@@ -66,10 +66,14 @@ sub BuildSections {
 	$sec_C_RIGIDFLEX->SetIsActive(1);
 
 	my $sec_D_FLEXTAIL = $sectionMngr->GetSection( Enums->Sec_D_FLEXTAIL );
-	$sec_D_FLEXTAIL->SetIsActive(1);
+	$sec_D_FLEXTAIL->SetIsActive(0);
 
 	my $sec_E_STIFFENER = $sectionMngr->GetSection( Enums->Sec_E_STIFFENER );
-	$sec_E_STIFFENER->SetIsActive(1);
+ 	if($stackupMngr->GetExistStiff("top") || $stackupMngr->GetExistStiff("bot")){
+		$sec_E_STIFFENER->SetIsActive(1);
+	}else{
+		$sec_E_STIFFENER->SetIsActive(0);
+	}
 	
 	my $sec_END = $sectionMngr->GetSection( Enums->Sec_END );
 	$sec_END->SetIsActive(1);

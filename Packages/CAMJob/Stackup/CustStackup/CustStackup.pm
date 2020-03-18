@@ -95,6 +95,17 @@ sub Build {
 	$builderMngr->BuildBlocks($secMngr);
 }
 
+sub GetSize{
+	my $self = shift;
+	
+	my %tblLim = $self->{"tblDrawing"}->GetOriLimits();
+	
+	my $w = abs($tblLim{"xMax"} - $tblLim{"xMin"});
+	my $h =abs($tblLim{"yMax"} - $tblLim{"yMin"}); 
+	
+	return ($w, $h);
+}
+
 sub Output {
 	my $self        = shift;
 	my $IDrawer     = shift;
