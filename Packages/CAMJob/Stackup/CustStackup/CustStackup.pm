@@ -36,10 +36,10 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}      = shift;
-	$self->{"jobId"}      = shift;
-	$self->{"step"}       = shift // "panel";
-	
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift // "panel";
+
 	$self->{"tblDrawing"} = TableDrawing->new( TblDrawEnums->Units_MM );
 
 	my $borderStyle = BorderStyle->new();
@@ -57,6 +57,8 @@ sub new {
 sub Build {
 	my $self = shift;
 
+	my $result = 1;
+
 	# 2) Choose proper stackup builder
 	my $builderMngr = undef;
 
@@ -73,14 +75,14 @@ sub Build {
 	}
 	elsif ( $pcbType eq EnumsGeneral->PcbType_MULTI ) {
 
-		$builderMngr = MngrVV->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"},$self->{"tblMain"} );
+		$builderMngr = MngrVV->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"tblMain"} );
 
 	}
 	elsif (    $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO
 			|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI )
 	{
 
-		$builderMngr = MngrRigidFlex->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"},$self->{"tblMain"} );
+		$builderMngr = MngrRigidFlex->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"tblMain"} );
 	}
 	else {
 
@@ -91,19 +93,25 @@ sub Build {
 
 	my $secMngr = SectionMngr->new();
 
-	$builderMngr->BuildSections($secMngr);
-	$builderMngr->BuildBlocks($secMngr);
+	unless ( $builderMngr->BuildSections($secMngr) ) {
+		$result = 0;
+	}
+	unless ( $builderMngr->BuildBlocks($secMngr) ) {
+		$result = 0;
+	}
+	
+	return $result;
 }
 
-sub GetSize{
+sub GetSize {
 	my $self = shift;
-	
+
 	my %tblLim = $self->{"tblDrawing"}->GetOriLimits();
-	
-	my $w = abs($tblLim{"xMax"} - $tblLim{"xMin"});
-	my $h =abs($tblLim{"yMax"} - $tblLim{"yMin"}); 
-	
-	return ($w, $h);
+
+	my $w = abs( $tblLim{"xMax"} - $tblLim{"xMin"} );
+	my $h = abs( $tblLim{"yMax"} - $tblLim{"yMin"} );
+
+	return ( $w, $h );
 }
 
 sub Output {

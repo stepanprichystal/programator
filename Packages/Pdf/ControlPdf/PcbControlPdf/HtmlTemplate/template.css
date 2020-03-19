@@ -1,7 +1,8 @@
 
 @page {
   @frame {
-    margin: 1cm;
+    margin: 1.5cm;
+    margin-top: 2.5cm;
   }
 } 
 
@@ -43,9 +44,9 @@ body {
 .infotable th {
    display:block;
   text-align:left;
-   color: black;
+   color: white;
    
-   background-color:#c3c3c3;
+   background-color:#C9101A;
    height: 45px;
    
       padding-left: 0px;

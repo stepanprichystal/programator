@@ -79,6 +79,8 @@ sub BuildSections {
 	# 3) Create columns
 
 	$self->_CreateSectionClmns($sectionMngr);
+	
+	return 1;
 
 }
 
@@ -106,6 +108,8 @@ sub BuildBlocks {
 
 	$self->_AddBlock( BuilderDrill->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"}, $stackupMngr, $sectionMngr ) );
 
+
+	return 1;
 }
 
 #-------------------------------------------------------------------------------------------#

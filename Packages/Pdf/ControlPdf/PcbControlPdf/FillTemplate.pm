@@ -48,7 +48,6 @@ sub new {
 sub FillKeysData {
 	my $self           = shift;
 	my $template       = shift;
-	my $stackupPath    = shift;
 	my $previewTopPath = shift;
 	my $previewBotPath = shift;
 	my $infoToPdf      = shift;    # if put info about operator to pdf
@@ -235,9 +234,7 @@ sub FillKeysData {
 
 	$template->SetKey( "PcbThickness", "Material thickness", "Tloušťka materiálu" );
 	$template->SetKey( "PcbThicknessVal", $stackupInf{"thick"} );
-
-	$template->SetKey( "PreviewStackup", $stackupPath );
-
+ 
 	# =================== Table views ============================
 
 	$template->SetKey( "TopView", "Top view", "Pohled top" );

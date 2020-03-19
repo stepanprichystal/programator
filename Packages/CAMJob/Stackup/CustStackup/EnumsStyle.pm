@@ -6,7 +6,7 @@ package Packages::CAMJob::Stackup::CustStackup::EnumsStyle;
 # Colors of stackup materials and tables
 
 use constant {
-			   Clr_TITLEBACKG     => "192, 0, 0",
+			   Clr_TITLEBACKG     => "201, 16, 26",
 			   Clr_HEADMAINBACK   => "191, 191, 191",
 			   Clr_HEADSUBBACK    => "217, 217, 217",
 			   Clr_LEFTCLMNBACK   => "242, 242, 242",

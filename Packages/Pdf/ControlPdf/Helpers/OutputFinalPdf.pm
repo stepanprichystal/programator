@@ -22,6 +22,10 @@ use aliased 'CamHelpers::CamJob';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
+use constant mm => 25.4 / 72;
+use constant in => 1 / 72;
+use constant pt => 1;
+
 
 sub new {
 	my $self = shift;
@@ -112,7 +116,7 @@ sub __AddHeaderFooter {
  				$title = $titles[scalar(@titles)-1];
  			}
  
-			$self->__DrawHeaderFooter( $pagesTotal, $title, $page_out, $pdf_out );
+			$self->__DrawHeaderFooter( $pagesTotal,scalar(@numpages), $title, $page_out, $pdf_out );
 
 			$pagesTotal++;
 
@@ -125,67 +129,76 @@ sub __AddHeaderFooter {
 sub __DrawHeaderFooter {
 	my $self      = shift;
 	my $pageNum   = shift;
+	my $pageTotal = shift;
 	my $pageTitle = shift;
 	my $page_out  = shift;
 	my $pdf_out   = shift;
 
-	my $headerW = 595;
-	my $headerH = 25;
-	my $footerW = 595;
-	my $footerH = 18;
+#	my $headerW = ;
+#	my $headerH = 25;
+#	my $footerW = 595;
+#	my $footerH = 18;
 
 	# header frame
-	my $header = $page_out->gfx;
-	$header->fillcolor('#C9101A');
-	$header->rect(
-				   0,                 # left
-				   842 - $headerH,    # bottom
-				   $headerW,          # width
-				   $headerH           # height
-	);
-
-	$header->fill;
-
-	# footer frame
-	my $footer = $page_out->gfx;
-	$footer->fillcolor('#C9101A');
-	$footer->rect(
-				   0,                 # left
-				   0,                 # bottom
-				   $footerW,          # width
-				   $footerH           # height
-	);
-
-	$footer->fill;
+#	my $header = $page_out->gfx;
+#	$header->fillcolor('#C9101A');
+#	$header->rect(
+#				   0,                 # left
+#				   842 - $headerH,    # bottom
+#				   $headerW,          # width
+#				   $headerH           # height
+#	);
+#
+#	$header->fill;
+#
+#	# footer frame
+#	my $footer = $page_out->gfx;
+#	$footer->fillcolor('#C9101A');
+#	$footer->rect(
+#				   0,                 # left
+#				   0,                 # bottom
+#				   $footerW,          # width
+#				   $footerH           # height
+#	);
+#
+#	$footer->fill;
+	my $a4H = 290/mm;
+	my $a4W = 210/mm;
+	my $pageMargin = 15/mm;
 
 	# add text title
 
 	my $txtHeader = $page_out->text;
-	$txtHeader->translate( 10, 842 - $headerH + 12 );
+	
 
-	my $font = $pdf_out->ttfont( GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\arial.ttf' );
+	my $fontBold = $pdf_out->ttfont( GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\ProximaNova-Black.otf' );
+	my $font = $pdf_out->ttfont( GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\ProximaNova-Regular.otf' );
 
-	#my $font = $pdf_out->corefont('arial');
-	$txtHeader->font( $font, 10 );
-	$txtHeader->fillcolor("white");
-	$txtHeader->text($pageTitle);
+		# add text title
+	
+	$txtHeader->fillcolor("black");
+	
+	my @lines = split(":",$pageTitle );
+	
+	
+	$txtHeader->translate( $pageMargin, $a4H-$pageMargin +2.5/mm  );
+	$txtHeader->font( $fontBold, 6/mm );
+	$txtHeader->text($lines[0]);
+	$txtHeader->translate( $pageMargin-2/mm, $a4H-$pageMargin -7/mm  );
+	$txtHeader->font( $fontBold, 10/mm );
+	$txtHeader->text($lines[1]);
 
-	# add text title
 
-	# add text title
+
+	# add page number
 
 	my $txtFooter = $page_out->text;
-	$txtFooter->translate( 280, 6 );
+	$txtFooter->translate( $a4W-$pageMargin, $pageMargin - 20 );
 
-	$txtFooter->font( $font, 8 );
-	$txtFooter->fillcolor("white");
+	$txtFooter->font( $font, 4/mm );
+	$txtFooter->fillcolor("black");
 
-	if ( $self->{"lang"} eq "cz" ) {
-		$txtFooter->text( 'Strana - ' . $pageNum );
-	}
-	else {
-		$txtFooter->text( 'Page - ' . $pageNum );
-	}
+	$txtFooter->text(   $pageNum."/".$pageTotal );
 
 }
 

@@ -61,6 +61,14 @@ sub new {
 	$self->{"previewBot"}     = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT );
 	$self->{"previewSingle"}  = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"lang"} );
 
+	# indication if each parts are required to be in final pdf
+	$self->{"previewTopPnlReq"} = 0;
+	$self->{"previewBotPnlReq"} = 0;
+	$self->{"previewTop1UpReq"} = 0;
+	$self->{"previewBot1UpReq"} = 0;
+	$self->{"previewStckpReq"}  = 0;
+	$self->{"previewSingleReq"} = 0;
+
 	return $self;
 }
 
@@ -79,9 +87,9 @@ sub Create {
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
 
-	my @layerFilter = map { $_->{"gROWname"}} CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
-	CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"pdfStep"}, 1, \@layerFilter ); 
- 
+	my @layerFilter = map { $_->{"gROWname"} } CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"pdfStep"}, 1, \@layerFilter );
+
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
 }
 
@@ -89,6 +97,8 @@ sub Create {
 sub CreateStackup {
 	my $self = shift;
 	my $mess = shift;
+
+	$self->{"previewStckpReq"} = 1;
 
 	# 1) create stackup image
 
@@ -102,6 +112,8 @@ sub CreatePreviewTop {
 	my $self = shift;
 	my $mess = shift;
 
+	$self->{"previewTop1UpReq"} = 1;
+
 	# 2) Final preview top
 	my $result = $self->{"previewTop"}->Create($mess);
 	return $result;
@@ -112,6 +124,8 @@ sub CreatePreviewBot {
 	my $self = shift;
 	my $mess = shift;
 
+	$self->{"previewBot1UpReq"} = 1;
+
 	# 3) Final preview top
 	my $result = $self->{"previewBot"}->Create($mess);
 	return $result;
@@ -121,6 +135,8 @@ sub CreatePreviewBot {
 sub CreatePreviewSingle {
 	my $self = shift;
 	my $mess = shift;
+
+	$self->{"previewSingleReq"} = 1;
 
 	# 4) Create preview single
 	my $result = $self->{"previewSingle"}->Create($mess);
@@ -134,15 +150,39 @@ sub GeneratePdf {
 
 	my $result = 1;
 
+	if ( $self->{"previewStckpReq"} && !-e $self->{"stackupPreview"}->GetOutput() ) {
+		$result = 0;
+		$$mess .= "Error when creating stackup preview.\n";
+	}
+
+	if ( $self->{"previewTop1UpReq"} && !-e $self->{"previewTop"}->GetOutput() ) {
+		$result = 0;
+		$$mess .= "Error when creating pcb image, view from top.\n";
+	}
+
+	if ( $self->{"previewBot1UpReq"} && !-e $self->{"previewBot"}->GetOutput() ) {
+		$result = 0;
+		$$mess .= "Error when creating pcb image, view from bot.\n";
+	}
+
+	if ( $self->{"previewSingleReq"} && !-e $self->{"previewSingle"}->GetOutput() ) {
+		$result = 0;
+		$$mess .= "Error when creating single layer pdf.\n";
+	}
+
 	# 5) Process template
-	$self->__ProcessTemplate( $self->{"stackupPreview"}->GetOutput(), $self->{"previewTop"}->GetOutput(), $self->{"previewBot"}->GetOutput() );
+	$self->__ProcessTemplate( $self->{"previewTop"}->GetOutput(), $self->{"previewBot"}->GetOutput() );
 
 	# 6) complete all together and add header and footer
+
+	my @pdfFiles = ( $self->{"template"}->GetOutFile() );
+	push( @pdfFiles, $self->{"stackupPreview"}->GetOutput() ) if ( $self->{"previewStckpReq"} );
+	push( @pdfFiles, $self->{"previewSingle"}->GetOutput() )  if ( $self->{"previewSingleReq"} );
 	
-	my @pdfFiles = ($self->{"template"}->GetOutFile(), $self->{"previewSingle"}->GetOutput() );
 	my @titles = $self->__GetPdfPageTitles();
-	
-	$self->{"outputPdf"}->Output(\@pdfFiles, \@titles );
+
+	$self->{"outputPdf"}->Output( \@pdfFiles, \@titles );
+
 	$self->__DeletePdfStep( $self->{"pdfStep"} );
 
 	return $result;
@@ -159,29 +199,19 @@ sub GetOutputPath {
 # Template must by first filled by data
 sub __ProcessTemplate {
 	my $self           = shift;
-	my $stackupPath    = shift;
 	my $previewTopPath = shift;
 	my $previewBotPath = shift;
-
-	unless ( -e $previewTopPath ) {
-		die "Error when creating pcb image, view from top.\n";
-	}
-
-	unless ( -e $previewBotPath ) {
-		die "Error when creating pcb image, view from bot.\n";
-	}
 
 	my $tempPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\PcbControlPdf\\HtmlTemplate\\template.html";
 
 	# Fill data template
 	my $templData = TemplateKey->new();
 
-	$self->{"fillTemplate"}->FillKeysData( $templData, $stackupPath, $previewTopPath, $previewBotPath, $self->{"infoToPdf"} );
-	$self->{"fillTemplate"}->FillKeysLayout( $templData );
+	$self->{"fillTemplate"}->FillKeysData( $templData, $previewTopPath, $previewBotPath, $self->{"infoToPdf"} );
+	$self->{"fillTemplate"}->FillKeysLayout($templData);
 
 	my $result = $self->{"template"}->ProcessTemplatePdf( $tempPath, $templData );
 
-	unlink($stackupPath);
 	unlink($previewTopPath);
 	unlink($previewBotPath);
 }
@@ -207,26 +237,39 @@ sub __GetPdfPageTitles {
 	}
 
 	# 2 page
-	if ( $self->{"lang"} eq "cz" ) {
-		push( @titles, $title . "Dodání" );
-	}
-	else {
-		push( @titles, $title . "Shipping units" );
+	if ( $self->{"previewStckpReq"} ) {
+		if ( $self->{"lang"} eq "cz" ) {
+			push( @titles, $title . "Skladba" );
+		}
+		else {
+			push( @titles, $title . "Stackup" );
+		}
+
 	}
 
-	# 3 page up to last page
-	if ( $self->{"lang"} eq "cz" ) {
-		
-		push( @titles, $title . "Jednotlivé vrstvy - pohled z vrchu" );
-	}
-	else {
-		push( @titles, $title . "Single layers - view from top" );
+	# 3 page
+	if ( $self->{"previewTop1UpReq"} || $self->{"previewBot1UpReq"} ) {
+		if ( $self->{"lang"} eq "cz" ) {
+			push( @titles, $title . "Dodání" );
+		}
+		else {
+			push( @titles, $title . "Shipping units" );
+		}
 	}
 
-	 return @titles;
+	# 4 page up to last page
+	if ( $self->{"previewSingleReq"} ) {
+		if ( $self->{"lang"} eq "cz" ) {
+
+			push( @titles, $title . "Jednotlivé vrstvy - pohled z vrchu" );
+		}
+		else {
+			push( @titles, $title . "Single layers - view from top" );
+		}
+	}
+
+	return @titles;
 }
-
- 
 
 # delete pdf step
 sub __DeletePdfStep {
@@ -253,20 +296,19 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d270787";
- 
+	my $jobId = "d146753";
 
-	my $mess = ""; 
+	my $mess = "";
 
-	my $control = ControlPdf->new( $inCAM, $jobId, "mpanel", "en" );
+	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
 	$control->Create();
 
-	#$control->CreateStackup(\$mess);
+	$control->CreateStackup(\$mess);
 	$control->CreatePreviewTop( \$mess );
-	#$control->CreatePreviewBot(\$mess);
-	#$control->CreatePreviewSingle( \$mess );
-	#$control->GeneratePdf();
-
+	$control->CreatePreviewBot(\$mess);
+	$control->CreatePreviewSingle( \$mess );
+	$control->GeneratePdf();
+#
 	$control->GetOutputPath();
 
 }
