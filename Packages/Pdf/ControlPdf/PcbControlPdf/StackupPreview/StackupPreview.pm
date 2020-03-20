@@ -58,7 +58,7 @@ sub Create {
 	# Page size is A4
 
 	my $a4W = 210;    # width in mm
-	my $a4H = 290;    # height mm
+	my $a4H = 297;    # height mm
 
 	# Stackup rotation by real stackup preview dimension
 	# if stackup width is more than 130% stackup height AND stackup real width is more than 130% A4 widtt => rotate

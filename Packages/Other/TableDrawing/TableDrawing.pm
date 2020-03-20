@@ -8,6 +8,7 @@ package Packages::Other::TableDrawing::TableDrawing;
 #3th party library
 use strict;
 use warnings;
+use Storable qw(dclone);
 
 #local library
 use aliased 'Packages::Other::TableDrawing::Enums';
@@ -34,16 +35,30 @@ sub new {
 }
 
 sub AddTable {
-	my $self         = shift;
-	my $key          = shift;
-	my $origin       = shift // { "x" => 0, "y" => 0 };
-	my $borderStyle  = shift;
- 
+	my $self        = shift;
+	my $key         = shift;
+	my $origin      = shift // { "x" => 0, "y" => 0 };
+	my $borderStyle = shift;
+
 	my $t = Table->new( $key, $origin, $borderStyle, $self->{"overwriteCell"} );
 
 	push( @{ $self->{"tables"} }, $t );
 
 	return $t;
+}
+
+sub DuplicateTable {
+	my $self  = shift;
+	my $key   = shift;
+	my $table = shift;
+	
+	my $dupl  = dclone($table);
+	
+	$dupl->{"key"} = $key;
+	
+	push( @{ $self->{"tables"} }, $dupl );
+	
+	return $dupl;
 }
 
 sub GetOriLimits {

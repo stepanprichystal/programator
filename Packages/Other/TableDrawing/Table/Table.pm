@@ -46,6 +46,12 @@ sub new {
 	return $self;
 }
 
+sub SetOrigin {
+	my $self = shift;
+	$self->{"origin"} = shift;
+
+}
+
 sub AddColDef {
 	my $self        = shift;
 	my $key         = shift;
@@ -237,8 +243,8 @@ sub GetRowByKey {
 
 	my $rowDef = first { $_->GetKey() eq $key } @{ $self->{"rowsDef"} };
 
-	unless ( defined $rowDef ){
-	die "Row definition (key: $key) was not found" ;
+	unless ( defined $rowDef ) {
+		die "Row definition (key: $key) was not found";
 	}
 
 	return $rowDef;
@@ -338,12 +344,12 @@ sub GetCellPos {
 
 # Return cell on specific position
 sub GetCellByPos {
-	my $self = shift;
+	my $self   = shift;
 	my $colPos = shift;
 	my $rowPos = shift;
-	
+
 	return $self->{"matrix"}->[$colPos]->[$rowPos];
- 
+
 }
 
 sub GetCellLimits {
@@ -381,8 +387,6 @@ sub GetCellLimits {
 		$lim{"yMin"} += $margins;
 		$lim{"yMax"} -= $margins;
 	}
-	
-	
 
 	return %lim;
 }

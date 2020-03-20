@@ -52,7 +52,7 @@ sub new {
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";    # place where pdf is created
 
-	$self->{"outputPdf"} = OutputFinalPdf->new( $self->{"lang"} );
+	$self->{"outputPdf"} = OutputFinalPdf->new( $self->{"lang"}, $self->{"infoToPdf"} );
 	$self->{"fillTemplate"} = FillTemplate->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 	$self->{"template"}       = HtmlTemplate->new( $self->{"lang"} );
@@ -300,13 +300,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
+	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en",1 );
 	$control->Create();
 
 	$control->CreateStackup(\$mess);
-	$control->CreatePreviewTop( \$mess );
-	$control->CreatePreviewBot(\$mess);
-	$control->CreatePreviewSingle( \$mess );
+	#$control->CreatePreviewTop( \$mess );
+	#$control->CreatePreviewBot(\$mess);
+	#$control->CreatePreviewSingle( \$mess );
 	$control->GeneratePdf();
 #
 	$control->GetOutputPath();

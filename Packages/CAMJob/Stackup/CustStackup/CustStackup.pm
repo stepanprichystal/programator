@@ -43,10 +43,10 @@ sub new {
 	$self->{"tblDrawing"} = TableDrawing->new( TblDrawEnums->Units_MM );
 
 	my $borderStyle = BorderStyle->new();
-	$borderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
-	$borderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
-	$borderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
-	$borderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
+	$borderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
+	$borderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
+	$borderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
+	$borderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1, Color->new( EnumsStyle->Clr_SECTIONBORDER ) );
 
 	$self->{"tblMain"} = $self->{"tblDrawing"}->AddTable( "Main", undef, $borderStyle );
 
@@ -146,6 +146,14 @@ sub __OnRenderPriorityHndl {
 	$priority->{ TblDrawEnums->DrawPriority_COLLBORDER } = 1;
 	$priority->{ TblDrawEnums->DrawPriority_COLLBACKG }  = 2;
 	$priority->{ TblDrawEnums->DrawPriority_ROWBACKG }   = 3;
+	$priority->{ TblDrawEnums->DrawPriority_TABBORDER }   = 4;
+	$priority->{ TblDrawEnums->DrawPriority_ROWBORDER }   = 5;
+	$priority->{ TblDrawEnums->DrawPriority_CELLBACKG }   = 6;
+	$priority->{ TblDrawEnums->DrawPriority_CELLBORDER }   = 7;
+	$priority->{ TblDrawEnums->DrawPriority_CELLTEXT }   = 8;
+	
+	
+	
 }
 
 # DrawPriority_TABBORDER  => "DrawPriority_TABBORDER",     # table frame

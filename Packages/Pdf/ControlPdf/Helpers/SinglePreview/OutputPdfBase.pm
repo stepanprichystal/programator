@@ -25,15 +25,19 @@ use aliased 'CamHelpers::CamJob';
 # Public method
 #-------------------------------------------------------------------------------------------#
 
+use constant mm => 25.4 / 72;
+use constant in => 1 / 72;
+use constant pt => 1;
+
 sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift;
-	$self->{"pdfStep"} = shift;
-	$self->{"lang"}    = shift;
+	$self->{"inCAM"}      = shift;
+	$self->{"jobId"}      = shift;
+	$self->{"pdfStep"}    = shift;
+	$self->{"lang"}       = shift;
 	$self->{"outputPath"} = shift;
 
 	$self->{"profileLim"} = undef;
@@ -61,9 +65,11 @@ sub Output {
 
 	$self->__OptimizeLayers( $layerList, $multiplX, $multiplY );
 
-	my $pathPdf = $self->__OutputRawPdf( $layerList, $multiplX, $multiplY );
+	my $titleMargin = 42;    # top page margin [mm] which creates space for title
 
-	$self->__AddTextPdf( $layerList,, $multiplX, $multiplY, $pathPdf );
+	my $pathPdf = $self->__OutputRawPdf( $layerList, $multiplX, $multiplY, $titleMargin );
+
+	$self->__AddTextPdf( $layerList,, $multiplX, $multiplY, $pathPdf, $titleMargin );
 
 }
 
@@ -169,10 +175,11 @@ sub __CopyFrame {
 
 # Do output pdf of expor tlayers
 sub __OutputRawPdf {
-	my $self      = shift;
-	my $layerList = shift;
-	my $multiplX  = shift;
-	my $multiplY  = shift;
+	my $self        = shift;
+	my $layerList   = shift;
+	my $multiplX    = shift;
+	my $multiplY    = shift;
+	my $titleMargin = shift;
 
 	my $inCAM = $self->{"inCAM"};
 
@@ -215,7 +222,7 @@ sub __OutputRawPdf {
 		#paper_width   => 260,
 		#paper_height  => 260,
 		#auto_tray     => 'no',
-		top_margin    => '0',
+		top_margin    => $titleMargin,    # margin for page title
 		bottom_margin => '0',
 		left_margin   => '0',
 		right_margin  => '0',
@@ -237,17 +244,22 @@ sub __OutputRawPdf {
 
 # add title and description to each pdf page for each layer
 sub __AddTextPdf {
-	my $self      = shift;
-	my $layerList = shift;
-	my $multiplX  = shift;
-	my $multiplY  = shift;
-	my $infile    = shift;
+	my $self        = shift;
+	my $layerList   = shift;
+	my $multiplX    = shift;
+	my $multiplY    = shift;
+	my $infile      = shift;
+	my $titleMargin = shift;
 
 	unless ( -e $infile ) {
 		die "Pdf file doesn't exiswt $infile.\n";
 	}
 
 	my $inCAM = $self->{"inCAM"};
+
+	my $a4H = 297 / mm;
+	my $a4W = 210 / mm;
+	$titleMargin /= mm;    # conver to points
 
 	my $pdf_in  = PDF::API2->open($infile);
 	my $pdf_out = PDF::API2->new;
@@ -270,8 +282,48 @@ sub __AddTextPdf {
 			0, 0,    # x y
 			1
 		);           # scale
+		             # 1) Cover black border in PDF
 
-		# draw info tables
+		my $coverLine = $page_out->gfx;
+		$coverLine->strokecolor('white');
+		$coverLine->linewidth( 2 / mm );
+
+		# left vertical
+		$coverLine->move( $titleMargin / 2, 0 );
+		$coverLine->line( $titleMargin / 2, $a4H );
+		$coverLine->stroke;
+
+		# middle vertical
+		$coverLine->move( $a4W / 2, 0 );
+		$coverLine->line( $a4W / 2, $a4H );
+		$coverLine->stroke;
+
+		# middle vertical
+		$coverLine->move( $a4W - $titleMargin / 2, 0 );
+		$coverLine->line( $a4W - $titleMargin / 2, $a4H );
+		$coverLine->stroke;
+
+		# top horizontal
+		$coverLine->move( 0, $a4H - $titleMargin - 4 / mm );
+		$coverLine->line( $a4W, $a4H - $titleMargin - 4 / mm );
+		$coverLine->stroke;
+
+		# middle top horizontal
+		$coverLine->move( 0, $a4H - $titleMargin - 123 / mm );
+		$coverLine->line( $a4W, $a4H - $titleMargin - 123 / mm );
+		$coverLine->stroke;
+
+		# middle bot horizontal
+		$coverLine->move( 0, $a4H - $titleMargin - 132 / mm  );
+		$coverLine->line( $a4W, $a4H - $titleMargin - 132 / mm  );
+		$coverLine->stroke;
+
+		# middle bot horizontal
+		$coverLine->move( 0, 4 / mm );
+		$coverLine->line( $a4W, 4 / mm );
+		$coverLine->stroke;
+
+		# 2) draw info tables
 
 		my @data = $self->__GetPageData( $layerList, $pagenum, $multiplX * $multiplY );
 
@@ -279,20 +331,23 @@ sub __AddTextPdf {
 		if ( $multiplX == 1 && $multiplY == 1 ) {
 
 			my $d = $data[0];
-			$self->__DrawInfoTable( 160, 45, $d, $page_out, $pdf_out );
+			$self->__DrawInfoTable( 55 / mm, 15 / mm, $d, $page_out, $pdf_out );
 
 		}
+
 		# 2 x 1 images per page
 		elsif ( $multiplX == 2 && $multiplY == 1 ) {
 
 			die "not implemented";
 
 		}
+
 		# 1 x 2 images per page
 		elsif ( $multiplX == 1 && $multiplY == 2 ) {
 
 			die "not implemented";
 		}
+
 		# 2 x 2 images per page
 		elsif ( $multiplX == 2 && $multiplY == 2 ) {
 
@@ -300,19 +355,19 @@ sub __AddTextPdf {
 
 				if ( $i == 0 ) {
 					my $d = $data[$i];
-					$self->__DrawInfoTable( 15, 430, $d, $page_out, $pdf_out );
+					$self->__DrawInfoTable( $titleMargin / 2-7/mm, $a4H - $titleMargin-4/mm, $d, $page_out, $pdf_out );
 				}
 				elsif ( $i == 1 ) {
 					my $d = $data[$i];
-					$self->__DrawInfoTable( 15, 23, $d, $page_out, $pdf_out );
+					$self->__DrawInfoTable( $titleMargin / 2-7/mm, $a4H / 2 - $titleMargin / 2-5/mm, $d, $page_out, $pdf_out );
 				}
 				elsif ( $i == 2 ) {
 					my $d = $data[$i];
-					$self->__DrawInfoTable( 310, 430, $d, $page_out, $pdf_out );
+					$self->__DrawInfoTable( $a4W / 2 +2/mm , $a4H - $titleMargin-4/mm, $d, $page_out, $pdf_out );
 				}
 				elsif ( $i == 3 ) {
 					my $d = $data[$i];
-					$self->__DrawInfoTable( 310, 23, $d, $page_out, $pdf_out );
+					$self->__DrawInfoTable( $a4W / 2 +2/mm , $a4H / 2 - $titleMargin / 2-5/mm, $d, $page_out, $pdf_out );
 				}
 			}
 
@@ -369,89 +424,96 @@ sub __DrawInfoTable {
 	my $page_out = shift;
 	my $pdf_out  = shift;
 
-	my $leftCellW  = 20;
-	my $leftCellH  = 25;
-	my $rightCellW = 250;
-	my $rightCellH = 25;
+	my $a4H = 297 / mm;
+	my $a4W = 210 / mm;
+
+	my $leftClmnW  = 15 / mm;
+	my $rightClmnW = 73 / mm;
+	my $topRowH    = 15;
+	my $botRowH    = 15;
 
 	# draw frame
-	my $frame = $page_out->gfx;
-	$frame->fillcolor('#E5E5E5');
-	$frame->rect(
-				  $xPos - 0.5,                     # left
-				  $yPos - 0.5,                     # bottom
-				  $leftCellW + $rightCellW + 1,    # width
-				  $leftCellH + 1                   # height
+	#	my $frame = $page_out->gfx;
+	#	$frame->fillcolor('#E5E5E5');
+	#	$frame->rect(
+	#				  $xPos - 0.5,                     # left
+	#				  $yPos - 0.5,                     # bottom
+	#				  $leftCellW + $rightCellW + 1,    # width
+	#				  $leftCellH + 1                   # height
+	#	);
+
+	#	$frame->fill;
+
+	# draw top row
+	my $tCell = $page_out->gfx;
+	$tCell->fillcolor('#C9101A');
+	$tCell->rect(
+				  $xPos,                        
+				  $yPos + $botRowH,             
+				  $leftClmnW + $rightClmnW,     
+				  $topRowH                     
 	);
+	$tCell->fill;
 
-	$frame->fill;
-
-	# draw left cell
-	my $lCell = $page_out->gfx;
-	$lCell->fillcolor('#F5F5F5');
-	$lCell->rect(
-				  $xPos,                           # left
-				  $yPos,                           # bottom
-				  $leftCellW,                      # width
-				  $leftCellH                       # height
+	# draw bot row - left cell
+	my $lbCell = $page_out->gfx;
+	$lbCell->fillcolor('#F5F5F5');
+	$lbCell->rect(
+				  $xPos,                        
+				  $yPos,             
+				  $leftClmnW,     
+				  $botRowH                     
 	);
-
-	$lCell->fill;
-
-	# draw right cell
-	my $rCell = $page_out->gfx;
-	$rCell->fillcolor('#FFFFFF');
-	$rCell->rect(
-				  $xPos + $leftCellW,              # left
-				  $yPos,                           # bottom
-				  $rightCellW,                     # width
-				  $rightCellH                      # height
+	$lbCell->fill;
+	
+	# draw bot row - right cell
+	my $rbCell = $page_out->gfx;
+	$rbCell->fillcolor('white');
+	$rbCell->rect(
+				  $xPos + $leftClmnW,                        
+				  $yPos,             
+				  $rightClmnW,     
+				  $botRowH                     
 	);
+	$rbCell->fill;
 
-	$rCell->fill;
+#	# draw crosst cell
+#	my $lineV = $page_out->gfx;
+#	$lineV->fillcolor('#E5E5E5');
+#	$lineV->rect(
+#				  $xPos + $leftCellW,          # left
+#				  $yPos,                       # bottom
+#				  0.5,                         # width
+#				  $rightCellH                  # height
+#	);
+#	$lineV->fill;
 
-	# draw crosst cell
-	my $lineV = $page_out->gfx;
-	$lineV->fillcolor('#E5E5E5');
-	$lineV->rect(
-				  $xPos + $leftCellW,              # left
-				  $yPos,                           # bottom
-				  0.5,                             # width
-				  $rightCellH                      # height
-	);
-	$lineV->fill;
+#	my $lineH = $page_out->gfx;
+#	$lineH->fillcolor('#E5E5E5');
+#	$lineH->rect(
+#				  $xPos,                       # left
+#				  $yPos + $rightCellH / 2,     # bottom
+#				  $rightCellW + $leftCellW,    # width
+#				  0.5                          # height
+#	);
+#	$lineH->fill;
 
-	my $lineH = $page_out->gfx;
-	$lineH->fillcolor('#E5E5E5');
-	$lineH->rect(
-				  $xPos,                           # left
-				  $yPos + $rightCellH / 2,         # bottom
-				  $rightCellW + $leftCellW,        # width
-				  0.5                              # height
-	);
-	$lineH->fill;
-
-	my $txtSize = 6;
-
+	my $txtSize = 3/mm;
+	my $txtMargin =1.5/mm; 
 	# add text title
 
 	my $txtTitle = $page_out->text;
-	$txtTitle->translate( $xPos + 2, $yPos + $rightCellH - 10 );
+	$txtTitle->translate( $xPos + $txtMargin, $yPos + $botRowH + $txtMargin );
 	my $font = $pdf_out->ttfont( GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\arial.ttf' );
 	$txtTitle->font( $font, $txtSize );
-	$txtTitle->fillcolor("black");
+	$txtTitle->fillcolor("white");
 
-	if ( $self->{"lang"} eq "cz" ) {
-		$txtTitle->text( 'Název    ' . $data->{"title"} );
-	}
-	else {
-		$txtTitle->text( 'Name    ' . $data->{"title"} );
-	}
+	$txtTitle->text( $data->{"title"} );
 
 	# add text title
 
 	my $txtInf = $page_out->text;
-	$txtInf->translate( $xPos + 2, $yPos + 3 );
+	$txtInf->translate( $xPos + $txtMargin, $yPos + $txtMargin );
 	$txtInf->font( $font, $txtSize );
 	$txtInf->fillcolor("black");
 

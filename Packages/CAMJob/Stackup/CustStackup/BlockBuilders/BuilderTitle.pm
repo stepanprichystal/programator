@@ -60,8 +60,14 @@ sub __BuildRow1 {
 	my $secMngr   = $self->{"sectionMngr"};
 
 	# Define first title row
+	
+	my $borderStyle = BorderStyle->new();
+	$borderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_TITLEBACKG ) );
+	$borderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_TITLEBACKG ) );
+	$borderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_TITLEBACKG ) );
+	$borderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2, Color->new( EnumsStyle->Clr_TITLEBACKG ) );
 	my $rowTitleBackg = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_TITLEBACKG ) );
-	$tblMain->AddRowDef( "row_title", EnumsStyle->RowHeight_TITLE, $rowTitleBackg );
+	$tblMain->AddRowDef( "row_title", EnumsStyle->RowHeight_TITLE, $rowTitleBackg, $borderStyle );
 
 	# Add title
 	my $titleStr = "Type: ";
@@ -118,7 +124,7 @@ sub __BuildRow1 {
 
 	my $c1TxtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 									 EnumsStyle->TxtSize_TITLE, Color->new( 255, 255, 255 ),
-									 TblDrawEnums->Font_BOLD, undef,
+									 TblDrawEnums->Font_NORMAL, undef,
 									 TblDrawEnums->TextHAlign_LEFT,
 									 TblDrawEnums->TextVAlign_CENTER, 1 );
 
@@ -130,7 +136,7 @@ sub __BuildRow1 {
 
 	my $c2TxtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 									 EnumsStyle->TxtSize_TITLE, Color->new( 255, 255, 255 ),
-									 TblDrawEnums->Font_BOLD, undef,
+									 TblDrawEnums->Font_NORMAL, undef,
 									 TblDrawEnums->TextHAlign_RIGHT,
 									 TblDrawEnums->TextVAlign_CENTER, 1 );
 
