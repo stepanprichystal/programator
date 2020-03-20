@@ -139,8 +139,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM   = InCAM->new();
-	my $jobId   = "d152457";
-	my $orderId = "d152457-03";
+	my $jobId   = "d241318";
+	my $orderId = "d241318-02";
 
 	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId );
 

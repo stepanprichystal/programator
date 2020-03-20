@@ -34,7 +34,7 @@ use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::CAMJob::Material::MaterialInfo';
 use aliased 'Packages::CAM::Netlist::NetlistCompare';
-use aliased 'Packages::CAMJob::Scheme::CustSchemeCheck';
+use aliased 'Packages::CAMJob::Scheme::SchemeCheck';
 use aliased 'Packages::CAMJob::Matrix::LayerNamesCheck';
 use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
 
@@ -583,12 +583,22 @@ sub OnCheckGroupData {
 
 	# 16) If customer has required scheme, check if scheme in mpanel is ok
 	my $usedScheme = undef;
-	unless ( CustSchemeCheck->CustSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
+	unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
 
 		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
 
 		$dataMngr->_AddWarningResult( "Customer schema",
 						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
+	}
+	
+	# X) Check production panel schema
+	my $usedPnlScheme = undef;
+	unless( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme )){
+		
+		$dataMngr->_AddErrorResult( "Špatné schéma",
+										 "Ve stepu panel vložené špatné scháma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)".
+										 " Vlož do panelu správné schéma");
+			 
 	}
 
 	# 17) Check if all our "board" layers are realy board
