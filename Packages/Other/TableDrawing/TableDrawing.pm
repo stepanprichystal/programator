@@ -124,6 +124,8 @@ sub Draw {
 	my %tblsLim = $self->GetOriLimits();
 
 	RenderDrawing->RenderTables( $drawBuilder, $self->{"tables"}, \%tblsLim, $scaleX, $scaleY, $originX, $originY );
+	
+	return 1;
 }
 
 #-------------------------------------------------------------------------------------------#

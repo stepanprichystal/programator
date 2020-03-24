@@ -50,15 +50,16 @@ sub new {
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
-	
+
 	# Optional pre-loaded parametrs
-	
+
 	$self->{"pcbType"}          = shift;
 	$self->{"pcbIsFlex"}        = shift;
 	$self->{"pcbClass"}         = shift;
 	$self->{"pcbClassInner"}    = shift;
 	$self->{"layerCnt"}         = shift;
 	$self->{"sigLayerComp"}     = shift;
+	$self->{"NCLayerComp"}      = shift;
 	$self->{"NCLayers"}         = shift;
 	$self->{"platedRoutExceed"} = shift;
 	$self->{"surface"}          = shift;
@@ -111,7 +112,7 @@ sub Init {
 			$self->{"stackupNC"} = StackupNC->new( $inCAM, $self->{'jobId'} );
 		}
 	}
-	
+
 	$self->{"rsExist"} = CamDrilling->NCLayerExists( $inCAM, $self->{'jobId'}, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 
 	$self->{"init"} = 1;
@@ -433,7 +434,6 @@ sub GetDefaultEtchType {
 		if ( scalar(@platedNC) ) {
 
 			my @viaFill = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill } @platedNC;
-			
 
 			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || scalar(@viaFill) ) {
 				$etchType = EnumsGeneral->Etching_PATTERN;
@@ -549,8 +549,6 @@ sub __GetBaseCuThick {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
-
- 
 
 }
 

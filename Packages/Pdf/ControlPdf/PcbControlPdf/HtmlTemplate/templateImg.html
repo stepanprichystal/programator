@@ -1,0 +1,99 @@
+ <!-- ------------------------------------------------------------------------------------------ 		-->
+ <!--  Description: This is spesial html template for image preview page of control pdf				-->
+ <!--  Add font arial.ttf is neccessary for proper working of text with czech diacritics				-->
+ <!--  texts: key_<nameOfKey> are replaced by real values during export									-->
+ <!--  Only some html/css syntax is working for more detail see: http://fwpn.org.pl/assets/event_attachments/asd.html -->
+ <!--  Author:SPR																						-->
+ <!-- ------------------------------------------------------------------------------------------ 		-->
+ 
+ 
+<html>
+
+  <head>
+    <title>HTML Layouts using DIV, SPAN</title>
+    <link rel="stylesheet" type="text/css" href="templateImg.css">
+    
+ <!-- Add font arial.ttf is neccessary for proper working of text with czech diacritics -->
+    <style>
+
+
+ 
+@font-face {
+font-family: "Arial";
+src: url("key_ScriptsRoot\Packages\Pdf\ControlPdf\Helpers\Resources\arial.ttf"); 
+}
+</style>
+    
+  </head>
+
+  <body>
+
+    
+   
+
+    <br/>
+     <br/>
+      <br/>
+    
+ 
+    
+    
+    	<!-- Table pcb parameters -->
+    
+    
+    <table class="infotable">
+      <tbody>
+        <tr>
+          <td>
+
+            <table class="infotable">
+              <tbody>
+                <tr>
+                  <th colspan=2>
+                    <img class="redsquare" align="middle" src="key_ScriptsRoot\Packages\Pdf\ControlPdf\PcbControlPdf\HtmlTemplate\Img\redSquare.jpg" />key_TopView</th>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+           <td style="border-bottom-width= 0px">
+            <br/>
+           
+            <img align="middle" src="key_TopViewImg" width="717" height="430" />
+
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <br/>
+            <br/>
+             
+            <table class="infotable">
+              <tbody>
+                <tr>
+                  <th colspan=2>
+                    <img class="redsquare" align="middle" src="key_ScriptsRoot\Packages\Pdf\ControlPdf\PcbControlPdf\HtmlTemplate\Img\redSquare.jpg" />key_BotView</th>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="border-bottom-width= 0px">
+            <br/>
+          
+            <img align="middle" src="key_BotViewImg" width="717" height="430" />
+
+
+          </td>
+        </tr>
+
+
+
+  </body>
+
+</html>

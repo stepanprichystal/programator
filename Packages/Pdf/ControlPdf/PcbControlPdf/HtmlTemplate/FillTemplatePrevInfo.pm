@@ -4,7 +4,7 @@
 # Template class than contain all needed data, which are pasted to final PDF
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::PcbControlPdf::FillTemplate;
+package Packages::Pdf::ControlPdf::PcbControlPdf::HtmlTemplate::FillTemplatePrevInfo;
 
 #3th party library
 use utf8;
@@ -48,8 +48,6 @@ sub new {
 sub FillKeysData {
 	my $self           = shift;
 	my $template       = shift;
-	my $previewTopPath = shift;
-	my $previewBotPath = shift;
 	my $infoToPdf      = shift;    # if put info about operator to pdf
 
 	my $inCAM = $self->{"inCAM"};
@@ -225,23 +223,7 @@ sub FillKeysData {
 	$template->SetKey( "DataCode",    "Data code",          "Datum" );
 	$template->SetKey( "DataCodeVal", $pcbInfo{"datacode"}, Translator->Cz( $pcbInfo{"datacode"} ) );
 
-	# =================== Table stackup ============================
-
-	$template->SetKey( "Stackup", "Stackup", "Složení" );
-
-	$template->SetKey( "MaterialQuality", "Material quality", "Druh materiálu" );
-	$template->SetKey( "MaterialQualityVal", $stackupInf{"material"} );
-
-	$template->SetKey( "PcbThickness", "Material thickness", "Tloušťka materiálu" );
-	$template->SetKey( "PcbThicknessVal", $stackupInf{"thick"} );
  
-	# =================== Table views ============================
-
-	$template->SetKey( "TopView", "Top view", "Pohled top" );
-	$template->SetKey( "TopViewImg", $previewTopPath );
-
-	$template->SetKey( "BotView", "Bot view", "Pohled bot" );
-	$template->SetKey( "BotViewImg", $previewBotPath );
 
 	return 1;
 }

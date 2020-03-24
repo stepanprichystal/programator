@@ -8,6 +8,7 @@ package Packages::Pdf::ControlPdf::PcbControlPdf::SinglePreview::SinglePreview;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min];
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -33,26 +34,32 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
+	$self->{"SR"}    = shift;
 	$self->{"lang"}  = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
-	
-	$self->{"outputData"} = OutputData->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
-	$self->{"layerList"}  = LayerDataList->new( $self->{"lang"} );
-	$self->{"outputPdf"}  = OutputPdfBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"outputData"}->GetStepName(), $self->{"lang"}, $self->{"outputPath"} );
-	
+	$self->{"outputData"} = OutputData->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"SR"} );
+
+	$self->{"layerList"} = LayerDataList->new( $self->{"lang"} );
+	$self->{"outputPdf"} =
+	  OutputPdfBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"outputData"}->GetStepName(), $self->{"lang"}, $self->{"outputPath"} );
 
 	return $self;
 }
 
 sub Create {
-	my $self = shift;
+	my $self           = shift;
+	my $drawProfile    = shift;
+	my $drawProfile1Up = shift;
+	my $message        = shift;
 
-	#my $lRef = shift;
-	my $message = shift;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	# prepare layers for export
+
+	CamHelper->SetStep( $inCAM, $self->{"step"} );
 
 	my $mess   = "";
 	my $result = $self->{"outputData"}->Create( \$mess );
@@ -68,7 +75,22 @@ sub Create {
 	$self->{"layerList"}->SetLayers( \@dataLayers );
 
 	# output single in 2x2 images per page
-	$self->{"outputPdf"}->Output( $self->{"layerList"}, 2, 2 );
+	# define multiplicity per page by step size
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"step"} );
+
+	my $w = abs( $lim{"xMax"} - $lim{"xMin"} );
+	my $h = abs( $lim{"yMax"} - $lim{"yMin"} );
+
+	my $multiplX = 3;
+	my $multiplY = 3;
+
+	# put 4x layer per page if PCB larger than 14cm
+	if ( max( $w, $h ) > 1400 ) {
+		$multiplX = 2;
+		$multiplY = 2;
+	}
+
+	$self->{"outputPdf"}->Output( $self->{"layerList"}, $multiplX, $multiplY, $drawProfile, $drawProfile1Up, [ 255, 0, 0 ], [ 100, 100, 100 ]);
 
 	# clear job
 	$self->{"outputData"}->Clear();

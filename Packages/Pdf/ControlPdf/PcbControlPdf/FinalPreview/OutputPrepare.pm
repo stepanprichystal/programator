@@ -732,6 +732,25 @@ sub __PreparePLTTHROUGHNC {
 
 	}
 
+	# Addstifener
+	my $stiffL = undef;
+	if ( $self->{"viewType"} eq Enums->View_FROMTOP && CamHelper->LayerExists( $inCAM, $jobId, "stiffc" ) ) {
+		$stiffL = "stiffc";
+	}
+	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT && CamHelper->LayerExists( $inCAM, $jobId, "stiffs" ) ) {
+		$stiffL = "stiffs";
+
+	}
+	if ( defined $stiffL ) {
+		
+		my $tmp = GeneralHelper->GetGUID();
+		$inCAM->COM( "merge_layers", "source_layer" => $stiffL, "dest_layer" => $tmp, "invert" => "no" );
+		CamLayer->WorkLayer( $inCAM, $tmp );
+		CamLayer->Contourize( $inCAM, $tmp, "x_or_y", "0" );
+		$inCAM->COM( "merge_layers", "source_layer" => $tmp, "dest_layer" => $lName, "invert" => "yes" );
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
+	}
+
 	#CamLayer->WorkLayer( $inCAM, $lName );
 	#$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
 

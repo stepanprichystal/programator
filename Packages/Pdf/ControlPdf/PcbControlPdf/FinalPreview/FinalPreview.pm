@@ -18,6 +18,7 @@ use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::OutputPrepa
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::Helper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums';
@@ -52,6 +53,8 @@ sub new {
 sub Create {
 	my $self    = shift;
 	my $message = shift;
+	
+	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
 
 	# get all board layers
 	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
@@ -409,7 +412,7 @@ sub __GetSilkColor {
 	}
 
 	my %colorMap = ();
-	$colorMap{"B"} = "250,250,250";    #white
+	$colorMap{"B"} = "241,241,228";    #white
 	$colorMap{"Z"} = "255,247,0";      #yellow
 	$colorMap{"C"} = "74,74,74";       # black
 

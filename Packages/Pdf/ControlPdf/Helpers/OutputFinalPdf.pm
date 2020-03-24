@@ -33,6 +33,7 @@ sub new {
 
 	$self->{"lang"}      = shift;
 	$self->{"infoToPdf"} = shift;
+	$self->{"jobId"}     = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
@@ -115,7 +116,7 @@ sub __AddHeaderFooter {
 				$title = $titles[ scalar(@titles) - 1 ];
 			}
 
-			$self->__DrawHeaderFooter( $pagesTotal, scalar(@numpages), $title, $page_out, $pdf_out );
+			$self->__DrawHeaderFooter( $pagesTotal, scalar(@titles), $title, $page_out, $pdf_out );
 
 			$pagesTotal++;
 
@@ -146,14 +147,18 @@ sub __DrawHeaderFooter {
 
 	$txtHeader->fillcolor("black");
 
-	my @lines = split( ":", $pageTitle );
+	my $title = "Production preview ";
+	if ( $self->{"lang"} eq "cz" ) {
+		$title = "Předvýrobní náhled ";
+	}
+ 
 
 	$txtHeader->translate( $pageMargin, $a4H - $pageMargin + 2.5 / mm );
 	$txtHeader->font( $fontBold, 6 / mm );
-	$txtHeader->text( $lines[0] );
-	$txtHeader->translate( $pageMargin - 2 / mm, $a4H - $pageMargin - 7 / mm );
+	$txtHeader->text( $title );
+	$txtHeader->translate( $pageMargin, $a4H - $pageMargin - 7 / mm );
 	$txtHeader->font( $fontBold, 10 / mm );
-	$txtHeader->text( $lines[1] );
+	$txtHeader->text( $pageTitle);
 
 	# 2) Add Logo
 	if ( $self->{"infoToPdf"} ) {
@@ -161,7 +166,7 @@ sub __DrawHeaderFooter {
 		my $logo = $page_out->gfx;
 		die("Unable to find image file: $!") unless -e $p;
 		my $photo_file = $pdf_out->image_jpeg($p);
-		$logo->image( $photo_file, $a4W -46/mm, $a4H - 20/mm, 30/mm, 9/mm   );
+		$logo->image( $photo_file, $a4W - 46 / mm, $a4H - 20 / mm, 30 / mm, 9 / mm );
 
 	}
 
@@ -171,9 +176,19 @@ sub __DrawHeaderFooter {
 	$txtFooter->translate( $a4W - $pageMargin, $pageMargin - 20 );
 
 	$txtFooter->font( $font, 4 / mm );
-	$txtFooter->fillcolor("black");
+	$txtFooter->fillcolor("gray");
 
 	$txtFooter->text( $pageNum . "/" . $pageTotal );
+
+	# 3) add page number
+
+	my $txtJobId = $page_out->text;
+	$txtJobId->translate( $pageMargin, $pageMargin - 20 );
+
+	$txtJobId->font( $font, 4 / mm );
+	$txtJobId->fillcolor("gray");
+
+	$txtJobId->text( uc( $self->{"jobId"} ) );
 
 }
 
