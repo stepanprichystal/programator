@@ -390,11 +390,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d276179";
+	my $jobId = "d276177";
 
 	my $mess = "";
 
-	my $step   = "o+1";
+	my $step   = "mpanel";
 	my $SR     = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
 	#my $nested = $SR;
 	my $nested = 0;
