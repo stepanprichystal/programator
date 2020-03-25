@@ -60,8 +60,6 @@ sub BaseMatInStock {
 	return $result;
 }
 
- 
-
 # Check if material for multilayer pcb is actually on the store
 sub StackupMatInStock {
 	my $self      = shift;
@@ -80,7 +78,26 @@ sub StackupMatInStock {
 	my $pnl = StandardBase->new( $inCAM, $pcbId );
 
 	# 1) check cores
+	# prepare couples: core (qId, id, id2) + number of occurence in stackup
+	my %cores = ();
+
 	foreach my $m ( $stackup->GetAllCores() ) {
+
+		my $coreKey = join( "_", ( $m->GetQId(), $m->GetId(), abs( $m->GetTopCopperLayer()->GetId() ) ) );
+
+		if ( defined $cores{$coreKey} ) {
+
+			$cores{$coreKey}->{"cnt"}++;
+		}
+		else {
+			$cores{$coreKey}->{"mat"} = $m;
+			$cores{$coreKey}->{"cnt"} = 1;
+		}
+	}
+
+	foreach my $coreKye ( keys %cores ) {
+
+		my $m = $cores{$coreKye}->{"mat"};
 
 		# abs - because copper id can be negative (plated core)
 		my @mat = HegMethods->GetCoreStoreInfoByUDA( $m->GetQId(), $m->GetId(), abs( $m->GetTopCopperLayer()->GetId() ) );
@@ -116,21 +133,41 @@ sub StackupMatInStock {
 		else {
 			my $amount    = sprintf( "%.2f", $mat[0]->{"stav_skladu"} );
 			my $requested = sprintf( "%.2f", $mat[0]->{"pocet_poptavano_vyroba"} );
-			my $avalaible = sprintf( "%.2f", $amount - $requested - ( defined $orderArea ? $orderArea : 0 ) );
+			my $avalaible = sprintf( "%.2f", $amount - $requested - ( defined $orderArea ? $orderArea * $cores{$coreKye}->{"cnt"} : 0 ) );
 
 			if ( $avalaible <= 0 ) {
 
 				$result = 0;
 				$$errMess .= "- Avalaible material quantity (" . $mat[0]->{"nazev_mat"} . ") is: " . $avalaible . "m2 in IS stock.\n";
 				$$errMess .= "(real amount is: " . $amount . "m2; requested by production is: " . $requested . "m2";
-				$$errMess .= "; request by order:$orderArea m2" if ( defined $orderArea );
+				$$errMess .= "; request by order:" . $orderArea . "m2 x " . $cores{$coreKye}->{"cnt"} . "pieces" if ( defined $orderArea );
 				$$errMess .= ")\n";
 			}
 		}
 	}
 
 	# 2) Check prepregs
+
+	# prepare couples: prepreg (qId, id) + number of occurence in stackup
+	my %prpg = ();
+
 	foreach my $m ( map { $_->GetAllPrepregs() } grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stackup->GetAllLayers() ) {
+
+		my $prpgKey = join( "_", ( $m->GetQId(), $m->GetId() ) );
+
+		if ( defined $prpg{$prpgKey} ) {
+
+			$prpg{$prpgKey}->{"cnt"}++;
+		}
+		else {
+			$prpg{$prpgKey}->{"mat"} = $m;
+			$prpg{$prpgKey}->{"cnt"} = 1;
+		}
+	}
+
+	foreach my $prpgKey ( keys %prpg ) {
+
+		my $m = $prpg{$prpgKey}->{"mat"};
 
 		my $prepregW = undef;
 		my $prepregH = undef;
@@ -181,14 +218,14 @@ sub StackupMatInStock {
 
 			my $amount    = sprintf( "%.2f", $mat[0]->{"stav_skladu"} );
 			my $requested = sprintf( "%.2f", $mat[0]->{"pocet_poptavano_vyroba"} );
-			my $avalaible = sprintf( "%.2f", $amount - $requested - ( defined $orderArea ? $orderArea : 0 ) );
+			my $avalaible = sprintf( "%.2f", $amount - $requested - ( defined $orderArea ? $orderArea * $prpg{$prpgKey}->{"cnt"} : 0 ) );
 
 			if ( $avalaible <= 0 ) {
 
 				$result = 0;
 				$$errMess .= "- Avalaible material quantity (" . $mat[0]->{"nazev_mat"} . ") is: " . $avalaible . "m2 in IS stock.\n";
 				$$errMess .= "(real amount is: " . $amount . "m2; requested by production is: " . $requested . "m2";
-				$$errMess .= "; request by order:$orderArea m2" if ( defined $orderArea );
+				$$errMess .= "; request by order:" . $orderArea . "m2 x " . $prpg{$prpgKey}->{"cnt"} . "pieces" if ( defined $orderArea );
 				$$errMess .= ")\n";
 
 			}
@@ -207,17 +244,30 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use Data::Dump qw(dump);
 
-		use aliased 'Packages::CAMJob::Material::MaterialInfo';
-		use aliased 'Packages::InCAM::InCAM';
-	
-		#my $inCAM = InCAM->new();
-		my $jobId = "d235159";
-	
-		my $mess = "";
-	 
-		my $result = MaterialInfo->BaseMatInStock($jobId, undef, \$mess);
-	 
-		print $mess;
+	use aliased 'Packages::CAMJob::Material::MaterialInfo';
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::CAMJob::Dim::JobDim';
+	use aliased 'CamHelpers::CamJob';
+
+	#my $inCAM = InCAM->new();
+	my $orderId = "d270204-02";
+	my $jobId   = "d270204";
+	my $inCAM   = InCAM->new();
+
+	my $mess = "";
+
+	my $inf           = HegMethods->GetInfoAfterStartProduce($orderId);
+	my %dimsPanelHash = JobDim->GetDimension( $inCAM, $jobId );
+	my %lim           = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+	my $pArea         = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
+	my $area          = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
+
+	# a) test id material in helios, match material in stackup
+
+	my $errMes = "";
+	my $matOk = MaterialInfo->StackupMatInStock( $inCAM, $jobId, undef, $area, \$errMes );
+
+	print "Result: $matOk Mess: $errMes ";
 }
 
 1;
