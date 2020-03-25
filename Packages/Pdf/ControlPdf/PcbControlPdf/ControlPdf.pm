@@ -399,7 +399,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $nested = $SR;
 	my $nested = 0;
 
-	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $nested, "en", 1 );
+	my $control = ControlPdf->new( $inCAM, $jobId, $step, 1, $nested, "en", 1 );
 
 	 
 	$control->AddInfoPreview( \$mess );
