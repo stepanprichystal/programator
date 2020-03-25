@@ -519,7 +519,7 @@ sub OnCheckGroupData {
 	}
 
 	# 14) Test if stackup material is on stock
-	my @affectOrder = HegMethods->GetOrdersByState( $self->{"jobId"}, 2 );    # Orders on Predvzrobni priprava
+	my @affectOrder = HegMethods->GetOrdersByState( $jobId, 2 );    # Orders on Predvzrobni priprava
 	my $area = undef;
 	if ( scalar(@affectOrder) ) {
 		my $inf           = HegMethods->GetInfoAfterStartProduce( $affectOrder[0]->{"reference_subjektu"} );

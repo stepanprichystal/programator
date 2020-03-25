@@ -904,10 +904,10 @@ sub GetPcbOrderNumbers {
 
 sub GetOrdersByState {
 	my $self  = shift;
-	my $pcbId = shift;
+	my $orderId = shift;
 	my $state = shift;
 
-	my @orders = $self->GetPcbOrderNumbers($pcbId);
+	my @orders = $self->GetPcbOrderNumbers($orderId);
 
 	@orders = grep { $_->{"stav"} == $state } @orders;
 

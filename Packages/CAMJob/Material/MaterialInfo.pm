@@ -15,7 +15,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
-
+use aliased 'Packages::ProductionPanel::StandardPanel::Enums' => 'StdPnlEnums';
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
@@ -174,7 +174,7 @@ sub StackupMatInStock {
 
 		my @mat = ();
 
-		if ( $pnl->IsStandard() ) {
+		if ( $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD) {
 
 			$prepregW = $pnl->GetStandard()->PrepregW();
 			$prepregH = $pnl->GetStandard()->PrepregH();
@@ -250,8 +250,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'CamHelpers::CamJob';
 
 	#my $inCAM = InCAM->new();
-	my $orderId = "d270204-02";
-	my $jobId   = "d270204";
+	my $orderId = "d276302-01";
+	my $jobId   = "d276302";
 	my $inCAM   = InCAM->new();
 
 	my $mess = "";
