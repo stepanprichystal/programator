@@ -78,7 +78,8 @@ sub OptSetCreate {
 	$$optName = GeneralHelper->GetGUID();
 	my $strSteps = join( "\\;", @steps );
 
- 
+
+
 	my $result = $inCAM->COM(
 							  "etset_create_opt",
 							  "job"          => $jobName,
@@ -90,11 +91,10 @@ sub OptSetCreate {
 							  "policy"       => "sm",
 							  "layers_list"  => ""
 	);
-	
-	$result += $inCAM->COM("etset_opt_cur","job" => $jobName,"step" => $stepName,"opt_name" => $$optName);
-	
+
+	$result += $inCAM->COM( "etset_opt_cur", "job" => $jobName, "step" => $stepName, "opt_name" => $$optName );
+
 	$result += $inCAM->COM("et_netlist_optimize");
-	
 
 	#if ok, InCAm return 0
 	if ( $result == 0 ) {
@@ -105,28 +105,27 @@ sub OptSetCreate {
 	}
 }
 
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::InCAM::InCAM';
-#	use aliased 'Packages::ETesting::BasicHelper::OptSet';
-#
-#	my $inCAM = InCAM->new();
-#
-#	my $jobName      = "f13610";
-#	my $stepName     = "panel";
-#	my $setupOptName = "atg_flying";
-#	my @steps        = ( "o+1", "mpanel" );
-#	my $optName      = OptSet->OptSetCreate( $inCAM, $jobName, $stepName, $setupOptName, \@steps );
-#
-#	if ( OptSet->OptSetExist( $inCAM, $jobName, $stepName, $optName ) ) {
-#
-#		OptSet->OptSetDelete( $inCAM, $jobName, $stepName, $optName );
-#	}
+	#	use aliased 'Packages::InCAM::InCAM';
+	#	use aliased 'Packages::ETesting::BasicHelper::OptSet';
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $jobName      = "f13610";
+	#	my $stepName     = "panel";
+	#	my $setupOptName = "atg_flying";
+	#	my @steps        = ( "o+1", "mpanel" );
+	#	my $optName      = OptSet->OptSetCreate( $inCAM, $jobName, $stepName, $setupOptName, \@steps );
+	#
+	#	if ( OptSet->OptSetExist( $inCAM, $jobName, $stepName, $optName ) ) {
+	#
+	#		OptSet->OptSetDelete( $inCAM, $jobName, $stepName, $optName );
+	#	}
 }
 
 1;

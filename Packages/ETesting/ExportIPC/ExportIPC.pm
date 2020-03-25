@@ -34,6 +34,7 @@ use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
 use aliased 'Packages::ETesting::BasicHelper::Helper';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'UniDTMEnums';
+use aliased 'CamHelpers::CamHistogram';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -461,7 +462,7 @@ sub __CleanLayers {
 					 "break_to_islands" => "yes"
 		);
 	}
-	
+
 	CamLayer->ClearLayers($inCAM);
 
 	# Clean Rout before plating
@@ -548,8 +549,26 @@ sub __CreateIpc {
 	# Raise result item for optimization set
 	my $resultItemOpSet = $self->_GetNewItem("Optimization");
 
+	# check empty soldermask layer (fake layers) and set as non board
+	my @emptySM = ();
+
+	foreach my $smL ( grep { $_->{"gROWlayer_type"} eq 'solder_mask' } CamJob->GetBoardBaseLayers( $inCAM, $jobId ) ) {
+
+		my %h = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $etStep, $smL->{"gROWname"} );
+		push( @emptySM, $smL->{"gROWname"} ) if ( $h{"total"} == 0 );
+	}
+
+	foreach my $sm (@emptySM) {
+		CamLayer->SetLayerContextLayer( $inCAM, $jobId, $sm, "misc" );
+	}
+
+	# 1) Optimize ET
 	my $optName;
 	my $resultOpSet = OptSet->OptSetCreate( $inCAM, $jobId, $etStep, $setupOptName, $optSteps, \$optName );
+
+	foreach my $sm (@emptySM) {
+		CamLayer->SetLayerContextLayer( $inCAM, $jobId, $sm, "board" );
+	}
 
 	unless ($resultOpSet) {
 		$resultItemOpSet->AddError( $inCAM->GetExceptionError() );
@@ -560,6 +579,7 @@ sub __CreateIpc {
 	# Raise result item for et set creation
 	my $resultItemEtSet = $self->_GetNewItem("Set creation");
 
+	# 2) Create ET set
 	my $etsetName;
 	my $resultEtSet = ETSet->ETSetCreate( $inCAM, $jobId, $etStep, $optName, \$etsetName );
 
@@ -579,6 +599,7 @@ sub __CreateIpc {
 		$outName .= "t";
 	}
 
+	# 3) Output IPC
 	$resultEtSet = ETSet->ETSetOutput( $inCAM, $jobId, $etStep, $optName, $etsetName, $outPath, $outName );
 
 	unless ($resultEtSet) {

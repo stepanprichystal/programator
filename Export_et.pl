@@ -13,9 +13,12 @@ use PackagesLib;
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::ETExport::ETExportTmp';
+use aliased 'Packages::Export::PreExport::FakeLayers';
 
-my $jobId    = "d229010";
+my $jobId    = "d276177";
 my $inCAM    = InCAM->new();
+
+FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
 
 #GET INPUT NIF INFORMATION
 my $stepToTest = "panel";

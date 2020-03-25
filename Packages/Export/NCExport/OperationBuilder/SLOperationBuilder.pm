@@ -243,10 +243,10 @@ sub __DefineNPlatedOperations {
 	$opManager->AddOperationDef( "fls", \@nplt_lsMill, -1 );
 
 	# 11) Operation name = fls - can contain layer
-	$opManager->AddOperationDef( "coverlayc", \@nplt_cvrlycMill, -1 );
+	$opManager->AddOperationDef( "cvrlyc", \@nplt_cvrlycMill, -1 );
 
 	# 11) Operation name = fls - can contain layer
-	$opManager->AddOperationDef( "coverlays", \@nplt_cvrlysMill, -1 );
+	$opManager->AddOperationDef( "cvrlys", \@nplt_cvrlysMill, -1 );
 
 	# 12) Operation name = fstiffc - can contain layer
 	# - @nplt_stiffcMill
