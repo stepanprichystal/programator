@@ -68,7 +68,7 @@ sub ProducPanelSchemeOk {
 	# 1) Check used schema from number of sig layers point of view
 	if ( $sigLCnt <= 2 ) {
 
-		if ( ! ($schLCnt > 0 &&  $schLCnt <= $sigLCnt)) {
+		if ( ! ($schLCnt > 1 &&  $schLCnt <=2)) {
 			$result = 0;
 		}
 	}
@@ -113,7 +113,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 		use aliased 'Packages::InCAM::InCAM';
 	
 		my $inCAM = InCAM->new();
-		my $jobId = "d241318";
+		my $jobId = "d276231";
 	
 		my $mess = "";
 	

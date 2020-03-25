@@ -596,7 +596,7 @@ sub OnCheckGroupData {
 	unless( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme )){
 		
 		$dataMngr->_AddErrorResult( "Špatné schéma",
-										 "Ve stepu panel vložené špatné scháma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)".
+										 "Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)".
 										 " Vlož do panelu správné schéma");
 			 
 	}
