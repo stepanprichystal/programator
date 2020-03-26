@@ -53,6 +53,18 @@ sub GetControlStep {
 	return $self->{"data"}->{"controlStep"};
 }
 
+sub SetControlInclNested {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"controlInclNested"} = $value;
+}
+
+sub GetControlInclNested {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"controlInclNested"};
+}
+
 sub SetControlLang {
 	my $self  = shift;
 	my $value = shift;

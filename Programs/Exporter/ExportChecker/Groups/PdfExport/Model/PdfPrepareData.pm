@@ -74,11 +74,7 @@ sub OnPrepareGroupData {
 	if ( $defaultInfo->IsPool() || (defined $custExportControl &&  $custExportControl == 0 )) {
 		$exportControl = 0;
 	}
-	
-	# TODO smazat
-	#if ( $defaultInfo->IsPool()){
-	#	$exportControl = 1;
-	#}
+ 
 	
 
 	# 2) define default step
@@ -90,7 +86,20 @@ sub OnPrepareGroupData {
 	else {
 		$defStep = "o+1";
 	}
+	
+	# x) default include nested steps preview
+ 
+	 my $inclNested = 0;
 
+	if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepCb"}->GetValue() ) ) {
+ 
+		if(scalar(CamStepRepeat->GetRepeatStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} ))> 1){
+			$inclNested = 1;
+		}
+	}
+	
+	$groupData->SetControlInclNested($inclNested);
+	 
 	# 3) default lang
 	my $defLang = "English";
 

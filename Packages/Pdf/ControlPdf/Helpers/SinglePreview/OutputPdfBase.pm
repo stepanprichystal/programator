@@ -330,7 +330,6 @@ sub __OutputRawPdf {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my ( $imgHeight, $imgWidth ) = $self->__GetImageSizeByMultipl( $multiplX, $multiplY );
 
 	# 1) Output one pdf per layer
 
@@ -352,9 +351,13 @@ sub __OutputRawPdf {
 		dest              => 'pdf_file',
 		num_copies        => '1',
 		dest_fname        => $sourcePdfPath,
-		#paper_size        => 'Other',
-		paper_width => $imgWidth/1000,
-		paper_height =>  $imgHeight/1000,
+		paper_size        => 'A4',
+#		paper_size        => 'custom',
+#		paper_width        => 100,
+#		paper_height        => 100,
+#		paper_units        => 'mm',
+#		scale_to=>0
+	 
 		nx                => 1,
 		ny                => 1,
 		orient            => 'none',
@@ -364,6 +367,7 @@ sub __OutputRawPdf {
 		right_margin      => '0',
 		"x_spacing"       => '0',
 		"y_spacing"       => '0',
+		
 
 	);
 
@@ -435,6 +439,7 @@ sub __OutputRawPdf {
 
 	my $mergedPdf = PDF::API2->new();
 	my $sourcePdf = PDF::API2->open($sourcePdfPath);
+		my ( $imgHeight, $imgWidth ) = $self->__GetImageSizeByMultipl( $multiplX, $multiplY );
 	
 	my $scale = min( $imgHeight / a4H, $imgWidth / a4W );
 
@@ -527,11 +532,11 @@ sub __OutputRawPdf {
 
 	}
 
-#	unlink($sourcePdf);
-#
-#	foreach my $pdf ( ( $profPdf, $prof1UpPdf, $profSpecPdf, $prof1UpSpecPdf ) ) {
-#		unlink($pdf) if ( defined $pdf );
-#	}
+	unlink($sourcePdf);
+
+	foreach my $pdf ( ( $profPdf, $prof1UpPdf, $profSpecPdf, $prof1UpSpecPdf ) ) {
+		unlink($pdf) if ( defined $pdf );
+	}
 
 	my $outputPdf = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 	$mergedPdf->saveas($outputPdf);

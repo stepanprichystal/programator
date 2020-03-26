@@ -6,6 +6,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf;
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use utf8;
@@ -40,18 +41,28 @@ use aliased 'Packages::NifFile::NifFile';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step = shift;
+	my $considerSR = shift;
+	my $detailPrev = shift;
+	my $lang = shift;
+	my $infoToPdf = shift;
+	
+
+	my $self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"}      = shift;
-	$self->{"jobId"}      = shift;
-	$self->{"step"}       = shift;
-	$self->{"considerSR"} = shift;    # show preview with step and repat data
-	$self->{"detailPrev"} = shift;    # do separate preview of nested step and repeat
-
+	$self->{"inCAM"}      = $inCAM;
+	$self->{"jobId"}      = $jobId;
+	$self->{"step"}       = $step;
+	$self->{"considerSR"} = $considerSR;    # show preview with step and repat data
+	$self->{"detailPrev"} = $detailPrev;    # do separate preview of nested step and repeat
 	$self->{"lang"}      = shift;     # language of pdf, values cz/en
 	$self->{"infoToPdf"} = shift;
+
 
 	# 1) Identify steps to process
 	my $srExist = CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
@@ -90,9 +101,11 @@ sub new {
 # Create stackup based on xml, and convert to png
 sub AddInfoPreview {
 	my $self = shift;
-	my $mess = shift;
+	my $mess = shift // \"";
 
 	my $result = 1;
+
+	my $resultItem = $self->_GetNewItem("General info");
 
 	$self->{"previewInfoReq"}->{"req"} = 1;
 
@@ -126,6 +139,9 @@ sub AddInfoPreview {
 		$$mess .= "Error during creating preview info page.\n";
 	}
 
+	$resultItem->AddError($$mess) unless ($result);    #  Add error to result
+	$self->_OnItemResult($resultItem);                 # Raise finish event
+
 	return $result;
 
 }
@@ -133,9 +149,11 @@ sub AddInfoPreview {
 # Create stackup based on xml, and convert to png
 sub AddStackupPreview {
 	my $self = shift;
-	my $mess = shift;
+	my $mess = shift // \"";
 
 	my $result = 1;
+
+	my $resultItem = $self->_GetNewItem("Stackup");
 
 	$self->{"previewStckpReq"}->{"req"} = 1;
 
@@ -161,13 +179,17 @@ sub AddStackupPreview {
 		$$mess .= "Error during creatin stackup pdf preview\n";
 	}
 
+	$self->_OnItemResult($resultItem);    # Raise finish event
+
 	return $result;
 }
 
 # Create image of real pcb from top
 sub AddImagePreview {
 	my $self = shift;
-	my $mess = shift;
+	my $mess = shift // \"";
+	my $top = shift // 1;
+	my $bot = shift // 1;
 
 	my $result;
 
@@ -175,6 +197,11 @@ sub AddImagePreview {
 	my $jobId = $self->{"jobId"};
 
 	foreach my $sInf ( @{ $self->{"steps"} } ) {
+		my $messTop = "";
+		my $messBot = "";
+
+		my $resultItemTop = $self->_GetNewItem( "Image TOP - " . $sInf->{"name"} );
+		my $resultItemBot = $self->_GetNewItem( "Image BOT - " . $sInf->{"name"} );
 
 		$self->{"previewImgReq"}->{ $sInf->{"name"} }->{"req"} = 1;
 
@@ -184,11 +211,15 @@ sub AddImagePreview {
 		my $previewTop = FinalPreview->new( $inCAM, $jobId, $sInf->{"name"} . "_pdf", EnumsFinal->View_FROMTOP );
 		my $previewBot = FinalPreview->new( $inCAM, $jobId, $sInf->{"name"} . "_pdf", EnumsFinal->View_FROMBOT );
 
-		unless ( $previewTop->Create($mess) ) {
+		unless ( $previewTop->Create( \$messTop ) ) {
+			$$mess .= $messTop;
+			$resultItemTop->AddError($messTop);
 			$result = 0;
 		}
 
-		unless ( $previewBot->Create($mess) ) {
+		unless ( $previewBot->Create( \$messBot ) ) {
+			$$mess .= $messBot;
+			$resultItemBot->AddError($messBot);
 			$result = 0;
 		}
 
@@ -229,8 +260,15 @@ sub AddImagePreview {
 		else {
 
 			$result = 0;
-			$$mess .= "Error during generate pdf page for top/bot image preview";
+
+			my $messTempl = "Error during generate pdf page for top/bot image preview";
+			$$mess .= $messTempl;
+			$resultItemTop->AddError($messTempl);
+			$resultItemBot->AddError($messTempl);
 		}
+
+		$self->_OnItemResult($resultItemTop);    # Raise finish event
+		$self->_OnItemResult($resultItemBot);    # Raise finish event
 
 		CamStep->DeleteStep( $inCAM, $jobId, $sInf->{"name"} . "_pdf" );
 	}
@@ -240,7 +278,7 @@ sub AddImagePreview {
 
 sub AddLayersPreview {
 	my $self = shift;
-	my $mess = shift;
+	my $mess = shift // \"";
 
 	my $result;
 
@@ -249,11 +287,14 @@ sub AddLayersPreview {
 
 	foreach my $sInf ( @{ $self->{"steps"} } ) {
 
+		my $messL      = "";
+		my $resultItem = $self->_GetNewItem( "Single layers TOP - " . $sInf->{"name"} );
+
 		$self->{"previewLayersReq"}->{ $sInf->{"name"} }->{"req"} = 1;
 
 		my $prev = SinglePreview->new( $inCAM, $jobId, $sInf->{"name"}, $sInf->{"considerSR"}, $self->{"lang"} );
 
-		if ( $prev->Create( 1, ( $sInf->{"containSR"} && !$sInf->{"considerSR"} && !$sInf->{"isNest"} ? 1 : 0 ), $mess ) ) {
+		if ( $prev->Create( 1, ( $sInf->{"containSR"} && !$sInf->{"considerSR"} && !$sInf->{"isNest"} ? 1 : 0 ), \$messL ) ) {
 			$self->{"previewLayersReq"}->{ $sInf->{"name"} }->{"outfile"} = $prev->GetOutput();
 
 			# Add page title
@@ -279,8 +320,12 @@ sub AddLayersPreview {
 		else {
 
 			$result = 0;
-			$$mess .= "Error during generate single layer preview for step: " . $sInf->{"name"};
+			$$messL .= "Error during generate single layer preview for step: " . $sInf->{"name"};
+			$$mess  .= $$messL;
+			$resultItem->AddError($$messL);
 		}
+
+		$self->_OnItemResult($resultItem);    # Raise finish event
 	}
 
 	return $result;
@@ -289,9 +334,11 @@ sub AddLayersPreview {
 # complete all together and create one single pdf
 sub GeneratePdf {
 	my $self = shift;
-	my $mess = shift;
+	my $mess = shift // \"";
 
 	my $result = 1;
+
+	my $resultItem = $self->_GetNewItem("Final PDF merge");
 
 	# 1) Before generating pdf, check if all required pages are available
 
@@ -346,6 +393,12 @@ sub GeneratePdf {
 		$self->{"outputPdf"}->Output( \@pdfFiles, $self->{"titles"} );
 
 	}
+	else {
+
+		$resultItem->AddError($$mess);
+	}
+
+	$self->_OnItemResult($resultItem);    # Raise finish event
 
 	return $result;
 }
@@ -390,22 +443,22 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d276177";
+	my $jobId = "d276179";
 
 	my $mess = "";
 
-	my $step   = "mpanel";
-	my $SR     = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
+	my $step = "o+1";
+	my $SR = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
+
 	#my $nested = $SR;
 	my $nested = 0;
 
-	my $control = ControlPdf->new( $inCAM, $jobId, $step, 1, $nested, "en", 1 );
+	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $nested, "en", 1 );
 
-	 
 	#$control->AddInfoPreview( \$mess );
 	#$control->AddStackupPreview( \$mess );
-	#$control->AddImagePreview( \$mess );
-	$control->AddLayersPreview( \$mess );
+	$control->AddImagePreview( \$mess, 1, 0 );
+	#$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 
 	unless ($reuslt) {

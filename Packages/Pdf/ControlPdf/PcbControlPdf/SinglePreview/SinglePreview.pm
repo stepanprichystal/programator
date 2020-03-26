@@ -95,7 +95,7 @@ sub Create {
 	my $multiplX = 3;
 	my $multiplY = 3;
 	if ( $featPerL > 4000 ) {
-		$multiplX = 3;
+		$multiplX = 2;
 		$multiplY = 2;
 	}
 	$self->{"outputPdf"}->Output( $self->{"layerList"}, $multiplX, $multiplY, $drawProfile, $drawProfile1Up, [ 255, 0, 0 ], [ 100, 100, 100 ] );

@@ -170,7 +170,6 @@ sub __SplitMultiPdf {
 	unlink($pdfOutput);
 }
 
-# Convert layer in pdf to PNG image
 sub __GetResolution {
 	my $self = shift;
 
@@ -249,6 +248,18 @@ sub __CreatePng {
 
 		# command convert pdf to png with specific resolution
 		push( @cmds1, " ( " );
+
+		# compute density whic depands on physical PCB size
+		my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
+		my $w = abs( $lim{"xMax"} - $lim{"xMin"} );    # value ten is 2x5 mm frame from each side, which is added
+		my $h = abs( $lim{"yMax"} - $lim{"yMin"} );    # value ten is 2x5 mm frame from each side, which is added
+
+		my $maxPcbSize = 400; # assume 400mm
+		my $inputVal = 1 + max( $w, $h ) / ( $maxPcbSize ) * 10;
+		my $logVal   = log($inputVal) / log(10);
+		my $dpiDelta = 200;
+		my $dpiBase  = 150;
+		my $dip      = $dpiBase + $dpiDelta * $logVal;
 
 		push( @cmds1, " -density 350" );
 		push( @cmds1, $dirPath . $l->GetOutputLayer() . ".pdf -flatten" );

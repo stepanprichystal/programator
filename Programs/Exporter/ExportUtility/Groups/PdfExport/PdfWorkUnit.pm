@@ -49,13 +49,14 @@ sub Init {
 	my $controlStep   = $taskData->GetControlStep();
 	my $controlLang   = $taskData->GetControlLang();
 	my $infoToPdf = $taskData->GetInfoToPdf();
+	my $inclNestedStep = $taskData->GetControlInclNested();
 	my $exportStackup = $taskData->GetExportStackup();
 	my $exportPressfit = $taskData->GetExportPressfit();
 	my $exportToleranceHole = $taskData->GetExportToleranceHole();
 	my $exportNCSpecial = $taskData->GetExportNCSpecial();
 	
 
-	my $mngr = PdfMngr->new( $inCAM, $jobId, $exportControl, $controlStep, $controlLang, $infoToPdf, $exportStackup, $exportPressfit, $exportToleranceHole, $exportNCSpecial );
+	my $mngr = PdfMngr->new( $inCAM, $jobId, $exportControl, $controlStep, $controlLang, $infoToPdf, $inclNestedStep,$exportStackup, $exportPressfit, $exportToleranceHole, $exportNCSpecial );
 
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 
