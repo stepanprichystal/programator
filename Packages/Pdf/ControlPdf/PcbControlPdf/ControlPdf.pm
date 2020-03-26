@@ -402,9 +402,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $control = ControlPdf->new( $inCAM, $jobId, $step, 1, $nested, "en", 1 );
 
 	 
-	$control->AddInfoPreview( \$mess );
-	$control->AddStackupPreview( \$mess );
-	$control->AddImagePreview( \$mess );
+	#$control->AddInfoPreview( \$mess );
+	#$control->AddStackupPreview( \$mess );
+	#$control->AddImagePreview( \$mess );
 	$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 

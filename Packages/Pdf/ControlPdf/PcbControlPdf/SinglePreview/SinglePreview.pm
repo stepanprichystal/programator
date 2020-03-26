@@ -43,7 +43,8 @@ sub new {
 
 	$self->{"layerList"} = LayerDataList->new( $self->{"lang"} );
 	$self->{"outputPdf"} =
-	  OutputPdfBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"outputData"}->GetStepName(), $self->{"lang"}, $self->{"outputPath"} );
+	  OutputPdfBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"outputData"}->GetStepName(),
+						  $self->{"lang"}, $self->{"outputPath"} );
 
 	return $self;
 }
@@ -76,21 +77,28 @@ sub Create {
 
 	# output single in 2x2 images per page
 	# define multiplicity per page by step size
-	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"step"} );
+	#	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"step"} );
+	#
+	#	my $w = abs( $lim{"xMax"} - $lim{"xMin"} );
+	#	my $h = abs( $lim{"yMax"} - $lim{"yMin"} );
 
-	my $w = abs( $lim{"xMax"} - $lim{"xMin"} );
-	my $h = abs( $lim{"yMax"} - $lim{"yMin"} );
-
-	my $multiplX = 3;
-	my $multiplY = 3;
-
-	# put 4x layer per page if PCB larger than 14cm
-	if ( max( $w, $h ) > 1400 ) {
-		$multiplX = 2;
-		$multiplY = 2;
+	my $featsCnt = 0;
+	my @layers   = $self->{"layerList"}->GetLayers();
+	foreach my $l ( map { $_->GetOutput() } @layers ) {
+		my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"outputData"}->GetStepName(), $l );
+		$featsCnt += $hist{"total"};
 	}
 
-	$self->{"outputPdf"}->Output( $self->{"layerList"}, $multiplX, $multiplY, $drawProfile, $drawProfile1Up, [ 255, 0, 0 ], [ 100, 100, 100 ]);
+	my $featPerL = $featsCnt / scalar(@layers);
+
+	# Decide if 9 or 4 layers per page
+	my $multiplX = 3;
+	my $multiplY = 3;
+	if ( $featPerL > 4000 ) {
+		$multiplX = 3;
+		$multiplY = 2;
+	}
+	$self->{"outputPdf"}->Output( $self->{"layerList"}, $multiplX, $multiplY, $drawProfile, $drawProfile1Up, [ 255, 0, 0 ], [ 100, 100, 100 ] );
 
 	# clear job
 	$self->{"outputData"}->Clear();
