@@ -37,6 +37,8 @@ use aliased 'Packages::CAM::Netlist::NetlistCompare';
 use aliased 'Packages::CAMJob::Scheme::SchemeCheck';
 use aliased 'Packages::CAMJob::Matrix::LayerNamesCheck';
 use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
+use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
+use aliased 'Packages::ProductionPanel::StandardPanel::Enums' => 'StdPnlEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -416,6 +418,35 @@ sub OnCheckGroupData {
 									"Nelze použít velký rozměr panelu protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm" );
 	}
 
+	my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+
+	# X) If HAL PB and physical size of panel is larger than 460
+	my $maxHALPB = 460;    # max panel height for PB HAL
+	if ( $surface =~ /A/i && $layerCnt <= 2 ) {
+
+		if ( abs( $profLim{"yMax"} - $profLim{"yMin"} ) > $maxHALPB ) {
+
+			$dataMngr->_AddErrorResult(
+										"Panel dimension",
+										"Nelze použít panel s výškou: "
+										  . abs( $profLim{"yMax"} - $profLim{"yMin"} )
+										  . "mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
+			);
+		}
+	}
+	elsif ( $surface =~ /A/i && $layerCnt > 2 ) {
+
+		my $pnl = StandardBase->new( $inCAM, $jobId );
+		if ( $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD && $pnl->HFr() > $maxHALPB ) {
+			$dataMngr->_AddErrorResult(
+										"Panel dimension",
+										"Nelze použít panel s výškou (po ofrézování rámečku): "
+										  . $pnl->HFr()
+										  . " mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
+			);
+		}
+	}
+
 	# 11) Check gold finger layers (goldc, golds)
 	my $goldFinger       = 0;
 	my @goldFingerLayers = ();
@@ -461,7 +492,7 @@ sub OnCheckGroupData {
 
 	}
 
-	# 13) Check if goldfinge exist or galvanic surface if panel equal to standard small dimension
+	# 13) Check if goldfinge exist or galvanic surface (G)  if panel equal to standard small dimension
 	if ( $surface =~ /G/i || $goldFinger ) {
 
 		# height: small standard VV - 407, small standard VV - 355
@@ -590,15 +621,17 @@ sub OnCheckGroupData {
 		$dataMngr->_AddWarningResult( "Customer schema",
 						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
 	}
-	
+
 	# X) Check production panel schema
 	my $usedPnlScheme = undef;
-	unless( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme )){
-		
-		$dataMngr->_AddErrorResult( "Špatné schéma",
-										 "Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)".
-										 " Vlož do panelu správné schéma");
-			 
+	unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme ) ) {
+
+		$dataMngr->_AddErrorResult(
+									"Špatné schéma",
+									"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
+									  . " Vlož do panelu správné schéma"
+		);
+
 	}
 
 	# 17) Check if all our "board" layers are realy board

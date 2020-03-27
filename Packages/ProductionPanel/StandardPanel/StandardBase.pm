@@ -13,9 +13,13 @@ use warnings;
 use aliased 'Packages::ProductionPanel::StandardPanel::Enums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::ProductionPanel::StandardPanel::Standard::StandardList';
 use aliased 'Packages::ProductionPanel::StandardPanel::Standard::Standard';
+use aliased 'Packages::Polygon::PolygonFeatures';
+use aliased 'Packages::Polygon::Features::Features::Features';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -31,6 +35,8 @@ sub new {
 	$self->{"step"}     = shift // "panel";
 	$self->{"accuracy"} = shift // 0.2;       # accoracy during dimension comparing, default +-200µ
 
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+
 	# Determine panel limits
 	my %profLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 	my %areaLim = CamStep->GetActiveAreaLim( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
@@ -43,7 +49,18 @@ sub new {
 	$self->{"wArea"}   = abs( $areaLim{"xMax"} - $areaLim{"xMin"} );
 	$self->{"hArea"}   = abs( $areaLim{"yMax"} - $areaLim{"yMin"} );
 
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+	if ( $self->{"layerCnt"} > 2 ) {
+
+		die "Fr layer doesn't exist" unless ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "fr" ) );
+		my $route = Features->new();
+		$route->Parse( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "fr" );
+		my %frLim = PolygonFeatures->GetLimByRectangle( [ $route->GetFeatures() ] );
+		$self->{"frLim"} = \%frLim;
+		$self->{"wFr"}   = abs( $frLim{"xMax"} - $frLim{"xMin"} );
+		$self->{"hFr"}   = abs( $frLim{"yMax"} - $frLim{"yMin"} );
+	}
+
+	
 
 	# Determine pcb type
 	$self->{"pcbType"} = undef;
@@ -126,14 +143,15 @@ sub GetStandardType {
 }
 
 # Return 1 if pcb is type Enums->Type_STANDARD, ale 0
-sub IsStandard{
+sub IsStandard {
 	my $self = shift;
-	
-	if($self->GetStandardType() eq Enums->Type_STANDARD){
+
+	if ( $self->GetStandardType() eq Enums->Type_STANDARD ) {
 
 		return 1;
-	}else{
-		
+	}
+	else {
+
 		return 0;
 	}
 }
@@ -202,6 +220,18 @@ sub HArea {
 	my $self = shift;
 
 	return $self->{"hArea"};
+}
+
+sub WFr {
+	my $self = shift;
+
+	return $self->{"wFr"};
+}
+
+sub HFr {
+	my $self = shift;
+
+	return $self->{"hFr"};
 }
 
 #-------------------------------------------------------------------------------------------#
