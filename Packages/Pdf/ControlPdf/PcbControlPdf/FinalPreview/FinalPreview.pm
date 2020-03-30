@@ -8,6 +8,9 @@ package Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::FinalPreview;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
+use Scalar::Util qw(blessed);
+use Storable qw(dclone);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -18,7 +21,11 @@ use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::OutputPrepa
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::Helper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums';
@@ -35,25 +42,33 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift;
-	$self->{"pdfStep"} = shift;
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"step"}     = shift;
+	$self->{"viewType"} = shift;         # TOP/BOT
+	$self->{"default"}  = shift;         # indicate this class/pdf step is d
+	$self->{"cloned"}   = shift // 0;    # Fell if this object is cloned;
 
-	$self->{"viewType"} = shift;    # TOP/BOT
-
-	$self->{"layerList"} = LayerDataList->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, );
-	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"} );
+	$self->{"pdfStep"} = ( $self->{"default"} ? "default" : $self->{"step"} ) . "_pdf";
 	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
+
+	$self->{"stepPrepared"} = 0;
 
 	return $self;
 }
 
 # Create image preview
-sub Create {
-	my $self    = shift;
-	my $message = shift;
-	
+sub Prepare {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $parent = first { $_->{"type"} eq 'parent' } @{ $self->{"steps"} };
+	my @layerFilter = map { $_->{"gROWname"} } CamJob->GetBoardLayers( $inCAM, $jobId );
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"pdfStep"}, 1, \@layerFilter );
+
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
 
 	# get all board layers
@@ -67,12 +82,29 @@ sub Create {
 	CamDrilling->AddNCLayerType( \@nclayers );
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@nclayers );
 
-	# set layer list
-	$self->{"layerList"}->InitLayers( \@layers );
+	$self->{"layerList"} = LayerDataList->new( $self->{"viewType"} );
+	$self->{"layerList"}->InitLayers( $self->{"inCAM"}, $self->{"jobId"}, \@layers );
 	$self->{"layerList"}->InitSurfaces( $self->__DefineSurfaces() );
 
-	$self->{"outputPrepare"}->PrepareLayers( $self->{"layerList"} );
-	$self->{"outputPdf"}->Output( $self->{"layerList"} );
+	# set layer list
+
+	my $OutputPrepare = OutputPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"} );
+	$OutputPrepare->PrepareLayers( $self->{"layerList"} );
+
+	$self->{"stepPrepared"} = 1;
+
+	return 1;
+}
+
+# Create image preview
+sub Create {
+	my $self           = shift;
+	my $message        = shift;
+	my $reducedQuality = shift;
+
+	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
+
+	$self->{"outputPdf"}->Output( $self->{"layerList"}, $reducedQuality );
 
 	return 1;
 }
@@ -80,8 +112,78 @@ sub Create {
 # Return path of image
 sub GetOutput {
 	my $self = shift;
+	
+	die "Layers are not prepared" unless($self->{"stepPrepared"});
 
 	return $self->{"outputPdf"}->GetOutput();
+}
+
+# Clone thic objcet + prepared step
+# 1) Copy prepared step to new step
+# 2) If new setep is nested step od current step, pick 1 arbitrary nested step, cut data around this step
+# 3) Clone and return thic object
+sub ClonePrepared {
+	my $self         = shift;
+	my $newStep      = shift;
+	my $cutByProfile = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $newPdftep = $newStep . "_pdf";
+
+	# 1) Copy prepared step to new step
+	CamStep->CopyStep( $inCAM, $jobId, $self->{"pdfStep"}, $jobId, $newPdftep );
+
+	# 2) Remove all behind new step profile
+	if ($cutByProfile) {
+		my $prof = GeneralHelper->GetGUID();
+		my $sr = first { $_->{"stepName"} eq $newStep } CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $self->{"step"} );
+
+		CamHelper->SetStep( $inCAM, $newPdftep );
+		CamStepRepeat->AddStepAndRepeat( $inCAM, $newPdftep, $sr->{"stepName"}, $sr->{"originX"}, $sr->{"originY"}, $sr->{"angle"} );
+		CamHelper->SetStep( $inCAM, $newStep );
+		$inCAM->COM( "profile_to_rout", "layer" => $prof, "width" => 200 );
+		CamHelper->SetStep( $inCAM, $newPdftep );
+		CamLayer->FlatternLayer( $inCAM, $jobId, $newPdftep, $prof );
+		CamStep->CreateProfileByLayer( $inCAM, $newPdftep, $prof );
+		$inCAM->COM('sredit_del_steps');
+
+		foreach my $lData ( $self->{"layerList"}->GetOutputLayers() ) {
+			CamLayer->ClipAreaByProf( $inCAM, $lData->GetOutputLayer(), 0, 0, 1 );    # do not clip outline rout 3mm behuind profile
+		}
+
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $prof );
+	}
+
+	# 3) Clone this object (by creating new)
+
+	my $className = blessed $self;
+	my $finPreview = $className->new( $inCAM, $jobId, $newStep, $self->{"viewType"}, 0, 1 );
+	$finPreview->{"stepPrepared"} = $self->{"stepPrepared"};
+	$finPreview->{"layerList"}    = dclone( $self->{"layerList"} );
+
+	return $finPreview;
+}
+
+sub Clean {
+	my $self        = shift;
+	my $cleanLayers = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	CamStep->DeleteStep( $inCAM, $jobId, $self->{"pdfStep"} );
+
+	if ( !$self->{"cloned"} ) {
+
+		# delete helper layers
+		foreach my $lData ( $self->{"layerList"}->GetOutputLayers() ) {
+
+			$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
+		}
+	}
+
 }
 
 #sub __ConvertPdfToPng {
@@ -110,6 +212,27 @@ sub GetOutput {
 #
 #	return;
 #}
+
+sub __InitLayers {
+	my $self  = shift;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @layers = CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
+
+	# check if gold plating exist - layer c, s and set indicator gold_plating => 1 to layer
+	$self->__SetGoldPlating( \@layers );
+
+	# add nc info to nc layers
+	my @nclayers = grep { $_->{"gROWlayer_type"} eq "rout" || $_->{"gROWlayer_type"} eq "drill" } @layers;
+	CamDrilling->AddNCLayerType( \@nclayers );
+	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@nclayers );
+
+	$self->{"layerList"} = LayerDataList->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, );
+	$self->{"layerList"}->InitLayers( \@layers );
+	$self->{"layerList"}->InitSurfaces( $self->__DefineSurfaces() );
+
+}
 
 # Each pcb layer is represent bz color/texture
 # this method is responsible for choose this color/texture, transparency, 3d effects, etc..

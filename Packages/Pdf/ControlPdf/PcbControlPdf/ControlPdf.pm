@@ -14,6 +14,7 @@ use strict;
 use warnings;
 use File::Copy;
 use PDF::API2;
+use List::Util qw(first);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -21,6 +22,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -43,14 +45,13 @@ use aliased 'Packages::NifFile::NifFile';
 sub new {
 	my $class = shift;
 
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
+	my $step       = shift;
 	my $considerSR = shift;
 	my $detailPrev = shift;
-	my $lang = shift;
-	my $infoToPdf = shift;
-	
+	my $lang       = shift;
+	my $infoToPdf  = shift;
 
 	my $self = $class->SUPER::new(@_);
 	bless $self;
@@ -60,21 +61,20 @@ sub new {
 	$self->{"step"}       = $step;
 	$self->{"considerSR"} = $considerSR;    # show preview with step and repat data
 	$self->{"detailPrev"} = $detailPrev;    # do separate preview of nested step and repeat
-	$self->{"lang"}      = shift;     # language of pdf, values cz/en
-	$self->{"infoToPdf"} = shift;
-
+	$self->{"lang"}       = $lang;          # language of pdf, values cz/en
+	$self->{"infoToPdf"}  = $infoToPdf;
 
 	# 1) Identify steps to process
 	my $srExist = CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 	die "Step: " . $self->{"step"} . " doesn't contain SR" if ( $self->{"considerSR"} && !$srExist );
 
 	# a) main step
-	my @steps = ( { "name" => $self->{"step"}, "containSR" => $srExist, "considerSR" => $self->{"considerSR"}, "isNest" => 0 } );
+	my @steps = ( { "name" => $self->{"step"}, "containSR" => $srExist, "considerSR" => $self->{"considerSR"}, "type" => 'parent' } );
 
 	# b) nested steps
 	if ( $self->{"detailPrev"} ) {
 		my @nested = CamStepRepeat->GetUniqueStepAndRepeat( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
-		push( @steps, map { { "name" => $_->{"stepName"}, "containSR" => 0, "considerSR" => 0, "isNest" => 1 } } @nested );
+		push( @steps, map { { "name" => $_->{"stepName"}, "containSR" => 0, "considerSR" => 0, "type" => 'nested' } } @nested );
 	}
 
 	$self->{"steps"}  = \@steps;
@@ -188,13 +188,21 @@ sub AddStackupPreview {
 sub AddImagePreview {
 	my $self = shift;
 	my $mess = shift // \"";
-	my $top = shift // 1;
-	my $bot = shift // 1;
+	my $top  = shift // 1;
+	my $bot  = shift // 1;
 
 	my $result;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
+	# Create common source step id more steps to output
+	my $parent = first { $_->{"type"} eq 'parent' } @{ $self->{"steps"} };
+	my $previewTopDef = FinalPreview->new( $inCAM, $jobId, $parent->{"name"}, EnumsFinal->View_FROMTOP, 1 );
+	my $previewBotDef = FinalPreview->new( $inCAM, $jobId, $parent->{"name"}, EnumsFinal->View_FROMBOT, 1 );
+
+	$previewTopDef->Prepare() if ($top);
+	$previewBotDef->Prepare() if ($bot);
 
 	foreach my $sInf ( @{ $self->{"steps"} } ) {
 		my $messTop = "";
@@ -205,30 +213,56 @@ sub AddImagePreview {
 
 		$self->{"previewImgReq"}->{ $sInf->{"name"} }->{"req"} = 1;
 
-		my @layerFilter = map { $_->{"gROWname"} } CamJob->GetBoardLayers( $inCAM, $jobId );
-		CamStep->CreateFlattenStep( $inCAM, $jobId, $sInf->{"name"}, $sInf->{"name"} . "_pdf", 1, \@layerFilter );
+		# 1) Generate image
+		my $previewTop = undef;
+		my $previewBot = undef;
 
-		my $previewTop = FinalPreview->new( $inCAM, $jobId, $sInf->{"name"} . "_pdf", EnumsFinal->View_FROMTOP );
-		my $previewBot = FinalPreview->new( $inCAM, $jobId, $sInf->{"name"} . "_pdf", EnumsFinal->View_FROMBOT );
+		if ( scalar( @{ $self->{"steps"} } ) > 1 ) {
 
-		unless ( $previewTop->Create( \$messTop ) ) {
-			$$mess .= $messTop;
-			$resultItemTop->AddError($messTop);
-			$result = 0;
+			my $cutProfData = ( $sInf->{"type"} eq 'nested' ? 1 : 0 );
+
+			$previewTop = $previewTopDef->ClonePrepared( $sInf->{"name"}, $cutProfData ) if ($top);
+			$previewBot = $previewBotDef->ClonePrepared( $sInf->{"name"}, $cutProfData ) if ($bot);
+		}
+		else {
+
+			$previewTop = $previewTopDef;
+			$previewBot = $previewBotDef;
 		}
 
-		unless ( $previewBot->Create( \$messBot ) ) {
-			$$mess .= $messBot;
-			$resultItemBot->AddError($messBot);
-			$result = 0;
+		# If details preview are requested, reduce image qulity of panel by 50%
+		my $reducedQuality = undef;
+		$reducedQuality = 70 if ( $self->{"detailPrev"} && $sInf->{"type"} eq 'parent' );
+
+		if ($top) {
+
+			#next if($sInf->{"name"} eq "mpanel");
+
+			unless ( $previewTop->Create( \$messTop, $reducedQuality ) ) {
+				$$mess .= $messTop;
+				$resultItemTop->AddError($messTop);
+				$result = 0;
+			}
+
+			$previewTop->Clean();
 		}
 
-		# Fill data template
+		if ($bot) {
+			unless ( $previewBot->Create( \$messBot, $reducedQuality ) ) {
+				$$mess .= $messBot;
+				$resultItemBot->AddError($messBot);
+				$result = 0;
+			}
+
+			$previewBot->Clean();
+		}
+
+		# 2) Fill data template with images
 		my $templData = TemplateKey->new();
 		my $fillTempl = FillTemplatePrevImg->new( $inCAM, $jobId );
 
-		my $pTop = $previewTop->GetOutput();
-		my $pBot = $previewBot->GetOutput();
+		my $pTop = $previewTop->GetOutput() if ($top);
+		my $pBot = $previewBot->GetOutput() if ($bot);
 
 		$fillTempl->FillKeysData( $templData, $pTop, $pBot, $self->{"infoToPdf"} );
 
@@ -249,9 +283,9 @@ sub AddImagePreview {
 				$title = "Shipping units";
 			}
 
-			my $detailExist = scalar( grep { $_->{"isNest"} } @{ $self->{"steps"} } );
+			my $detailExist = scalar( grep { $_->{"type"} eq 'nested' } @{ $self->{"steps"} } );
 			if ($detailExist) {
-				$title .= " - " . ( !$sInf->{"isNest"} ? "panel" : "single" );
+				$title .= " - " . ( $sInf->{"type"} eq 'parent' ? "panel" : "single" );
 			}
 
 			$self->__AddPageTitle($title);
@@ -270,7 +304,12 @@ sub AddImagePreview {
 		$self->_OnItemResult($resultItemTop);    # Raise finish event
 		$self->_OnItemResult($resultItemBot);    # Raise finish event
 
-		CamStep->DeleteStep( $inCAM, $jobId, $sInf->{"name"} . "_pdf" );
+	}
+
+	if ( scalar( @{ $self->{"steps"} } ) > 1 ) {
+
+		$previewTopDef->Clean() if ($top);
+		$previewBotDef->Clean() if ($bot);
 	}
 
 	return $result;
@@ -288,13 +327,14 @@ sub AddLayersPreview {
 	foreach my $sInf ( @{ $self->{"steps"} } ) {
 
 		my $messL      = "";
-		my $resultItem = $self->_GetNewItem( "Single layers TOP - " . $sInf->{"name"} );
+		my $resultItem = $self->_GetNewItem( "Single layers - " . $sInf->{"name"} );
 
 		$self->{"previewLayersReq"}->{ $sInf->{"name"} }->{"req"} = 1;
 
 		my $prev = SinglePreview->new( $inCAM, $jobId, $sInf->{"name"}, $sInf->{"considerSR"}, $self->{"lang"} );
 
-		if ( $prev->Create( 1, ( $sInf->{"containSR"} && !$sInf->{"considerSR"} && !$sInf->{"isNest"} ? 1 : 0 ), \$messL ) ) {
+		my $draw1UpProfile = $sInf->{"containSR"} && !$sInf->{"considerSR"} && $sInf->{"type"} eq "parent" ? 1 : 0;
+		if ( $prev->Create( 1, $draw1UpProfile, \$messL ) ) {
 			$self->{"previewLayersReq"}->{ $sInf->{"name"} }->{"outfile"} = $prev->GetOutput();
 
 			# Add page title
@@ -307,9 +347,9 @@ sub AddLayersPreview {
 				$title = "Production data";
 			}
 
-			my $detailExist = scalar( grep { $_->{"isNest"} } @{ $self->{"steps"} } );
+			my $detailExist = scalar( grep { $_->{"type"} eq 'nested' } @{ $self->{"steps"} } );
 			if ($detailExist) {
-				$title .= " - " . ( !$sInf->{"isNest"} ? "panel" : "single" );
+				$title .= " - " . ( $sInf->{"type"} eq 'parent' ? "panel" : "single" );
 			}
 
 			my $pdf = PDF::API2->open( $prev->GetOutput() );
@@ -443,21 +483,22 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d276179";
+	my $jobId = "d146753";
 
 	my $mess = "";
 
-	my $step = "o+1";
+	my $step = "mpanel";
 	my $SR = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
 
 	#my $nested = $SR;
-	my $nested = 0;
+	my $detailPrev = 1;
 
-	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $nested, "en", 1 );
+	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $detailPrev, "en", 1 );
 
 	#$control->AddInfoPreview( \$mess );
 	#$control->AddStackupPreview( \$mess );
 	$control->AddImagePreview( \$mess, 1, 0 );
+
 	#$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 
@@ -465,7 +506,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 		print STDERR "Error:" . $mess;
 	}
 
-	#
 	$control->GetOutputPath();
 
 }

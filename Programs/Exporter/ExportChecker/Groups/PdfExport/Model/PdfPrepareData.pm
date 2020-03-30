@@ -15,6 +15,7 @@ use warnings;
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
@@ -91,9 +92,9 @@ sub OnPrepareGroupData {
  
 	 my $inclNested = 0;
 
-	if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepCb"}->GetValue() ) ) {
+	if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $defStep ) ) {
  
-		if(scalar(CamStepRepeat->GetRepeatStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} ))> 1){
+		if(scalar(CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $defStep ))> 1){
 			$inclNested = 1;
 		}
 	}

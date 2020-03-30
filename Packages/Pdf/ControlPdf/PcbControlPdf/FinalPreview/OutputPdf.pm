@@ -21,6 +21,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'Enums::EnumsGeneral';
@@ -44,12 +45,141 @@ sub new {
 sub Output {
 	my $self      = shift;
 	my $layerList = shift;
+	my $reducedQuality = shift;
 
-	$self->_Output($layerList);
+	$self->__OptimizeLayers($layerList),
+	$self->_Output($layerList, $reducedQuality);
 	
 	$self->__FinalTransform($layerList);
 }
 
+# Clip area arpound profile
+# Create border around pcb which is responsible for keep all layer dimension same
+# border is 5mm behind profile
+# if preview is bot, mirror data
+sub __OptimizeLayers {
+	my $self      = shift;
+	my $layerList = shift;
+
+	my $inCAM  = $self->{"inCAM"};
+	my @layers = $layerList->GetOutputLayers();
+
+	# 1) Clip area behind profile
+
+	CamLayer->ClearLayers($inCAM);
+
+	foreach my $l ( grep { $_->GetType() ne Enums->Type_NPLTTHROUGHNC } @layers ) {
+
+		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+	}
+
+	# clip area around profile
+	$inCAM->COM(
+		"clip_area_end",
+		"layers_mode" => "affected_layers",
+		"layer"       => "",
+		"area"        => "profile",
+
+		#"area_type"   => "rectangle",
+		"inout"       => "outside",
+		"contour_cut" => "yes",
+		#"margin"      => ( $self->{"pdfStep"} eq "pdf_panel" ? "0" : "1000" ),    # keep panel dimension, else add extra margin 1mm
+		"margin"      => 0,    # keep panel dimension, else add extra margin 1mm
+		"feat_types"  => "line\;pad;surface;arc;text",
+		"pol_types"   => "positive\;negative"
+	);
+	$inCAM->COM(
+				 "affected_layer",
+				 "mode"     => "all",
+				 "affected" => "no"
+	);
+
+	# 2) Create frame 5mm behind profile. Frame define border of layer data
+
+	my $lName = GeneralHelper->GetGUID();
+	$inCAM->COM(
+				 'create_layer',
+				 "layer"     => $lName,
+				 "context"   => 'misc',
+				 "type"      => 'document',
+				 "polarity"  => 'positive',
+				 "ins_layer" => ''
+	);
+	CamLayer->WorkLayer( $inCAM, $lName );
+
+	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, 1 );
+
+	# frame width 2mm
+	my $frame = 4;
+
+	my @coord = ();
+
+	my %p1 = (
+			   "x" => $lim{"xMin"} - $frame,
+			   "y" => $lim{"yMin"} - $frame
+	);
+	my %p2 = (
+			   "x" => $lim{"xMin"} - $frame,
+			   "y" => $lim{"yMax"} + $frame
+	);
+	my %p3 = (
+			   "x" => $lim{"xMax"} + $frame,
+			   "y" => $lim{"yMax"} + $frame
+	);
+	my %p4 = (
+			   "x" => $lim{"xMax"} + $frame,
+			   "y" => $lim{"yMin"} - $frame
+	);
+	push( @coord, \%p1 );
+	push( @coord, \%p2 );
+	push( @coord, \%p3 );
+	push( @coord, \%p4 );
+
+	# frame 100µm width around pcb (fr frame coordinate)
+	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r10", "positive", 1 );
+
+	# copy border to all output layers
+
+	my @layerStr = map { $_->GetOutputLayer() } @layers;
+	my $layerStr = join( "\\;", @layerStr );
+	$inCAM->COM(
+		"sel_copy_other",
+		"dest"         => "layer_name",
+		"target_layer" => $layerStr,
+		"invert"       => "no"
+
+	);
+
+	$inCAM->COM( 'delete_layer', "layer" => $lName );
+	CamLayer->ClearLayers($inCAM);
+
+	# if preview from BOT mirror all layers
+	if ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
+
+		my $rotateBy = undef;
+
+	 
+
+		my $x = abs( $lim{"xMax"} - $lim{"xMin"} );
+		my $y = abs( $lim{"yMax"} - $lim{"yMin"} );
+
+		if ( $x <= $y ) {
+
+			$rotateBy = "y";
+		}
+		else {
+
+			$rotateBy = "x";
+		}
+
+		foreach my $l (@layers) {
+
+			CamLayer->WorkLayer( $inCAM, $l->GetOutputLayer() );
+			CamLayer->MirrorLayerData( $inCAM, $l->GetOutputLayer(), $rotateBy );
+		}
+	}
+
+}
 
 sub __FinalTransform{
 	my $self = shift;

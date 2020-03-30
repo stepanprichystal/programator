@@ -135,7 +135,7 @@ sub FillKeysData {
 
 	$template->SetKey( "SilkBotVal", $silkBotValEn, $silkBotValCz );
 
-	$template->SetKey( "PcbThickness", "Material thickness", "Tloušťka materiálu" );
+	$template->SetKey( "PcbThickness", "Base thickness", "Základní tloušťka" );
 
 	$template->SetKey( "PcbThicknessVal", $stackupInf{"thick"} );
 

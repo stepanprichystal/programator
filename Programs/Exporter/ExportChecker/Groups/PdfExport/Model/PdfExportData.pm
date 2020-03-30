@@ -48,11 +48,13 @@ sub OnExportGroupData {
  	$exportData->SetExportControl( $groupData->GetExportControl() );
 	$exportData->SetControlStep( $groupData->GetControlStep() );
 	$exportData->SetControlLang( $groupData->GetControlLang() );
+	$exportData->SetInfoToPdf( $groupData->GetInfoToPdf() );
+	$exportData->SetControlInclNested( $groupData->GetControlInclNested() );
 	$exportData->SetExportStackup( $groupData->GetExportStackup() );
 	$exportData->SetExportPressfit( $groupData->GetExportPressfit() );
 	$exportData->SetExportToleranceHole( $groupData->GetExportToleranceHole() );
 	$exportData->SetExportNCSpecial( $groupData->GetExportNCSpecial() );
-	$exportData->SetInfoToPdf( $groupData->GetInfoToPdf() );
+
 	
 	 
 	return $exportData;

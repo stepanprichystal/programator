@@ -37,11 +37,14 @@ sub new {
 }
 
 sub InitLayers {
-	my $self = shift;
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my $layers = shift;
 
-	my @pdfLayers = $self->__InitLayers(@_);
+	my @pdfLayers = $self->__InitLayers( $inCAM, $jobId, $layers );
 
-	$self->__DisableLayer( \@pdfLayers );
+	$self->__DisableLayer( $inCAM, $jobId, \@pdfLayers );
 
 	$self->_SetLayers( \@pdfLayers );
 }
@@ -157,19 +160,19 @@ sub GetBackground {
 #-------------------------------------------------------------------------------------------#
 
 sub __InitLayers {
-	my $self = shift;
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my $layers = shift;
 
-	my @boardL = @{ shift(@_) };
-
-	my $jobId = $self->{"jobId"};
-	my $inCAM = $self->{"inCAM"};
+	my @boardL = @{$layers};
 
 	# Go through job matrix and prepare job layers by proper direction from TOP to BOT (seen from TOP)
 	# By order is mean physical order of all layers ( plus order of NC operations) on PCB
 
 	my @pdfLayers = ();
 	my $layerCnt  = CamJob->GetSignalLayer( $inCAM, $jobId );
-	my $stackup   = Stackup->new($inCAM, $jobId) if ( $layerCnt > 2 );
+	my $stackup   = Stackup->new( $inCAM, $jobId ) if ( $layerCnt > 2 );
 	my $isFlex    = JobHelper->GetIsFlex($jobId);
 
 	# 1) Prepare layers which are visible  from both sides TOP and BOT
@@ -321,11 +324,11 @@ sub __InitLayers {
 				my $position = $i == 1 || $i == scalar(@stackupL) - 2 ? "out" : "in";
 				my $viewType;
 
-				if ( $stackupL[ $i -1 ]->GetType() eq EnumsStack->MaterialType_COPPER && $stackupL[ $i - 1 ]->GetCopperName() eq "c" ) {
+				if ( $stackupL[ $i - 1 ]->GetType() eq EnumsStack->MaterialType_COPPER && $stackupL[ $i - 1 ]->GetCopperName() eq "c" ) {
 					$viewType = Enums->Visible_FROMTOP;
 
 				}
-				elsif ( $stackupL[ $i + 1 ]->GetType() eq EnumsStack->MaterialType_COPPER &&  $stackupL[ $i + 1 ]->GetCopperName() eq "s" ) {
+				elsif ( $stackupL[ $i + 1 ]->GetType() eq EnumsStack->MaterialType_COPPER && $stackupL[ $i + 1 ]->GetCopperName() eq "s" ) {
 					$viewType = Enums->Visible_FROMBOT;
 				}
 				else {
@@ -475,10 +478,9 @@ sub __InitLayers {
 # Make some layer NON active depends of PCB type and view side
 sub __DisableLayer {
 	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
 	my $pdfLayers = shift;
-
-	my $jobId = $self->{"jobId"};
-	my $inCAM = $self->{"inCAM"};
 
 	my $pcbType  = JobHelper->GetPcbType($jobId);
 	my $isFlex   = JobHelper->GetIsFlex($jobId);

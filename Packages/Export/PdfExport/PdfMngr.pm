@@ -107,13 +107,16 @@ sub __ExportDataControl {
 	my $controlPdf =
 	  ControlPdf->new( $inCAM, $jobId, $self->{"controlStep"}, $considerSR, $self->{"controlInclNested"}, $lang, $self->{"controlInfoToPdf"} );
 
+	my $f = sub {
+		
+		my $self = $_[0];
+				my $item = $_[1];
+				$item->SetGroup("Control data");
+				$self->_OnItemResult($item);
+	};
+
 	$controlPdf->{"onItemResult"}->Add(
-		sub {
-			my $self = $_[0];
-			my $item = $_[1];
-			$item->SetGroup("Control data");
-			$self->_OnItemResult($item);
-		}
+		sub {$f->($self,@_)}
 	);
 
 	# 1) Create Info preview
@@ -121,7 +124,7 @@ sub __ExportDataControl {
 	$controlPdf->AddInfoPreview();
 
 	# 2) Create stackup
-	u $controlPdf->AddStackupPreview();
+	$controlPdf->AddStackupPreview();
 
 	# 3) Create Preview images
 

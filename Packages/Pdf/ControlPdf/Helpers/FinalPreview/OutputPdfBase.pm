@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamFilter';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::SystemCall::SystemCall';
+use aliased 'Packages::Tests::Test';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -47,9 +48,12 @@ sub GetOutput {
 	return $self->{"outputPath"};
 }
 
+
+
 sub _Output {
 	my $self      = shift;
 	my $layerList = shift;
+	my $reducedQuality = shift; # percentage or reduction image DPI eg.: 50% means resolution is decreased by 50%
 
 	my $result = 1;
 
@@ -92,38 +96,34 @@ sub _Output {
 	unless ( -e $multiPdf ) {
 		die "Nepodarilo se vytvorit PDF, asi chyba \"CAT.exe\" nic s jobem nedelej a volej SPR";
 	}
-
-	# delete helper layers
-	foreach my $lData (@layers) {
-
-		$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
-	}
-
+ 
 	# 2) split whole pdf to single pdf
 	$self->__SplitMultiPdf( $layerList, $multiPdf, $dirPath );
 
-	# 3) compute image resolution by phzsic size of pcb
-	my %resolution = $self->__GetResolution();
+	# 3) compute image DPI and resolution by physic size of pcb
+	my $DPI = $self->__GetImageDPIQuality($reducedQuality);
+	
+	my %resolution = $self->__GetResolution($DPI);
 
 	# 3) conver each pdf page to image
-	$self->__CreatePng( $layerList, $dirPath, \%resolution );
+	$self->__CreatePng( $layerList, $dirPath, $DPI, \%resolution );
 
 	# 4) merge all images together
 	$self->__MergePng( $layerList, $dirPath );
 
 	# 5) delete temporary png and directory
-	foreach my $l (@layers) {
-		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
-
-			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
-		}
-		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
-
-			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
-		}
-	}
-
-	rmdir($dirPath);
+#	foreach my $l (@layers) {
+#		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
+#
+#			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
+#		}
+#		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
+#
+#			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
+#		}
+#	}
+#
+#	rmdir($dirPath);
 
 }
 
@@ -170,63 +170,146 @@ sub __SplitMultiPdf {
 	unlink($pdfOutput);
 }
 
-sub __GetResolution {
-	my $self = shift;
+# Image DPI depands on physical PCB size.
+# More larger PCB more heigher DPI (we need good detail quality after image zoom)
+# Minimum DPI = 150
+# Maximum DPI = 350 and more
+# Function for return DPI is logarithmic,
+# it means there is no big different in DPI value for large and extra large PCB (still around 350 - 400 DPI)
 
+sub __GetImageDPIQuality {
+	my $self  = shift;
+	my $reducedQuality = shift // 100;
+	
+	
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	my $maxPcbSize = 500;    # assume max PCB size is around 400mm
+
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"pdfStep"} );
 
-	my $x = abs( $lim{"xMax"} - $lim{"xMin"} ) + 8;    # value ten is 2x5 mm frame from each side, which is added
-	my $y = abs( $lim{"yMax"} - $lim{"yMin"} ) + 8;    # value ten is 2x5 mm frame from each side, which is added
+	my $x       = abs( $lim{"xMax"} - $lim{"xMin"} );
+	my $y       = abs( $lim{"yMax"} - $lim{"yMin"} );
+	my $pcbSize = max( $x, $y );
 
-	my $maxPcbSize = 300;                              # asume, max pcb are 350 mm long
-	my $pcbSize = max( $x, $y );                       # longer side of actual pcb
+	# Compute input value for logarithm. Wee need number 1-10
+	# +1 because we dont want negative values nee number
+	# *10 because wee need number between 0-10
+	my $inputVal = 1 + $pcbSize / $maxPcbSize * 10;
+	my $logVal   = log($inputVal) / log(10);
+	my $dpiDelta = 150;                               # flating value of DPI based on PCB size
+	my $dpiBase  = 200;                               # stable value of DPI (minimum for each PCB size)
+	my $dpi      = $dpiBase + $dpiDelta * $logVal;
 
-	my $maxFloatRes = 2000;                            # resolution of 'x', which is depand on image size
+	$dpi *= $reducedQuality/100;
 
-	my $pcbFloatRes = $pcbSize / $maxPcbSize * $maxFloatRes;
+	Diag("PcbSize: $pcbSize; input log value: $inputVal; Log val:= $logVal; DPI: $dpi (Reduced by: $reducedQuality %)");
 
-	# max resolution, if pcb has max size
-	my $maxResX = 3000;
-	my $maxResY = 4245;
+	return int($dpi);
+}
 
-	# if pcb x dimension exceed max x dimension
-	#if ( $pcbResolution > $maxFloatRes ) {
-	#$pcbResolution = $maxFloatRes;
-	#}
+sub __GetResolution {
+	my $self = shift;
+	my $dpi  = shift;
+		my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"pdfStep"} );
 
-	# final pcb resolution, compute resolution Y side
+	my $x       = abs( $lim{"xMax"} - $lim{"xMin"} )  + 8;    # value ten is 2x5 mm frame from each side, which is added;
+	my $y       = abs( $lim{"yMax"} - $lim{"yMin"} )  + 8;    # value ten is 2x5 mm frame from each side, which is added;
+	my $pcbSize = max( $x, $y );
+ 
+	my $a4W     = 210;
+	my $a4H     = 297;
+	my $textureH = 4245; # Surface texture are 3000*4245 mm
+	my $textureW = 3000;
 
-	my $pcbResY = int( ( $maxResY - $maxFloatRes ) + $pcbFloatRes );
+	my $resY = $a4H /24.5*$dpi; # assume image is printed to PDF longer side is vertical 
+	my $resX =  min($x, $y)/max($x, $y) *  $resY;
 
-	if ( $pcbResY > $maxResY ) {
-		$pcbResY = $maxResY;
+	# Check y resolution is smaller tha ntxture height
+	if($resY > $textureH){
+		$resY = $textureH;
+		$resX = min($x, $y)/max($x, $y) *  $resY;
 	}
 
-	my $pcbResX = int( ( $pcbResY / max( $x, $y ) ) * min( $x, $y ) );    # compute y size based on pcb ratio
-
-	# if y resolution is begger than max, recompute y resolution
-
-	if ( $pcbResX > $maxResX ) {
-
-		$pcbResX = $maxResX;
-		$pcbResY = int( ( $pcbResX / min( $x, $y ) ) * max( $x, $y ) );   # compute y size based on pcb ratio
+	# Check x resolution is smaller tha ntxture width
+	if($resX > $textureW){
+		$resX = $a4W/24.5*$dpi;
+		$resY =  max($x, $y)/min($x, $y) *  $resX;
 	}
 
-	# test if pcb resolution in y exceed max y dimension
+	Diag("Resolution for PCB is: $resX x $resY mm");
 
-	my %res = ( "x" => $pcbResX, "y" => $pcbResY );
+	my %res = ( "x" => int($resX), "y" => int($resY) );
 
 	return %res;
 }
+
+#
+#sub __GetResolution {
+#	my $self = shift;
+#	my $dpi  = shift;
+#
+#	my $inCAM = $self->{"inCAM"};
+#	my $jobId = $self->{"jobId"};
+#
+#	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"pdfStep"} );
+#
+#	my $x = abs( $lim{"xMax"} - $lim{"xMin"} ) + 8;    # value ten is 2x5 mm frame from each side, which is added
+#	my $y = abs( $lim{"yMax"} - $lim{"yMin"} ) + 8;    # value ten is 2x5 mm frame from each side, which is added
+#
+#	my $maxPcbSize = 300;                              # asume, max pcb are 350 mm long
+#	my $pcbSize = max( $x, $y );                       # longer side of actual pcb
+#
+#	my $maxFloatRes = 2000;                            # resolution of 'x', which is depand on image size
+#
+#	my $pcbFloatRes = $pcbSize / $maxPcbSize * $maxFloatRes;
+#
+#	# max resolution, if pcb has max size (aspect ratio of A4 where layers are print)
+#	my $maxResX = 3000;
+#	my $maxResY = 4245;
+#
+#	# if pcb x dimension exceed max x dimension
+#	#if ( $pcbResolution > $maxFloatRes ) {
+#	#$pcbResolution = $maxFloatRes;
+#	#}
+#
+#	# final pcb resolution, compute resolution Y side
+#
+#	my $pcbResY = int( ( $maxResY - $maxFloatRes ) + $pcbFloatRes );
+#
+#	if ( $pcbResY > $maxResY ) {
+#		$pcbResY = $maxResY;
+#	}
+#
+#	my $pcbResX = int( ( $pcbResY / max( $x, $y ) ) * min( $x, $y ) );    # compute y size based on pcb ratio
+#
+#	# if y resolution is begger than max, recompute y resolution
+#
+#	if ( $pcbResX > $maxResX ) {
+#
+#		$pcbResX = $maxResX;
+#		$pcbResY = int( ( $pcbResX / min( $x, $y ) ) * max( $x, $y ) );   # compute y size based on pcb ratio
+#	}
+#
+#	# test if pcb resolution in y exceed max y dimension
+#
+#	my %res = ( "x" => $pcbResX, "y" => $pcbResY );
+#
+#	Diag("Resolution for PCB is: $pcbResX x $pcbResY mm");
+#
+#	return %res;
+#}
 
 # Convert layer in pdf to PNG image
 sub __CreatePng {
 	my $self       = shift;
 	my $layerList  = shift;
 	my $dirPath    = shift;
+	my $DPI = shift;
 	my $resolution = shift;
 
 	my @layers = $layerList->GetOutputLayers();
@@ -249,19 +332,8 @@ sub __CreatePng {
 		# command convert pdf to png with specific resolution
 		push( @cmds1, " ( " );
 
-		# compute density whic depands on physical PCB size
-		my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
-		my $w = abs( $lim{"xMax"} - $lim{"xMin"} );    # value ten is 2x5 mm frame from each side, which is added
-		my $h = abs( $lim{"yMax"} - $lim{"yMin"} );    # value ten is 2x5 mm frame from each side, which is added
-
-		my $maxPcbSize = 400; # assume 400mm
-		my $inputVal = 1 + max( $w, $h ) / ( $maxPcbSize ) * 10;
-		my $logVal   = log($inputVal) / log(10);
-		my $dpiDelta = 200;
-		my $dpiBase  = 150;
-		my $dip      = $dpiBase + $dpiDelta * $logVal;
-
-		push( @cmds1, " -density 350" );
+ 
+		push( @cmds1, " -density $DPI" );
 		push( @cmds1, $dirPath . $l->GetOutputLayer() . ".pdf -flatten" );
 		push( @cmds1, "-shave 20x20 -trim -shave 5x5" );                     # shave two borders around image
 		push( @cmds1, "-resize " . $resolution->{"x"} );
@@ -290,6 +362,7 @@ sub __CreatePng {
 			my $texturPath = GeneralHelper->Root() . "\\Resources\\Textures\\" . $layerSurf->GetTexture() . ".jpeg";
 
 			push( @cmds2, $texturPath . " -crop " . $resolution->{"x"} . "x" . $resolution->{"y"} . "+0+0" );
+			 
 		}
 
 		# Add brightness

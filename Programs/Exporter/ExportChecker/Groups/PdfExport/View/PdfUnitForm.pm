@@ -103,6 +103,7 @@ sub __SetLayoutControl {
 	my $szRowDetail2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRowDetail3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRowDetail4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRowDetail5 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	#my $szRowDetail4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
@@ -111,6 +112,7 @@ sub __SetLayoutControl {
 
 	my $stepTxt     = Wx::StaticText->new( $statBox, -1, "Step",          &Wx::wxDefaultPosition, [ 120, 20 ] );
 	my $langTxt     = Wx::StaticText->new( $statBox, -1, "Language",      &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $inclNestedTxt = Wx::StaticText->new( $statBox, -1, "Incl nested steps", &Wx::wxDefaultPosition, [ 120, 20 ] );
 	my $operatorTxt = Wx::StaticText->new( $statBox, -1, "Operator info", &Wx::wxDefaultPosition, [ 120, 20 ] );
 
 	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
@@ -128,7 +130,7 @@ sub __SetLayoutControl {
 	# SET EVENTS
 
 	Wx::Event::EVT_CHECKBOX( $exportControlChb, -1, sub { $self->__OnExportControlChange(@_) } );
-	Wx::Event::EVT_CHECKBOX( $inclNestedChb,    -1, sub { $self->__OnControlStepChange(@_) } );
+	Wx::Event::EVT_COMBOBOX( $stepCb,    -1, sub { $self->__OnControlStepChange(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -140,8 +142,12 @@ sub __SetLayoutControl {
 	$szRowDetail3->Add( $langTxt, 0, &Wx::wxALL, 0 );
 	$szRowDetail3->Add( $langCb,  0, &Wx::wxALL, 0 );
 
-	$szRowDetail4->Add( $operatorTxt, 0, &Wx::wxALL, 0 );
-	$szRowDetail4->Add( $operatorChb, 0, &Wx::wxALL, 0 );
+	$szRowDetail4->Add( $inclNestedTxt, 0, &Wx::wxALL, 0 );
+	$szRowDetail4->Add( $inclNestedChb, 0, &Wx::wxALL, 0 );
+	
+	$szRowDetail5->Add( $operatorTxt, 0, &Wx::wxALL, 0 );
+	$szRowDetail5->Add( $operatorChb,  0, &Wx::wxALL, 0 );
+	
 
 	$szStatBox->Add( $szRowDetail1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
@@ -149,6 +155,7 @@ sub __SetLayoutControl {
 	$szStatBox->Add( $szRowDetail2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRowDetail3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szRowDetail4, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRowDetail5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 	$self->{"exportControlChb"} = $exportControlChb;
@@ -263,25 +270,23 @@ sub __OnExportControlChange {
 
 sub __OnControlStepChange {
 	my $self = shift;
-
-	my $step =;
-
+	
 	my $inclNested = 0;
 
 	if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepCb"}->GetValue() ) ) {
 
-		$self->{"stepCb"}->Enable();
-		
-		if(scalar(CamStepRepeat->GetRepeatStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} ))> 1){
+		$self->{"inclNestedChb"}->Enable();
+
+		if ( scalar( CamStepRepeat->GetRepeatStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepCb"}->GetValue() ) ) > 1 ) {
 			$inclNested = 1;
 		}
 	}
 	else {
 
-		$self->{"stepCb"}->Disable();
+		$self->{"inclNestedChb"}->Disable();
 	}
-	
-	$self->{"stepCb"}->SetValue($inclNested);
+
+	$self->{"inclNestedChb"}->SetValue($inclNested);
 
 }
 
@@ -326,10 +331,10 @@ sub DisableControls {
 
 	if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepCb"}->GetValue() ) ) {
 
-		$self->{"stepCb"}->Enable();
+		$self->{"inclNestedChb"}->Enable();
 	}
 	else {
-		$self->{"stepCb"}->Disable();
+		$self->{"inclNestedChb"}->Disable();
 	}
 
 }
@@ -363,6 +368,7 @@ sub SetControlStep {
 	my $val  = shift;
 
 	$self->{"stepCb"}->SetValue($val);
+	$self->__OnControlStepChange();
 }
 
 sub GetControlStep {
