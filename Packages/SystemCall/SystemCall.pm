@@ -78,18 +78,6 @@ sub Run {
 
 	$processObj->Wait(INFINITE);
 	
-#	#	my @cmd = ("perl");
-#	#	push( @cmd, $self->{"runScrpit"} );
-#	#
-#	#	push( @cmd, $self->{"scriptPath"} );
-#	#	push( @cmd, $self->{"output"} );
-#	#	push( @cmd, $filesStr );
-#	#
-#	#	my $cmdStr = join( " ", @cmd );
-#
-#	#print STDERR "\n\ncommand: $cmdStr\n\n";
-#
-#	#system($cmdStr);
 
 	# read output
 
@@ -100,6 +88,8 @@ sub Run {
 		my $json = JSON->new();
 
 		$self->{"outputData"} = $json->decode($serializeData);
+		
+		unlink($self->{"output"});
 
 	}
 	else {

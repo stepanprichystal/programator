@@ -4,7 +4,7 @@
 # Amd Which layer merge
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerData;
+package Packages::Pdf::ControlPdf::Helpers::ImgPreview::LayerData::LayerData;
 
 #3th party library
 use strict;

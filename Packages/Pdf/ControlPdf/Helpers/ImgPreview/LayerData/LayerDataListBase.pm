@@ -4,7 +4,7 @@
 # This sctructure contain list <LayerData> and operations with this items
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerDataListBase;
+package Packages::Pdf::ControlPdf::Helpers::ImgPreview::LayerData::LayerDataListBase;
 
 #3th party library
 use strict;
@@ -12,7 +12,7 @@ use warnings;
 use Storable qw(dclone);
 
 #local library
-use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerData';
+use aliased 'Packages::Pdf::ControlPdf::Helpers::ImgPreview::LayerData::LayerData';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Connectors::HeliosConnector::HegMethods';

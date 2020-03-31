@@ -35,7 +35,7 @@ unless ($cmds) {
 }
  
 
-my $MAX_THREADS = 4; # max 3x convert.exe is running
+my $MAX_THREADS = 6; # max 3x convert.exe is running
  
 
 # Threads add their ID to this queue when they are ready for work

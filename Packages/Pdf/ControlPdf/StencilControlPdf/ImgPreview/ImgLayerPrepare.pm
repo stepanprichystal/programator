@@ -3,7 +3,7 @@
 # Description: Responsible for prepare layers before print as pdf
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::OutputPrepare;
+package Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::ImgLayerPrepare;
 
 #3th party library
 use threads;
@@ -18,7 +18,7 @@ use Image::Size;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::Enums';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamFilter';

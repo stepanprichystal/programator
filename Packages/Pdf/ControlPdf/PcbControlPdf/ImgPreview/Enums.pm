@@ -1,5 +1,5 @@
 
-package Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums;
+package Packages::Pdf::ControlPdf::PcbControlPdf::ImgPreview::Enums;
 
 use constant {
 	Type_RIGIDMATOUTER => "typeRigidMatOuter",

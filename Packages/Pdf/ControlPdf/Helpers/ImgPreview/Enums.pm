@@ -1,5 +1,5 @@
 
-package Packages::Pdf::ControlPdf::Helpers::FinalPreview::Enums;
+package Packages::Pdf::ControlPdf::Helpers::ImgPreview::Enums;
 
  
  

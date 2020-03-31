@@ -4,8 +4,8 @@
 # This sctructure contain list <LayerData> and operations with this items
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::LayerData::LayerDataList;
-use base ('Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerDataListBase');
+package Packages::Pdf::ControlPdf::PcbControlPdf::ImgPreview::LayerData::LayerDataList;
+use base ('Packages::Pdf::ControlPdf::Helpers::ImgPreview::LayerData::LayerDataListBase');
 
 #3th party library
 use strict;
@@ -13,9 +13,9 @@ use warnings;
 use List::MoreUtils qw(first_index);
 
 #local library
-use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerData';
-use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums';
-use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::Enums' => 'PrevEnums';
+use aliased 'Packages::Pdf::ControlPdf::Helpers::ImgPreview::LayerData::LayerData';
+use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ImgPreview::Enums';
+use aliased 'Packages::Pdf::ControlPdf::Helpers::ImgPreview::Enums' => 'PrevEnums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamJob';
@@ -129,7 +129,7 @@ sub GetBackground {
 	my @l =
 	  $self->GetLayers( Enums->Type_MASK, ( $self->{"viewType"} eq Enums->View_FROMTOP ? Enums->Visible_FROMTOP : Enums->Visible_FROMBOT ) );
 
-	if ( defined $l[0] ) {
+	if ( defined $l[0] && $l[0]->HasLayers()) {
 		my $surf = $l[0]->GetSurface();
 
 		if ( $surf->GetType() eq PrevEnums->Surface_COLOR && $surf->GetColor() eq "250,250,250" ) {

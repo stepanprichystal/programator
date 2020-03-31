@@ -74,6 +74,7 @@ sub ParseStackup {
 	);
 
 	close($fStackupXml);
+	unlink(EnumsPaths->Client_INCAMTMPOTHER . $fname);
 	
 	if(defined $xml->{"soll"} && $xml->{"soll"} ne ""){
 		

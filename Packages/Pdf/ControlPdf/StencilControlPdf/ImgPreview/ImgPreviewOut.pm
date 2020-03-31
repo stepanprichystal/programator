@@ -4,8 +4,8 @@
 # Prepare each export layer, print as pdf, convert to image => than merge all layers together
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::OutputPdf;
-use base('Packages::Pdf::ControlPdf::Helpers::FinalPreview::OutputPdfBase');
+package Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::ImgPreviewOut;
+use base('Packages::Pdf::ControlPdf::Helpers::ImgPreview::ImgPreviewOutBase');
 
 #3th party library
 use threads;
@@ -19,7 +19,7 @@ use Image::Size;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::Enums';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::Enums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamFilter';

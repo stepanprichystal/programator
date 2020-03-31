@@ -3,14 +3,14 @@
 # Description: Information about color or texcture of given layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerColor;
+package Packages::Pdf::ControlPdf::Helpers::ImgPreview::LayerData::LayerColor;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::Enums';
+use aliased 'Packages::Pdf::ControlPdf::Helpers::ImgPreview::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

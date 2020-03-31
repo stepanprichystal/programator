@@ -4,7 +4,7 @@
 # Prepare each export layer, print as pdf, convert to image => than merge all layers together
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::Helpers::FinalPreview::OutputPdfBase;
+package Packages::Pdf::ControlPdf::Helpers::ImgPreview::ImgPreviewOutBase;
 
 #3th party library
 use strict;
@@ -17,7 +17,7 @@ use Image::Size;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::Enums' => 'PrevEnums';
+use aliased 'Packages::Pdf::ControlPdf::Helpers::ImgPreview::Enums' => 'PrevEnums';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamFilter';
@@ -37,6 +37,8 @@ sub new {
 	$self->{"inCAM"}      = shift;
 	$self->{"jobId"}      = shift;
 	$self->{"pdfStep"}    = shift;
+	$self->{"layerList"}  = shift;
+	$self->{"viewType"}   = shift;
 	$self->{"outputPath"} = shift;
 
 	return $self;
@@ -48,18 +50,15 @@ sub GetOutput {
 	return $self->{"outputPath"};
 }
 
-
-
 sub _Output {
-	my $self      = shift;
-	my $layerList = shift;
-	my $reducedQuality = shift; # percentage or reduction image DPI eg.: 50% means resolution is decreased by 50%
+	my $self           = shift;
+	my $reducedQuality = shift;    # percentage or reduction image DPI eg.: 50% means resolution is decreased by 50%
 
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
 
-	my @layers = $layerList->GetOutputLayers();
+	my @layers = $self->{"layerList"}->GetOutputLayers();
 
 	# folder, where are putted temporary layer pdf and layer png
 	my $dirPath = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . "\\";
@@ -96,44 +95,45 @@ sub _Output {
 	unless ( -e $multiPdf ) {
 		die "Nepodarilo se vytvorit PDF, asi chyba \"CAT.exe\" nic s jobem nedelej a volej SPR";
 	}
- 
+
 	# 2) split whole pdf to single pdf
-	$self->__SplitMultiPdf( $layerList, $multiPdf, $dirPath );
+	$self->__SplitMultiPdf( $multiPdf, $dirPath );
 
 	# 3) compute image DPI and resolution by physic size of pcb
 	my $DPI = $self->__GetImageDPIQuality($reducedQuality);
-	
+
 	my %resolution = $self->__GetResolution($DPI);
 
 	# 3) conver each pdf page to image
-	$self->__CreatePng( $layerList, $dirPath, $DPI, \%resolution );
+	$self->__CreatePng( $dirPath, $DPI, \%resolution );
 
 	# 4) merge all images together
-	$self->__MergePng( $layerList, $dirPath );
+	$self->__MergePng($dirPath);
 
 	# 5) delete temporary png and directory
-#	foreach my $l (@layers) {
-#		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
-#
-#			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
-#		}
-#		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
-#
-#			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
-#		}
-#	}
-#
-#	rmdir($dirPath);
+	foreach my $l (@layers) {
+		if ( -e $dirPath . $l->GetOutputLayer() . ".png" ) {
+
+			unlink( $dirPath . $l->GetOutputLayer() . ".png" );
+		}
+		if ( -e $dirPath . $l->GetOutputLayer() . ".pdf" ) {
+
+			unlink( $dirPath . $l->GetOutputLayer() . ".pdf" );
+		}
+	}
+
+	rmdir($dirPath);
+
+	return $result;
 
 }
 
 sub __SplitMultiPdf {
 	my $self      = shift;
-	my $layerList = shift;
 	my $pdfOutput = shift;
 	my $dirPath   = shift;
 
-	my @layers = $layerList->GetOutputLayers();
+	my @layers = $self->{"layerList"}->GetOutputLayers();
 
 	my $pdf_in = PDF::API2->open($pdfOutput);
 
@@ -178,10 +178,9 @@ sub __SplitMultiPdf {
 # it means there is no big different in DPI value for large and extra large PCB (still around 350 - 400 DPI)
 
 sub __GetImageDPIQuality {
-	my $self  = shift;
+	my $self = shift;
 	my $reducedQuality = shift // 100;
-	
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
@@ -198,11 +197,11 @@ sub __GetImageDPIQuality {
 	# *10 because wee need number between 0-10
 	my $inputVal = 1 + $pcbSize / $maxPcbSize * 10;
 	my $logVal   = log($inputVal) / log(10);
-	my $dpiDelta = 150;                               # flating value of DPI based on PCB size
-	my $dpiBase  = 200;                               # stable value of DPI (minimum for each PCB size)
+	my $dpiDelta = 170;                               # flating value of DPI based on PCB size
+	my $dpiBase  = 150;                               # stable value of DPI (minimum for each PCB size)
 	my $dpi      = $dpiBase + $dpiDelta * $logVal;
 
-	$dpi *= $reducedQuality/100;
+	$dpi *= $reducedQuality / 100;
 
 	Diag("PcbSize: $pcbSize; input log value: $inputVal; Log val:= $logVal; DPI: $dpi (Reduced by: $reducedQuality %)");
 
@@ -210,35 +209,35 @@ sub __GetImageDPIQuality {
 }
 
 sub __GetResolution {
-	my $self = shift;
-	my $dpi  = shift;
-		my $inCAM = $self->{"inCAM"};
+	my $self  = shift;
+	my $dpi   = shift;
+	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
+
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $self->{"pdfStep"} );
 
-	my $x       = abs( $lim{"xMax"} - $lim{"xMin"} )  + 8;    # value ten is 2x5 mm frame from each side, which is added;
-	my $y       = abs( $lim{"yMax"} - $lim{"yMin"} )  + 8;    # value ten is 2x5 mm frame from each side, which is added;
+	my $x       = abs( $lim{"xMax"} - $lim{"xMin"} ) + 8;    # value ten is 2x5 mm frame from each side, which is added;
+	my $y       = abs( $lim{"yMax"} - $lim{"yMin"} ) + 8;    # value ten is 2x5 mm frame from each side, which is added;
 	my $pcbSize = max( $x, $y );
- 
-	my $a4W     = 210;
-	my $a4H     = 297;
-	my $textureH = 4245; # Surface texture are 3000*4245 mm
+
+	my $a4W      = 210;
+	my $a4H      = 297;
+	my $textureH = 4245;                                     # Surface texture are 3000*4245 mm
 	my $textureW = 3000;
 
-	my $resY = $a4H /24.5*$dpi; # assume image is printed to PDF longer side is vertical 
-	my $resX =  min($x, $y)/max($x, $y) *  $resY;
+	my $resY = $a4H / 24.5 * $dpi;                           # assume image is printed to PDF longer side is vertical
+	my $resX = min( $x, $y ) / max( $x, $y ) * $resY;
 
 	# Check y resolution is smaller tha ntxture height
-	if($resY > $textureH){
+	if ( $resY > $textureH ) {
 		$resY = $textureH;
-		$resX = min($x, $y)/max($x, $y) *  $resY;
+		$resX = min( $x, $y ) / max( $x, $y ) * $resY;
 	}
 
 	# Check x resolution is smaller tha ntxture width
-	if($resX > $textureW){
-		$resX = $a4W/24.5*$dpi;
-		$resY =  max($x, $y)/min($x, $y) *  $resX;
+	if ( $resX > $textureW ) {
+		$resX = $a4W / 24.5 * $dpi;
+		$resY = max( $x, $y ) / min( $x, $y ) * $resX;
 	}
 
 	Diag("Resolution for PCB is: $resX x $resY mm");
@@ -307,12 +306,11 @@ sub __GetResolution {
 # Convert layer in pdf to PNG image
 sub __CreatePng {
 	my $self       = shift;
-	my $layerList  = shift;
 	my $dirPath    = shift;
-	my $DPI = shift;
+	my $DPI        = shift;
 	my $resolution = shift;
 
-	my @layers = $layerList->GetOutputLayers();
+	my @layers = $self->{"layerList"}->GetOutputLayers();
 
 	my @allCmds = ();
 
@@ -332,7 +330,6 @@ sub __CreatePng {
 		# command convert pdf to png with specific resolution
 		push( @cmds1, " ( " );
 
- 
 		push( @cmds1, " -density $DPI" );
 		push( @cmds1, $dirPath . $l->GetOutputLayer() . ".pdf -flatten" );
 		push( @cmds1, "-shave 20x20 -trim -shave 5x5" );                     # shave two borders around image
@@ -362,7 +359,7 @@ sub __CreatePng {
 			my $texturPath = GeneralHelper->Root() . "\\Resources\\Textures\\" . $layerSurf->GetTexture() . ".jpeg";
 
 			push( @cmds2, $texturPath . " -crop " . $resolution->{"x"} . "x" . $resolution->{"y"} . "+0+0" );
-			 
+
 		}
 
 		# Add brightness
@@ -457,7 +454,7 @@ sub __CreatePng {
 	print STDERR "threat created (conversion pdf => png)\n";
 
 	# conversion is processed in another perl instance by this script
-	my $script = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\Helpers\\FinalPreview\\CreatePng.pl";
+	my $script = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\Helpers\\ImgPreview\\CreatePng.pl";
 
 	my $createPngCall = SystemCall->new( $script, \@allCmds );
 	unless ( $createPngCall->Run(1) ) {
@@ -471,11 +468,10 @@ sub __CreatePng {
 
 # Merge converted png together
 sub __MergePng {
-	my $self      = shift;
-	my $layerList = shift;
-	my $dirPath   = shift;
+	my $self    = shift;
+	my $dirPath = shift;
 
-	my @layers = $layerList->GetOutputLayers();
+	my @layers = $self->{"layerList"}->GetOutputLayers();
 
 	my @layerStr2 = map { $dirPath . $_->GetOutputLayer() . ".png" } @layers;
 	my $layerStr2 = join( " ", @layerStr2 );
@@ -487,13 +483,13 @@ sub __MergePng {
 	my @cmd = ( EnumsPaths->Client_IMAGEMAGICK . "convert.exe" );
 	push( @cmd, $layerStr2 );
 
-	push( @cmd, "-background " . $self->_ConvertColor( $layerList->GetBackground() ) );
+	push( @cmd, "-background " . $self->_ConvertColor( $self->{"layerList"}->GetBackground() ) );
 	push( @cmd, "-flatten" );
 	push( @cmd, "-trim" );
 
 	#if background image is not white, add little border around whole image
-	if ( $layerList->GetBackground() ne "255,255,255" ) {
-		push( @cmd, "-bordercolor " . $self->_ConvertColor( $layerList->GetBackground() ) . " -border 20x20" );
+	if ( $self->{"layerList"}->GetBackground() ne "255,255,255" ) {
+		push( @cmd, "-bordercolor " . $self->_ConvertColor( $self->{"layerList"}->GetBackground() ) . " -border 20x20" );
 	}
 
 	#push( @cmd, "-blur 0.2x0.2" );
@@ -502,7 +498,7 @@ sub __MergePng {
 
 	my $cmdStr = join( " ", @cmd );
 
-	print STDERR "Image: " . $self->{""} . ", CMD:\n$cmdStr\n";
+	print STDERR "Image: CMD:\n$cmdStr\n";
 
 	my $systeMres = system($cmdStr);
 

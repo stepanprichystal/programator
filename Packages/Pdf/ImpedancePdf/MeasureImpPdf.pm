@@ -83,7 +83,7 @@ sub Create {
 				my $dataLayer = $self->__PrepareDataLayer($c);
 				my $impLayer = $self->__PrepareImpLayer( $step->{"stepName"}, $c, $i + 1, scalar(@constr), $stackup );
 
-				push( @outputPaths, $self->__OutputPdf( $step->{"stepName"}, $dataLayer, $impLayer ) );
+				push( @outputPaths, $self->__ImgPreviewOut( $step->{"stepName"}, $dataLayer, $impLayer ) );
 				
 				$self->_OnItemResult($resultItem);
 			}
@@ -91,7 +91,7 @@ sub Create {
 	}
 
 	# Merge all pdf file
-	$self->__MergeAndOutputPdf(\@outputPaths);
+	$self->__MergeAndImgPreviewOut(\@outputPaths);
 
 
 	return 1;
@@ -182,7 +182,7 @@ sub __PrepareImpLayer {
 	return $lName;
 }
 
-sub __OutputPdf {
+sub __ImgPreviewOut {
 	my $self      = shift;
 	my $step      = shift;
 	my $dataLayer = shift;
@@ -228,7 +228,7 @@ sub __OutputPdf {
 }
 
 
-sub __MergeAndOutputPdf {
+sub __MergeAndImgPreviewOut {
 	my $self    = shift;
 	my @inFiles = @{ shift(@_) };
 	 

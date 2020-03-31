@@ -40,7 +40,7 @@ sub new {
 	$self->{"outputData"} = OutputData->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
 	$self->{"layerList"}  = LayerDataList->new( $self->{"lang"} );
-	$self->{"outputPdf"}  = OutputPdfBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"},$self->{"outputData"}->GetStepName(), $self->{"lang"}, $self->{"outputPath"} );
+	$self->{"outputPdf"}  = ImgPreviewOutBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"},$self->{"outputData"}->GetStepName(), $self->{"lang"}, $self->{"outputPath"} );
 	
 
 	return $self;

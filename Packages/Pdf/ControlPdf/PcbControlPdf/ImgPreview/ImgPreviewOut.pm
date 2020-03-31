@@ -4,8 +4,8 @@
 # Prepare each export layer, print as pdf, convert to image => than merge all layers together
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::OutputPdf;
-use base('Packages::Pdf::ControlPdf::Helpers::FinalPreview::OutputPdfBase');
+package Packages::Pdf::ControlPdf::PcbControlPdf::ImgPreview::ImgPreviewOut;
+use base('Packages::Pdf::ControlPdf::Helpers::ImgPreview::ImgPreviewOutBase');
 
 #3th party library
 use threads;
@@ -19,8 +19,9 @@ use Image::Size;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::FinalPreview::Enums';
+use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ImgPreview::Enums';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamFilter';
@@ -32,25 +33,35 @@ use aliased 'Packages::SystemCall::SystemCall';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	
+	my $class = shift;
+
 	my $output = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpeg";
-	my $self      = $class->SUPER::new(@_, $output);
+	my $self = $class->SUPER::new( @_, $output );
 	bless $self;
-  
 
 	return $self;
 }
 
 sub Output {
-	my $self      = shift;
-	my $layerList = shift;
+	my $self           = shift;
 	my $reducedQuality = shift;
-
-	$self->__OptimizeLayers($layerList),
-	$self->_Output($layerList, $reducedQuality);
 	
-	$self->__FinalTransform($layerList);
+	my $result = 1;
+
+	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
+
+	$self->__OptimizeLayers();
+	$self->_Output($reducedQuality);
+	$self->__FinalTransform();
+	
+	return $result;
+}
+
+# Return path of image
+sub GetOutput {
+	my $self = shift;
+ 
+	return $self->SUPER::GetOutput();
 }
 
 # Clip area arpound profile
@@ -58,11 +69,10 @@ sub Output {
 # border is 5mm behind profile
 # if preview is bot, mirror data
 sub __OptimizeLayers {
-	my $self      = shift;
-	my $layerList = shift;
+	my $self = shift;
 
 	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layerList->GetOutputLayers();
+	my @layers = $self->{"layerList"}->GetOutputLayers();
 
 	# 1) Clip area behind profile
 
@@ -83,10 +93,11 @@ sub __OptimizeLayers {
 		#"area_type"   => "rectangle",
 		"inout"       => "outside",
 		"contour_cut" => "yes",
+
 		#"margin"      => ( $self->{"pdfStep"} eq "pdf_panel" ? "0" : "1000" ),    # keep panel dimension, else add extra margin 1mm
-		"margin"      => 0,    # keep panel dimension, else add extra margin 1mm
-		"feat_types"  => "line\;pad;surface;arc;text",
-		"pol_types"   => "positive\;negative"
+		"margin"     => 0,                              # keep panel dimension, else add extra margin 1mm
+		"feat_types" => "line\;pad;surface;arc;text",
+		"pol_types"  => "positive\;negative"
 	);
 	$inCAM->COM(
 				 "affected_layer",
@@ -158,8 +169,6 @@ sub __OptimizeLayers {
 
 		my $rotateBy = undef;
 
-	 
-
 		my $x = abs( $lim{"xMax"} - $lim{"xMin"} );
 		my $y = abs( $lim{"yMax"} - $lim{"yMin"} );
 
@@ -181,12 +190,11 @@ sub __OptimizeLayers {
 
 }
 
-sub __FinalTransform{
+sub __FinalTransform {
 	my $self = shift;
-	my $layerList = shift;
-	
+
 	my $outputTmp = $self->{"outputPath"};
-	
+
 	# 2) Adjust image to ratio 3:5. Thus if image is square, this fill image by white color
 	# in order image has ratio 3:5
 
@@ -231,7 +239,7 @@ sub __FinalTransform{
 		push( @cmd2, "-rotate 90" );
 	}
 
-	push( @cmd2, "-gravity center -background " . $self->_ConvertColor( $layerList->GetBackground() ) );
+	push( @cmd2, "-gravity center -background " . $self->_ConvertColor( $self->{"layerList"}->GetBackground() ) );
 	push( @cmd2, "-extent " . $dimW . "x" . $dimH );
 
 	push( @cmd2, $self->{"outputPath"} );
@@ -241,9 +249,9 @@ sub __FinalTransform{
 	my $systeMres2 = system($cmdStr2);
 
 	#unlink($outputTmp);
-	
+
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

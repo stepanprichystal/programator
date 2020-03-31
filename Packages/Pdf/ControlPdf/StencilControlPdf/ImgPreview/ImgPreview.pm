@@ -3,7 +3,7 @@
 # Description: Module create image preview of pcb based on physical layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::FinalPreview;
+package Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::ImgPreview;
 
 #3th party library
 use strict;
@@ -11,16 +11,16 @@ use warnings;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::LayerData::LayerDataList';
-use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::LayerData::LayerColor';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::OutputPdf';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::OutputPrepare';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::LayerData::LayerDataList';
+use aliased 'Packages::Pdf::ControlPdf::Helpers::ImgPreview::LayerData::LayerColor';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::ImgPreviewOut';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::ImgLayerPrepare';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::Enums';
-use aliased 'Packages::Pdf::ControlPdf::Helpers::FinalPreview::Enums' => 'PrevEnums';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::Enums';
+use aliased 'Packages::Pdf::ControlPdf::Helpers::ImgPreview::Enums' => 'PrevEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
@@ -39,8 +39,8 @@ sub new {
 	$self->{"params"}   = shift;    # Stencil parameters
 
 	$self->{"layerList"} = LayerDataList->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"} );
-	$self->{"outputPrepare"} = OutputPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"}, $self->{"params"} );
-	$self->{"outputPdf"} = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
+	$self->{"imgLayerPrepare"} = ImgLayerPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"}, $self->{"params"} );
+	$self->{"outputPdf"} = ImgPreviewOut->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
 
 	return $self;
@@ -58,7 +58,7 @@ sub Create {
 	$self->{"layerList"}->InitLayers( \@layers );
 	$self->{"layerList"}->InitSurfaces( $self->__DefineSurfaces() );
 
-	$self->{"outputPrepare"}->PrepareLayers( $self->{"layerList"} );
+	$self->{"imgLayerPrepare"}->PrepareLayers( $self->{"layerList"} );
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
 
 	return 1;
@@ -151,7 +151,7 @@ sub __DefineSurfaces {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::FinalPreview';
+	use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::ImgPreview';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -160,7 +160,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $control = FinalPreview->new( $inCAM, $jobId, "o+1", "en" );
+	my $control = ImgPreview->new( $inCAM, $jobId, "o+1", "en" );
 	$control->Create();
 
 	#$control->CreateStackup(\$mess);

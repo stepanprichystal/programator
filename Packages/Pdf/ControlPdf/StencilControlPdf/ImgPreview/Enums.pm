@@ -1,5 +1,5 @@
 
-package Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::Enums;
+package Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::Enums;
 
 use constant {
 	Type_STNCLMAT => "typeStencilMat",

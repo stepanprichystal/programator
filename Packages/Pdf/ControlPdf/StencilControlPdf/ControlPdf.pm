@@ -24,8 +24,8 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Other::HtmlTemplate::HtmlTemplate';
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::HtmlTemplate::TemplateKey';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::FinalPreview';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::Enums' => "EnumsFinal";
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::ImgPreview';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::Enums' => "EnumsFinal";
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::SinglePreview::SinglePreview';
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FillTemplate';
 use aliased 'Packages::Pdf::ControlPdf::Helpers::OutputFinalPdf';
@@ -62,10 +62,10 @@ sub new {
 
 	if ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP || $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT )
 	{
-		$self->{"preview"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP, $self->{"params"} );
+		$self->{"preview"} = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP, $self->{"params"} );
 	}
 	else {
-		$self->{"preview"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT, $self->{"params"} );
+		$self->{"preview"} = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT, $self->{"params"} );
 	}
 
 	$self->{"previewSingle"} = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"lang"} );
