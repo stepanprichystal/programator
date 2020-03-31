@@ -132,10 +132,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 	use Data::Dump qw(dump);
 
-	my $inCAM = InCAM->new();
-	my $jobId = "d33881";
+	my $inCAM   = InCAM->new();
+	my $jobId   = "d131715";
+	my $orderId = "d131715-04";
+
+	my $ch = ProcessReorder->new( $inCAM, $jobId, $orderId );
 	
-	my $ch = ProcessReorder->new($inCAM, $jobId);
+	 
 	
 	my $errMess = "";
 	my @arr = $ch->RunTasks(\$errMess);

@@ -46,11 +46,11 @@ sub Run {
 	my $jobId = $self->{"jobId"};
 
 	my $result = 1;
- 
-	if( $self->{"isPool"}){
+
+	if ( $self->{"isPool"} ) {
 		return $result;
 	}
- 
+
 	if ( $self->__CheckBeforeExport($mess) ) {
 
 		unless ( $self->__PrepareExportFile($mess) ) {
@@ -75,9 +75,12 @@ sub __CheckBeforeExport {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	$self->{"units"} = UnitHelper->PrepareUnits($inCAM, $jobId);
+	$self->{"units"} = UnitHelper->PrepareUnits( $inCAM, $jobId );
 
-	my @activeOnUnits = grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON } @{ $self->{"units"}->{"units"} };
+	my @activeOnUnits =
+	  grep { $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEON
+		  || $_->GetGroupState() eq CheckerEnums->GroupState_ACTIVEALWAYS }
+	  @{ $self->{"units"}->{"units"} };
 
 	foreach my $unit (@activeOnUnits) {
 
@@ -90,10 +93,9 @@ sub __CheckBeforeExport {
 			$$mess .= $resultMngr->GetErrorsStr(1);
 		}
 	}
-	
+
 	return $result;
 }
- 
 
 sub __PrepareExportFile {
 	my $self = shift;
@@ -103,18 +105,18 @@ sub __PrepareExportFile {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
-	my $exportDir = EnumsPaths->Client_INCAMTMPOTHER."processReorder\\";
-	
+
+	my $exportDir = EnumsPaths->Client_INCAMTMPOTHER . "processReorder\\";
+
 	unless ( -e $exportDir ) {
-		mkdir( $exportDir ) or die "Can't create dir: " . $exportDir . $_;
+		mkdir($exportDir) or die "Can't create dir: " . $exportDir . $_;
 	}
 
 	my $pathExportFile = $exportDir . $jobId;
 
 	my $dataTransfer = DataTransfer->new( $jobId, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
- 
-	my @orders = map { $_->{"reference_subjektu"} } HegMethods->GetOrdersByState($self->{"jobId"}, 2); # Orders on Predvzrobni priprava
+
+	my @orders = map { $_->{"reference_subjektu"} } HegMethods->GetOrdersByState( $self->{"jobId"}, 2 );    # Orders on Predvzrobni priprava
 
 	$dataTransfer->SaveData( EnumsJobMngr->TaskMode_ASYNC, 1, undef, undef, \@orders );
 
