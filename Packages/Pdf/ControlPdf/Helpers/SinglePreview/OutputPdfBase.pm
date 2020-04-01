@@ -42,7 +42,7 @@ sub new {
 
 	$self->{"inCAM"}      = shift;
 	$self->{"jobId"}      = shift;
-	$self->{"sourceStep"}  = shift; # contain information about SR while pdfStep don't have to
+	$self->{"sourceStep"} = shift;    # contain information about SR while pdfStep don't have to
 	$self->{"pdfStep"}    = shift;
 	$self->{"lang"}       = shift;
 	$self->{"outputPath"} = shift;
@@ -69,8 +69,8 @@ sub Output {
 	my $drawProfile1Up = shift // 0;
 	my $profColor      = shift // [ 255, 0, 0 ];
 	my $prof1UpColor   = shift // [ 0, 255, 0 ];
-	my $profWidth      = shift // 1;               # 1mm
-	my $profWidth1Up   = shift // 1;               # 1mm
+	my $profWidth      = shift // 500;             # µm
+	my $profWidth1Up   = shift // 500;             # µm
 
 	if ( $multiplX < 1 ) {
 		die "Multiplicity of image in X axis has to by at least 1";
@@ -114,7 +114,7 @@ sub __PrepareProfiles {
 	my $self           = shift;
 	my $drawProfile    = shift;
 	my $drawProfile1Up = shift;
-	my $profWidth      = shift // 400;    # 300µm
+	my $profWidth      = shift // 500;    # 300µm
 	my $profWidth1Up   = shift // 300;    # 300µmm
 
 	my $inCAM = $self->{"inCAM"};
@@ -128,9 +128,10 @@ sub __PrepareProfiles {
 	if ($drawProfile) {
 		$profL = GeneralHelper->GetGUID();
 		CamMatrix->CreateLayer( $inCAM, $jobId, $profL, "document", "positive", 0 );
-		$inCAM->COM( "profile_to_rout", "layer" => $profL, "width" => ($profWidth) );
+		$inCAM->COM( "profile_to_rout", "layer" => $profL, "width" => $profWidth );
 		CamLayer->WorkLayer( $inCAM, $profL );
-		$inCAM->COM( "sel_line2dash", "seg_len" => 1000, "gap_len" => 500 );
+		$inCAM->COM( "sel_design2rout", "rad_tol" => 100 );
+		$inCAM->COM( "sel_line2dash", "seg_len" => 1000, "gap_len" => 1000 );
 		CamLayer->ClearLayers( $inCAM, $profL );
 
 	}
@@ -153,9 +154,10 @@ sub __PrepareProfiles {
 			my $name = "1up" . ( scalar(@steps) > 1 ? "(type: " . ( $i + 1 ) . ")" : "" );
 
 			CamHelper->SetStep( $inCAM, $s );
-			$inCAM->COM( "profile_to_rout", "layer" => $prof1UpL, "width" => ($profWidth1Up) );
+			$inCAM->COM( "profile_to_rout", "layer" => $prof1UpL, "width" => $profWidth1Up );
 			CamLayer->WorkLayer( $inCAM, $profL );
-			$inCAM->COM( "sel_line2dash", "seg_len" => 1000, "gap_len" => 500 );
+			$inCAM->COM( "sel_design2rout", "rad_tol" => 100 );
+			$inCAM->COM( "sel_line2dash", "seg_len" => 1000, "gap_len" => 1000 );
 
 			$inCAM->COM(
 						 "sr_fill",
@@ -164,8 +166,8 @@ sub __PrepareProfiles {
 						 "predefined_pattern_type" => "lines",
 						 "indentation"             => "even",
 						 "lines_angle"             => 45,
-						 "lines_witdh"             => 200,
-						 "lines_dist"              => 2000,
+						 "lines_witdh"             => 300,
+						 "lines_dist"              => 4000,
 						 "step_margin_x"           => "0",
 						 "step_margin_y"           => "0",
 						 "step_max_dist_x"         => 1000,
@@ -175,12 +177,15 @@ sub __PrepareProfiles {
 						 "dest"                    => "layer_name",
 						 "layer"                   => $prof1UpL
 			);
-			
-			CamMatrix->CopyLayer( $inCAM, $jobId, $prof1UpL, $s, $prof1UpL, $self->{"pdfStep"} );
 
-			CamLayer->ClearLayers( $inCAM, $profL );
+			#
+
 		}
 
+		CamHelper->SetStep( $inCAM, $self->{"sourceStep"} );
+		CamLayer->FlatternLayer( $inCAM, $jobId, $self->{"sourceStep"}, $prof1UpL );
+		CamMatrix->CopyLayer( $inCAM, $jobId, $prof1UpL, $self->{"sourceStep"}, $prof1UpL, $self->{"pdfStep"} );
+		CamLayer->ClearLayers( $inCAM, $profL );
 		CamHelper->SetStep( $inCAM, $self->{"pdfStep"} );
 	}
 
@@ -240,8 +245,8 @@ sub __OptimizeLayers {
 
 	push( @lSpec, $profSpecL )    if ( defined $profSpecL );
 	push( @lSpec, $prof1UpSpecL ) if ( defined $prof1UpSpecL );
-	
-	foreach my $l ( @lSpec ) {
+
+	foreach my $l (@lSpec) {
 
 		my %limL = CamJob->GetLayerLimits( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l );
 
@@ -251,7 +256,6 @@ sub __OptimizeLayers {
 		$limSpec{"ymax"} = $limL{"ymax"} if ( !defined $limSpec{"ymax"} || $limSpec{"ymax"} < $limL{"ymax"} );
 	}
 
-	
 	$self->__AddFrame( \@lSpec, \%limSpec, $imgHRatio, $imgWRatio );
 
 }
@@ -330,7 +334,6 @@ sub __OutputRawPdf {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-
 	# 1) Output one pdf per layer
 
 	my $layerStr = join( ";", map { $_->GetOutput() } $layerList->GetLayers() );
@@ -352,58 +355,26 @@ sub __OutputRawPdf {
 		num_copies        => '1',
 		dest_fname        => $sourcePdfPath,
 		paper_size        => 'A4',
-#		paper_size        => 'custom',
-#		paper_width        => 100,
-#		paper_height        => 100,
-#		paper_units        => 'mm',
-#		scale_to=>0
-	 
-		nx                => 1,
-		ny                => 1,
-		orient            => 'none',
-		top_margin        => '0',
-		bottom_margin     => '0',
-		left_margin       => '0',
-		right_margin      => '0',
-		"x_spacing"       => '0',
-		"y_spacing"       => '0',
-		
+
+		#		paper_size        => 'custom',
+		#		paper_width        => 100,
+		#		paper_height        => 100,
+		#		paper_units        => 'mm',
+		#		scale_to=>0
+
+		nx            => 1,
+		ny            => 1,
+		orient        => 'none',
+		top_margin    => '0',
+		bottom_margin => '0',
+		left_margin   => '0',
+		right_margin  => '0',
+		"x_spacing"   => '0',
+		"y_spacing"   => '0',
 
 	);
 
-	#	# open PDF and add white "cover" frame around pdf border (InCAM add to each page black border)
-	#	my $sourcePdf = PDF::API2->open($sourcePdfPath);
-	#	foreach my $pagenum ( 1 .. $sourcePdf->pages ) {
-	#
-	#		# my $page_in = $pdf_in->openpage($pagenum);
-	#
-	#		my $page    = $sourcePdf->openpage($pagenum);
-	#		my $cvrLine = $page->gfx;
-	#		$cvrLine->strokecolor('blue');
-	#		$cvrLine->linewidth( 2 / mm );
-	#
-	#		# left vertical
-	#		$cvrLine->move( 0, 0 );
-	#		$cvrLine->line( 0, a4H / mm );
-	#		$cvrLine->stroke;
-	#
-	#		# top vertical
-	#		$cvrLine->move( 0, a4H / mm );
-	#		$cvrLine->line( a4W / mm, a4H / mm );
-	#		$cvrLine->stroke;
-	#
-	#		# top vertical
-	#		$cvrLine->move( a4W / mm, a4H / mm );
-	#		$cvrLine->line( a4W / mm, 0 );
-	#		$cvrLine->stroke;
-	#
-	#		# top vertical
-	#		$cvrLine->move( a4W / mm, 0 );
-	#		$cvrLine->line( 0, 0 );
-	#		$cvrLine->stroke;
-	#	}
-	#
-	#	$sourcePdf->update();
+	 
 
 	# 2) output profiles
 	my $profPdf        = undef;
@@ -415,32 +386,37 @@ sub __OutputRawPdf {
 		my $path = $self->__OutputProfilePdf( $profL, $profColor );
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $profL );
 		$profPdf = PDF::API2->open($path);
+		unlink($path);
 	}
 
 	if ( defined $prof1UpL ) {
 		my $path = $self->__OutputProfilePdf( $prof1UpL, $profColor1Up );
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $prof1UpL );
 		$prof1UpPdf = PDF::API2->open($path);
+		unlink($path);
 	}
 
 	if ( defined $profSpecL ) {
 		my $path = $self->__OutputProfilePdf( $profSpecL, $profColor );
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $profSpecL );
 		$profSpecPdf = PDF::API2->open($path);
+		unlink($path);
 	}
 
 	if ( defined $prof1UpSpecL ) {
 		my $path = $self->__OutputProfilePdf( $prof1UpSpecL, $profColor1Up );
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $prof1UpSpecL );
 		$prof1UpSpecPdf = PDF::API2->open($path);
+		unlink($path);
 	}
 
 	# 2) merge page together by page multiplicity
 
 	my $mergedPdf = PDF::API2->new();
 	my $sourcePdf = PDF::API2->open($sourcePdfPath);
-		my ( $imgHeight, $imgWidth ) = $self->__GetImageSizeByMultipl( $multiplX, $multiplY );
-	
+	unlink($sourcePdfPath);
+	my ( $imgHeight, $imgWidth ) = $self->__GetImageSizeByMultipl( $multiplX, $multiplY );
+
 	my $scale = min( $imgHeight / a4H, $imgWidth / a4W );
 
 	my @layers    = $layerList->GetLayers();
@@ -532,12 +508,7 @@ sub __OutputRawPdf {
 
 	}
 
-	unlink($sourcePdf);
-
-	foreach my $pdf ( ( $profPdf, $prof1UpPdf, $profSpecPdf, $prof1UpSpecPdf ) ) {
-		unlink($pdf) if ( defined $pdf );
-	}
-
+   
 	my $outputPdf = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 	$mergedPdf->saveas($outputPdf);
 
@@ -798,34 +769,45 @@ sub __DrawInfoTable {
 	$txtTitle->text( $data->{"title"} );
 
 	# circel
-	my $tTag = $page->gfx;
+	my $fillColor = '#9800DF';    # special layers are purple
 
 	if ( $data->{"lType"} eq "signal" || $data->{"lType"} eq "power_ground" || $data->{"lType"} eq "mixed" ) {
-		$tTag->fillcolor("#AE392F");
+		$fillColor = "#AE392F";
 
 	}
 	elsif ( $data->{"lType"} eq "solder_mask" ) {
 
-		$tTag->fillcolor('#3B7129');
+		$fillColor = "#3B7129";
+
+	}
+	elsif ( $data->{"lType"} eq "silk_screen" ) {
+
+		$fillColor = "#FFFFFF";
 
 	}
 	elsif ( $data->{"lType"} eq "coverlay" ) {
 
-		$tTag->fillcolor('#FFD319');
+		$fillColor = "#FFD319";
 
 	}
 	elsif ( $data->{"lType"} eq "drill" || $data->{"lType"} eq "rout" ) {
 
-		$tTag->fillcolor('#4E4E4E');
-	}
-	else {
-
-		$tTag->fillcolor('#9800DF');
+		$fillColor = "#4E4E4E";
 	}
 
+	my $tTag = $page->gfx;
+
+	# Add extra black border
+	if ( $data->{"lType"} eq "silk_screen" ) {
+		$tTag->fillcolor('#000000');
+		$tTag->circle( $xPos + 3 / mm, $yPos + 2.5 / mm, (2*1.05) / mm );
+		$tTag->fill;
+	}
+
+	$tTag->fillcolor($fillColor);
 	$tTag->circle( $xPos + 3 / mm, $yPos + 2.5 / mm, 2 / mm );
 	$tTag->fill;
-
+	
 	# add info
 
 	my $txtInf = $page->text;

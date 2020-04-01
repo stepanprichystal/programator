@@ -80,7 +80,6 @@ sub PrepareLayers {
 	# 2) Prepare PDF layers
 	$self->__PrepareLayers($layerList);
 
-
 	# 3) Remove special overlays
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"bendAreaL"} ) if ( defined $self->{"bendAreaL"} );    # bend area
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"coverlaysL"}->{$_} ) foreach ( keys %{ $self->{"coverlaysL"} } );    # coverlays
@@ -761,8 +760,7 @@ sub __PreparePLTTHROUGHNC {
 
 	}
 	if ( defined $self->{"coverlaysL"}->{$coverlayL} ) {
-		$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{$coverlayL}, "dest_layer" => $lName, "invert" => "yes" )
-		  ;
+		$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{$coverlayL}, "dest_layer" => $lName, "invert" => "yes" );
 	}
 
 	#CamLayer->WorkLayer( $inCAM, $lName );
@@ -953,28 +951,8 @@ sub __PrepareSTIFFENER {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $lName = GeneralHelper->GetGUID();
-
 	# 1) Create full surface by profile
-	$inCAM->COM(
-				 'create_layer',
-				 layer     => $lName,
-				 context   => 'misc',
-				 type      => 'document',
-				 polarity  => 'positive',
-				 ins_layer => ''
-	);
-
-	my @pointsLim = ();
-	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMin"} } );
-	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMax"} } );
-	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMax"} } );
-	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMin"} } );
-	push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMin"} } );    # last point = first point
-
-	CamLayer->WorkLayer( $inCAM, $lName );
-	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
-	CamLayer->ResizeFeatures( $inCAM, 7000 );
+	my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
 
 	# 2) Copy negative of stiffener rout
 	my $stiffL = ( grep { $_->{"gROWlayer_type"} eq "stiffener" } $layer->GetSingleLayers() )[0];
@@ -1109,21 +1087,9 @@ sub __GetOverlayCoverlays {
 		next unless ( $layer->HasLayers() );
 
 		my @layers = $layer->GetSingleLayers();
-		my $lName  = GeneralHelper->GetGUID();
 
 		# 1) Create full surface by profile
-		$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
-
-		my @pointsLim = ();
-		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMin"} } );
-		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMax"} } );
-		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMax"} } );
-		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMax"}, "y" => $self->{"profileLim"}->{"yMin"} } );
-		push( @pointsLim, { "x" => $self->{"profileLim"}->{"xMin"}, "y" => $self->{"profileLim"}->{"yMin"} } );    # last point = first point
-
-		CamLayer->WorkLayer( $inCAM, $lName );
-		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
-		CamLayer->ResizeFeatures( $inCAM, 7000 );
+		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
 
 		# 2) Copy coverlay milling
 		my $cvrL = ( grep { $_->{"gROWname"} =~ /^coverlay/ } $layer->GetSingleLayers() )[0];
@@ -1223,8 +1189,6 @@ sub __CountersinkCheck {
 
 	return $result;
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

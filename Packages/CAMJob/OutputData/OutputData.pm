@@ -41,7 +41,7 @@ sub new {
 	$self->{"step"}  = shift;
 	$self->{"SR"}    = shift // 1;    # include SR data
 
-	$self->{"data_step"} = "data_" . $self->{"step"};
+	$self->{"data_step"} =  $self->{"step"}."_outdata";
 
 	# get limits of step
 	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 0 );
@@ -158,7 +158,7 @@ sub __GetLayersForExport {
 
 	# 2) Filter internal layers, which are unable to export
 
-	my @internal = ( "fr", "v1", "fsch", "bend" );
+	my @internal = ( "fr", "v1", "fsch", "coverlaypins" );
 
 	my %tmp;
 	@tmp{@internal} = ();

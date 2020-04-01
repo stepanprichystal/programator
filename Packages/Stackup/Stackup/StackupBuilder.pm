@@ -87,12 +87,14 @@ sub BuildStackupLamination {
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@NCLayers );
 
 	# NC layers which influence stackup design
-	my @NCAffect = grep { $_->{"plated"} && !$_->{"technical"} && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } @NCLayers;
+	my @NCAffect = grep { $_->{"plated"} && !$_->{"technical"} } @NCLayers;
 
-	# NC layers which NOT influence stackup design (all NC except @NCInflStackup)
+	# NC layers which NOT influence stackup design (all NC except @NCInflStackup; coverlay; prepreg; stiffener; score routs)
 	my %tmp;
 	@tmp{ map { $_->{"gROWname"} } @NCAffect } = ();
 	my @NCNoAffect = grep { !exists $tmp{ $_->{"gROWname"} } } @NCLayers;
+	@NCNoAffect = grep { defined $_->{"NCSigStartOrder"} } @NCNoAffect;                      # Layers which go through signal layers
+	@NCNoAffect = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } @NCNoAffect;
 
 	# 3) Prepare stackup products
 	my @parsed = map { { "l" => $_, "t" => Enums->ProductL_MATERIAL } } @{ $self->{"stackup"}->{"layers"} };

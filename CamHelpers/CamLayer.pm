@@ -18,6 +18,7 @@ use aliased 'CamHelpers::CamCopperArea';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamDTM';
+use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamStepRepeat';
 
@@ -356,6 +357,36 @@ sub NegativeLayerData {
 	$inCAM->COM( 'affected_layer', name => $layer, mode => "single", affected => "no" );
 }
 
+# Return layer with filled rectangle defined by profile limits
+sub FilledProfileLim {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $step    = shift;
+	my $margin  = shift // 0;
+	my $profLim = shift // { CamJob->GetProfileLimits2( $inCAM, $jobId, $step ) };
+
+	my $lName = GeneralHelper->GetGUID();
+
+	# Create full surface by profile
+	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+
+	my @pointsLim = ();
+	push( @pointsLim, { "x" => $profLim->{"xMin"}, "y" => $profLim->{"yMin"} } );
+	push( @pointsLim, { "x" => $profLim->{"xMin"}, "y" => $profLim->{"yMax"} } );
+	push( @pointsLim, { "x" => $profLim->{"xMax"}, "y" => $profLim->{"yMax"} } );
+	push( @pointsLim, { "x" => $profLim->{"xMax"}, "y" => $profLim->{"yMin"} } );
+	push( @pointsLim, { "x" => $profLim->{"xMin"}, "y" => $profLim->{"yMin"} } );    # last point = first point
+
+	$self->WorkLayer( $inCAM, $lName );
+	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
+
+	$self->ResizeFeatures( $inCAM, $margin ) if ( $margin != 0 );
+
+	return $lName;
+
+}
+
 # Clipa read data by  rectangle
 sub ClipLayerData {
 	my $self       = shift;
@@ -487,12 +518,11 @@ sub MirrorLayerData {
 			$inCAM->COM( "sel_transform", "oper" => "mirror" );
 
 		}
-	
+
 	}
 	elsif ( defined $anchor ) {
 
-		$inCAM->COM( "sel_transform", "oper" => "mirror", "mode" => "anchor", "x_anchor" => $anchor->{"x"}, "y_anchor" => $anchor->{"y"} )
-		  ;
+		$inCAM->COM( "sel_transform", "oper" => "mirror", "mode" => "anchor", "x_anchor" => $anchor->{"x"}, "y_anchor" => $anchor->{"y"} );
 	}
 	else {
 
@@ -514,7 +544,7 @@ sub StretchLayerData {
 	my $stretchY = shift;    # stretch at y axis percent / 100 (e.g.: Stretch by 1%, parameter value = 1.01)
 	my $originX  = shift;
 	my $originY  = shift;
- 
+
 	$inCAM->COM(
 				 "sel_transform",
 				 "oper"     => "scale",
@@ -533,7 +563,7 @@ sub LayerIntersection {
 	my $inCAM  = shift;
 	my $layer1 = shift;
 	my $layer2 = shift;
-	my $lim    = shift;      # area which is processed and result is only fro this area
+	my $lim    = shift;    # area which is processed and result is only fro this area
 
 	my $lTmp1 = GeneralHelper->GetGUID();
 	my $lTmp2 = GeneralHelper->GetGUID();

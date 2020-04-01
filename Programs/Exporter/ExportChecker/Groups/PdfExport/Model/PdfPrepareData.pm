@@ -94,7 +94,7 @@ sub OnPrepareGroupData {
 
 	if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $defStep ) ) {
  
-		if(scalar(CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $defStep ))> 1){
+		if(scalar(CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $defStep ))>= 1){
 			$inclNested = 1;
 		}
 	}

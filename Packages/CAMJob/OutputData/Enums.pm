@@ -5,6 +5,7 @@ package Packages::CAMJob::OutputData::Enums;
 
 use constant {
 	Type_BOARDLAYERS => "typeBoardLayers",
+	Type_FLEXLAYERS => "flexlayers",
 	Type_NCLAYERS => "typeNCLayers",
 	Type_NCDEPTHLAYERS => "typeNCDepthLayers",
 	Type_OUTLINE => "typeOutline",
@@ -12,7 +13,7 @@ use constant {
 	Type_DRILLMAP => "typeDrillMap",
 	Type_SPECIALSURF => "typeSpecialSurf",
 	Type_FILLEDHOLES => "filledHoles",
-	Type_FLEXLAYERS => "flexlayers"
+	
 };
  
  use constant {

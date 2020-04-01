@@ -8,6 +8,7 @@ package Packages::CAMJob::OutputData::PrepareLayers::PrepareBase;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -17,12 +18,13 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamSymbolSurf';
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamFilter';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAMJob::OutputData::Enums';
-use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::CAMJob::OutputData::Helper';
-use aliased 'CamHelpers::CamGoldArea';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 
 #-------------------------------------------------------------------------------------------#
@@ -78,7 +80,7 @@ sub __PrepareBASEBOARD {
 	my $inCAM = $self->{"inCAM"};
 
 	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "drill" && $_->{"gROWlayer_type"} ne "rout" } @layers;
-	@layers = grep { $_->{"gROWname"} !~ /^(plg|[lg]|gold)[cs]$/i } @layers;    # special surfaces (goldc, gc, lc, plgc,  etc)
+	@layers = grep { $_->{"gROWname"} !~ /^(plg|[lg]|gold)[cs]$/i } @layers;         # special surfaces (goldc, gc, lc, plgc,  etc)
 	@layers = grep { $_->{"gROWname"} !~ /^(coverlay|stiff)[csv]\d*$/i } @layers;    # special flex layers (coverlayc, coverlays, stiffc,  etc)
 
 	foreach my $l (@layers) {
@@ -105,12 +107,14 @@ sub __PrepareOUTLINE {
 
 	my $inCAM = $self->{"inCAM"};
 
-	my $lName = GeneralHelper->GetNumUID();
-	$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+	# 1) Outline layer
 
-	CamLayer->WorkLayer( $inCAM, $lName );
+	my $lOutline = GeneralHelper->GetNumUID();
+	$inCAM->COM( 'create_layer', layer => $lOutline, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
 
-	$inCAM->COM( "profile_to_rout", "layer" => $lName, "width" => "200" );
+	CamLayer->WorkLayer( $inCAM, $lOutline );
+
+	$inCAM->COM( "profile_to_rout", "layer" => $lOutline, "width" => "200" );
 
 	# fake layer 'o'
 	my %l = ( "gROWname" => "o" );
@@ -120,9 +124,27 @@ sub __PrepareOUTLINE {
 	my $enInf = Helper->GetJobLayerInfo( \%l );
 	my $czInf = Helper->GetJobLayerInfo( \%l, 1 );
 
-	my $lData = LayerData->new( $type, \%l, $enTit, $czTit, $enInf, $czInf, $lName );
+	my $lData = LayerData->new( $type, \%l, $enTit, $czTit, $enInf, $czInf, $lOutline );
 
 	$self->{"layerList"}->AddLayer($lData);
+
+	# 2)
+	my $l = first { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "bendarea" && $_->{"gROWname"} eq "bend" } @layers;
+
+	if ( defined $l ) {
+		my $lOutlineFlex = GeneralHelper->GetNumUID();
+
+		my $enTit = Helper->GetJobLayerTitle( $l, $type );
+		my $czTit = Helper->GetJobLayerTitle( $l, $type, 1 );
+		my $enInf = Helper->GetJobLayerInfo($l);
+		my $czInf = Helper->GetJobLayerInfo( $l, 1 );
+
+		$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lOutlineFlex );
+
+		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lOutlineFlex );
+
+		$self->{"layerList"}->AddLayer($lData);
+	}
 
 }
 
@@ -248,14 +270,14 @@ sub __PrepareFILLEDHOLES {
 			my $lDrillRout = $result->MergeLayers();    # merge DRILLBase and ROUTBase result layer
 
 			$inCAM->COM(
-				"copy_layer",
-				"source_job"   => $jobId,
-				"source_step"  => $self->{"step"},
-				"source_layer" => $lDrillRout,
-				"dest"         => "layer_name",
-				"dest_step"    => $self->{"step"},
-				"dest_layer"   => $lName,
-				"mode"         => "append"
+						 "copy_layer",
+						 "source_job"   => $jobId,
+						 "source_step"  => $self->{"step"},
+						 "source_layer" => $lDrillRout,
+						 "dest"         => "layer_name",
+						 "dest_step"    => $self->{"step"},
+						 "dest_layer"   => $lName,
+						 "mode"         => "append"
 			);
 
 			$inCAM->COM( "delete_layer", "layer" => $lDrillRout );
@@ -279,38 +301,103 @@ sub __PrepareFLEXLAYERS {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	my @lFLexROut = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "rout" } @layers;
-
-	CamDrilling->AddNCLayerType( \@lFLexROut );
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@lFLexROut );
-
 	# 1) Define coverlays
+	my @lCoverlay = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "coverlay" } @layers;
+	foreach my $cvrL (@lCoverlay) {
 
-	my @lCoverlay = grep {
-		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
-		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
-	} @lFLexROut;
- 
-	foreach my $l ( @lCoverlay) {
+		# 1) Create full surface by profile
+		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
 
-  
-		my $lName = CamLayer->RoutCompensation( $inCAM, $l->{"gROWname"}, "document" );
-		CamLayer->Contourize( $inCAM, $lName, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		# 2) Copy coverlay milling
+
+		my @cvrRoutLs =
+		  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
+		CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@cvrRoutLs );
+
+		my $cvrRoutL = ( grep { $_->{"gROWdrl_start"} eq $cvrL->{"gROWname"} && $_->{"gROWdrl_end"} eq $cvrL->{"gROWname"} } @cvrRoutLs )[0];
+		my $lTmp = CamLayer->RoutCompensation( $inCAM, $cvrRoutL->{"gROWname"}, "document" );
+		CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $lName, "invert" => "yes" );
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+
+		# 3) If exist coverlay pins, final shape of coverlay depands on NPLT rout layers
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" ) ) {
+
+			# Countourize whole layers and keep surfaces in bend area only
+
+			CamLayer->WorkLayer( $inCAM, $lName );
+			CamLayer->ClipAreaByProf( $inCAM, $lName, 1000 );         # do not clip outline rout 3mm behuind profile
+			CamLayer->Contourize( $inCAM, $lName, "x_or_y", "0" );
+
+			if ( CamFilter->SelectByReferenece( $inCAM, $jobId, "touch", $lName, undef, undef, undef, "bend" ) ) {
+
+				$inCAM->COM('sel_reverse');
+				if ( CamLayer->GetSelFeaturesCnt($inCAM) ) {
+					CamLayer->DeleteFeatures($inCAM);
+				}
+			}
+		}
+
 		CamLayer->WorkLayer( $inCAM, $lName );
-		CamLayer->ClipAreaByProf( $inCAM, $lName, 0 );
- 	
-		my $lRef = (grep { $_->{"gROWname"} eq  $l->{"gROWdrl_start"}} @layers)[0];
- 
-		my $enTit = Helper->GetJobLayerTitle( $lRef, $type );
-		my $czTit = Helper->GetJobLayerTitle( $lRef, $type, 1 );
-		my $enInf = Helper->GetJobLayerInfo($lRef);
-		my $czInf = Helper->GetJobLayerInfo( $lRef, 1 );
-		 
-		my $lData = LayerData->new( $type, $lRef, $enTit, $czTit, $enInf, $czInf, $lName );
+		CamLayer->Contourize( $inCAM, $lName, "x_or_y", "0" );
+
+		my $enTit = Helper->GetJobLayerTitle( $cvrL, $type );
+		my $czTit = Helper->GetJobLayerTitle( $cvrL, $type, 1 );
+		my $enInf = Helper->GetJobLayerInfo($cvrL);
+		my $czInf = Helper->GetJobLayerInfo( $cvrL, 1 );
+
+		my $lData = LayerData->new( $type, $cvrL, $enTit, $czTit, $enInf, $czInf, $lName );
+
+		$self->{"layerList"}->AddLayer($lData);
+	}
+
+	# 2) Define stiffeners
+	my @stiffLayers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "stiffener" } @layers;
+
+	foreach my $stiffL (@stiffLayers) {
+
+		# 1) Create full surface by profile
+		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
+
+		# 2) Copy negative of stiffener rout
+
+		my @stiffRoutLs =
+		  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill ] );
+		CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
+
+		my $stiffRoutL = ( grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs )[0];
+		my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
+		CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		$inCAM->COM(
+					 "merge_layers",
+					 "source_layer" => $lTmp,
+					 "dest_layer"   => $lName,
+					 "invert"       => "yes"
+		);
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+
+		# 3) Copy negatife NPLT mill to stiffener to acheive final stiffener shape
+
+		my @NPLTNClayers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill ] );
+
+		foreach my $npltL (@NPLTNClayers) {
+
+			my $routL = CamLayer->RoutCompensation( $inCAM, $npltL->{"gROWname"}, "document" );
+			$inCAM->COM( "merge_layers", "source_layer" => $routL, "dest_layer" => $lName, "invert" => "yes" );
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $routL );
+		}
+
+		my $enTit = Helper->GetJobLayerTitle( $stiffL, $type );
+		my $czTit = Helper->GetJobLayerTitle( $stiffL, $type, 1 );
+		my $enInf = Helper->GetJobLayerInfo($stiffL);
+		my $czInf = Helper->GetJobLayerInfo( $stiffL, 1 );
+
+		my $lData = LayerData->new( $type, $stiffL, $enTit, $czTit, $enInf, $czInf, $lName );
 
 		$self->{"layerList"}->AddLayer($lData);
 
 	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

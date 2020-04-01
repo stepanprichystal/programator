@@ -25,6 +25,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::SystemCall::SystemCall';
 
@@ -45,7 +46,7 @@ sub new {
 sub Output {
 	my $self           = shift;
 	my $reducedQuality = shift;
-	
+
 	my $result = 1;
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
@@ -53,14 +54,14 @@ sub Output {
 	$self->__OptimizeLayers();
 	$self->_Output($reducedQuality);
 	$self->__FinalTransform();
-	
+
 	return $result;
 }
 
 # Return path of image
 sub GetOutput {
 	my $self = shift;
- 
+
 	return $self->SUPER::GetOutput();
 }
 
@@ -72,18 +73,23 @@ sub __OptimizeLayers {
 	my $self = shift;
 
 	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
 	my @layers = $self->{"layerList"}->GetOutputLayers();
 
 	# 1) Clip area behind profile
 
 	CamLayer->ClearLayers($inCAM);
 
-	foreach my $l ( grep { $_->GetType() ne Enums->Type_NPLTTHROUGHNC } @layers ) {
+	# Avoid clipping of routs final routs, it cause illegal surfaces
+	#foreach my $l ( grep { $_->GetType() ne Enums->Type_NPLTTHROUGHNC } @layers ) {
+	#		foreach my $l ( grep { $_->GetType() ne Enums->Type_NPLTTHROUGHNC } @layers ) {
+	#
+	#		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
+	#	}
 
-		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
-	}
+	# Clip area around profile
+	CamLayer->AffectLayers( $inCAM, [ map { $_->GetOutputLayer() } @layers ] );
 
-	# clip area around profile
 	$inCAM->COM(
 		"clip_area_end",
 		"layers_mode" => "affected_layers",
@@ -95,15 +101,31 @@ sub __OptimizeLayers {
 		"contour_cut" => "yes",
 
 		#"margin"      => ( $self->{"pdfStep"} eq "pdf_panel" ? "0" : "1000" ),    # keep panel dimension, else add extra margin 1mm
-		"margin"     => 0,                              # keep panel dimension, else add extra margin 1mm
+		"margin" => 1000,    #  clipping of routs can cause illegal surfaces, so clip 2,5mm behind profile, where is no surfaces
 		"feat_types" => "line\;pad;surface;arc;text",
 		"pol_types"  => "positive\;negative"
 	);
-	$inCAM->COM(
-				 "affected_layer",
-				 "mode"     => "all",
-				 "affected" => "no"
-	);
+
+	CamLayer->ClearLayers($inCAM);
+
+	# There could be created illegal surface behind profile by clippin, so delete them
+	CamLayer->AffectLayers( $inCAM, [ map { $_->GetOutputLayer() } @layers ] );
+	if ( CamFilter->BySurfaceArea( $inCAM, 0, 0.001 ) ) {
+		CamLayer->DeleteFeatures($inCAM);
+	}
+
+	# Prepare negative behind profile, which cover everzthing behind profile
+	#	my $lCover = GeneralHelper->GetGUID();
+	#	$inCAM->COM( "profile_to_rout", "layer" => $lCover, "width" => 6000 );
+	#	CamLayer->WorkLayer( $inCAM, $lCover );
+	#	CamLayer->ClipAreaByProf( $inCAM, $lCover, 0, 1, 1 );
+	#	CamLayer->WorkLayer( $inCAM, $lCover );
+	#	CamLayer->Contourize( $inCAM, $lCover );
+	#	CamLayer->WorkLayer( $inCAM, $lCover );
+	#
+	#
+	#	CamLayer->CopySelOtherLayer( $inCAM, [ map { $_->GetOutputLayer() } @layers ], 1 );
+	#	CamMatrix->DeleteLayer($inCAM, $jobId, $lCover);
 
 	# 2) Create frame 5mm behind profile. Frame define border of layer data
 
@@ -120,7 +142,7 @@ sub __OptimizeLayers {
 
 	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, 1 );
 
-	# frame width 2mm
+	# frame width 4mm
 	my $frame = 4;
 
 	my @coord = ();

@@ -25,6 +25,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamFilter';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::Helper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ImgPreview::Enums';
@@ -138,7 +139,15 @@ sub Clone {
 
 		# 3) Clip all behind cloned step profile in current pdf step
 		foreach my $lData ( $self->{"layerList"}->GetOutputLayers() ) {
-			CamLayer->ClipAreaByProf( $inCAM, $lData->GetOutputLayer(), $cutProfileMargin, 0, 1 );    # do not clip outline rout 3mm behuind profile
+			my $cuCountoru = 1; # do not cut countoru, it cause illegal surfaces
+			my $cutProfileMargin = 0;
+			CamLayer->ClipAreaByProf( $inCAM, $lData->GetOutputLayer(), $cutProfileMargin, 0, $cuCountoru );     
+		}
+		
+		# There could be created illegal surface behind profile by clippin, so delete them
+		CamLayer->AffectLayers( $inCAM, [ map { $_->GetOutputLayer() } $self->{"layerList"}->GetOutputLayers() ] );
+		if(CamFilter->BySurfaceArea($inCAM, 0,0.001)){
+			CamLayer->DeleteFeatures($inCAM);
 		}
 
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $prof );

@@ -203,13 +203,13 @@ sub AddImagePreview {
 	my $imgPreviewBot = ImgPreview->new( $inCAM, $jobId, $parent->{"name"}, EnumsFinal->View_FROMBOT );
 
 	if ($top) {
-		my $resultItemTop = $self->_GetNewItem("Prepare top img layers");
+		my $resultItemTop = $self->_GetNewItem("Prepare TOP img layers");
 		$imgPreviewTop->Prepare();
 		$self->_OnItemResult($resultItemTop);
 	}
 
 	if ($bot) {
-		my $resultItemBot = $self->_GetNewItem("Prepare bot img layers");
+		my $resultItemBot = $self->_GetNewItem("Prepare BOT img layers");
 		$imgPreviewBot->Prepare();
 		$self->_OnItemResult($resultItemBot);
 	}
@@ -221,8 +221,8 @@ sub AddImagePreview {
 		my $messTop = "";
 		my $messBot = "";
 
-		my $resultItemTop = $self->_GetNewItem( "Generate top img - " . $sInf->{"name"} );
-		my $resultItemBot = $self->_GetNewItem( "Generate bot img - " . $sInf->{"name"} );
+		my $resultItemTop = $self->_GetNewItem( "Generate TOP img - " . $sInf->{"name"} );
+		my $resultItemBot = $self->_GetNewItem( "Generate BOT img - " . $sInf->{"name"} );
 
 		$self->{"previewImgReq"}->{ $sInf->{"name"} }->{"req"} = 1;
 
@@ -342,6 +342,8 @@ sub AddLayersPreview {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	my @nestStepSign = ( 'a', 'b', 'c', 'd', 'e', 'f', 'g' );
+
 	foreach my $sInf ( @{ $self->{"steps"} } ) {
 
 		my $messL      = "";
@@ -352,7 +354,7 @@ sub AddLayersPreview {
 		my $prev = SinglePreview->new( $inCAM, $jobId, $sInf->{"name"}, $sInf->{"considerSR"}, $self->{"lang"} );
 
 		my $draw1UpProfile = $sInf->{"containSR"} && !$sInf->{"considerSR"} && $sInf->{"type"} eq "parent" ? 1 : 0;
-		if ( $prev->Create( 1, $draw1UpProfile, \$messL ) ) {
+		if ( $prev->Create( 1, $draw1UpProfile, $sInf->{"containSR"},\$messL ) ) {
 			$self->{"previewLayersReq"}->{ $sInf->{"name"} }->{"outfile"} = $prev->GetOutput();
 
 			# Add page title
@@ -365,9 +367,13 @@ sub AddLayersPreview {
 				$title = "Production data";
 			}
 
-			my $detailExist = scalar( grep { $_->{"type"} eq 'nested' } @{ $self->{"steps"} } );
-			if ($detailExist) {
+			my @details = grep { $_->{"type"} eq 'nested' } @{ $self->{"steps"} };
+			if ( scalar(@details) ) {
 				$title .= " - " . ( $sInf->{"type"} eq 'parent' ? "panel" : "single" );
+				
+				if ( scalar(@details) > 1 &&  $sInf->{"type"} eq 'nested' ) {
+					$title .= " (" . shift(@nestStepSign) . ")";
+				}
 			}
 
 			my $pdf = PDF::API2->open( $prev->GetOutput() );
@@ -501,7 +507,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d274012";
+	my $jobId = "d266566";
 
 	my $mess = "";
 
