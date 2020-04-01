@@ -227,10 +227,9 @@ sub __OptimizeLayers {
 	my $x = abs( $lim{"xmax"} - $lim{"xmin"} );
 	my $y = abs( $lim{"ymax"} - $lim{"ymin"} );
 
-	my @l = (
-			  map { $_->GetOutput() }
-			  grep { $_->GetType() ne OutputEnums->Type_NCDEPTHLAYERS && $_->GetType() ne OutputEnums->Type_DRILLMAP } @layers
-	);
+	my @l = ( grep { $_->GetType() ne OutputEnums->Type_NCDEPTHLAYERS && $_->GetType() ne OutputEnums->Type_DRILLMAP } @layers );
+	@l = map { $_->GetOutput() } @l;
+
 	push( @l, $profL )    if ( defined $profL );
 	push( @l, $prof1UpL ) if ( defined $prof1UpL );
 
@@ -238,10 +237,8 @@ sub __OptimizeLayers {
 
 	# 2) Process layers which ARE types: Type_NCDEPTHLAYERS; Type_DRILLMAP (layer data are behind profile)
 	my %limSpec = ();
-	my @lSpec = (
-				  map { $_->GetOutput() }
-				  grep { $_->GetType() eq OutputEnums->Type_NCDEPTHLAYERS || $_->GetType() eq OutputEnums->Type_DRILLMAP } @layers
-	);
+	my @lSpec = ( grep { $_->GetType() eq OutputEnums->Type_NCDEPTHLAYERS || $_->GetType() eq OutputEnums->Type_DRILLMAP } @layers );
+	@lSpec = map { $_->GetOutput() } @lSpec;
 
 	push( @lSpec, $profSpecL )    if ( defined $profSpecL );
 	push( @lSpec, $prof1UpSpecL ) if ( defined $prof1UpSpecL );
@@ -258,6 +255,26 @@ sub __OptimizeLayers {
 
 	$self->__AddFrame( \@lSpec, \%limSpec, $imgHRatio, $imgWRatio );
 
+	# 3) All layers are printed to single pdf and orientation of "frame" must be equal
+	# If oreintation of special layer is different from standard layers, rotate 90°°
+	if (@lSpec) {
+		my %limStd  = CamJob->GetLayerLimits2( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $l[0] );
+		my %limSpec = CamJob->GetLayerLimits2( $inCAM, $self->{"jobId"}, $self->{"pdfStep"}, $lSpec[0] );
+
+		my $stdX = abs( $limStd{"xMax"} - $limStd{"xMin"} );
+		my $stdY = abs( $limStd{"yMax"} - $limStd{"yMin"} );
+		
+		my $specX = abs( $limSpec{"xMax"} - $limSpec{"xMin"} );
+		my $specY = abs( $limSpec{"yMax"} - $limSpec{"yMin"} );
+
+		if (   ($stdX > $stdY && $specX < $specY) || ($stdX < $stdY && $specX > $specY)) 
+		{
+			CamLayer->AffectLayers( $inCAM, \@lSpec );
+			$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => 90, "direction" => "ccw" );
+			CamLayer->ClearLayers($inCAM);
+		}
+
+	}
 }
 
 sub __AddFrame {
@@ -374,8 +391,6 @@ sub __OutputRawPdf {
 
 	);
 
-	 
-
 	# 2) output profiles
 	my $profPdf        = undef;
 	my $prof1UpPdf     = undef;
@@ -386,6 +401,7 @@ sub __OutputRawPdf {
 		my $path = $self->__OutputProfilePdf( $profL, $profColor );
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $profL );
 		$profPdf = PDF::API2->open($path);
+
 		unlink($path);
 	}
 
@@ -400,6 +416,7 @@ sub __OutputRawPdf {
 		my $path = $self->__OutputProfilePdf( $profSpecL, $profColor );
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $profSpecL );
 		$profSpecPdf = PDF::API2->open($path);
+
 		unlink($path);
 	}
 
@@ -414,6 +431,7 @@ sub __OutputRawPdf {
 
 	my $mergedPdf = PDF::API2->new();
 	my $sourcePdf = PDF::API2->open($sourcePdfPath);
+
 	unlink($sourcePdfPath);
 	my ( $imgHeight, $imgWidth ) = $self->__GetImageSizeByMultipl( $multiplX, $multiplY );
 
@@ -508,7 +526,6 @@ sub __OutputRawPdf {
 
 	}
 
-   
 	my $outputPdf = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 	$mergedPdf->saveas($outputPdf);
 
@@ -800,14 +817,14 @@ sub __DrawInfoTable {
 	# Add extra black border
 	if ( $data->{"lType"} eq "silk_screen" ) {
 		$tTag->fillcolor('#000000');
-		$tTag->circle( $xPos + 3 / mm, $yPos + 2.5 / mm, (2*1.05) / mm );
+		$tTag->circle( $xPos + 3 / mm, $yPos + 2.5 / mm, ( 2 * 1.05 ) / mm );
 		$tTag->fill;
 	}
 
 	$tTag->fillcolor($fillColor);
 	$tTag->circle( $xPos + 3 / mm, $yPos + 2.5 / mm, 2 / mm );
 	$tTag->fill;
-	
+
 	# add info
 
 	my $txtInf = $page->text;
@@ -859,8 +876,9 @@ sub __GetImageSizeByMultipl {
 	my $multiplX = shift;
 	my $multiplY = shift;
 
-	my $imgHRatio = ( a4H - $self->{"margin"}->{"top"} - $self->{"margin"}->{"bot"} -    ( ( $multiplY - 1 ) * $self->{"imgSpaxeV"} ) ) / $multiplY;
-	my $imgWRatio = ( a4W - $self->{"margin"}->{"left"} - $self->{"margin"}->{"right"} - ( ( $multiplX - 1 ) * $self->{"imgSpaxeH"} ) ) / $multiplX;
+	my $imgHRatio = ( a4H - $self->{"margin"}->{"top"} - $self->{"margin"}->{"bot"} - ( ( $multiplY - 1 ) * $self->{"imgSpaxeV"} ) ) / $multiplY;
+	my $imgWRatio =
+	  ( a4W - $self->{"margin"}->{"left"} - $self->{"margin"}->{"right"} - ( ( $multiplX - 1 ) * $self->{"imgSpaxeH"} ) ) / $multiplX;
 
 	return ( $imgHRatio, $imgWRatio );
 

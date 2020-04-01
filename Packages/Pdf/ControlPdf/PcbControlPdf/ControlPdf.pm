@@ -507,23 +507,23 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d266566";
+	my $jobId = "d261919";
 
 	my $mess = "";
 
-	my $step = "mpanel";
+	my $step = "o+1";
 	my $SR = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
 
 	#my $nested = $SR;
-	my $detailPrev = 1;
+	my $detailPrev = 0;
 
 	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $detailPrev, "en", 1 );
 
 	#$control->AddInfoPreview( \$mess );
 	#$control->AddStackupPreview( \$mess );
-	$control->AddImagePreview( \$mess, 1, 1 );
+	#$control->AddImagePreview( \$mess, 1, 1 );
 
-	#$control->AddLayersPreview( \$mess );
+	$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 
 	unless ($reuslt) {
