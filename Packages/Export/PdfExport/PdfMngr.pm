@@ -108,16 +108,14 @@ sub __ExportDataControl {
 	  ControlPdf->new( $inCAM, $jobId, $self->{"controlStep"}, $considerSR, $self->{"controlInclNested"}, $lang, $self->{"controlInfoToPdf"} );
 
 	my $f = sub {
-		
+
 		my $self = $_[0];
-				my $item = $_[1];
-				$item->SetGroup("Control data");
-				$self->_OnItemResult($item);
+		my $item = $_[1];
+		$item->SetGroup("Control data");
+		$self->_OnItemResult($item);
 	};
 
-	$controlPdf->{"onItemResult"}->Add(
-		sub {$f->($self,@_)}
-	);
+	$controlPdf->{"onItemResult"}->Add( sub { $f->( $self, @_ ) } );
 
 	# 1) Create Info preview
 
@@ -135,13 +133,10 @@ sub __ExportDataControl {
 	$controlPdf->AddLayersPreview();
 
 	# 5) Generate final pdf
-	my $errMess = "";
-	my $resultFinal = $self->_GetNewItem( "Final PDF merge", "Control data" );
-	unless ( $controlPdf->GeneratePdf( \$errMess ) ) {
-		$resultFinal->AddError("$errMess");
-	}
+	if ( $controlPdf->GeneratePdf() ) {
 
-	if ($resultFinal) {
+		my $errMess = "";
+		my $resultFinal = $self->_GetNewItem( "Copy to archive", "Control data" );
 
 		my $outputPdf = $controlPdf->GetOutputPath();
 
@@ -158,12 +153,14 @@ sub __ExportDataControl {
 			}
 		}
 
-		copy( $outputPdf, $archivePath );
-		unlink($outputPdf);
+		if(copy( $outputPdf, $archivePath )){
+			unlink($outputPdf);
+		}
+ 
+		$self->_OnItemResult($resultFinal);
 	}
 
-	$self->_OnItemResult($resultFinal);
-
+ 
 }
 
 sub __OnExportControl {

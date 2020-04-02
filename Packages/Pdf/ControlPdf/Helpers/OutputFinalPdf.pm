@@ -162,11 +162,11 @@ sub __DrawHeaderFooter {
 
 	# 2) Add Logo
 	if ( $self->{"infoToPdf"} ) {
-		my $p    = GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\logo-gatema.jpg';
+		my $p    = GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\gatema_logo_RGB_claim.png';
 		my $logo = $page_out->gfx;
 		die("Unable to find image file: $!") unless -e $p;
-		my $photo_file = $pdf_out->image_jpeg($p);
-		$logo->image( $photo_file, $a4W - 46 / mm, $a4H - 20 / mm, 30 / mm, 9 / mm );
+		my $photo_file = $pdf_out->image_png($p);
+		$logo->image( $photo_file, $a4W - 51 / mm, $a4H - 21 / mm, 35 / mm, 11.2 / mm ); # keep aspect ratio
 
 	}
 

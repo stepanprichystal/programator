@@ -519,11 +519,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $detailPrev, "en", 1 );
 
-	#$control->AddInfoPreview( \$mess );
+	$control->AddInfoPreview( \$mess );
 	#$control->AddStackupPreview( \$mess );
 	#$control->AddImagePreview( \$mess, 1, 1 );
 
-	$control->AddLayersPreview( \$mess );
+	#$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 
 	unless ($reuslt) {
