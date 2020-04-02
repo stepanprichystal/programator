@@ -313,11 +313,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $f = Features->new();
 
-	my $jobId = "d152456";
+	my $jobId = "d250516";
 	my $inCAM = InCAM->new();
 
-	my $step  = "o+1_";
-	my $layer = "f";
+	my $step  = "o+1";
+	my $layer = "mfill1";
 
 	$f->Parse( $inCAM, $jobId, $step, $layer );
 
@@ -337,10 +337,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#		}
 	#	}
 
-	@features = grep { $_->{"type"} =~ /[la]/i } $f->GetFeatures();
+	@features = grep { $_->{"type"} =~ /[p]/i } $f->GetFeatures();
 
 	my $report = "";
-	my %lt = PolygonFeatures->GetFeatureMatrix( \@features, 10, \$report );
+	my %lt = PolygonFeatures->GetFeatureMatrix( \@features, 5, \$report );
 
 	print $report;
 

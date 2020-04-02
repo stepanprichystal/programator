@@ -686,6 +686,19 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# 24) PLateed hole collision
+	foreach my $sName  ( map {$_->{"stepName"}}  CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" ) ){
+	
+		my $errMess = "";
+	
+		unless(ViaFillingCheck->CheckDrillHoleCollision(  $inCAM, $jobId, $sName, \$errMess )){
+			
+			$dataMngr->_AddErrorResult( "Plated holes collision", "Erorr in step: $sName; $errMess" );
+		}
+	
+	}
+
+
 }
 
 #-------------------------------------------------------------------------------------------#
