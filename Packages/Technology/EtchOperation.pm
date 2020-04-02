@@ -42,6 +42,10 @@ sub GetCompensation {
 									   'level' => [ 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1 ],
 									   'space' => 80
 							  },
+							   '12' => {
+									   'level' => [ 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1 ],
+									   'space' => 80
+							  },
 							  '18' => {
 										'level' => [ 1.1, 1 ],
 										'space' => 80
@@ -103,6 +107,10 @@ sub GetCompensation {
 									   'space' => 80
 							  },
 							  '9' => {
+									   'level' => [ 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6 ],
+									   'space' => 80
+							  },
+							   '12' => {
 									   'level' => [ 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6 ],
 									   'space' => 80
 							  },
@@ -194,7 +202,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $cuThickness = 35;
 	my $class       = 6;
-	my $plated      = 0;
+	my $plated      = 1;
 
 	print EtchOperation->GetCompensation( $cuThickness, $class, $plated );
 

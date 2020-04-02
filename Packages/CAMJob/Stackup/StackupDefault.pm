@@ -232,6 +232,8 @@ sub _GetCuIdByThick {
 
 	if ( $thick == 9 ) {
 		return 2;
+	}elsif ( $thick == 12 ) {
+		return 3;
 	}
 	elsif ( $thick == 18 ) {
 		return 4;
