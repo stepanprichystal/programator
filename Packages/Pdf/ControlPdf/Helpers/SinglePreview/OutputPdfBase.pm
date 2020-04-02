@@ -70,7 +70,7 @@ sub Output {
 	my $profColor      = shift // [ 255, 0, 0 ];
 	my $prof1UpColor   = shift // [ 0, 255, 0 ];
 	my $profWidth      = shift // 500;             # µm
-	my $profWidth1Up   = shift // 500;             # µm
+	my $profWidth1Up   = shift // 200;             # µm
 
 	if ( $multiplX < 1 ) {
 		die "Multiplicity of image in X axis has to by at least 1";
@@ -115,7 +115,7 @@ sub __PrepareProfiles {
 	my $drawProfile    = shift;
 	my $drawProfile1Up = shift;
 	my $profWidth      = shift // 500;    # 300µm
-	my $profWidth1Up   = shift // 300;    # 300µmm
+	my $profWidth1Up   = shift // 100;    # 100µm thinner than score line etc (not entirely cover lazer data)
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -155,9 +155,9 @@ sub __PrepareProfiles {
 
 			CamHelper->SetStep( $inCAM, $s );
 			$inCAM->COM( "profile_to_rout", "layer" => $prof1UpL, "width" => $profWidth1Up );
-			CamLayer->WorkLayer( $inCAM, $profL );
-			$inCAM->COM( "sel_design2rout", "rad_tol" => 100 );
-			$inCAM->COM( "sel_line2dash", "seg_len" => 1000, "gap_len" => 1000 );
+			CamLayer->WorkLayer( $inCAM, $prof1UpL );
+			#$inCAM->COM( "sel_design2rout", "rad_tol" => 100 );
+			#$inCAM->COM( "sel_line2dash", "seg_len" => 2000, "gap_len" => 3000 );
 
 			$inCAM->COM(
 						 "sr_fill",
@@ -166,7 +166,7 @@ sub __PrepareProfiles {
 						 "predefined_pattern_type" => "lines",
 						 "indentation"             => "even",
 						 "lines_angle"             => 45,
-						 "lines_witdh"             => 300,
+						 "lines_witdh"             => $profWidth1Up,
 						 "lines_dist"              => 4000,
 						 "step_margin_x"           => "0",
 						 "step_margin_y"           => "0",
@@ -263,12 +263,11 @@ sub __OptimizeLayers {
 
 		my $stdX = abs( $limStd{"xMax"} - $limStd{"xMin"} );
 		my $stdY = abs( $limStd{"yMax"} - $limStd{"yMin"} );
-		
+
 		my $specX = abs( $limSpec{"xMax"} - $limSpec{"xMin"} );
 		my $specY = abs( $limSpec{"yMax"} - $limSpec{"yMin"} );
 
-		if (   ($stdX > $stdY && $specX < $specY) || ($stdX < $stdY && $specX > $specY)) 
-		{
+		if ( ( $stdX > $stdY && $specX < $specY ) || ( $stdX < $stdY && $specX > $specY ) ) {
 			CamLayer->AffectLayers( $inCAM, \@lSpec );
 			$inCAM->COM( "sel_transform", "oper" => "rotate", "angle" => 90, "direction" => "ccw" );
 			CamLayer->ClearLayers($inCAM);
@@ -456,23 +455,23 @@ sub __OutputRawPdf {
 
 			for ( my $c = 0 ; $c < $multiplX ; $c++ ) {
 
-				# Add source layer
-				my $xData = $mergedPdf->importPageIntoForm( $sourcePdf, $currLData + 1 );
-				$gfx->formimage( $xData, $posX, $posY, $scale );
-
 				my $specProf = $layers[$currLData]->GetType() eq OutputEnums->Type_NCDEPTHLAYERS
 				  || $layers[$currLData]->GetType() eq OutputEnums->Type_DRILLMAP ? 1 : 0;
 
-				# Add step profile
-				if ( defined $profL && defined $profSpecL ) {
-					my $xp = $mergedPdf->importPageIntoForm( $specProf ? $profSpecPdf : $profPdf, 1 );
-					$gfx->formimage( $xp, $posX, $posY, $scale );
-				}
+				# 1) Add source layer 
+				my $xData = $mergedPdf->importPageIntoForm( $sourcePdf, $currLData + 1 );
+				$gfx->formimage( $xData, $posX, $posY, $scale );
 
-				# Add nested  1up steps profiles
+				# 2) Add nested  1up steps profiles (above data layer)
 				if ( defined $prof1UpL && defined $prof1UpSpecL ) {
 					my $xp1Up = $mergedPdf->importPageIntoForm( $specProf ? $prof1UpSpecPdf : $prof1UpPdf, 1 );
 					$gfx->formimage( $xp1Up, $posX, $posY, $scale );
+				}
+
+				# 3) Add step profile (above data layer)
+				if ( defined $profL && defined $profSpecL ) {
+					my $xp = $mergedPdf->importPageIntoForm( $specProf ? $profSpecPdf : $profPdf, 1 );
+					$gfx->formimage( $xp, $posX, $posY, $scale );
 				}
 
 				# Add cover frame
