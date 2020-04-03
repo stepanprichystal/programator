@@ -4,7 +4,7 @@
 # Template class than contain all needed data, which are pasted to final PDF
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::StencilControlPdf::FillTemplate;
+package Packages::Pdf::ControlPdf::StencilControlPdf::HtmlTemplate::FillTemplatePrevInfo;
 
 #3th party library
 use utf8;
@@ -36,25 +36,24 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-	$self->{"params"}   = shift;    # Stencil parameters
+	$self->{"inCAM"}  = shift;
+	$self->{"jobId"}  = shift;
+	$self->{"params"} = shift;    # Stencil parameters
 
 	return $self;
 }
 
 sub Fill {
-	my $self           = shift;
-	my $template       = shift;
-	my $previewTopPath = shift;
-	my $infoToPdf      = shift;    # if put info about operator to pdf
+	my $self      = shift;
+	my $template  = shift;
+	my $infoToPdf = shift;        # if put info about operator to pdf
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# Load info about pcb
- 
-	my %inf    = StnclHelper->GetStencilInfo( $self->{"jobId"} );
+
+	my %inf = StnclHelper->GetStencilInfo( $self->{"jobId"} );
 
 	my $custSetExist = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );    # zakaznicke sady
 
@@ -100,7 +99,9 @@ sub Fill {
 	$template->SetKey( "PutIntoFrame", "Stick into frame", "Vlepit do rámu" );
 
 	my $frame = $self->{"params"}->GetSchema()->{"type"} eq StnclEnums->Schema_FRAME ? 1 : 0;
-	$template->SetKey( "PutIntoFrameVal", $frame ? "Yes, using squeegee from readable side" : "No", $frame ? "Ano, pohyb stěrky z čitelné strany" : "Ne" );
+	$template->SetKey( "PutIntoFrameVal",
+					   $frame ? "Yes, using squeegee from readable side" : "No",
+					   $frame ? "Ano, pohyb stěrky z čitelné strany"  : "Ne" );
 
 	$template->SetKey( "Technology", "Technology", "Technologie" );
 
@@ -129,16 +130,16 @@ sub Fill {
 	my $fiducTextCz = "";
 
 	if ( $fiducInf->{"halfFiducials"} ) {
-		
-		my $readable = $fiducInf->{"fiducSide"} eq "readable" ? 1:0;
- 
+
+		my $readable = $fiducInf->{"fiducSide"} eq "readable" ? 1 : 0;
+
 		if ( $inf{"tech"} eq StnclEnums->Technology_LASER ) {
-			$fiducTextEn = "Half-lasered (from ".($readable? "readable" : "nonreadable")."	side)";
-			$fiducTextCz = "Vypálené do poloviny (z ".($readable? "čitelné" : "nečitelné")." strany)";
+			$fiducTextEn = "Half-lasered (from " .        ( $readable ? "readable"  : "nonreadable" ) . "	side)";
+			$fiducTextCz = "Vypálené do poloviny (z " . ( $readable ? "čitelné" : "nečitelné" ) . " strany)";
 		}
 		elsif ( $inf{"tech"} eq StnclEnums->Technology_ETCH ) {
-			$fiducTextEn = "Half-etched (from ".($readable? "readable" : "nonreadable")." side)";
-			$fiducTextCz = "Vyleptané do poloviny (z ".($readable? "čitelné" : "nečitelné")." strany)";
+			$fiducTextEn = "Half-etched (from " .         ( $readable ? "readable"  : "nonreadable" ) . " side)";
+			$fiducTextCz = "Vyleptané do poloviny (z " . ( $readable ? "čitelné" : "nečitelné" ) . " strany)";
 		}
 	}
 	else {
@@ -146,106 +147,53 @@ sub Fill {
 		$fiducTextCz = "Ne";
 	}
 
-	$template->SetKey( "FiducialsVal",$fiducTextEn, $fiducTextCz );
+	$template->SetKey( "FiducialsVal", $fiducTextEn, $fiducTextCz );
 
 	$template->SetKey( "Type", "Type", "Type" );
-	
+
 	my $typeEn = "";
 	my $typeCz = "";
-	if($self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP){
+	if ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP ) {
 		$typeEn = "For TOP pcb side";
 		$typeCz = "Pro vrchní TOP stranu dps";
-	
-	}elsif($self->{"params"}->GetStencilType() eq StnclEnums->StencilType_BOT){
+
+	}
+	elsif ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_BOT ) {
 		$typeEn = "For BOTTOM pcb side";
 		$typeCz = "Pro spodní BOT stranu pcb ";
-	}elsif($self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT){
+	}
+	elsif ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT ) {
 		$typeEn = "For TOP+BOTTOM pcb side";
 		$typeCz = "Pro vrchní TOP + spodní BOT stranu dps";
 	}
-	
-	
+
 	$template->SetKey( "TypeVal", $typeEn, $typeCz );
-	
+
 	$template->SetKey( "SourceType", "Data source", "Zdroj dat" );
-	
+
 	my $sourceTypeEn = "";
 	my $sourceTypeCz = "";
-	
-	if($self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA){
+
+	if ( $self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_CUSTDATA ) {
 		$sourceTypeEn = "Customer data";
 		$sourceTypeCz = "Dodáno zákazníkem";
-	
-	}elsif($self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
-		$sourceTypeEn = "Order - ".$self->{"params"}->GetDataSource()->{"sourceJob"}.($self->{"params"}->GetDataSource()->{"sourceJobIsPool"}?" (POOL)":"");
-		$sourceTypeCz = "Zakázka - ".$self->{"params"}->GetDataSource()->{"sourceJob"}.($self->{"params"}->GetDataSource()->{"sourceJobIsPool"}?" (POOL)":"");
-	} 
-	
-	$template->SetKey( "SourceTypeVal", $sourceTypeEn, $sourceTypeCz );
-	
-	# Information about stencil source data
-# sourceType => sourceJob/sourceCustomerData
-# sourceJob => jobId
-# sourceJobIsPool => 1/0
-sub SetDataSource {
-	my $self = shift;
-	my $val  = shift;
 
-	$self->{"data"}->{"isPool"} = $val;
-} 
-	
-
- 
-	# =================== Table views ============================
- 
- 	my $legendProfEn = "";
- 	my $legendProfCz = "";
- 
- 	if($self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
-		$legendProfEn = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\profile.png" /> pcb profile';
-		$legendProfCz = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\profile.png" /> profil dps';
- 	}
- 	
-	$template->SetKey( "LegendProfile", $legendProfEn, $legendProfCz );
-	
-	my $legendDataEn = "";
- 	my $legendDataCz = "";
-	
-	if($self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB){
-	 	$legendDataEn = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\data.png" /> stencil data limits';
-		$legendDataCz = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\data.png" /> ohraničení plošek šablony';
 	}
-	
-	$template->SetKey( "LegendData", $legendDataEn, $legendDataCz );	
- 
-	my $legendFiducEn = '';
- 	my $legendFiducCz = '';
- 
- 	if($fiducInf->{"halfFiducials"}){
- 		
- 		my $readable = $fiducInf->{"fiducSide"} eq "readable" ? 1:0;
- 		
- 		if ( $inf{"tech"} eq StnclEnums->Technology_LASER ) {
-			$fiducTextEn = "Positions of half-lasered fiducials (from ".($readable? "readable" : "nonreadable")." side)";
-			$fiducTextCz = "Pozice fiduciálních značek vypálených do poloviny (z ".($readable? "čitelné" : "nečitelné")." strany)";
-		}
-		elsif ( $inf{"tech"} eq StnclEnums->Technology_ETCH ) {
-			$fiducTextEn = "Positions of half-lasered fiducials (from ".($readable? "readable" : "nonreadable")." side)";
-			$fiducTextCz = "Pozice fiduciálních značek vypálených do poloviny (z ".($readable? "čitelné" : "nečitelné")." strany)";
-		}
- 		
- 		$legendFiducEn = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\fiduc.png" /> '.$fiducTextEn;
- 		$legendFiducCz = '<img  height="15" src="'.GeneralHelper->Root().'\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\fiduc.png" /> '.$fiducTextCz;
- 
- 	}
- 
-	$template->SetKey( "LegendFiduc", $legendFiducEn, $legendFiducCz );
-	$template->SetKey( "TopView", "View from readable side (squeegee side)", "Pohled z čitelné strany (strana stěrky)" );
-	$template->SetKey( "TopViewImg", $previewTopPath );
- 
+	elsif ( $self->{"params"}->GetDataSource()->{"sourceType"} eq StnclEnums->StencilSource_JOB ) {
+		$sourceTypeEn =
+		    "Order - "
+		  . $self->{"params"}->GetDataSource()->{"sourceJob"}
+		  . ( $self->{"params"}->GetDataSource()->{"sourceJobIsPool"} ? " (POOL)" : "" );
+		$sourceTypeCz =
+		    "Zakázka - "
+		  . $self->{"params"}->GetDataSource()->{"sourceJob"}
+		  . ( $self->{"params"}->GetDataSource()->{"sourceJobIsPool"} ? " (POOL)" : "" );
+	}
+
+	$template->SetKey( "SourceTypeVal", $sourceTypeEn, $sourceTypeCz );
+
 	return 1;
 }
- 
 
 sub __GetEmployyInfo {
 	my $self = shift;

@@ -39,8 +39,8 @@ sub new {
 	$self->{"params"}   = shift;    # Stencil parameters
 
 	$self->{"layerList"} = LayerDataList->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"} );
-	$self->{"imgLayerPrepare"} = ImgLayerPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"}, $self->{"params"} );
-	$self->{"outputPdf"} = ImgPreviewOut->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"} );
+	$self->{"imgLayerPrepare"} =
+	  ImgLayerPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"}, $self->{"params"} );
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
 
 	return $self;
@@ -51,15 +51,25 @@ sub Create {
 	my $self    = shift;
 	my $message = shift;
 
-	# get all board layers
+	# 1) Create step
+	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
+	CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"pdfStep"}, 0 );
+	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
+
+
+	# 2)Get layers for output
 	my @layers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
 	# set layer list
 	$self->{"layerList"}->InitLayers( \@layers );
 	$self->{"layerList"}->InitSurfaces( $self->__DefineSurfaces() );
 
+	# 3) Prepare layers for image
 	$self->{"imgLayerPrepare"}->PrepareLayers( $self->{"layerList"} );
-	$self->{"outputPdf"}->Output( $self->{"layerList"} );
+	
+	# 4) Output image
+	my $imgOutput = ImgPreviewOut->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"layerList"}, $self->{"viewType"} );
+	$imgOutput->Output( $self->{"layerList"} );
 
 	return 1;
 }
@@ -143,6 +153,22 @@ sub __DefineSurfaces {
 
 	return \%clrs;
 
+}
+
+sub Clean {
+	my $self        = shift;
+ 
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	CamStep->DeleteStep( $inCAM, $jobId, $self->{"pdfStep"} );
+
+	# delete helper layers
+	foreach my $lData ( $self->{"layerList"}->GetOutputLayers() ) {
+
+		$inCAM->COM( 'delete_layer', "layer" => $lData->GetOutputLayer() );
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

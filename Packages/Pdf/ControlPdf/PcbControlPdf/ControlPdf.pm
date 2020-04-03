@@ -192,7 +192,7 @@ sub AddImagePreview {
 	my $top  = shift // 1;
 	my $bot  = shift // 1;
 
-	my $result;
+	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};

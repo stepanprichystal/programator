@@ -75,7 +75,7 @@ sub PrepareLayers {
 
 	# prepare layers
 	$self->__PrepareLayers($layerList);
-	$self->__OptimizeLayers($layerList);
+ 
 
 }
 
@@ -706,107 +706,7 @@ sub __PrepareFIDUCPOS {
 	$layer->SetOutputLayer($lName);
 }
 
-# Clip area arpound profile
-# Create border around pcb which is responsible for keep all layer dimension same
-# border is 5mm behind profile
-# if preview is bot, mirror data
-sub __OptimizeLayers {
-	my $self      = shift;
-	my $layerList = shift;
 
-	my $inCAM  = $self->{"inCAM"};
-	my @layers = $layerList->GetOutputLayers();
-
-	# 1) Clip area behind profile
-
-	CamLayer->ClearLayers($inCAM);
-
-	foreach my $l (@layers) {
-
-		$inCAM->COM( "affected_layer", "name" => $l->GetOutputLayer(), "mode" => "single", "affected" => "yes" );
-	}
-
-	# clip area around profile
-	$inCAM->COM(
-		"clip_area_end",
-		"layers_mode" => "affected_layers",
-		"layer"       => "",
-		"area"        => "profile",
-
-		#"area_type"   => "rectangle",
-		"inout"       => "outside",
-		"contour_cut" => "yes",
-		"margin"      => "-2",        # cut 2µm inside of pcb, because cut exactly on border can coause ilegal surfaces, in nplt mill example
-		"feat_types" => "line\;pad;surface;arc;text",
-		"pol_types"  => "positive\;negative"
-	);
-	$inCAM->COM( "affected_layer", "mode" => "all", "affected" => "no" );
-
-	# 2) Create frame 5mm behind profile. Frame define border of layer data
-
-	my $lName = GeneralHelper->GetGUID();
-	$inCAM->COM( 'create_layer', "layer" => $lName, "context" => 'misc', "type" => 'document', "polarity" => 'positive', "ins_layer" => '' );
-	CamLayer->WorkLayer( $inCAM, $lName );
-
-	# frame width 2mm
-	my $frame = 4;
-
-	my @coord = ();
-
-	my %p1 = ( "x" => $self->{"profileLim"}->{"xMin"} - $frame, "y" => $self->{"profileLim"}->{"yMin"} - $frame );
-	my %p2 = ( "x" => $self->{"profileLim"}->{"xMin"} - $frame, "y" => $self->{"profileLim"}->{"yMax"} + $frame );
-	my %p3 = ( "x" => $self->{"profileLim"}->{"xMax"} + $frame, "y" => $self->{"profileLim"}->{"yMax"} + $frame );
-	my %p4 = ( "x" => $self->{"profileLim"}->{"xMax"} + $frame, "y" => $self->{"profileLim"}->{"yMin"} - $frame );
-	push( @coord, \%p1 );
-	push( @coord, \%p2 );
-	push( @coord, \%p3 );
-	push( @coord, \%p4 );
-
-	# frame 100µm width around pcb (fr frame coordinate)
-	CamSymbol->AddPolyline( $self->{"inCAM"}, \@coord, "r10", "positive", 1 );
-
-	# copy border to all output layers
-
-	my @layerStr = map { $_->GetOutputLayer() } @layers;
-	my $layerStr = join( "\\;", @layerStr );
-	$inCAM->COM(
-		"sel_copy_other",
-		"dest"         => "layer_name",
-		"target_layer" => $layerStr,
-		"invert"       => "no"
-
-	);
-
-	$inCAM->COM( 'delete_layer', "layer" => $lName );
-	CamLayer->ClearLayers($inCAM);
-
-	# if preview from BOT mirror all layers
-	if ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
-
-		my $rotateBy = undef;
-
-		my %lim = %{ $self->{"profileLim"} };
-
-		my $x = abs( $lim{"xMax"} - $lim{"xMin"} );
-		my $y = abs( $lim{"yMax"} - $lim{"yMin"} );
-
-		if ( $x <= $y ) {
-
-			$rotateBy = "y";
-		}
-		else {
-
-			$rotateBy = "x";
-		}
-
-		foreach my $l (@layers) {
-
-			CamLayer->WorkLayer( $inCAM, $l->GetOutputLayer() );
-			CamLayer->MirrorLayerData( $inCAM, $l->GetOutputLayer(), $rotateBy );
-		}
-	}
-
-}
 
 sub __DrawDashedRect {
 	my $self       = shift;

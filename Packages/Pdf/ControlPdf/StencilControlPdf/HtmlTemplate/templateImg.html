@@ -1,0 +1,83 @@
+ <!-- ------------------------------------------------------------------------------------------ 		-->
+ <!--  Description: This is spesial html template for first  page of control pdf				-->
+ <!--  Add font arial.ttf is neccessary for proper working of text with czech diacritics				-->
+ <!--  texts: key_<nameOfKey> are replaced by real values during export									-->
+ <!--  Only some html/css syntax is working for more detail see: http://fwpn.org.pl/assets/event_attachments/asd.html -->
+ <!--  Author:SPR																						-->
+ <!-- ------------------------------------------------------------------------------------------ 		-->
+ 
+ 
+<html>
+
+  <head>
+    <title>HTML Layouts using DIV, SPAN</title>
+    <link rel="stylesheet" type="text/css" href="templateInfo.css">
+    
+ <!-- Add font arial.ttf is neccessary for proper working of text with czech diacritics -->
+    <style>
+
+
+ 
+@font-face {
+font-family: "Arial";
+src: url("key_ScriptsRoot\Packages\Pdf\ControlPdf\Helpers\Resources\arial.ttf");
+}
+</style>
+    
+  </head>
+
+  <body>
+ 
+    <br/>
+
+ 
+
+	<!-- Table shiping previews -->
+
+ <table class="infotable">
+      <tbody>
+        <tr>
+          <td>
+
+            <table class="infotable">
+              <tbody>
+                <tr>
+                  <th colspan=2>
+                    <img class="redsquare" align="middle" src="key_ScriptsRoot\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\redSquare.jpg" /><span>&nbsp;&nbsp;</span>key_TopView</th>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+        
+          <tr>
+           <td   class="infotable_val" style="border-bottom-width= 0px; vertical-align:middle"  >
+         	
+ 			
+              <span>key_LegendProfile</span>
+              <span>key_LegendData</span>
+               <span>key_LegendFiduc</span>
+               
+               <img  height="32" src="key_ScriptsRoot\Packages\Pdf\ControlPdf\StencilControlPdf\HtmlTemplate\Img\expander.png" />
+               
+          </td>
+        </tr>
+
+        <tr>
+           <td style="border-bottom-width= 0px">
+         
+  
+            <img align="middle" src="key_TopViewImg" width="750" height="740" />
+
+          </td>
+        </tr>
+       
+	 </tbody>
+        
+	 </table>
+    
+	 
+ 
+  </body>
+
+</html>
