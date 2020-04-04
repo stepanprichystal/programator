@@ -715,7 +715,7 @@ sub __DrawInfoTable {
 
 	#my $leftClmnW  = 15 / mm;
 	#my $rightClmnW = 73 / mm;
-	my $leftClmnW  = 12 / mm;
+	my $leftClmnW  = 14 / mm;
 	my $rightClmnW = $tabWidth - $leftClmnW;
 	my $topRowH    = 15;
 	my $botRowH    = 15;
@@ -837,7 +837,7 @@ sub __DrawInfoTable {
 		$txtInf->text('Pozn.');
 	}
 	else {
-		$txtInf->text('Info');
+		$txtInf->text('Note');
 	}
 
 	# add info text

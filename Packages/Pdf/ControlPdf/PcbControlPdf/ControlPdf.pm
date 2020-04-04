@@ -301,9 +301,18 @@ sub AddImagePreview {
 
 			my @details = grep { $_->{"type"} eq 'nested' } @{ $self->{"steps"} };
 			if ( scalar(@details) ) {
-				$title .= " - " . ( $sInf->{"type"} eq 'parent' ? "panel" : "single" );
 
-				if ( scalar(@details) > 1 &&  $sInf->{"type"} eq 'nested' ) {
+				my $type = undef;
+				if ( $sInf->{"type"} eq 'parent' ) {
+					$type = $self->{"lang"} eq "cz" ? "panel" : "panel";
+				}
+				else {
+					$type = $self->{"lang"} eq "cz" ? "kus" : "single";
+				}
+
+				$title .= " - " . $type;
+
+				if ( scalar(@details) > 1 && $sInf->{"type"} eq 'nested' ) {
 					$title .= " (" . shift(@nestStepSign) . ")";
 				}
 
@@ -354,7 +363,7 @@ sub AddLayersPreview {
 		my $prev = SinglePreview->new( $inCAM, $jobId, $sInf->{"name"}, $sInf->{"considerSR"}, $self->{"lang"} );
 
 		my $draw1UpProfile = $sInf->{"containSR"} && !$sInf->{"considerSR"} && $sInf->{"type"} eq "parent" ? 1 : 0;
-		if ( $prev->Create( 1, $draw1UpProfile, $sInf->{"containSR"},\$messL ) ) {
+		if ( $prev->Create( 1, $draw1UpProfile, $sInf->{"containSR"}, \$messL ) ) {
 			$self->{"previewLayersReq"}->{ $sInf->{"name"} }->{"outfile"} = $prev->GetOutput();
 
 			# Add page title
@@ -369,9 +378,17 @@ sub AddLayersPreview {
 
 			my @details = grep { $_->{"type"} eq 'nested' } @{ $self->{"steps"} };
 			if ( scalar(@details) ) {
-				$title .= " - " . ( $sInf->{"type"} eq 'parent' ? "panel" : "single" );
-				
-				if ( scalar(@details) > 1 &&  $sInf->{"type"} eq 'nested' ) {
+				my $type = undef;
+				if ( $sInf->{"type"} eq 'parent' ) {
+					$type = $self->{"lang"} eq "cz" ? "panel" : "panel";
+				}
+				else {
+					$type = $self->{"lang"} eq "cz" ? "kus" : "single";
+				}
+
+				$title .= " - " . $type;
+
+				if ( scalar(@details) > 1 && $sInf->{"type"} eq 'nested' ) {
 					$title .= " (" . shift(@nestStepSign) . ")";
 				}
 			}
@@ -520,6 +537,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $detailPrev, "en", 1 );
 
 	$control->AddInfoPreview( \$mess );
+
 	#$control->AddStackupPreview( \$mess );
 	#$control->AddImagePreview( \$mess, 1, 1 );
 

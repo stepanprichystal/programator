@@ -43,14 +43,14 @@ sub new {
 	my $self      = $class->SUPER::new( $packageId, @_ );
 	bless $self;
 
-	$self->{"inCAM"}        = shift;
-	$self->{"jobId"}        = shift;
-	$self->{"exportNif"}    = shift;
-	$self->{"exportData"}   = shift;
-	$self->{"exportPdf"}    = shift;
-	$self->{"exportMeasure"}    = shift;
-	$self->{"stencilThick"} = shift;
-	$self->{"fiducInfo"}    = shift;
+	$self->{"inCAM"}         = shift;
+	$self->{"jobId"}         = shift;
+	$self->{"exportNif"}     = shift;
+	$self->{"exportData"}    = shift;
+	$self->{"exportPdf"}     = shift;
+	$self->{"exportMeasure"} = shift;
+	$self->{"stencilThick"}  = shift;
+	$self->{"fiducInfo"}     = shift;
 
 	# PROPERTIES
 
@@ -66,8 +66,6 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
-
 
 	# Export nif
 	if ( $self->{"exportNif"} ) {
@@ -121,80 +119,88 @@ sub Run {
 		my $defLang = "en";
 
 		my %inf = %{ HegMethods->GetCustomerInfo($jobId) };
- 		
- 		# 25 is CZ
+
+		# 25 is CZ
 		if ( $inf{"zeme"} eq 25 ) {
 			$defLang = "cz";
 		}
-		
+
 		# Decide if ptv user info to pdf
-		my $note = CustomerNote->new( $inf{"reference_subjektu"} );
+		my $note     = CustomerNote->new( $inf{"reference_subjektu"} );
 		my $userInfo = 1;
- 
-		if ($note->NoInfoToPdf()) {
+
+		if ( $note->NoInfoToPdf() ) {
 			$userInfo = 0;
 		}
 
-		my $pdf = ControlPdf->new( $inCAM, $jobId, "o+1", $defLang, $userInfo );
-		$pdf->Create();
+		my $controlPdf = ControlPdf->new( $inCAM, $jobId, "o+1", $defLang, $userInfo );
 
-		my $result1 = $self->_GetNewItem( "Preview image", "Export pdf" );
-		my $mess1 = "";
-		unless ( $pdf->CreatePreview( \$mess1 ) ) {
-			$result1->AddError($mess1);
-		}
-		$self->_OnItemResult($result1);
+		my $f = sub {
 
-		my $result2 = $self->_GetNewItem( "Produce data", "Export pdf" );
-		my $mess2 = "";
-		unless ( $pdf->CreatePreviewSingle( \$mess2 ) ) {
-			$result2->AddError($mess2);
-		}
-		$self->_OnItemResult($result2);
+			my $self = $_[0];
+			my $item = $_[1];
+			$item->SetGroup("Control pdf");
+			$self->_OnItemResult($item);
+		};
 
-		my $result3 = $self->_GetNewItem( "Finalisation", "Export pdf" );
-		my $mess3 = "";
-		unless ( $pdf->GeneratePdf( \$mess3 ) ) {
-			$result2->AddError($mess3);
-		}
-		$self->_OnItemResult($result3);
+		$controlPdf->{"onItemResult"}->Add( sub { $f->( $self, @_ ) } );
 
-		# copy  pdf control to archive
-		my $outputPdf = $pdf->GetOutputPath();
+		# 1) Create Info preview
 
-		unless ( -e $outputPdf ) {
-			die "Output pdf control doesnt exist. Failed to create control pdf.\n";
-		}
+		$controlPdf->AddInfoPreview();
 
-		my $archivePath = JobHelper->GetJobArchive($jobId) . "zdroje\\" . $self->{"jobId"} . "-control.pdf";
+		# 2) Create Preview images
 
-		if ( -e $archivePath ) {
-			unless ( unlink($archivePath) ) {
-				die "Can not delete old pdf control file (" . $archivePath . "). Maybe file is still open.\n";
+		$controlPdf->AddImagePreview();
+
+		# 4) Create single layer preview
+
+		$controlPdf->AddLayersPreview();
+
+		# 5) Generate final pdf
+		if ( $controlPdf->GeneratePdf() ) {
+
+			my $errMess = "";
+			my $resultFinal = $self->_GetNewItem( "Copy to archive", "Control pdf" );
+
+			my $outputPdf = $controlPdf->GetOutputPath();
+
+			unless ( -e $outputPdf ) {
+				$resultFinal->AddError("Output pdf control doesnt exist. Failed to create control pdf.\n");
 			}
+
+			my $archivePath = JobHelper->GetJobArchive($jobId) . "zdroje\\" . $self->{"jobId"} . "-control.pdf";
+
+			if ( -e $archivePath ) {
+				unless ( unlink($archivePath) ) {
+
+					$resultFinal->AddError( "Can not delete old pdf control file (" . $archivePath . "). Maybe file is still open.\n" );
+				}
+			}
+
+			if ( copy( $outputPdf, $archivePath ) ) {
+				unlink($outputPdf);
+			}
+
+			$self->_OnItemResult($resultFinal);
 		}
-
-		copy( $outputPdf, $archivePath );
-		unlink($outputPdf);
-
 	}
-	
+
 	# Export measure data
 	if ( $self->{"exportMeasure"} ) {
-		
-		
+
 		my $resultItemData = $self->_GetNewItem("Export \"pad info\" pdf");
-		
+
 		my $export = MeasureData->new( $inCAM, $jobId );
-		
-		my $mess = "";
-		my $result = $export->Output(\$mess);
-		
-		unless($result){
-			
+
+		my $mess   = "";
+		my $result = $export->Output( \$mess );
+
+		unless ($result) {
+
 			$resultItemData->AddError($mess);
 		}
-		
+
 		$self->_OnItemResult($resultItemData);
 	}
 
@@ -245,11 +251,10 @@ sub TaskItemsCount {
 	if ( $self->{"exportPdf"} ) {
 		$totalCnt += 3;    # pdf export
 	}
-	
+
 	if ( $self->{"exportMeasure"} ) {
 		$totalCnt += 1;    # measure data export
 	}
-	 
 
 	return $totalCnt;
 

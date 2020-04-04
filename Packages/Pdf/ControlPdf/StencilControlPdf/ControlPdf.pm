@@ -59,7 +59,7 @@ sub new {
 
 	# PROPERTIES
 
-	$self->{"pdfStep"}    = "pdf_" . $self->{"step"};
+	 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";             # place where pdf is created
 	$self->{"outputPdf"}  = OutputFinalPdf->new( $self->{"lang"}, $self->{"infoToPdf"}, $self->{"jobId"} );
 	$self->{"params"}     = StencilSerializer->new( $self->{"jobId"} )->LoadStenciLParams();
@@ -92,7 +92,7 @@ sub AddInfoPreview {
 	my $fillTempl = FillTemplatePrevInfo->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"params"} );
 
 	$fillTempl->FillKeysData( $templData, $self->{"infoToPdf"} );
-	$fillTempl->FillKeysLayout($templData);
+	#$fillTempl->FillKeysLayout($templData);
 
 	my $templ = HtmlTemplate->new( $self->{"lang"} );
 	if ( $templ->ProcessTemplatePdf( $tempPath, $templData ) ) {
@@ -123,13 +123,13 @@ sub AddInfoPreview {
 }
 
 # Create image of real pcb from top
-sub AddImgPreview {
+sub AddImagePreview {
 	my $self = shift;
 	my $mess = shift // \"";
-	
-		my $result = 1;
-			my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+
+	my $result = 1;
+	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
 
 	my $resultItem = $self->_GetNewItem("Generate img");
 
@@ -138,10 +138,10 @@ sub AddImgPreview {
 	my $imgPreview = undef;
 	if ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP || $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT )
 	{
-		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP, $self->{"params"} );
+		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, EnumsFinal->View_FROMTOP, $self->{"params"} );
 	}
 	else {
-		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT, $self->{"params"} );
+		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, EnumsFinal->View_FROMBOT, $self->{"params"} );
 	}
 
 	# We create only one preview image which depends
@@ -158,7 +158,7 @@ sub AddImgPreview {
 
 	# 2) Fill data template with images
 	my $templData = TemplateKey->new();
-	my $fillTempl = FillTemplatePrevImg->new( $inCAM, $jobId );
+	my $fillTempl = FillTemplatePrevImg->new( $inCAM, $jobId, $self->{"params"}  );
 
 	$fillTempl->FillKeysData( $templData, $imgPath, $self->{"infoToPdf"} );
 
@@ -201,8 +201,6 @@ sub AddImgPreview {
 	return $result;
 }
 
- 
-
 sub AddLayersPreview {
 	my $self = shift;
 	my $mess = shift // \"";
@@ -212,14 +210,14 @@ sub AddLayersPreview {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $messL      = "";
+	 
 	my $resultItem = $self->_GetNewItem("Single layers");
 
 	$self->{"previewLayersReq"}->{"req"} = 1;
 
 	my $prev = SinglePreview->new( $inCAM, $jobId, $self->{"step"}, $self->{"lang"} );
 
-	if ( $prev->Create( 1, \$messL ) ) {
+	if ( $prev->Create( 1, \$mess ) ) {
 		$self->{"previewLayersReq"}->{"outfile"} = $prev->GetOutput();
 
 		# Add page title
@@ -231,14 +229,15 @@ sub AddLayersPreview {
 		else {
 			$title = "Production data";
 		}
+		
+		$self->__AddPageTitle($title);
 
 	}
 	else {
 
 		$result = 0;
-		$$messL .= "Error during generate single layer preview";
-		$$mess  .= $$messL;
-		$resultItem->AddError($$messL);
+		$$mess .= "Error during generate single layer preview";
+		$resultItem->AddError($$mess);
 	}
 
 	$self->_OnItemResult($resultItem);    # Raise finish event
@@ -386,7 +385,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
+	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en", 1 );
 	$control->AddInfoPreview( \$mess );
 	$control->AddImagePreview( \$mess, 1, 1 );
 	$control->AddLayersPreview( \$mess );

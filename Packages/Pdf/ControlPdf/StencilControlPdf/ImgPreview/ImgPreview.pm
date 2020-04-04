@@ -18,6 +18,8 @@ use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::ImgLayerP
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::Enums';
 use aliased 'Packages::Pdf::ControlPdf::Helpers::ImgPreview::Enums' => 'PrevEnums';
@@ -34,14 +36,16 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
-	$self->{"pdfStep"}  = shift;
+	$self->{"step"}  = shift;
 	$self->{"viewType"} = shift;    # TOP/BOT
 	$self->{"params"}   = shift;    # Stencil parameters
 
+	$self->{"pdfStep"} = $self->{"step"} . ( $self->{"viewType"} eq Enums->View_FROMTOP ? "_top" : "_bot" ) . "_pdf";
 	$self->{"layerList"} = LayerDataList->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"} );
 	$self->{"imgLayerPrepare"} =
 	  ImgLayerPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"}, $self->{"params"} );
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
+	$self->{"outputPdf"}= ImgPreviewOut->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"layerList"}, $self->{"viewType"} );
 
 	return $self;
 }
@@ -68,8 +72,8 @@ sub Create {
 	$self->{"imgLayerPrepare"}->PrepareLayers( $self->{"layerList"} );
 	
 	# 4) Output image
-	my $imgOutput = ImgPreviewOut->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"layerList"}, $self->{"viewType"} );
-	$imgOutput->Output( $self->{"layerList"} );
+	
+	$self->{"outputPdf"}->Output( $self->{"layerList"} );
 
 	return 1;
 }

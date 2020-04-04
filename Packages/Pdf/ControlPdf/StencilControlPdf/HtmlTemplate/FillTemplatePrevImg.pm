@@ -4,7 +4,7 @@
 # Template class than contain all needed data, which are pasted to final PDF
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ControlPdf::PcbControlPdf::HtmlTemplate::FillTemplatePrevImg;
+package Packages::Pdf::ControlPdf::StencilControlPdf::HtmlTemplate::FillTemplatePrevImg;
 
 #3th party library
 use utf8;
@@ -16,7 +16,8 @@ use POSIX qw(strftime);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
-
+use aliased 'Programs::Stencil::StencilCreator::Enums'           => 'StnclEnums';
+use aliased 'Programs::Stencil::StencilCreator::Helpers::Helper' => 'StnclHelper';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -26,8 +27,9 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+	$self->{"inCAM"}  = shift;
+	$self->{"jobId"}  = shift;
+	$self->{"params"} = shift;    # Stencil parameters
 
 	return $self;
 }

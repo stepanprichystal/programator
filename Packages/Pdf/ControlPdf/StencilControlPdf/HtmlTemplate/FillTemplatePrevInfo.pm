@@ -43,7 +43,7 @@ sub new {
 	return $self;
 }
 
-sub Fill {
+sub FillKeysData {
 	my $self      = shift;
 	my $template  = shift;
 	my $infoToPdf = shift;        # if put info about operator to pdf
