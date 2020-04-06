@@ -125,7 +125,7 @@ sub Create {
 	if(scalar(@preparedLayers)){
 		$result = 1;
 		
-		$self->__OutputPdf( \@preparedLayers );
+		$self->__ImgPreviewOut( \@preparedLayers );
 	}
 
 	
@@ -314,7 +314,7 @@ sub __GetOperationByLayer {
 
 }
 
-sub __OutputPdf {
+sub __ImgPreviewOut {
 	my $self   = shift;
 	my $layers = shift;
 

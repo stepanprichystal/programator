@@ -15,6 +15,7 @@ use warnings;
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
@@ -74,11 +75,7 @@ sub OnPrepareGroupData {
 	if ( $defaultInfo->IsPool() || (defined $custExportControl &&  $custExportControl == 0 )) {
 		$exportControl = 0;
 	}
-	
-	# TODO smazat
-	#if ( $defaultInfo->IsPool()){
-	#	$exportControl = 1;
-	#}
+ 
 	
 
 	# 2) define default step
@@ -90,7 +87,20 @@ sub OnPrepareGroupData {
 	else {
 		$defStep = "o+1";
 	}
+	
+	# x) default include nested steps preview
+ 
+	 my $inclNested = 0;
 
+	if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $defStep ) ) {
+ 
+		if(scalar(CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $defStep ))>= 1){
+			$inclNested = 1;
+		}
+	}
+	
+	$groupData->SetControlInclNested($inclNested);
+	 
 	# 3) default lang
 	my $defLang = "English";
 

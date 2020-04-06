@@ -9,6 +9,7 @@ package Packages::Pdf::ControlPdf::PcbControlPdf::StackupPreview::StackupPreview
 #3th party library
 use strict;
 use warnings;
+use PDF::API2;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -16,6 +17,10 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::CAMJob::Stackup::CustStackup::CustStackup';
+use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing';
+use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsBuilder';
+use aliased 'Packages::Other::TableDrawing::Enums'                  => 'TblDrawEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -29,9 +34,7 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpeg";
-
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
 	return $self;
 }
@@ -40,29 +43,53 @@ sub Create {
 	my $self    = shift;
 	my $message = shift;
 
-	my $stackup      = StackupPdf->new( $self->{"inCAM"}, $self->{"jobId"} );
-	my $resultCreate = $stackup->Create();
-
-	if ( $self->{"layerCnt"} <= 2 ) {
-		return 1;
-	}
-	elsif ( !$resultCreate && $self->{"layerCnt"} > 2 ) {
-		$$message .= "Error when create stackup preview. Loading stackup failed.";
-		return 0;
-	}
-
-	my $path   = $stackup->GetStackupPath();
 	my $result = 1;
 
-	$result = $self->__ConvertToImage($path);
+	# 1) Init customer stackup class
+	my $custStckp = CustStackup->new( $self->{"inCAM"}, $self->{"jobId"} );
 
-	unless ($result) {
-		$$message .= "Error when convverting stackup in PDF to image.";
+	# 2) Build stackup
+	unless ( $custStckp->Build() ) {
+		$result = 0;
+		$$message .= "Error when create stackup preview. Build stackup preview failed";
 	}
 
-	unlink($path);
+	# 3) Generate output by pdf drawer
 
-	FileHelper->DeleteTempFiles();
+	# Page size is A4
+	my $margin      = 17;    # 15 mm margin of whole page
+	my $marginTitle = 40;    # top title margin
+	my $a4W = 210;                                 # width in mm
+	my $a4H = 297 - ( $marginTitle - $margin );    # height mm
+
+	# Stackup rotation by real stackup preview dimension
+	# if stackup width is more than 130% stackup height AND stackup real width is more than 130% A4 widtt => rotate
+	my ( $w, $h ) = $custStckp->GetSize();
+	my $rotation = $h * 1.3 < $w && $w > $a4W ? 270  : undef;
+	my $canvasX  = $rotation                  ? $a4H : $a4W;
+	my $canvasY  = $rotation                  ? $a4W : $a4H;
+
+	unlink( $self->{"outputPath"} );
+	my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $self->{"outputPath"}, undef, [ $canvasX, $canvasY ], $margin, $rotation );
+
+	# Gemerate output
+
+	my $HAlign = EnumsBuilder->HAlign_MIDDLE;
+	my $VAlign = EnumsBuilder->VAlign_MIDDLE;
+
+	if ( $custStckp->Output( $drawBuilder, 1, $HAlign, $VAlign ) ) {
+
+		# Add top margin because of page title
+		my $sourcePdf = PDF::API2->open( $self->{"outputPath"} );
+		my $page      = $sourcePdf->openpage(1);
+		use constant mm => 25.4 / 72;
+		$page->mediabox( $a4W / mm, ( $a4H + $marginTitle - $margin ) / mm );
+		$sourcePdf->update();
+	}
+	else   {
+		$result = 0;
+		$$message .= "Error when create stackup preview. Generate pdf preview failed";
+	}
 
 	return $result;
 }
@@ -71,32 +98,6 @@ sub GetOutput {
 	my $self = shift;
 
 	return $self->{"outputPath"};
-}
-
-sub __ConvertToImage {
-	my $self       = shift;
-	my $pdfStackup = shift;    # path
-
-	my @cmd = ( EnumsPaths->Client_IMAGEMAGICK."convert.exe" );
-
-	push( @cmd, "-density 300 -background white -flatten" );
-	push( @cmd, $pdfStackup );
-	push( @cmd, "-rotate 270 -crop 1520x3000+120+0 -trim" );
-	push( @cmd, "-bordercolor white -border 20x20" );
-	push( @cmd, "-gravity center -background white -extent 2000x2000" );
-	push( @cmd, $self->{"outputPath"} );
-
-	my $cmdStr = join( " ", @cmd );
-
-	my $result = system($cmdStr);
-
-	if ( $result == 0 ) {
-		return 1;
-	}
-	else {
-		return 0;
-	}
-
 }
 
 #-------------------------------------------------------------------------------------------#

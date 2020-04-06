@@ -70,7 +70,7 @@ sub InitForm {
 	$self->{"groupWrapper"} = $groupWrapper;
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	$self->{"form"} = PdfUnitForm->new( $parent, $inCAM, $self->{"jobId"} , $self->{"dataMngr"}->GetDefaultInfo() );
+	$self->{"form"} = PdfUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo() );
 
 	# init base class with event class
 	$self->{"eventClass"} = PdfUnitFormEvt->new( $self->{"form"} );
@@ -87,13 +87,13 @@ sub RefreshGUI {
 	#refresh group form
 	$self->{"form"}->SetExportControl( $groupData->GetExportControl() );
 	$self->{"form"}->SetControlStep( $groupData->GetControlStep() );
+	$self->{"form"}->SetControlInclNested( $groupData->GetControlInclNested() );
 	$self->{"form"}->SetControlLang( $groupData->GetControlLang() );
 	$self->{"form"}->SetExportStackup( $groupData->GetExportStackup() );
 	$self->{"form"}->SetExportPressfit( $groupData->GetExportPressfit() );
 	$self->{"form"}->SetExportToleranceHole( $groupData->GetExportToleranceHole() );
 	$self->{"form"}->SetExportNCSpecial( $groupData->GetExportNCSpecial() );
 	$self->{"form"}->SetInfoToPdf( $groupData->GetInfoToPdf() );
-	
 
 }
 
@@ -113,6 +113,7 @@ sub GetGroupData {
 
 		$groupData->SetExportControl( $frm->GetExportControl() );
 		$groupData->SetControlStep( $frm->GetControlStep() );
+		$groupData->SetControlInclNested( $frm->GetControlInclNested() );
 		$groupData->SetControlLang( $frm->GetControlLang() );
 		$groupData->SetExportStackup( $frm->GetExportStackup() );
 		$groupData->SetExportPressfit( $frm->GetExportPressfit() );

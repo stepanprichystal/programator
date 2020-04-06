@@ -36,20 +36,19 @@ sub new {
 	$self->{"lang"}  = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
-	
+
 	$self->{"outputData"} = OutputData->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
-	$self->{"layerList"}  = LayerDataList->new( $self->{"lang"} );
-	$self->{"outputPdf"}  = OutputPdfBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"outputData"}->GetStepName(), $self->{"lang"}, $self->{"outputPath"} );
-	
+	$self->{"layerList"} = LayerDataList->new( $self->{"lang"} );
+	$self->{"outputPdf"} = OutputPdfBase->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"outputData"}->GetStepName(),
+												   $self->{"lang"}, $self->{"outputPath"} );
 
 	return $self;
 }
 
 sub Create {
 	my $self = shift;
-
-	#my $lRef = shift;
+		my $drawProfile = shift//1;
 	my $message = shift;
 
 	# prepare layers for export
@@ -67,7 +66,11 @@ sub Create {
 	$self->{"layerList"}->SetStepName($stepName);
 	$self->{"layerList"}->SetLayers( \@dataLayers );
 
-	$self->{"outputPdf"}->Output( $self->{"layerList"}, 1, 1 );
+	my $multiplX    = 1;
+	my $multiplY    = 1;
+
+
+	$self->{"outputPdf"}->Output( $self->{"layerList"}, $multiplX, $multiplY, $drawProfile, 0, [ 255, 157, 157 ] );
 
 	# clear job
 	$self->{"outputData"}->Clear();

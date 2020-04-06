@@ -168,9 +168,23 @@ sub GetSequentialLam {
 
 sub GetSideByCuLayer {
 	my $self = shift;
+	my $lName     = shift;
+	my $outerCore = shift;           # indicate if copper is located on the core and on the outer of press package in the same time
+	my $plugging  = shift;           # indicate if layer contain plugging
 
-	die "Not implemented";
+	my $side = undef;
 
+	my $p = $self->GetProductByLayer($lName, $outerCore, $plugging);
+	
+	if($p->GetTopCopperLayer() eq $lName){
+		$side =  "top";
+	}elsif($p->GetBotCopperLayer() eq $lName){
+		$side =  "bot"
+	}else{
+		die "Unable identify side for copper layer: $lName, outerCore: $outerCore, plugging: $plugging";
+	}
+
+	return $side;
 }
 
 # Return final thickness of Input/Press product in µm by given copper name
@@ -246,6 +260,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	my $jobId = "d266566";
+ 
 	my $stackup = Stackup->new( $inCAM, $jobId );
 
 	#my $thick = $stackup->GetFinalThick();

@@ -28,8 +28,8 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 	$self->{"step"}  = shift;
 	$self->{"layer"} = shift;
 
@@ -46,7 +46,7 @@ sub new {
 	$self->{"outerRout"}     = undef;
 	$self->{"outerBrdgRout"} = undef;
 
-	$self->__InitUniRTM();
+	$self->__InitUniRTM($inCAM, $jobId);
 
 	return $self;
 }
@@ -86,9 +86,9 @@ sub GetMultiChainSeqList {
 
 sub __InitUniRTM {
 	my $self = shift;
-
-	my $inCAM   = $self->{"inCAM"};
-	my $jobId   = $self->{"jobId"};
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	
 	my $step    = $self->{"step"};
 	my $layer   = $self->{"layer"};
 	my $breakSR = $self->{"breakSR"};

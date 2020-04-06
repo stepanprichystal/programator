@@ -25,6 +25,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamHistogram';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -38,8 +39,9 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift;
+	$self->{"SR"}    = shift // 1;    # include SR data
 
-	$self->{"data_step"} = "data_" . $self->{"step"};
+	$self->{"data_step"} =  $self->{"step"}."_outdata";
 
 	# get limits of step
 	my %lim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 0 );
@@ -59,14 +61,27 @@ sub Create {
 	my $self        = shift;
 	my $message     = shift;
 	my $layerFilter = shift;    # request on onlyu some layers
-	 
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# 1) Create flattened step
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"data_step"}, 1 );
+	my @childSteps = ();
+
+	if ( $self->{"SR"} ) {
+		CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"data_step"}, 1 );
+		@childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $self->{"step"} );
+	}
+	else {
+
+		CamStep->CopyStep( $inCAM, $jobId, $self->{"step"}, $jobId, $self->{"data_step"} );
+		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $self->{"data_step"} ) ) {
+			CamHelper->SetStep( $inCAM, $self->{"data_step"} );
+			$inCAM->COM("sredit_del_steps");
+		}
+	}
+
 	CamHelper->SetStep( $inCAM, $self->{"data_step"} );
-	my @childSteps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $self->{"step"} );
 
 	# get all layers of export
 	my @layers = $self->__GetLayersForExport($layerFilter);
@@ -112,7 +127,7 @@ sub Clear {
 	#delete if step  exist
 	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"data_step"} ) ) {
 
-			$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"data_step"}, "type" => "step" );
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"data_step"}, "type" => "step" );
 	}
 
 	# delete helper layers
@@ -122,6 +137,9 @@ sub Clear {
 sub __GetLayersForExport {
 	my $self        = shift;
 	my $layerFilter = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	my @allLayers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	my @layers = ();
@@ -140,11 +158,18 @@ sub __GetLayersForExport {
 
 	# 2) Filter internal layers, which are unable to export
 
-	my @internal = ( "fr", "v1", "fsch", "bend" );
+	my @internal = ( "fr", "v1", "fsch", "coverlaypins" );
 
 	my %tmp;
 	@tmp{@internal} = ();
 	@layers = grep { !exists $tmp{ $_->{"gROWname"} } } @layers;
+
+	# 3) Filter layers which contain no data
+	for ( my $i = scalar(@layers) - 1 ; $i >= 0 ; $i-- ) {
+		my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"data_step"}, $layers[$i]->{"gROWname"} );
+		splice @layers, $i, 1 if ( $hist{"total"} == 0 );
+
+	}
 
 	return @layers;
 }

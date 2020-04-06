@@ -6,6 +6,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::ControlPdf::StencilControlPdf::ControlPdf;
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use utf8;
@@ -24,10 +25,11 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Other::HtmlTemplate::HtmlTemplate';
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::HtmlTemplate::TemplateKey';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::FinalPreview';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FinalPreview::Enums' => "EnumsFinal";
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::ImgPreview';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::ImgPreview::Enums' => "EnumsFinal";
 use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::SinglePreview::SinglePreview';
-use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::FillTemplate';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::HtmlTemplate::FillTemplatePrevInfo';
+use aliased 'Packages::Pdf::ControlPdf::StencilControlPdf::HtmlTemplate::FillTemplatePrevImg';
 use aliased 'Packages::Pdf::ControlPdf::Helpers::OutputFinalPdf';
 use aliased 'Programs::Stencil::StencilSerializer::StencilSerializer';
 use aliased 'Programs::Stencil::StencilCreator::Enums' => 'StnclEnums';
@@ -38,90 +40,255 @@ use aliased 'Packages::NifFile::NifFile';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $lang      = shift;
+	my $infoToPdf = shift;
+
+	my $self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-	$self->{"step"}  = shift;
-
-	$self->{"lang"}      = shift;    # language of pdf, values cz/en
-	$self->{"infoToPdf"} = shift;
+	$self->{"inCAM"}     = $inCAM;
+	$self->{"jobId"}     = $jobId;
+	$self->{"step"}      = $step;
+	$self->{"lang"}      = $lang;        # language of pdf, values cz/en
+	$self->{"infoToPdf"} = $infoToPdf;
 
 	# PROPERTIES
 
-	$self->{"pdfStep"}    = "pdf_" . $self->{"step"};
-	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";    # place where pdf is created
-	$self->{"outputPdf"}  = OutputFinalPdf->new( $self->{"lang"} );
+	 
+	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";             # place where pdf is created
+	$self->{"outputPdf"}  = OutputFinalPdf->new( $self->{"lang"}, $self->{"infoToPdf"}, $self->{"jobId"} );
 	$self->{"params"}     = StencilSerializer->new( $self->{"jobId"} )->LoadStenciLParams();
 
-	$self->{"fillTemplate"} = FillTemplate->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"params"} );
+	$self->{"titles"} = [];                                                                                   # page titles
 
-	$self->{"template"} = HtmlTemplate->new( $self->{"lang"} );
-
-	if ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP || $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT )
-	{
-		$self->{"preview"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMTOP, $self->{"params"} );
-	}
-	else {
-		$self->{"preview"} = FinalPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, EnumsFinal->View_FROMBOT, $self->{"params"} );
-	}
-
-	$self->{"previewSingle"} = SinglePreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"lang"} );
+	# indication if each parts are required to be in final pdf
+	$self->{"previewInfoReq"}   = { "req" => 0, "outfile" => undef };
+	$self->{"previewImgReq"}    = { "req" => 0, "outfile" => undef };                                         # kyes are name of steps
+	$self->{"previewLayersReq"} = { "req" => 0, "outfile" => undef };
 
 	return $self;
 }
 
-# do some initialiyation, create pdf step in InCAM job
-sub Create {
+# Create stackup based on xml, and convert to png
+sub AddInfoPreview {
 	my $self = shift;
+	my $mess = shift // \"";
 
-	CamHelper->SetStep( $self->{"inCAM"}, $self->{"step"} );
+	my $result = 1;
 
-	CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"pdfStep"}, 0 );
+	my $resultItem = $self->_GetNewItem("General info");
 
-	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
+	$self->{"previewInfoReq"}->{"req"} = 1;
+
+	my $tempPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\StencilControlPdf\\HtmlTemplate\\templateInfo.html";
+
+	# Fill data template
+	my $templData = TemplateKey->new();
+	my $fillTempl = FillTemplatePrevInfo->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"params"} );
+
+	$fillTempl->FillKeysData( $templData, $self->{"infoToPdf"} );
+	#$fillTempl->FillKeysLayout($templData);
+
+	my $templ = HtmlTemplate->new( $self->{"lang"} );
+	if ( $templ->ProcessTemplatePdf( $tempPath, $templData ) ) {
+
+		$self->{"previewInfoReq"}->{"outfile"} = $templ->GetOutFile();
+
+		# Add page title
+		my $title = undef;
+		if ( $self->{"lang"} eq "cz" ) {
+			$title = "Obecné";
+		}
+		else {
+			$title = "General";
+		}
+
+		$self->__AddPageTitle($title);
+	}
+	else {
+		$result = 0;
+		$$mess .= "Error during creating preview info page.\n";
+	}
+
+	$resultItem->AddError($$mess) unless ($result);    #  Add error to result
+	$self->_OnItemResult($resultItem);                 # Raise finish event
+
+	return $result;
+
 }
 
 # Create image of real pcb from top
-sub CreatePreview {
+sub AddImagePreview {
 	my $self = shift;
-	my $mess = shift;
+	my $mess = shift // \"";
+
+	my $result = 1;
+	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
+
+	my $resultItem = $self->_GetNewItem("Generate img");
+
+	$self->{"previewImgReq"}->{"req"} = 1;
+
+	my $imgPreview = undef;
+	if ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP || $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT )
+	{
+		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, EnumsFinal->View_FROMTOP, $self->{"params"} );
+	}
+	else {
+		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, EnumsFinal->View_FROMBOT, $self->{"params"} );
+	}
 
 	# We create only one preview image which depends
-	my $result = $self->{"preview"}->Create($mess);
+
+	my $imgPath = undef;
+	if ( $imgPreview->Create($mess) ) {
+		$imgPath = $imgPreview->GetOutput();
+	}
+	else {
+
+		$resultItem->AddError($mess);
+		$result = 0;
+	}
+
+	# 2) Fill data template with images
+	my $templData = TemplateKey->new();
+	my $fillTempl = FillTemplatePrevImg->new( $inCAM, $jobId, $self->{"params"}  );
+
+	$fillTempl->FillKeysData( $templData, $imgPath, $self->{"infoToPdf"} );
+
+	my $templ    = HtmlTemplate->new( $self->{"lang"} );
+	my $tempPath = GeneralHelper->Root() . "\\Packages\\Pdf\\ControlPdf\\StencilControlPdf\\HtmlTemplate\\templateImg.html";
+
+	if ( $templ->ProcessTemplatePdf( $tempPath, $templData ) ) {
+
+		unlink($imgPath);
+
+		$self->{"previewImgReq"}->{"outfile"} = $templ->GetOutFile();
+
+		# Add page title
+
+		my $title = undef;
+		if ( $self->{"lang"} eq "cz" ) {
+			$title = "Dodání";
+		}
+		else {
+			$title = "Shipping units";
+		}
+
+		$self->__AddPageTitle($title);
+
+	}
+	else {
+
+		$result = 0;
+
+		my $messTempl = "Error during generate pdf page for top/bot image preview";
+		$$mess .= $messTempl;
+
+		$resultItem->AddError($messTempl);
+	}
+
+	$self->_OnItemResult($resultItem);    # Raise finish event
+
+	$imgPreview->Clean();
 
 	return $result;
 }
 
-# Create pdf preview of single layers
-sub CreatePreviewSingle {
+sub AddLayersPreview {
 	my $self = shift;
-	my $mess = shift;
+	my $mess = shift // \"";
 
-	# 4) Create preview single
-	my $result = $self->{"previewSingle"}->Create($mess);
+	my $result = 1;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	 
+	my $resultItem = $self->_GetNewItem("Single layers");
+
+	$self->{"previewLayersReq"}->{"req"} = 1;
+
+	my $prev = SinglePreview->new( $inCAM, $jobId, $self->{"step"}, $self->{"lang"} );
+
+	if ( $prev->Create( 1, \$mess ) ) {
+		$self->{"previewLayersReq"}->{"outfile"} = $prev->GetOutput();
+
+		# Add page title
+
+		my $title = undef;
+		if ( $self->{"lang"} eq "cz" ) {
+			$title = "Výrobní data";
+		}
+		else {
+			$title = "Production data";
+		}
+		
+		$self->__AddPageTitle($title);
+
+	}
+	else {
+
+		$result = 0;
+		$$mess .= "Error during generate single layer preview";
+		$resultItem->AddError($$mess);
+	}
+
+	$self->_OnItemResult($resultItem);    # Raise finish event
+
 	return $result;
 }
 
 # complete all together and create one single pdf
 sub GeneratePdf {
 	my $self = shift;
-	my $mess = shift;
+	my $mess = shift // \"";
 
 	my $result = 1;
 
-	# 5) Process template
-	$self->__ProcessTemplate( $self->{"preview"}->GetOutput() );
+	my $resultItem = $self->_GetNewItem("Final PDF merge");
 
-	# 6) complete all together and add header and footer
+	# 1) Before generating pdf, check if all required pages are available
 
-	my @pdfFiles = ( $self->{"template"}->GetOutFile(), $self->{"previewSingle"}->GetOutput() );
-	my @titles = $self->__GetPdfPageTitles();
+	if ( $self->{"previewInfoReq"}->{"req"} && !-e $self->{"previewInfoReq"}->{"outfile"} ) {
+		$result = 0;
+		$$mess .= "Error when creating stackup preview.\n";
+	}
 
-	$self->{"outputPdf"}->Output( \@pdfFiles, \@titles );
-	$self->__DeletePdfStep( $self->{"pdfStep"} );
+	if ( $self->{"previewImgReq"}->{"req"} && !-e $self->{"previewImgReq"}->{"outfile"} ) {
+		$result = 0;
+		$$mess .= "Error when creating image preview.\n";
+	}
+
+	if ( $self->{"previewLayersReq"}->{"req"} && !-e $self->{"previewLayersReq"}->{"outfile"} ) {
+		$result = 0;
+		$$mess .= "Error when creating production layers preview.\n";
+	}
+
+	# 2) complete all together and add header and footer
+
+	if ($result) {
+
+		my @pdfFiles = ();
+
+		push( @pdfFiles, $self->{"previewInfoReq"}->{"outfile"} )   if ( $self->{"previewInfoReq"}->{"req"} );
+		push( @pdfFiles, $self->{"previewImgReq"}->{"outfile"} )    if ( $self->{"previewImgReq"}->{"req"} );
+		push( @pdfFiles, $self->{"previewLayersReq"}->{"outfile"} ) if ( $self->{"previewLayersReq"}->{"req"} );
+
+		$self->{"outputPdf"}->Output( \@pdfFiles, $self->{"titles"} );
+
+	}
+	else {
+		$resultItem->AddError($$mess);
+	}
+
+	$self->_OnItemResult($resultItem);    # Raise finish event
 
 	return $result;
 }
@@ -188,18 +355,11 @@ sub __GetPdfPageTitles {
 	return @titles;
 }
 
-# delete pdf step
-sub __DeletePdfStep {
-	my $self    = shift;
-	my $stepPdf = shift;
+sub __AddPageTitle {
+	my $self  = shift;
+	my $title = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	#delete if step already exist
-	if ( CamHelper->StepExists( $inCAM, $jobId, $stepPdf ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $stepPdf, "type" => "step" );
-	}
+	push( @{ $self->{"titles"} }, $title );
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -213,7 +373,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d274012";
+	my $jobId = "d276512";
 
 	#	foreach my $l ( CamJob->GetAllLayers( $inCAM, $jobId ) ) {
 	#
@@ -225,13 +385,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en" );
-	$control->Create();
+	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en", 1 );
+	$control->AddInfoPreview( \$mess );
+	$control->AddImagePreview( \$mess, 1, 1 );
+	$control->AddLayersPreview( \$mess );
+	my $reuslt = $control->GeneratePdf( \$mess );
 
-	$control->CreatePreview( \$mess );
-
-	#$control->CreatePreviewSingle(\$mess);
-	#$control->GeneratePdf();
+	unless ($reuslt) {
+		print STDERR "Error:" . $mess;
+	}
 
 	#$control->GetOutputPath();
 

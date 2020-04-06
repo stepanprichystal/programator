@@ -22,13 +22,18 @@ use aliased 'CamHelpers::CamJob';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
+use constant mm => 25.4 / 72;
+use constant in => 1 / 72;
+use constant pt => 1;
 
 sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
 
-	$self->{"lang"} = shift;
+	$self->{"lang"}      = shift;
+	$self->{"infoToPdf"} = shift;
+	$self->{"jobId"}     = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
@@ -36,9 +41,9 @@ sub new {
 }
 
 sub Output {
-	my $self              = shift;
-	my $pdfFiles          = shift;
-	my $pageTitles        = shift;
+	my $self       = shift;
+	my $pdfFiles   = shift;
+	my $pageTitles = shift;
 
 	# Test if all pdf files exist
 	foreach my $f ( @{$pdfFiles} ) {
@@ -47,8 +52,8 @@ sub Output {
 		}
 	}
 
- 	# Merge files, add titles
-	$self->__AddHeaderFooter($pdfFiles, $pageTitles);
+	# Merge files, add titles
+	$self->__AddHeaderFooter( $pdfFiles, $pageTitles );
 
 	# remove tmp files
 	foreach my $f ( @{$pdfFiles} ) {
@@ -59,11 +64,10 @@ sub Output {
 
 }
 
-
 sub __AddHeaderFooter {
 	my $self    = shift;
 	my @inFiles = @{ shift(@_) };
-	my @titles = @{ shift(@_) }; # if more pages than titles, rest of pages will have last title in list
+	my @titles  = @{ shift(@_) };    # if more pages than titles, rest of pages will have last title in list
 
 	# the output file
 	my $pdf_out = PDF::API2->new( -file => $self->{"outputPath"} );
@@ -104,15 +108,15 @@ sub __AddHeaderFooter {
 				0, 0,    # x y
 				1
 			);           # scale
- 
- 			my $title = $titles[$pagesTotal-1];
- 			
- 			unless(defined $title){
- 				
- 				$title = $titles[scalar(@titles)-1];
- 			}
- 
-			$self->__DrawHeaderFooter( $pagesTotal, $title, $page_out, $pdf_out );
+
+			my $title = $titles[ $pagesTotal - 1 ];
+
+			unless ( defined $title ) {
+
+				$title = $titles[ scalar(@titles) - 1 ];
+			}
+
+			$self->__DrawHeaderFooter( $pagesTotal, scalar(@titles), $title, $page_out, $pdf_out );
 
 			$pagesTotal++;
 
@@ -125,67 +129,66 @@ sub __AddHeaderFooter {
 sub __DrawHeaderFooter {
 	my $self      = shift;
 	my $pageNum   = shift;
+	my $pageTotal = shift;
 	my $pageTitle = shift;
 	my $page_out  = shift;
 	my $pdf_out   = shift;
 
-	my $headerW = 595;
-	my $headerH = 25;
-	my $footerW = 595;
-	my $footerH = 18;
+	my $a4H        = 290 / mm;
+	my $a4W        = 210 / mm;
+	my $pageMargin = 15 / mm;
 
-	# header frame
-	my $header = $page_out->gfx;
-	$header->fillcolor('#C9101A');
-	$header->rect(
-				   0,                 # left
-				   842 - $headerH,    # bottom
-				   $headerW,          # width
-				   $headerH           # height
-	);
-
-	$header->fill;
-
-	# footer frame
-	my $footer = $page_out->gfx;
-	$footer->fillcolor('#C9101A');
-	$footer->rect(
-				   0,                 # left
-				   0,                 # bottom
-				   $footerW,          # width
-				   $footerH           # height
-	);
-
-	$footer->fill;
-
-	# add text title
+	# 1) add text title
 
 	my $txtHeader = $page_out->text;
-	$txtHeader->translate( 10, 842 - $headerH + 12 );
 
-	my $font = $pdf_out->ttfont( GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\arial.ttf' );
+	my $fontBold = $pdf_out->ttfont( GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\ProximaNova-Black.otf' );
+	my $font     = $pdf_out->ttfont( GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\ProximaNova-Regular.otf' );
 
-	#my $font = $pdf_out->corefont('arial');
-	$txtHeader->font( $font, 10 );
-	$txtHeader->fillcolor("white");
-	$txtHeader->text($pageTitle);
+	$txtHeader->fillcolor("black");
 
-	# add text title
+	my $title = "Production preview ";
+	if ( $self->{"lang"} eq "cz" ) {
+		$title = "Předvýrobní náhled ";
+	}
+ 
 
-	# add text title
+	$txtHeader->translate( $pageMargin, $a4H - $pageMargin + 2.5 / mm );
+	$txtHeader->font( $fontBold, 6 / mm );
+	$txtHeader->text( $title );
+	$txtHeader->translate( $pageMargin, $a4H - $pageMargin - 7 / mm );
+	$txtHeader->font( $fontBold, 10 / mm );
+	$txtHeader->text( $pageTitle);
+
+	# 2) Add Logo
+	if ( $self->{"infoToPdf"} ) {
+		my $p    = GeneralHelper->Root() . '\Packages\Pdf\ControlPdf\Helpers\Resources\gatema_logo_RGB_claim.png';
+		my $logo = $page_out->gfx;
+		die("Unable to find image file: $!") unless -e $p;
+		my $photo_file = $pdf_out->image_png($p);
+		$logo->image( $photo_file, $a4W - 51 / mm, $a4H - 21 / mm, 35 / mm, 11.2 / mm ); # keep aspect ratio
+
+	}
+
+	# 3) add page number
 
 	my $txtFooter = $page_out->text;
-	$txtFooter->translate( 280, 6 );
+	$txtFooter->translate( $a4W - $pageMargin, $pageMargin - 20 );
 
-	$txtFooter->font( $font, 8 );
-	$txtFooter->fillcolor("white");
+	$txtFooter->font( $font, 4 / mm );
+	$txtFooter->fillcolor("gray");
 
-	if ( $self->{"lang"} eq "cz" ) {
-		$txtFooter->text( 'Strana - ' . $pageNum );
-	}
-	else {
-		$txtFooter->text( 'Page - ' . $pageNum );
-	}
+	$txtFooter->text( $pageNum . "/" . $pageTotal );
+
+	# 3) add page number
+
+	my $txtJobId = $page_out->text;
+	$txtJobId->translate( $pageMargin, $pageMargin - 20 );
+
+	$txtJobId->font( $font, 4 / mm );
+	$txtJobId->fillcolor("gray");
+
+	$txtJobId->text( uc( $self->{"jobId"} ) );
 
 }
 

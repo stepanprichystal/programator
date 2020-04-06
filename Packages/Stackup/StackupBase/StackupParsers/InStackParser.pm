@@ -211,6 +211,13 @@ sub ParseStackup {
 	return @layers;
 }
 
+
+sub GetNominalThick {
+	my $self = shift;
+
+	die "Get nominal thickness is not implemented";
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

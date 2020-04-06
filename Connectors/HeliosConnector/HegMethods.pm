@@ -67,6 +67,7 @@ sub GetAllByPcbId {
 				 d.zakaznicke_cislo,
 				 d.zlaceni,
 				 d.lak_typ,
+				 d.stiffener,
 				 dn.kus_x n_kus_x,
 				 dn.kus_y n_kus_y,
 				 dn.panel_x n_mpanel_x,
@@ -91,6 +92,7 @@ sub GetAllByPcbId {
 				 m.nazev_subjektu material_nazev,
 				 m.reference_subjektu material_reference_subjektu,
 				 d.material_coverlay,
+				 d.material_stiffener,
 				 d.poznamka_zakaznik poznamka_web,
 				 n.poznamka n_poznamka_zak,
 				 z.kusy_pozadavek pocet,
@@ -903,9 +905,9 @@ sub GetPcbOrderNumbers {
 }
 
 sub GetOrdersByState {
-	my $self  = shift;
+	my $self    = shift;
 	my $orderId = shift;
-	my $state = shift;
+	my $state   = shift;
 
 	my @orders = $self->GetPcbOrderNumbers($orderId);
 
@@ -1818,8 +1820,6 @@ sub GetMatStoreInfoByUDA {
 	return @result;
 }
 
-
-
 # Return material info by material reference
 sub GetMatInfoByUDA {
 	my $self = shift;
@@ -1869,6 +1869,35 @@ sub GetMatInfoByUDA {
 	}
 }
 
+# Return material info by material reference
+sub GetMatInfo {
+	my $self         = shift;
+	my $matReference = shift;
+
+	my @params = ( SqlParameter->new( "__matReference", Enums->SqlDbType_VARCHAR, $matReference ) );
+
+	my $cmd = "SELECT 
+				kks.reference_subjektu,
+				kks.nazev_subjektu,
+				kks.vyska,
+				kks.doplnkovy_rozmer,
+				 uda.dps_id,
+  				 uda.dps_id2,
+ 				 uda.dps_qid,
+ 				  uda.dps_type
+				FROM lcs.kmenova_karta_skladu kks
+				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
+				WHERE kks.reference_subjektu = __matReference";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	if (@result) {
+		return $result[0];
+	}
+	else {
+		return 0;
+	}
+}
+
 # Return infro from actual store from CNC store for material by material reference
 sub GetMatStoreInfo {
 	my $self         = shift;
@@ -1876,7 +1905,7 @@ sub GetMatStoreInfo {
 
 	my @params = ( SqlParameter->new( "__matReference", Enums->SqlDbType_VARCHAR, $matReference ) );
 
-my $cmd = "SELECT 
+	my $cmd = "SELECT 
 					kks.reference_subjektu,
 					kks.nazev_subjektu as nazev_mat,
 					ss.pocet_disp as stav_skladu, 
@@ -1890,40 +1919,90 @@ my $cmd = "SELECT
 				WHERE kks.reference_subjektu = __matReference AND sklad.reference_subjektu = 130 ";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-		if (@result) {
-		return $result[0];
-	}
-	else {
-		return 0;
-	}
-
- 
-}
-
-# Return material info by material reference
-sub GetMatInfo {
-	my $self         = shift;
-	my $matReference = shift;
-
-	my @params = ( SqlParameter->new( "__matReference", Enums->SqlDbType_VARCHAR, $matReference ) );
-
-	my $cmd = "SELECT 
-				kks.reference_subjektu,
-				kks.nazev_subjektu,
-				kks.vyska,
-				 uda.dps_id,
-  				 uda.dps_id2,
- 				 uda.dps_qid
-				FROM lcs.kmenova_karta_skladu kks
-				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
-				WHERE kks.reference_subjektu = __matReference";
-
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 	if (@result) {
 		return $result[0];
 	}
 	else {
 		return 0;
+	}
+
+}
+
+# Return information of coverlay material in PCB
+sub GetPcbMat {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+	
+				 kks.reference_subjektu material_coverlay_reference
+				
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
+
+	my $res = undef;
+
+	if ( defined $matReference ) {
+		$res = $self->GetMatInfo($matReference);
+	}
+}
+
+# Return information of coverlay material in PCB
+sub GetPcbCoverlayMat {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+	
+				 kks.reference_subjektu material_coverlay_reference
+				
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_coverlay
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
+
+	my $res = undef;
+
+	if ( defined $matReference ) {
+		$res = $self->GetMatInfo($matReference);
+	}
+}
+
+# Return information of stiffener material in PCB
+sub GetPcbStiffenerMat {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+
+	my $cmd = "select top 1
+				
+				kks.reference_subjektu
+				 
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_stiffener
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+
+	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
+
+	my $res = undef;
+
+	if ( defined $matReference ) {
+		$res = $self->GetMatInfo($matReference);
 	}
 }
 
@@ -2118,45 +2197,7 @@ sub GetImpedancExist {
 
 }
 
-# Return information of coverlay material in PCB
-# This is temporary in order get information from IS
-# but normally this information should be in stackup file
-sub GetPcbCoverlayMat {
-	my $self  = shift;
-	my $pcbId = shift;
-
-	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
-
-	my $cmd = "select top 1
-				
-				 d.material_coverlay,
-				 kks.reference_subjektu material_coverlay_reference,
-				kks.reference_subjektu,
-				kks.nazev_subjektu,
-				kks.vyska tloustka,
-				kks.doplnkovy_rozmer tloustka_lepidlo,
-				 uda.dps_id,
-  				 uda.dps_id2,
- 				 uda.dps_qid
-				
-				 from lcs.desky_22 d with (nolock)
-				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
-				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_coverlay
-				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 left outer join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
-
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-
-	if (@result) {
-
-		return $result[0];
-	}
-	else {
-		return undef;
-	}
-}
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -2194,7 +2235,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->GetMatStoreInfo( "0305000031" );
+	my $mat = HegMethods->GetMatStoreInfo("0305000031");
 
 	dump($mat);
 	die;

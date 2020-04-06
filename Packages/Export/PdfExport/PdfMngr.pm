@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
 use aliased 'Packages::Pdf::DrillMapPdf::DrillMapPdf';
@@ -34,16 +35,17 @@ sub new {
 	my $self      = $class->SUPER::new( $packageId, @_ );
 	bless $self;
 
-	$self->{"inCAM"}           = shift;
-	$self->{"jobId"}           = shift;
-	$self->{"exportControl"}   = shift;    # if export pdf data contro
-	$self->{"controlStep"}     = shift;    # which step export
-	$self->{"controlLang"}     = shift;    # which language use
-	$self->{"infoToPdf"}       = shift;    # put info about operator to pdf
-	$self->{"exportStackup"}   = shift;    # if export stackup pdf to job's archive
-	$self->{"exportPressfit"}  = shift;    # if export pressfit pdf
-	$self->{"exportToleranceHole"}  = shift;    # if export tolerance hole pdf
-	$self->{"exportNCSpecial"} = shift;    # if export NC special pdf
+	$self->{"inCAM"}               = shift;
+	$self->{"jobId"}               = shift;
+	$self->{"exportControl"}       = shift;    # if export pdf data contro
+	$self->{"controlStep"}         = shift;    # which step export
+	$self->{"controlLang"}         = shift;    # which language use
+	$self->{"controlInfoToPdf"}    = shift;    # put info about operator to pdf
+	$self->{"controlInclNested"}   = shift;    # include nested steps in pdf preview
+	$self->{"exportStackup"}       = shift;    # if export stackup pdf to job's archive
+	$self->{"exportPressfit"}      = shift;    # if export pressfit pdf
+	$self->{"exportToleranceHole"} = shift;    # if export tolerance hole pdf
+	$self->{"exportNCSpecial"}     = shift;    # if export NC special pdf
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
 
@@ -71,11 +73,11 @@ sub Run {
 	if ( $self->{"exportPressfit"} ) {
 		$self->__ExportPressfit();
 	}
-	
+
 	if ( $self->{"exportToleranceHole"} ) {
 		$self->__ExportToleranceHole();
 	}
-	
+
 	if ( $self->{"exportNCSpecial"} ) {
 		$self->__ExportNCSpecial();
 	}
@@ -96,94 +98,79 @@ sub __ExportDataControl {
 		$lang = "cz";
 	}
 
-	my $controlPdf = ControlPdf->new( $inCAM, $jobId, $self->{"controlStep"}, $lang, $self->{"infoToPdf"} );
+	my $considerSR = 0;
 
-	$controlPdf->Create();
+	if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $self->{"controlStep"} ) ) {
+		$considerSR = $self->{"controlInclNested"} ? 0 : 1;
+	}
 
-	# 1) Create stackup
+	my $controlPdf =
+	  ControlPdf->new( $inCAM, $jobId, $self->{"controlStep"}, $considerSR, $self->{"controlInclNested"}, $lang, $self->{"controlInfoToPdf"} );
 
-	if ( $self->{"layerCnt"} > 2 ) {
+	my $f = sub {
 
-		my $resultStackup = $self->_GetNewItem( "Preview stackup", "Control pdf" );
+		my $self = $_[0];
+		my $item = $_[1];
+		$item->SetGroup("Control data");
+		$self->_OnItemResult($item);
+	};
 
-		my $mess1   = "";
-		my $result1 = $controlPdf->CreateStackup( \$mess1 );
+	$controlPdf->{"onItemResult"}->Add( sub { $f->( $self, @_ ) } );
 
-		unless ($result1) {
-			$resultStackup->AddError($mess1);
+	# 1) Create Info preview
+
+	$controlPdf->AddInfoPreview();
+
+	# 2) Create stackup
+	$controlPdf->AddStackupPreview();
+
+	# 3) Create Preview images
+
+	$controlPdf->AddImagePreview();
+
+	# 4) Create single layer preview
+
+	$controlPdf->AddLayersPreview();
+
+	# 5) Generate final pdf
+	if ( $controlPdf->GeneratePdf() ) {
+
+		my $errMess = "";
+		my $resultFinal = $self->_GetNewItem( "Copy to archive", "Control data" );
+
+		my $outputPdf = $controlPdf->GetOutputPath();
+
+		unless ( -e $outputPdf ) {
+			$resultFinal->AddError("Output pdf control doesnt exist. Failed to create control pdf.\n");
 		}
 
-		$self->_OnItemResult($resultStackup);
-	}
+		my $archivePath = JobHelper->GetJobArchive($jobId) . "zdroje\\" . $self->{"jobId"} . "-control.pdf";
 
-	# 2) Create preview top
+		if ( -e $archivePath ) {
+			unless ( unlink($archivePath) ) {
 
-	my $resultPreviewTop = $self->_GetNewItem( "Preview top", "Control pdf" );
-
-	my $mess2   = "";
-	my $result2 = $controlPdf->CreatePreviewTop( \$mess2 );
-
-	unless ($result2) {
-		$resultPreviewTop->AddError($mess2);
-	}
-
-	$self->_OnItemResult($resultPreviewTop);
-
-	# 3) Create preview bot
-
-	my $resultPreviewBot = $self->_GetNewItem( "Preview bot", "Control pdf" );
-
-	my $mess3   = "";
-	my $result3 = $controlPdf->CreatePreviewBot( \$mess3 );
-
-	unless ($result3) {
-		$resultPreviewBot->AddError($mess3);
-	}
-
-	$self->_OnItemResult($resultPreviewBot);
-
-	# 4) Create preview single
-
-	my $resultSingle = $self->_GetNewItem( "Single layers", "Control pdf" );
-
-	my $mess4   = "";
-	my $result4 = $controlPdf->CreatePreviewSingle( \$mess4 );
-
-	unless ($result4) {
-		$resultSingle->AddError($mess4);
-	}
-
-	$self->_OnItemResult($resultSingle);
-
-	# 5) Final output
-
-	my $resultFinal = $self->_GetNewItem( "Generate pdf", "Control pdf" );
-
-	my $mess5   = "";
-	my $result5 = $controlPdf->GeneratePdf( \$mess5 );
-
-	unless ($result5) {
-		$resultFinal->AddError($mess5);
-	}
-
-	$self->_OnItemResult($resultFinal);
-
-	my $outputPdf = $controlPdf->GetOutputPath();
-
-	unless ( -e $outputPdf ) {
-		die "Output pdf control doesnt exist. Failed to create control pdf.\n";
-	}
-
-	my $archivePath = JobHelper->GetJobArchive($jobId) . "zdroje\\" . $self->{"jobId"} . "-control.pdf";
-
-	if ( -e $archivePath ) {
-		unless ( unlink($archivePath) ) {
-			die "Can not delete old pdf control file (" . $archivePath . "). Maybe file is still open.\n";
+				$resultFinal->AddError( "Can not delete old pdf control file (" . $archivePath . "). Maybe file is still open.\n" );
+			}
 		}
+
+		if(copy( $outputPdf, $archivePath )){
+			unlink($outputPdf);
+		}
+ 
+		$self->_OnItemResult($resultFinal);
 	}
 
-	copy( $outputPdf, $archivePath );
-	unlink($outputPdf);
+ 
+}
+
+sub __OnExportControl {
+	my $self = shift;
+	my $item = shift;
+
+	$item->SetGroup("Control data");
+
+	$self->_OnItemResult($item);
+
 }
 
 sub __ExportStackup {
@@ -259,7 +246,6 @@ sub __ExportPressfit {
 
 }
 
-
 sub __ExportToleranceHole {
 	my $self = shift;
 
@@ -297,7 +283,6 @@ sub __ExportToleranceHole {
 	$self->_OnItemResult($resultPressfit);
 
 }
-
 
 sub __ExportNCSpecial {
 	my $self = shift;
@@ -340,29 +325,29 @@ sub TaskItemsCount {
 
 	if ( $self->{"exportControl"} ) {
 
-		if ( $self->{"layerCnt"} > 2 ) {
-			$totalCnt += 1;    # stackup preview
-		}
-
-		$totalCnt += 2;        # top + bot view
-		$totalCnt += 1;        # single output
-		$totalCnt += 1;        # output final pdf
+		$totalCnt += 1;                                        # preview info
+		$totalCnt += 1;                                        # stackup preview
+		$totalCnt += 2;                                        # top + bot view
+		$totalCnt += 2 if ( $self->{"controlInclNested"} );    # top + bot view nested
+		$totalCnt += 1;                                        # single output
+		$totalCnt += 1 if ( $self->{"controlInclNested"} );    # single output  nested
+		$totalCnt += 1;                                        # output final pdf
 	}
 
 	if ( $self->{"exportStackup"} ) {
-		$totalCnt += 1;        # output stackup pdf
+		$totalCnt += 1;                                        # output stackup pdf
 	}
 
 	if ( $self->{"exportPressfit"} ) {
-		$totalCnt += 1;        # output pressfit pdf
+		$totalCnt += 1;                                        # output pressfit pdf
 	}
-	
+
 	if ( $self->{"exportToleranceHole"} ) {
-		$totalCnt += 1;        # output tolerances pdf
+		$totalCnt += 1;                                        # output tolerances pdf
 	}
- 
+
 	if ( $self->{"exportNCSpecial"} ) {
-		$totalCnt += 1;        # output nc special pdf
+		$totalCnt += 1;                                        # output nc special pdf
 	}
 
 	return $totalCnt;

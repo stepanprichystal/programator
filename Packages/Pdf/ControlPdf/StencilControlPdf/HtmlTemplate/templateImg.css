@@ -1,0 +1,60 @@
+
+@page {
+  @frame {
+    margin: 1.5cm;
+    margin-top: 2.1cm;
+  }
+} 
+
+body {
+    font-family: Arial;
+    font-size: 12px;
+    background-color:white;
+}
+ 
+.headertable {
+ display:block;
+  width:100%;
+   height:40px;
+   background-color: #c9101a;
+
+ 	font-size: 16px;
+    color: white;
+    border:0px;
+}
+
+ 
+ 
+.infotable table{
+   display:block;
+   width:100%;
+   
+}
+ 
+
+.infotable th {
+   display:block;
+  text-align:left;
+   color: white;
+   
+   background-color:#C9101A;
+   height: 45px;
+   
+      padding-left: 0px;
+    padding-right: 0px;
+ vertical-align:middle;
+} 
+
+ 
+.redsquare{
+  height: 20px;
+  width:10px;
+} 
+ 
+ 
+
+
+
+
+ 
+

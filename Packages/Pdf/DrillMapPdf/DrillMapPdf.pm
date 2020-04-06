@@ -103,7 +103,7 @@ sub Create {
 
 	foreach my $m (@drillMaps) {
 
-		push( @paths, $self->__OutputPdf( $m, $backgroundLayer ) );
+		push( @paths, $self->__ImgPreviewOut( $m, $backgroundLayer ) );
 	}
 
 	return 1;
@@ -116,7 +116,7 @@ sub GetPdfPaths {
 	return @{ $self->{"outputPaths"} };
 }
 
-sub __OutputPdf {
+sub __ImgPreviewOut {
 	my $self       = shift;
 	my $drillMap   = shift;
 	my $background = shift;

@@ -38,8 +38,8 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 	$self->{"step"}    = shift;
 	$self->{"layer"}   = shift;
 	$self->{"breakSR"} = shift;
@@ -50,14 +50,14 @@ sub new {
 	$self->{"magazineDef"}  = undef;
 	$self->{"magazineSpec"} = undef;
 
-	$self->{"materialName"} = HegMethods->GetMaterialKind( $self->{"jobId"} );
+	$self->{"materialName"} = HegMethods->GetMaterialKind( $jobId );
 
 	my @t = ();
 	$self->{"tools"} = \@t;
 
 	$self->__LoadMagazineXml();
 
-	$self->__InitUniDTM();
+	$self->__InitUniDTM($inCAM, $jobId);
 
 	$self->{"check"} = UniDTMCheck->new($self);
 
@@ -201,10 +201,10 @@ sub GetPilots {
 }
 
 sub __InitUniDTM {
-	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	
 	my $step  = $self->{"step"};
 	my $layer = $self->{"layer"};
 
@@ -233,7 +233,7 @@ sub __InitUniDTM {
 		$uniT->SetTypeUse( $t->{"gTOOLtype2"} );
 		$uniT->SetFinishSize( $t->{"gTOOLfinish_size"} );
 		$uniT->SetToolNum( $t->{"gTOOLnum"} );
-		
+
 		push( @{ $self->{"tools"} }, $uniT );
 
 	}
@@ -260,19 +260,20 @@ sub __InitUniDTM {
 	}
 
 	# 3) Add pilot hole definitions if tools diameter is bigger than 5.3mm
-	$self->__AddPilotHolesDefinition();
+	$self->__AddPilotHolesDefinition($inCAM, $jobId);
 
 	# 4) Load magazine code by magazine info
 
-	$self->__LoadToolsMagazine();
+	$self->__LoadToolsMagazine($inCAM, $jobId);
 
 }
 
 # Add pilot tool definitions
 sub __AddPilotHolesDefinition {
 	my $self  = shift;
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	
+	my $inCAM = shift;
+	my $jobId = shift;
 
 	# Add pilot holes only for plated
 	my $lType = CamHelper->LayerType( $inCAM, $jobId, $self->{"layer"} );
@@ -332,15 +333,14 @@ sub __AddPilotHoles {
 
 sub __LoadToolsMagazine {
 	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $inCAM = shift;
+	my $jobId = shift;
 
 	my $materialName = $self->{"materialName"};
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
 
-		my $operation = CamDrilling->GetToolOperation($inCAM, $jobId, $self->{"layer"}, $t->GetTypeProcess());
+		my $operation = CamDrilling->GetToolOperation( $inCAM, $jobId, $self->{"layer"}, $t->GetTypeProcess() );
 
 		$t->SetToolOperation($operation);
 
@@ -394,8 +394,6 @@ sub __LoadToolsMagazine {
 		}
 	}
 }
-
-
 
 sub __LoadMagazineXml {
 	my $self = shift;

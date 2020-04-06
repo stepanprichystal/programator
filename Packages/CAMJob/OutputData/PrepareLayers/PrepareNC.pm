@@ -129,7 +129,7 @@ sub Prepare {
 
 	# 5) Create layer data for NC layers
 	$self->{"prepareNCStandard"}->Prepare( \@layers, Enums->Type_NCLAYERS );
-	$self->{"prepareNCDrawing"}->Prepare( \@layers, Enums->Type_NCLAYERS );
+	$self->{"prepareNCDrawing"}->Prepare( \@layers, Enums->Type_NCDEPTHLAYERS );
 
 }
 

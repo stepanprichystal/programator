@@ -56,6 +56,9 @@ sub new {
 
 	# Cu layer count
 	$self->{"layerCnt"} = undef;
+	
+	# Nominal thickness requested by customer
+	$self->{"nominalThick"} = undef;
 
 	$self->__CreateStackup();
 
@@ -187,6 +190,12 @@ sub GetStackupIsHybrid {
 	return scalar(@types) > 1 ? 1 : 0;
 }
 
+# Return nominal thickness requested by customer
+sub GetNominalThickness{
+	my $self = shift;
+	
+	return $self->{"nominalThick"};
+}
 #-------------------------------------------------------------------------------------------#
 #  Private method
 #-------------------------------------------------------------------------------------------#
@@ -386,6 +395,9 @@ sub __SetOtherProperty {
 
 	#set cu layers count
 	$self->{"layerCnt"} = scalar( grep GeneralHelper->RegexEquals( $_->{type}, Enums->MaterialType_COPPER ), @stackupL );
+	
+	
+	$self->{"nominalThick"} = $self->{"parser"}->GetNominalThick();
 
 }
 

@@ -75,6 +75,14 @@ sub GetJobLayerTitle {
 			$title = "Obrys";
 		}
 	}
+	
+	elsif ( $l->{"gROWname"} =~ /^bend$/i ) {
+
+		$title = "Flexible area outline";
+		if ($cz) {
+			$title = "Obrys flexibilních částí";
+		}
+	}
 
 	# inner layer
 	elsif ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
@@ -141,7 +149,7 @@ sub GetJobLayerTitle {
 			$sigLayerCz = "Strana spojů (bot)";
 			$sigLayerEn = "Solder layer (bot)";
 		}
-		elsif ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
+		elsif ( $sigLayer =~ /^v(\d)$/i ) {
 
 			my $lNum = $1;
 			$sigLayerCz = "Vnitřní vrstva číslo: $lNum.";
@@ -151,6 +159,33 @@ sub GetJobLayerTitle {
 		$title = "Coverlay on " . $sigLayerEn;
 		if ($cz) {
 			$title = "Coverlay na " . $sigLayerCz;
+		}
+	
+	}elsif ( $l->{"gROWname"} =~ /^stiff(\w*)$/i ) {
+
+		# coverlay
+		my $sigLayer = $1;
+		my $sigLayerCz;
+		my $sigLayerEn;
+
+		if ( $sigLayer eq "c" ) {
+			$sigLayerCz = "Strana součástek (top)";
+			$sigLayerEn = "Component layer (top)";
+		}
+		elsif ( $sigLayer eq "s" ) {
+			$sigLayerCz = "Strana spojů (bot)";
+			$sigLayerEn = "Solder layer (bot)";
+		}
+		elsif ( $sigLayer =~ /^v(\d)$/i ) {
+
+			my $lNum = $1;
+			$sigLayerCz = "Vnitřní vrstva číslo: $lNum.";
+			$sigLayerEn = "Inner layer number: $lNum.";
+		}
+
+		$title = "Stiffener on " . $sigLayerEn;
+		if ($cz) {
+			$title = "Stiffener na " . $sigLayerCz;
 		}
 	
 	}
