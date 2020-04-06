@@ -141,12 +141,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM   = InCAM->new();
-	my $jobId   = "d272564";
-	my $orderId = "d272564-01";
+	my $jobId   = "d074576";
+	my $orderId = "d074576-01";
 
 	#my $type = Helper->GetReorderType($inCAM, $orderId);
 
-	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId, Enums->ReorderType_POOLFORMERSTD );
+	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId, Enums->ReorderType_POOL );
 
 	my $errMess = "";
 	my @arr     = $ch->RunChanges( \$errMess );

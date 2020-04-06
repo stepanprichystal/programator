@@ -71,7 +71,7 @@ sub UnMaskThroughHoleNearBGA {
 	my $jobId            = shift;
 	my $step             = shift;
 	my $resize           = shift // -50;    # -50µm resize drill holes copied to solder mask
-	my $minDistHole2Pad  = shift // 500;
+	my $minDistHole2Pad  = shift // 2000;
 	my $unMaskedCntRef   = shift;
 	my $unMaskAttrValRef = shift;
 
@@ -109,7 +109,7 @@ sub UnMaskThroughHoleNearSMD {
 	my $jobId            = shift;
 	my $step             = shift;
 	my $resize           = shift // -50;    # -50µm resize drill holes copied to solder mask
-	my $minDistHole2Pad  = shift // 500;
+	my $minDistHole2Pad  = shift // 2000;
 	my $unMaskedCntRef   = shift;
 	my $unMaskAttrValRef = shift;
 
