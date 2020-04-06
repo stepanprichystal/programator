@@ -41,38 +41,44 @@ sub UnMaskBGAThroughHole {
 	my $unMaskedCntRef   = 0;
 	my $unMaskAttrValRef = "";
 
-	my $resize          = -50;    # copy drill smaller about 50µm to solder mask
-	my $minDistHole2Pad = 500;    # 500µm minimal distance of through hole to pad
-	$result = UnMaskNC->UnMaskThroughHoleNearBGA( $inCAM, $jobId, $step, $resize, $minDistHole2Pad, \$unMaskedCntRef, \$unMaskAttrValRef );
+	my @NC = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	my @sm = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-	if ( $result && $unMaskedCntRef > 0 ) {
+	if ( scalar(@NC) && scalar(@sm) ) {
 
-		my $lTmp = "unmask_hole_near_bga";
+		my $resize          = -50;    # copy drill smaller about 50µm to solder mask
+		my $minDistHole2Pad = 500;    # 500µm minimal distance of through hole to pad
+		$result = UnMaskNC->UnMaskThroughHoleNearBGA( $inCAM, $jobId, $step, $resize, $minDistHole2Pad, \$unMaskedCntRef, \$unMaskAttrValRef );
 
-		my @sm =
-		  map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+		if ( $result && $unMaskedCntRef > 0 ) {
 
-		CamLayer->AffectLayers( $inCAM, \@sm );
+			my $lTmp = "unmask_hole_near_bga";
 
-		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".string", $unMaskAttrValRef ) ) {
+			my @sm =
+			  map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-			CamLayer->CopySelOtherLayer( $inCAM, [$lTmp], 0, 0 );
-			CamLayer->WorkLayer( $inCAM, $lTmp );
+			CamLayer->AffectLayers( $inCAM, \@sm );
 
-			$inCAM->COM( "sel_change_sym", "symbol" => "cross1500x1500x200x200x50x50xr" );
+			if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".string", $unMaskAttrValRef ) ) {
+
+				CamLayer->CopySelOtherLayer( $inCAM, [$lTmp], 0, 0 );
+				CamLayer->WorkLayer( $inCAM, $lTmp );
+
+				$inCAM->COM( "sel_change_sym", "symbol" => "cross1500x1500x200x200x50x50xr" );
+			}
+
+			my @mess = ();
+			push( @mess, "Na desce byly nalezeny <b>otvory (" . $unMaskedCntRef . ") blízko BGA</b> plošek. Tyto otvory byly odmaskovány." );
+			push( @mess, "" );
+			push( @mess, "Zkontroluj tyto otvory jestli je vše ok. " );
+			push( @mess, "Pozice otvorů jsou zkopírované v pomocné vrstvě: $lTmp." );
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );    #  Script se zastavi
+			$inCAM->PAUSE("Zkontroluj odmaskovane otvory blizko BGA plosek. Vrstva: $lTmp ");
+
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 		}
-
-		my @mess = ();
-		push( @mess, "Na desce byly nalezeny <b>otvory (" . $unMaskedCntRef . ") blízko BGA</b> plošek. Tyto otvory byly odmaskovány." );
-		push( @mess, "" );
-		push( @mess, "Zkontroluj tyto otvory jestli je vše ok. " );
-		push( @mess, "Pozice otvorů jsou zkopírované v pomocné vrstvě: $lTmp." );
-
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );    #  Script se zastavi
-		$inCAM->PAUSE("Zkontroluj odmaskovane otvory blizko BGA plosek. Vrstva: $lTmp ");
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
-	} 
+	}
 
 	return $result;
 }
@@ -92,39 +98,46 @@ sub UnMaskSMDThroughHole {
 	my $unMaskedCntRef   = 0;
 	my $unMaskAttrValRef = "";
 
-	my $resize          = -50;    # copy drill smaller about 50µm to solder mask
-	my $minDistHole2Pad = 300;    # 300µm minimal distance of through hole to pad
-	$result = UnMaskNC->UnMaskThroughHoleNearSMD( $inCAM, $jobId, $step, $resize, $minDistHole2Pad, \$unMaskedCntRef, \$unMaskAttrValRef );
+	my @NC = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
+	my @sm = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-	if ( $result && $unMaskedCntRef ) {
+	if ( scalar(@NC) && scalar(@sm) ) {
 
-		my $lTmp = "unmask_hole_near_smd";
+		my $resize          = -50;    # copy drill smaller about 50µm to solder mask
+		my $minDistHole2Pad = 300;    # 300µm minimal distance of through hole to pad
+		$result = UnMaskNC->UnMaskThroughHoleNearSMD( $inCAM, $jobId, $step, $resize, $minDistHole2Pad, \$unMaskedCntRef, \$unMaskAttrValRef )
+		  ;
 
-		my @sm =
-		  map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+		if ( $result && $unMaskedCntRef ) {
 
-		CamLayer->AffectLayers( $inCAM, \@sm );
+			my $lTmp = "unmask_hole_near_smd";
 
-		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".string", $unMaskAttrValRef ) ) {
+			my @sm =
+			  map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-			CamLayer->CopySelOtherLayer( $inCAM, [$lTmp], 0, 0 );
-			CamLayer->WorkLayer( $inCAM, $lTmp );
+			CamLayer->AffectLayers( $inCAM, \@sm );
 
-			$inCAM->COM( "sel_change_sym", "symbol" => "cross1500x1500x200x200x50x50xr" );
+			if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".string", $unMaskAttrValRef ) ) {
+
+				CamLayer->CopySelOtherLayer( $inCAM, [$lTmp], 0, 0 );
+				CamLayer->WorkLayer( $inCAM, $lTmp );
+
+				$inCAM->COM( "sel_change_sym", "symbol" => "cross1500x1500x200x200x50x50xr" );
+			}
+
+			my @mess = ();
+			push( @mess, "Na desce byly nalezeny <b>otvory (" . $unMaskedCntRef . ") blízko SMD </b> plošek. Tyto otvory byly odmaskovány." );
+			push( @mess, "" );
+			push( @mess, "Zkontroluj tyto otvory jestli je vše ok. " );
+			push( @mess, "Pozice otvorů jsou zkopírované v pomocné vrstvě: $lTmp." );
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );    #  Script se zastavi
+			$inCAM->PAUSE("Zkontroluj odmaskovane otvory blizko SMD plosek. Vrstva: $lTmp ");
+
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+
 		}
-
-		my @mess = ();
-		push( @mess, "Na desce byly nalezeny <b>otvory (" . $unMaskedCntRef . ") blízko SMD </b> plošek. Tyto otvory byly odmaskovány." );
-		push( @mess, "" );
-		push( @mess, "Zkontroluj tyto otvory jestli je vše ok. " );
-		push( @mess, "Pozice otvorů jsou zkopírované v pomocné vrstvě: $lTmp." );
-
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );    #  Script se zastavi
-		$inCAM->PAUSE("Zkontroluj odmaskovane otvory blizko SMD plosek. Vrstva: $lTmp ");
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
-	
-	} 
+	}
 
 	return $result;
 }

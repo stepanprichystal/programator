@@ -60,74 +60,79 @@ sub Run {
 	# 1) unmask selceted through holes near GBA pads
 
 	my @NC = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
-	my @bgaLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId, 0, 1 );
-	my @steps = ();
-	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+	my @sm = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	
+	if ( scalar(@NC) && scalar(@sm) ) {
 
-		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
-	}
-	else {
+		my @bgaLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId, 0, 1 );
+		my @steps = ();
+		if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
 
-		@steps = ("o+1");
-	}
-
-	# BGA exist
-	my $bgaExist = 0;
-	foreach my $s (@steps) {
-		foreach my $l (@bgaLayers) {
-
-			my %att = CamHistogram->GetAttHistogram( $inCAM, $jobId, $s, $l );
-			if ( $att{".bga"} ) {
-				$bgaExist = 1;
-				last;
-			}
+			@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 		}
-		last if ($bgaExist);
-	}
+		else {
 
-	if ($bgaExist) {
+			@steps = ("o+1");
+		}
+
+		# BGA exist
+		my $bgaExist = 0;
 		foreach my $s (@steps) {
+			foreach my $l (@bgaLayers) {
 
-			my $unMaskedCntRef   = 0;
-			my $unMaskAttrValRef = "";
-
-			my $resize          = undef;    # default - copy drill smaller about 50µm to solder mask
-			my $minDistHole2Pad = undef;    # default - 500µm minimal distance of through hole to pad
-
-			unless ( UnMaskNC->UnMaskThroughHoleNearBGA( $inCAM, $jobId, $s, $resize, $minDistHole2Pad ) ) {
-				$result = 0;
+				my %att = CamHistogram->GetAttHistogram( $inCAM, $jobId, $s, $l );
+				if ( $att{".bga"} ) {
+					$bgaExist = 1;
+					last;
+				}
 			}
-
+			last if ($bgaExist);
 		}
-	}
 
-	# SMD exist
-	my $smdExist = 0;
-	foreach my $s (@steps) {
-		foreach my $l (@bgaLayers) {
+		if ($bgaExist) {
+			foreach my $s (@steps) {
 
-			my %att = CamHistogram->GetAttHistogram( $inCAM, $jobId, $s, $l );
-			if ( $att{".smd"} ) {
-				$smdExist = 1;
-				last;
+				my $unMaskedCntRef   = 0;
+				my $unMaskAttrValRef = "";
+
+				my $resize          = undef;    # default - copy drill smaller about 50µm to solder mask
+				my $minDistHole2Pad = undef;    # default - 500µm minimal distance of through hole to pad
+
+				unless ( UnMaskNC->UnMaskThroughHoleNearBGA( $inCAM, $jobId, $s, $resize, $minDistHole2Pad ) ) {
+					$result = 0;
+				}
+
 			}
 		}
-		last if ($smdExist);
-	}
 
-	if ($smdExist) {
+		# SMD exist
+		my $smdExist = 0;
 		foreach my $s (@steps) {
+			foreach my $l (@bgaLayers) {
 
-			my $unMaskedCntRef   = 0;
-			my $unMaskAttrValRef = "";
-
-			my $resize          = undef;    # default - copy drill smaller about 50µm to solder mask
-			my $minDistHole2Pad = undef;    # default - 500µm minimal distance of through hole to pad
-
-			unless ( UnMaskNC->UnMaskThroughHoleNearSMD( $inCAM, $jobId, $s, $resize, $minDistHole2Pad ) ) {
-				$result = 0;
+				my %att = CamHistogram->GetAttHistogram( $inCAM, $jobId, $s, $l );
+				if ( $att{".smd"} ) {
+					$smdExist = 1;
+					last;
+				}
 			}
+			last if ($smdExist);
+		}
 
+		if ($smdExist) {
+			foreach my $s (@steps) {
+
+				my $unMaskedCntRef   = 0;
+				my $unMaskAttrValRef = "";
+
+				my $resize          = undef;    # default - copy drill smaller about 50µm to solder mask
+				my $minDistHole2Pad = undef;    # default - 500µm minimal distance of through hole to pad
+
+				unless ( UnMaskNC->UnMaskThroughHoleNearSMD( $inCAM, $jobId, $s, $resize, $minDistHole2Pad ) ) {
+					$result = 0;
+				}
+
+			}
 		}
 	}
 
