@@ -45,15 +45,67 @@ sub Build {
 
 	my $result = $self->SUPER::Build( $stripVariant, $cpnSett, $cpnSingleSett );
 
-	# 2) Add extra behaviour for conaplanar SE
+	# Add extra behaviour for conaplanar SE
 
+	# 2) Set coplanar type
 	$self->{"layout"}->SetCoplanar(1);
+
+	# 2) Set GND to track distance
 
 	my $coSE = $self->_GetXmlConstr()->GetParamDouble("CS");    # µm
 
 	foreach my $t ( $self->{"layout"}->GetTracks() ) {
 
 		$t->SetGNDDist($coSE);
+	}
+
+	# 3) Set GND via hole positions
+	if ( $cpnSett->GetGNDViaShielding() ) {
+
+		die "Only route type: streight is allowed when coplanar with GND via"
+		  if ( $stripVariant->Route() ne Enums->Route_STREIGHT );
+
+		die "Only single strip is allowed when coplanar with GND via"
+		  if ( $self->{"cpnSingle"}->IsMultistrip() );
+
+		# Via hole can start just near track pad, because coupon contains alwazs only one (diff) or two (2 x SE in two pools)
+		# microstrip
+		my $origin  = $self->{"cpnSingle"}->GetMicrostripOrigin($stripVariant);
+		my $xPosCnt = $self->{"cpnSingle"}->GetMicrostripPosCnt( $stripVariant, "x" );
+		my $p2pDist = $cpnSingleSett->GetTrackPad2TrackPad() / 1000;                     # in mm
+
+		my $tOrigin  = PointLayout->new( $origin->X() + ( $xPosCnt - 1 ) * $p2pDist, $origin->Y() );
+		 
+		 
+
+		my $viaHoleOffset =
+		  ( $cpnSingleSett->GetPadTrackSize() / 2 + $coSE + $cpnSett->GetGNDViaHole2GNDDist() + $cpnSett->GetGNDViaHoleSize() / 2 ) / 1000;
+		my $viaHoleArea = ( $cpnSingleSett->GetCpnSingleWidth() - 2 * $tOrigin->X() - 2 * $viaHoleOffset );
+
+		my $viaCnt = int( $viaHoleArea / ( $cpnSett->GetGNDViaHoleDX() / 1000 ) ) + 1;
+		my $areaLeft = $viaHoleArea % ( $cpnSett->GetGNDViaHoleDX() / 1000 );
+
+		my $yPosTopVia =
+		  $tOrigin->Y() + $p2pDist/2+
+		  ( $stripVariant->RouteDist() * 1000 / 2 +
+			$stripVariant->RouteWidth() * 1000 +
+			$coSE + $cpnSett->GetGNDViaHole2GNDDist() +
+			$cpnSett->GetGNDViaHoleSize() / 2 ) / 1000;
+		my $yPosBotVia =
+		  $tOrigin->Y() + $p2pDist/2  -
+		  ( $stripVariant->RouteDist() * 1000 / 2 +
+			$stripVariant->RouteWidth() * 1000 +
+			$coSE + $cpnSett->GetGNDViaHole2GNDDist() +
+			$cpnSett->GetGNDViaHoleSize() / 2 ) / 1000;
+
+		my $xPosVia = $tOrigin->X() + $viaHoleOffset + $areaLeft / 2;
+		for ( my $i = 0 ; $i < $viaCnt ; $i++ ) {
+
+			$self->{"layout"}->AddGNDViaPoint( PointLayout->new( $xPosVia, $yPosTopVia ) );
+			$self->{"layout"}->AddGNDViaPoint( PointLayout->new( $xPosVia, $yPosBotVia ) );
+
+			$xPosVia += $cpnSett->GetGNDViaHoleDX() / 1000;
+		}
 	}
 
 	return $result;

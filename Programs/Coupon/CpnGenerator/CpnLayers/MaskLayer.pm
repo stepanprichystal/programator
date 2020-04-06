@@ -34,8 +34,8 @@ sub new {
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;    # microstrip layout
+	my $self            = shift;
+	my $layout          = shift;    # microstrip layout
 	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
@@ -61,8 +61,19 @@ sub Build {
 		$self->{"drawing"}->AddPrimitive($pad);
 	}
 
-	# Draw to layer
-	#$self->_Draw();
+	# Drav GND via holes pad
+
+	if ( $layout->GetCoplanar() ) {
+		my $shieldingLayout = $cpnSingleLayout->GetShieldingGNDViaLayout();
+
+		if ( defined $shieldingLayout && $shieldingLayout->GetUnMaskGNDVia() ) {
+			foreach my $hole ( $layout->GetGNDViaPoints() ) {
+
+				$self->{"drawing"}->AddPrimitive(
+					   PrimitivePad->new( "r" . ( 2 * $shieldingLayout->GetGNDViaHoleRing() + $shieldingLayout->GetGNDViaHoleSize() + 80 ), $hole ) );
+			}
+		}
+	}
 
 }
 

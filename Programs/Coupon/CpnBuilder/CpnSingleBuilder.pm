@@ -32,6 +32,7 @@ use aliased 'Programs::Coupon::CpnBuilder::MicrostripBuilders::CODiffBuilder';
 use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::CpnInfoTextBuilder';
 use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::GuardTracksBuilder';
 use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::ShieldingBuilder';
+use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::ShieldingGNDViaBuilder';
 use aliased 'Programs::Coupon::CpnBuilder::OtherBuilders::CpnLayerBuilder';
 
 #-------------------------------------------------------------------------------------------#
@@ -192,6 +193,21 @@ sub Build {
 
 	}
 
+	# Build shielding GND Via for coplanar types
+	if ( $self->{"cpnSett"}->GetGNDViaShielding() ) {
+
+		my $sBuilder = ShieldingGNDViaBuilder->new( $inCAM, $jobId );
+		if ( $sBuilder->Build( $self->{"singleCpnVar"}, $self->{"cpnSett"}, $errMess ) ) {
+
+			$self->{"layout"}->SetShieldingGNDViaLayout( $sBuilder->GetLayout() );
+		}
+		else {
+
+			$result = 0;
+		}
+
+	}
+
 	# Build other parameters
 	if ($result) {
 
@@ -241,7 +257,7 @@ sub GetShareGNDLayers {
 
 	my @strips = $self->{"singleCpnVar"}->GetStripsByColumn( $stripVariant->Col() );
 
-	my @gndLayers = ();                                                                 # layers where has to by GND pad (on specific column position)
+	my @gndLayers = ();               # layers where has to by GND pad (on specific column position)
 
 	foreach my $s (@strips) {
 

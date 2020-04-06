@@ -198,6 +198,40 @@ shieldingSymbolDX = 500 # µm
 shieldingSymbolDY = 500 # µm
  
 
+# GENERAL SHIELDING GND VIASETTINGS
+# --------------------------------------------------------------------------------------
+[t = Coplanar via shielding]
+[h = Add GND via hole to GND along impedance track]
+GNDViaShielding = 1 # 1/0
+
+[t = Via hole size]
+[h = Size of GND via hole]
+[u = µm ]
+GNDViaHoleSize = 400 # µm
+
+[t = Via hole annular ring]
+[h = Size of GND via hole annular ring]
+[u = µm ]
+GNDViaHoleRing = 100 # µm
+
+[t = Horiz. via hole distance]
+[h = Horizontal via hole distance (hole center 2 hole center)]
+[u = µm ]
+GNDViaHoleDX = 4000 # µm
+ 
+[t = GND edge via hole distance]
+[h = Via hole distance from edge of GND]
+[u = µm ]
+GNDViaHole2GNDDist = 500 # µm
+
+[t = Unmask GND via]
+[h = Unmask GND via with 40µm clearance]
+UnMaskGNDVia = 1 # 1/0
+
+[t = Filled GND via]
+[h = If checked, via holes will be placed to filled plt through layer]
+FilledGNDVia = 0 # 1/0
+
 # GUARD TRACK SETTINGS
 # --------------------------------------------------------------------------------------
 [t = Guard tracks]

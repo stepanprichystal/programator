@@ -85,6 +85,21 @@ sub VerifyGroupComb {
 		my $maxPoolCnt    = $self->__GetGroupSett($groupId)->{"maxPoolCnt"};
 		my $maxStripsCntH = $self->__GetGroupSett($groupId)->{"maxStripsCntH"};
 
+		# 1) Coplanar type has special rules
+		# Diff coplanar can by only 1 per group
+		# SE coplanar can by one per group with arbitrary next SE(all types)
+		if ( grep { $_->{"type"} eq "coplanar_diff" || $_->{"type"} eq "coplanar_se" } @{$group} ) {
+			$maxStripsCntH = 1;
+
+			if ( grep { $_->{"type"} eq "coplanar_diff" } @{$group} ) {
+				$maxPoolCnt = 1;
+			}
+
+			if ( scalar( grep { $_->{"type"} eq "coplanar_se" || $_->{"type"} eq "_se" } @{$group} ) != scalar( @{$group} ) ) {
+				$maxPoolCnt = 1;
+			}
+		}
+
 		# return all alowed pool combination for one group
 		#
 		# Example:

@@ -3,7 +3,7 @@
 # Description: Layer builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnGenerator::CpnLayers::PthDrillLayer;
+package Programs::Coupon::CpnGenerator::CpnLayers::GNDViaShieldingLayer;
 
 use base('Programs::Coupon::CpnGenerator::CpnLayers::LayerBase');
 
@@ -45,10 +45,13 @@ sub Build {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# drav GND and track pads
-	foreach my $pad ( $layout->GetPads() ) {
+	# drav GND via holes
+	my $shieldingLayout = $cpnSingleLayout->GetShieldingGNDViaLayout();
+	 
+	
+	foreach my $hole ( $layout->GetGNDViaPoints() ) {
 
- 		$self->{"drawing"}->AddPrimitive(PrimitivePad->new( "r".$cpnSingleLayout->GetPadDrillSize(), $pad->GetPoint() ));
+ 		$self->{"drawing"}->AddPrimitive(PrimitivePad->new( "r".$shieldingLayout->GetGNDViaHoleSize(), $hole ));
 	}
  
   

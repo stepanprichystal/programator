@@ -16,6 +16,7 @@ use Set::Partition;
 use POSIX;
 
 #local library
+use aliased 'Enums::EnumsImp';
 use aliased 'Programs::Coupon::Enums';
 use aliased 'Programs::Coupon::CpnSource::CpnSource';
 
@@ -40,7 +41,6 @@ sub new {
 	return $self;
 
 }
-
 
 sub GenerateGroups {
 	my $self = shift;
@@ -72,6 +72,17 @@ sub GenerateGroups {
 	# Max count of items, which are partitions created from is 6 items
 	my @allComb;
 	my $maxItems = 8;
+
+	# Remove Coplanar diff strips -this type has to by always alone in group
+	# (reason - coplanar diff has vias along imp line. This vias can by in collosion with another imp
+	# lines in same group/pool)
+	my @xmlConsStructCOPLANAR_DIFF = ();
+	for ( my $i = scalar(@xmlConsStruct) - 1 ; $i >= 0 ; $i-- ) {
+
+		if ( $xmlConsStruct[$i]->{"type"} eq EnumsImp->Type_CODIFF ) {
+			push( @xmlConsStructCOPLANAR_DIFF, splice @xmlConsStruct, 1, $i );
+		}
+	}
 
 	if ( scalar(@xmlConsStruct) <= $maxItems ) {
 		@allComb = partitions( \@xmlConsStruct )
@@ -111,6 +122,20 @@ sub GenerateGroups {
 
 				$allComb[$i]->[$j] = \@comb;
 			}
+		}
+	}
+
+	# Add coplanar diff to each combination
+	if ( scalar(@xmlConsStructCOPLANAR_DIFF) ) {
+
+		my @a = ();
+
+		foreach my $coplDiff (@xmlConsStructCOPLANAR_DIFF) {
+			push( @a, [$coplDiff] );
+		}
+
+		for ( my $i = 0 ; $i < scalar(@allComb) ; $i++ ) {
+			push( @{ $allComb[$i] }, @a );
 		}
 	}
 
@@ -175,7 +200,7 @@ sub GenerateGroups {
 
 	return @allComb;
 }
- 
+
 sub GenerateGroupComb {
 	my $self = shift;
 	my @comb = @{ shift(@_) };    # combination of strip id merget to groups
@@ -200,8 +225,6 @@ sub GenerateGroupComb {
 
 	return \@groupComb;
 }
- 
-  
 
 sub __GetConstraint {
 	my $self = shift;

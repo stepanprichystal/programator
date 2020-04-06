@@ -22,7 +22,7 @@ use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadNegLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PthDrillLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadTextLayer';
 use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer';
-
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::GNDViaShieldingLayer';
 use aliased 'Programs::Coupon::Helper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
@@ -112,6 +112,20 @@ sub Build {
 
 	# process: m
 	$self->_AddLayer( PthDrillLayer->new("m") );
+
+	# process: m/mfill
+	if ( $layout->GetCoplanar() ) {
+		my $shieldingGNDVia = $cpnSingleLayout->GetShieldingGNDViaLayout();
+		if ( defined $shieldingGNDVia ) {
+
+			if ( $shieldingGNDVia->GetFilledGNDVia() ) {
+				$self->_AddLayer( GNDViaShieldingLayer->new("mfill") );
+			}
+			else {
+				$self->_AddLayer( GNDViaShieldingLayer->new("m") );
+			}
+		}
+	}
 
 	$self->_Build( $layout, $cpnSingleLayout, $layersLayout );
 

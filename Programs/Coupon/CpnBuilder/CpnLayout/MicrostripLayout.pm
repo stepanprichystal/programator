@@ -25,8 +25,10 @@ sub new {
 	bless $self;
 
 	# Microstrip layout properties
-	$self->{"pads"}   = [];
-	$self->{"tracks"} = [];
+	$self->{"pads"}         = [];       # GND and Track pads definition
+	$self->{"tracks"}       = [];       # Trancks definition
+	$self->{"coplanar"}     = 0;        # indicate coplanar type
+	$self->{"GNDViaPoints"} = undef;    # positions of GND VIA holes along strip line (coplanar only)
 
 	# Microstript model properties
 	$self->{"microstripModel"} = undef;
@@ -43,8 +45,6 @@ sub new {
 	$self->{"pad2GNDClearance"} = undef;
 
 	$self->{"padClearance"} = undef;
-
-	$self->{"coplanar"} = 0;
 
 	return $self;
 }
@@ -168,6 +168,24 @@ sub GetTrackToCopper {
 
 	return $self->{"trackToCopper"};
 
+}
+
+sub AddGNDViaPoint {
+	my $self  = shift;
+	my $point = shift;
+
+	push( @{ $self->{"GNDViaPoints"} }, $point );
+
+}
+
+sub GetGNDViaPoints {
+	my $self = shift;
+
+	if(!defined $self->{"GNDViaPoints"}){
+		die ;
+	}
+
+	return @{ $self->{"GNDViaPoints"} };
 }
 
 sub SetPad2GND {

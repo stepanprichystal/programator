@@ -67,11 +67,20 @@ sub __SetLayout {
 	# Shielding TAB
 	my $pageShielding = MyWxBookCtrlPage->new( $nb, $nb->GetPageCount() );
 	$nb->AddPage( $pageShielding, "General shielding + guard tracks", 0, $nb->GetPageCount() );
-	my $szShielding = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szShielding     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szRow1Shielding = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2Shielding = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	$pageShielding->SetSizer($szShielding);
 
-	$szShielding->Add( $self->__BuildShieldingSett($pageShielding),   1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szShielding->Add( $self->__BuildGuardTracksSett($pageShielding), 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow1Shielding->Add( $self->__BuildShieldingSett($pageShielding),       1,  &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow1Shielding->Add( $self->__BuildShieldingGNDViaSett($pageShielding), 1,  &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow2Shielding->Add( $self->__BuildGuardTracksSett($pageShielding),     50, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow2Shielding->Add( 1, 1, 50, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szShielding->Add( $szRow1Shielding, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szShielding->Add( $szRow2Shielding, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	#__BuildShieldingGNDViaSett
 
 	# Logo TAB
 	my $pageLogo = MyWxBookCtrlPage->new( $nb, $nb->GetPageCount() );
@@ -112,19 +121,18 @@ sub __BuildGeneralSett {
 	$szStatBox->Add( 1, 10, 0 );
 	$szStatBox->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	$szStatBox->Add( $self->__BuildRowUni_CheckBox( $statBox, "countourMech", 0, $pnlRows ), 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "countourTypeX", [ "none", "rout",  "score" ]), 0, &Wx::wxALL, 1 );;
-	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "countourBridgesCntX",  0, 4 ), 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "countourTypeY", [ "none", "rout", "score" ]) , 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "countourBridgesCntY",  0, 4 ), 0, &Wx::wxALL, 1 );
-	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "bridgesWidth", 0, 10000 ), 0, &Wx::wxALL, 1 );
-	
- 
+	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "countourTypeX", [ "none", "rout", "score" ] ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "countourBridgesCntX", 0, 4 ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_ComboBox( $pnlRows, "countourTypeY", [ "none", "rout", "score" ] ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "countourBridgesCntY", 0, 4 ),     0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "bridgesWidth",        0, 10000 ), 0, &Wx::wxALL, 1 );
+
 	unless ( $self->{"settings"}->GetCountourMech() ) {
 		$pnlRows->Disable();
 	}
 
 	# EVENTS
-	
+
 	$pnlRows->SetSizer($szRows);
 	$szStatBox->Add( $pnlRows, 1, 0 );
 
@@ -324,6 +332,55 @@ sub __BuildShieldingSett {
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "shieldingSymbolDY", 100, 10000 ), 0, &Wx::wxALL, 1 );
 
 	unless ( $self->{"settings"}->GetShielding() ) {
+		$pnlRows->Disable();
+	}
+
+	$pnlRows->SetSizer($szRows);
+
+	$szStatBox->Add( $pnlRows, 1, 0 );
+
+	# EVENTS
+	# EVENTS
+	#Wx::Event::EVT_CHECKBOX( $control, -1, sub { $self->__InfoTextDisable($szRows) } );
+
+	# SAVE REFERENCES
+
+	return $szStatBox;
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Info shielding settings
+#-------------------------------------------------------------------------------------------#
+
+sub __BuildShieldingGNDViaSett {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Coplanar GND via shielding' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $pnlRows = Wx::Panel->new( $statBox, -1 );
+	my $szRows = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
+	# build rows
+
+	# Define disable enable checkbox
+	$szStatBox->Add( 1, 5, 0 );
+	$szStatBox->Add( $self->__BuildRowUni_CheckBox( $statBox, "GNDViaShielding", 0, $pnlRows ), 0, &Wx::wxALL, 1 );
+
+	# ----
+
+	$szRows->Add( $self->_GetSeparateLine($pnlRows), 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+
+	$szRows->Add( Wx::StaticText->new( $pnlRows, -1, "Definition of GND via:", &Wx::wxDefaultPosition ), 0, &Wx::wxALL, 4 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "GNDViaHoleSize",     150, 5000 ),  0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "GNDViaHoleRing",     50,  300 ),   0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "GNDViaHoleDX",       200, 10000 ), 0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "GNDViaHole2GNDDist", 50,  2000 ),  0, &Wx::wxALL, 1 );
+	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "UnMaskGNDVia" ), 0 );
+	$szRows->Add( $self->__BuildRowUni_CheckBox( $pnlRows, "FilledGNDVia" ), 0 );
+
+	unless ( $self->{"settings"}->GetGNDViaShielding() ) {
 		$pnlRows->Disable();
 	}
 

@@ -24,12 +24,11 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"points"}      = shift;
-	$self->{"width"}       = shift;
-	$self->{"gndDistance"} = shift;    # specify track clearance from GND (only coplanar types)
+	$self->{"points"}       = shift;
+	$self->{"width"}        = shift;
+	$self->{"GNDDistance"}  = shift;    # specify track clearance from GND (only coplanar types)
 
 	return $self;
-
 }
 
 sub AddTrackPoint {
@@ -56,14 +55,16 @@ sub SetGNDDist {
 	my $self    = shift;
 	my $gndDist = shift;
 
-	$self->{"gndDistance"} = $gndDist;
+	$self->{"GNDDistance"} = $gndDist;
 }
 
 sub GetGNDDist {
 	my $self = shift;
 
-	return $self->{"gndDistance"};
+	return $self->{"GNDDistance"};
 }
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

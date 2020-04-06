@@ -734,6 +734,109 @@ sub SetShieldingSymbolDY {
 	$self->_SetVal("shieldingSymbolDY", $val);
 }
 
+
+# GND via shielding for coplanar
+
+sub GetGNDViaShielding {
+	my $self = shift;
+
+	return $self->_GetVal("GNDViaShielding");
+
+}
+
+sub SetGNDViaShielding {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("GNDViaShielding", $val);
+}
+
+sub GetGNDViaHoleSize {
+	my $self = shift;
+
+	return $self->_GetVal("GNDViaHoleSize");
+
+}
+
+sub SetGNDViaHoleSize {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("GNDViaHoleSize", $val);
+}
+
+sub GetGNDViaHoleRing {
+	my $self = shift;
+
+	return $self->_GetVal("GNDViaHoleRing");
+
+}
+
+sub SetGNDViaHoleRing {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("GNDViaHoleRing", $val);
+}
+
+sub GetGNDViaHoleDX {
+	my $self = shift;
+
+	return $self->_GetVal("GNDViaHoleDX");
+
+}
+
+sub SetGNDViaHoleDX {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("GNDViaHoleDX", $val);
+}
+
+sub GetGNDViaHole2GNDDist {
+	my $self = shift;
+
+	return $self->_GetVal("GNDViaHole2GNDDist");
+
+}
+
+sub SetGNDViaHole2GNDDist {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("GNDViaHole2GNDDist", $val);
+}
+
+  
+
+sub GetUnMaskGNDVia {
+	my $self = shift;
+
+	return $self->_GetVal("UnMaskGNDVia");
+
+}
+
+sub SetUnMaskGNDVia {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("UnMaskGNDVia", $val);
+}
+
+sub GetFilledGNDVia {
+	my $self = shift;
+
+	return $self->_GetVal("FilledGNDVia");
+
+}
+
+sub SetFilledGNDVia {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->_SetVal("FilledGNDVia", $val);
+}
+
 # Title (logo + job id)
 
 sub GetTitle {

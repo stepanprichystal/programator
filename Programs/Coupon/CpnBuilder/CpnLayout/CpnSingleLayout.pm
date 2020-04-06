@@ -24,14 +24,15 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"h"}                 = undef;    # dynamic heght of single coupon
-	$self->{"w"}                 = undef;    # dynamic width of single coupo (active area width + text on rights)
-	$self->{"stripsLayouts"}     = [];
-	$self->{"infoTextLayout"}    = undef;
-	$self->{"guardTracksLayout"} = undef;
-	$self->{"shieldingLayout"}   = undef;
-	$self->{"cpnSingleWidth"}    = undef;
-	$self->{"position"}          = undef;
+	$self->{"h"}                     = undef;    # dynamic heght of single coupon
+	$self->{"w"}                     = undef;    # dynamic width of single coupo (active area width + text on rights)
+	$self->{"stripsLayouts"}         = [];
+	$self->{"infoTextLayout"}        = undef;
+	$self->{"guardTracksLayout"}     = undef;
+	$self->{"shieldingLayout"}       = undef;
+	$self->{"shieldingGNDViaLayout"} = undef;
+	$self->{"cpnSingleWidth"}        = undef;
+	$self->{"position"}              = undef;
 
 	$self->{"padGNDSymNeg"}  = undef;
 	$self->{"padTrackSize"}  = undef;
@@ -137,6 +138,20 @@ sub GetShieldingLayout {
 	my $self = shift;
 
 	return $self->{"shieldingLayout"};
+}
+
+sub SetShieldingGNDViaLayout {
+	my $self    = shift;
+	my $layouts = shift;
+
+	$self->{"shieldingGNDViaLayout"} = $layouts
+
+}
+
+sub GetShieldingGNDViaLayout {
+	my $self = shift;
+
+	return $self->{"shieldingGNDViaLayout"};
 }
 
 sub SetCpnSingleWidth {

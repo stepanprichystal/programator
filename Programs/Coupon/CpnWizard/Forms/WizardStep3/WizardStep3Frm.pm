@@ -100,14 +100,13 @@ sub Update {
 	$self->{"coreWizardStep"} = $wizardStep;    # Update current step wizard
 
 	my $cpnVariant = $self->{"coreWizardStep"}->GetCpnVariant();
-	my $cpnLayout = $self->{"coreWizardStep"}->GetCpnLayout();
-	
+	my $cpnLayout  = $self->{"coreWizardStep"}->GetCpnLayout();
+
 	my $preview = "\n" . $cpnVariant;
 	$preview .= "\n\n";
-	$preview .= "Coupon dimensions: ".sprintf("%.1f", $cpnLayout->GetWidth())."mm x ".sprintf("%.1f", $cpnLayout->GetHeight())."mm";
-	
- 
-	$self->{"previewTxt"}->SetValue( $preview );
+	$preview .= "Coupon dimensions: " . sprintf( "%.1f", $cpnLayout->GetWidth() ) . "mm x " . sprintf( "%.1f", $cpnLayout->GetHeight() ) . "mm";
+
+	$self->{"previewTxt"}->SetValue($preview);
 }
 
 sub FinishCoupon {
@@ -118,8 +117,11 @@ sub FinishCoupon {
 
 sub __ShowInCAMAsync {
 	my $self = shift;
+
 	
 	$self->__GenerateCoupon(0);
+
+	
 }
 
 # ================================================================================
@@ -157,16 +159,16 @@ sub __GenerateCouponEnd {
 		}
 		else {
 			$self->{"parentFrm"}->Hide();
+			$self->{"inCAM"}->COM("display_sr", "display" => "yes" );
 			my $res = $self->{"inCAM"}->PAUSE("Check Coupon...");
-			
+
 			# protection if somebody click "Abort"
-			if($res !~ /ok/i){
+			if ( $res !~ /ok/i ) {
 				print STDERR "ERRROR, user click ABORT on InCAM pause window.";
-				$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, [ "You clicked Abort, Instack generator will be closed" ] );
+				$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_SYSTEMERROR, ["You clicked Abort, Instack generator will be closed"] );
 				$self->{"parentFrm"}->Close();
 			}
- 
-			
+
 			$self->{"parentFrm"}->Show();
 
 			$self->{"coreWizardStep"}->UpdateCpnGenerated(1);
