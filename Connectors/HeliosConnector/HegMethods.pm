@@ -2173,6 +2173,34 @@ sub GetPcbAncestor {
 
 }
 
+# Get all ReOrders
+# Pcb has order number begger than -01 + are on state 'Predvyrobni priprava'
+sub GetAllMatKinds {
+	my $self = shift;
+
+	my @params = ();
+
+	my $cmd = "SELECT
+       			data_val,
+       			disp_val
+				FROM lcs.editstyles
+				WHERE name = 'ddlb_22_material_druh'";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+	my %mats = ();
+	for ( my $i = 0 ; $i < scalar(@result) ; $i++ ) {
+
+		my %inf = ();
+		$mats{ $result[$i]{'data_val'} } = ( $result[$i]{'disp_val'} =~ /tg\s*(\d+)/i )[0];
+
+	}
+	
+	# Add extra material DE104 = FR4
+	$mats{"DE104"} = $mats{"FR4"};
+
+	return %mats;
+}
+
 sub GetImpedancExist {
 	my $self  = shift;
 	my $pcbId = shift;
