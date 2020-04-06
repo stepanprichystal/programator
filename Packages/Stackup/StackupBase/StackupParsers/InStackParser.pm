@@ -215,7 +215,8 @@ sub ParseStackup {
 sub GetNominalThick {
 	my $self = shift;
 
-	die "Get nominal thickness is not implemented";
+	return 0;
+	#die "Get nominal thickness is not implemented";
 }
 
 #-------------------------------------------------------------------------------------------#
