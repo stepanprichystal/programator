@@ -65,6 +65,7 @@ sub BuildStackupLamination {
 	die "Signal layer cnt in matrix ($sigLMatrixCnt) didn't match witch signal layer cnt in stackup file ($sigLStckpCnt)"
 	  if ( $sigLMatrixCnt != $sigLStckpCnt );
 
+ 
 	my $NCCheck = 1;
 	my $mess    = "";
 	$NCCheck = 0 if ( !LayerErrorInfo->CheckWrongNames( $self->{"NCLayers"}, \$mess ) );

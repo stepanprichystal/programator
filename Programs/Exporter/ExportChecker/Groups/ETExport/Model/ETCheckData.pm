@@ -21,7 +21,6 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'Packages::ETesting::BasicHelper::Helper' => 'ETHelper';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -42,15 +41,15 @@ sub OnCheckGroupData {
 	my $jobId    = $dataMngr->{"jobId"};
 	my $stepName = "panel";
 
-	my $groupData = $dataMngr->GetGroupData();
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	my $groupData   = $dataMngr->GetGroupData();
 
 	# 1) check attribute .n_electric (it can appear in odb data)
 
 	my @steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
-	
-	
-	my @l = CamJob->GetSignalLayerNames($inCAM, $jobId);
- 
+
+	my @l = CamJob->GetSignalLayerNames( $inCAM, $jobId );
+
 	my $impPresent = 0;
 	foreach my $step (@steps) {
 
@@ -87,12 +86,38 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "IPC file placement", "Není vybráno umístění, kam se má IPC soubor zkopírovat (Server copy; Local copy)" );
 
 	}
-	
+
 	# 4) Check if keep rpofile is possible
-	if($groupData->GetKeepProfiles() && !ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $groupData->GetStepToTest())){
-		
+	if ( $groupData->GetKeepProfiles() && !ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $groupData->GetStepToTest() ) ) {
+
 		$dataMngr->_AddErrorResult( "Keep profiles",
-									 "Pro ET step: ".$groupData->GetStepToTest()." není možné ponechat SR profily desek v IPC souboru." );
+									"Pro ET step: " . $groupData->GetStepToTest() . " není možné ponechat SR profily desek v IPC souboru." );
+	}
+
+	# 5) Check if coverlay on outer signal layers are properly prepared (are not empty)
+	my @cvrl = grep { $_->{"gROWname"} =~ /^coverlay[cs]$/ } $defaultInfo->GetBoardBaseLayers();
+	if ( scalar(@cvrl) ) {
+
+		my @steps = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+
+		foreach my $l (@cvrl) {
+
+			foreach my $s (@steps) {
+
+				my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+				if ( $hist{"total"} == 0 ) {
+
+					$dataMngr->_AddErrorResult(
+						"Empty coverlay layers",
+						"Vrstva: "
+						  . $l->{"gROWname"}
+						  . "; ve stepu: "
+						  . $s->{"stepName"}
+						  . " nesmí být prázdná kvůli správnému vytvoření elektrického testu."
+					);
+				}
+			}
+		}
 	}
 
 }
@@ -103,18 +128,18 @@ sub OnCheckGroupData {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-  #	use aliased 'Packages::Export::NCExport::NCExportGroup';
-  #
-  #	my $jobId    = "F13608";
-  #	my $stepName = "panel";
-  #
-  #	my $inCAM = InCAM->new();
-  #
-  #	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
-  #
-  #	$ncgroup->Run();
+	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
+	#
+	#	my $jobId    = "F13608";
+	#	my $stepName = "panel";
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
+	#
+	#	$ncgroup->Run();
 
-  #print $test;
+	#print $test;
 
 }
 

@@ -158,6 +158,20 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# X) Check proper number of signal layers
+	if ( $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER && $defaultInfo->GetLayerCnt() != 1 ) {
+
+		$dataMngr->_AddErrorResult( "Wrong number of signal layers", "Pokud je deska typu Neplát, musí mít jednu signálovou vrstvu \"c\"" );
+	}
+
+	# X) Check proper number of signal layers
+	if ( $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_1VFLEX && $defaultInfo->GetLayerCnt() != 2 ) {
+
+		$dataMngr->_AddErrorResult( "Wrong number of signal layers",
+					   "Pokud je deska typu: Jednostranný flex, musí mít dvě signálové vrstvy (vždy se vyrábí z oboustranného materiálu)" )
+		  ;
+	}
+
 	# X) Check if exist plt layers and technology is not galvanic
 	if ( $layerCnt >= 2 ) {
 
@@ -187,13 +201,7 @@ sub OnCheckGroupData {
 		}
 
 	}
-
-	# 4) Check if onesided flex layer has always two signal layer in matrix
-	if ( $defaultInfo->GetIsFlex() && HegMethods->GetTypeOfPcb( $jobId, 1 ) =~ /^F$/i && $layerCnt != 2 ) {
-
-		$dataMngr->_AddErrorResult( "Špatný počet signálových vrstev",
-									"Pokud je typ DPS jednostranný flex, v matrixu musí být vždy dvě signálové vrstvy: c + s" );
-	}
+ 
 
 	# 4) Check if material and pcb thickness and base cuthickness is set
 	my $materialKindIS = $defaultInfo->GetMaterialKind();
