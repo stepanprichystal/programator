@@ -133,16 +133,21 @@ sub __LoadChanges {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+
 	use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
 	use aliased 'Packages::InCAM::InCAM';
+	#use aliased 'Packages::Reorder::ChangeReorder::Helper';
+	use aliased 'Packages::Reorder::Enums';
 
 	use Data::Dump qw(dump);
 
 	my $inCAM   = InCAM->new();
-	my $jobId   = "d241318";
-	my $orderId = "d241318-02";
+	my $jobId   = "d074576";
+	my $orderId = "d074576-01";
 
-	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId );
+	#my $type = Helper->GetReorderType($inCAM, $orderId);
+
+	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId, Enums->ReorderType_POOL );
 
 	my $errMess = "";
 	my @arr     = $ch->RunChanges( \$errMess );

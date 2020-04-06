@@ -276,7 +276,15 @@ sub DelFeatuesAttribute {
 	$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => $attribute, "attr_vals" => $value );
 }
 
- 
+# Delete all atributes from selected features on affected layers
+sub DelAllFeatuesAttribute {
+	my $self      = shift;
+	my $inCAM     = shift;
+
+	$inCAM->COM( "sel_delete_atr", "mode" => "all" );
+}
+
+
 
 
 # Return array of all atributes in job (feature attributes)
@@ -320,4 +328,27 @@ sub GetAttrParamsByName {
 	return %{$att};
 }
 
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'CamHelpers::CamAttributes';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobName = "d272564";
+
+	  
+	 
+
+	print 1;
+
+}
+
 1;
+
+

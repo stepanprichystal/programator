@@ -64,7 +64,7 @@ use aliased 'Packages::GuideSubs::Scoring::DoFlattenScore';
 use aliased 'Packages::CAMJob::Stackup::StackupDefault';
 use aliased 'Packages::GuideSubs::Routing::CheckRout';
 use aliased 'Packages::Compare::Layers::CompareLayers';
-use aliased 'Packages::CAMJob::SolderMask::PreparationLayout';
+use aliased 'Packages::CAMJob::SolderMask::UnMaskNC';
 use aliased 'Packages::GuideSubs::Drilling::BlindDrilling::BlindDrillTools';
 use aliased 'Packages::GuideSubs::Drilling::BlindDrilling::CheckDrillTools';
 use aliased 'Packages::GuideSubs::Routing::DoRoutOptimalization';
@@ -175,14 +175,17 @@ unless ($panelSizeCheck == 0) {
 		
 		
 		# Copy all rout layers to solder mask
-		PreparationLayout->CopyRoutToSolderMask($inCAM, $jobName, 'o+1' );
+		UnMaskNC->UnMaskNpltRout($inCAM, $jobName, 'o+1' );
 		
 		# Un mask throuh hole if BGA on the boards
 		DoUnmaskNC->UnMaskBGAThroughHole( $inCAM, $jobName );
+		
+		# Un mask throuh hole if BGA on the boards
+		DoUnmaskNC->UnMaskSMDThroughHole( $inCAM, $jobName );
 			
 		#22.5.2018 zaremovano, delalo chyby pøi kopírování mpanelu z jiné zakázky.		
 		#if ( CamHelper->StepExists( $inCAM, $jobName, 'mpanel' ) ) { 
- 		#			PreparationLayout->CopyRoutToSolderMask($inCAM, $jobName, 'mpanel' );
+ 		#			UnMaskNC->UnMaskNpltRout($inCAM, $jobName, 'mpanel' );
  		#			$inCAM->COM ('set_step',name=> 'o+1');
  		#}
  			

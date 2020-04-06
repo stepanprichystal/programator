@@ -16,6 +16,8 @@ use warnings;
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Reorder::Enums';
+use aliased 'Helpers::JobHelper';
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -32,13 +34,13 @@ sub new {
 sub Run {
 	my $self = shift;
 
-	my $inCAM    = $self->{"inCAM"};
-	my $jobId    = $self->{"jobId"};
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
 	my $reorderType = $self->{"reorderType"};
 
 	my $needChange = 0;
 
-	# check if pcb is in revision
+	# 1) check if pcb is in revision
 	my $pcbInfo = HegMethods->GetBasePcbInfo($jobId);
 
 	my $revize = $pcbInfo->{"stav"} eq 'R' ? 1 : 0;    # indicate if pcb need user-manual process before go to produce
@@ -52,6 +54,11 @@ sub Run {
 						   0
 		);
 
+	}
+
+	# 2) All flexible PCB must go through TPV
+	if ( JobHelper->GetIsFlex($jobId) ) {
+		$self->_AddChange( "Flexibilni DPS jde do výroby. Je třeba překontrolvoat na TPV jestli nedošlo ke změnám v přípravě\n ", 0 );
 	}
 
 }
