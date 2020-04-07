@@ -52,6 +52,26 @@ sub ParseStackup {
 
 	my $stackupXml = XML::LibXML->load_xml( "location" => $stcFile );
 
+	# 1) Parse nominal thickness requested by user
+	my $stackupNode = ( $stackupXml->findnodes('/document/interfacelist/JOB/STACKUP/STACKUP') )[0];
+	if ( defined $stackupNode->{"CUSTOMER_THICKNESS"} ) {
+		# convert from mills to µm
+		$self->{"nominalThick"} = $stackupNode->{"CUSTOMER_THICKNESS"} * 25.4;
+
+	}
+
+	#	if ( defined $xml->{"soll"} && $xml->{"soll"} ne "" ) {
+	#
+	#		CUSTOMER_THICKNESS
+	#
+	#		my $nom = $xml->{"soll"};
+	#		$nom =~ s/,/\./;
+	#		$nom *= 1000;
+	#		$self->{"nominalThick"} = $nom;
+	#	}
+
+	# 2) Parse stackup layers
+
 	my @layers = ();
 
 	#temporary solution, reading real thickness of prepreg from special file
@@ -135,8 +155,9 @@ sub ParseStackup {
 				$layerInfo->{"typetext"} = $info->{typetext};
 				$layerInfo->{"id"}       = $matUda{$matRef}->{"dps_id"};
 				$layerInfo->{"qId"}      = $matUda{$matRef}->{"dps_qid"};
+
 				# prepreg is noflow if contains text "no flow"
-				$layerInfo->{"noFlow"}   = $layerInfo->{"typetext"} =~ /((no)|(low)).*flow/i ? 1 : 0;
+				$layerInfo->{"noFlow"} = $layerInfo->{"typetext"} =~ /((no)|(low)).*flow/i ? 1 : 0;
 
 				push( @layers, $layerInfo );
 			}
@@ -167,8 +188,6 @@ sub ParseStackup {
 			my $layerInfo = CoreLayer->new();
 
 			$coreCnt++;
-
-			
 
 			my $info = $stackuInfoData->GetCoreInfo( $matUda{$matRef}->{"dps_qid"}, $matUda{$matRef}->{"dps_id"} );
 
@@ -206,17 +225,14 @@ sub ParseStackup {
 
 	}
 
-
-
 	return @layers;
 }
 
-
 sub GetNominalThick {
 	my $self = shift;
+ 
 
-	return 0;
-	#die "Get nominal thickness is not implemented";
+	return $self->{"nominalThick"}
 }
 
 #-------------------------------------------------------------------------------------------#

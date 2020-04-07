@@ -76,6 +76,8 @@ sub ParseStackup {
 	close($fStackupXml);
 	unlink(EnumsPaths->Client_INCAMTMPOTHER . $fname);
 	
+	# 1) Parse nominal thickness requested by user
+	
 	if(defined $xml->{"soll"} && $xml->{"soll"} ne ""){
 		
 		my $nom = $xml->{"soll"};
@@ -83,6 +85,8 @@ sub ParseStackup {
 		$nom *=1000;
 		$self->{"nominalThick"} = $nom;
 	}
+
+	# 2) Parse stackup layers
 
 	my @elements = @{ $xml->{element} };
 
