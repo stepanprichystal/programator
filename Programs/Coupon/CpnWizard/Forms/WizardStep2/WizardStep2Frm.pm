@@ -51,7 +51,7 @@ sub GetLayout {
 	#my $szRowList = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
-	my $btnGlobal = Wx::Button->new( $pnlMain, -1, "Global", &Wx::wxDefaultPosition, [ 100, 35 ] );
+	my $btnGlobal = Wx::Button->new( $pnlMain, -1, "General", &Wx::wxDefaultPosition, [ 100, 35 ] );
 	my $btmIco = Wx::Bitmap->new( Helper->GetResourcePath() . "settings25x25.bmp", &Wx::wxBITMAP_TYPE_BMP );    #wxBITMAP_TYPE_PNG
 	$btnGlobal->SetBitmap($btmIco);
 
@@ -202,16 +202,34 @@ sub __ShowGroupSett {
 
 	my $settingsTmp = $self->{"coreWizardStep"}->GetGroupSettings($groupId)->GetDeepCopy();
 
-	my $result = 0;
-	my $frm = GroupSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result );
+	my $result   = 0;
+	my $isGlobal = 0;
+	my $frm      = GroupSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result, \$isGlobal );
 
 	$frm->ShowModal();
 
 	# update layout
 	if ($result) {
+		if ($isGlobal) {
 
-		my $groupSett = $self->{"coreWizardStep"}->GetGroupSettings($groupId);
-		$groupSett->UpdateSettings($settingsTmp);
+			# Set settings for all groups
+
+			my $allGroupSett = $self->{"coreWizardStep"}->GetAllGroupSettings();
+
+			foreach my $gId ( keys %{$allGroupSett} ) {
+
+				my $groupSett = $allGroupSett->{$gId};
+				$groupSett->UpdateSettings( $settingsTmp->GetDeepCopy() );
+			}
+
+		}
+		else {
+			# set settings only for current group
+
+			my $groupSett = $self->{"coreWizardStep"}->GetGroupSettings($groupId);
+			$groupSett->UpdateSettings($settingsTmp);
+
+		}
 	}
 
 }
@@ -225,16 +243,36 @@ sub __ShowStripSett {
 
 	my $settingsTmp = $self->{"coreWizardStep"}->GetStripSettings($stripId)->GetDeepCopy();
 
-	my $result = 0;
-	my $frm = StripSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result );
+	my $result   = 0;
+	my $isGlobal = 0;
+	my $frm      = StripSettFrm->new( $self->{"parentFrm"}, $settingsTmp, \$result, \$isGlobal );
 
 	$frm->ShowModal();
 
 	# update layout
 	if ($result) {
 
-		my $stripSett = $self->{"coreWizardStep"}->GetStripSettings($stripId);
-		$stripSett->UpdateSettings($settingsTmp);
+		if ($isGlobal) {
+
+			# Set settings for all microstrips
+
+			my $allStripSett = $self->{"coreWizardStep"}->GetAllStripSettings();
+
+			foreach my $sId ( keys %{$allStripSett} ) {
+
+				my $stripSett = $allStripSett->{$sId};
+
+				$stripSett->UpdateSettings( $settingsTmp->GetDeepCopy() );
+			}
+
+		}
+		else {
+
+			# set settings only for current microstrip
+			my $stripSett = $self->{"coreWizardStep"}->GetStripSettings($stripId);
+			$stripSett->UpdateSettings($settingsTmp);
+		}
+
 	}
 
 }

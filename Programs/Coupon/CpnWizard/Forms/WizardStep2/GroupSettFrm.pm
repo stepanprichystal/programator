@@ -24,6 +24,7 @@ sub new {
 	my $parent   = shift;
 	my $settings = shift;
 	my $result   = shift;
+	my $isGlobal = shift;
 
 	my $title     = "Coupon group settings";
 	my $dimension = [ 540, 560 ];
@@ -35,19 +36,38 @@ sub new {
 
 	# Properties
 
-	$self->__SetLayout();
+	$self->__SetLayout($isGlobal);
 
 	return $self;
 }
 
 sub __SetLayout {
 	my $self = shift;
+	my $isGlobal = shift;
 
 	# DEFINE CONTROLS
 
 	$self->{"szMain"}->Add( $self->__BuildLayoutSett( $self->{"pnlMain"} ), 50, &Wx::wxEXPAND, 1 );
 
 	$self->{"szMain"}->Add( $self->__BuildPadSett( $self->{"pnlMain"} ), 50, &Wx::wxEXPAND, 1 );
+	
+	
+	$self->{"szMain"}->Add( 1, 5, 1 );
+	my $overWriteChb = Wx::CheckBox->new( $self->{"pnlMain"}, -1, "Set same settings for all groups", &Wx::wxDefaultPosition );
+	$overWriteChb->SetForegroundColour( Wx::Colour->new( 255, 0, 0 ) );
+	$self->{"szMain"}->Add( $overWriteChb, 0, &Wx::wxALL, 4 );
+
+	# EVENTS
+	# EVENTS
+	Wx::Event::EVT_CHECKBOX(
+		$overWriteChb, -1,
+
+		sub {
+			my $chb = shift;
+			$$isGlobal = defined $chb->GetValue() && $chb->GetValue() ? 1 : 0;
+		}
+	);
+	
 	# BUILD STRUCTURE OF LAYOUT
 
 	# DEFINE LAYOUT STRUCTURE

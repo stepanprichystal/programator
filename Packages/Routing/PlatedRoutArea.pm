@@ -31,14 +31,14 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 #  Script methods
 #-------------------------------------------------------------------------------------------#
 
-# Return 1 if plated rout exceed area or if tool in "m" layer is bigger than 5mm
+# Return 1 if plated rout exceed area or if tool in "m" layer is bigger than 5,1mm
 sub PlatedAreaExceed {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $stepName = shift;
 
-	my $maxArea = 19.5;    # approx area of hole 5mm
+	my $maxArea = 20.428;    # approx area of hole 5,1mm
 
 	my $areaExceed = 0;
 
@@ -50,7 +50,7 @@ sub PlatedAreaExceed {
 
 		CamDrilling->AddHistogramValues( $inCAM, $jobId, $stepName, \@layers );
 
-		if ( $layer{"maxTool"} && $layer{"maxTool"} > 5000 ) {
+		if ( $layer{"maxTool"} && $layer{"maxTool"} > 5100 ) {
 
 			$areaExceed = 1;
 		}

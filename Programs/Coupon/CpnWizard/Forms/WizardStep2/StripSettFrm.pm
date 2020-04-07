@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: 
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnWizard::Forms::WizardStep2::StripSettFrm;
@@ -24,6 +24,7 @@ sub new {
 	my $parent   = shift;
 	my $settings = shift;
 	my $result   = shift;
+	my $isGlobal = shift;    # reference whe will be stored if settings is global for all strips
 
 	my $title     = "Coupon microstrip settings";
 	my $dimension = [ 440, 300 ];
@@ -35,17 +36,34 @@ sub new {
 
 	# Properties
 
-	$self->__SetLayout();
+	$self->__SetLayout($isGlobal);
 
 	return $self;
 }
 
 sub __SetLayout {
-	my $self = shift;
+	my $self     = shift;
+	my $isGlobal = shift;
 
 	# DEFINE CONTROLS
 
-	$self->{"szMain"}->Add( $self->__BuildLayoutSett( $self->{"pnlMain"} ), 50, &Wx::wxEXPAND, 1 );
+	$self->{"szMain"}->Add( $self->__BuildLayoutSett( $self->{"pnlMain"}, $isGlobal ), 50, &Wx::wxEXPAND, 1 );
+
+	$self->{"szMain"}->Add( 1, 5, 1 );
+	my $overWriteChb = Wx::CheckBox->new( $self->{"pnlMain"}, -1, "Set same settings for all microstrips", &Wx::wxDefaultPosition );
+	$overWriteChb->SetForegroundColour( Wx::Colour->new( 255, 0, 0 ) );
+	$self->{"szMain"}->Add( $overWriteChb, 0, &Wx::wxALL, 4 );
+
+	# EVENTS
+	# EVENTS
+	Wx::Event::EVT_CHECKBOX(
+		$overWriteChb, -1,
+
+		sub {
+			my $chb = shift;
+			$$isGlobal = defined $chb->GetValue() && $chb->GetValue() ? 1 : 0;
+		}
+	);
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -58,8 +76,9 @@ sub __SetLayout {
 #-------------------------------------------------------------------------------------------#
 
 sub __BuildLayoutSett {
-	my $self   = shift;
-	my $parent = shift;
+	my $self     = shift;
+	my $parent   = shift;
+ 
 
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Track settings' );
@@ -80,18 +99,15 @@ sub __BuildLayoutSett {
 	$szRows->Add( $self->__BuildRowUni_SpinCtrl( $pnlRows, "padClearance",  0,  200 ),  0, &Wx::wxALL, 1 );
 
 	$pnlRows->SetSizer($szRows);
-
 	$szStatBox->Add( $pnlRows, 1, 0 );
 
 	# EVENTS
-	# EVENTS
-	#Wx::Event::EVT_CHECKBOX( $control, -1, sub { $self->__InfoTextDisable($szRows) } );
 
 	# SAVE REFERENCES
 
 	return $szStatBox;
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

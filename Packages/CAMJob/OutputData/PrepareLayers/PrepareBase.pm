@@ -21,6 +21,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamFilter';
+use aliased 'CamHelpers::CamGoldArea';
 use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAMJob::OutputData::Enums';

@@ -189,11 +189,11 @@ shieldingType = symbol # symbol/solid
 shieldingSymbol = r200 # µm incam symbol
 
 [t = Vertical symbols dist]
-[h = Vertical symbols dist]
+[h = Vertical symbols dist (symbol center to symbol center)]
 [u = µm ]
 shieldingSymbolDX = 500 # µm
 [t = Horizontal symbols dist]
-[h = Horizontal symbols dist]
+[h = Horizontal symbols dist (symbol center to symbol center)]
 [u = µm ]
 shieldingSymbolDY = 500 # µm
  
