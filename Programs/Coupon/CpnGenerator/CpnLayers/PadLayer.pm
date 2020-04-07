@@ -75,19 +75,7 @@ sub Build {
 
 	}
 
-	# Drav GND via holes pad
-		if ( $layout->GetCoplanar() ) {
-	my $shieldingLayout = $cpnSingleLayout->GetShieldingGNDViaLayout();
-
-	if ( defined $shieldingLayout ) {
-		foreach my $hole ( $layout->GetGNDViaPoints() ) {
-
-			$self->{"drawing"}->AddPrimitive(
-							 PrimitivePad->new( "r" . ( 2 * $shieldingLayout->GetGNDViaHoleRing() + $shieldingLayout->GetGNDViaHoleSize() ), $hole ) )
-			  ;
-		}
-	}
-		}
+	 
  
 
 }

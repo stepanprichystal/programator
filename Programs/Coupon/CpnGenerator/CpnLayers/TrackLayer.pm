@@ -192,18 +192,7 @@ sub Build {
 		  ->AddPrimitive( PrimitiveSurfFill->new( $solidPattern, 0, 0, 0, 0, 1, 0, $self->_InvertPolar( DrawEnums->Polar_POSITIVE, $layerLayout ) ) );
 	}
 
-	# Drav GND via holes pad
-	if ( $layout->GetCoplanar() ) {
-		my $shieldingLayout = $cpnSingleLayout->GetShieldingGNDViaLayout();
-
-		if ( defined $shieldingLayout ) {
-			foreach my $hole ( $layout->GetGNDViaPoints() ) {
-
-				$self->{"drawing"}->AddPrimitive(
-							PrimitivePad->new( "r" . ( 2 * $shieldingLayout->GetGNDViaHoleRing() + $shieldingLayout->GetGNDViaHoleSize() ), $hole ) );
-			}
-		}
-	}
+ 
 
 }
 

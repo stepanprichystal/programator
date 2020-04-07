@@ -113,17 +113,24 @@ sub Build {
 	# process: m
 	$self->_AddLayer( PthDrillLayer->new("m") );
 
-	# process: m/mfill
+	# Process coplanar via hole (drill hole + annular ring)
 	if ( $layout->GetCoplanar() ) {
+
 		my $shieldingGNDVia = $cpnSingleLayout->GetShieldingGNDViaLayout();
 		if ( defined $shieldingGNDVia ) {
 
+			# Drill hole
 			if ( $shieldingGNDVia->GetFilledGNDVia() ) {
 				$self->_AddLayer( GNDViaShieldingLayer->new("mfill") );
 			}
 			else {
 				$self->_AddLayer( GNDViaShieldingLayer->new("m") );
 			}
+
+			# Anunular ring
+			$self->_AddLayer( GNDViaShieldingLayer->new("c") );
+			$self->_AddLayer( GNDViaShieldingLayer->new("s") );
+
 		}
 	}
 

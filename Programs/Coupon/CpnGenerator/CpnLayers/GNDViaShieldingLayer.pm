@@ -20,7 +20,6 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 
-
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Programs::Coupon::Enums';
 use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
@@ -33,29 +32,36 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
-	 
+
 	return $self;
 }
 
 sub Build {
-	my $self   = shift;
-	my $layout = shift;    # microstrip layout
+	my $self            = shift;
+	my $layout          = shift;    # microstrip layout
 	my $cpnSingleLayout = shift;    # cpn single layout
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# drav GND via holes
-	my $shieldingLayout = $cpnSingleLayout->GetShieldingGNDViaLayout();
-	 
-	
+	my $shieldLyt = $cpnSingleLayout->GetShieldingGNDViaLayout();
+
 	foreach my $hole ( $layout->GetGNDViaPoints() ) {
 
- 		$self->{"drawing"}->AddPrimitive(PrimitivePad->new( "r".$shieldingLayout->GetGNDViaHoleSize(), $hole ));
+		# Draw pad according layer (signal/drill)
+
+		if ( $self->GetLayerName() =~ /^m/ ) {
+
+			$self->{"drawing"}->AddPrimitive( PrimitivePad->new( "r" . $shieldLyt->GetGNDViaHoleSize(), $hole ) );
+
+		}
+		elsif ( $self->GetLayerName() =~ /^[cs]$/ ) {
+
+			$self->{"drawing"}
+			  ->AddPrimitive( PrimitivePad->new( "r" . ( 2 * $shieldLyt->GetGNDViaHoleRing() + $shieldLyt->GetGNDViaHoleSize() ), $hole ) );
+		}
 	}
- 
-  
- 	 
 
 }
 
