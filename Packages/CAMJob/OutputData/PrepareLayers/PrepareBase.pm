@@ -307,7 +307,9 @@ sub __PrepareFLEXLAYERS {
 	foreach my $cvrL (@lCoverlay) {
 
 		# 1) Create full surface by profile
-		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
+		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 1000, $self->{"profileLim"} );
+		CamLayer->ClipAreaByProf( $inCAM, $lName, 0, 0,1 );   
+		CamLayer->WorkLayer( $inCAM, $lName );
 
 		# 2) Copy coverlay milling
 
@@ -358,7 +360,9 @@ sub __PrepareFLEXLAYERS {
 	foreach my $stiffL (@stiffLayers) {
 
 		# 1) Create full surface by profile
-		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
+		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 1000, $self->{"profileLim"} );
+		CamLayer->ClipAreaByProf( $inCAM, $lName, 0, 0,1 );   
+		CamLayer->WorkLayer( $inCAM, $lName );
 
 		# 2) Copy negative of stiffener rout
 

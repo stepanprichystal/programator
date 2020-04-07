@@ -182,6 +182,11 @@ sub CheckIsNotEmpty {
 		if ( $stepName ne "panel" && defined $l->{"type"} ) {
 			next;
 		}
+
+		if ( $l->{"fHist"}->{"total"} == 0 ) {
+			$result = 0;
+			$$mess .= "NC layer: " . $l->{"gROWname"} . " is empty (doesn't contain any symbols).\n";
+		}
 	}
 
 	return $result;

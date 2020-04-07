@@ -144,7 +144,7 @@ sub __BuildRow1 {
 	my $c2xpos   = $secMngr->GetColumnCnt(1) - $c2xStart;
 
 	my $date = sprintf "%02.f.%02.f.%04.f", localtime->mday(), ( localtime->mon() + 1 ), ( localtime->year() + 1900 );
-	my $c2Str = "Date:" . $date;
+	my $c2Str = "Date: " . $date;
 
 	$tblMain->AddCell( $c2xStart, 0, $c2xpos, undef, $c2Str, $c2TxtStyle );
 

@@ -47,7 +47,7 @@ use constant {
 # Stackup row heights [mm]
 
 use constant {
-			   RowHeight_TITLE    => 9,
+			   RowHeight_TITLE    => 7,
 			   RowHeight_MAINHEAD => 9,
 			   RowHeight_STANDARD => 5,
 			   RowHeight_MATGAP   => 0.7,

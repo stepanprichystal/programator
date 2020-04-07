@@ -207,7 +207,7 @@ sub __BuildDrillRow {
 		my $NCTxt = "";
 		for ( my $i = 0 ; $i < scalar(@NCtxt) ; $i++ ) {
 
-			$NCTxt .= $NCtxt[$i] . ( $i < scalar(@NCtxt) - 2 ? "; " : "" ) . ( ( $i + 1 ) % 3 == 0 ? "\n" : "" );
+			$NCTxt .= $NCtxt[$i] . ( $i <= scalar(@NCtxt) - 2 ? "; " : "" ) . ( ( $i + 1 ) % 3 == 0 ? "\n" : "" );
 		}
 
 		my $NCTextStyle = TextStyle->new( TblDrawEnums->TextStyle_MULTILINE,
