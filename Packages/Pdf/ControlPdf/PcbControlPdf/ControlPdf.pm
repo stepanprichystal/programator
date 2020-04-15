@@ -243,7 +243,7 @@ sub AddImagePreview {
 			my $imgPreviewOut = ImgPreviewOut->new( $inCAM, $jobId, $pdfStep, $layerList, EnumsFinal->View_FROMTOP );
 
 			#next;
-			next if($sInf->{"name"} eq "mpanel");
+			#next if($sInf->{"name"} eq "mpanel");
 			if ( $imgPreviewOut->Output($reducedQuality) ) {
 				$pTop = $imgPreviewOut->GetOutput();
 			}
@@ -261,7 +261,7 @@ sub AddImagePreview {
 			my $imgPreviewOut = ImgPreviewOut->new( $inCAM, $jobId, $pdfStep, $layerList, EnumsFinal->View_FROMBOT );
 
 			#next;
-			next if($sInf->{"name"} eq "mpanel");
+			#next if($sInf->{"name"} eq "mpanel");
 			if ( $imgPreviewOut->Output($reducedQuality) ) {
 				$pBot = $imgPreviewOut->GetOutput();
 			}
