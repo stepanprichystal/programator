@@ -176,19 +176,27 @@ sub GetScanMark {
 sub GetScanMarkPoint {
 	my $self      = shift;
 	my @scanMarks = @{ shift(@_) };
-	my $attName   = shift;
+	my $attName   = shift;            # either string("abc") or Regex type (qr/abc/)
 
 	my %point = ();
+	my $id    = undef;
 
-	my $id = ( grep { $scanMarks[$_]->{"att"}{".pnl_place"} eq $attName } 0 .. $#scanMarks )[0];
+	if ( ref $attName eq 'Regexp' ) {
+		$id = ( grep { $scanMarks[$_]->{"att"}{".pnl_place"} =~ m/$attName/ } 0 .. $#scanMarks )[0];
+	}
+	else {
+		$id = ( grep { $scanMarks[$_]->{"att"}{".pnl_place"} eq $attName } 0 .. $#scanMarks )[0];
+	}
+
 	if ( defined $id ) {
 
 		$point{"x"} = $scanMarks[$id]->{"x1"};
 		$point{"y"} = $scanMarks[$id]->{"y1"};
 
 		return %point;
-	}else{
-		
+	}
+	else {
+
 		die "Scan mark point was not found for attribute \".pnl_place\" and attribute value: \"$attName\"";
 	}
 
@@ -464,17 +472,17 @@ sub GetDrilledNumber {
 	my $machine    = shift;
 	my @scanMarks  = @{ shift(@_) };
 	my %nullPoint  = %{ shift(@_) };
-	my $cuThick = shift;
+	my $cuThick    = shift;
 	my $coreNumber = shift;
- 
-	die "No drilled number position defined" if(!defined $position);
-	die "No machine defined" if(!defined $machine);
+
+	die "No drilled number position defined" if ( !defined $position );
+	die "No machine defined"                 if ( !defined $machine );
 
 	# Add job id
 	my $numberStr = $jobId;
- 
- 	# Add Cu thickness
-	if (  defined $cuThick ) {
+
+	# Add Cu thickness
+	if ( defined $cuThick ) {
 
 		if ( $cuThick == 0 ) {
 			$numberStr .= "--";
@@ -502,10 +510,9 @@ sub GetDrilledNumber {
 	# Add machine letter
 	$machine =~ m/machine_(\w)/;
 	$numberStr .= uc($1);
-	
+
 	# Add core number
-	$numberStr .= " J$coreNumber" if(defined $coreNumber);
-	
+	$numberStr .= " J$coreNumber" if ( defined $coreNumber );
 
 	my $scanMark = "";
 
@@ -516,15 +523,14 @@ sub GetDrilledNumber {
 	}
 	elsif ( $position eq "stdframe" ) {
 
-		$scanMark = "drilled_pcbId_c";
-	}else{
-		
+		$scanMark =  qr/^drilled_pcbId_c/; # attribut value can have suffix
+	}
+	else {
+
 		die "Wrong drilled number position: $position";
 	}
 
-	$numberStr = $self->GetScanMark( \@scanMarks, \%nullPoint, $scanMark ) . "M97," . $numberStr."\n";
-
-
+	$numberStr = $self->GetScanMark( \@scanMarks, \%nullPoint, $scanMark ) . "M97," . $numberStr . "\n";
 
 	return $numberStr;
 }

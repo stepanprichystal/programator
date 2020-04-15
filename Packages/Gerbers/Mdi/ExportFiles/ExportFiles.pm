@@ -381,10 +381,11 @@ sub __GetFiducials {
 	# take position and sort them: lefttop; right-top; right-bot; left-bot
 	my @fiducials = ();
 
-	my $fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top$/ } @features )[0];
-	my $fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top$/ } @features )[0];
-	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/ } @features )[0];
-	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/ } @features )[0];
+	# Left top mark can have suffix
+	my $fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top(-508.*)?$/i } @features )[0];
+	my $fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top$/i } @features )[0];
+	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/i } @features )[0];
+	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/i } @features )[0];
 
 	die "OLEC fiducial mark left-top was not found"  if ( !defined $fLT );
 	die "OLEC fiducial mark right-top was not found" if ( !defined $fRT );

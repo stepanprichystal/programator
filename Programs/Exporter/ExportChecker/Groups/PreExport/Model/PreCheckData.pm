@@ -168,8 +168,7 @@ sub OnCheckGroupData {
 	if ( $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_1VFLEX && $defaultInfo->GetLayerCnt() != 2 ) {
 
 		$dataMngr->_AddErrorResult( "Wrong number of signal layers",
-					   "Pokud je deska typu: Jednostranný flex, musí mít dvě signálové vrstvy (vždy se vyrábí z oboustranného materiálu)" )
-		  ;
+					  "Pokud je deska typu: Jednostranný flex, musí mít dvě signálové vrstvy (vždy se vyrábí z oboustranného materiálu)" );
 	}
 
 	# X) Check if exist plt layers and technology is not galvanic
@@ -201,7 +200,6 @@ sub OnCheckGroupData {
 		}
 
 	}
- 
 
 	# 4) Check if material and pcb thickness and base cuthickness is set
 	my $materialKindIS = $defaultInfo->GetMaterialKind();
@@ -501,21 +499,27 @@ sub OnCheckGroupData {
 	}
 
 	# 13) Check if goldfinge exist or galvanic surface (G)  if panel equal to standard small dimension
-	if ( $surface =~ /G/i || $goldFinger ) {
 
-		# height: small standard VV - 407, small standard VV - 355
+	if ( ( $surface =~ /G/i || $goldFinger ) ) {
 
-		my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+		my $cutPnl = CamAttributes->GetJobAttrByName( $inCAM, $jobId, 'technology_cut' );
 
-		my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+		if ( !defined $cutPnl || $cutPnl =~ /^no$/i ) {
 
-		if ( $h > 408 ) {
+			# height: small standard VV - 407, small standard VV - 355
 
-			$dataMngr->_AddErrorResult(
-										"Panel dimension",
-										"Příliš velký panel. \nPokud job obsahuje zlacený konektor nebo povrch je galvanické zlato,"
-										  . " panel musí mýt maximálně tak velký jako malý standardní panel."
-			);
+			my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+
+			my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+
+			if ( $h > 408 ) {
+
+				$dataMngr->_AddErrorResult(
+											"Panel dimension",
+											"Příliš velký panel. \nPokud job obsahuje zlacený konektor nebo povrch je galvanické zlato,"
+											  . " panel musí mýt maximálně tak velký jako malý standardní panel."
+				);
+			}
 		}
 
 	}
