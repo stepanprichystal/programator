@@ -155,16 +155,7 @@ sub __OnRenderPriorityHndl {
 	
 	
 }
-
-# DrawPriority_TABBORDER  => "DrawPriority_TABBORDER",     # table frame
-#			   DrawPriority_COLLBACKG  => "DrawPriority_COLLBACKG",     # column background
-#			   DrawPriority_COLLBORDER => "DrawPriority_COLLBORDER",    # column border
-#			   DrawPriority_ROWBACKG   => "DrawPriority_ROWBACKG",      # row background
-#			   DrawPriority_ROWBORDER  => "DrawPriority_ROWBORDER",     # row border
-#			   DrawPriority_CELLBACKG  => "DrawPriority_CELLBACKG",     # cell background
-#			   DrawPriority_CELLBORDER => "DrawPriority_CELLBORDER",    # cell border
-#			   DrawPriority_CELLTEXT   => "DrawPriority_CELLTEXT",      # cell text
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
