@@ -243,7 +243,7 @@ sub AddImagePreview {
 			my $imgPreviewOut = ImgPreviewOut->new( $inCAM, $jobId, $pdfStep, $layerList, EnumsFinal->View_FROMTOP );
 
 			#next;
-			#next if($sInf->{"name"} eq "mpanel");
+			next if($sInf->{"name"} eq "mpanel");
 			if ( $imgPreviewOut->Output($reducedQuality) ) {
 				$pTop = $imgPreviewOut->GetOutput();
 			}
@@ -261,7 +261,7 @@ sub AddImagePreview {
 			my $imgPreviewOut = ImgPreviewOut->new( $inCAM, $jobId, $pdfStep, $layerList, EnumsFinal->View_FROMBOT );
 
 			#next;
-			#next if($sInf->{"name"} eq "mpanel");
+			next if($sInf->{"name"} eq "mpanel");
 			if ( $imgPreviewOut->Output($reducedQuality) ) {
 				$pBot = $imgPreviewOut->GetOutput();
 			}
@@ -524,7 +524,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d267628";
+	my $jobId = "d277993";
 
 	my $mess = "";
 
@@ -539,7 +539,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#$control->AddInfoPreview( \$mess );
 
 	#$control->AddStackupPreview( \$mess );
-	#$control->AddImagePreview( \$mess, 1, 1 );
+	$control->AddImagePreview( \$mess, 1, 0 );
 
 	$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );

@@ -139,14 +139,15 @@ sub Clone {
 
 		# 3) Clip all behind cloned step profile in current pdf step
 		foreach my $lData ( $self->{"layerList"}->GetOutputLayers() ) {
-			my $cuCountoru = 1; # do not cut countoru, it cause illegal surfaces
+			my $cuCountoru = 1; # cut countour, it cause illegal surfaces (we handle it in next few lines below)
 			my $cutProfileMargin = 0;
 			CamLayer->ClipAreaByProf( $inCAM, $lData->GetOutputLayer(), $cutProfileMargin, 0, $cuCountoru );     
 		}
 		
-		# There could be created illegal surface behind profile by clippin, so delete them
+		# There could be created illegal surface behind profile by clippin, so delete them		
 		CamLayer->AffectLayers( $inCAM, [ map { $_->GetOutputLayer() } $self->{"layerList"}->GetOutputLayers() ] );
-		if(CamFilter->BySurfaceArea($inCAM, 0,0.001)){
+		my $minSurfArea = 0.1; # 0.1mm2
+		if(CamFilter->BySurfaceArea($inCAM, 0,$minSurfArea)){
 			CamLayer->DeleteFeatures($inCAM);
 		}
 
