@@ -411,26 +411,54 @@ sub OnCheckGroupData {
 	}
 
 	# 10) Check if dimension of panel are ok, depand on finish surface
-	my $surface   = $defaultInfo->GetPcbSurface($jobId);
-	my $pcbThick  = $defaultInfo->GetPcbThick($jobId);
-	my $panelType = $defaultInfo->GetPanelType();
+	my $surface  = $defaultInfo->GetPcbSurface($jobId);
+	my $pcbThick = $defaultInfo->GetPcbThick($jobId);
+	my %profLim  = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+	my $cutPnl   = $defaultInfo->GetJobAttrByName('technology_cut');
 
-	# if HAL PB , and thisck < 1.5mm => onlz small panel
+	# if HAL PB , and thisck < 1.5mm, dim must be max 355mm height
+	my $maxThinHALPB = 355;
 	if (    $surface =~ /A/i
 		 && $pcbThick < 1500
-		 && ( $panelType eq EnumsProducPanel->SIZE_MULTILAYER_BIG || $panelType eq EnumsProducPanel->SIZE_STANDARD_BIG ) )
+		 && $layerCnt <= 2 )
 	{
-		$dataMngr->_AddErrorResult( "Panel dimension",
-									"Nelze použít velký rozměr panelu protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm" );
+		my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+		if ( $h > $maxThinHALPB )
+		{
+			$dataMngr->_AddErrorResult(
+										"Panel dimension - thin PBC",
+										"Nelze použít velký rozměr panelu ("
+										  . $h
+										  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu je: $maxThinHALPB mm"
+			);
+		}
 	}
+	elsif (    $surface =~ /A/i
+			&& $pcbThick < 1500
+			&& $layerCnt > 2 )
+	{
 
-	my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+		my $pnl = StandardBase->new( $inCAM, $jobId );
+		if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
+			 && $pnl->HFr() > $maxThinHALPB )
+		{
+			$dataMngr->_AddErrorResult(
+										"Panel dimension - thin PBC",
+										"Nelze použít velký rozměr panelu ("
+										  . $pnl->HFr()
+										  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu (fr rámečku) je: $maxThinHALPB mm"
+			);
+		}
+	}
 
 	# X) If HAL PB and physical size of panel is larger than 460
 	my $maxHALPB = 460;    # max panel height for PB HAL
+
 	if ( $surface =~ /A/i && $layerCnt <= 2 ) {
 
-		if ( abs( $profLim{"yMax"} - $profLim{"yMin"} ) > $maxHALPB ) {
+		if ( abs( $profLim{"yMax"} - $profLim{"yMin"} ) > $maxHALPB
+			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
+		{
 
 			$dataMngr->_AddErrorResult(
 										"Panel dimension",
@@ -443,7 +471,10 @@ sub OnCheckGroupData {
 	elsif ( $surface =~ /A/i && $layerCnt > 2 ) {
 
 		my $pnl = StandardBase->new( $inCAM, $jobId );
-		if ( $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD && $pnl->HFr() > $maxHALPB ) {
+		if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
+			 && $pnl->HFr() > $maxHALPB
+			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
+		{
 			$dataMngr->_AddErrorResult(
 										"Panel dimension",
 										"Nelze použít panel s výškou (po ofrézování rámečku): "
@@ -502,7 +533,7 @@ sub OnCheckGroupData {
 
 	if ( ( $surface =~ /G/i || $goldFinger ) ) {
 
-		my $cutPnl = CamAttributes->GetJobAttrByName( $inCAM, $jobId, 'technology_cut' );
+		my $cutPnl = $defaultInfo->GetJobAttrByName('technology_cut');
 
 		if ( !defined $cutPnl || $cutPnl =~ /^no$/i ) {
 

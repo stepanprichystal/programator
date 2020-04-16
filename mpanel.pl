@@ -68,6 +68,8 @@ my $customer = getValueNoris($jobName, 'customer');
 		$znacky = "TRANSCON";
 }elsif ($customer =~ /elmatica/i) {
 		$znacky = "ELMATICA";
+}elsif ($customer =~ /WB\s*Electronics/i) {
+		$znacky = "WBELECTRONICS";
 }
 
 
@@ -246,8 +248,7 @@ if ($okoli == 5) {
 			$fid_schema = 'cust_bmr_5';
 	} elsif ($znacky eq "BEZ_FIDUCIALU") {
 			$fid_schema = 'mpanel_bez_fid';
-	} elsif ($znacky eq "SAFIRAL") {
-			$fid_schema = 'cust_safiral_5';
+
 #	} elsif ($znacky eq "PRINCITEC_5x8") {
 #			$fid_schema = 'cust_princitec_5x8';
 	} else {
@@ -294,6 +295,10 @@ elsif ($okoli == 10) {
 			$fid_schema = 'mpanel_bez_fid';
 	} elsif ($znacky eq "SAFIRAL") {
 			$fid_schema = 'cust_safiral_10';
+	} elsif ($znacky eq "SAFIRAL") {
+			$fid_schema = 'cust_safiral_10';
+	} elsif ($znacky eq "WBELECTRONICS") {
+			$fid_schema = 'cust_wb_10';
 	} else {
 		$fid_schema = 0;
 	}
@@ -457,7 +462,7 @@ unless ($znacky eq 'ATM' or $znacky eq 'RACOM') {
 ##########################################################################################################
 sub fill_znacky {
     $construct_znacky->delete(0,'end');
-    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA ELMATICA_bez_otvoru PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL); 
+    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA ELMATICA_bez_otvoru PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL WBELECTRONICS); 
     foreach my $className (sort @customerList) {
         $construct_znacky->insert('end',"$className");
     }

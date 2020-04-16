@@ -11,6 +11,7 @@ use utf8;
 use strict;
 use warnings;
 use File::Copy;
+use List::Util qw[max min];
 
 #local library
 use aliased 'CamHelpers::CamLayer';
@@ -211,20 +212,21 @@ sub OnCheckGroupData {
 		);
 	}
 
-
-	
 	# X) Check technogy
 	# If layer cnt is => 2 technology should be galvanics (if there are plated drill layers), in other case resist
-	if(  $defaultInfo->GetLayerCnt() >= 2 && $groupData->GetTechnology() eq EnumsGeneral->Technology_RESIST){
-		
+	if ( $defaultInfo->GetLayerCnt() >= 2 && $groupData->GetTechnology() eq EnumsGeneral->Technology_RESIST ) {
+
 		my $cu = $defaultInfo->GetBaseCuThick("c");
-		$dataMngr->_AddWarningResult( "Technology", "DPS má zvolenou technologii \"Leptací resist\". "
-											."Tedy DPS nebude prokovená a výsledná Cu bude základní (".$cu."µm). "
-											."Je to pro zákazníka akceptovatelné?" );
-		
+		$dataMngr->_AddWarningResult(
+									  "Technology",
+									  "DPS má zvolenou technologii \"Leptací resist\". "
+										. "Tedy DPS nebude prokovená a výsledná Cu bude základní ("
+										. $cu
+										. "µm). "
+										. "Je to pro zákazníka akceptovatelné?"
+		);
+
 	}
- 
-	
 
 	# 8) Check if goldfinger exist, if area is greater than 10mm^2
 
@@ -254,7 +256,7 @@ sub OnCheckGroupData {
 		if ( ( $goldCExist || $goldSExist ) && $refLayerExist ) {
 
 			my $cuThickness = $defaultInfo->GetBaseCuThick("c");
-			my $pcbThick    = CamJob->GetFinalPcbThick($inCAM, $jobId);
+			my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
 
 			my %result = CamGoldArea->GetGoldFingerArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel" );
 
@@ -651,24 +653,72 @@ sub OnCheckGroupData {
 	if ( defined $maxERFOuterNum && $maxERFOuterNum != $defaultInfo->GetPcbClass() ) {
 
 		$dataMngr->_AddWarningResult(
-									  "Konstukční třída ",
-									  "V jobu je nastavená jiná konstrukční třída pro vnější vrstvy (job attribut: Pcbclass = "
-										. $defaultInfo->GetPcbClass()
-										. ") než poslední ERF model ($maxERFOuter, pro step: $maxERFOuterNumStep), který byl spuštěn v checklistu: \"$chcklstCheckName\". "
-										. "Je to správně?"
+			"Konstukční třída ",
+			"V jobu je nastavená jiná konstrukční třída pro vnější vrstvy (job attribut: Pcbclass = "
+			  . $defaultInfo->GetPcbClass()
+			  . ") než poslední ERF model ($maxERFOuter, pro step: $maxERFOuterNumStep), který byl spuštěn v checklistu: \"$chcklstCheckName\". "
+			  . "Je to správně?"
 		);
 	}
 
 	if ( defined $maxERFInnerNum && $maxERFInnerNum != $defaultInfo->GetPcbClassInner() ) {
 
 		$dataMngr->_AddWarningResult(
-									  "Konstukční třída vnitřní vrstvy",
-									  "V jobu je nastavená jiná konstrukční třída pro vnitřní vrstvy (job attribut: PcbclassInner = "
-										. $defaultInfo->GetPcbClassInner()
-										. ") než poslední ERF model ($maxERFInner, pro step: $maxERFInnerNumStep), který byl spuštěn v checklistu: \"$chcklstCheckName\". "
-										. "Je to správně?"
+			"Konstukční třída vnitřní vrstvy",
+			"V jobu je nastavená jiná konstrukční třída pro vnitřní vrstvy (job attribut: PcbclassInner = "
+			  . $defaultInfo->GetPcbClassInner()
+			  . ") než poslední ERF model ($maxERFInner, pro step: $maxERFInnerNumStep), který byl spuštěn v checklistu: \"$chcklstCheckName\". "
+			  . "Je to správně?"
 		);
 	}
+
+	# X) Check minimal/maximal customer panel dimension
+	if ( $defaultInfo->StepExist("mpanel") ) {
+
+		my ( $minA, $minB ) = $defaultInfo->GetCustomerNote()->MinCustPanelDim();
+
+		if ( defined $minA && defined $minB ) {
+
+			my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "mpanel" );
+			my $h   = abs( $lim{"yMax"} - $lim{"yMin"} );
+			my $w   = abs( $lim{"xMax"} - $lim{"xMin"} );
+
+			if ( min( $w, $h ) < min( $minA, $minB ) || max( $w, $h ) < max( $minA, $minB ) ) {
+				$dataMngr->_AddWarningResult(
+											  "Minimální velikost mpanelu",
+											  "Zákazník požaduje minimální velikost panelu pro osazování: "
+												. $minA . "mm x "
+												. $minB
+												. "mm. Mpanel má aktuálně: "
+												. $w . "mm x "
+												. $h
+				);
+			}
+		}
+
+		my ( $maxA, $maxB ) = $defaultInfo->GetCustomerNote()->MaxCustPanelDim();
+
+		if ( defined $maxA && defined $maxB ) {
+
+			my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "mpanel" );
+			my $h   = abs( $lim{"yMax"} - $lim{"yMin"} );
+			my $w   = abs( $lim{"xMax"} - $lim{"xMin"} );
+
+			if ( min( $w, $h ) > min( $maxA, $maxB ) || max( $w, $h ) > max( $maxA, $maxB ) ) {
+
+				$dataMngr->_AddWarningResult(
+											  "Maximální velikost mpanelu",
+											  "Zákazník požaduje maximální velikost panelu pro osazování: "
+												. $minA . "mm x "
+												. $minB
+												. "mm. Mpanel má aktuálně: "
+												. $w . "mm x "
+												. $h
+				);
+			}
+		}
+	}
+
 }
 
 # check if datacode exist
@@ -800,8 +850,6 @@ sub __CheckMarkingLayer {
 
 	return $res;
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -170,6 +170,39 @@ sub PlatedHolesType {
 	return $t;
 }
 
+# Minimal dimensions of customer panel
+# Return two dimension (panel side "a" and "b")
+sub MinCustPanelDim {
+	my $self = shift;
+
+	if ( !$self->Exist() ) {
+		return undef;
+	}
+
+	my $a = $self->{"notes"}->{"MinCustPnlDim1"};
+	my $b = $self->{"notes"}->{"MinCustPnlDim2"} // $a;
+	
+	 
+	return ($a, $b); 
+}
+
+# Minimal dimensions of customer panel
+# Return two dimension (panel side "a" and "b")
+sub MaxCustPanelDim {
+	my $self = shift;
+
+	if ( !$self->Exist() ) {
+		return undef;
+	}
+
+	my $a = $self->{"notes"}->{"MaxCustPnlDim1"};
+	my $b = $self->{"notes"}->{"MaxCustPnlDim2"} // $a;
+	
+	 
+	return ($a, $b); 
+}
+
+
 # ======== Stencil notes ============
 
 sub HoleDistX {
@@ -261,6 +294,7 @@ sub SizeY {
 
 	return $self->{"notes"}->{"SizeY"};
 }
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
