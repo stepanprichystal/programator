@@ -67,6 +67,8 @@ sub OnExportGroupData {
 	$exportData->SetFlexi_maska( $groupData->GetFlexi_maska() );
 	$exportData->SetC_mask_colour( $groupData->GetC_mask_colour() );
 	$exportData->SetS_mask_colour( $groupData->GetS_mask_colour() );
+	$exportData->SetC_mask_colour2( $groupData->GetC_mask_colour2() );
+	$exportData->SetS_mask_colour2( $groupData->GetS_mask_colour2() );
 	$exportData->SetC_silk_screen_colour( $groupData->GetC_silk_screen_colour() );
 	$exportData->SetS_silk_screen_colour( $groupData->GetS_silk_screen_colour() );
 

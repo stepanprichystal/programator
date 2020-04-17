@@ -123,7 +123,7 @@ sub OnPrepareGroupData {
 
 	# Mask color
 
-	#mask
+	# mask
 
 	my %masks = HegMethods->GetSolderMaskColor($jobId);
 	unless ( defined $masks{"top"} ) {
@@ -134,6 +134,18 @@ sub OnPrepareGroupData {
 	}
 	$groupData->SetC_mask_colour( $masks{"top"} );
 	$groupData->SetS_mask_colour( $masks{"bot"} );
+	
+	# mask 2
+
+	my %masks2 = HegMethods->GetSolderMaskColor2($jobId);
+	unless ( defined $masks2{"top"} ) {
+		$masks2{"top"} = "";
+	}
+	unless ( defined $masks2{"bot"} ) {
+		$masks2{"bot"} = "";
+	}
+	$groupData->SetC_mask_colour2( $masks2{"top"} );
+	$groupData->SetS_mask_colour2( $masks2{"bot"} );
 
 	#flex mask
 	my %flexType = HegMethods->GetFlexSolderMask($jobId);

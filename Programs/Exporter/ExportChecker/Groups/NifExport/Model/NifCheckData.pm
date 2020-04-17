@@ -30,6 +30,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamChecklist';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Packages::CAMJob::Marking::Marking';
@@ -85,9 +86,9 @@ sub OnCheckGroupData {
 	}
 
 	# 3) mask control
-	my %masks = CamLayer->ExistSolderMasks( $inCAM, $jobId );
-	my $topMaskExist = CamHelper->LayerExists( $inCAM, $jobId, "mc" );
-	my $botMaskExist = CamHelper->LayerExists( $inCAM, $jobId, "ms" );
+	my %masks        = CamLayer->ExistSolderMasks( $inCAM, $jobId );
+	my $topMaskExist = $defaultInfo->LayerExist("mc");
+	my $botMaskExist = $defaultInfo->LayerExist("ms");
 
 	# Control mask existence
 	if ( $masks{"top"} != $topMaskExist ) {
@@ -97,6 +98,19 @@ sub OnCheckGroupData {
 	if ( $masks{"bot"} != $botMaskExist ) {
 
 		$dataMngr->_AddErrorResult( "Maska BOT", "Nesedí maska bot v metrixu jobu a ve formuláři Heliosu" );
+	}
+
+	my %masks2        = CamLayer->ExistSolderMasks( $inCAM, $jobId, 1 );
+	my $topMask2Exist = $defaultInfo->LayerExist("mc2");
+	my $botMask2Exist = $defaultInfo->LayerExist("ms2");
+
+	if ( $masks2{"top"} != $topMask2Exist ) {
+
+		$dataMngr->_AddErrorResult( "Maska 2 TOP", "Nesedí maska 2 top v metrixu jobu a ve formuláři Heliosu" );
+	}
+	if ( $masks2{"bot"} != $botMask2Exist ) {
+
+		$dataMngr->_AddErrorResult( "Maska 2 BOT", "Nesedí maska 2 bot v metrixu jobu a ve formuláři Heliosu" );
 	}
 
 	# 4) Control mask colour
@@ -125,10 +139,35 @@ sub OnCheckGroupData {
 		);
 	}
 
+	my %masksColor2IS        = HegMethods->GetSolderMaskColor2($jobId);
+	my $masksColorTop2Export = $groupData->GetC_mask_colour2();
+	my $masksColorBot2Export = $groupData->GetS_mask_colour2();
+
+	if ( $masksColor2IS{"top"} ne $masksColorTop2Export ) {
+
+		$dataMngr->_AddErrorResult(
+									"Maska 2 TOP",
+									"Nesedí barva masky 2 top. Export =>"
+									  . ValueConvertor->GetMaskCodeToColor($masksColorTop2Export)
+									  . ", Helios => "
+									  . ValueConvertor->GetMaskCodeToColor( $masksColor2IS{"top"} ) . "."
+		);
+	}
+	if ( $masksColor2IS{"bot"} ne $masksColorBot2Export ) {
+
+		$dataMngr->_AddErrorResult(
+									"Maska 2 BOT",
+									"Nesedí barva masky 2 bot. Export =>"
+									  . ValueConvertor->GetMaskCodeToColor($masksColorBot2Export)
+									  . ", Helios => "
+									  . ValueConvertor->GetMaskCodeToColor( $masksColor2IS{"bot"} ) . "."
+		);
+	}
+
 	# 5) silk
-	my %silk = CamLayer->ExistSilkScreens( $inCAM, $jobId );
-	my $topSilkExist = CamHelper->LayerExists( $inCAM, $jobId, "pc" );
-	my $botSilkExist = CamHelper->LayerExists( $inCAM, $jobId, "ps" );
+	my %silk         = CamLayer->ExistSilkScreens( $inCAM, $jobId );
+	my $topSilkExist = $defaultInfo->LayerExist("pc");
+	my $botSilkExist = $defaultInfo->LayerExist("ps");
 
 	# Control silk existence
 	if ( $silk{"top"} != $topSilkExist ) {
@@ -140,9 +179,9 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Potisk BOT", "Nesedí potisk bot v metrixu jobu a ve formuláři Heliosu" );
 	}
 
-	my %silk2 = CamLayer->ExistSilkScreens( $inCAM, $jobId, 1 );
-	my $topSilk2Exist = CamHelper->LayerExists( $inCAM, $jobId, "pc2" );
-	my $botSilk2Exist = CamHelper->LayerExists( $inCAM, $jobId, "ps2" );
+	my %silk2         = CamLayer->ExistSilkScreens( $inCAM, $jobId, 1 );
+	my $topSilk2Exist = $defaultInfo->LayerExist("pc2");
+	my $botSilk2Exist = $defaultInfo->LayerExist("ps2");
 
 	# Control silk existence
 	if ( $silk2{"top"} != $topSilk2Exist ) {
@@ -212,13 +251,34 @@ sub OnCheckGroupData {
 		);
 	}
 
+	# X) Warn user if solder mask 2 was automatically generated from solder mask 1
+
+	my @mask2 = grep { $_->{"gROWname"} =~ /^m[cs]2$/ } $defaultInfo->GetBoardBaseLayers();
+
+	foreach my $l (@mask2) {
+
+		my %attr = CamAttributes->GetLayerAttr( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
+		if ( defined $attr{"export_fake_layer"} && $attr{"export_fake_layer"} eq "yes" ) {
+
+			$dataMngr->_AddWarningResult(
+										  "Generated data for solder mask 2",
+										  "V IS byl nalezen požadavek pro druhou nepájivou masku. Data vrstvy: "
+											. $l->{"gROWname"}
+											. ", budou automaticky vygenerována z vrstvy: "
+											. ( $l->{"gROWname"} =~ /^(m[cs])/ )[0]
+											. ". Motivy obou masek budou stejné, je to ok?"
+			);
+
+		}
+	}
+
 	# X) Check technogy
 	# If layer cnt is => 2 technology should be galvanics (if there are plated drill layers), in other case resist
 	if ( $defaultInfo->GetLayerCnt() >= 2 && $groupData->GetTechnology() eq EnumsGeneral->Technology_RESIST ) {
 
-		my $cu = $defaultInfo->GetBaseCuThick("c");
+		my $cu = $defaultInfo->GetBaseCuThick(" c ");
 		$dataMngr->_AddWarningResult(
-									  "Technology",
+									  " Technology ",
 									  "DPS má zvolenou technologii \"Leptací resist\". "
 										. "Tedy DPS nebude prokovená a výsledná Cu bude základní ("
 										. $cu

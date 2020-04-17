@@ -137,6 +137,28 @@ sub GetS_mask_colour {
 	return $self->{"data"}->{"s_mask_colour"};
 }
 
+# c_mask_colour2
+sub SetC_mask_colour2 {
+	my $self  = shift;
+	$self->{"data"}->{"c_mask_colour2"} = shift;
+}
+
+sub GetC_mask_colour2 {
+	my $self  = shift;
+	return $self->{"data"}->{"c_mask_colour2"};
+}
+
+# s_mask_colour2
+sub SetS_mask_colour2 {
+	my $self  = shift;
+	$self->{"data"}->{"s_mask_colour2"} = shift;
+}
+
+sub GetS_mask_colour2 {
+	my $self  = shift;
+	return $self->{"data"}->{"s_mask_colour2"};
+}
+
 
 # c_silk_screen_colour2
 sub SetC_silk_screen_colour2 {

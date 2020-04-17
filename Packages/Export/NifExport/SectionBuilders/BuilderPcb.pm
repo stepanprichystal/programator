@@ -109,6 +109,27 @@ sub Build {
 
 		$section->AddRow( "maska_s_1", $nifData{"s_mask_colour"} );
 	}
+	
+	#c_mask_colour2
+	if ( $self->_IsRequire("c_mask_colour2") ) {
+
+		unless ( $nifData{"c_mask_colour2"} ) {
+			$nifData{"c_mask_colour2"} = "";
+		}
+
+		$section->AddRow( "maska_c_2", $nifData{"c_mask_colour2"} );
+	}
+
+	#s_mask_colour2
+	if ( $self->_IsRequire("s_mask_colour2") ) {
+
+		unless ( $nifData{"s_mask_colour2"} ) {
+			$nifData{"s_mask_colour2"} = "";
+		}
+
+		$section->AddRow( "maska_s_2", $nifData{"s_mask_colour2"} );
+	}
+	
 
 	#c_silk_screen_colour
 	if ( $self->_IsRequire("c_silk_screen_colour") ) {

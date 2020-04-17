@@ -105,6 +105,7 @@ sub __PrepareLayers {
 		$self->__PrepareGRAFIT($l)        if ( $l->GetType() eq Enums->Type_GRAFIT );
 		$self->__PreparePEELABLE($l)      if ( $l->GetType() eq Enums->Type_PEELABLE );
 		$self->__PrepareMASK($l)          if ( $l->GetType() eq Enums->Type_MASK );
+		$self->__PrepareMASK($l)          if ( $l->GetType() eq Enums->Type_MASK2 );
 		$self->__PrepareFLEXMASK($l)      if ( $l->GetType() eq Enums->Type_FLEXMASK );
 		$self->__PrepareCOVERLAY($l)      if ( $l->GetType() eq Enums->Type_COVERLAY );
 		$self->__PrepareSILK($l)          if ( $l->GetType() eq Enums->Type_SILK );

@@ -97,36 +97,56 @@ sub __CreateFakeSMLayers {
 
 	my %mask = HegMethods->GetSolderMaskColor2($jobId);
 
-	my @fake = ();
+	my @mask2      = grep { $_->{"gROWname"} =~ /^m[cs]2$/ } CamJob->GetBoardLayers( $inCAM, $jobId );
+	my $mcUserData = 0;
+	my $msUserData = 0;
 
-	push( @fake, "mc2" ) if ( defined $mask{"top"} && $mask{"top"} ne "" );
-	push( @fake, "ms2" ) if ( defined $mask{"bot"} && $mask{"bot"} ne "" );
+	foreach my $l (@mask2) {
 
-	my @steps = ($step);
+		my %attr = CamAttributes->GetLayerAttr( $inCAM, $jobId, $step, $l->{"gROWname"} );
+		if ( !defined $attr{"export_fake_layer"} || $attr{"export_fake_layer"} eq "no" ) {
 
-	if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) ) {
-
-		push( @steps, map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) );
-	}
-
-	foreach my $fl (@fake) {
-
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $fl );
-		CamMatrix->CreateLayer( $inCAM, $jobId, $fl, "solder_mask", "positive", 1 );
-	}
-
-	foreach my $s (@steps) {
-
-		CamHelper->SetStep( $inCAM, $s );
-
-		foreach my $fl (@fake) {
-
-			my ($source) = $fl =~ m/(m[cs])/;
-			$inCAM->COM( "merge_layers", "source_layer" => $source, "dest_layer" => $fl );
+			if ( $l->{"gROWname"} =~ /^mc2$/ ) {
+				$mcUserData = 1;
+			}
+			if ( $l->{"gROWname"} =~ /^ms2$/ ) {
+				$msUserData = 1;
+			}
 		}
 	}
 
-	CamLayer->ClearLayers($inCAM);
+	my @fake = ();
+	push( @fake, "mc2" ) if ( defined $mask{"top"} && $mask{"top"} ne "" && !$mcUserData );
+	push( @fake, "ms2" ) if ( defined $mask{"bot"} && $mask{"bot"} ne "" && !$msUserData );
+
+	if ( scalar(@fake) ) {
+
+		my @steps = ($step);
+
+		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) ) {
+
+			push( @steps, map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $step ) );
+		}
+
+		foreach my $fl (@fake) {
+
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $fl );
+			CamMatrix->CreateLayer( $inCAM, $jobId, $fl, "solder_mask", "positive", 1 );
+		}
+
+		foreach my $s (@steps) {
+
+			CamHelper->SetStep( $inCAM, $s );
+
+			foreach my $fl (@fake) {
+
+				my ($source) = $fl =~ m/(m[cs])/;
+				$inCAM->COM( "merge_layers", "source_layer" => $source, "dest_layer" => $fl );
+			}
+		}
+
+		CamLayer->ClearLayers($inCAM);
+	}
 
 	return @fake;
 }
@@ -142,7 +162,7 @@ sub __CreateFakeSMOLECLayers {
 	my $emptyLayers = shift // 0;    # Create layer without any data
 
 	my @fakeLayers = ();
-	
+
 	return @fakeLayers if ( !JobHelper->GetIsFlex($jobId) );
 
 	my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
@@ -171,7 +191,7 @@ sub __CreateFakeSMOLECLayers {
 	}
 
 	return @fakeLayers unless ( defined $fakeSM );
-	
+
 	CamHelper->SetStep( $inCAM, $step );
 
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $fakeSM );
@@ -271,7 +291,6 @@ sub __CreateFakeOuterCoreLayers {
 	my $step        = shift;
 	my $emptyLayers = shift // 0;    # Create layer without any data
 
- 
 	my @fakeLayers = ();
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
@@ -307,7 +326,7 @@ sub __CreateFakeOuterCoreLayers {
 			}
 
 			# Put surface over whole panel (full sopper)
-if ( !$emptyLayers ) {
+			if ( !$emptyLayers ) {
 
 				# Add frame and fiduc for OLEC (take it from c2)
 				CamLayer->WorkLayer( $inCAM, "v2" );
@@ -373,7 +392,7 @@ if ( !$emptyLayers ) {
 				  unless ( scalar(@olecFeats) == 4 );
 
 				foreach my $c (@olecFeats) {
-					
+
 					CamSymbol->AddPad( $inCAM, $olecSym, { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "negative" );
 				}
 
@@ -405,7 +424,6 @@ if ( !$emptyLayers ) {
 	return @fakeLayers;
 
 }
-
 
 sub __CreateCoreDrillLayers {
 	my $self        = shift;
@@ -446,7 +464,6 @@ sub __CreateCoreDrillLayers {
 
 	return @fakeLayers;
 }
-
 
 sub __PutInfoText {
 	my $self  = shift;
@@ -500,11 +517,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d262773";
+	my $jobId    = "d278492";
 	my $stepName = "panel";
 
 	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
-
 
 }
 

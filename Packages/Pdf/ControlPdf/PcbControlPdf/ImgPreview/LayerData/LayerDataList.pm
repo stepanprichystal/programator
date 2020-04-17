@@ -255,6 +255,11 @@ sub __InitLayers {
 	$LDMaskFlexTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^mcflex$/ } @boardL );
 	push( @pdfLayers, $LDMaskFlexTOP );
 
+	# POS 10: Type_MASK2 from TOP
+	my $LDMask2TOP = LayerData->new( Enums->Type_MASK2, Enums->Visible_FROMTOP );
+	$LDMask2TOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^mc2$/ } @boardL );
+	push( @pdfLayers, $LDMask2TOP );
+
 	# POS 10: Type_MASK from TOP
 	my $LDMaskTOP = LayerData->new( Enums->Type_MASK, Enums->Visible_FROMTOP );
 	$LDMaskTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^mc$/ } @boardL );
@@ -387,6 +392,11 @@ sub __InitLayers {
 	my $LDMaskBOT = LayerData->new( Enums->Type_MASK, Enums->Visible_FROMBOT );
 	$LDMaskBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^ms$/ } @boardL );
 	push( @pdfLayers, $LDMaskBOT );
+
+	# POS 20: Type_MASK2 from BOT
+	my $LDMask2BOT = LayerData->new( Enums->Type_MASK2, Enums->Visible_FROMBOT );
+	$LDMask2BOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^ms2$/ } @boardL );
+	push( @pdfLayers, $LDMask2BOT );
 
 	# POS 21: Type_FLEXMASK from BOT
 	my $LDMaskFlexBOT = LayerData->new( Enums->Type_FLEXMASK, Enums->Visible_FROMBOT );

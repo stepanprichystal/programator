@@ -62,6 +62,8 @@ sub Build {
 	push(@req, "pocet_vrstev");
 	push(@req, "c_mask_colour");
 	push(@req, "s_mask_colour");
+	push(@req, "c_mask_colour2");
+	push(@req, "s_mask_colour2");
 	push(@req, "c_silk_screen_colour");
 	push(@req, "s_silk_screen_colour");
 	push(@req, "c_silk_screen_colour2");

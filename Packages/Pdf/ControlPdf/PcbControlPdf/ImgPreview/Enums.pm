@@ -10,6 +10,7 @@ use constant {
 	Type_OUTERSURFACE => "typeOuterSurface",
 	Type_INNERCU => "typeInnerCu",
 	Type_MASK => "typeMask",
+	Type_MASK2 => "typeMask2",
 	Type_FLEXMASK => "typeFlexMask",
 	Type_COVERLAY => "typeCoverlay",
 	Type_SILK => "typeSilk",

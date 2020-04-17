@@ -181,8 +181,10 @@ sub __SetLayoutSettings {
 	my $silkTop2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top 2",    \@silkColor );
 	my $silkTopCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk top",      \@silkColor );
 	my $maskTopBendCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask top flex", \@flexMaskColor );
+	my $maskTop2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask top 2",    \@maskColor );
 	my $maskTopCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask top",      \@maskColor );
 	my $maskBotCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask bot",      \@maskColor );
+	my $maskBot2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask bot 2",    \@maskColor );
 	my $maskBotBendCb = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Mask bot flex", \@flexMaskColor );
 	my $silkBotCb     = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk bot",      \@silkColor );
 	my $silkBot2Cb    = NifColorCb->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, "Silk bot 2",    \@silkColor );
@@ -201,8 +203,10 @@ sub __SetLayoutSettings {
 	$szCol4->Add( $silkTop2Cb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol4->Add( $silkTopCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol4->Add( $maskTopBendCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $maskTop2Cb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol4->Add( $maskTopCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol4->Add( $maskBotCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szCol4->Add( $maskBot2Cb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol4->Add( $maskBotBendCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol4->Add( $silkBotCb,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szCol4->Add( $silkBot2Cb,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -229,6 +233,8 @@ sub __SetLayoutSettings {
 	$self->{"maskTopBendCb"} = $maskTopBendCb;
 	$self->{"maskTopCb"}     = $maskTopCb;
 	$self->{"maskBotCb"}     = $maskBotCb;
+	$self->{"maskTop2Cb"}    = $maskTop2Cb;
+	$self->{"maskBot2Cb"}    = $maskBot2Cb;
 	$self->{"maskBotBendCb"} = $maskBotBendCb;
 	$self->{"silkBotCb"}     = $silkBotCb;
 	$self->{"silkBot2Cb"}    = $silkBot2Cb;
@@ -391,15 +397,15 @@ sub __QuickNotesClick {
 # HANDLERS CONTROLS
 # =====================================================================
 sub OnPREGroupTentingChangeHandler {
-	my $self = shift;
-	my $etchingType  = shift;
-	
-	
+	my $self        = shift;
+	my $etchingType = shift;
+
 	# if etchin type is tenting, tenting 1 else 0
-	
-	if($etchingType eq EnumsGeneral->Etching_TENTING){
+
+	if ( $etchingType eq EnumsGeneral->Etching_TENTING ) {
 		$self->{'tentingProp'} = 1;
-	}else{
+	}
+	else {
 		$self->{'tentingProp'} = 0;
 	}
 }
@@ -431,8 +437,9 @@ sub DisableControls {
 
 	# Show/hide special solder mask and silk screen
 	$self->{"silkTop2Cb"}->Hide()    unless ( $self->{"defaultInfo"}->LayerExist("pc2") );
-	$self->{"silkTop2Cb"}->Hide()    unless ( $self->{"defaultInfo"}->LayerExist("pc2") );
 	$self->{"silkBot2Cb"}->Hide()    unless ( $self->{"defaultInfo"}->LayerExist("ps2") );
+	$self->{"maskTop2Cb"}->Hide()    unless ( $self->{"defaultInfo"}->LayerExist("mc2") );
+	$self->{"maskBot2Cb"}->Hide()    unless ( $self->{"defaultInfo"}->LayerExist("ms2") );
 	$self->{"maskTopBendCb"}->Hide() unless ( $self->{"defaultInfo"}->LayerExist("mcflex") );
 	$self->{"maskBotBendCb"}->Hide() unless ( $self->{"defaultInfo"}->LayerExist("msflex") );
 
@@ -592,6 +599,36 @@ sub SetS_mask_colour {
 sub GetS_mask_colour {
 	my $self  = shift;
 	my $color = $self->{"maskBotCb"}->GetValue();
+	return ValueConvertor->GetMaskColorToCode($color);
+}
+
+# c_mask_colour2
+sub SetC_mask_colour2 {
+	my $self  = shift;
+	my $value = shift;
+
+	my $color = ValueConvertor->GetMaskCodeToColor($value);
+	$self->{"maskTop2Cb"}->SetValue($color);
+}
+
+sub GetC_mask_colour2 {
+	my $self  = shift;
+	my $color = $self->{"maskTop2Cb"}->GetValue();
+	return ValueConvertor->GetMaskColorToCode($color);
+}
+
+# s_mask_colour2
+sub SetS_mask_colour2 {
+	my $self  = shift;
+	my $value = shift;
+
+	my $color = ValueConvertor->GetMaskCodeToColor($value);
+	$self->{"maskBot2Cb"}->SetValue($color);
+}
+
+sub GetS_mask_colour2 {
+	my $self  = shift;
+	my $color = $self->{"maskBot2Cb"}->GetValue();
 	return ValueConvertor->GetMaskColorToCode($color);
 }
 

@@ -114,6 +114,8 @@ sub RefreshGUI {
 	$self->{"form"}->SetFlexi_maska( $groupData->GetFlexi_maska() );
 	$self->{"form"}->SetC_mask_colour( $groupData->GetC_mask_colour() );
 	$self->{"form"}->SetS_mask_colour( $groupData->GetS_mask_colour() );
+	$self->{"form"}->SetC_mask_colour2( $groupData->GetC_mask_colour2() );
+	$self->{"form"}->SetS_mask_colour2( $groupData->GetS_mask_colour2() );
 	$self->{"form"}->SetC_silk_screen_colour( $groupData->GetC_silk_screen_colour() );
 	$self->{"form"}->SetS_silk_screen_colour( $groupData->GetS_silk_screen_colour() );
 	$self->{"form"}->SetS_silk_screen_colour2( $groupData->GetS_silk_screen_colour2() );
@@ -161,6 +163,8 @@ sub GetGroupData {
 		$groupData->SetFlexi_maska( $frm->GetFlexi_maska() );
 		$groupData->SetC_mask_colour( $frm->GetC_mask_colour() );
 		$groupData->SetS_mask_colour( $frm->GetS_mask_colour() );
+		$groupData->SetC_mask_colour2( $frm->GetC_mask_colour2() );
+		$groupData->SetS_mask_colour2( $frm->GetS_mask_colour2() );
 		$groupData->SetC_silk_screen_colour( $frm->GetC_silk_screen_colour() );
 		$groupData->SetS_silk_screen_colour( $frm->GetS_silk_screen_colour() );
 		$groupData->SetS_silk_screen_colour2( $frm->GetS_silk_screen_colour2() );

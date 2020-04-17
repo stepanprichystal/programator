@@ -139,15 +139,15 @@ sub Clone {
 
 		# 3) Clip all behind cloned step profile in current pdf step
 		foreach my $lData ( $self->{"layerList"}->GetOutputLayers() ) {
-			my $cuCountoru = 1; # cut countour, it cause illegal surfaces (we handle it in next few lines below)
+			my $cuCountoru       = 1;    # cut countour, it cause illegal surfaces (we handle it in next few lines below)
 			my $cutProfileMargin = 0;
-			CamLayer->ClipAreaByProf( $inCAM, $lData->GetOutputLayer(), $cutProfileMargin, 0, $cuCountoru );     
+			CamLayer->ClipAreaByProf( $inCAM, $lData->GetOutputLayer(), $cutProfileMargin, 0, $cuCountoru );
 		}
-		
-		# There could be created illegal surface behind profile by clippin, so delete them		
+
+		# There could be created illegal surface behind profile by clippin, so delete them
 		CamLayer->AffectLayers( $inCAM, [ map { $_->GetOutputLayer() } $self->{"layerList"}->GetOutputLayers() ] );
-		my $minSurfArea = 0.1; # 0.1mm2
-		if(CamFilter->BySurfaceArea($inCAM, 0,$minSurfArea)){
+		my $minSurfArea = 0.1;           # 0.1mm2
+		if ( CamFilter->BySurfaceArea( $inCAM, 0, $minSurfArea ) ) {
 			CamLayer->DeleteFeatures($inCAM);
 		}
 
@@ -156,7 +156,7 @@ sub Clone {
 
 	# 3) Return prepared "layer list" structure and pdf step
 
-	push( @{$self->{"clonedSteps"}}, $clonStepPdf );
+	push( @{ $self->{"clonedSteps"} }, $clonStepPdf );
 
 	my $layerList = undef;
 	if ($useSourceStep) {
@@ -176,7 +176,7 @@ sub Clean {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	foreach my $step ( ( @{$self->{"clonedSteps"}}, $self->{"pdfStep"} ) ) {
+	foreach my $step ( ( @{ $self->{"clonedSteps"} }, $self->{"pdfStep"} ) ) {
 		CamStep->DeleteStep( $inCAM, $jobId, $step );
 	}
 
@@ -294,34 +294,34 @@ sub __DefineSurfaces {
 	$clrs{ Enums->Type_GRAFIT } = $grafitClr;
 
 	# Mask color
-	my ( $clrKey, $clrRGB ) = $self->__GetMaskColor();
+	my ( $maskClrKey, $maskClrRGB ) = $self->__GetMaskColor();
 	my $maskClr = LayerColor->new( PrevEnums->Surface_COLOR );
 	$clrs{ Enums->Type_MASK } = $maskClr;
 
-	if ( defined $clrKey ) {
+	if ( defined $maskClrKey ) {
 
-		$maskClr->SetColor($clrRGB);
+		$maskClr->SetColor($maskClrRGB);
 
 		# Set opaque for different color
-		if ( $clrKey eq "W" ) {
+		if ( $maskClrKey eq "W" ) {
 
 			# White
 
 			$maskClr->SetOpaque(92);
 		}
-		elsif ( $clrKey eq "B" ) {
+		elsif ( $maskClrKey eq "B" ) {
 
 			# Black
 
 			$maskClr->SetOpaque(89);
 		}
-		elsif ( $clrKey eq "M" ) {
+		elsif ( $maskClrKey eq "M" ) {
 
 			# Blue
 
 			$maskClr->SetOpaque(85);
 		}
-		elsif ( $clrKey eq "G" ) {
+		elsif ( $maskClrKey eq "G" ) {
 
 			# Green SMD Flex
 
@@ -331,6 +331,48 @@ sub __DefineSurfaces {
 			# other
 
 			$maskClr->SetOpaque(70);
+		}
+
+	}
+
+	# Mask color 2
+	my ( $mask2ClrKey, $mask2ClrRGB ) = $self->__GetMaskColor(1);
+	my $mask2Clr = LayerColor->new( PrevEnums->Surface_COLOR );
+	$clrs{ Enums->Type_MASK2 } = $mask2Clr;
+
+	if ( defined $mask2ClrKey ) {
+
+		$mask2Clr->SetColor($mask2ClrRGB);
+
+		# Set opaque for different color
+		if ( $mask2ClrKey eq "W" ) {
+
+			# White
+
+			$mask2Clr->SetOpaque(92);
+		}
+		elsif ( $mask2ClrKey eq "B" ) {
+
+			# Black
+
+			$mask2Clr->SetOpaque(89);
+		}
+		elsif ( $mask2ClrKey eq "M" ) {
+
+			# Blue
+
+			$mask2Clr->SetOpaque(85);
+		}
+		elsif ( $mask2ClrKey eq "G" ) {
+
+			# Green SMD Flex
+
+			$mask2Clr->SetOpaque(45);
+		}
+		else {
+			# other
+
+			$mask2Clr->SetOpaque(70);
 		}
 
 	}
@@ -431,21 +473,21 @@ sub __DefineSurfaces {
 }
 
 sub __GetMaskColor {
-	my $self = shift;
+	my $self       = shift;
+	my $secondMask = shift;    # return color for scend silkscreen
 
-	my %pcbMask = Helper->GetMaskColor( $self->{"inCAM"}, $self->{"jobId"} );
-	my %pcbMask2 = Helper->GetMaskColor( $self->{"inCAM"}, $self->{"jobId"}, 1 );    # return second color mask
+	my %pcbMask = Helper->GetMaskColor( $self->{"inCAM"}, $self->{"jobId"}, $secondMask );
 
 	# Decide which mask color is on top
 	my $pcbMaskVal;
 	if ( $self->{"viewType"} eq Enums->View_FROMTOP ) {
 
-		$pcbMaskVal = defined $pcbMask2{"top"} && $pcbMask2{"top"} ne "" ? $pcbMask2{"top"} : $pcbMask{"top"};
+		$pcbMaskVal = $pcbMask{"top"};
 
 	}
 	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT ) {
 
-		$pcbMaskVal = defined $pcbMask2{"bot"} && $pcbMask2{"bot"} ne "" ? $pcbMask2{"bot"} : $pcbMask{"bot"};
+		$pcbMaskVal = $pcbMask{"bot"};
 	}
 
 	unless ($pcbMaskVal) {
