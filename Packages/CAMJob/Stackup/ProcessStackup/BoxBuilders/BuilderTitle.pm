@@ -51,9 +51,9 @@ sub Build {
 
 	# 2) Define ROWS
 	my $BACKtmp = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new("255, 100, 0") );
-	$tbl->AddRowDef( "row1", EnumsStyle->RowHeight_STD, $BACKtmp );
-	$tbl->AddRowDef( "row2", EnumsStyle->RowHeight_STD, $BACKtmp );
-	$tbl->AddRowDef( "row3", EnumsStyle->RowHeight_STD, $BACKtmp );
+	$tbl->AddRowDef( "row1", EnumsStyle->BoxTitleRowHeight_STD, $BACKtmp );
+	$tbl->AddRowDef( "row2", EnumsStyle->BoxTitleRowHeight_STD, $BACKtmp );
+	$tbl->AddRowDef( "row3", EnumsStyle->BoxTitleRowHeight_STD, $BACKtmp );
 
 	# 3) Define cells
 

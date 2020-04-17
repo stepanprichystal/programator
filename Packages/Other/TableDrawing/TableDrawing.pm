@@ -118,8 +118,8 @@ sub Draw {
 	my $drawBuilder = shift;
 	my $scaleX      = shift // 1;
 	my $scaleY      = shift // 1;
-	my $originX     = shift // 0;
-	my $originY     = shift // 0;
+	my $originX     = shift // 0; # this offset do not consider ScaleX
+	my $originY     = shift // 0;  # this offset do not consider ScaleY
 
 	my %tblsLim = $self->GetOriLimits();
 

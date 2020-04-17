@@ -1,6 +1,4 @@
 
- 
-
 package Packages::CAMJob::Stackup::ProcessStackup::Enums;
 
 use constant {
@@ -13,4 +11,12 @@ use constant {
 			   LamType_MULTIPRODUCT => "LamType_MULTIPRODUCT",    # Lamination of products
 };
 
-1;
+# Laminate pads type
+
+use constant {
+	LamPad_PADPAPER  => "LamPad_PADPAPER",        # Lamination of stiffener
+	LamPad_PADRUBBER => "LamPad_PADRUBBER",        # Lamination of stiffener
+	LamPad_PADFILM   => "LamPad_PADFILM"         # Lamination of stiffener
+  };
+
+  1;

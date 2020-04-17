@@ -8,6 +8,7 @@ use aliased 'Packages::CAMJob::Stackup::ProcessStackup::ProcessStackup';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsBuilder';
 use aliased 'Packages::Other::TableDrawing::Enums'                  => 'TblDrawEnums';
+
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';
@@ -33,7 +34,7 @@ my $processStckp = ProcessStackup->new( $inCAM, $jobId );
 # 2)
 my $lamCnt = $processStckp->LamintaionCnt();
 
-if ($lamCnt) {
+if ($lamCnt) { 
 
 	# 2) Build stackup
 	$processStckp->Build();
@@ -65,7 +66,7 @@ if ($lamCnt) {
 
 	# Gemerate output
 
-	$processStckp->Output(\@drawBuilders, 0);
+	$processStckp->Output(\@drawBuilders, 0, undef, EnumsBuilder->VAlign_TOP);
 
 	#
 	#my $tMain = $tDrawing->AddTable("Main");

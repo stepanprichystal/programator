@@ -108,7 +108,7 @@ sub GetOrderDate {
 		$dateStart = $pattern->parse_datetime( $self->{"orderInfoIS"}->{"datum_zahajeni"} )->dmy('.');    # start order date
 
 	}
-	
+
 	return $dateStart;
 }
 
@@ -205,6 +205,7 @@ sub GetExistStiff {
 
 			my $mInf = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
 
+			$stifInfo->{"adhesiveKind"}  = "";
 			$stifInfo->{"adhesiveText"}  = "3M 467MP tape";
 			$stifInfo->{"adhesiveThick"} = 50;                # ? is not store
 			$stifInfo->{"adhesiveTg"}    = 204;
@@ -212,22 +213,13 @@ sub GetExistStiff {
 			my @n = split( /\s/, $mInf->{"nazev_subjektu"} );
 			shift(@n) if ( $n[0] =~ /lam/i );
 
-			$stifInfo->{"stiffText"} = $n[0];
-			my $t = $mInf->{"vyska"};
+			$stifInfo->{"stiffKind"} = $n[0];
+			$stifInfo->{"stiffText"} = $n[2] . "mm " . $n[1];
+			my $t = $n[2];
 			$t =~ s/,/\./;
-			$t *= 1000000;
+			$t *= 1000;
 
-			# If not core, copper thickness are included in material height
-			if ( $mInf->{"dps_type"} !~ /core/i ) {
-
-				if ( $mInf->{"nazev_subjektu"} =~ m/(\d+\/\d+)/ ) {
-					my @cu = split( "/", $1 );
-					$t -= $cu[0] if ( defined $cu[0] );
-					$t -= $cu[1] if ( defined $cu[1] );
-				}
-			}
-
-			$stifInfo->{"stiffThick"} = $t;      # µm
+			$stifInfo->{"stiffThick"} = $t;                   # µm
 			$stifInfo->{"stiffTg"}    = undef;
 
 			# Try to get TG of stiffener adhesive
@@ -249,6 +241,96 @@ sub GetExistStiff {
 	return $exist;
 
 }
+
+
+sub GetPressPadTB317KInfo {
+	my $self = shift;
+
+	my $isId = "0318000019";
+	my $inf = $self->__GetPresspadInfo($isId);
+	
+	return $inf;
+}
+
+sub GetPressPadFF10NInfo {
+	my $self = shift;
+
+	my $isId = "0318000018";
+	my $inf = $self->__GetPresspadInfo($isId);
+	
+	return $inf;
+}
+
+sub GetPresspad5500Info {
+	my $self = shift;
+
+	my $isId = "0319000029";
+	my $inf = $self->__GetPresspadInfo($isId);
+	
+	return $inf;
+}
+
+sub GetReleaseFilm1500HTInfo {
+	my $self = shift;
+
+	my $isId = "0319000031";
+	my $inf = $self->__GetPresspadInfo($isId);
+	
+	return $inf;
+}
+
+sub GetReleaseFilmPacoViaInfo {
+	my $self = shift;
+
+	my $isId = "0319000041";
+	my $inf = $self->__GetPresspadInfo($isId);
+	
+	return $inf;
+}
+
+sub GetFilmPacoflexUltraInfo {
+	my $self = shift;
+
+	my $isId = "0319000032";
+	my $inf = $self->__GetPresspadInfo($isId);
+	
+	return $inf;
+}
+
+sub GetFilmPacoplus4500Info {
+	my $self = shift;
+
+	my $isId = "0319000030";
+	my $inf = $self->__GetPresspadInfo($isId);
+	
+	return $inf;
+}
+
+
+
+sub __GetPresspadInfo {
+	my $self   = shift;
+	my $matRef = shift;
+
+	my $inf = {};
+
+	my $isInf = HegMethods->GetMatInfo($matRef);
+
+	$inf->{"text"} = $isInf->{"nazev_subjektu"};
+
+	my $t = $isInf->{"vyska"};
+	$t =~ s/,/\./;
+	$t *= 1000000;
+
+	$inf->{"thick"} = $t;
+
+	die "Pad material name was not found for material IS reference:" . $matRef  unless ( defined $inf->{"text"} );
+	die "Pad material thick was not found for material IS reference:" . $matRef unless ( defined $inf->{"thick"} );
+	
+	return $inf;
+}
+ 
+
 #
 ## Decide of get mask color ftom NIF/Helios
 #sub __GetMaskColor {
