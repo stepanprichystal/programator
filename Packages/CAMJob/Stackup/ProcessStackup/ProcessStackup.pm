@@ -70,6 +70,8 @@ sub LamintaionCnt {
 # Return number of lamination
 sub Build {
 	my $self = shift;
+	my $pageWidth = shift // 210;    # A4 width mm
+	my $pageHeight = shift // 290;    # A4 height mm
 
 	my $result = 1;
 
@@ -83,7 +85,7 @@ sub Build {
 
 		my $processLam = ProcessStackupLam->new( $inCAM, $jobId, $lam, $self->{"stackupMngr"} );
 
-		$processLam->Build();
+		$processLam->Build($pageWidth, $pageHeight);
 
 		push( @{ $self->{"processStackupLam"} }, $processLam );
 

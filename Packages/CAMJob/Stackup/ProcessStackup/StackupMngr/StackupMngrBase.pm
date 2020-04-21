@@ -21,7 +21,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'Packages::CAMJob::Technology::LayerSettings';
-
+use aliased 'CamHelpers::CamAttributes';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -45,6 +46,7 @@ sub new {
 
 		@orders = sort { int( $a->{"reference_subjektu"} ) <=> int( $b->{"reference_subjektu"} ) } @orders;
 		my $orderId = $self->{"jobId"} . "-" . $orders[0]{"reference_subjektu"};
+		$self->{"orderId"} = $orderId;
 		$self->{"orderInfoIS"} = HegMethods->GetAllByOrderId($orderId);
 	}
 
@@ -67,6 +69,19 @@ sub new {
 	return $self;
 }
 
+sub GetOrderId {
+	my $self = shift;
+
+	my $orderName = $self->{"jobId"}."-(no active order)";
+	
+	if(defined $self->{"orderId"}){
+		$orderName = $self->{"orderId"};
+	}
+
+	return $orderName;
+
+}
+
 sub GetPCBName {
 	my $self = shift;
 
@@ -79,6 +94,22 @@ sub GetCustomerName {
 
 	return HegMethods->GetCustomerInfo( $self->{"jobId"} )->{"customer"};
 
+}
+
+sub GetPCBEmployeeInfo {
+	my $self = shift;
+
+	my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
+
+	my %employyInf = ();
+
+	if ( defined $name && $name ne "" ) {
+
+		%employyInf = %{ HegMethods->GetEmployyInfo($name) }
+
+	}
+
+	return %employyInf;
 }
 
 sub GetOrderTerm {
@@ -110,6 +141,21 @@ sub GetOrderDate {
 	}
 
 	return $dateStart;
+}
+
+sub GetPanelSize {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+
+	my $w = abs( $lim{"xMax"} - $lim{"xMin"} );
+	my $h = abs( $lim{"yMax"} - $lim{"yMin"} );
+
+	return ( $w, $h );
 }
 
 #sub GetExistSM {
@@ -204,7 +250,7 @@ sub GetExistStiff {
 		if ( defined $stifInfo ) {
 
 			my $mInf = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
-
+			$stifInfo->{"adhesiveISRef"} = "0319000045";
 			$stifInfo->{"adhesiveKind"}  = "";
 			$stifInfo->{"adhesiveText"}  = "3M 467MP tape";
 			$stifInfo->{"adhesiveThick"} = 50;                # ? is not store
@@ -213,13 +259,14 @@ sub GetExistStiff {
 			my @n = split( /\s/, $mInf->{"nazev_subjektu"} );
 			shift(@n) if ( $n[0] =~ /lam/i );
 
-			$stifInfo->{"stiffKind"} = $n[0];
-			$stifInfo->{"stiffText"} = $n[2] . "mm " . $n[1];
+			$stifInfo->{"stiffISRef"} = $mInf->{"reference_subjektu"};
+			$stifInfo->{"stiffKind"}  = $n[0];
+			$stifInfo->{"stiffText"}  = $n[2] . "mm " . $n[1];
 			my $t = $n[2];
 			$t =~ s/,/\./;
 			$t *= 1000;
 
-			$stifInfo->{"stiffThick"} = $t;                   # µm
+			$stifInfo->{"stiffThick"} = $t;      # µm
 			$stifInfo->{"stiffTg"}    = undef;
 
 			# Try to get TG of stiffener adhesive
@@ -242,13 +289,24 @@ sub GetExistStiff {
 
 }
 
+sub GetSteelPlateInfo {
+	my $self = shift;
+
+	my $inf = {};
+
+	$inf->{"ISRef"} = undef;
+	$inf->{"text"}  = "Sttel plate";
+	$inf->{"thick"} = 1000;            # 1000µm
+
+	return $inf;
+}
 
 sub GetPressPadTB317KInfo {
 	my $self = shift;
 
 	my $isId = "0318000019";
-	my $inf = $self->__GetPresspadInfo($isId);
-	
+	my $inf  = $self->__GetPresspadInfo($isId);
+
 	return $inf;
 }
 
@@ -256,8 +314,8 @@ sub GetPressPadFF10NInfo {
 	my $self = shift;
 
 	my $isId = "0318000018";
-	my $inf = $self->__GetPresspadInfo($isId);
-	
+	my $inf  = $self->__GetPresspadInfo($isId);
+
 	return $inf;
 }
 
@@ -265,8 +323,8 @@ sub GetPresspad5500Info {
 	my $self = shift;
 
 	my $isId = "0319000029";
-	my $inf = $self->__GetPresspadInfo($isId);
-	
+	my $inf  = $self->__GetPresspadInfo($isId);
+
 	return $inf;
 }
 
@@ -274,8 +332,8 @@ sub GetReleaseFilm1500HTInfo {
 	my $self = shift;
 
 	my $isId = "0319000031";
-	my $inf = $self->__GetPresspadInfo($isId);
-	
+	my $inf  = $self->__GetPresspadInfo($isId);
+
 	return $inf;
 }
 
@@ -283,8 +341,8 @@ sub GetReleaseFilmPacoViaInfo {
 	my $self = shift;
 
 	my $isId = "0319000041";
-	my $inf = $self->__GetPresspadInfo($isId);
-	
+	my $inf  = $self->__GetPresspadInfo($isId);
+
 	return $inf;
 }
 
@@ -292,8 +350,8 @@ sub GetFilmPacoflexUltraInfo {
 	my $self = shift;
 
 	my $isId = "0319000032";
-	my $inf = $self->__GetPresspadInfo($isId);
-	
+	my $inf  = $self->__GetPresspadInfo($isId);
+
 	return $inf;
 }
 
@@ -301,12 +359,71 @@ sub GetFilmPacoplus4500Info {
 	my $self = shift;
 
 	my $isId = "0319000030";
-	my $inf = $self->__GetPresspadInfo($isId);
-	
+	my $inf  = $self->__GetPresspadInfo($isId);
+
 	return $inf;
 }
 
+sub GetPressProgramInfo {
+	my $self    = shift;
+	my $lamType = shift;
 
+	my ( $w, $h ) = $self->GetPanelSize();
+
+	my %pInfo = ( "name" => undef, "dimX" => undef, "dimY" => undef );
+
+	if ( $self->{"isFlex"} ) {
+
+		# 1) Program name
+
+		if ( $lamType eq Enums->LamType_STIFFPRODUCT ) {
+
+			$pInfo{"name"} = "Stiffener_";
+
+		}
+		elsif ( $lamType eq Enums->LamType_CVRLBASE ) {
+
+			$pInfo{"name"} = "RigidFlex_";
+
+		}
+		elsif ( $lamType eq Enums->LamType_CVRLPRODUCT ) {
+
+			$pInfo{"name"} = "ORigidFLex_coverlay_";
+
+		}
+		elsif ( $lamType eq Enums->LamType_PRPGBASE ) {
+
+			$pInfo{"name"} = "ORigidFLex_coverlay_";
+
+		}
+		elsif ( $lamType eq Enums->LamType_FLEXPRPGBASE ) {
+
+			$pInfo{"name"} = "RigidFlex_";
+
+		}
+		elsif ( $lamType eq Enums->LamType_MULTIBASE ) {
+
+		}
+		elsif ( $lamType eq Enums->LamType_MULTIPRODUCT ) {
+
+		}
+
+		# 2) Program dim
+
+		if ( $h < 410 ) {
+
+			$pInfo{"dimX"} = "400";
+			$pInfo{"dimY"} = "400";
+		}
+		else {
+
+			$pInfo{"dimX"} = $w;
+			$pInfo{"dimY"} = $h;
+		}
+	}
+
+	return %pInfo;
+}
 
 sub __GetPresspadInfo {
 	my $self   = shift;
@@ -316,7 +433,11 @@ sub __GetPresspadInfo {
 
 	my $isInf = HegMethods->GetMatInfo($matRef);
 
-	$inf->{"text"} = $isInf->{"nazev_subjektu"};
+	$inf->{"ISRef"} = $isInf->{"reference_subjektu"};
+	$inf->{"text"}  = $isInf->{"nazev_subjektu"};
+
+	# Remove dimensions
+	$inf->{"text"} =~ s/\d+(\,\d+)?\s*[m]*\s*x\s*\d+(\,\d+)?\s*[m]*\s*//;
 
 	my $t = $isInf->{"vyska"};
 	$t =~ s/,/\./;
@@ -326,10 +447,9 @@ sub __GetPresspadInfo {
 
 	die "Pad material name was not found for material IS reference:" . $matRef  unless ( defined $inf->{"text"} );
 	die "Pad material thick was not found for material IS reference:" . $matRef unless ( defined $inf->{"thick"} );
-	
+
 	return $inf;
 }
- 
 
 #
 ## Decide of get mask color ftom NIF/Helios

@@ -12,6 +12,7 @@ use Class::Interface;
 use utf8;
 use strict;
 use warnings;
+use POSIX qw(strftime);
 
 #local library
 use aliased 'Enums::EnumsGeneral';
@@ -35,28 +36,54 @@ sub new {
 }
 
 sub Build {
-	my $self = shift;
+	my $self      = shift;
+	my $type      = shift;    # header/footer
+	my $pageWidth = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $tbl   = $self->{"table"};
+	my $inCAM     = $self->{"inCAM"};
+	my $jobId     = $self->{"jobId"};
+	my $tbl       = $self->{"table"};
+	my $stckpMngr = $self->{"stackupMngr"};
 
 	# 1) Define columns
-	$self->{"table"}->AddColDef( "leftMargin", EnumsStyle->ClmnWidth_margin );
+	$self->{"table"}->AddColDef( "leftCol",  $pageWidth / 2 );
+	$self->{"table"}->AddColDef( "rightCol", $pageWidth / 2 );
 
-	my $c1TxtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+	my $cLTxtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 									 EnumsStyle->TxtSize_NORMAL,
 									 Color->new( 0, 0, 0 ),
 									 TblDrawEnums->Font_NORMAL, undef,
 									 TblDrawEnums->TextHAlign_LEFT,
 									 TblDrawEnums->TextVAlign_CENTER, 1 );
 
+	my $cRTxtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+									 EnumsStyle->TxtSize_NORMAL,
+									 Color->new( 0, 0, 0 ),
+									 TblDrawEnums->Font_NORMAL, undef,
+									 TblDrawEnums->TextHAlign_RIGHT,
+									 TblDrawEnums->TextVAlign_CENTER, 1 );
+
 	# 2) Define ROWS + cells
-	my $BACKtmp = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( "255, 0, 0") );
- 	$tbl->AddRowDef( "text", EnumsStyle->RowHeight_STD, $BACKtmp  );
- 	
-	my $str = "Technologický postup - lisování";
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftMargin") ), 0, undef, undef, $str, $c1TxtStyle );
+	#my $BACKtmp = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new("255, 0, 0") );
+	my $BACKtmp = undef;
+	my $row = $tbl->AddRowDef( "text", EnumsStyle->BoxHFRowHeight_TITLE, $BACKtmp );
+
+	if ( $type eq "header" ) {
+
+		my $str = "Technologický postup - lisování";
+		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowDefPos($row), undef, undef, $str, $cLTxtStyle );
+	}
+	elsif ( $type eq "footer" ) {
+
+		my $strLeftCol = "Vygenerováno: " . strftime "%d.%m.%Y %H:%M", localtime;
+		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowDefPos($row), undef, undef, $strLeftCol, $cLTxtStyle );
+
+		my %employyInf = $stckpMngr->GetPCBEmployeeInfo();
+
+		my $strRightCol = "TPV: " . $employyInf{"jmeno"} . " " . $employyInf{"prijmeni"};
+		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowDefPos($row), undef, undef, $strRightCol, $cRTxtStyle );
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

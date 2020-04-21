@@ -36,28 +36,30 @@ my $lamCnt = $processStckp->LamintaionCnt();
 
 if ($lamCnt) { 
 
-	# 2) Build stackup
-	$processStckp->Build();
-
-	# 3) Generate output by some drawer
-
 	# Init Draw Builder
 	my $a4W = 210;    #mm
-	my $a4H = 290;    #mm
+	my $a4H = 297;    #mm
 
 	#my ( $w, $h ) = $processStckp->GetSize();
-	 
-	my $canvasX  = $a4W;
-	my $canvasY  = $a4H;
-	my $margin   = 15;
+	 my $margin   = 6; # margin of printer
+	my $canvasX  = $a4W-2*$margin;
+	my $canvasY  = $a4H-2*$margin;;
+	
 
+
+	# 2) Build stackup
+	$processStckp->Build($canvasX , $canvasY );
+
+	# 3) Generate output by some drawer
+ 
 	my @drawBuilders = ();
 
 	for ( my $i = 0 ; $i < $lamCnt ; $i++ ) {
 
 		 my $p = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID().".pdf";
 		unlink($p);
-		my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [ $canvasX, $canvasY ], $margin );
+		my $pageMargin = 2;
+		my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [ $canvasX, $canvasY ], $pageMargin);
 
 		push( @drawBuilders, $drawBuilder );
 	}
@@ -66,7 +68,7 @@ if ($lamCnt) {
 
 	# Gemerate output
 
-	$processStckp->Output(\@drawBuilders, 0, undef, EnumsBuilder->VAlign_TOP);
+	$processStckp->Output(\@drawBuilders, 1, undef, EnumsBuilder->VAlign_TOP);
 
 	#
 	#my $tMain = $tDrawing->AddTable("Main");

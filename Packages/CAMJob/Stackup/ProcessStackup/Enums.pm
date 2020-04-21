@@ -14,9 +14,24 @@ use constant {
 # Laminate pads type
 
 use constant {
-	LamPad_PADPAPER  => "LamPad_PADPAPER",        # Lamination of stiffener
-	LamPad_PADRUBBER => "LamPad_PADRUBBER",        # Lamination of stiffener
-	LamPad_PADFILM   => "LamPad_PADFILM"         # Lamination of stiffener
-  };
+	ItemType_PADPAPER     => "ItemType_PADPAPER",        # disposable paper pad
+	ItemType_PADRUBBER    => "ItemType_PADRUBBER",       # rubber pad
+	ItemType_PADFILM      => "ItemType_PADFILM",         # disposable films
+	ItemType_PADFILMSHINE => "ItemType_PADFILMSHINE",    # disposable films from shine side
+	ItemType_PADALU       => "ItemType_PADALU",          # aluminuim pad
+	ItemType_PADSTEEL     => "ItemType_PADSTEEL",        # steel plate
 
-  1;
+	ItemType_MATCUFOIL      => "ItemType_MATCUFOIL",
+	ItemType_MATCUCORE      => "ItemType_MATCUCORE",
+	ItemType_MATCORE        => "ItemType_MATCORE",
+	ItemType_MATFLEXCORE    => "ItemType_MATFLEXCORE",
+	ItemType_MATPREPREG     => "ItemType_MATPREPREG",
+	ItemType_MATFLEXPREPREG => "ItemType_MATFLEXPREPREG",
+	ItemType_MATCOVERLAY    => "ItemType_MATCOVERLAY",
+	ItemType_MATSTIFFENER   => "ItemType_MATSTIFFENER",
+	ItemType_MATADHESIVE    => "ItemType_MATADHESIVE",
+	ItemType_MATPRODUCT     => "ItemType_MATPRODUCT"
+
+};
+
+1;

@@ -18,7 +18,7 @@ use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::CAMJob::Stackup::ProcessStackup::StackupMngr::StackupLamination';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::StackupLam::StackupLam';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,21 +46,58 @@ sub GetAllLamination {
 
 	my $stiffInfBot = {};
 	my $stiffBotExist = $self->GetExistCvrl( "bot", $stiffInfBot );
-	
-	
+
 	my @lam = ();
-	
-	if($cvrlInfBot || $cvrlInfTop){
-		my $inf = StackupLamination->new(scalar(@lam)+1, Enums->LamType_CVRLBASE);
-		push(@lam, $inf);
+
+
+	if ( $cvrlInfBot || $cvrlInfTop ) {
+		my $inf = StackupLam->new( scalar(@lam) , Enums->LamType_CVRLBASE, undef, "P".(scalar(@lam)+1) );
+		push( @lam, $inf );
 	}
-	
-	if($stiffTopExist || $stiffBotExist){
-		my $inf = StackupLamination->new(scalar(@lam)+1, Enums->LamType_STIFFPRODUCT);
-		push(@lam, $inf);
+
+	if ( $stiffTopExist || $stiffBotExist ) {
+		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_STIFFPRODUCT, undef, "P".(scalar(@lam)) );
+		push( @lam, $inf );
 	}
-	
+
 	return @lam;
+}
+
+sub GetThick {
+	my $self          = shift;
+	my $inclCoverlay  = shift;
+	my $inclStiffener = shift;
+
+	my $thick = $self->{"pcbInfoIS"}->{"material_tloustka"} * 1000;
+
+	if ($inclCoverlay) {
+
+		my $cvrlTop = {};
+		if ( $self->GetExistCvrl( "top", $cvrlTop ) ) {
+			$thick += $cvrlTop->{"cvrlThick"} + $cvrlTop->{"adhesiveThick"};
+		}
+
+		my $cvrlBot = {};
+		if ( $self->GetExistCvrl( "bot", $cvrlBot ) ) {
+			$thick += $cvrlBot->{"cvrlThick"} + $cvrlBot->{"adhesiveThick"};
+		}
+	}
+
+	if ($inclStiffener) {
+
+		my $stiffTop = {};
+		if ( $self->GetExistStiff( "top", $stiffTop ) ) {
+			$thick += $stiffTop->{"stiffThick"} + $stiffTop->{"adhesiveThick"};
+		}
+
+		my $stiffBot = {};
+		if ( $self->GetExistStiff( "bot", $stiffBot ) ) {
+			$thick += $stiffBot->{"stiffThick"} + $stiffBot->{"adhesiveThick"}
+		}
+	}
+	
+	return $thick;
+
 }
 
 #sub GetLayerCnt {
@@ -185,30 +222,29 @@ sub GetExistCvrl {
 #	return HegMethods->GetOuterCuThick( $self->{"jobId"} );
 #}
 #
-#sub GetTG {
-#	my $self = shift;
-#
-#	# 1) Get min TG of PCB
-#	my $matKind = HegMethods->GetMaterialKind( $self->{"jobId"}, 1 );
-#
-#	my $minTG = undef;
-#
-#	if ( $matKind =~ /tg\s*(\d+)/i ) {
-#
-#		# single kinf of stackup materials
-#
-#		$minTG = $1;
-#	}
-#
-#	# 2) Get min TG of estra layers (stiffeners/double coated tapes etc..)
-#	my $specTg = $self->_GetSpecLayerTg();
-#
-#	if ( defined $minTG && defined $specTg ) {
-#		$minTG = min( ( $minTG, $specTg ) );
-#	}
-#
-#	return $minTG;
-#}
+
+# Return info about material kind and material TG
+sub GetBaseMaterialInfo {
+	my $self = shift;
+	
+	my @mats = ();
+
+	# 1) Get min TG of PCB
+	my $matKind =  $self->{"pcbInfoIS"}->{"material_druh"};
+
+	my $minTG = undef; 
+
+	if ( $matKind =~ /tg\s*(\d+)/i ) {
+
+		# single kinf of stackup materials
+
+		$minTG = $1;
+	}
+ 
+ 	push(@mats, {"kind" => $matKind, "tg" => $minTG});
+ 
+	return @mats;
+}
 #
 #sub GetThicknessStiffener {
 #	my $self = shift;

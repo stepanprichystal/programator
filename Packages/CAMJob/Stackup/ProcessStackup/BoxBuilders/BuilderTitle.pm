@@ -36,6 +36,7 @@ sub new {
 
 sub Build {
 	my $self = shift;
+	my $pageWidth = shift;
 
 	my $inCAM       = $self->{"inCAM"};
 	my $jobId       = $self->{"jobId"};
@@ -43,14 +44,16 @@ sub Build {
 	my $stackupMngr = $self->{"stackupMngr"};
 
 	# 1) Define columns
-	$self->{"table"}->AddColDef( "leftMargin", EnumsStyle->ClmnWidth_margin );
-	$self->{"table"}->AddColDef( "col1Text",   EnumsStyle->BoxTitleClmnWidth_1 );
-	$self->{"table"}->AddColDef( "col1Val",    EnumsStyle->BoxTitleClmnWidth_2 );
-	$self->{"table"}->AddColDef( "col2Text",   EnumsStyle->BoxTitleClmnWidth_3 );
-	$self->{"table"}->AddColDef( "col2Val",    EnumsStyle->BoxTitleClmnWidth_4 );
+	 
+	$tbl->AddColDef( "leftMargin",  EnumsStyle->ClmnWidth_margin);
+	$tbl->AddColDef( "col1Text",   EnumsStyle->BoxTitleClmnWidth_1 );
+	$tbl->AddColDef( "col1Val",    EnumsStyle->BoxTitleClmnWidth_2 );
+	$tbl->AddColDef( "col2Text",   EnumsStyle->BoxTitleClmnWidth_3 );
+	$tbl->AddColDef( "col2Val",   $pageWidth -   $tbl->GetWidth() );
 
 	# 2) Define ROWS
-	my $BACKtmp = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new("255, 100, 0") );
+	#my $BACKtmp = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new("255, 100, 0") );
+	my $BACKtmp = undef;
 	$tbl->AddRowDef( "row1", EnumsStyle->BoxTitleRowHeight_STD, $BACKtmp );
 	$tbl->AddRowDef( "row2", EnumsStyle->BoxTitleRowHeight_STD, $BACKtmp );
 	$tbl->AddRowDef( "row3", EnumsStyle->BoxTitleRowHeight_STD, $BACKtmp );
@@ -76,8 +79,8 @@ sub Build {
 										TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	# Pcb number
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Text") ), 0, undef, undef, "Číslo zakázky:", $txtStyle );
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Val") ), 0, undef, undef, $jobId, $txtStylePcbId );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Text") ), 0, undef, undef, "Císlo zakázky:", $txtStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Val") ), 0, undef, undef, $stackupMngr->GetOrderId(), $txtStylePcbId );
 
 	# PCB name
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Text") ), 1, undef, undef, "Název desky:", $txtStyle );
