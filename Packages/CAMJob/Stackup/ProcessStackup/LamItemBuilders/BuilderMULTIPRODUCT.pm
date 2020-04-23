@@ -2,7 +2,7 @@
 # Description: Builder for stiffener lamination
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderSTIFFPRODUCT;
+package Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderMULTIPRODUCT;
 use base('Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::LamItemBuilderBase');
 
 #3th party library
@@ -53,7 +53,7 @@ sub Build {
 
 	# LAYER: Top release film
 	$lam->AddItem( $releaseInf->{"ISRef"},
-				   Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADRELEASE ),
+				   Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
 				   undef, undef, $releaseInf->{"text"}, $releaseInf->{"thick"} );
 
 	# LAYER: Top Stiffener
@@ -69,8 +69,8 @@ sub Build {
 		);
 		$lam->AddChildItem( $item, "bot",
 							$stiffTopInfo->{"adhesiveISRef"},
-							Enums->ItemType_MATSTIFFADHESIVE,
-							EnumsStyle->GetItemTitle( Enums->ItemType_MATSTIFFADHESIVE ),
+							Enums->ItemType_MATADHESIVE,
+							EnumsStyle->GetItemTitle( Enums->ItemType_MATADHESIVE ),
 							undef,
 							$stiffTopInfo->{"adhesiveKind"},
 							$stiffTopInfo->{"adhesiveText"},
@@ -102,8 +102,8 @@ sub Build {
 								  $stiffBotInfo->{"stiffThick"} );
 		$lam->AddChildItem( $item, "top",
 							$stiffBotInfo->{"adhesiveISRef"},
-							Enums->ItemType_MATSTIFFADHESIVE,
-							EnumsStyle->GetItemTitle( Enums->ItemType_MATSTIFFADHESIVE ),
+							Enums->ItemType_MATADHESIVE,
+							EnumsStyle->GetItemTitle( Enums->ItemType_MATADHESIVE ),
 							undef,
 							$stiffBotInfo->{"adhesiveKind"},
 							$stiffBotInfo->{"adhesiveText"},
@@ -113,7 +113,7 @@ sub Build {
 
 	# LAYER: Bot release film
 	$lam->AddItem( $releaseInf->{"ISRef"},
-				   Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADRELEASE ),
+				   Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
 				   undef, undef, $releaseInf->{"text"}, $releaseInf->{"thick"} );
 
 	# LAYER: Bot presspad

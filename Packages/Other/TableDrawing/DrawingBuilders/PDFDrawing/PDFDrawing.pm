@@ -324,6 +324,11 @@ sub DrawTextParagraph {
 
 	# Compute vertical aligment
 	$y = $boxStartY;
+	
+	# Adjust box width (cut box, bz longest word in text)
+	# Because last word on the end of line is put to this line even if whole match to box width
+	my $wordLen = length((sort{length($b) <=> length($a)}split(/\s/, $text))[0]);
+	$boxW -= $wordLen*$size ;
 
 	$txt->textstart;
 

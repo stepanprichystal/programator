@@ -88,8 +88,8 @@ sub __BuildMatListTitle {
 	# 2) Define ROWS
 	#my $BACKtmp = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new("255, 100, 50") );
 	my $BACKtmp = undef;
-	my $row = $tbl->AddRowDef( "titleAmounts", EnumsStyle->BoxMainRowHeight_TITLE, $BACKtmp, $borderRowStyle );
-	my $rowPos = $tbl->GetRowDefPos($row);
+	my $row     = $tbl->AddRowDef( "titleAmounts", EnumsStyle->BoxMainRowHeight_TITLE, $BACKtmp, $borderRowStyle );
+	my $rowPos  = $tbl->GetRowDefPos($row);
 
 	# 3) Define cells
 
@@ -133,6 +133,7 @@ sub __BuildMatListBody {
 									  undef, undef,
 									  TblDrawEnums->TextHAlign_LEFT,
 									  TblDrawEnums->TextVAlign_CENTER, 0.5 );
+									  
 
 	my $borderStyle = BorderStyle->new();
 	$borderStyle->AddEdgeStyle( "bot", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_BOXBORDERLIGHT ) );
@@ -154,9 +155,18 @@ sub __BuildMatListBody {
 	# get inique materials (pads first)
 	@items = grep {
 		     $_->GetItemType() ne Enums->ItemType_PADSTEEL
-		  && $_->GetItemType() ne Enums->ItemType_PADFILMSHINE
-		  && $_->GetItemType() ne Enums->ItemType_MATPRODUCT
+		  && $_->GetItemType() ne Enums->ItemType_PADFILMGLOSS
+		  && $_->GetItemType() ne Enums->ItemType_MATPRODUCTDPS
 		  && $_->GetItemType() ne Enums->ItemType_MATCORE
+		  && $_->GetItemType() ne Enums->ItemType_MATFLEXCORE
+		  && $_->GetItemType() ne Enums->ItemType_MATCUCORE
+		  && $_->GetItemType() ne Enums->ItemType_MATCVRLADHESIVE
+		  && $_->GetItemType() ne Enums->ItemType_MATPRODUCTDPS
+		  && $_->GetItemType() ne Enums->ItemType_MATPRODUCTCORE
+		  && $_->GetItemType() ne Enums->ItemType_PADFILMGLOSS
+		  && $_->GetItemType() ne Enums->ItemType_PADFILMMATT
+		  
+
 	} @items;
 
 	my @uniqItems = do {
@@ -174,25 +184,31 @@ sub __BuildMatListBody {
 					   undef, undef, $item->GetValType(), $txtStdStyle, undef, $borderStyle );
 
 		# Mat IS ref
+		my $itemId = $item->GetItemId();
+		$itemId = "0319000xxx" if ( $itemId !~ /\d{10}/ );
+
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matRef") ),
 					   $tbl->GetRowDefPos($row),
-					   undef, undef, $item->GetItemId(), $txtStdStyle, undef, $borderStyle );
+					   undef, undef, $itemId, $txtStdStyle, undef, $borderStyle );
 
 		# Mat Kind
+		my $kindStr = $item->GetValKind();
+		$kindStr =~ s/\s*//g;
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matKind") ),
 					   $tbl->GetRowDefPos($row),
-					   undef, undef, $item->GetValKind(), $txtStdStyle, undef, $borderStyle );
+					   undef, undef, $kindStr, $txtStdStyle, undef, $borderStyle );
 
 		# Mat Text
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matName") ),
 					   $tbl->GetRowDefPos($row),
-					   undef, undef, $item->GetValText(), $txtStdStyle, undef, $borderStyle );
+					   undef, undef, substr( $item->GetValText(), 0, 28 ),
+					   $txtStdStyle, undef, $borderStyle );
 
 		# Mat count
 		my $cnt = scalar( grep { $_->GetItemId() eq $item->GetItemId() } @items );
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matCount") ),
 					   $tbl->GetRowDefPos($row),
-					   undef, undef, $cnt, $txtStdStyle, undef, $borderStyle );
+					   undef, undef, $cnt . "x", $txtStdStyle, undef, $borderStyle );
 
 	}
 

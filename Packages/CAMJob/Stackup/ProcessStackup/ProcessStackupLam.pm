@@ -1,5 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Class is responsible for building lamination prescription
+# bz specific type of lamination
 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
@@ -28,6 +29,14 @@ use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderSTIFFPRODUCT';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderCVRLBASE';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderCVRLPRODUCT';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderFLEXBASE';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderRIGIDFINAL';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderORIGIDFLEXFINAL';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderIRIGIDFLEXFINAL';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderMULTIPRODUCT';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderRIGIDBASE';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -58,6 +67,7 @@ sub Build {
 	$self->__BuildBoxes( $pageWidth, $pageHeight );
 }
 
+# Build lamination instruction structure by lamination type
 sub __BuildStackupItems {
 	my $self = shift;
 
@@ -71,41 +81,47 @@ sub __BuildStackupItems {
 	# 1) Pick proper builder
 
 	my $itemBldr = undef;
-
 	if ( $lam->GetLamType() eq Enums->LamType_STIFFPRODUCT ) {
 
 		$itemBldr = BuilderSTIFFPRODUCT->new( $inCAM, $jobId );
 	}
 	elsif ( $lam->GetLamType() eq Enums->LamType_CVRLBASE ) {
 
-		$itemBldr = BuilderSTIFFPRODUCT->new( $inCAM, $jobId, $lam, $stckpMngr );
+		$itemBldr = BuilderCVRLBASE->new( $inCAM, $jobId );
 	}
 	elsif ( $lam->GetLamType() eq Enums->LamType_CVRLPRODUCT ) {
 
-		$itemBldr = BuilderSTIFFPRODUCT->new( $inCAM, $jobId, $lam, $stckpMngr );
+		$itemBldr = BuilderCVRLPRODUCT->new( $inCAM, $jobId, $lam, $stckpMngr );
 	}
-	elsif ( $lam->GetLamType() eq Enums->LamType_PRPGBASE ) {
+	elsif ( $lam->GetLamType() eq Enums->LamType_RIGIDBASE ) {
 
-		$itemBldr = BuilderSTIFFPRODUCT->new( $inCAM, $jobId, $lam, $stckpMngr );
+		$itemBldr = BuilderRIGIDBASE->new( $inCAM, $jobId );
 	}
-	elsif ( $lam->GetLamType() eq Enums->LamType_FLEXPRPGBASE ) {
+	elsif ( $lam->GetLamType() eq Enums->LamType_FLEXBASE ) {
 
-		$itemBldr = BuilderSTIFFPRODUCT->new( $inCAM, $jobId, $lam, $stckpMngr );
+		$itemBldr = BuilderFLEXBASE->new( $inCAM, $jobId, $lam, $stckpMngr );
 	}
-	elsif ( $lam->GetLamType() eq Enums->LamType_MULTIBASE ) {
+	elsif ( $lam->GetLamType() eq Enums->LamType_RIGIDFINAL ) {
 
-		$itemBldr = BuilderSTIFFPRODUCT->new( $inCAM, $jobId, $lam, $stckpMngr );
+		$itemBldr = BuilderRIGIDFINAL->new( $inCAM, $jobId, $lam, $stckpMngr );
+
 	}
-	elsif ( $lam->GetLamType() eq Enums->LamType_MULTIPRODUCT ) {
+	elsif ( $lam->GetLamType() eq Enums->LamType_ORIGIDFLEXFINAL ) {
 
-		$itemBldr = BuilderSTIFFPRODUCT->new( $inCAM, $jobId, $lam, $stckpMngr );
+		$itemBldr = BuilderORIGIDFLEXFINAL->new( $inCAM, $jobId, $lam, $stckpMngr );
+
+	}
+	elsif ( $lam->GetLamType() eq Enums->LamType_IRIGIDFLEXFINAL ) {
+
+		$itemBldr = BuilderIRIGIDFLEXFINAL->new( $inCAM, $jobId, $lam, $stckpMngr );
 	}
 
-	$result = $itemBldr->Build( $lam, $stckpMngr );
+	$result = $itemBldr->Build( $lam, $stckpMngr ) if ( defined $itemBldr );
 
 	return $result;
 }
 
+# Phzsic drawing of lamination instruction to TableDrawing
 sub __BuildBoxes {
 	my $self       = shift;
 	my $pageWidth  = shift;    # A4 width mm
@@ -130,7 +146,7 @@ sub __BuildBoxes {
 	my $headerTbl = $self->{"tblDrawing"}->AddTable( "Header", \%o );
 	$headerTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
 	my $builderHeader = BuilderHeaderFooter->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $headerTbl );
-	$builderHeader->Build("header", $pageWidth);
+	$builderHeader->Build( "header", $pageWidth );
 
 	# BOX Title
 	my %oTitle = %o;
@@ -167,7 +183,7 @@ sub __BuildBoxes {
 	my $infoTbl = $self->{"tblDrawing"}->AddTable( "Info", \%oInfo, $borderStyle );
 	$infoTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
 	my $builderInfo = BuilderInfo->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $infoTbl );
-	$builderInfo->Build($boxXEndPos, $boxYEndPos);
+	$builderInfo->Build( $boxXEndPos, $boxYEndPos );
 
 	# BOX Footer
 	my %oFooter = %oMatList;
@@ -175,7 +191,7 @@ sub __BuildBoxes {
 	my $footerTbl = $self->{"tblDrawing"}->AddTable( "Footer", \%oFooter );
 	$footerTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
 	my $builderFooter = BuilderHeaderFooter->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $footerTbl );
-	$builderFooter->Build("footer", $pageWidth);
+	$builderFooter->Build( "footer", $pageWidth );
 
 	return $result;
 }

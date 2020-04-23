@@ -1,12 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:  
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Stackup::ProcessStackup::StackupMngr::StackupMngrVV;
-use base('Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase');
+use base('Packages::CAMJob::Stackup::ProcessStackup::StackupMngr::StackupMngrBase');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use List::Util qw(first min);
@@ -19,6 +20,8 @@ use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Polygon::Features::Features::Features';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::Enums';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackup::StackupLam::StackupLam';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -30,9 +33,220 @@ sub new {
 	bless $self;
 
 	$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"inLayerEmpty"} = { $self->__SetIsInnerLayerEmpty() };
 
 	return $self;
+}
+
+sub GetAllLamination {
+	my $self = shift;
+	my $lamType = shift;
+
+	my $stackup = $self->{"stackup"};
+
+	my @inputProduct = $stackup->GetInputProducts();
+
+	my @pressProduct = $stackup->GetPressProducts(1);
+
+	my @lamintaions = ();
+
+	my $lamOrder = 0;
+
+	# Process input product laminations
+	foreach my $inputP (@inputProduct) {
+
+		my @matLayers = $inputP->GetLayers( StackEnums->ProductL_MATERIAL );
+
+		# Process lamination if there are some material layers
+		#(which means there is material to press together)
+		if ( scalar(@matLayers) ) {
+
+			my $lamType;
+			if ( $inputP->GetCoreRigidType() eq StackEnums->CoreType_RIGID ) {
+
+				$lamType = Enums->LamType_RIGIDBASE;
+			}
+			elsif ( $inputP->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
+
+				$lamType = Enums->LamType_FLEXBASE;
+			}
+
+			my $lam = StackupLam->new( $lamOrder, $lamType, "P" . $inputP->GetId(), $inputP );
+			push( @lamintaions, $lam );
+
+			$lamOrder++;
+		}
+	}
+
+	# Process press product laminations
+	foreach my $pressP (@pressProduct) {
+
+		my @layers = $pressP->GetLayers( StackEnums->ProductL_PRODUCT );
+
+		my $lamType = undef;
+
+		if ( $self->GetPcbType() eq EnumsGeneral->PcbType_MULTI ) {
+			$lamType = Enums->LamType_RIGIDFINAL;
+		}
+		elsif ( $self->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI || $self->GetPcbType() eq EnumsGeneral->PcbType_MULTIFLEX ) {
+			$lamType = Enums->LamType_IRIGIDFLEXFINAL;
+		}
+		elsif ( $self->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXO ) {
+			$lamType = Enums->LamType_ORIGIDFLEXFINAL;
+		}
+
+		my $lam = StackupLam->new( $lamOrder, $lamType, $pressP->GetId() . "xLis", $pressP );
+		push( @lamintaions, $lam );
+
+		$lamOrder++;
+
+		# Check if press contain extra lamination
+		if ( $pressP->GetExistExtraPress() ) {
+
+			my $lam = StackupLam->new( $lamOrder, Enums->LamType_CVRLPRODUCT, $pressP->GetId() . "xLis", $pressP );
+			push( @lamintaions, $lam );
+
+			$lamOrder++;
+
+		}
+	}
+	
+		# Filter laminations by type
+	if ( defined $lamType ) {
+		@lamintaions = grep { $_->GetLamType() eq $lamType } @lamintaions;
+	}
+
+	return @lamintaions;
+}
+
+sub GetCoreISRef {
+	my $self           = shift;
+	my $stckpCoreLayer = shift;
+
+	my $topCuLayer = $stckpCoreLayer->GetTopCopperLayer();
+
+	return $self->__GetMatRefByUDA( "core_", $stckpCoreLayer->GetQId(), $stckpCoreLayer->GetId(), $topCuLayer->GetId() );
+}
+
+sub GetCuFoilISRef {
+	my $self         = shift;
+	my $stckpCuLayer = shift;
+
+	return $self->__GetMatRefByUDA( "cu", $stckpCuLayer->GetId() );
+}
+
+sub GetPrpgISRef {
+	my $self           = shift;
+	my $stckpPrpgLayer = shift;
+
+	return $self->__GetMatRefByUDA( "prpg", $stckpPrpgLayer->GetQId(), $stckpPrpgLayer->GetId() );
+}
+
+sub __GetMatRefByUDA {
+	my $self = shift;
+	my $type = shift;
+	my $qId  = shift;
+	my $id   = shift;
+	my $id2  = shift;
+
+	#my $inf = HegMethods->GetMatInfoByUDA( $qId, $id, $id2 );
+	my $str = $type;
+	$str .= "_" . $qId if ( defined $qId );
+	$str .= "_" . $id  if ( defined $id );
+	$str .= "_" . $id2 if ( defined $id2 );
+	return $str;
+}
+
+sub GetBaseMaterialInfo {
+	my $self = shift;
+
+	my @mats = ();
+
+	my @mat = uniq( map { $_->GetTextType() } $self->{"stackup"}->GetAllCores() );
+
+	for ( my $i = 0 ; $i < scalar(@mat) ; $i++ ) {
+
+		$mat[$i] =~ s/\s//g;
+	}
+
+	foreach my $m (@mat) {
+
+		my $matKey = first { $m =~ /$_/i } keys %{ $self->{"isMatKinds"} };
+		next unless ( defined $matKey );
+
+		push( @mats, { "kind" => $matKey, "tg" => $self->{"isMatKinds"}->{$matKey} } );
+
+	}
+	return @mats;
+}
+
+sub GetPressProgramInfo {
+	my $self     = shift;
+	my $lamType  = shift;
+	my $IProduct = shift;
+
+	my ( $w, $h ) = $self->GetPanelSize();
+	my @mats = $self->GetBaseMaterialInfo();
+
+	my %pInfo = ( "name" => undef, "dimX" => undef, "dimY" => undef );
+
+	# 1) Program name
+
+	if ( $lamType eq Enums->LamType_STIFFPRODUCT ) {
+
+		$pInfo{"name"} = "Stiffener_tape";
+
+	}
+	elsif (    $lamType eq Enums->LamType_FLEXBASE
+			|| $lamType eq Enums->LamType_ORIGIDFLEXFINAL
+			|| $lamType eq Enums->LamType_IRIGIDFLEXFINAL )
+	{
+
+		$pInfo{"name"} = "Flex";
+
+	}
+	elsif ( $lamType eq Enums->LamType_CVRLPRODUCT ) {
+
+		$pInfo{"name"} = "RigidFlex_coverlay";
+
+	}
+	elsif ( $lamType eq Enums->LamType_RIGIDBASE ) {
+
+		# Coose proper program by core material kind
+		# $IProduct should by tzpe of Product_INPUT
+		my @cores = map { $_->GetData()->GetLayers() } $IProduct->GetChildProducts();
+		my $core = first { $_->GetData()->GetType() eq StackEnums->MaterialType_CORE } @cores;
+		my $matKind = uc( $core->GetData()->GetTextType() );
+		$matKind =~ s/\s//g;
+		$pInfo{"name"} = $matKind;
+
+	}
+	elsif ( $lamType eq Enums->LamType_RIGIDFINAL ) {
+
+		my @mats = sort { $b->{"tg"} <=> $a->{"tg"} } @mats;
+		my $matKind = uc( $mats[0]->{"kind"} );
+		$matKind =~ s/\s//g;
+		$pInfo{"name"} = $matKind ;
+	}
+	 
+
+	# 2) Program dim
+
+	if ( $h < 410 && $self->GetIsFlex() ) {
+
+		$pInfo{"dimX"} = "400";
+		$pInfo{"dimY"} = "400";
+	}
+	else {
+
+		$pInfo{"dimX"} = $w;
+		$pInfo{"dimY"} = $h;
+	}
+	
+	die "Press program name was found for lamination type: $lamType" unless(defined $pInfo{"name"});
+	 
+	$pInfo{"name"} .= "_<poč. pater>";
+
+	return %pInfo;
 }
 
 #sub GetLayerCnt {
@@ -42,11 +256,11 @@ sub new {
 #
 #}
 #
-#sub GetStackup {
-#	my $self = shift;
-#
-#	return $self->{"stackup"};
-#}
+sub GetStackup {
+	my $self = shift;
+
+	return $self->{"stackup"};
+}
 #
 ## Return stackup layers(exceot top/bottom coverlay)
 #sub GetStackupLayers {
@@ -61,105 +275,106 @@ sub new {
 #
 #}
 #
-#sub GetExistCvrl {
-#	my $self   = shift;
-#	my $side   = shift;    # top/bot
-#	my $info   = shift;    # reference for storing info
-#	my $stckpL = shift;
-#
-#	my $exist = 0;
-#
-#	my @l = $self->{"stackup"}->GetAllLayers();
-#
-#	my $sigName = undef;
-#	if ( $side eq "top" ) {
-#		$sigName = "c";
-#	}
-#	elsif ( $side eq "bot" ) {
-#		$sigName = "s";
-#	}
-#
-#	@l = reverse(@l) if ( $side eq "bot" );
-#
-#	for ( my $i = 0 ; $i < scalar(@l) ; $i++ ) {
-#
-#		if (    $l[$i]->GetType() eq StackEnums->MaterialType_COVERLAY
-#			 && defined $l[ $i + 1 ]
-#			 && $l[ $i + 1 ]->GetType() eq StackEnums->MaterialType_COPPER
-#			 && $l[ $i + 1 ]->GetCopperName() eq $sigName )
-#		{
-#			$exist = 1;
-#
-#			if ( defined $info ) {
-#				$self->GetCvrlInfo( $l[$i], $info );
-#			}
-#			last;
-#		}
-#	}
-#
-#	return $exist;
-#}
-#
-#sub GetCvrlInfo {
-#	my $self   = shift;
-#	my $stckpL = shift;
-#	my $inf    = shift // {};
-#
-#	$inf->{"adhesiveText"}  = "";
-#	$inf->{"adhesiveThick"} = $stckpL->GetAdhesiveThick();
-#	$inf->{"cvrlText"}      = $stckpL->GetTextType() . " " . $stckpL->GetText();
-#	$inf->{"cvrlThick"} =
-#	  $stckpL->GetThick(0) - $stckpL->GetAdhesiveThick();    # Return real thickness from base class (not consider if covelraz is selective)
-#	$inf->{"selective"} = $stckpL->GetMethod() eq StackEnums->Coverlay_SELECTIVE ? 1 : 0;
-#
-#	die "Cvrl adhesive material name was not found at material:" . $stckpL->GetText()
-#	  unless ( defined $inf->{"adhesiveText"} );
-#	die "Coverlay adhesive material thick was not found at material:" . $stckpL->GetText()
-#	  unless ( defined $inf->{"adhesiveThick"} );
-#	die "Coverlay material name was not found at material:" . $stckpL->GetText()          unless ( defined $inf->{"cvrlText"} );
-#	die "Coverlay thickness was not found at material:" . $stckpL->GetText()              unless ( defined $inf->{"cvrlThick"} );
-#	die "Coverlay type (selective or not)was not found at material:" . $stckpL->GetText() unless ( defined $inf->{"selective"} );
-#
-#	return $inf;
-#}
-#
-#sub GetPrepregTitle {
-#	my $self  = shift;
-#	my $l     = shift;
-#	my $types = shift;
-#
-#	my $t = $l->GetTextType();
-#	$t =~ s/\s//g;
-#	my %childPCnt = ();
-#
-#	foreach my $childP ( $l->GetAllPrepregs() ) {
-#
-#		my $type = $childP->GetText();
-#		$type =~ s/\s//g;
-#		if ( $type !~ m/^(\d+)\s*(\[.*\])*/i ) {
-#			die "Prepreg text:" . $l->GetText() . " doesn't have valid format";
-#		}
-#
-#		# add gap if there is bracket
-#		$type =~ s/\[/ [/;
-#
-#		if ( defined $childPCnt{$type} ) {
-#			$childPCnt{$type}++;
-#		}
-#		else {
-#			$childPCnt{$type} = 1;
-#		}
-#	}
-#
-#	#	if ( scalar( keys %childPCnt ) == 1 ) {
-#	#		$t .= join( "+", map { $childPCnt{$_} . "x" . $_ } keys %childPCnt );
-#	#	}
-#
-#	push( @{$types}, map { $childPCnt{$_} . "x" . $_ } keys %childPCnt );
-#
-#	return $t;
-#
-#}
+sub GetExistCvrl {
+	my $self = shift;
+	my $side = shift;    # top/bot
+	my $info = shift;    # reference for storing info
+
+	my $exist = 0;
+
+	my @l = $self->{"stackup"}->GetAllLayers();
+
+	my $sigName = undef;
+	if ( $side eq "top" ) {
+		$sigName = "c";
+	}
+	elsif ( $side eq "bot" ) {
+		$sigName = "s";
+	}
+
+	@l = reverse(@l) if ( $side eq "bot" );
+
+	for ( my $i = 0 ; $i < scalar(@l) ; $i++ ) {
+
+		if (    $l[$i]->GetType() eq StackEnums->MaterialType_COVERLAY
+			 && defined $l[ $i + 1 ]
+			 && $l[ $i + 1 ]->GetType() eq StackEnums->MaterialType_COPPER
+			 && $l[ $i + 1 ]->GetCopperName() eq $sigName )
+		{
+			$exist = 1;
+
+			if ( defined $info ) {
+				$self->GetCvrlInfo( $l[$i], $info );
+			}
+			last;
+		}
+	}
+
+	return $exist;
+}
+
+sub GetCvrlInfo {
+	my $self   = shift;
+	my $stckpL = shift;
+	my $inf    = shift // {};
+
+	$inf->{"adhesiveText"}  = "";
+	$inf->{"adhesiveThick"} = $stckpL->GetAdhesiveThick();
+	$inf->{"cvrlText"}      = $stckpL->GetTextType() . " " . $stckpL->GetText();
+	$inf->{"cvrlThick"} =
+	  $stckpL->GetThick(0) - $stckpL->GetAdhesiveThick();    # Return real thickness from base class (not consider if covelraz is selective)
+	$inf->{"selective"} = $stckpL->GetMethod() eq StackEnums->Coverlay_SELECTIVE ? 1 : 0;
+
+	# Fake is ref
+	$inf->{"cvrlISRef"} = $self->__GetMatRefByUDA( "cvrl", $inf->{"adhesiveThick"}, $inf->{"cvrlThick"} );
+
+	die "Cvrl adhesive material name was not found at material:" . $stckpL->GetText()
+	  unless ( defined $inf->{"adhesiveText"} );
+	die "Coverlay adhesive material thick was not found at material:" . $stckpL->GetText()
+	  unless ( defined $inf->{"adhesiveThick"} );
+	die "Coverlay material name was not found at material:" . $stckpL->GetText()          unless ( defined $inf->{"cvrlText"} );
+	die "Coverlay thickness was not found at material:" . $stckpL->GetText()              unless ( defined $inf->{"cvrlThick"} );
+	die "Coverlay type (selective or not)was not found at material:" . $stckpL->GetText() unless ( defined $inf->{"selective"} );
+
+	return $inf;
+}
+
+sub GetPrepregTitle {
+	my $self  = shift;
+	my $l     = shift;
+	my $types = shift;
+
+	my $t = $l->GetTextType();
+	$t =~ s/\s//g;
+	my %childPCnt = ();
+
+	foreach my $childP ( $l->GetAllPrepregs() ) {
+
+		my $type = $childP->GetText();
+		$type =~ s/\s//g;
+		if ( $type !~ m/^(\d+)\s*(\[.*\])*/i ) {
+			die "Prepreg text:" . $l->GetText() . " doesn't have valid format";
+		}
+
+		add gap if there is bracket $type =~ s/\[/ [/;
+
+		if ( defined $childPCnt{$type} ) {
+			$childPCnt{$type}++;
+		}
+		else {
+			$childPCnt{$type} = 1;
+		}
+	}
+
+	if ( scalar( keys %childPCnt ) == 1 ) {
+		$t .= join( "+", map { $childPCnt{$_} . "x" . $_ } keys %childPCnt );
+	}
+
+	push( @{$types}, map { $childPCnt{$_} . "x" . $_ } keys %childPCnt );
+
+	return $t;
+
+}
 #
 #sub GetTG {
 #	my $self = shift;

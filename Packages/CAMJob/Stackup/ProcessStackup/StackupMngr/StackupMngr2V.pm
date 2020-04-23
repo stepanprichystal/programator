@@ -7,6 +7,7 @@ package Packages::CAMJob::Stackup::ProcessStackup::StackupMngr::StackupMngr2V;
 use base('Packages::CAMJob::Stackup::ProcessStackup::StackupMngr::StackupMngrBase');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use List::Util qw(first min max);
@@ -34,6 +35,7 @@ sub new {
 
 sub GetAllLamination {
 	my $self = shift;
+	my $lamType = shift;
 
 	my $cvrlInfTop = {};
 	my $cvrlTopExist = $self->GetExistCvrl( "top", $cvrlInfTop );
@@ -49,15 +51,19 @@ sub GetAllLamination {
 
 	my @lam = ();
 
-
 	if ( $cvrlInfBot || $cvrlInfTop ) {
-		my $inf = StackupLam->new( scalar(@lam) , Enums->LamType_CVRLBASE, undef, "P".(scalar(@lam)+1) );
+		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_CVRLBASE, undef, "P" . ( scalar(@lam) + 1 ) );
 		push( @lam, $inf );
 	}
 
 	if ( $stiffTopExist || $stiffBotExist ) {
-		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_STIFFPRODUCT, undef, "P".(scalar(@lam)) );
+		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_STIFFPRODUCT, undef, "P" . ( scalar(@lam) ) );
 		push( @lam, $inf );
+	}
+
+	# Filter laminations by type
+	if ( defined $lamType ) {
+		@lam = grep { $_->GetLamType() eq $lamType } @lam;
 	}
 
 	return @lam;
@@ -92,10 +98,10 @@ sub GetThick {
 
 		my $stiffBot = {};
 		if ( $self->GetExistStiff( "bot", $stiffBot ) ) {
-			$thick += $stiffBot->{"stiffThick"} + $stiffBot->{"adhesiveThick"}
+			$thick += $stiffBot->{"stiffThick"} + $stiffBot->{"adhesiveThick"};
 		}
 	}
-	
+
 	return $thick;
 
 }
@@ -192,6 +198,8 @@ sub GetExistCvrl {
 
 			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
 
+			$inf->{"cvrlISRef"} = $matInfo->{"reference_subjektu"};
+
 			my $thick    = $matInfo->{"vyska"} * 1000000;
 			my $thickAdh = $matInfo->{"doplnkovy_rozmer"} * 1000000;
 
@@ -226,13 +234,13 @@ sub GetExistCvrl {
 # Return info about material kind and material TG
 sub GetBaseMaterialInfo {
 	my $self = shift;
-	
+
 	my @mats = ();
 
 	# 1) Get min TG of PCB
-	my $matKind =  $self->{"pcbInfoIS"}->{"material_druh"};
+	my $matKind = $self->{"pcbInfoIS"}->{"material_druh"};
 
-	my $minTG = undef; 
+	my $minTG = undef;
 
 	if ( $matKind =~ /tg\s*(\d+)/i ) {
 
@@ -240,11 +248,55 @@ sub GetBaseMaterialInfo {
 
 		$minTG = $1;
 	}
- 
- 	push(@mats, {"kind" => $matKind, "tg" => $minTG});
- 
+
+	push( @mats, { "kind" => $matKind, "tg" => $minTG } );
+
 	return @mats;
 }
+
+sub GetPressProgramInfo {
+	my $self    = shift;
+	my $lamType = shift;
+
+	my ( $w, $h ) = $self->GetPanelSize();
+	my @mats = $self->GetBaseMaterialInfo();
+
+	my %pInfo = ( "name" => undef, "dimX" => undef, "dimY" => undef );
+
+	# 1) Program name
+
+	if ( $lamType eq Enums->LamType_STIFFPRODUCT ) {
+
+		$pInfo{"name"} = "Stiffener_tape";
+
+	}
+	elsif ( $lamType eq Enums->LamType_CVRLBASE ) {
+
+		$pInfo{"name"} = "Flex";
+
+	}
+ 
+
+	# 2) Program dim
+
+	if ( $h < 410 && $self->GetIsFlex() ) {
+
+		$pInfo{"dimX"} = "400";
+		$pInfo{"dimY"} = "400";
+	}
+	else {
+
+		$pInfo{"dimX"} = $w;
+		$pInfo{"dimY"} = $h;
+	}
+	
+	die "Press program name was found for lamination type: $lamType" unless(defined $pInfo{"name"});
+	
+	$pInfo{"name"} .= "_<poč. pater>";
+	
+	return %pInfo;
+}
+
 #
 #sub GetThicknessStiffener {
 #	my $self = shift;

@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Represent type + information about specific lamination
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Stackup::ProcessStackup::StackupLam::StackupLam;
@@ -24,10 +24,10 @@ sub new {
 
 	$self->{"lamOrder"}     = shift;
 	$self->{"lamType"}      = shift;
-	$self->{"lamData"}      = shift;
-	$self->{"lamProductId"} = shift;
+	$self->{"lamProductId"} = shift;    # marking of result semiproduct
+	$self->{"lamData"}      = shift;    # onlz for multilayer (IProduct)
 
-	$self->{"items"} = [];
+	$self->{"items"} = [];              # contain single material + presspad layers of whole lamination package
 
 	return $self;
 }
@@ -115,11 +115,12 @@ sub GetPaketThick {
 
 		if ( !$start && $item->GetItemType() eq Enums->ItemType_PADSTEEL ) {
 			$start = 1;
+			next;
 		}
 
 		push( @pItems, $item ) if ($start);
 
-		if ( $i > 0 && $start && $item->GetItemType() eq Enums->ItemType_PADSTEEL ) {
+		if ( scalar(@pItems) > 1 && $start && $item->GetItemType() eq Enums->ItemType_PADSTEEL ) {
 			last;
 		}
 	}
@@ -150,9 +151,6 @@ sub GetOuterPresspads {
 	return @outerPads;
 
 }
-
-
- 
 
 1;
 

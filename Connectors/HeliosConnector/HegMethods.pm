@@ -1820,6 +1820,32 @@ sub GetMatStoreInfoByUDA {
 	return @result;
 }
 
+#
+#sub GetPrepregInfoByUDA {
+#	my $self     = shift;
+#	my $qId      = shift;    # quality id (DR4, IS400, ..)
+#	my $id       = shift;
+#	my $flex     = shift;    # prepreg thick id
+#
+#	my $type = EnumsIS->MatType_PREPREG;
+#
+#	$type = EnumsIS->MatType_PREPREGFLEX if ($flex);
+#
+#	return $self->GetMatInfoByUDA( $type, $qId, $id);
+#}
+#
+#
+#sub GetCoreInfoByUDA {
+#	my $self     = shift;
+#	my $qId      = shift;    # quality id (DR4, IS400, ..)
+#	my $id       = shift;    # core thick id
+#	my $id2      = shift;    # copper thick id
+#	my $matXsize = shift;    # in mm
+#	my $matYsize = shift;    # in mm
+#
+#	return $self->GetMatInfoByUDA( EnumsIS->MatType_CORE, $qId, $id, $id2);
+#}
+
 # Return material info by material reference
 sub GetMatInfoByUDA {
 	my $self = shift;

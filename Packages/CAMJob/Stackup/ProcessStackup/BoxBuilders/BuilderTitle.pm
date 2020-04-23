@@ -80,7 +80,7 @@ sub Build {
 
 	# Pcb number
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Text") ), 0, undef, undef, "Císlo zakázky:", $txtStyle );
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Val") ), 0, undef, undef, $stackupMngr->GetOrderId(), $txtStylePcbId );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Val") ), 0, undef, undef, uc($stackupMngr->GetOrderId()), $txtStylePcbId );
 
 	# PCB name
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Text") ), 1, undef, undef, "Název desky:", $txtStyle );

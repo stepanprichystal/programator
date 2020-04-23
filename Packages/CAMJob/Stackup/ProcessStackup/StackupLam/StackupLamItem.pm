@@ -20,26 +20,29 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"itemId"}     = shift;
-	$self->{"itemType"}   = shift;
-	$self->{"valType"}    = shift;
-	$self->{"valExtraId"} = shift;
-	$self->{"valKind"}    = shift;
-	$self->{"valText"}    = shift;
-	$self->{"valThick"}   = shift;
+	$self->{"itemId"}     = shift;    # id of specific material/presspad
+	$self->{"itemType"}   = shift;    # item type
+	$self->{"valType"}    = shift;    # description if item type
+	$self->{"valExtraId"} = shift;    # Extra di for (Cu layer, flex prepreg Id, core Id, product Id, ...)
+	$self->{"valKind"}    = shift;    # material kin (IS400, ...)
+	$self->{"valText"}    = shift;    # description of material
+	$self->{"valThick"}   = shift;    # material thickness
 
-	$self->{"childTop"} = undef;
-	$self->{"childBot"} = undef;
+	# Item can by merged from another two (to/bot) items
+	# It means, they have no gap between themselves in the final picture
+	$self->{"childTop"} = undef;    # Reference to TOP Cu layer, top/bot product layer and so on
+	$self->{"childBot"} = undef;    # Reference to BOT Cu layer, top/bot product layer and so on
 
 	return $self;
 }
 
-sub GetIsPad{
+sub GetIsPad {
 	my $self = shift;
-	
-	if($self->{"itemType"} =~ /ItemType_PAD/){
+
+	if ( $self->{"itemType"} =~ /ItemType_PAD/ ) {
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
 }

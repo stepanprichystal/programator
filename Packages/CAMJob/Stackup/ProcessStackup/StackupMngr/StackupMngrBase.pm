@@ -45,9 +45,9 @@ sub new {
 	if ( scalar(@orders) ) {
 
 		@orders = sort { int( $a->{"reference_subjektu"} ) <=> int( $b->{"reference_subjektu"} ) } @orders;
-		my $orderId = $self->{"jobId"} . "-" . $orders[0]{"reference_subjektu"};
+		my $orderId = $orders[0]{"reference_subjektu"};
 		$self->{"orderId"} = $orderId;
-		$self->{"orderInfoIS"} = HegMethods->GetAllByOrderId($orderId);
+		$self->{"orderInfoIS"} = {HegMethods->GetAllByOrderId($orderId)};
 	}
 
 	$self->{"nifFile"} = NifFile->new( $self->{"jobId"} );
@@ -121,7 +121,7 @@ sub GetOrderTerm {
 
 		my $pattern = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S', );
 
-		$dateTerm = $pattern->parse_datetime( $self->{"orderInfoIS"}->{"termin"} ) > dmy('.');    # order term
+		$dateTerm = $pattern->parse_datetime( $self->{"orderInfoIS"}->{"termin"} )->dmy('.');    # order term
 
 	}
 
@@ -198,11 +198,11 @@ sub GetPanelSize {
 #
 #}
 #
-#sub GetPcbType {
-#	my $self = shift;
-#
-#	return $self->{"pcbType"};
-#}
+sub GetPcbType {
+	my $self = shift;
+
+	return $self->{"pcbType"};
+}
 #
 #sub GetPlatedNC {
 #	my $self = shift;
@@ -288,7 +288,7 @@ sub GetExistStiff {
 	return $exist;
 
 }
-
+ 
 sub GetSteelPlateInfo {
 	my $self = shift;
 
@@ -297,6 +297,28 @@ sub GetSteelPlateInfo {
 	$inf->{"ISRef"} = undef;
 	$inf->{"text"}  = "Sttel plate";
 	$inf->{"thick"} = 1000;            # 1000µm
+
+	return $inf;
+}
+
+sub GetAluPlateInfo {
+	my $self = shift;
+
+	my $inf = {};
+
+	$inf->{"ISRef"} = "0401000021";
+	$inf->{"text"}  = "ALU entry  boards A18,";
+	$inf->{"thick"} = 200;            # 1000µm
+
+	return $inf;
+}
+
+
+sub GetPressPad01FGKInfo {
+	my $self = shift;
+
+	my $isId = "0318000010";
+	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
 }
@@ -364,66 +386,7 @@ sub GetFilmPacoplus4500Info {
 	return $inf;
 }
 
-sub GetPressProgramInfo {
-	my $self    = shift;
-	my $lamType = shift;
 
-	my ( $w, $h ) = $self->GetPanelSize();
-
-	my %pInfo = ( "name" => undef, "dimX" => undef, "dimY" => undef );
-
-	if ( $self->{"isFlex"} ) {
-
-		# 1) Program name
-
-		if ( $lamType eq Enums->LamType_STIFFPRODUCT ) {
-
-			$pInfo{"name"} = "Stiffener_";
-
-		}
-		elsif ( $lamType eq Enums->LamType_CVRLBASE ) {
-
-			$pInfo{"name"} = "RigidFlex_";
-
-		}
-		elsif ( $lamType eq Enums->LamType_CVRLPRODUCT ) {
-
-			$pInfo{"name"} = "ORigidFLex_coverlay_";
-
-		}
-		elsif ( $lamType eq Enums->LamType_PRPGBASE ) {
-
-			$pInfo{"name"} = "ORigidFLex_coverlay_";
-
-		}
-		elsif ( $lamType eq Enums->LamType_FLEXPRPGBASE ) {
-
-			$pInfo{"name"} = "RigidFlex_";
-
-		}
-		elsif ( $lamType eq Enums->LamType_MULTIBASE ) {
-
-		}
-		elsif ( $lamType eq Enums->LamType_MULTIPRODUCT ) {
-
-		}
-
-		# 2) Program dim
-
-		if ( $h < 410 ) {
-
-			$pInfo{"dimX"} = "400";
-			$pInfo{"dimY"} = "400";
-		}
-		else {
-
-			$pInfo{"dimX"} = $w;
-			$pInfo{"dimY"} = $h;
-		}
-	}
-
-	return %pInfo;
-}
 
 sub __GetPresspadInfo {
 	my $self   = shift;
@@ -497,11 +460,11 @@ sub __GetPresspadInfo {
 #
 #}
 #
-#sub GetIsFlex {
-#	my $self = shift;
-#
-#	return $self->{"isFlex"};
-#}
+sub GetIsFlex {
+	my $self = shift;
+
+	return $self->{"isFlex"};
+}
 #
 #
 #

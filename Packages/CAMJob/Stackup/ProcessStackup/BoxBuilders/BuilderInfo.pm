@@ -15,6 +15,7 @@ use warnings;
 use Time::localtime;
 use Storable qw(dclone);
 use List::Util qw(first);
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Enums::EnumsGeneral';
@@ -53,8 +54,8 @@ sub Build {
 	# 1) Define columns
 	my $clmnWidth = ( $boxXEndPos - $tbl->GetOrigin()->{"x"} ) - 2 * EnumsStyle->ClmnWidth_margin;
 	$tbl->AddColDef( "leftMargin",  EnumsStyle->ClmnWidth_margin );
-	$tbl->AddColDef( "leftCol",     $clmnWidth / 2 );
-	$tbl->AddColDef( "rightCol",    $clmnWidth / 2 );
+	$tbl->AddColDef( "leftCol",     $clmnWidth * 2 / 5 );
+	$tbl->AddColDef( "rightCol",    $clmnWidth * 3 / 5 );
 	$tbl->AddColDef( "rightMargin", EnumsStyle->ClmnWidth_margin );
 
 	# 2) Define styles
@@ -71,13 +72,13 @@ sub Build {
 										TblDrawEnums->Font_NORMAL, undef,
 										TblDrawEnums->TextHAlign_LEFT,
 										TblDrawEnums->TextVAlign_CENTER, 1 );
-										
-		my $txtRCollBStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-										EnumsStyle->TxtSize_NORMAL,
-										Color->new( 0, 0, 0 ),
-										TblDrawEnums->Font_BOLD, undef,
-										TblDrawEnums->TextHAlign_LEFT,
-										TblDrawEnums->TextVAlign_CENTER, 1 );									
+
+	my $txtRCollBStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+										 EnumsStyle->TxtSize_NORMAL,
+										 Color->new( 0, 0, 0 ),
+										 TblDrawEnums->Font_BOLD, undef,
+										 TblDrawEnums->TextHAlign_LEFT,
+										 TblDrawEnums->TextVAlign_CENTER, 1 );
 	my $txtTitStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 									  EnumsStyle->TxtSize_NORMAL,
 									  Color->new( 0, 0, 0 ),
@@ -89,21 +90,23 @@ sub Build {
 	$borderTitleStyle->AddEdgeStyle( "top", TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
 	$borderTitleStyle->AddEdgeStyle( "bot", TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
 
-
 	$self->__BuildOperInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $borderTitleStyle );
 
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
+	$self->__BuildPaketInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $txtRCollBStyle, $borderTitleStyle );
+
+	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+
+	$self->__BuildLamInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $txtRCollBStyle, $borderTitleStyle );
+
+	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+
 	$self->__BuildMatInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $borderTitleStyle );
-
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
-	$self->__BuildPaketInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle,$txtRCollBStyle, $borderTitleStyle );
-
-	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
-
-
-	$self->__BuildLamInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $borderTitleStyle );
+	$self->__BuildNoteInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $borderTitleStyle );
+	
 
 	# Add special row "extender" which stretch table to bottom edge of page
 	if ( $tbl->GetOrigin()->{"y"} + $tbl->GetHeight() < $boxYEndPos ) {
@@ -164,7 +167,7 @@ sub __BuildPaketInfo {
 	my $txtTitStyle      = shift;
 	my $txtLCollStyle    = shift;
 	my $txtRCollStyle    = shift;
-	my $txtRCollBStyle    = shift;
+	my $txtRCollBStyle   = shift;
 	my $borderTitleStyle = shift;
 
 	my $tbl       = $self->{"table"};
@@ -195,9 +198,7 @@ sub __BuildPaketInfo {
 	my $paketThickStr = sprintf( "%.2fmm", $paketThick / 1000 );
 	$paketThickStr =~ s/\./,/g;
 
-	 
-
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Včetne podložek:", $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Vč. podložek:", $txtLCollStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $paketThickStr,    $txtRCollBStyle );
 
 	# Amount per press paket
@@ -218,8 +219,8 @@ sub __BuildPaketInfo {
 	$amountStr =~ s/\./,/g;
 	my $rowAmount = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Počet na plotnu:", $txtLCollStyle );
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $amountStr,         $txtRCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Poč./plotnu:", $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $amountStr,      $txtRCollStyle );
 
 }
 
@@ -255,7 +256,8 @@ sub __BuildOperInfo {
 		if ( $curLam->GetLamOrder() eq $lam->GetLamOrder() ) {
 
 			$txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-										EnumsStyle->TxtSize_BIG, Color->new( 0, 0, 0 ),
+										EnumsStyle->TxtSize_NORMAL,
+										Color->new( 0, 0, 0 ),
 										TblDrawEnums->Font_BOLD, undef,
 										TblDrawEnums->TextHAlign_LEFT,
 										TblDrawEnums->TextVAlign_CENTER, 1 );
@@ -265,13 +267,22 @@ sub __BuildOperInfo {
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, $textStr, $txtStyle );
 	}
 
-	# 2) Define semi product, created bz pressing
+	# 2) Define operation order
 
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
+	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
+	my $strOrder = ( $lam->GetLamOrder() + 1 ) . "/" . scalar(@allLam);
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Lisování:", $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $strOrder,     $txtRCollStyle );
+
+	# 3) Define semi product, created bz pressing
+
+	#$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+
 	my $rowProduc = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Výsled. polotovar:",         $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Polotovar:",         $txtLCollStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $lam->GetProductId(), $txtRCollStyle );
 
 }
@@ -281,6 +292,7 @@ sub __BuildLamInfo {
 	my $txtTitStyle      = shift;
 	my $txtLCollStyle    = shift;
 	my $txtRCollStyle    = shift;
+	my $txtRCollBStyle   = shift;
 	my $borderTitleStyle = shift;
 
 	my $tbl       = $self->{"table"};
@@ -296,14 +308,14 @@ sub __BuildLamInfo {
 
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
-	my %pInfo = $stckpMngr->GetPressProgramInfo( $lam->GetLamType() );
+	my %pInfo = $stckpMngr->GetPressProgramInfo( $lam->GetLamType(), $lam->GetLamData() );
 
 	# Program name
 	if ( defined $pInfo{"name"} ) {
 		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
-		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Název:",      $txtLCollStyle );
-		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $pInfo{"name"}, $txtRCollStyle );
+		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, $pInfo{"name"}, $txtRCollBStyle );
+
 	}
 
 	# Program dimension
@@ -314,6 +326,48 @@ sub __BuildLamInfo {
 		my $dimStr = int( $pInfo{"dimX"} ) . " x " . int( $pInfo{"dimY"} ) . "mm";
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Rozměry:", $txtLCollStyle );
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $dimStr,     $txtRCollStyle );
+	}
+}
+
+sub __BuildNoteInfo {
+	my $self             = shift;
+	my $txtTitStyle      = shift;
+	my $txtLCollStyle    = shift;
+	my $txtRCollStyle    = shift;
+	my $borderTitleStyle = shift;
+
+	my $tbl       = $self->{"table"};
+	my $stckpMngr = $self->{"stackupMngr"};
+	my $lam       = $self->{"lamination"};
+
+	# 1) Define title cell
+
+	#my $BACKtmp = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new("255, 100, 50") );
+	my $BACKtmp = undef;
+	my $rowTit = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_TITLE, $BACKtmp, $borderTitleStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, "POZNÁMKA TPV", $txtTitStyle );
+
+	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+
+	# Put note about noflow prepreg
+	my @noflow = map { $_->GetValExtraId() } grep { $_->GetItemType() eq Enums->ItemType_MATFLEXPREPREG } $lam->GetItems();
+	if ( scalar(uniq(@noflow)) > 1 ) {
+		
+		$tbl->AddRowDef( $tbl->GetRowCnt(), 5*EnumsStyle->RowHeight_STD );
+	 
+
+		my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_PARAGRAPH,
+									   EnumsStyle->TxtSize_NORMAL,
+									   Color->new( 0, 0, 0 ),
+									   TblDrawEnums->Font_NORMAL, undef,
+									   TblDrawEnums->TextHAlign_LEFT,
+									   TblDrawEnums->TextVAlign_CENTER, 1 );
+
+		my $str = "Pozor na správný výběr NoFlow prepregů dle složení ";
+		$str .=
+		  "(ID: " . join( " vs ",   @noflow ) . ")";
+
+		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() -1, 2, undef, $str, $txtStyle );
 	}
 
 }

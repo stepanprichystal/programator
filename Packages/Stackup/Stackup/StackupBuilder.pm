@@ -196,6 +196,7 @@ sub __AddCoverlayLayers {
 		  defined( first { $_->{"gROWname"} eq "coverlaypins" } @{ $self->{"boardBaseLayers"} } )
 		  ? Enums->Coverlay_SELECTIVE
 		  : Enums->Coverlay_FULL;
+		$layerInfo->{"copperName"} = $sigL;
 		$layerInfo->{"id"}  = $id;
 		$layerInfo->{"qId"} = $qId;
 

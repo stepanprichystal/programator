@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------------------#
-# Description:
-
+# Description: Create single TableDrawing for every lamination
+# Each teble drawing is possinle to output with arbotrary  IDrawingBuilder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Stackup::ProcessStackup::ProcessStackup;
@@ -16,21 +16,9 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::StackupMngr::StackupMngr2V';
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::StackupMngr::StackupMngrVV';
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::ProcessStackupLam';
-
-#use aliased 'Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::MngrRigidFlex';
-#use aliased 'Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::MngrVV';
-#use aliased 'Packages::CAMJob::Stackup::CustStackup::BuilderMngrs::Mngr2V';
-#use aliased 'Packages::Other::TableDrawing::TableDrawing';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::GeometryHelper';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsDrawBldr';
-
-#use aliased 'Packages::CAMJob::Stackup::CustStackup::Section::SectionMngr';
-#use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
-#use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
-#use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
-#use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
-#use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -53,39 +41,40 @@ sub new {
 	return $self;
 }
 
+# Return laout cont for specific PCB
 sub LamintaionCnt {
-	my $self = shift;
+	my $self    = shift;
+	my $lamType = shift;    # Build only specific lam types
 
 	my $cnt = 0;
 
-	if ( defined $self->{"stackupMngr"} ) {
+	my @allLam = $self->{"stackupMngr"}->GetAllLamination($lamType);
 
-		$cnt = scalar( $self->{"stackupMngr"}->GetAllLamination() );
-	}
 
-	return $cnt;
 
+	return scalar(@allLam);
 }
 
-# Return number of lamination
+# Prepare table drawing for each laminations
 sub Build {
-	my $self = shift;
-	my $pageWidth = shift // 210;    # A4 width mm
+	my $self       = shift;
+	my $pageWidth  = shift // 210;    # A4 width mm
 	my $pageHeight = shift // 290;    # A4 height mm
+	my $lamType    = shift;           # Build only specific lam types
 
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my @allLam = $self->{"stackupMngr"}->GetAllLamination();
+	my @allLam = $self->{"stackupMngr"}->GetAllLamination($lamType);
 
 	# 1) Choose stackup manager
 	foreach my $lam (@allLam) {
 
 		my $processLam = ProcessStackupLam->new( $inCAM, $jobId, $lam, $self->{"stackupMngr"} );
 
-		$processLam->Build($pageWidth, $pageHeight);
+		$processLam->Build( $pageWidth, $pageHeight );
 
 		push( @{ $self->{"processStackupLam"} }, $processLam );
 
@@ -106,7 +95,6 @@ sub Output {
 
 	die "IDrawers count (" . scalar( @{$IDrawers} ) . ") isn not equal to lamination count (" . scalar(@stackupLam) . ")"
 	  if ( scalar( @{$IDrawers} ) != scalar(@stackupLam) );
-	  
 
 	for ( my $i = 0 ; $i < scalar(@stackupLam) ; $i++ ) {
 

@@ -71,8 +71,6 @@ sub Build {
 
 	$self->__BuildStckpBody();
 
- 
-
 }
 
 sub __BuildStckpTitle {
@@ -82,11 +80,10 @@ sub __BuildStckpTitle {
 
 	# Define border style for all tables
 	my $borderStyle = BorderStyle->new();
-	$borderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
-	
+	$borderStyle->AddEdgeStyle( "left", TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
+
 	my $borderRowStyle = BorderStyle->new();
-	$borderRowStyle->AddEdgeStyle( "bot",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
- 
+	$borderRowStyle->AddEdgeStyle( "bot", TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
 
 	# 2) Define ROWS
 	#my $BACKtmp = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new("255, 100, 50") );
@@ -204,6 +201,13 @@ sub __DrawItem {
 		$self->{"builderHelper"}->DrawSteelPlate($row);
 	}
 
+	if ( $itemType eq Enums->ItemType_PADALU ) {
+
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
+										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
+	}
+
 	if ( $itemType eq Enums->ItemType_PADPAPER ) {
 
 		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
@@ -218,14 +222,17 @@ sub __DrawItem {
 										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 
-	if ( $itemType eq Enums->ItemType_PADFILM ) {
+	if ( $itemType eq Enums->ItemType_PADRELEASE ) {
 
 		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
 		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
 										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 
-	if ( $itemType eq Enums->ItemType_PADFILMSHINE ) {
+	if (    $itemType eq Enums->ItemType_PADFILM
+		 || $itemType eq Enums->ItemType_PADFILMGLOSS
+		 || $itemType eq Enums->ItemType_PADFILMMATT )
+	{
 
 		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
 		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
@@ -241,22 +248,49 @@ sub __DrawItem {
 												$txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 
-	if ( $itemType eq Enums->ItemType_MATADHESIVE ) {
+	if ( $itemType eq Enums->ItemType_MATCOVERLAY ) {
+
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		$self->{"builderHelper"}->DrawMatCvrl( $row,          $itemValType,   $itemValExtraId, $itemValKind,     $itemValText,
+											   $itemValThick, $txtStckpStyle, $txtStdStyle,    $txtStdBoldStyle, $borderStyle );
+	}
+
+	if ( $itemType eq Enums->ItemType_MATCVRLADHESIVE || $itemType eq Enums->ItemType_MATSTIFFADHESIVE ) {
 
 		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
 		$self->{"builderHelper"}->DrawMatAdhesive( $row,           $itemValType, $itemValKind,     $itemValText, $itemValThick,
 												   $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 
-	if ( $itemType eq Enums->ItemType_MATPRODUCT ) {
+	if ( $itemType eq Enums->ItemType_MATPRODUCTDPS || $itemType eq Enums->ItemType_MATPRODUCTCORE ) {
 
 		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
 		$self->{"builderHelper"}->DrawMatProduct( $row,          $itemValType,   $itemValExtraId, $itemValKind,     $itemValText,
 												  $itemValThick, $txtStckpStyle, $txtStdStyle,    $txtStdBoldStyle, $borderStyle );
 	}
 
+	if ( $itemType eq Enums->ItemType_MATCORE || $itemType eq Enums->ItemType_MATFLEXCORE ) {
+
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		$self->{"builderHelper"}->DrawMatCore( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValKind, $itemValText,
+											   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
+	}
+
+	if ( $itemType eq Enums->ItemType_MATCUFOIL || $itemType eq Enums->ItemType_MATCUCORE ) {
+
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		$self->{"builderHelper"}->DrawMatCu( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValKind, $itemValText,
+											 $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
+	}
+
+	if ( $itemType eq Enums->ItemType_MATFLEXPREPREG || $itemType eq Enums->ItemType_MATPREPREG ) {
+
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		$self->{"builderHelper"}->DrawMatPrpg( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValKind, $itemValText,
+											   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
+	}
+
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
