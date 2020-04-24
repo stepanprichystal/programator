@@ -7,7 +7,6 @@
 package Packages::ProductionPanel::PanelDimension;
 
 use aliased 'Enums::EnumsProducPanel';
-use aliased 'Packages::ProductionPanel::PanelDimension';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamJob';
 

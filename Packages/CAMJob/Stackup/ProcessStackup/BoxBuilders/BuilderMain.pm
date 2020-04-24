@@ -164,7 +164,9 @@ sub __BuildStckpBody {
 						   ( !defined $botItem ? dclone($borderStyle) : undef ) );
 
 		if ( defined $botItem ) {
+			
 			$self->__DrawItem( $botItem, dclone($txtStckpStyle), dclone($txtStdStyle), dclone($txtStdBoldStyle), dclone($borderStyle) );
+			
 		}
 
 		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATGAP );

@@ -21,8 +21,6 @@ use aliased 'Packages::CAMJob::Stackup::ProcessStackup::BoxBuilders::BuilderMain
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::BoxBuilders::BuilderMatList';
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::BoxBuilders::BuilderInfo';
 use aliased 'Packages::Other::TableDrawing::TableDrawing';
-use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
-
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::EnumsStyle';
 use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';

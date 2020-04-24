@@ -51,8 +51,8 @@ sub Build {
 	my $prpgBotExist = $pLayers[-1]->GetType() eq StackEnums->ProductL_MATERIAL
 	  && $pLayers[-1]->GetData()->GetType() eq StackEnums->MaterialType_PREPREG ? 1 : 0;
 
-#	my $cvrlTopExist = $prpgTopExist && $pLayers[0]->GetIsNoFlow() && $pLayers[0]->GetIsCoverlayIncl() ? 1 : 0;
-#	my $cvrlBotExist = $prpgTopExist && $pLayers[-1]->GetIsNoFlow() && $pLayers[-1]->GetIsCoverlayIncl() ? 1 : 0;
+	#	my $cvrlTopExist = $prpgTopExist && $pLayers[0]->GetIsNoFlow() && $pLayers[0]->GetIsCoverlayIncl() ? 1 : 0;
+	#	my $cvrlBotExist = $prpgTopExist && $pLayers[-1]->GetIsNoFlow() && $pLayers[-1]->GetIsCoverlayIncl() ? 1 : 0;
 
 	# $stckpMngr->GetExistCvrl( "top", $cvrlTopInfo );
 	#my $cvrlBotInfo  = {};
@@ -88,7 +88,7 @@ sub Build {
 				 && $pLayer->GetData()->GetIsCoverlayIncl() )
 			{
 
-					$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pLayer->GetCoverlay() );
+				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pLayer->GetData()->GetCoverlay() );
 
 			}
 
@@ -96,10 +96,11 @@ sub Build {
 		}
 		elsif ( $pLayer->GetType() eq StackEnums->ProductL_PRODUCT ) {
 
-			foreach my $pChildL ( $pLayer->GetData()->GetLayers() ) {
+			my @layers = map { $_->GetData() } $pLayer->GetData()->GetLayers();
 
-				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pChildL->GetData() );
-			}
+			my $coreL = first { $_->GetType() eq StackEnums->MaterialType_CORE } @layers;
+
+			$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $coreL );
 		}
 	}
 
@@ -122,7 +123,6 @@ sub Build {
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );
 
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

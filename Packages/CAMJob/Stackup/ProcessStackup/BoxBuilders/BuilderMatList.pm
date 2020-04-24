@@ -133,7 +133,6 @@ sub __BuildMatListBody {
 									  undef, undef,
 									  TblDrawEnums->TextHAlign_LEFT,
 									  TblDrawEnums->TextVAlign_CENTER, 0.5 );
-									  
 
 	my $borderStyle = BorderStyle->new();
 	$borderStyle->AddEdgeStyle( "bot", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_BOXBORDERLIGHT ) );
@@ -165,7 +164,6 @@ sub __BuildMatListBody {
 		  && $_->GetItemType() ne Enums->ItemType_MATPRODUCTCORE
 		  && $_->GetItemType() ne Enums->ItemType_PADFILMGLOSS
 		  && $_->GetItemType() ne Enums->ItemType_PADFILMMATT
-		  
 
 	} @items;
 
@@ -193,12 +191,15 @@ sub __BuildMatListBody {
 
 		# Mat Kind
 		my $kindStr = $item->GetValKind();
+		$kindStr = "" if ( !defined $kindStr );    # draw border
 		$kindStr =~ s/\s*//g;
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matKind") ),
 					   $tbl->GetRowDefPos($row),
 					   undef, undef, $kindStr, $txtStdStyle, undef, $borderStyle );
 
 		# Mat Text
+		my $valStr = $item->GetValText();
+		$valStr = "" if ( !defined $valStr );      # draw border
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matName") ),
 					   $tbl->GetRowDefPos($row),
 					   undef, undef, substr( $item->GetValText(), 0, 28 ),
@@ -211,7 +212,6 @@ sub __BuildMatListBody {
 					   undef, undef, $cnt . "x", $txtStdStyle, undef, $borderStyle );
 
 	}
-
 }
 
 #-------------------------------------------------------------------------------------------#

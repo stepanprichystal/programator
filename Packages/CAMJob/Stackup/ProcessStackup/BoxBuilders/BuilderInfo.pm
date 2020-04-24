@@ -210,7 +210,8 @@ sub __BuildPaketInfo {
 	my @outerPads = $lam->GetOuterPresspads();      # outer pads (top/bot), which are outer of inner steel plates
 	if ( scalar(@outerPads) ) {
 
-		my $padsT += $_->GetValThick() foreach @outerPads;
+		my $padsT = 0;
+		$padsT+= $_->GetValThick() foreach @outerPads;
 		$availableH -= $padsT;
 	}
 

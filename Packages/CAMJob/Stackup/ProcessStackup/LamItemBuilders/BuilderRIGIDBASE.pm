@@ -58,13 +58,12 @@ sub Build {
 		}
 		elsif ( $pLayer->GetType() eq StackEnums->ProductL_PRODUCT ) {
 
-			foreach my $pChildL ( $pLayer->GetData()->GetLayers() ) {
+			my @layers = map { $_->GetData() } $pLayer->GetData()->GetLayers();
 
-				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pChildL->GetData() );
-			}
+			my $coreL = first { $_->GetType() eq StackEnums->MaterialType_CORE } @layers;
 
+			$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $coreL );
 		}
-
 	}
 
 	# LAYER: Bot release film

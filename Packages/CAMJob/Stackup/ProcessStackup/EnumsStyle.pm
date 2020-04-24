@@ -22,12 +22,11 @@ use constant {
 	Clr_ADHESIVE  => "189, 215, 238",
 	Clr_STIFFENER => "174, 170, 170",
 
-	Clr_PADPAPER     => "82, 186, 255",
-	Clr_PADRUBBER    => "255, 79, 140",
-	Clr_PADFILM      => "82, 255, 149",
-	Clr_PADFILMSHINE => "184, 255, 212",
-	Clr_PADALU       => "113, 113, 113",
-	Clr_PADSTEEL     => "94, 94, 94",
+	Clr_PADPAPER     => "136, 207, 254",
+	Clr_PADRUBBER    => "255, 113, 162",
+	Clr_PADFILM      => "136, 254, 164",
+	Clr_PADALU       => "160, 160, 160",
+	Clr_PADSTEEL     => "160, 160, 160",
 
 };
 
@@ -77,9 +76,9 @@ use constant {
 
 	BoxMainRowHeight_TITLE       => 6,
 	BoxMainRowHeight_TITLEGAP    => 5,
-	BoxMainRowHeight_MATGAP      => 1,
+	BoxMainRowHeight_MATGAP      => 1.2,
 	BoxMainRowHeight_MATROW      => 6,
-	BoxMainRowHeight_STEELPADROW => 3,
+	BoxMainRowHeight_STEELPADROW => 2,
 
 };
 

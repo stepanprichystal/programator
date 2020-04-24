@@ -12,7 +12,6 @@ use warnings;
 #loading of locale modules
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';

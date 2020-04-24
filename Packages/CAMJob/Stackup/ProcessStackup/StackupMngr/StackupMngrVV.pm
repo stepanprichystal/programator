@@ -38,7 +38,7 @@ sub new {
 }
 
 sub GetAllLamination {
-	my $self = shift;
+	my $self    = shift;
 	my $lamType = shift;
 
 	my $stackup = $self->{"stackup"};
@@ -52,6 +52,16 @@ sub GetAllLamination {
 	my $lamOrder = 0;
 
 	# Process input product laminations
+
+	# Sordt input products by "core type". Rigid frist, tahn flex
+ 
+	my @rigid        = grep { $_->GetCoreRigidType() eq StackEnums->CoreType_RIGID } @inputProduct;
+	my @flex         = grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } @inputProduct;
+
+	@inputProduct = ();
+	push( @inputProduct, @rigid ) if ( scalar(@rigid) );
+	push( @inputProduct, @flex )  if ( scalar(@flex) );
+
 	foreach my $inputP (@inputProduct) {
 
 		my @matLayers = $inputP->GetLayers( StackEnums->ProductL_MATERIAL );
@@ -70,7 +80,7 @@ sub GetAllLamination {
 				$lamType = Enums->LamType_FLEXBASE;
 			}
 
-			my $lam = StackupLam->new( $lamOrder, $lamType, "P" . $inputP->GetId(), $inputP );
+			my $lam = StackupLam->new( $lamOrder, $lamType, "J" . $inputP->GetId(), $inputP );
 			push( @lamintaions, $lam );
 
 			$lamOrder++;
@@ -109,8 +119,8 @@ sub GetAllLamination {
 
 		}
 	}
-	
-		# Filter laminations by type
+
+	# Filter laminations by type
 	if ( defined $lamType ) {
 		@lamintaions = grep { $_->GetLamType() eq $lamType } @lamintaions;
 	}
@@ -225,9 +235,8 @@ sub GetPressProgramInfo {
 		my @mats = sort { $b->{"tg"} <=> $a->{"tg"} } @mats;
 		my $matKind = uc( $mats[0]->{"kind"} );
 		$matKind =~ s/\s//g;
-		$pInfo{"name"} = $matKind ;
+		$pInfo{"name"} = $matKind;
 	}
-	 
 
 	# 2) Program dim
 
@@ -241,9 +250,9 @@ sub GetPressProgramInfo {
 		$pInfo{"dimX"} = $w;
 		$pInfo{"dimY"} = $h;
 	}
-	
-	die "Press program name was found for lamination type: $lamType" unless(defined $pInfo{"name"});
-	 
+
+	die "Press program name was found for lamination type: $lamType" unless ( defined $pInfo{"name"} );
+
 	$pInfo{"name"} .= "_<poč. pater>";
 
 	return %pInfo;

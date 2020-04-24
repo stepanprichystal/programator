@@ -186,7 +186,7 @@ sub DrawMatProduct {
 	my $matExtraId      = shift;
 	my $matKind         = shift // "";
 	my $matText         = shift // "";
-	my $matThick        = shift // "";
+	my $matThick        = shift // 0;
 	my $txtStckpStyle   = shift;
 	my $txtStdStyle     = shift;
 	my $txtStdBoldStyle = shift;
@@ -366,7 +366,7 @@ sub DrawMatCu {
 	my $matExtraId      = shift;
 	my $matKind         = shift // "";
 	my $matText         = shift // "";
-	my $matThick        = shift // "";
+	my $matThick        = shift // 0;
 	my $txtStckpStyle   = shift;
 	my $txtStdStyle     = shift;
 	my $txtStdBoldStyle = shift;
@@ -446,7 +446,7 @@ sub DrawPad {
 	elsif ( $itemType eq Enums->ItemType_PADRUBBER ) {
 
 		$clr = EnumsStyle->Clr_PADRUBBER;
-		$clrText = "255, 255, 255";
+		$clrText = "0, 0, 0";
 
 	}
 	elsif ( $itemType eq Enums->ItemType_PADFILMGLOSS ||  $itemType eq Enums->ItemType_PADFILMMATT ) {
@@ -464,7 +464,7 @@ sub DrawPad {
 	elsif ( $itemType eq Enums->ItemType_PADALU ) {
 
 		$clr = EnumsStyle->Clr_PADALU;
-		$clrText = "255, 255, 255";
+		$clrText = "0, 0, 0";
 
 	}
 	elsif ( $itemType eq Enums->ItemType_PADSTEEL ) {
@@ -494,6 +494,7 @@ sub DrawPad {
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matKind") ), $tab->GetRowDefPos($row), undef, undef, undef, undef, undef, $borderStyle );
 
 	# Mat Text
+	$padText = $padText//"";
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
 				   undef, undef, substr( $padText, 0, 28 ), $txtStdBoldStyle, undef, $borderStyle );

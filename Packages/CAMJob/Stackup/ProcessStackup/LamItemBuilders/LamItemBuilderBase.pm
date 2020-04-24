@@ -33,6 +33,9 @@ sub new {
 	return $self;
 }
 
+
+ 
+
 # Build stackup product layer for Multilayer PCB
 sub _ProcessStckpProduct {
 	my $self      = shift;
@@ -46,7 +49,7 @@ sub _ProcessStckpProduct {
 	if ( $IProduct->GetProductType() eq StackEnums->Product_INPUT ) {
 
 		$itemType = Enums->ItemType_MATPRODUCTCORE;
-		$itemId   = "P" . $IProduct->GetId();
+		$itemId   = "J" . $IProduct->GetId();
 
 	}
 	elsif ( $IProduct->GetProductType() eq StackEnums->Product_PRESS ) {
@@ -56,9 +59,7 @@ sub _ProcessStckpProduct {
 	}
 
 	# LAYER: product
-	my $curProducNum = ( $lam->GetProductId() =~ /^P(\d+)$/i )[0];
-	my $product = ( $curProducNum - 1 ) < 1 ? "" : "P" . ( $curProducNum - 1 );
-
+	 
 	my $item = $lam->AddItem( $itemId, $itemType, EnumsStyle->GetItemTitle($itemType), $itemId, undef, undef, $IProduct->GetThick() );
 
 	$lam->AddChildItem( $item, "top", $itemId . "productTop", Enums->$itemType, "TOP", undef, undef, undef, undef );
@@ -145,8 +146,8 @@ sub _ProcessStckpMatLayer {
 								  $stckpLayer->GetText(),
 								  $stckpLayer->GetThick() );
 
-		$lam->AddChildItem( $item, $layerISRef, Enums->ItemType_MATCUCORE, $topCuLayer->GetCopperName(), undef, undef, undef, undef );
-		$lam->AddChildItem( $item, $layerISRef, Enums->ItemType_MATCUCORE, $botCuLayer->GetCopperName(), undef, undef, undef, undef );
+		$lam->AddChildItem( $item, "top", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $topCuLayer->GetCopperName(), undef, undef, undef, undef );
+		$lam->AddChildItem( $item, "bot", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $botCuLayer->GetCopperName(), undef, undef, undef, undef );
 
 	}
 	elsif ( $stckpLayer->GetType() eq StackEnums->MaterialType_COVERLAY ) {

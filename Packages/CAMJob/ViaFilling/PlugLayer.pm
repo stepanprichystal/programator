@@ -181,7 +181,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#use Data::Dump qw(dump);
 
 	use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
-	use aliased 'CamHelpers::CamDrilling';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();

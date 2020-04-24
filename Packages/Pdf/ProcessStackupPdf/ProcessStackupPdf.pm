@@ -157,10 +157,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
 	#my $jobId = "d270787";    #Outer RigidFLex BOT
 
-	#my $jobId    = "d261919"; # standard vv 10V
+	my $jobId    = "d261919"; # standard vv 10V
 	#my $jobId = "d274753"; # standard vv 8V
 	#my $jobId = "d274986";    # standard vv 4V
-	my $jobId = "d266566"; # inner flex
+	#my $jobId = "d266566"; # inner flex
 	#my $jobId = "d146753"; # 1v flex
 	#my $jobId = "d267628" ; # flex 2v + stiff
 	#my $jobId = "d064915"; # neplat

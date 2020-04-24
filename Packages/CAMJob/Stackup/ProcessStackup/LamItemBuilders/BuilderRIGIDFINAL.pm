@@ -68,11 +68,16 @@ sub Build {
 			if ( $IProduct->GetProductType() eq StackEnums->Product_INPUT && !@matL ) {
 
 				# Process core (there should be only one core, else INPUT would be press )
+				my @layers =map{$_->GetData()}( $IProduct->GetChildProducts() )[0]->GetData()->GetLayers();
+				my $coreL = first { $_->GetType() eq StackEnums->MaterialType_CORE } @layers;
 
-				foreach my $pChildL ( ( $IProduct->GetChildProducts() )[0]->GetData()->GetLayers() ) {
-
-					$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pChildL->GetData() );
-				}
+				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $coreL );
+				
+				
+#				foreach my $pChildL (  ) {
+#
+#					$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pChildL->GetData() );
+#				}
 
 			}
 			else{
