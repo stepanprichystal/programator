@@ -3,8 +3,8 @@
 # Description: Coated upper embedded builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded;
-use base('Programs::Coupon::CpnGenerator::ModelBuilders::ModelBuilderBase');
+package Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded2T;
+use base('Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded');
 
 use Class::Interface;
 &implements('Programs::Coupon::CpnGenerator::ModelBuilders::IModelBuilder');
@@ -26,7 +26,6 @@ use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer';
 use aliased 'Programs::Coupon::Helper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::GNDViaShieldingLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -46,86 +45,41 @@ sub Build {
 	my $cpnSingleLayout = shift;
 	my $layersLayout    = shift;
 
-	my $inCAM = $self->{"inCAM"};
+		my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# translate InStack layer name to InCAM layer name
+	# 1) Build Coated microstrip
+	$self->SUPER::Build( $layout, $cpnSingleLayout, $layersLayout );
 
-	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+	# 2) Buil special behaviour
 
 	# Info from constrain XML
 	my $trackL = $layout->GetTrackLayer();
-	my $emptyL = $layout->GetTopRefLayer();
 	my $gndL   = $layout->GetBotRefLayer();
 
-	# Build coupon layers
+	my $layerCnt = scalar( grep { $_ =~ /[csv]\d*/i } keys %{$layersLayout} );
 
 	# process: mc
-	if ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ) {
+	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == 2 ) {
+		$self->_AddLayer( TrackMaskLayer->new("mc") );
 
-		$self->_AddLayer( MaskLayer->new("mc") );
-		$self->_AddLayer( PadTextMaskLayer->new("mc") );
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ) {
+
+			if ( $trackL eq "c" ) {
+				$self->_AddLayer( TrackMaskLayer->new("mc") );
+			}
+		}
 	}
-
-	# process: c
-	$self->_AddLayer( PadTextLayer->new("c") );
-	$self->_AddLayer( TrackClearanceLayer->new("c") );
-	$self->_AddLayer( PadLayer->new("c") );
-
-	for ( my $i = 0 ; $i < scalar( $layerCnt - 2 ) ; $i++ ) {
-
-		my $inLayer = "v" . ( $i + 2 );
-
-		if ( $trackL eq $inLayer ) {
-
-			$self->_AddLayer( PadTextLayer->new($inLayer) );
-			$self->_AddLayer( TrackLayer->new($inLayer) );
-		}
-		elsif ( $gndL eq $inLayer ) {
-
-			$self->_AddLayer( GNDLayer->new($inLayer) );
-		}
-		else {
-
-			$self->_AddLayer( TrackClearanceLayer->new($inLayer) );
-			$self->_AddLayer( PadNegLayer->new($inLayer) );
-		}
-
-	}
-
-	# process: s
-	$self->_AddLayer( PadTextLayer->new("s") );
-	$self->_AddLayer( TrackClearanceLayer->new("s") );
-	$self->_AddLayer( PadLayer->new("s") );
 
 	# process: ms
-	if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {
+	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == $layerCnt - 1 ) {
+		$self->_AddLayer( TrackMaskLayer->new("ms") );
 
-		$self->_AddLayer( MaskLayer->new("ms") );
-		$self->_AddLayer( PadTextMaskLayer->new("ms") );
-	}
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {
 
-	# process: m
-	$self->_AddLayer( PthDrillLayer->new("m") );
-
-	# Process coplanar via hole (drill hole + annular ring)
-	if ( $layout->GetCoplanar() ) {
-
-		my $shieldingGNDVia = $cpnSingleLayout->GetShieldingGNDViaLayout();
-		if ( defined $shieldingGNDVia ) {
-
-			# Drill hole
-			if ( $shieldingGNDVia->GetFilledGNDVia() ) {
-				$self->_AddLayer( GNDViaShieldingLayer->new("mfill") );
+			if ( $trackL eq "s" ) {
+				$self->_AddLayer( TrackMaskLayer->new("ms") );
 			}
-			else {
-				$self->_AddLayer( GNDViaShieldingLayer->new("m") );
-			}
-
-			# Anunular ring
-			$self->_AddLayer( GNDViaShieldingLayer->new("c") );
-			$self->_AddLayer( GNDViaShieldingLayer->new("s") );
-
 		}
 	}
 

@@ -293,10 +293,10 @@ sub AddImagePreview {
 
 			my $title = undef;
 			if ( $self->{"lang"} eq "cz" ) {
-				$title = "Dodání";
+				$title = "Finální produkt";
 			}
 			else {
-				$title = "Shipping units";
+				$title = "Final product";
 			}
 
 			my @details = grep { $_->{"type"} eq 'nested' } @{ $self->{"steps"} };

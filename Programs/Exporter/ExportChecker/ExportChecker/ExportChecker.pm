@@ -99,7 +99,7 @@ sub new {
 sub Init {
 	my $self     = shift;
 	my $launcher = shift;    # contain InCAM library conencted to server
-
+ 
 	# 1) Get InCAm from Launcher
 
 	$self->{"launcher"} = $launcher;
@@ -147,21 +147,28 @@ sub Init {
 
 	#set handlers for main app form
 	$self->__SetHandlers();
+ 
 
 }
 
 sub Run {
 	my $self = shift;
-	$self->{"form"}->{"mainFrm"}->Show(1);
 
-	#	# When all succesinit, close waiting form
-	#	if ( $self->{"loadingFrmPid"} ) {
-	#		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
-	#	}
 
-	#Helper->ShowAbstractQueueWindow(0,"Loading Exporter Checker");
+		$self->{"form"}->{"mainFrm"}->Show(1);
 
-	$self->{"form"}->MainLoop();
+		#	# When all succesinit, close waiting form
+		#	if ( $self->{"loadingFrmPid"} ) {
+		#		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
+		#	}
+
+		#Helper->ShowAbstractQueueWindow(0,"Loading Exporter Checker");
+
+		$self->{"form"}->MainLoop();
+
+
+	
+	
 
 }
 
@@ -476,7 +483,7 @@ sub __RefreshForm {
 	# Set export buttons
 	my %groupsState = $self->{"units"}->GetGroupState();
 
-	if ($groupsState{Enums->GroupState_ACTIVEON} == 0) {
+	if ( $groupsState{ Enums->GroupState_ACTIVEON } == 0 ) {
 		$self->{"form"}->DisableExportBtn(1);
 	}
 	else {

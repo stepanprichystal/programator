@@ -259,8 +259,17 @@ sub GetSignalLSett {
 	my $plt  = shift;    # Is layer plated
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+	
+	# EnumsGeneral->Etching_PATTERN
+	# EnumsGeneral->Etching_TENTING
+	my $etchType = shift;
 
-	return $self->{"layerSettings"}->GetSignalLSett( $l, $plt );
+	# EnumsGeneral->Technology_GALVANICS
+	# EnumsGeneral->Technology_RESIST
+	my $technology = shift;
+	
+
+	return $self->{"layerSettings"}->GetSignalLSett( $l, $plt, $etchType, $technology );
 }
 
 # Set polarity, mirro, compensation for board layers

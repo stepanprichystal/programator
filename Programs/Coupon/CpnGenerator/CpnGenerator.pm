@@ -29,7 +29,10 @@ use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline2T';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline2B';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded2T';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded2T';
+
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
@@ -393,7 +396,11 @@ sub __GenerateSingle {
 
 			  case EnumsImp->Model_COATED_UPPER_EMBEDDED { $modelBuilder = CoatedUpperEmbedded->new() }
 
+			  case EnumsImp->Model_COATED_UPPER_EMBEDDED_2T { $modelBuilder = CoatedUpperEmbedded2T->new() }		  
+			  
 			  case EnumsImp->Model_UNCOATED_UPPER_EMBEDDED { $modelBuilder = UncoatedUpperEmbedded->new() }
+			  
+			  case EnumsImp->Model_UNCOATED_UPPER_EMBEDDED_2T { $modelBuilder = UncoatedUpperEmbedded2T->new() }
 
 			  else { die "Microstirp model: " . $stripLayout->GetModel() . " is not implemented"; }
 		}

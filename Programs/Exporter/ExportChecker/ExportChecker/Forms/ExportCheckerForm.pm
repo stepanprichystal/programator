@@ -135,6 +135,7 @@ sub OnInit {
 	return 1;
 }
 
+
 # Return group builder, which is responsible for building
 # groups gui and adding groups to form
 sub GetGroupBuilder {
