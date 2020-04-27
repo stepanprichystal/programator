@@ -21,6 +21,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
+use aliased 'Packages::Pdf::ProcessStackupPdf::ProcessStackupPdf';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
 use aliased 'Packages::Pdf::DrillMapPdf::DrillMapPdf';
 use aliased 'Packages::Pdf::NCSpecialPdf::NCSpecialPdf';
@@ -68,6 +69,11 @@ sub Run {
 
 	if ( $self->{"exportStackup"} ) {
 		$self->__ExportStackup();
+		
+		if(CamJob->GetSignalLayerCnt($self->{"inCAM"},$self->{"jobId"} ) > 2){
+			$self->__ExportStackupOld();
+		}
+		
 	}
 
 	if ( $self->{"exportPressfit"} ) {
@@ -153,14 +159,13 @@ sub __ExportDataControl {
 			}
 		}
 
-		if(copy( $outputPdf, $archivePath )){
+		if ( copy( $outputPdf, $archivePath ) ) {
 			unlink($outputPdf);
 		}
- 
+
 		$self->_OnItemResult($resultFinal);
 	}
 
- 
 }
 
 sub __OnExportControl {
@@ -179,11 +184,58 @@ sub __ExportStackup {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	my $resultStackup = $self->_GetNewItem("Production stackup pdf");
+	my $stackup = ProcessStackupPdf->new( $inCAM, $jobId );
+
+	if ( $stackup->GetLaminationExist() ) {
+
+		#my $lamType = ProcStckpEnums->LamType_CVRLPRODUCT;
+		my $lamType = undef;
+		my $resultCreate = $stackup->Create( undef, undef, undef, $lamType );
+
+		unless ($resultCreate) {
+			$resultStackup->AddError("Failed to create pdf stackup");
+		}
+	}
+	else {
+
+		die "No lamination exists in job";
+	}
+
+	my $tmpPath = $stackup->GetOutputPath();
+	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf";
+
+	# create folder
+	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
+		mkdir( JobHelper->GetJobArchive($jobId) . "pdf" );
+	}
+	if ( -e $pdfPath ) {
+		unless ( unlink($pdfPath) ) {
+			die "Can not delete old pdf stackup file (" . $pdfPath . "). Maybe file is still open.\n";
+		}
+	}
+
+	unless ( copy( $tmpPath, $pdfPath ) ) {
+
+		$resultStackup->AddError( "Can not delete old pdf stackup file (" . $pdfPath . "). Maybe file is still open.\n" );
+
+	}
+
+	$self->_OnItemResult($resultStackup);
+
+}
+
+sub __ExportStackupOld {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	my $stackup = StackupPdf->new( $inCAM, $self->{"jobId"} );
 	my $resultCreate = $stackup->Create( 1, 1, 1 );
 
 	my $tmpPath = $stackup->GetStackupPath();
-	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf";
+	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm_old.pdf";
 
 	# create folder
 	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
@@ -198,7 +250,7 @@ sub __ExportStackup {
 
 	copy( $tmpPath, $pdfPath ) or die "Copy failed: $!";
 
-	my $resultStackup = $self->_GetNewItem("Stackup pdf");
+	my $resultStackup = $self->_GetNewItem("Stackup pdf OLD");
 
 	unless ($resultCreate) {
 		$resultStackup->AddError("Failed to create pdf stackup");

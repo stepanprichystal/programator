@@ -119,6 +119,7 @@ sub AddCell {
 	my $textStyle   = shift;
 	my $backgStyle  = shift;
 	my $borderStyle = shift;
+ 
 
 	#die "End col ($endCol) must be greater than star col ($startCol)" if ( $endCol < $startCol );
 	#die "End row ($endRow) must be greater than star row ($startRow)" if ( $endRow < $startRow );
@@ -131,14 +132,20 @@ sub AddCell {
 
 	}
 
-	die "Start row index ($startRow) is grater than row count (" . ( $self->GetRowCnt() ) . ")"
-	  if ( $startRow + 1 > $self->GetRowCnt() );
+	if ( $startRow + 1 > $self->GetRowCnt() ) {
+		die "Start row index ($startRow) is grater than row count (" . ( $self->GetRowCnt() ) . ")";
+	}
+
 	die "End row index (" . $startRow + $rowCnt . ") is grater than row count (" . ( $self->GetRowCnt() ) . ")"
 	  if ( $startRow + $rowCnt > $self->GetRowCnt() );
 
-	die "Text style must be defined if text is set (cell: [$startCol, $startRow]" if ( defined $text && !defined $textStyle );
+	if ( defined $text && !defined $textStyle ) {
+		die "Text style must be defined if text is set (cell: [$startCol, $startRow]";
+	}
 
-	die "Text style object type is wrong" if ( defined $textStyle && !$textStyle->isa("Packages::Other::TableDrawing::Table::Style::TextStyle") );
+	if ( defined $textStyle && !$textStyle->isa("Packages::Other::TableDrawing::Table::Style::TextStyle") ) {
+		die "Text style object type is wrong";
+	}
 
 	die "Backg style object type is wrong" if ( defined $backgStyle && !$backgStyle->isa("Packages::Other::TableDrawing::Table::Style::BackgStyle") );
 

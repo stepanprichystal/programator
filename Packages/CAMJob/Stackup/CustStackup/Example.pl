@@ -55,7 +55,7 @@ my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [$canvasX,
  
 # Gemerate output
 
-$newCustStckp->Output($drawBuilder);
+$newCustStckp->Output($drawBuilder, 0 ,0);
 
 
 

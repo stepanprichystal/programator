@@ -173,16 +173,13 @@ sub __SetLayoutStackup {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Stackup' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Production stackup' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
 
 	# DEFINE CONTROLS
 
 	my $exportStackupChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
-	if ( $self->{"layerCnt"} <= 2 ) {
 
-		$exportStackupChb->Disable();
-	}
 
 	# SET EVENTS
 

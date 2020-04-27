@@ -42,6 +42,9 @@ sub new {
 	CamDrilling->AddNCLayerType( \@NCLayers );
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
 
+	# filter only NC which go through signal layers
+	@NCLayers = grep { defined $_->{"NCSigStart"} } @NCLayers;
+
 	$self->{"boardBaseLayers"} = \@boardBase;
 	$self->{"NCLayers"}        = \@NCLayers;
 
@@ -65,7 +68,6 @@ sub BuildStackupLamination {
 	die "Signal layer cnt in matrix ($sigLMatrixCnt) didn't match witch signal layer cnt in stackup file ($sigLStckpCnt)"
 	  if ( $sigLMatrixCnt != $sigLStckpCnt );
 
- 
 	my $NCCheck = 1;
 	my $mess    = "";
 	$NCCheck = 0 if ( !LayerErrorInfo->CheckWrongNames( $self->{"NCLayers"}, \$mess ) );
@@ -196,8 +198,9 @@ sub __AddCoverlayLayers {
 		  defined( first { $_->{"gROWname"} eq "coverlaypins" } @{ $self->{"boardBaseLayers"} } )
 		  ? Enums->Coverlay_SELECTIVE
 		  : Enums->Coverlay_FULL;
-		$layerInfo->{"id"}  = $id;
-		$layerInfo->{"qId"} = $qId;
+		$layerInfo->{"copperName"} = $sigL;
+		$layerInfo->{"id"}         = $id;
+		$layerInfo->{"qId"}        = $qId;
 
 		my $idx = first_index { $_->GetType() eq Enums->MaterialType_COPPER && $_->GetCopperName() eq $sigL }
 		@{ $self->{"stackup"}->{"layers"} };
@@ -241,7 +244,7 @@ sub __AddCoverlayLayers {
 				if (
 					 !(
 						   $self->{"stackup"}->{"layers"}->[$prprgIdx]->GetType() eq Enums->MaterialType_PREPREG
-						&& $self->{"stackup"}->{"layers"}->[$prprgIdx]->GetIsNoFlow() 
+						&& $self->{"stackup"}->{"layers"}->[$prprgIdx]->GetIsNoFlow()
 					 )
 				  )
 				{
@@ -698,8 +701,8 @@ sub __IdentifyFlexCoreProduct {
 
 			if (
 				 defined $P1Top
-				 && (    $P1Top->{"l"}->GetType() ne Enums->MaterialType_PREPREG
-					  || !$P1Top->{"l"}->GetIsNoFlow())
+				 && ( $P1Top->{"l"}->GetType() ne Enums->MaterialType_PREPREG
+					  || !$P1Top->{"l"}->GetIsNoFlow() )
 				 && $P1Top->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
 			  )
 			{
@@ -707,8 +710,8 @@ sub __IdentifyFlexCoreProduct {
 			}
 			if (
 				 defined $P1Bot
-				 && (    $P1Bot->{"l"}->GetType() ne Enums->MaterialType_PREPREG
-					  || $P1Bot->{"l"}->GetNoFlowType() ne Enums->NoFlowPrepreg_P1 )
+				 && ( $P1Bot->{"l"}->GetType() ne Enums->MaterialType_PREPREG
+					  || !$P1Top->{"l"}->GetIsNoFlow() )
 				 && $P1Bot->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
 			  )
 			{

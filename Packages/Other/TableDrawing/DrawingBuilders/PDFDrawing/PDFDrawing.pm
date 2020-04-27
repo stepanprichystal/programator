@@ -18,7 +18,7 @@ use PDF::API2;
 
 #local library
 use aliased 'Packages::Other::TableDrawing::Enums' => 'EnumsDraw';
-
+use aliased 'Helpers::GeneralHelper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -32,18 +32,14 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"units"}        = shift;
+	$self->{"units"} = shift;
 
-	$self->{"outputPath"}   = shift;        # Set if new PDF shoudl be created
-	$self->{"existPdfPath"} = shift;        # Set if update existing PDF
-	
-	$self->{"mediaSize"}    = shift;        # Set onl if new PDF page
-	$self->{"margin"}       = shift // 0;
-	$self->{"rotate"}       = shift; # 90/180/270
-	
-	
-	
-	
+	$self->{"outputPath"}   = shift;    # Set if new PDF shoudl be created
+	$self->{"existPdfPath"} = shift;    # Set if update existing PDF
+
+	$self->{"mediaSize"} = shift;       # Set onl if new PDF page
+	$self->{"margin"}    = shift // 0;
+	$self->{"rotate"}    = shift;       # 90/180/270
 
 	$self->{"coord"} = EnumsDraw->CoordSystem_LEFTBOT;
 
@@ -123,18 +119,19 @@ sub Init {
 	}
 
 	# Init some fonts
+	my $pResources = GeneralHelper->Root() . "\\Packages\\Other\\TableDrawing\\DrawingBuilders\\PDFDrawing\\Resources\\";
 
 	$self->{"fonts"} = {
-						 EnumsDraw->FontFamily_ARIAL => {
-														  EnumsDraw->Font_BOLD   => $self->{"pdf"}->corefont( 'Arial-Bold',   -encoding => 'latin1' ),
-														  EnumsDraw->Font_NORMAL => $self->{"pdf"}->corefont( 'Arial',        -encoding => 'latin1' ),
-														  EnumsDraw->Font_ITALIC => $self->{"pdf"}->corefont( 'Arial-Italic', -encoding => 'latin1' ),
-						 },
-						 EnumsDraw->FontFamily_TIMES => {
-														  EnumsDraw->Font_BOLD   => $self->{"pdf"}->corefont( 'Times-Bold',   -encoding => 'latin1' ),
-														  EnumsDraw->Font_NORMAL => $self->{"pdf"}->corefont( 'Times',        -encoding => 'latin1' ),
-														  EnumsDraw->Font_ITALIC => $self->{"pdf"}->corefont( 'Times-Italic', -encoding => 'latin1' ),
-						 },
+		EnumsDraw->FontFamily_ARIAL => {
+			EnumsDraw->Font_BOLD => $self->{"pdf"}->ttfont( $pResources . "arial_bold.ttf" ),
+			EnumsDraw->Font_NORMAL => $self->{"pdf"}->ttfont( $pResources . "arial.ttf" ),
+			EnumsDraw->Font_ITALIC => $self->{"pdf"}->corefont( 'Arial-Italic', -encoding => 'latin1' ),
+		},
+		EnumsDraw->FontFamily_TIMES => {
+										 EnumsDraw->Font_BOLD   => $self->{"pdf"}->corefont( 'Times-Bold',   -encoding => 'latin1' ),
+										 EnumsDraw->Font_NORMAL => $self->{"pdf"}->corefont( 'Times',        -encoding => 'latin1' ),
+										 EnumsDraw->Font_ITALIC => $self->{"pdf"}->corefont( 'Times-Italic', -encoding => 'latin1' ),
+		},
 	};
 
 	#$self->{"page"}->bleedbox( $self->{"mediaSize"}->[0] / $self->{"unitConv"}, $self->{"mediaSize"}->[1] / $self->{"unitConv"} );
@@ -327,6 +324,11 @@ sub DrawTextParagraph {
 
 	# Compute vertical aligment
 	$y = $boxStartY;
+	
+	# Adjust box width (cut box, bz longest word in text)
+	# Because last word on the end of line is put to this line even if whole match to box width
+	my $wordLen = length((sort{length($b) <=> length($a)}split(/\s/, $text))[0]);
+	$boxW -= $wordLen*$size ;
 
 	$txt->textstart;
 
@@ -341,17 +343,18 @@ sub DrawTextParagraph {
 sub Finish {
 	my $self = shift;
 
-	if($self->{"rotate"}){
-		
-		$self->{"page"}->rotate($self->{"rotate"});
+	if ( $self->{"rotate"} ) {
+
+		$self->{"page"}->rotate( $self->{"rotate"} );
 	}
 
-	if($self->{"existPdfPath"}){
+	if ( $self->{"existPdfPath"} ) {
 		$self->{"pdf"}->update();
-	}else{
+	}
+	else {
 		$self->{"pdf"}->save();
 	}
-	
+
 }
 
 #-------------------------------------------------------------------------------------------#

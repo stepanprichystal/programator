@@ -23,12 +23,33 @@ sub RenderTables {
 	my $tablesLim   = shift;
 	my $scaleX      = shift // 1;
 	my $scaleY      = shift // 1;
-	my $originX     = shift // 0;
-	my $originY     = shift // 0;
+	my $offsetX     = shift // 0; # not scaled
+	my $offsetY     = shift // 0; # not scaled
 
 	$drawBuilder->Init();
 
 	foreach my $table ( @{$tables} ) {
+		
+		my $originX = $offsetX;
+		my $originY = $offsetY;
+
+		# Consider table offset
+		my $o = $table->GetOrigin();
+		$originX += $o->{"x"} * $scaleX;
+
+		if ( $drawBuilder->GetCoordSystem() eq Enums->CoordSystem_LEFTTOP ) {
+
+			# X axis reise to right, Y axis raise to bottom
+
+			$originY += $o->{"y"} * $scaleY;
+		}
+		elsif ( $drawBuilder->GetCoordSystem() eq Enums->CoordSystem_LEFTBOT ) {
+
+			# X axis reise to right, Y axis raise to top
+
+			$originY -= $o->{"y"} * $scaleY;
+
+		}
 
 		$self->__RenderTable( $table, $drawBuilder, $tablesLim, $scaleX, $scaleY, $originX, $originY );
 
@@ -84,10 +105,10 @@ sub __RenderBorderTable {
 
 		my %tabLim = ();
 
-		$tabLim{"xMin"} = $table->GetOrigin()->{"x"};
-		$tabLim{"xMax"} = $table->GetOrigin()->{"x"} + $table->GetWidth();
-		$tabLim{"yMin"} = $table->GetOrigin()->{"y"};
-		$tabLim{"yMax"} = $table->GetOrigin()->{"y"} + $table->GetHeight();
+		$tabLim{"xMin"} =0;
+		$tabLim{"xMax"} = $table->GetWidth();
+		$tabLim{"yMin"} = 0;
+		$tabLim{"yMax"} =  $table->GetHeight();
 
 		$self->__DrawBorder( $drawBuilder, $table->GetBorderStyle(), \%tabLim, $tblsLim, $scaleX, $scaleY, $originX, $originY );
 	}
@@ -160,7 +181,7 @@ sub __RenderBorderCell {
 		if ( $cell->GetBorderStyle() ) {
 			$self->__DrawBorder( $drawBuilder, $cell->GetBorderStyle(), \%cellLim, $tblsLim, $scaleX, $scaleY, $originX, $originY );
 		}
- 
+
 	}
 
 }
@@ -403,31 +424,31 @@ sub __DrawBorder {
 
 		if ( $edgeKey eq "top" ) {
 
-			$xStrkS = $coord{"LB"}->{"x"};
-			$xStrkE = $coord{"RB"}->{"x"};
-			$yStrkS = $coord{"LB"}->{"y"};
-			$yStrkE = $coord{"LB"}->{"y"};
+			$xStrkS = $coord{"LT"}->{"x"};
+			$xStrkE = $coord{"RT"}->{"x"};
+			$yStrkS = $coord{"LT"}->{"y"};
+			$yStrkE = $coord{"RT"}->{"y"};
 		}
 		elsif ( $edgeKey eq "bot" ) {
 
 			$xStrkS = $coord{"LB"}->{"x"};
 			$xStrkE = $coord{"RB"}->{"x"};
-			$yStrkS = $coord{"LT"}->{"y"};
-			$yStrkE = $coord{"LT"}->{"y"};
+			$yStrkS = $coord{"LB"}->{"y"};
+			$yStrkE = $coord{"RB"}->{"y"};
 		}
 		elsif ( $edgeKey eq "left" ) {
 
 			$xStrkS = $coord{"LB"}->{"x"};
-			$xStrkE = $coord{"LB"}->{"x"};
+			$xStrkE = $coord{"LT"}->{"x"};
 			$yStrkS = $coord{"LB"}->{"y"};
 			$yStrkE = $coord{"LT"}->{"y"};
 		}
 		elsif ( $edgeKey eq "right" ) {
 
 			$xStrkS = $coord{"RB"}->{"x"};
-			$xStrkE = $coord{"RB"}->{"x"};
-			$yStrkS = $coord{"LB"}->{"y"};
-			$yStrkE = $coord{"LT"}->{"y"};
+			$xStrkE = $coord{"RT"}->{"x"};
+			$yStrkS = $coord{"RB"}->{"y"};
+			$yStrkE = $coord{"RT"}->{"y"};
 		}
 
 		if ( $edges{$edgeKey}->GetStyle() eq Enums->EdgeStyle_SOLIDSTROKE ) {

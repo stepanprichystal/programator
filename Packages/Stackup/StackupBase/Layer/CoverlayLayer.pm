@@ -31,7 +31,17 @@ sub new {
 	#only if materialType is copper
 	$self->{"method"} = undef;
 
+	# Coper layer name whci coverlay cover
+	$self->{"copperName"} = undef;
+
 	return $self;
+}
+
+# Coper layer name whci coverlay cover
+sub GetCoveredCopperName {
+	my $self = shift;
+
+	return $self->{"copperName"};
 }
 
 # Thickness of adhesive in µm
