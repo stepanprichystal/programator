@@ -237,7 +237,9 @@ if ($okoli == 5) {
 			$fid_schema = 'cust_applied_okoli_5';
 	} elsif ($znacky eq "TOROLA") {
 		    $fid_schema = 'cust_torola_5';
-	} elsif ($znacky eq "WENDEL") {
+	}elsif ($znacky eq "TRANSCON") {
+		    $fid_schema = 'cust_transcon_5';
+	}elsif ($znacky eq "WENDEL") {
 			$fid_schema = 'cust_wendel_5';
 	}elsif ($znacky eq "ELMATICA") {
 			$fid_schema = 'cust_elmatica_5-fid-1mm_hole3mm';	
@@ -275,6 +277,8 @@ elsif ($okoli == 10) {
 			$fid_schema = 'cust_applied_okoli_10';
 	} elsif ($znacky eq "TOROLA") {
 			$fid_schema = 'cust_torola_10';
+	}elsif ($znacky eq "TRANSCON") {
+		    $fid_schema = 'cust_transcon_10';
 	} elsif ($znacky eq "BETACONTROL_10mm") {
 			$fid_schema = 'cust_betacontrol_okoli_10mm';
 	} elsif ($znacky eq "SMT_10mm_12mm") {
@@ -297,7 +301,7 @@ elsif ($okoli == 10) {
 			$fid_schema = 'cust_safiral_10';
 	} elsif ($znacky eq "SAFIRAL") {
 			$fid_schema = 'cust_safiral_10';
-	} elsif ($znacky eq "WBELECTRONICS") {
+	} elsif ($znacky eq "WBELECTRONICS_10") {
 			$fid_schema = 'cust_wb_10';
 	} else {
 		$fid_schema = 0;
@@ -317,6 +321,8 @@ elsif ($okoli == 7) {
 			$fid_schema = 'cust_applied_okoli_7';
 	} elsif ($znacky eq "TOROLA") {
 			$fid_schema = 'cust_torola_7';
+	}elsif ($znacky eq "TRANSCON") {
+		    $fid_schema = 'cust_transcon_7';
 	}elsif ($znacky eq "ELMATICA") {
 			$fid_schema = 'cust_elmatica_7-fid-1mm_hole3mm';
 			die "Okoli pro ramecek 5mm cust_elmatica_5-fid-1mm_hole3mm neni nadefinovano.";		
@@ -462,7 +468,7 @@ unless ($znacky eq 'ATM' or $znacky eq 'RACOM') {
 ##########################################################################################################
 sub fill_znacky {
     $construct_znacky->delete(0,'end');
-    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA ELMATICA_bez_otvoru PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL WBELECTRONICS); 
+    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA ELMATICA_bez_otvoru PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA TRANSCON BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL WBELECTRONICS_10); 
     foreach my $className (sort @customerList) {
         $construct_znacky->insert('end',"$className");
     }
