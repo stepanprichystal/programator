@@ -48,9 +48,12 @@ sub LamintaionCnt {
 
 	my $cnt = 0;
 
-	my @allLam = $self->{"stackupMngr"}->GetAllLamination($lamType);
+	my @allLam = ();
 
-
+	if ( defined $self->{"stackupMngr"} ) {
+		
+		$self->{"stackupMngr"}->GetAllLamination($lamType);
+	}
 
 	return scalar(@allLam);
 }
@@ -58,9 +61,9 @@ sub LamintaionCnt {
 # Prepare table drawing for each laminations
 sub Build {
 	my $self       = shift;
-	my $pageWidth  = shift // 210;    # A4 width mm
-	my $pageHeight = shift // 290;    # A4 height mm
-	my $lamType    = shift;           # Build only specific lam types
+	my $pageWidth  = shift // 210;                             # A4 width mm
+	my $pageHeight = shift // 290;                             # A4 height mm
+	my $lamType    = shift;                                    # Build only specific lam types
 
 	my $result = 1;
 
@@ -142,6 +145,10 @@ sub __Init {
 
 		$self->{"stackupMngr"} = StackupMngrVV->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
+	}
+	else {
+
+		$self->{"stackupMngr"} = undef;
 	}
 
 }

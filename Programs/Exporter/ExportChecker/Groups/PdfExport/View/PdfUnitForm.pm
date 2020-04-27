@@ -17,6 +17,7 @@ use Wx;
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
+use aliased 'Enums::EnumsGeneral';
 
 #use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -110,10 +111,10 @@ sub __SetLayoutControl {
 	# DEFINE CONTROLS
 	my $exportControlChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
 
-	my $stepTxt     = Wx::StaticText->new( $statBox, -1, "Step",          &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $langTxt     = Wx::StaticText->new( $statBox, -1, "Language",      &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $stepTxt       = Wx::StaticText->new( $statBox, -1, "Step",              &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $langTxt       = Wx::StaticText->new( $statBox, -1, "Language",          &Wx::wxDefaultPosition, [ 120, 20 ] );
 	my $inclNestedTxt = Wx::StaticText->new( $statBox, -1, "Incl nested steps", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $operatorTxt = Wx::StaticText->new( $statBox, -1, "Operator info", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $operatorTxt   = Wx::StaticText->new( $statBox, -1, "Operator info",     &Wx::wxDefaultPosition, [ 120, 20 ] );
 
 	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
 	my $last = $steps[ scalar(@steps) - 1 ];
@@ -130,7 +131,7 @@ sub __SetLayoutControl {
 	# SET EVENTS
 
 	Wx::Event::EVT_CHECKBOX( $exportControlChb, -1, sub { $self->__OnExportControlChange(@_) } );
-	Wx::Event::EVT_COMBOBOX( $stepCb,    -1, sub { $self->__OnControlStepChange(@_) } );
+	Wx::Event::EVT_COMBOBOX( $stepCb, -1, sub { $self->__OnControlStepChange(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -144,10 +145,9 @@ sub __SetLayoutControl {
 
 	$szRowDetail4->Add( $inclNestedTxt, 0, &Wx::wxALL, 0 );
 	$szRowDetail4->Add( $inclNestedChb, 0, &Wx::wxALL, 0 );
-	
+
 	$szRowDetail5->Add( $operatorTxt, 0, &Wx::wxALL, 0 );
-	$szRowDetail5->Add( $operatorChb,  0, &Wx::wxALL, 0 );
-	
+	$szRowDetail5->Add( $operatorChb, 0, &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRowDetail1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
@@ -180,6 +180,17 @@ sub __SetLayoutStackup {
 
 	my $exportStackupChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
 
+	my $pcbType = $self->{"defaultInfo"}->GetPcbType();
+
+	# 1) Choose stackup manager
+
+	if (    $pcbType eq EnumsGeneral->PcbType_1V
+		 || $pcbType eq EnumsGeneral->PcbType_2V
+		 || $pcbType eq EnumsGeneral->PcbType_NOCOPPER )
+	{
+
+		$exportStackupChb->Disable();
+	}
 
 	# SET EVENTS
 
@@ -267,7 +278,7 @@ sub __OnExportControlChange {
 
 sub __OnControlStepChange {
 	my $self = shift;
-	
+
 	my $inclNested = 0;
 
 	if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepCb"}->GetValue() ) ) {
