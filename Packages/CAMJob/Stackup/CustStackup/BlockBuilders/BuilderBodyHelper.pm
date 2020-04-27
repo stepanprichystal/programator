@@ -187,6 +187,14 @@ sub AddPlatedDrilling {
 
 	return 0 unless ( $secMngr->GetSection( Enums->Sec_A_MAIN )->GetIsActive() );
 
+	# Do not add Drill, when PCB is not plated
+	my $type = $stckpMngr->GetPcbType();
+
+	return 0
+	  if (    $type eq EnumsGeneral->PcbType_NOCOPPER
+		   || $type eq EnumsGeneral->PcbType_1V
+		   || $type eq EnumsGeneral->PcbType_1VFLEX );
+
 	my $txtStandardStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 										   EnumsStyle->TxtSize_STANDARD,
 										   Color->new( 255, 255, 255 ),

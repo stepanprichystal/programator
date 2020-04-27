@@ -107,8 +107,10 @@ sub _Output {
 	# 3) conver each pdf page to image
 	$self->__CreatePng( $dirPath, $DPI, \%resolution );
 
+
 	# 4) merge all images together
 	$self->__MergePng($dirPath);
+ 
 
 	# 5) delete temporary png and directory
 	foreach my $l (@layers) {
@@ -332,15 +334,18 @@ sub __CreatePng {
 
 		push( @cmds1, " -density $DPI" );
 		push( @cmds1, $dirPath . $l->GetOutputLayer() . ".pdf -flatten" );
-		push( @cmds1, "-shave 20x20 -trim -shave 5x5" );                     # shave two borders around image
-		push( @cmds1, "-resize " . $resolution->{"x"} );
+
+		push( @cmds1, "-shave 10x10 -trim -shave 5x5" );                     # shave two borders around image
+		#push( @cmds1, "-shave 20x20 -trim" );              # shave two borders around image
+		# !ignore aspect ratio, It is necessary in order to acheive same resolution as is copmputed
+		push( @cmds1, "-resize " . $resolution->{"x"}."x".$resolution->{"y"}."!" ); 
 
 		push( @cmds1, " ) " );
 
 		# command from white do transparent and copy alpha channel
 		push( @cmds1, "-background black -alpha copy -type truecolormatte -alpha copy -channel A -negate" );
 
-		my $cmds1str = join( " ", @cmds1 );                                  # finnal comand cmd1
+		my $cmds1str = join( " ", @cmds1 );                # finnal comand cmd1
 
 		# 2) ============================================================================================
 		# Cmd2 - based on surface type TEXTURE/COLOR take texture image or create colored canvas

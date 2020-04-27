@@ -68,7 +68,7 @@ sub BuildSections {
 
 	my $sec_D_FLEXTAIL = $sectionMngr->GetSection( Enums->Sec_D_FLEXTAIL );
 	$sec_D_FLEXTAIL->SetIsActive(0);
-	
+
 	my $sec_E_STIFFENER = $sectionMngr->GetSection( Enums->Sec_E_STIFFENER );
 	if ( $stackupMngr->GetExistStiff("top") || $stackupMngr->GetExistStiff("bot") ) {
 		$sec_E_STIFFENER->SetIsActive(1);
@@ -85,7 +85,7 @@ sub BuildSections {
 	# 3) Create columns
 
 	$self->_CreateSectionClmns($sectionMngr);
-	
+
 	return 1;
 
 }
@@ -111,10 +111,15 @@ sub BuildBlocks {
 	$self->_AddBlock( BuilderThick->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"}, $stackupMngr, $sectionMngr ) );
 
 	# Add total thickness of stackup
-	if ( scalar( $stackupMngr->GetPlatedNC() ) ) {
+
+	my $pcbType = $stackupMngr->GetPcbType();
+	if (    $pcbType ne EnumsGeneral->PcbType_NOCOPPER
+		 && $pcbType ne EnumsGeneral->PcbType_1V
+		 && $pcbType ne EnumsGeneral->PcbType_1VFLEX )
+	{
 		$self->_AddBlock( BuilderDrill->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"}, $stackupMngr, $sectionMngr ) );
 	}
-	
+
 	return 1;
 
 }
