@@ -52,7 +52,7 @@ sub LamintaionCnt {
 
 	if ( defined $self->{"stackupMngr"} ) {
 		
-		$self->{"stackupMngr"}->GetAllLamination($lamType);
+		@allLam = $self->{"stackupMngr"}->GetAllLamination($lamType);
 	}
 
 	return scalar(@allLam);
