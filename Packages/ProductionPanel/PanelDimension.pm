@@ -169,7 +169,7 @@ sub GetPanelTypeByActiveArea {
 	}
 
 	foreach my $name (@nameOfPanel) {
-		my %dimsPanelHash = PanelDimension->GetDimensionPanel( $inCAM, $name );
+		my %dimsPanelHash = $self->GetDimensionPanel( $inCAM, $name );
 
 		if (     _CompareTolerance( $dimsPanelHash{'PanelSizeX'}, ( $areaW + $dimsPanelHash{'BorderLeft'} + $dimsPanelHash{'BorderRight'} ) ) == 1
 			 and _CompareTolerance( $dimsPanelHash{'PanelSizeY'}, ( $areaH + $dimsPanelHash{'BorderTop'} + $dimsPanelHash{'BorderBot'} ) ) == 1 )
