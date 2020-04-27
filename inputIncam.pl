@@ -1361,7 +1361,7 @@ sub __GetOrigStep {
 		my $origStep = shift;
 		my $editStep = undef;
 		
-			if ( $origStep eq "o" || $origStep eq "input" || $origStep eq "pcb") {
+			if ( $origStep eq "o" || $origStep eq "input" || $origStep eq "pcb" || $origStep eq "pcbdata") {
 							$editStep = 'o+1';
 			}
 	return($editStep);
