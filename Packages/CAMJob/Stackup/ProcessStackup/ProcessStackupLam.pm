@@ -181,7 +181,7 @@ sub __BuildBoxes {
 	my $infoTbl = $self->{"tblDrawing"}->AddTable( "Info", \%oInfo, $borderStyle );
 	$infoTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
 	my $builderInfo = BuilderInfo->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $infoTbl );
-	$builderInfo->Build( $boxXEndPos, $boxYEndPos );
+	$builderInfo->Build( $boxXEndPos, $matListTbl->GetOrigin()->{"y"} +  $matListTbl->GetHeight());
 
 	# BOX Footer
 	my %oFooter = %oMatList;

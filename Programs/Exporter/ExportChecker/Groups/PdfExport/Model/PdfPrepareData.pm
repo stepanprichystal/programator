@@ -19,6 +19,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
+use aliased 'Packages::Pdf::ProcessStackupPdf::ProcessStackupPdf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -65,18 +66,16 @@ sub OnPrepareGroupData {
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
-	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	my $defaultInfo  = $dataMngr->GetDefaultInfo();
 	my $customerNote = $defaultInfo->GetCustomerNote();
 
 	# 1) Export control
-	my $exportControl = 1;
+	my $exportControl     = 1;
 	my $custExportControl = $customerNote->ExportPdfControl();
 
-	if ( $defaultInfo->IsPool() || (defined $custExportControl &&  $custExportControl == 0 )) {
+	if ( $defaultInfo->IsPool() || ( defined $custExportControl && $custExportControl == 0 ) ) {
 		$exportControl = 0;
 	}
- 
-	
 
 	# 2) define default step
 	my $defStep = undef;
@@ -87,20 +86,20 @@ sub OnPrepareGroupData {
 	else {
 		$defStep = "o+1";
 	}
-	
+
 	# x) default include nested steps preview
- 
-	 my $inclNested = 0;
+
+	my $inclNested = 0;
 
 	if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $defStep ) ) {
- 
-		if(scalar(CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $defStep ))>= 1){
+
+		if ( scalar( CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $defStep ) ) >= 1 ) {
 			$inclNested = 1;
 		}
 	}
-	
+
 	$groupData->SetControlInclNested($inclNested);
-	 
+
 	# 3) default lang
 	my $defLang = "English";
 
@@ -114,7 +113,7 @@ sub OnPrepareGroupData {
 	# 4) default info to pdf
 	my $defInfoToPdf = 1;
 
-	if ($customerNote->NoInfoToPdf()) {
+	if ( $customerNote->NoInfoToPdf() ) {
 
 		$defInfoToPdf = 0;
 	}
@@ -122,35 +121,36 @@ sub OnPrepareGroupData {
 	# 5) default stackup export
 	my $defStackup = 0;
 
-	if ( $defaultInfo->GetLayerCnt() > 2 ) {
+	my $procStackup = ProcessStackupPdf->new( $inCAM, $jobId );
+
+	if ( $procStackup->GetLaminationExist() ) {
 
 		$defStackup = 1;
 	}
-	
+
 	# 6) default pressfit export
 	my $defPressfit = 0;
 
-	if ( $defaultInfo->GetPressfitExist() || $defaultInfo->GetMeritPressfitIS()) {
+	if ( $defaultInfo->GetPressfitExist() || $defaultInfo->GetMeritPressfitIS() ) {
 
 		$defPressfit = 1;
 	}
-	
+
 	# 7) default tolerance hole export
 	my $defTolHole = 0;
 
-	if ( $defaultInfo->GetToleranceHoleExist() || $defaultInfo->GetToleranceHoleIS()) {
+	if ( $defaultInfo->GetToleranceHoleExist() || $defaultInfo->GetToleranceHoleIS() ) {
 
 		$defTolHole = 1;
 	}
-	
+
 	# 7) default NC special export
 	my $defNCSpec = 0;
 
-	if (  CountersinkCheck->ExistCountersink( $inCAM, $jobId )) {
+	if ( CountersinkCheck->ExistCountersink( $inCAM, $jobId ) ) {
 
 		$defNCSpec = 1;
 	}
-	
 
 	$groupData->SetExportControl($exportControl);
 	$groupData->SetControlStep($defStep);
@@ -160,7 +160,7 @@ sub OnPrepareGroupData {
 	$groupData->SetExportPressfit($defPressfit);
 	$groupData->SetExportToleranceHole($defTolHole);
 	$groupData->SetExportNCSpecial($defNCSpec);
-	
+
 	return $groupData;
 }
 

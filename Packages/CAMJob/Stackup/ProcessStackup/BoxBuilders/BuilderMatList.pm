@@ -183,7 +183,7 @@ sub __BuildMatListBody {
 
 		# Mat IS ref
 		my $itemId = $item->GetItemId();
-		$itemId = "0319000xxx" if ( $itemId !~ /\d{10}/ );
+		$itemId = "-" if ( $itemId !~ /\d{10}/ );
 
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matRef") ),
 					   $tbl->GetRowDefPos($row),

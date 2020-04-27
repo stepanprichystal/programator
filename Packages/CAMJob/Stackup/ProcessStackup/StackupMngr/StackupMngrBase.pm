@@ -258,6 +258,9 @@ sub GetExistStiff {
 
 			my @n = split( /\s/, $mInf->{"nazev_subjektu"} );
 			shift(@n) if ( $n[0] =~ /lam/i );
+			
+			$_ =~ s/mm//gi foreach (@n);
+			
 
 			$stifInfo->{"stiffISRef"} = $mInf->{"reference_subjektu"};
 			$stifInfo->{"stiffKind"}  = $n[0];

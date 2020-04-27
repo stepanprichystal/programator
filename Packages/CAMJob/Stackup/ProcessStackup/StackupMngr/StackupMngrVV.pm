@@ -151,6 +151,7 @@ sub GetPrpgISRef {
 	return $self->__GetMatRefByUDA( "prpg", $stckpPrpgLayer->GetQId(), $stckpPrpgLayer->GetId() );
 }
 
+# Return fake IS ref, but unique for each material type
 sub __GetMatRefByUDA {
 	my $self = shift;
 	my $type = shift;

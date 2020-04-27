@@ -1846,54 +1846,57 @@ sub GetMatStoreInfoByUDA {
 #	return $self->GetMatInfoByUDA( EnumsIS->MatType_CORE, $qId, $id, $id2);
 #}
 
-# Return material info by material reference
-sub GetMatInfoByUDA {
-	my $self = shift;
-	my $qId  = shift;
-	my $id   = shift;
-	my $id2  = shift;
-
-	my @params = ();
-	push( @params, SqlParameter->new( "__qId", Enums->SqlDbType_INT, $qId ) ) if ( defined $qId );
-	push( @params, SqlParameter->new( "__id",  Enums->SqlDbType_INT, $id ) )  if ( defined $id );
-	push( @params, SqlParameter->new( "__id2", Enums->SqlDbType_INT, $id2 ) ) if ( defined $id2 );
-
-	my $where = "";
-	if ( defined $id ) {
-
-		$where .= " uda.dps_id = __id";
-	}
-
-	if ( defined $qId ) {
-
-		$where .= " and uda.dps_qid = __qId";
-	}
-
-	if ( defined $id2 ) {
-
-		$where .= " and uda.dps_id2 = __id2";
-	}
-
-	my $cmd = "SELECT 
-				kks.reference_subjektu,
-				kks.nazev_subjektu,
-				kks.vyska,
-				 uda.dps_id,
-  				 uda.dps_id2,
- 				 uda.dps_qid,
- 				 uda.dps_druh
-				FROM lcs.kmenova_karta_skladu kks
-				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
-				WHERE " . $where;
-
-	my @result = Helper->ExecuteDataSet( $cmd, \@params );
-	if (@result) {
-		return $result[0];
-	}
-	else {
-		return 0;
-	}
-}
+## Return material info by material reference
+#sub GetMatInfoByUDA {
+#	my $self = shift;
+#	my $matType = shift; # EnumsIS->MatType_<CORE/PREPREG/COPPER/>
+#	my $matType   = shift;
+#	my $qId       = shift;
+#	my $id        = shift;
+#	my $id2       = shift;
+#
+#	my @params = ();
+#	push( @params, SqlParameter->new( "_matType", Enums->SqlDbType_VARCHAR, $matType ) );
+#	push( @params, SqlParameter->new( "__qId",    Enums->SqlDbType_INT,     $qId ) ) if ( defined $qId );
+#	push( @params, SqlParameter->new( "__id",     Enums->SqlDbType_INT,     $id ) ) if ( defined $id );
+#	push( @params, SqlParameter->new( "__id2",    Enums->SqlDbType_INT,     $id2 ) ) if ( defined $id2 );
+#
+#	my $where = "";
+#	if ( defined $id ) {
+#
+#		$where .= " uda.dps_id = __id";
+#	}
+#
+#	if ( defined $qId ) {
+#
+#		$where .= " and uda.dps_qid = __qId";
+#	}
+#
+#	if ( defined $id2 ) {
+#
+#		$where .= " and uda.dps_id2 = __id2";
+#	}
+#
+#	my $cmd = "SELECT 
+#				kks.reference_subjektu,
+#				kks.nazev_subjektu,
+#				kks.vyska,
+#				 uda.dps_id,
+#  				 uda.dps_id2,
+# 				 uda.dps_qid,
+# 				 uda.dps_druh
+#				FROM lcs.kmenova_karta_skladu kks
+#				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
+#				WHERE " . $where;
+#
+#	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+#	if (@result) {
+#		return $result[0];
+#	}
+#	else {
+#		return 0;
+#	}
+#}
 
 # Return material info by material reference
 sub GetMatInfo {
@@ -2220,7 +2223,7 @@ sub GetAllMatKinds {
 		$mats{ $result[$i]{'data_val'} } = ( $result[$i]{'disp_val'} =~ /tg\s*(\d+)/i )[0];
 
 	}
-	
+
 	# Add extra material DE104 = FR4
 	$mats{"DE104"} = $mats{"FR4"};
 
@@ -2251,7 +2254,6 @@ sub GetImpedancExist {
 
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#

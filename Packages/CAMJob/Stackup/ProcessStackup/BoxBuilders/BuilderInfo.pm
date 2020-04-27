@@ -147,7 +147,7 @@ sub __BuildMatInfo {
 		}
 
 		my $matStr = $mats[$i]->{"kind"};
-		$matStr .= " (" . $mats[$i]->{"tg"} . ")" if ( defined $mats[$i]->{"tg"} );
+		$matStr .= " (" . $mats[$i]->{"tg"} . "°)" if ( defined $mats[$i]->{"tg"} );
 
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $matStr, $txtRCollStyle );
 	}

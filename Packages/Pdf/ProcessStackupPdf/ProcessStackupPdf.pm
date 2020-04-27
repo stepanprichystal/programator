@@ -153,12 +153,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::CAMJob::Stackup::ProcessStackup::Enums' => 'ProcStckpEnums';
 
 	my $inCAM = InCAM->new();
-
+	my $jobId    = "d087972"; # standard vv 14V
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
 	#my $jobId = "d270787";    #Outer RigidFLex BOT
-
-	my $jobId    = "d261919"; # standard vv 10V
+	#my $jobId    = "d261919"; # standard vv 10V
 	#my $jobId = "d274753"; # standard vv 8V
+	#my $jobId = "d274611"; # standard vv 10V bez postup laminace
+	
 	#my $jobId = "d274986";    # standard vv 4V
 	#my $jobId = "d266566"; # inner flex
 	#my $jobId = "d146753"; # 1v flex
