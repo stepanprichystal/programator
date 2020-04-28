@@ -57,12 +57,13 @@ sub Build {
 	$tbl->AddColDef( "leftOverlapMatIn",  EnumsStyle->BoxMainClmnWidth_STCKOVRLPIN );
 	$tbl->AddColDef( "matType",           EnumsStyle->BoxMainClmnWidth_TYPE );
 	$tbl->AddColDef( "matId",             EnumsStyle->BoxMainClmnWidth_ID );
-	$tbl->AddColDef( "rightOverlapMatIn", EnumsStyle->BoxMainClmnWidth_STCKOVRLP );
-	$tbl->AddColDef( "rightOverlapMat",   EnumsStyle->BoxMainClmnWidth_STCKOVRLPIN );
+	$tbl->AddColDef( "rightOverlapMatIn", EnumsStyle->BoxMainClmnWidth_STCKOVRLPIN );
+	$tbl->AddColDef( "rightOverlapMat",   EnumsStyle->BoxMainClmnWidth_STCKOVRLP );
 	$tbl->AddColDef( "rightOverlapPad",   EnumsStyle->BoxMainClmnWidth_PADOVRLP );
 	$tbl->AddColDef( "middleMargin",      EnumsStyle->BoxMainClmnWidth_MARGIN );
-	$tbl->AddColDef( "matKind",           EnumsStyle->BoxMainClmnWidth_KIND );
+
 	$tbl->AddColDef( "matName",           EnumsStyle->BoxMainClmnWidth_NAME );
+		$tbl->AddColDef( "matKind",           EnumsStyle->BoxMainClmnWidth_KIND );
 	$tbl->AddColDef( "matThick",          EnumsStyle->BoxMainClmnWidth_THICK );
 	$tbl->AddColDef( "rightMargin",       EnumsStyle->BoxMainClmnWidth_MARGIN );
 
@@ -95,21 +96,21 @@ sub __BuildStckpTitle {
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 								   EnumsStyle->TxtSize_NORMAL,
 								   Color->new( 0, 0, 0 ),
-								   TblDrawEnums->Font_NORMAL, undef,
+								   TblDrawEnums->Font_BOLD, undef,
 								   TblDrawEnums->TextHAlign_LEFT,
 								   TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	# Mat type
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matType") ), 0, undef, undef, "TYP", $txtStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matType") ), 0, undef, undef, "Typ", $txtStyle );
 
 	# Mat ID
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matId") ), 0, undef, undef, "ID", $txtStyle, undef, $borderStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matId") ), 0, undef, undef, "Id", $txtStyle, undef, $borderStyle );
 
 	# Mat Kind
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matKind") ), 0, undef, undef, "DRUH", $txtStyle, undef, $borderStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matKind") ), 0, undef, undef, "Druh", $txtStyle, undef, $borderStyle );
 
 	# Mat Name
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matName") ), 0, undef, undef, "NÁZEV", $txtStyle, undef, $borderStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matName") ), 0, undef, undef, "Název", $txtStyle, undef, $borderStyle );
 
 	# Mat Thickness
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matThick") ), 0, undef, undef, "[µm]", $txtStyle, undef, $borderStyle );
@@ -140,7 +141,7 @@ sub __BuildStckpBody {
 	my $txtStdBoldStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 										  EnumsStyle->TxtSize_NORMAL,
 										  Color->new( 0, 0, 0 ),
-										  TblDrawEnums->Font_BOLD, undef,
+										  undef, undef,
 										  TblDrawEnums->TextHAlign_LEFT,
 										  TblDrawEnums->TextVAlign_CENTER, 0.5 );
 

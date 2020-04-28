@@ -57,7 +57,7 @@ sub Create {
 	my $self          = shift;
 	my $paperWidth    = shift // 210;
 	my $paperHeight   = shift // 297;
-	my $printerMargin = shift // 6;     # margin of printer
+	my $printerMargin = shift // 10;     # margin of printer
 	my $lamType       = shift;          # Build only specific lam type
 
 	my $inCAM = $self->{"inCAM"};
@@ -155,7 +155,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	#my $jobId    = "d087972"; # standard vv 14V
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
-	my $jobId = "d270787";    #Outer RigidFLex BOT
+	#my $jobId = "d270787";    #Outer RigidFLex BOT
 	#my $jobId    = "d261919"; # standard vv 10V
 	#my $jobId = "d274753"; # standard vv 8V
 	#my $jobId = "d274611"; # standard vv 10V bez postup laminace
@@ -168,7 +168,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $jobId = "d275112"; # standard 1v
 	#my $jobId = "d275162"; # standard 2v
 
-	#my $jobId    = "d279515";
+	my $jobId    = "d279469";
 
 	my $stackup = ProcessStackupPdf->new( $inCAM, $jobId );
 

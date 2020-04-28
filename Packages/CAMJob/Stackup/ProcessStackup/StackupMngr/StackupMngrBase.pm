@@ -468,6 +468,14 @@ sub GetIsFlex {
 
 	return $self->{"isFlex"};
 }
+
+sub GetCuLayerCnt{
+	my $self = shift;
+	
+	return CamJob->GetSignalLayerCnt($self->{"inCAM"}, $self->{"jobId"});
+}
+
+
 #
 #
 #

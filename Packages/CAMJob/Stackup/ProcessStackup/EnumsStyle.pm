@@ -14,10 +14,10 @@ use constant {
 	Clr_BOXBORDERLIGHT => "191, 191, 191",
 	Clr_PRODUCT        => "31, 133, 222",
 
-	Clr_COPPER    => "174, 57, 47",
-	Clr_CORERIGID => "248, 154, 28",
-	Clr_COREFLEX  => "248, 154, 28",
-	Clr_PREPREG   => "169, 161, 80",
+	Clr_COPPER    => "156, 1, 1",
+	Clr_CORERIGID => "159, 149, 19",
+	Clr_COREFLEX  => "159, 149, 19",
+	Clr_PREPREG   => "71, 143, 71",
 	Clr_COVERLAY  => "255, 211, 25",
 	Clr_ADHESIVE  => "189, 215, 238",
 	Clr_STIFFENER => "174, 170, 170",
@@ -26,7 +26,7 @@ use constant {
 	Clr_PADRUBBER    => "255, 174, 202",
 	Clr_PADFILM      => "136, 254, 175",
 	Clr_PADALU       => "180, 180, 180",
-	Clr_PADSTEEL     => "160, 160, 160",
+	Clr_PADSTEEL     => "146, 146, 146",
 
 };
 
@@ -49,20 +49,20 @@ use constant {
 	BoxTitleClmnWidth_4 => 30,
 
 	BoxMainClmnWidth_MARGIN      => 3,
-	BoxMainClmnWidth_PADOVRLP    => 3.5,
-	BoxMainClmnWidth_STCKOVRLP   => 3,
-	BoxMainClmnWidth_STCKOVRLPIN => 2.5,
-	BoxMainClmnWidth_TYPE        => 25,
+	BoxMainClmnWidth_PADOVRLP    => 2.5,
+	BoxMainClmnWidth_STCKOVRLP   => 4.5,
+	BoxMainClmnWidth_STCKOVRLPIN => 1,
+	BoxMainClmnWidth_TYPE        => 22,
 	BoxMainClmnWidth_ID          => 4,
-	BoxMainClmnWidth_KIND        => 22,
-	BoxMainClmnWidth_NAME        => 50,
-	BoxMainClmnWidth_THICK       => 10,
+	BoxMainClmnWidth_KIND        => 23,
+	BoxMainClmnWidth_NAME        => 49,
+	BoxMainClmnWidth_THICK       => 8,
 
-	BoxMatListClmnWidth_TYPE  => 28,
+	BoxMatListClmnWidth_TYPE  => 25,
 	BoxMatListClmnWidth_REF   => 22,
 	BoxMatListClmnWidth_KIND  => 22,
-	BoxMatListClmnWidth_NAME  => 50,
-	BoxMatListClmnWidth_COUNT => 10,
+	BoxMatListClmnWidth_NAME  => 49,
+	BoxMatListClmnWidth_COUNT => 7,
 
 };
 
@@ -76,16 +76,16 @@ use constant {
 
 	BoxMainRowHeight_TITLE       => 6,
 	BoxMainRowHeight_TITLEGAP    => 5,
-	BoxMainRowHeight_MATGAP      => 1.1,
-	BoxMainRowHeight_MATROW      => 6,
+	BoxMainRowHeight_MATGAP      => 0.7,
+	BoxMainRowHeight_MATROW      => 5,
 	BoxMainRowHeight_STEELPADROW => 2,
 
 };
 
 # Other sizes
 use constant {
-	BoxSpace_SIZE => 3.0,
-	Border_THICK  => 0.2,
+	BoxSpace_SIZE => 2.5,
+	Border_THICK  => 0.1,
 
 };
 

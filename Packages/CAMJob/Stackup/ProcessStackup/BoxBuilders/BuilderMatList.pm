@@ -53,8 +53,8 @@ sub Build {
 	$tbl->AddColDef( "leftMargin",  EnumsStyle->BoxMainClmnWidth_MARGIN );
 	$tbl->AddColDef( "matType",     EnumsStyle->BoxMatListClmnWidth_TYPE );
 	$tbl->AddColDef( "matRef",      EnumsStyle->BoxMatListClmnWidth_REF );
-	$tbl->AddColDef( "matKind",     EnumsStyle->BoxMatListClmnWidth_KIND );
 	$tbl->AddColDef( "matName",     EnumsStyle->BoxMatListClmnWidth_NAME );
+	$tbl->AddColDef( "matKind",     EnumsStyle->BoxMatListClmnWidth_KIND );
 	$tbl->AddColDef( "matCount",    EnumsStyle->BoxMatListClmnWidth_COUNT );
 	$tbl->AddColDef( "rightMargin", EnumsStyle->BoxMainClmnWidth_MARGIN );
 
@@ -96,24 +96,24 @@ sub __BuildMatListTitle {
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 								   EnumsStyle->TxtSize_NORMAL,
 								   Color->new( 0, 0, 0 ),
-								   TblDrawEnums->Font_NORMAL, undef,
+								   TblDrawEnums->Font_BOLD, undef,
 								   TblDrawEnums->TextHAlign_LEFT,
 								   TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	# Mat type
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matType") ), $rowPos, undef, undef, "TYP", $txtStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matType") ), $rowPos, undef, undef, "Typ", $txtStyle );
 
 	# Mat IS number
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matRef") ), $rowPos, undef, undef, "SKLAD", $txtStyle, undef, $borderCellStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matRef") ), $rowPos, undef, undef, "Sklad", $txtStyle, undef, $borderCellStyle );
 
 	# Mat KIND
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matKind") ), $rowPos, undef, undef, "DRUH", $txtStyle, undef, $borderCellStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matKind") ), $rowPos, undef, undef, "Druh", $txtStyle, undef, $borderCellStyle );
 
 	# Mat Name
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matName") ), $rowPos, undef, undef, "NÁZEV", $txtStyle, undef, $borderCellStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matName") ), $rowPos, undef, undef, "Název", $txtStyle, undef, $borderCellStyle );
 
 	# Mat aMOUNTS
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matCount") ), $rowPos, undef, undef, "[KS]", $txtStyle, undef, $borderCellStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matCount") ), $rowPos, undef, undef, "[ks]", $txtStyle, undef, $borderCellStyle );
 }
 
 sub __BuildMatListBody {
