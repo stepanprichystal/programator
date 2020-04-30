@@ -1,60 +1,35 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, allow build nif section
+# Description: Base class for all layout class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::Style::Color;
+package Packages::Other::TableDrawing::TableLayout::TableLayoutBase;
 
 #3th party library
 use strict;
 use warnings;
 
-#use File::Copy;
-
 #local library
-use aliased 'Packages::Other::TableDrawing::Enums';
+ 
 
 #-------------------------------------------------------------------------------------------#
-#  Public method
+#  Package methods
 #-------------------------------------------------------------------------------------------#
-
 sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
+ 
 
-	if ( @_ == 1 ) {
+	$self->{"__CLASS__"} = caller();
 
-		# overload - color defined as string (3 numbers separated by coma)
-		my $str = shift;
-		$str =~ s/\s//g;
-		my @rgb = split( ",", $str );
-
-		$self->{"R"} = $rgb[0] // 255;
-		$self->{"G"} = $rgb[1] // 255;
-		$self->{"B"} = $rgb[2] // 255;
-
-	}
-	elsif ( @_ == 3 ) {
-
-		# overload - color defined three separated values
-
-		$self->{"R"} = shift // 255;
-		$self->{"G"} = shift // 255;
-		$self->{"B"} = shift // 255;
-	}
-
+	 
 	return $self;
-}
-
-sub GetHexCode {
-	my $self = shift;
-
-	my $hex = sprintf( "%.2x%.2x%.2x", $self->{"R"}, $self->{"G"}, $self->{"B"} );
-
-	return "#" . $hex;
 
 }
+
+# Important because of serialize class
+sub TO_JSON { return { %{ shift() } }; }
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -62,6 +37,7 @@ sub GetHexCode {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	 
 }
 
 1;

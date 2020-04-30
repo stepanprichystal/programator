@@ -3,15 +3,22 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::TableCell;
+package Packages::Other::TableDrawing::TableLayout::StyleLayout::StrokeStyle;
+use base qw(Packages::Other::TableDrawing::TableLayout::TableLayoutBase);
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
+
 
 #3th party library
 use strict;
 use warnings;
-use List::Util qw(first);
+
+#use File::Copy;
 
 #local library
 use aliased 'Packages::Other::TableDrawing::Enums';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -19,76 +26,57 @@ use aliased 'Packages::Other::TableDrawing::Enums';
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+	
+	my $strokeStyle = shift // Enums->StrokeStyle_NONE;
+	my $strokeWidth = shift // 0;
+	my $strokeColor = shift // Color->new();
+	my $dashLen   = shift // 0;
+	my $gapLen    = shift // 0;
+	
+	my $self = {};
+	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"id"}          = shift;
-	$self->{"text"}        = shift;
-	$self->{"textStyle"}   = shift;
-	$self->{"backgStyle"}  = shift;
-	$self->{"borderStyle"} = shift;
-	$self->{"xPosCnt"}     = shift;    # number of merged cells
-	$self->{"yPosCnt"}     = shift;    # number of merged cells
-
+	$self->{"strokeStyle"} = $strokeStyle;
+	$self->{"strokeWidth"} = $strokeWidth;
+	$self->{"strokeColor"} = $strokeColor;
+	$self->{"dashLen"}   = $dashLen;
+	$self->{"gapLen"}    = $gapLen;
+ 
 	return $self;
 }
-
-sub GetId {
-	my $self = shift;
-	return $self->{"id"};
-}
-
-sub GetText {
+ 
+ 
+sub GetStyle {
 	my $self = shift;
 
-	return $self->{"text"};
+	return $self->{"strokeStyle"};
 
 }
 
-sub GetTextStyle {
+sub GetWidth {
 	my $self = shift;
 
-	return $self->{"textStyle"};
+	return $self->{"strokeWidth"};
 
 }
 
-sub GetBackgStyle {
+sub GetColor {
 	my $self = shift;
 
-	return $self->{"backgStyle"};
-
+	return $self->{"strokeColor"};
 }
 
-sub GetBorderStyle {
+sub GetDashLen {
 	my $self = shift;
 
-	return $self->{"borderStyle"};
+	return $self->{"dashLen"};
 }
 
-sub GetIsMerged {
+sub GetGapLen {
 	my $self = shift;
 
-	return ( $self->{"xPosCnt"} > 1 || $self->{"yPosCnt"} > 1 ) ? 1 : 0;
-}
-
-sub GetXPosCnt {
-	my $self = shift;
-
-	return $self->{"xPosCnt"};
-}
-
-sub GetYPosCnt {
-	my $self = shift;
-
-	return $self->{"yPosCnt"};
-}
-
-
-sub SetText {
-	my $self = shift;
-
-	$self->{"text"} = shift;
-
+	return $self->{"gapLen"};
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -1,5 +1,5 @@
 
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 
 package Packages::CAMJob::Stackup::CustStackup::Enums;
 

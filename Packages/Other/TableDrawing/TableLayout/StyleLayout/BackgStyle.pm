@@ -3,7 +3,11 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::TableCollDef;
+package Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle;
+use base qw(Packages::Other::TableDrawing::TableLayout::TableLayoutBase);
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
 
 #3th party library
 use strict;
@@ -12,46 +16,28 @@ use warnings;
 #use File::Copy;
 
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::Enums';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+	my $backgStyle = shift // Enums->BackgStyle_NONE;
+	my $backgColor  = shift // Color->new();
+	
+	my $self       = {};
+	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"id"}   = shift;
-	$self->{"key"}   = shift;
-	$self->{"width"} = shift;
-	$self->{"backgStyle"}  = shift ;
-	$self->{"borderStyle"} = shift ;
+	$self->{"backgStyle"} = $backgStyle;
+	$self->{"backgColor"} = $backgColor;
 
 	return $self;
 }
 
-sub GetId {
-	my $self = shift;
-
-	return $self->{"id"};
-
-}
-
-sub GetKey {
-	my $self = shift;
-
-	return $self->{"key"};
-
-}
-
-sub GetWidth {
-	my $self = shift;
-
-	return $self->{"width"};
-
-}
 
 sub GetBackgStyle {
 	my $self = shift;
@@ -60,10 +46,10 @@ sub GetBackgStyle {
 
 }
 
-sub GetBorderStyle {
+sub GetBackgColor {
 	my $self = shift;
 
-	return $self->{"borderStyle"};
+	return $self->{"backgColor"};
 
 }
 

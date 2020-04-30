@@ -11,9 +11,9 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

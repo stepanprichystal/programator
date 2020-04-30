@@ -12,8 +12,9 @@ use Storable qw(dclone);
 
 #local library
 use aliased 'Packages::Other::TableDrawing::Enums';
-use aliased 'Packages::Other::TableDrawing::Table::Table';
+use aliased 'Packages::Other::TableDrawing::TableLayout::TablesLayout';
 use aliased 'Packages::Other::TableDrawing::RenderDrawing';
+use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -27,9 +28,11 @@ sub new {
 	$self->{"units"}         = shift // Enums->Units_PT;    # units which are used for drawing
 	$self->{"overwriteCell"} = shift // 1;                  # Allow overfrite cell on same position as new cell (former cell can't be merged)
 
-	$self->{"tables"} = [];
+	$self->{"tables"} = TablesLayout->new();
 	$self->{"scaleX"} = 1;
 	$self->{"scaleY"} = 1;
+
+	$self->{"jsonStorable"} = JsonStorable->new();
 
 	return $self;
 }
@@ -40,9 +43,7 @@ sub AddTable {
 	my $origin      = shift // { "x" => 0, "y" => 0 };
 	my $borderStyle = shift;
 
-	my $t = Table->new( $key, $origin, $borderStyle, $self->{"overwriteCell"} );
-
-	push( @{ $self->{"tables"} }, $t );
+	my $t = $self->{"tables"}->AddTable( $key, $origin, $borderStyle, $self->{"overwriteCell"} );
 
 	return $t;
 }
@@ -51,13 +52,9 @@ sub DuplicateTable {
 	my $self  = shift;
 	my $key   = shift;
 	my $table = shift;
-	
-	my $dupl  = dclone($table);
-	
-	$dupl->{"key"} = $key;
-	
-	push( @{ $self->{"tables"} }, $dupl );
-	
+
+	my $dupl = $self->{"tables"}->DuplicateTable( $key, $table );
+
 	return $dupl;
 }
 
@@ -69,22 +66,24 @@ sub GetOriLimits {
 	my $minY = undef;
 	my $maxY = undef;
 
-	for ( my $i = 0 ; $i < scalar( @{ $self->{"tables"} } ) ; $i++ ) {
+	my @tables = $self->{"tables"}->GetAllTables();
 
-		if ( !defined $minX || $self->{"tables"}->[$i]->GetOrigin()->{"x"} < $minX ) {
-			$minX = $self->{"tables"}->[$i]->GetOrigin()->{"x"};
+	for ( my $i = 0 ; $i < scalar(@tables) ; $i++ ) {
+
+		if ( !defined $minX || $tables[$i]->GetOrigin()->{"x"} < $minX ) {
+			$minX = $tables[$i]->GetOrigin()->{"x"};
 		}
 
-		if ( !defined $minY || $self->{"tables"}->[$i]->GetOrigin()->{"y"} < $minY ) {
-			$minY = $self->{"tables"}->[$i]->GetOrigin()->{"y"};
+		if ( !defined $minY || $tables[$i]->GetOrigin()->{"y"} < $minY ) {
+			$minY = $tables[$i]->GetOrigin()->{"y"};
 		}
 
-		if ( !defined $maxX || $self->{"tables"}->[$i]->GetOrigin()->{"x"} + $self->{"tables"}->[$i]->GetWidth() > $maxX ) {
-			$maxX = $self->{"tables"}->[$i]->GetOrigin()->{"x"} + $self->{"tables"}->[$i]->GetWidth();
+		if ( !defined $maxX || $tables[$i]->GetOrigin()->{"x"} + $tables[$i]->GetWidth() > $maxX ) {
+			$maxX = $tables[$i]->GetOrigin()->{"x"} + $tables[$i]->GetWidth();
 		}
 
-		if ( !defined $maxY || $self->{"tables"}->[$i]->GetOrigin()->{"y"} + $self->{"tables"}->[$i]->GetHeight() > $maxY ) {
-			$maxY = $self->{"tables"}->[$i]->GetOrigin()->{"y"} + $self->{"tables"}->[$i]->GetHeight();
+		if ( !defined $maxY || $tables[$i]->GetOrigin()->{"y"} + $tables[$i]->GetHeight() > $maxY ) {
+			$maxY = $tables[$i]->GetOrigin()->{"y"} + $tables[$i]->GetHeight();
 		}
 	}
 
@@ -113,18 +112,40 @@ sub GetScaleLimits {
 	return %lim;
 }
 
+# Store whole drawing to JSON and return string
+# Later is possoble draw JSON by
+sub DrawingToJSON {
+	my $self    = shift;
+	my $refJSON = shift;
+
+	$$refJSON = $self->{"jsonStorable"}->Encode( $self->{"tables"} );
+
+	return 1;
+}
+
+sub LoadSerialized {
+	my $self        = shift;
+	my $serilLayout = shift;
+
+	$self->{"tables"} = $self->{"jsonStorable"}->Decode($serilLayout);
+
+	return 1;
+}
+
 sub Draw {
 	my $self        = shift;
 	my $drawBuilder = shift;
 	my $scaleX      = shift // 1;
 	my $scaleY      = shift // 1;
-	my $originX     = shift // 0; # this offset do not consider ScaleX
-	my $originY     = shift // 0;  # this offset do not consider ScaleY
+	my $originX     = shift // 0;
+	my $originY     = shift // 0;
+
+	die "No tables defined. Either Add table or Load JSON" unless ( $self->{"tables"}->GetAllTables() );
 
 	my %tblsLim = $self->GetOriLimits();
 
 	RenderDrawing->RenderTables( $drawBuilder, $self->{"tables"}, \%tblsLim, $scaleX, $scaleY, $originX, $originY );
-	
+
 	return 1;
 }
 
@@ -136,13 +157,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Other::TableDrawing::TableDrawing';
 	use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing';
-	use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
-	use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
+	use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
+	use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle';
 	use aliased 'Packages::Other::TableDrawing::DrawingBuilders::GeometryHelper';
 	use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsBuilder';
-	use aliased 'Packages::Other::TableDrawing::Table::Style::StrokeStyle';
-	use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
-	use aliased 'Packages::Other::TableDrawing::Table::Style::TextStyle';
+	use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::StrokeStyle';
+	use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
+	use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::TextStyle';
 
 	my $tDrawing = TableDrawing->new( Enums->Units_MM );
 

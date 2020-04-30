@@ -3,7 +3,11 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::Style::BorderStyle;
+package Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle;
+use base qw(Packages::Other::TableDrawing::TableLayout::TableLayoutBase);
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
 
 #3th party library
 use strict;
@@ -13,8 +17,8 @@ use warnings;
 
 #local library
 use aliased 'Packages::Other::TableDrawing::Enums';
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
-use aliased 'Packages::Other::TableDrawing::Table::Style::StrokeStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::StrokeStyle';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -22,22 +26,28 @@ use aliased 'Packages::Other::TableDrawing::Table::Style::StrokeStyle';
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+	my $top   = shift;
+	my $bot   = shift;
+	my $left  = shift;
+	my $right = shift;
+
+	my $self = {};
+	$self = $class->SUPER::new(@_);
 	bless $self;
 
 	$self->{"eStyles"} = {};
 
-	$self->{"eStyles"}->{"top"}   = shift;
-	$self->{"eStyles"}->{"bot"}   = shift;
-	$self->{"eStyles"}->{"left"}  = shift;
-	$self->{"eStyles"}->{"right"} = shift;
-
+	$self->{"eStyles"}->{"top"}   = $top;
+	$self->{"eStyles"}->{"bot"}   = $bot;
+	$self->{"eStyles"}->{"left"}  = $left;
+	$self->{"eStyles"}->{"right"} = $right;
+ 
 	return $self;
 }
-
+ 
 sub AddEdgeStyle {
 	my $self        = shift;
-	my $edge        = shift;    #top/bot/left/right
+	my $edge        = shift;                   #top/bot/left/right
 	my $strokeStyle = shift;
 	my $strokeWidth = shift;
 	my $strokeColor = shift;
@@ -84,7 +94,7 @@ sub GetRightEdgeStyle {
 sub GetAllEdgesStyle {
 	my $self = shift;
 
-	return %{$self->{"eStyles"}};
+	return %{ $self->{"eStyles"} };
 }
 
 #-------------------------------------------------------------------------------------------#

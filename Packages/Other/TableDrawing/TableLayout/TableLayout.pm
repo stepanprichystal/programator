@@ -3,7 +3,11 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::Table;
+package Packages::Other::TableDrawing::TableLayout::TableLayout;
+use base qw(Packages::Other::TableDrawing::TableLayout::TableLayoutBase);
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
 
 #3th party library
 use strict;
@@ -12,13 +16,13 @@ use List::Util qw(first);
 use List::MoreUtils qw(uniq first_index);
 
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::TableCell';
-use aliased 'Packages::Other::TableDrawing::Table::TableCollDef';
-use aliased 'Packages::Other::TableDrawing::Table::TableRowDef';
+use aliased 'Packages::Other::TableDrawing::TableLayout::CellLayout';
+use aliased 'Packages::Other::TableDrawing::TableLayout::CollLayout';
+use aliased 'Packages::Other::TableDrawing::TableLayout::RowLayout';
 use aliased 'Packages::Other::TableDrawing::Enums';
-use aliased 'Packages::Other::TableDrawing::Table::Style::TextStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::TextStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
 use aliased 'Packages::Events::Event';
 
 #-------------------------------------------------------------------------------------------#
@@ -26,22 +30,40 @@ use aliased 'Packages::Events::Event';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $self  = {};
-	bless $self;
+	my $class         = shift;
+	my $key           = shift;
+	my $origin        = shift // { "x" => 0, "y" => 0 };
+	my $borderStyle   = shift;
+	my $overwriteCell = shift // 0;
 
-	$self->{"key"}           = shift;
-	$self->{"origin"}        = shift // { "x" => 0, "y" => 0 };
-	$self->{"borderStyle"}   = shift;
-	$self->{"overwriteCell"} = shift // 0;
+	my $self = {};
+	$self = $class->SUPER::new(@_);
+	bless $self;
+	
+	$self->{"key"}           = $key;
+	$self->{"origin"}        = $origin;
+	$self->{"borderStyle"}   = $borderStyle;
+	$self->{"overwriteCell"} = $overwriteCell;
 
 	$self->{"matrix"}   = [];
 	$self->{"collsDef"} = [];
 	$self->{"rowsDef"}  = [];
 
 	$self->{"lastCellId"} = 0;
+	
+	my %prior = ();
+	$prior{ Enums->DrawPriority_COLLBACKG }  = 1;    # column background
+	$prior{ Enums->DrawPriority_COLLBORDER } = 2;    # column border
+	$prior{ Enums->DrawPriority_ROWBACKG }   = 3;    # row background
+	$prior{ Enums->DrawPriority_ROWBORDER }  = 4;    # row border
+	$prior{ Enums->DrawPriority_CELLBACKG }  = 5;    # cell background
+	$prior{ Enums->DrawPriority_CELLBORDER } = 6;    # cell border
+	$prior{ Enums->DrawPriority_CELLTEXT }   = 7;    # cell text
+	$prior{ Enums->DrawPriority_TABBORDER }  = 8;    # table frame
 
-	$self->{"renderOrderEvt"} = Event->new();
+	$self->{"renderOrder"} = \%prior;
+	
+	#$self->{"renderOrderEvt"} = Event->new();
 
 	return $self;
 }
@@ -62,7 +84,7 @@ sub AddColDef {
 	die "Col with key: $key already exists" if ( defined first { $_->GetKey() eq $key } @{ $self->{"collsDef"} } );
 
 	my $id = scalar( @{ $self->{"collsDef"} } );
-	my $colDef = TableCollDef->new( $id, $key, $width, $backgStyle, $borderStyle );
+	my $colDef = CollLayout->new( $id, $key, $width, $backgStyle, $borderStyle );
 	push( @{ $self->{"collsDef"} }, $colDef );
 
 	my @rows = (undef) x $self->GetRowCnt();
@@ -96,7 +118,7 @@ sub InsertRowDef {
 	die "Position ($pos) must be in range: 0 - " . scalar( @{ $self->{"rowsDef"} } ) if ( $pos > scalar( @{ $self->{"rowsDef"} } ) );
 
 	my $id = scalar( @{ $self->{"rowsDef"} } );
-	my $rowDef = TableRowDef->new( $id, $key, $height, $backgStyle, $borderStyle );
+	my $rowDef = RowLayout->new( $id, $key, $height, $backgStyle, $borderStyle );
 
 	splice @{ $self->{"rowsDef"} }, $pos, 0, $rowDef;
 
@@ -119,7 +141,6 @@ sub AddCell {
 	my $textStyle   = shift;
 	my $backgStyle  = shift;
 	my $borderStyle = shift;
- 
 
 	#die "End col ($endCol) must be greater than star col ($startCol)" if ( $endCol < $startCol );
 	#die "End row ($endRow) must be greater than star row ($startRow)" if ( $endRow < $startRow );
@@ -143,18 +164,18 @@ sub AddCell {
 		die "Text style must be defined if text is set (cell: [$startCol, $startRow]";
 	}
 
-	if ( defined $textStyle && !$textStyle->isa("Packages::Other::TableDrawing::Table::Style::TextStyle") ) {
+	if ( defined $textStyle && !$textStyle->isa("Packages::Other::TableDrawing::TableLayout::StyleLayout::TextStyle") ) {
 		die "Text style object type is wrong";
 	}
 
-	die "Backg style object type is wrong" if ( defined $backgStyle && !$backgStyle->isa("Packages::Other::TableDrawing::Table::Style::BackgStyle") );
+	die "Backg style object type is wrong" if ( defined $backgStyle && !$backgStyle->isa("Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle") );
 
 	die "Border style object type is wrong"
-	  if ( defined $borderStyle && !$borderStyle->isa("Packages::Other::TableDrawing::Table::Style::BorderStyle") );
+	  if ( defined $borderStyle && !$borderStyle->isa("Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle") );
 
 	my $cellId = $self->{"lastCellId"};
 	$self->{"lastCellId"}++;
-	my $cell = TableCell->new( $cellId, $text, $textStyle, $backgStyle, $borderStyle, $collCnt, $rowCnt );
+	my $cell = CellLayout->new( $cellId, $text, $textStyle, $backgStyle, $borderStyle, $collCnt, $rowCnt );
 
 	for ( my $i = $startCol ; $i < $startCol + $collCnt ; $i++ ) {
 
@@ -180,26 +201,17 @@ sub AddCell {
 	}
 }
 
+sub SetRenderPriority{
+	my $self = shift;
+	my $newPrior = shift;
+	
+	%{$self->{"renderOrder"}} = %{$newPrior};
+}
+
 sub GetRenderPriority {
 	my $self = shift;
-
-	my %prior = ();
-
-	$prior{ Enums->DrawPriority_COLLBACKG }  = 1;    # column background
-	$prior{ Enums->DrawPriority_COLLBORDER } = 2;    # column border
-	$prior{ Enums->DrawPriority_ROWBACKG }   = 3;    # row background
-	$prior{ Enums->DrawPriority_ROWBORDER }  = 4;    # row border
-	$prior{ Enums->DrawPriority_CELLBACKG }  = 5;    # cell background
-	$prior{ Enums->DrawPriority_CELLBORDER } = 6;    # cell border
-	$prior{ Enums->DrawPriority_CELLTEXT }   = 7;    # cell text
-	$prior{ Enums->DrawPriority_TABBORDER }  = 8;    # table frame
-
-	if ( $self->{"renderOrderEvt"}->Handlers() ) {
-
-		$self->{"renderOrderEvt"}->Do( \%prior );
-	}
-
-	return %prior;
+ 
+	return %{$self->{"renderOrder"}};
 }
 
 sub GetOrigin {

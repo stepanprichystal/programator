@@ -16,9 +16,9 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Other::TableDrawing::TableDrawing';
 use aliased 'Packages::Other::TableDrawing::Enums'                  => 'TblDrawEnums';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsDrawBldr';
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
 #-------------------------------------------------------------------------------------------#

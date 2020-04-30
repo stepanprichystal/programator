@@ -22,9 +22,9 @@ use aliased 'Packages::CAMJob::Stackup::ProcessStackup::BoxBuilders::BuilderMatL
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::BoxBuilders::BuilderInfo';
 use aliased 'Packages::Other::TableDrawing::TableDrawing';
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::EnumsStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderSTIFFPRODUCT';
 use aliased 'Packages::CAMJob::Stackup::ProcessStackup::LamItemBuilders::BuilderCVRLBASE';
@@ -142,7 +142,7 @@ sub __BuildBoxes {
 
 	# BOX Header
 	my $headerTbl = $self->{"tblDrawing"}->AddTable( "Header", \%o );
-	$headerTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
+	$headerTbl->SetRenderPriority( $self->__GetRenderPriority() );
 	my $builderHeader = BuilderHeaderFooter->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $headerTbl );
 	$builderHeader->Build( "header", $pageWidth );
 
@@ -150,7 +150,7 @@ sub __BuildBoxes {
 	my %oTitle = %o;
 	$oTitle{"y"} += $headerTbl->GetHeight() + EnumsStyle->BoxSpace_SIZE;
 	my $titleTbl = $self->{"tblDrawing"}->AddTable( "Title", \%oTitle, $borderStyle );
-	$titleTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
+	$titleTbl->SetRenderPriority( $self->__GetRenderPriority() );
 	my $builderTitle = BuilderTitle->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $titleTbl );
 	$builderTitle->Build($pageWidth);
 
@@ -158,7 +158,7 @@ sub __BuildBoxes {
 	my %oMain = %oTitle;
 	$oMain{"y"} += $titleTbl->GetHeight() + EnumsStyle->BoxSpace_SIZE;
 	my $mainTbl = $self->{"tblDrawing"}->AddTable( "Main", \%oMain, $borderStyle );
-	$mainTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
+	$mainTbl->SetRenderPriority( $self->__GetRenderPriority() );
 	my $builderMain = BuilderMain->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $mainTbl );
 	$builderMain->Build();
 
@@ -171,7 +171,7 @@ sub __BuildBoxes {
 	my %oMatList = %oMain;
 	$oMatList{"y"} += $mainTbl->GetHeight() + EnumsStyle->BoxSpace_SIZE;
 	my $matListTbl = $self->{"tblDrawing"}->AddTable( "MatList", \%oMatList, $borderStyle );
-	$matListTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
+	$matListTbl->SetRenderPriority( $self->__GetRenderPriority() );
 	my $builderMatList = BuilderMatList->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $matListTbl );
 	$builderMatList->Build($boxYEndPos);
 
@@ -179,15 +179,15 @@ sub __BuildBoxes {
 	my %oInfo = %oMain;
 	$oInfo{"x"} += $mainTbl->GetWidth() + EnumsStyle->BoxSpace_SIZE;
 	my $infoTbl = $self->{"tblDrawing"}->AddTable( "Info", \%oInfo, $borderStyle );
-	$infoTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
+	$infoTbl->SetRenderPriority( $self->__GetRenderPriority() );
 	my $builderInfo = BuilderInfo->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $infoTbl );
-	$builderInfo->Build( $boxXEndPos, $matListTbl->GetOrigin()->{"y"} +  $matListTbl->GetHeight());
+	$builderInfo->Build( $boxXEndPos, $matListTbl->GetOrigin()->{"y"} + $matListTbl->GetHeight() );
 
 	# BOX Footer
 	my %oFooter = %oMatList;
 	$oFooter{"y"} += $matListTbl->GetHeight() + EnumsStyle->BoxSpace_SIZE;
 	my $footerTbl = $self->{"tblDrawing"}->AddTable( "Footer", \%oFooter );
-	$footerTbl->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
+	$footerTbl->SetRenderPriority( $self->__GetRenderPriority() );
 	my $builderFooter = BuilderHeaderFooter->new( $inCAM, $jobId, $self->{"lamination"}, $self->{"stackupMngr"}, $footerTbl );
 	$builderFooter->Build( "footer", $pageWidth );
 
@@ -201,9 +201,10 @@ sub GetTableDrawing {
 }
 
 # Set object (borders, backgrounds,...) render priority
-sub __OnRenderPriorityHndl {
-	my $self     = shift;
-	my $priority = shift;
+sub __GetRenderPriority {
+	my $self = shift;
+
+	my $priority = {};
 
 	$priority->{ TblDrawEnums->DrawPriority_COLLBACKG } = 1;
 	$priority->{ TblDrawEnums->DrawPriority_ROWBACKG }  = 2;
@@ -215,6 +216,7 @@ sub __OnRenderPriorityHndl {
 	$priority->{ TblDrawEnums->DrawPriority_CELLBORDER } = 7;
 	$priority->{ TblDrawEnums->DrawPriority_CELLTEXT }   = 8;
 
+	return $priority;
 }
 
 #-------------------------------------------------------------------------------------------#

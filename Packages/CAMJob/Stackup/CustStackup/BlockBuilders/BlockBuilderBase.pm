@@ -12,10 +12,10 @@ use warnings;
 #use File::Copy;
 
 #local library
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

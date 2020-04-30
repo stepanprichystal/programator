@@ -6,13 +6,13 @@ use warnings;
 
 use aliased 'Packages::Other::TableDrawing::TableDrawing';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing';
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::GeometryHelper';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsBuilder';
-use aliased 'Packages::Other::TableDrawing::Table::Style::StrokeStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::TextStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::StrokeStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::TextStyle';
 use aliased 'Packages::Other::TableDrawing::Enums';
 
 my $tDrawing = TableDrawing->new( Enums->Units_MM );

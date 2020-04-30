@@ -3,7 +3,11 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::Style::TextStyle;
+package Packages::Other::TableDrawing::TableLayout::StyleLayout::TextStyle;
+use base qw(Packages::Other::TableDrawing::TableLayout::TableLayoutBase);
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
 
 #3th party library
 use strict;
@@ -13,7 +17,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::Other::TableDrawing::Enums';
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -21,21 +25,31 @@ use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+
+	my $textType   = shift;
+	my $size       = shift;
+	my $color      = shift // Color->new( 0, 0, 0 );
+	my $font       = shift // Enums->Font_NORMAL;
+	my $fontFamily = shift // Enums->FontFamily_ARIAL;
+	my $HAlign     = shift // Enums->TextHAlign_LEFT;
+	my $VAlign     = shift // Enums->TextVAlign_TOP;
+	my $margin     = shift // 0;
+
+	my $self = {};
+	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"textType"}   = shift;
-	$self->{"size"}       = shift;
-	$self->{"color"}      = shift // Color->new( 0, 0, 0 );
-	$self->{"font"}       = shift // Enums->Font_NORMAL;
-	$self->{"fontFamily"} = shift // Enums->FontFamily_ARIAL;
-	$self->{"HAlign"}     = shift // Enums->TextHAlign_LEFT;
-	$self->{"VAlign"}     = shift // Enums->TextVAlign_TOP;
-	$self->{"margin"}     = shift // 0;
+	$self->{"textType"}   = $textType;
+	$self->{"size"}       = $size;
+	$self->{"color"}      = $color;
+	$self->{"font"}       = $font;
+	$self->{"fontFamily"} = $fontFamily;
+	$self->{"HAlign"}     = $HAlign;
+	$self->{"VAlign"}     = $VAlign;
+	$self->{"margin"}     = $margin;
 
 	return $self;
 }
-
 
 sub SetColor {
 	my $self = shift;

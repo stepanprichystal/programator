@@ -18,9 +18,9 @@ use warnings;
 #local library
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::TextStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BackgStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::TextStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderThickHelper';
 

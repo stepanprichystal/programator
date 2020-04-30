@@ -34,7 +34,7 @@ sub new {
 
 	$self->{"step"}              = "panel";
 	$self->{"stackupMngr"}       = undef;
-	$self->{"processStackupLam"} = [];
+	#$self->{"processStackupLam"} = [];
 
 	$self->__Init();
 
@@ -51,7 +51,7 @@ sub LamintaionCnt {
 	my @allLam = ();
 
 	if ( defined $self->{"stackupMngr"} ) {
-		
+
 		@allLam = $self->{"stackupMngr"}->GetAllLamination($lamType);
 	}
 
@@ -61,9 +61,10 @@ sub LamintaionCnt {
 # Prepare table drawing for each laminations
 sub Build {
 	my $self       = shift;
-	my $pageWidth  = shift // 210;                             # A4 width mm
-	my $pageHeight = shift // 290;                             # A4 height mm
-	my $lamType    = shift;                                    # Build only specific lam types
+	my $pageWidth  = shift // 210;    # A4 width mm
+	my $pageHeight = shift // 290;    # A4 height mm
+	my $tblDrawings = shift;
+	my $lamType    = shift;           # Build only specific lam types
 
 	my $result = 1;
 
@@ -79,51 +80,53 @@ sub Build {
 
 		$processLam->Build( $pageWidth, $pageHeight );
 
-		push( @{ $self->{"processStackupLam"} }, $processLam );
-
+		push(@{$tblDrawings}, $processLam->GetTableDrawing());
 	}
 
 	return $result;
 }
+#
+#sub Output {
+#	my $self        = shift;
+#	my $IDrawers    = shift;                                   # Array of drawers (one drawer for one lamination)
+#	my $fitInCanvas = shift // 1;
+#	my $HAlign      = shift // EnumsDrawBldr->HAlign_MIDDLE;
+#	my $VAlign      = shift // EnumsDrawBldr->VAlign_MIDDLE;
+#
+#	my $result     = 1;
+#	my @stackupLam = @{ $self->{"processStackupLam"} };
+#
+#	die "IDrawers count (" . scalar( @{$IDrawers} ) . ") isn not equal to lamination count (" . scalar(@stackupLam) . ")"
+#	  if ( scalar( @{$IDrawers} ) != scalar(@stackupLam) );
+#
+#	for ( my $i = 0 ; $i < scalar(@stackupLam) ; $i++ ) {
+#
+#		my $lam     = $stackupLam[$i];
+#		my $IDrawer = $IDrawers->[$i];
+#		my $tblDraw = $lam->GetTableDrawing();
+#
+#		my $scaleX = 1;
+#		my $scaleY = 1;
+#
+#		if ($fitInCanvas) {
+#			( $scaleX, $scaleY ) = GeometryHelper->ScaleDrawingInCanvasSize( $tblDraw, $IDrawer );
+#		}
+#
+#		my $xOffset = GeometryHelper->HAlignDrawingInCanvasSize( $tblDraw, $IDrawer, $HAlign, $scaleX, $scaleY );
+#		my $yOffset = GeometryHelper->VAlignDrawingInCanvasSize( $tblDraw, $IDrawer, $VAlign, $scaleX, $scaleY );
+#
+#		unless ( $tblDraw->Draw( $IDrawer, $scaleX, $scaleY, $xOffset, $yOffset ) ) {
+#
+#			print STDERR "Error during build lamination process id:" . $lam->GetLamOrder();
+#			$result = 0;
+#		}
+#	}
+#
+#	return $result;
+#}
+# 
+#
 
-sub Output {
-	my $self        = shift;
-	my $IDrawers    = shift;                                   # Array of drawers (one drawer for one lamination)
-	my $fitInCanvas = shift // 1;
-	my $HAlign      = shift // EnumsDrawBldr->HAlign_MIDDLE;
-	my $VAlign      = shift // EnumsDrawBldr->VAlign_MIDDLE;
-
-	my $result     = 1;
-	my @stackupLam = @{ $self->{"processStackupLam"} };
-
-	die "IDrawers count (" . scalar( @{$IDrawers} ) . ") isn not equal to lamination count (" . scalar(@stackupLam) . ")"
-	  if ( scalar( @{$IDrawers} ) != scalar(@stackupLam) );
-
-	for ( my $i = 0 ; $i < scalar(@stackupLam) ; $i++ ) {
-
-		my $lam     = $stackupLam[$i];
-		my $IDrawer = $IDrawers->[$i];
-		my $tblDraw = $lam->GetTableDrawing();
-
-		my $scaleX = 1;
-		my $scaleY = 1;
-
-		if ($fitInCanvas) {
-			( $scaleX, $scaleY ) = GeometryHelper->ScaleDrawingInCanvasSize( $tblDraw, $IDrawer );
-		}
-
-		my $xOffset = GeometryHelper->HAlignDrawingInCanvasSize( $tblDraw, $IDrawer, $HAlign, $scaleX, $scaleY );
-		my $yOffset = GeometryHelper->VAlignDrawingInCanvasSize( $tblDraw, $IDrawer, $VAlign, $scaleX, $scaleY );
-
-		unless ( $tblDraw->Draw( $IDrawer, $scaleX, $scaleY, $xOffset, $yOffset ) ) {
-
-			print STDERR "Error during build lamination process id:" . $lam->GetLamOrder();
-			$result = 0;
-		}
-
-	}
-	return $result;
-}
 
 sub __Init {
 	my $self = shift;

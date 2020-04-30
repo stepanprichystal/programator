@@ -21,15 +21,16 @@ sub RenderTables {
 	my $drawBuilder = shift;
 	my $tables      = shift;
 	my $tablesLim   = shift;
-	my $scaleX      = shift // 1;
-	my $scaleY      = shift // 1;
-	my $offsetX     = shift // 0; # not scaled
-	my $offsetY     = shift // 0; # not scaled
-
+	my $scaleX      = shift;
+	my $scaleY      = shift;
+	my $offsetX     = shift;
+	my $offsetY     = shift;
+	
 	$drawBuilder->Init();
 
-	foreach my $table ( @{$tables} ) {
-		
+	my @tables = $tables->GetAllTables();
+	foreach my $table (@tables) {
+
 		my $originX = $offsetX;
 		my $originY = $offsetY;
 
@@ -105,10 +106,10 @@ sub __RenderBorderTable {
 
 		my %tabLim = ();
 
-		$tabLim{"xMin"} =0;
+		$tabLim{"xMin"} = 0;
 		$tabLim{"xMax"} = $table->GetWidth();
 		$tabLim{"yMin"} = 0;
-		$tabLim{"yMax"} =  $table->GetHeight();
+		$tabLim{"yMax"} = $table->GetHeight();
 
 		$self->__DrawBorder( $drawBuilder, $table->GetBorderStyle(), \%tabLim, $tblsLim, $scaleX, $scaleY, $originX, $originY );
 	}

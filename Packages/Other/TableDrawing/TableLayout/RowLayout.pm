@@ -3,17 +3,20 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::Table::Style::StrokeStyle;
+package Packages::Other::TableDrawing::TableLayout::RowLayout;
+use base qw(Packages::Other::TableDrawing::TableLayout::TableLayoutBase);
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
 
 #3th party library
 use strict;
 use warnings;
-
-#use File::Copy;
+use List::Util qw(first);
 
 #local library
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::Enums';
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -21,48 +24,59 @@ use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+
+	my $id          = shift;
+	my $key         = shift;
+	my $height      = shift;
+	my $backgStyle  = shift;
+	my $borderStyle = shift;
+
+	my $self = {};
+	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"strokeStyle"} = shift // Enums->StrokeStyle_NONE;
-	$self->{"strokeWidth"} = shift // 0;
-	$self->{"strokeColor"} = shift // Color->new();
-	$self->{"dashLen"}   = shift // 0;
-	$self->{"gapLen"}    = shift // 0;
+	$self->{"id"}          = $id;
+	$self->{"key"}         = $key;
+	$self->{"height"}      = $height;
+	$self->{"backgStyle"}  = $backgStyle;
+	$self->{"borderStyle"} = $borderStyle;
 
 	return $self;
 }
 
-sub GetStyle {
+sub GetId {
 	my $self = shift;
 
-	return $self->{"strokeStyle"};
+	return $self->{"id"};
 
 }
 
-sub GetWidth {
+sub GetKey {
 	my $self = shift;
 
-	return $self->{"strokeWidth"};
+	return $self->{"key"};
 
 }
 
-sub GetColor {
+sub GetHeight {
 	my $self = shift;
 
-	return $self->{"strokeColor"};
+	return $self->{"height"};
+
 }
 
-sub GetDashLen {
+sub GetBackgStyle {
 	my $self = shift;
 
-	return $self->{"dashLen"};
+	return $self->{"backgStyle"};
+
 }
 
-sub GetGapLen {
+sub GetBorderStyle {
 	my $self = shift;
 
-	return $self->{"gapLen"};
+	return $self->{"borderStyle"};
+
 }
 
 #-------------------------------------------------------------------------------------------#

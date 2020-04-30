@@ -23,9 +23,9 @@ use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsDra
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Section::SectionMngr';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::Enums';
 use aliased 'Packages::CAMJob::Stackup::CustStackup::EnumsStyle';
-use aliased 'Packages::Other::TableDrawing::Table::Style::BorderStyle';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
-use aliased 'Packages::Other::TableDrawing::Table::Style::Color';
+use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -50,7 +50,7 @@ sub new {
 
 	$self->{"tblMain"} = $self->{"tblDrawing"}->AddTable( "Main", undef, $borderStyle );
 
-	$self->{"tblMain"}->{"renderOrderEvt"}->Add( sub { $self->__OnRenderPriorityHndl(@_) } );
+	$self->{"tblMain"}->SetRenderPriority( $self->__GetRenderPriority() );
 	return $self;
 }
 
@@ -99,7 +99,7 @@ sub Build {
 	unless ( $builderMngr->BuildBlocks($secMngr) ) {
 		$result = 0;
 	}
-	
+
 	return $result;
 }
 
@@ -133,29 +133,37 @@ sub Output {
 	my $xOffset = GeometryHelper->HAlignDrawingInCanvasSize( $self->{"tblDrawing"}, $IDrawer, $HAlign, $scaleX, $scaleY );
 	my $yOffset = GeometryHelper->VAlignDrawingInCanvasSize( $self->{"tblDrawing"}, $IDrawer, $VAlign, $scaleX, $scaleY );
 
-	$result = $self->{"tblDrawing"}->Draw( $IDrawer, $scaleX, $scaleY, $xOffset, $yOffset );
+	$self->{"tblDrawing"}->SetScaleX($scaleX);
+
+	$self->{"tblDrawing"}->SetScaleY($scaleY);
+
+	$self->{"tblDrawing"}->SetOriginX($xOffset);
+
+	$self->{"tblDrawing"}->SetOriginY($yOffset);
+
+	$result = $self->{"tblDrawing"}->Draw($IDrawer);
 
 	return $result;
 }
 
 # Set object (borders, backgrounds,...) render priority
-sub __OnRenderPriorityHndl {
-	my $self     = shift;
-	my $priority = shift;
+sub __GetRenderPriority {
+	my $self = shift;
 
-	$priority->{ TblDrawEnums->DrawPriority_COLLBORDER } = 1;
+	my $priority = {};
+
+		$priority->{ TblDrawEnums->DrawPriority_COLLBORDER } = 1;
 	$priority->{ TblDrawEnums->DrawPriority_COLLBACKG }  = 2;
 	$priority->{ TblDrawEnums->DrawPriority_ROWBACKG }   = 3;
-	$priority->{ TblDrawEnums->DrawPriority_TABBORDER }   = 4;
-	$priority->{ TblDrawEnums->DrawPriority_ROWBORDER }   = 5;
-	$priority->{ TblDrawEnums->DrawPriority_CELLBACKG }   = 6;
-	$priority->{ TblDrawEnums->DrawPriority_CELLBORDER }   = 7;
+	$priority->{ TblDrawEnums->DrawPriority_TABBORDER }  = 4;
+	$priority->{ TblDrawEnums->DrawPriority_ROWBORDER }  = 5;
+	$priority->{ TblDrawEnums->DrawPriority_CELLBACKG }  = 6;
+	$priority->{ TblDrawEnums->DrawPriority_CELLBORDER } = 7;
 	$priority->{ TblDrawEnums->DrawPriority_CELLTEXT }   = 8;
-	
-	
-	
+
+	return $priority;
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
