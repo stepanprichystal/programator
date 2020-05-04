@@ -28,14 +28,15 @@ use aliased 'Packages::TriggerFunction::MDIFiles';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::TriggerFunction::NCFiles';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::TriggerFunction::Travelers';
 use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
 use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 
 my $orderId  = shift;    # job order for process
 my $taskType = shift;    # type of task to process
-my $loginId = shift;    # user which do request
+my $loginId  = shift;    # user which do request
 
-#$orderId = "d152457-01";
+#$orderId = "d279269-01";
 #$taskType = TaskEnums->PCB_TOPRODUCE;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
@@ -45,13 +46,11 @@ my $logger = get_logger("trigger");
 
 $logger->debug("Trigger page run");
 
-
 $logger->debug("Params before set default values. Order id: $orderId, Task type: $taskType, LoginId: $loginId");
 
-
 # Set default values for params
- 
-if (  $taskType eq "not_defined" ) {
+
+if ( $taskType eq "not_defined" ) {
 
 	$taskType = TaskEnums->PCB_TOPRODUCE;
 }
@@ -93,13 +92,27 @@ else {
 #-------------------------------------------------------------------------------------------#
 
 sub __PcbToProduce {
-
-	# 1) change some lines in MDI xml files eval
+	
+	# 1) Convert trevellers template to pdf
 	eval {
 
-		$logger->debug("Before process MDI files --".$orderId."--");
+		$logger->debug( "Before process trevelers template files --" . $orderId . "--" );
+		Travelers->StackupTemplate2PDF($orderId);
+		$logger->debug( "After process trevelers template files --" . $orderId . "--" );
+
+	};
+	if ($@) {
+
+		$processed = 0;
+		$logger->error( "\n Error when processing \"trevelers template\" job: $orderId.\n" . $@, 1 );
+	}
+
+	# 2) change some lines in MDI xml files eval
+	eval {
+
+		$logger->debug( "Before process MDI files --" . $orderId . "--" );
 		MDIFiles->AddPartsNumber($orderId);
-		$logger->debug("After process MDI files --".$orderId."--");
+		$logger->debug( "After process MDI files --" . $orderId . "--" );
 
 	};
 	if ($@) {
@@ -108,7 +121,7 @@ sub __PcbToProduce {
 		$logger->error( "\n Error when processing \"MDI files\" job: $orderId.\n" . $@, 1 );
 	}
 
-	# 2) change drilled number in NC files
+	# 3) change drilled number in NC files
 	eval {
 
 		NCFiles->ChangePcbOrderNumber($orderId);
@@ -118,8 +131,8 @@ sub __PcbToProduce {
 		$processed = 0;
 		$logger->error( "\n Error when processing \"NC files\" (change pcb drilled nuimber) job: $orderId.\n" . $@, 1 );
 	}
-	
-	# 3) Add rout speed to NC rout operation
+
+	# 4) Add rout speed to NC rout operation
 	eval {
 
 		NCFiles->CompleteRoutFeed($orderId);

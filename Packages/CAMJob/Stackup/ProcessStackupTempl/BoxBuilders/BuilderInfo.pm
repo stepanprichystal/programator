@@ -86,7 +86,7 @@ sub Build {
 		EnumsStyle->TxtSize_NORMAL,
 		Color->new( 0, 0, 0 ),
 		TblDrawEnums->Font_BOLD,         undef,
-		TblDrawEnums->TextHAlign_LEFT,
+		TblDrawEnums->TextHAlign_RIGHT,
 		TblDrawEnums->TextVAlign_CENTER, 1
 	);
 	
@@ -189,8 +189,7 @@ sub __BuildMatInfo {
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, "Přířezů navíc:", $txtLCollStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $amountExtraStr, $txtRCollStyle );
 
-	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
-
+	 
 	# Put info about dodelavka
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 

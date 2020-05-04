@@ -201,12 +201,11 @@ sub __ExportStackup {
 	}
 
 	# 1) Clear old files
-	my @stakupTepl =  FileHelper->GetFilesNameByPattern($pDirStackup, "stackup");
-  	unlink( $_ ) foreach(@stakupTepl);
-	 
-	my @stakupPdf =  FileHelper->GetFilesNameByPattern($pDirPdf, "stackup");
-  	unlink( $_ ) foreach(@stakupPdf);
- 
+	my @stakupTepl = FileHelper->GetFilesNameByPattern( $pDirStackup, "stackup" );
+	unlink($_) foreach (@stakupTepl);
+
+	my @stakupPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "stackup" );
+	unlink($_) foreach (@stakupPdf);
 
 	my $pSerTempl = $pDirStackup . $jobId . "_template_stackup.txt";
 	my $pOutTempl = $pDirStackup . $jobId . "_template_stackup.pdf";
@@ -234,6 +233,8 @@ sub __ExportStackup {
 				$resultStackup->AddError( "Can not delete old pdf stackup file (" . $pOutTempl . "). Maybe file is still open.\n" );
 			}
 
+			unlink( $stackup->GetOutputPath() );
+
 			# 3) Output all orders in production
 			my @PDFOrders = ();
 			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
@@ -251,7 +252,7 @@ sub __ExportStackup {
 
 			my $serFromFile = FileHelper->ReadAsString($pSerTempl);
 
-		foreach my $order (@PDFOrders) {
+			foreach my $order (@PDFOrders) {
 
 				$stackup->OutputSerialized( $serFromFile, $lamType, $order->{"orderId"}, $order->{"extraProducId"} );
 
@@ -260,6 +261,8 @@ sub __ExportStackup {
 				unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
 					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
 				}
+
+				unlink( $stackup->GetOutputPath() );
 
 			}
 

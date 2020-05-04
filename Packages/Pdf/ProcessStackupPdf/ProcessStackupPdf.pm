@@ -105,8 +105,7 @@ sub OutputTemplate {
 	my $self    = shift;
 	my $lamType = shift;    # Build only specific lam type
 
-	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
-
+	
 	die "Process stackup is not defined" unless ( defined $self->{"processStckp"} );
 
 	my $result = 1;
@@ -321,6 +320,8 @@ sub __MergeLamPDF {
 
 	# Merge all togehter
 	# the output file
+	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
+	
 	my $pdf_out = PDF::API2->new( -file => $self->{"outputPath"} );
 
 	my $pagesTotal = 1;
@@ -426,6 +427,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			unless ( copy( $stackup->GetOutputPath(), $pOutTempl ) ) {
 				print STDERR "Can not delete old pdf stackup file (" . $pOutTempl . "). Maybe file is still open.\n";
 			}
+			
+			unlink($stackup->GetOutputPath());
 
 			# 3) Output all orders in production
 			my @PDFOrders = ();
@@ -453,6 +456,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 				unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
 					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
 				}
+				
+				unlink($stackup->GetOutputPath());
 
 			}
 
