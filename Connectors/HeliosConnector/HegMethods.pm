@@ -1877,7 +1877,7 @@ sub GetMatStoreInfoByUDA {
 #		$where .= " and uda.dps_id2 = __id2";
 #	}
 #
-#	my $cmd = "SELECT 
+#	my $cmd = "SELECT
 #				kks.reference_subjektu,
 #				kks.nazev_subjektu,
 #				kks.vyska,
@@ -2254,6 +2254,64 @@ sub GetImpedancExist {
 
 }
 
+# Return information about all production order by order id
+# Available statuses of product order
+#Poøízený (P)
+#Uvolnìný (N)
+#Ukonèený (J)
+#Uzavøený (Z)
+#Ukonèený (A)
+#Odloženo (O)
+sub GetProducOrderByOederId {
+	my $self            = shift;
+	my $orderId         = shift;
+	my $extraProducId = shift ;    # pouze prikazy s cislem dodelavky vetsi jak 0
+	my $status          = shift;         #  status of Produc order
+
+ 
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+
+	my $extraProducCMD = "";
+	if(defined $extraProducId){
+		
+		$extraProducCMD = " and udapo.cislo_dodelavky = $extraProducId /* jedna se o dodelavku */";
+	}
+
+	my $statusCMD = "";
+	if(defined $status){
+		
+		$statusCMD = " and po.status = '".uc($status)."'";
+	}
+
+	my $cmd = "select
+      		 udapo.cislo_dodelavky,
+      		 po.status,
+      		 lcs.nf_edit_style('mfr_prod_order_status', po.status) status_text,
+      		 po.status,
+      		 po.nazev_subjektu,
+      		 po.qty_source,
+      		 po.cislo_subjektu,
+      		 z.kusy_pozadavek,
+			z.pocet_prirezu,
+			z.prirezu_navic,
+			z.datum_zahajeni,
+			z.termin,
+			d.nasobnost,
+			CEILING(po.qty_source/d.nasobnost) AS prirezy_dodelavka
+		from lcs.product_order po
+      		 join lcs.uda_product_order udapo on udapo.cislo_subjektu = po.cislo_subjektu
+      		 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.reference_subjektu=po.nazev_subjektu
+      		 left outer join lcs.desky_22 d with (nolock) on d.cislo_subjektu=z.deska
+		where po.nazev_subjektu = _OrderId /* cislo_subjektu zakazky dps */
+      		 and po.nazev_subjektu not like '%-J%' /* odfiltrovani jader */
+      		 $extraProducCMD
+      		 $statusCMD";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	return @result;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Helper method
 #-------------------------------------------------------------------------------------------#
@@ -2291,9 +2349,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->GetMatStoreInfo("0305000031");
+	my @mat = HegMethods->GetProducOrderByOederId( "d027248-58", 1, "N" );
 
-	dump($mat);
+	dump(@mat);
 	die;
 }
 

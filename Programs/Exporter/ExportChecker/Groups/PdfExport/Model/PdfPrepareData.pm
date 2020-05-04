@@ -19,7 +19,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
-use aliased 'Packages::Pdf::ProcessStackupPdf::ProcessStackupPdf';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::ProcessStackupTempl';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -121,10 +121,12 @@ sub OnPrepareGroupData {
 	# 5) default stackup export
 	my $defStackup = 0;
 
-	my $procStackup = ProcessStackupPdf->new( $inCAM, $jobId );
+	my $procStack = ProcessStackupTempl->new( $inCAM, $jobId );
 
-	if ( $procStackup->GetLaminationExist() ) {
+	# 2) Check if there is any laminations
 
+	if ( $procStack->LamintaionCnt() ) {
+		
 		$defStackup = 1;
 	}
 

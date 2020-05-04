@@ -11,7 +11,9 @@ package Packages::ObjectStorable::JsonStorable::JsonStorable;
 #3th party library
 use strict;
 use warnings;
-use JSON;
+#use JSON;
+use JSON::XS;
+ 
 
 #local library
 
@@ -24,8 +26,9 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"json"} = JSON->new();
-
+	#$self->{"json"} = JSON->new();
+	$self->{"json"} = JSON::XS->new->ascii->pretty->allow_nonref;
+	
 	$self->{"json"}->convert_blessed( [1] );
 
 	return $self;

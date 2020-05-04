@@ -18,6 +18,7 @@ use File::Copy;
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
+use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
@@ -25,6 +26,8 @@ use aliased 'Packages::Pdf::ProcessStackupPdf::ProcessStackupPdf';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
 use aliased 'Packages::Pdf::DrillMapPdf::DrillMapPdf';
 use aliased 'Packages::Pdf::NCSpecialPdf::NCSpecialPdf';
+use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::ProcessStackupTempl';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -69,11 +72,11 @@ sub Run {
 
 	if ( $self->{"exportStackup"} ) {
 		$self->__ExportStackup();
-		
-		if(CamJob->GetSignalLayerCnt($self->{"inCAM"},$self->{"jobId"} ) > 2){
+
+		if ( CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} ) > 2 ) {
 			$self->__ExportStackupOld();
 		}
-		
+
 	}
 
 	if ( $self->{"exportPressfit"} ) {
@@ -185,15 +188,84 @@ sub __ExportStackup {
 	my $jobId = $self->{"jobId"};
 
 	my $resultStackup = $self->_GetNewItem("Production stackup pdf");
-	my $stackup = ProcessStackupPdf->new( $inCAM, $jobId );
 
-	if ( $stackup->GetLaminationExist() ) {
+	my $pDirStackup = JobHelper->GetJobArchive($jobId) . "tpvpostup\\";
+	my $pDirPdf     = JobHelper->GetJobArchive($jobId) . "pdf\\";
+
+	unless ( -d $pDirStackup ) {
+		die "Unable to create dir: $pDirStackup" unless ( mkdir $pDirStackup );
+	}
+
+	unless ( -d $pDirPdf ) {
+		die "Unable to create dir: $pDirPdf" unless ( mkdir $pDirPdf );
+	}
+
+	# 1) Clear old files
+	my @stakupTepl =  FileHelper->GetFilesNameByPattern($pDirStackup, "stackup");
+  	unlink( $_ ) foreach(@stakupTepl);
+	 
+	my @stakupPdf =  FileHelper->GetFilesNameByPattern($pDirPdf, "stackup");
+  	unlink( $_ ) foreach(@stakupPdf);
+ 
+
+	my $pSerTempl = $pDirStackup . $jobId . "_template_stackup.txt";
+	my $pOutTempl = $pDirStackup . $jobId . "_template_stackup.pdf";
+
+	my $stackup = ProcessStackupPdf->new($jobId);
+	my $procStack = ProcessStackupTempl->new( $inCAM, $jobId );
+
+	# 2) Check if there is any laminations
+
+	if ( $procStack->LamintaionCnt() ) {
 
 		#my $lamType = ProcStckpEnums->LamType_CVRLPRODUCT;
-		my $lamType = undef;
-		my $resultCreate = $stackup->Create( undef, undef, undef, $lamType );
+		my $lamType      = undef;
+		my $ser          = "";
+		my $resultCreate = $stackup->BuildTemplate( $inCAM, $lamType, \$ser );
 
-		unless ($resultCreate) {
+		if ($resultCreate) {
+
+			# 1) Output serialized template
+			FileHelper->WriteString( $pSerTempl, $ser );
+
+			# 2) Output pdf template
+			$stackup->OutputTemplate($lamType);
+			unless ( copy( $stackup->GetOutputPath(), $pOutTempl ) ) {
+				$resultStackup->AddError( "Can not delete old pdf stackup file (" . $pOutTempl . "). Maybe file is still open.\n" );
+			}
+
+			# 3) Output all orders in production
+			my @PDFOrders = ();
+			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
+			@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
+
+			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
+
+			# Add all extro production
+			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
+
+				my @extraOrders = HegMethods->GetProducOrderByOederId( $orderId, undef, "N" );
+				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
+				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
+			}
+
+			my $serFromFile = FileHelper->ReadAsString($pSerTempl);
+
+		foreach my $order (@PDFOrders) {
+
+				$stackup->OutputSerialized( $serFromFile, $lamType, $order->{"orderId"}, $order->{"extraProducId"} );
+
+				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
+
+				unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
+					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
+				}
+
+			}
+
+		}
+		else {
+
 			$resultStackup->AddError("Failed to create pdf stackup");
 		}
 	}
@@ -202,27 +274,7 @@ sub __ExportStackup {
 		die "No lamination exists in job";
 	}
 
-	my $tmpPath = $stackup->GetOutputPath();
-	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf";
-
-	# create folder
-	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
-		mkdir( JobHelper->GetJobArchive($jobId) . "pdf" );
-	}
-	if ( -e $pdfPath ) {
-		unless ( unlink($pdfPath) ) {
-			die "Can not delete old pdf stackup file (" . $pdfPath . "). Maybe file is still open.\n";
-		}
-	}
-
-	unless ( copy( $tmpPath, $pdfPath ) ) {
-
-		$resultStackup->AddError( "Can not delete old pdf stackup file (" . $pdfPath . "). Maybe file is still open.\n" );
-
-	}
-
 	$self->_OnItemResult($resultStackup);
-
 }
 
 sub __ExportStackupOld {
