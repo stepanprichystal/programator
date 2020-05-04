@@ -47,7 +47,7 @@ sub UnMaskBGAThroughHole {
 	if ( scalar(@NC) && scalar(@sm) ) {
 
 		my $resize          = -50;    # copy drill smaller about 50µm to solder mask
-		my $minDistHole2Pad = 500;    # 500µm minimal distance of through hole to pad
+		my $minDistHole2Pad = 2000;    # 2000µm minimal distance of through hole to pad
 		$result = UnMaskNC->UnMaskThroughHoleNearBGA( $inCAM, $jobId, $step, $resize, $minDistHole2Pad, \$unMaskedCntRef, \$unMaskAttrValRef );
 
 		if ( $result && $unMaskedCntRef > 0 ) {
@@ -104,7 +104,7 @@ sub UnMaskSMDThroughHole {
 	if ( scalar(@NC) && scalar(@sm) ) {
 
 		my $resize          = -50;    # copy drill smaller about 50µm to solder mask
-		my $minDistHole2Pad = 300;    # 300µm minimal distance of through hole to pad
+		my $minDistHole2Pad = 2000;    # 2000µm minimal distance of through hole to pad
 		$result = UnMaskNC->UnMaskThroughHoleNearSMD( $inCAM, $jobId, $step, $resize, $minDistHole2Pad, \$unMaskedCntRef, \$unMaskAttrValRef )
 		  ;
 
