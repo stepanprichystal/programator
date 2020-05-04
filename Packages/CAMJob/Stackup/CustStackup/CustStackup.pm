@@ -132,16 +132,9 @@ sub Output {
 
 	my $xOffset = GeometryHelper->HAlignDrawingInCanvasSize( $self->{"tblDrawing"}, $IDrawer, $HAlign, $scaleX, $scaleY );
 	my $yOffset = GeometryHelper->VAlignDrawingInCanvasSize( $self->{"tblDrawing"}, $IDrawer, $VAlign, $scaleX, $scaleY );
+ 
 
-	$self->{"tblDrawing"}->SetScaleX($scaleX);
-
-	$self->{"tblDrawing"}->SetScaleY($scaleY);
-
-	$self->{"tblDrawing"}->SetOriginX($xOffset);
-
-	$self->{"tblDrawing"}->SetOriginY($yOffset);
-
-	$result = $self->{"tblDrawing"}->Draw($IDrawer);
+	$result = $self->{"tblDrawing"}->Draw($IDrawer, $scaleX, $scaleY, $xOffset, $yOffset);
 
 	return $result;
 }
