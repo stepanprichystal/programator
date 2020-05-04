@@ -18,6 +18,7 @@ use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsDrill';
+use aliased 'Packages::Stackup::StackupBase::StackupBase';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -313,6 +314,45 @@ sub GetMaterialParams {
 	# Dir name of default machine parameters
 	my $macDefName = "machine_default";
 
+	# Get proper material file
+	if ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
+
+		$materialName = "PREPREG";
+	}
+	elsif ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
+
+		$materialName = "COVERLAY";
+	}
+
+	if ( $materialName =~ /Hybrid/i ) {
+
+		# Get proper material type from stackup
+
+		my $stackup = StackupBase->new($jobId);
+		my @types   = $stackup->GetStackupHybridTypes();
+
+		if (    scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types )
+			 && scalar( grep { $_ =~ /(PYRALUX)/i } @types ) )
+		{
+			$materialName = "HYBRID_PYRALUX-FR4";
+		}
+		elsif (    scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types )
+				&& scalar( grep { $_ =~ /(RO3)/i } @types ) )
+		{
+			$materialName = "HYBRID_RO3-FR4";
+		}
+		elsif (    scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types )
+				&& scalar( grep { $_ =~ /(RO4)/i } @types ) )
+		{
+			$materialName = "HYBRID_RO4-FR4";
+		}
+		elsif (    scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types )
+				&& scalar( grep { $_ =~ /(R58X0)/i } @types ) )
+		{
+			$materialName = "HYBRID_R58X0-FR4";
+		}
+	}
+
 	# 1) parse Drilling parameter
 	my $drillOp   = CamDrilling->GetToolOperation( $inCAM, $jobId, $layer, EnumsDrill->TypeProc_HOLE );
 	my $drillDef  = {};
@@ -523,7 +563,7 @@ sub GetDrilledNumber {
 	}
 	elsif ( $position eq "stdframe" ) {
 
-		$scanMark =  qr/^drilled_pcbId_c/; # attribut value can have suffix
+		$scanMark = qr/^drilled_pcbId_c/;    # attribut value can have suffix
 	}
 	else {
 
@@ -547,12 +587,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d113608";
+	my $jobId    = "d270787";
 	my $stepName = "panel";
 
-	my $materialName = "IS400";
+	my $materialName = "Hybrid";
 	my $machine      = "machine_c";
-	my $layer        = "rs";
+	my $layer        = "f";
 
 	my $uniDTM = UniDTM->new( $inCAM, $jobId, $stepName, $layer, 1 );
 	my @t = $uniDTM->GetTools();

@@ -273,56 +273,28 @@ sub OnCheckGroupData {
 	if ( $layerCnt > 2 && $materialKindIS && $pcbThickHelios ) {
 
 		# Multilayer PCB
+		my $stackup = $defaultInfo->GetStackup();
 
-		# a) test id material in helios, match material in stackup
+		# a) test id material in helios, match material in stackup (only non hybrid PCB)
+		if ( !$stackup->GetStackupIsHybrid() ) {
 
-		my $stackKindStr = $defaultInfo->GetStackup()->GetStackupType();
-		$stackKindStr =~ s/[\s\t]//g;
-		$stackKindStr = uc($stackKindStr);
-		my @allStackKind = split( /\+/, $stackKindStr );
+			my $stackKindStr = $defaultInfo->GetStackup()->GetStackupType();
+			$stackKindStr =~ s/[\s\t]//g;
 
-		for ( my $i = 0 ; $i < scalar(@allStackKind) ; $i++ ) {
+			$stackKindStr =~ s/.*DE104.*/FR4/ig;    #exception DE 104 and IS400 eq FR4
 
-			$allStackKind[$i] =~ s/.*DE104.*/FR4/g;    #exception DE 104 and IS400 eq FR4
-			                                           #$allStackKind[$i] =~ s/.*PYRALUX.*/PYRALUX/g; #exception PYRALUXCG and PYRALUXAP eq PYRALUX
-
-			if ( $allStackKind[$i] =~ /.*IS400.*/ && $stackKindStr =~ /PYRALUX/ ) {
-				$allStackKind[$i] = "FR4";
+			if ( $stackKindStr =~ /.*IS400.*/i && $stackKindStr =~ /PYRALUX/i ) {
+				$stackKindStr = "FR4";
 			}
 
-		}
-
-		my @allMaterialKindIS = split( /\-/, $materialKindIS );
-
-		my %counts;
-		$counts{$_}++ for @allStackKind;
-
-		foreach my $nameIS (@allMaterialKindIS) {
-
-			my $n = ( grep { $_ =~ /$nameIS/ } @allStackKind )[0];
-
-			if ( defined $n ) {
-				$counts{$n}++;
-			}
-			else {
-
-				$counts{$nameIS} = 1;
-			}
-		}
-
-		foreach my $name ( keys %counts ) {
-
-			if ( $counts{$name} != 2 ) {
-
+			unless ( $stackKindStr =~ /$materialKindIS/ ) {
 				$dataMngr->_AddErrorResult(
-											"Stackup material",
-											"Stackup material doesn't match with material in Helios. Stackup material: "
-											  . join( "+", @allStackKind )
-											  . ", Helios material: "
-											  . join( "+", @allMaterialKindIS ) . "."
+					"Stackup material",
+					"Stackup material doesn't match with material in Helios. Stackup material: $stackKindStr"
+					  . ", Helios material: $materialKindIS"
 				);
-				last;
 			}
+
 		}
 
 		# b) test if created stackup match thickness in helios +-5%
@@ -423,8 +395,7 @@ sub OnCheckGroupData {
 		 && $layerCnt <= 2 )
 	{
 		my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
-		if ( $h > $maxThinHALPB )
-		{
+		if ( $h > $maxThinHALPB ) {
 			$dataMngr->_AddErrorResult(
 										"Panel dimension - thin PBC",
 										"Nelze použít velký rozměr panelu ("

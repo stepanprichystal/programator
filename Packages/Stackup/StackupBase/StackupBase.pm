@@ -56,7 +56,7 @@ sub new {
 
 	# Cu layer count
 	$self->{"layerCnt"} = undef;
-	
+
 	# Nominal thickness requested by customer
 	$self->{"nominalThick"} = undef;
 
@@ -173,11 +173,27 @@ sub GetCoreByCuLayer {
 }
 
 # Return type of material, which stackup is composed from
-# Assume, all layers are same type, so take type from first core
 sub GetStackupType {
 	my $self = shift;
 
 	return join( "+", uniq( map( $_->GetTextType(), $self->GetAllCores() ) ) );
+}
+
+# Return type of material, which stackup is composed from
+sub GetStackupHybridTypes {
+	my $self = shift;
+
+	die "Stackup is not hybrid" unless ( $self->GetStackupIsHybrid() );
+
+	my @types = uniq( map( $_->GetTextType(), $self->GetAllCores() ) );
+
+	for ( my $i = 0 ; $i < scalar(@types) ; $i++ ) {
+
+		$types[$i] =~ s/\s*//g;
+
+	}
+
+	@types;
 }
 
 # Return if stackup is hybrid
@@ -191,11 +207,12 @@ sub GetStackupIsHybrid {
 }
 
 # Return nominal thickness requested by customer
-sub GetNominalThickness{
+sub GetNominalThickness {
 	my $self = shift;
-	
+
 	return $self->{"nominalThick"};
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Private method
 #-------------------------------------------------------------------------------------------#
@@ -338,11 +355,10 @@ sub __SetStackupLayers {
 			# Every noflow prepreg which is next on flex core is always single (no more prepregs merged into one parent)
 			# check if prepreg  under flex core
 			$newParent = 1
-			  if ( defined $curParentPrpg
+			  if (    defined $curParentPrpg
 				   && $curParentPrpg->GetIsNoFlow()
 				   && $parsedLayers[$i]->GetIsNoFlow()
-				   && $curParentPrpg->GetFlexPress != $flexPress
-			  );
+				   && $curParentPrpg->GetFlexPress != $flexPress );
 
 			if ($newParent) {
 
@@ -361,7 +377,7 @@ sub __SetStackupLayers {
 				$curParentPrpg->{"parent"}   = 1;
 				$curParentPrpg->{"noFlow"}   = $parsedLayers[$i]->GetIsNoFlow();
 				$curParentPrpg->{"noFlowType"} = $noFlowType if ( $parsedLayers[$i]->GetIsNoFlow() );
-				$curParentPrpg->{"flexPress"} = $flexPress if ( $parsedLayers[$i]->GetIsNoFlow() );
+				$curParentPrpg->{"flexPress"}  = $flexPress  if ( $parsedLayers[$i]->GetIsNoFlow() );
 
 			}
 
@@ -369,7 +385,7 @@ sub __SetStackupLayers {
 			my $childPrpgInfo = $parsedLayers[$i];
 
 			$childPrpgInfo->{"noFlowType"} = $noFlowType if ( $childPrpgInfo->GetIsNoFlow() );
-			$childPrpgInfo->{"flexPress"} = $flexPress if ( $childPrpgInfo->GetIsNoFlow() );
+			$childPrpgInfo->{"flexPress"}  = $flexPress  if ( $childPrpgInfo->GetIsNoFlow() );
 
 			$curParentPrpg->AddChildPrepreg($childPrpgInfo);
 
@@ -395,8 +411,7 @@ sub __SetOtherProperty {
 
 	#set cu layers count
 	$self->{"layerCnt"} = scalar( grep GeneralHelper->RegexEquals( $_->{type}, Enums->MaterialType_COPPER ), @stackupL );
-	
-	
+
 	$self->{"nominalThick"} = $self->{"parser"}->GetNominalThick();
 
 }
