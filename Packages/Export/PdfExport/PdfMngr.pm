@@ -290,7 +290,7 @@ sub __ExportStackupOld {
 	my $resultCreate = $stackup->Create( 1, 1, 1 );
 
 	my $tmpPath = $stackup->GetStackupPath();
-	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm_old.pdf";
+	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf";
 
 	# create folder
 	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {

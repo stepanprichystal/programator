@@ -42,15 +42,7 @@ sub new {
 	$self->{"pcbInfoIS"} = ( HegMethods->GetAllByPcbId( $self->{"jobId"} ) )[0];
 
 	# Get order info of active orders (take order with smaller reference)
-	my @orders = HegMethods->GetPcbOrderNumbers( $self->{"jobId"} );
-	@orders = grep { $_->{"stav"} !~ /^[57]$/ } @orders;    # not ukoncena and stornovana
-	if ( scalar(@orders) ) {
-
-		@orders = sort { int( $a->{"reference_subjektu"} ) <=> int( $b->{"reference_subjektu"} ) } @orders;
-		my $orderId = $orders[0]{"reference_subjektu"};
-		$self->{"orderId"}     = $orderId;
-		$self->{"orderInfoIS"} = { HegMethods->GetAllByOrderId($orderId) };
-	}
+ 
 
 	$self->{"nifFile"} = NifFile->new( $self->{"jobId"} );
 
@@ -76,12 +68,7 @@ sub GetOrderId {
 
 	my $orderName = $self->{"jobId"} ."-".Enums->KEYORDERNUM;
 	
-	
-	
-#	if(defined $self->{"orderId"}){
-#		$orderName = $self->{"orderId"};
-#	}
-
+ 
 	return $orderName;
 
 }
@@ -208,6 +195,14 @@ sub GetPcbType {
 
 	return $self->{"pcbType"};
 }
+
+sub GetISPcbType {
+	my $self = shift;
+	
+	return HegMethods->GetTypeOfPcb($self->{"jobId"})
+}
+
+
 #
 #sub GetPlatedNC {
 #	my $self = shift;

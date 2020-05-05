@@ -46,7 +46,7 @@ sub new {
 
 	$self->{"paperWidth"}  = shift // 210;
 	$self->{"paperHeight"} = shift // 297;
-	$self->{"paperMargin"} = shift // 6;                              # margin of printer
+	$self->{"paperMargin"} = shift // 6;                               # margin of printer
 	$self->{"fitInCanvas"} = shift // 1;                               # Scale stackup to PDF page size
 	$self->{"HAlign"}      = shift // EnumsDrawBldr->HAlign_MIDDLE;    # Center stackup horizontall at page
 	$self->{"VAlign"}      = shift // EnumsDrawBldr->VAlign_MIDDLE;    # Center stackup verticall at page
@@ -105,7 +105,6 @@ sub OutputTemplate {
 	my $self    = shift;
 	my $lamType = shift;    # Build only specific lam type
 
-	
 	die "Process stackup is not defined" unless ( defined $self->{"processStckp"} );
 
 	my $result = 1;
@@ -220,7 +219,14 @@ sub __UpdateJSONTemplate {
 	my $orderId    = shift;
 	my $extraOrder = shift;    # number of extra production
 
-	my $infoIS = ( HegMethods->GetProducOrderByOederId( $orderId, $extraOrder, ( $extraOrder > 0 ? "N" : undef ) ) )[0];
+	my $infoIS = undef;
+
+	if ( $extraOrder > 0 ) {
+		$infoIS = ( HegMethods->GetProducOrderByOederId( $orderId, $extraOrder, "N" ) )[0];
+	}
+	else {
+		$infoIS = { HegMethods->GetAllByOrderId($orderId) };
+	}
 
 	my ($orderNum) = $orderId =~ m/\w\d{6}-(\d+)/;
 
@@ -278,7 +284,7 @@ sub __UpdateJSONTemplate {
 	$$JSONstr = join( JSONPAGESEP, @JSONstrUpdt );
 
 	my $extraOrderStr    = $extraOrder > 0 ? "DODĚLÁVKA Č:" : "";
-	my $extraOrderValStr = $extraOrder > 0 ? $extraOrder        : "";
+	my $extraOrderValStr = $extraOrder > 0 ? $extraOrder       : "";
 	my $v_KEYEXTRAPRODUC = ProcStckpEnums->KEYEXTRAPRODUC;
 	my $v_KEYEXTRAPRODUCVAL = ProcStckpEnums->KEYEXTRAPRODUCVAL;
 	$$JSONstr =~ s/$v_KEYEXTRAPRODUC/$extraOrderStr/ig;
@@ -321,7 +327,7 @@ sub __MergeLamPDF {
 	# Merge all togehter
 	# the output file
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
-	
+
 	my $pdf_out = PDF::API2->new( -file => $self->{"outputPath"} );
 
 	my $pagesTotal = 1;
@@ -379,12 +385,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $jobId = "d274986";    # standard vv 4V
 	#my $jobId = "d266566"; # inner flex
 	#my $jobId = "d146753"; # 1v flex
-	my $jobId = "d267628" ; # flex 2v + stiff
+	#my $jobId = "d267628" ; # flex 2v + stiff
 	#my $jobId = "d064915"; # neplat
 	#my $jobId = "d275112"; # standard 1v
 	#my $jobId = "d275162"; # standard 2v
 
-	#my $jobId       = "d279269";
+	my $jobId       = "d162595";
 	my $pDirStackup = EnumsPaths->Client_INCAMTMPOTHER . "pdfstackup\\";
 	my $pDirPdf     = EnumsPaths->Client_INCAMTMPOTHER . "pdf\\";
 
@@ -396,11 +402,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 		die "Unable to create dir: $pDirStackup" unless ( mkdir $pDirPdf );
 	}
 
-	my @stakupTepl =  FileHelper->GetFilesNameByPattern($pDirStackup, "stackup");
-  	unlink( $_ ) foreach(@stakupTepl);
-	 
-	my @stakupPdf =  FileHelper->GetFilesNameByPattern($pDirPdf, "stackup");
-  	unlink( $_ ) foreach(@stakupPdf);
+	my @stakupTepl = FileHelper->GetFilesNameByPattern( $pDirStackup, "stackup" );
+	unlink($_) foreach (@stakupTepl);
+
+	my @stakupPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "stackup" );
+	unlink($_) foreach (@stakupPdf);
 
 	my $pSerTempl = $pDirStackup . $jobId . "_template_stackup.txt";
 	my $pOutTempl = $pDirStackup . $jobId . "_template_stackup.pdf";
@@ -427,8 +433,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			unless ( copy( $stackup->GetOutputPath(), $pOutTempl ) ) {
 				print STDERR "Can not delete old pdf stackup file (" . $pOutTempl . "). Maybe file is still open.\n";
 			}
-			
-			unlink($stackup->GetOutputPath());
+
+			unlink( $stackup->GetOutputPath() );
 
 			# 3) Output all orders in production
 			my @PDFOrders = ();
@@ -456,8 +462,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 				unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
 					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
 				}
-				
-				unlink($stackup->GetOutputPath());
+
+				unlink( $stackup->GetOutputPath() );
 
 			}
 

@@ -66,6 +66,14 @@ sub Build {
 								   TblDrawEnums->Font_NORMAL, undef,
 								   TblDrawEnums->TextHAlign_RIGHT,
 								   TblDrawEnums->TextVAlign_CENTER, 1 );
+	
+		my $txtRedStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+								   EnumsStyle->TxtSize_SMALL,
+								   Color->new( 204, 0, 0 ),
+								   TblDrawEnums->Font_NORMAL, undef,
+								   TblDrawEnums->TextHAlign_RIGHT,
+								   TblDrawEnums->TextVAlign_CENTER, 1 );
+								   
 	my $txtValStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 									  EnumsStyle->TxtSize_NORMAL,
 									  Color->new( 0, 0, 0 ),
@@ -86,7 +94,7 @@ sub Build {
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Text") ), 1, undef, undef, "Název desky:", $txtStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Val") ), 1, undef, undef, $stackupMngr->GetPCBName(), $txtValStyle );
 
-	# PCB name
+	# PCB customer
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Text") ), 2, undef, undef, "Zákazník:", $txtStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Val") ), 2, undef, undef, $stackupMngr->GetCustomerName(), $txtValStyle );
 
@@ -97,6 +105,10 @@ sub Build {
 	# Date
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col2Text") ), 1, undef, undef, "Termín:", $txtStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col2Val") ), 1, undef, undef, $stackupMngr->GetOrderTerm(), $txtValStyle );
+	
+	# Date control
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col2Val") ), 2, undef, undef, "Datumy jsou předběžné, ověř správnost na hlavním postupu!", $txtRedStyle );
+	#$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("col1Val") ), 2, undef, undef, $stackupMngr->GetCustomerName(), $txtValStyle );
 
 }
 

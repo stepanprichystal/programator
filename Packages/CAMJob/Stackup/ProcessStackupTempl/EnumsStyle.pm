@@ -32,6 +32,7 @@ use constant {
 
 # Text size [mm]
 use constant {
+	TxtSize_SMALL => 3.0,
 	TxtSize_NORMAL => 3.4,
 	TxtSize_BIG    => 4.0,
 	TxtSize_PCBID  => 4.3,
@@ -44,7 +45,7 @@ use constant {
 	ClmnWidth_margin => 0.5,
 
 	BoxTitleClmnWidth_1 => 30,
-	BoxTitleClmnWidth_2 => 100,
+	BoxTitleClmnWidth_2 => 115,
 	BoxTitleClmnWidth_3 => 30,
 	BoxTitleClmnWidth_4 => 30,
 

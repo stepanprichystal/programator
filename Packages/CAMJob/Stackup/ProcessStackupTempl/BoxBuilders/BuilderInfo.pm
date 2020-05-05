@@ -143,6 +143,13 @@ sub __BuildMatInfo {
 
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
+	# DPS type
+	my $rowPCBType = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
+
+	my $pcbType = $stckpMngr->GetISPcbType();
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Typ desky:", $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $pcbType,           $txtRCollStyle );
+
 	# Layer count
 	my $rowCuCnt = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
