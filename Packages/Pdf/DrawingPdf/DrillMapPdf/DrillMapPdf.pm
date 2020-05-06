@@ -3,7 +3,7 @@
 # Description: Modul is responsible for creation pdf pressfit
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::DrillMapPdf::DrillMapPdf;
+package Packages::Pdf::DrawingPdf::DrillMapPdf::DrillMapPdf;
 
 #3th party library
 use strict;
@@ -342,7 +342,7 @@ sub __CheckTools {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Pdf::DrillMapPdf::DrillMapPdf';
+	use aliased 'Packages::Pdf::DrawingPdf::DrillMapPdf::DrillMapPdf';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();

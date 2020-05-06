@@ -3,7 +3,7 @@
 # Description: Modul is responsible for creation pdf stackup from prepared xml definition
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ProcessStackupPdf::ProcessStackupPdf;
+package Packages::Pdf::TravelerPdf::TravelerPdfBase;
 
 #3th party library
 use utf8;
@@ -21,7 +21,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
-use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::ProcessStackupTempl';
+use aliased 'Packages::CAMJob::Traveler::UniTraveler::UniTraveler';
 use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::Enums' => "ProcStckpEnums";
 use aliased 'Packages::Other::TableDrawing::Enums'                  => 'TblDrawEnums';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing';
@@ -56,64 +56,55 @@ sub new {
 
 	# Customer stackup class
 	# Will be defined after Build function
-	$self->{"processStckp"} = undef;
+	$self->{"ITraveler"}    = undef;
 	$self->{"tblDrawings"}  = [];
-
 	$self->{"jsonStorable"} = JsonStorable->new();
 
 	return $self;
 }
 
-sub BuildTemplate {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my $lamType    = shift;    # Build only specific lam type
-	                           # if defined $serialized reference
-	                           # Method store here JSON string which contain array of JSON strings for eeach lamination
+sub _BuildTemplate {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $ITraveler = shift;
+
+	# if defined $serialized reference
+	# Method store here JSON string which contain array of JSON strings for eeach lamination
 	my $serialized = shift;
 
 	my $result = 0;
 
 	# 1) Init customer stackup
-	$self->{"processStckp"} = ProcessStackupTempl->new( $inCAM, $self->{"jobId"} );
+	$self->{"ITraveler"} = $ITraveler;
 
-	# 2) Check if there is any laminations
+ 
+	# 2) Build stackup
+	my @tblDrawings = ();
+	$result = $self->{"ITraveler"}->Build( $self->{"canvasX"}, $self->{"canvasY"}, \@tblDrawings );
 
-	my $lamCnt = $self->{"processStckp"}->LamintaionCnt($lamType);
-
-	if ($lamCnt) {
-
-		# 2) Build stackup
-		my @tblDrawings = ();
-		$result = $self->{"processStckp"}->Build( $self->{"canvasX"}, $self->{"canvasY"}, \@tblDrawings, $lamType );
-
-		if ( defined $serialized ) {
-
-			$$serialized = $self->__GetJSON( \@tblDrawings );
-
-		}
-
-		$self->{"tblDrawings"} = \@tblDrawings;
+	if ( defined $serialized ) {
+		$$serialized = $self->__GetJSON( \@tblDrawings );
 	}
+
+	$self->{"tblDrawings"} = \@tblDrawings;
 
 	return $result;
 
 }
 
 # Output stackup template to PDF file
-sub OutputTemplate {
+sub _OutputTemplate {
 	my $self    = shift;
-	my $lamType = shift;    # Build only specific lam type
-
-	die "Process stackup is not defined" unless ( defined $self->{"processStckp"} );
+ 
+	die "Process stackup is not defined" unless ( defined $self->{"ITraveler"} );
 
 	my $result = 1;
 
-	my $lamCnt       = $self->{"processStckp"}->LamintaionCnt($lamType);
+	my $drawCnt       = @{$self->{"tblDrawings"}};
 	my @drawBuilders = ();
 	my @lamFiles     = ();
 
-	for ( my $i = 0 ; $i < $lamCnt ; $i++ ) {
+	for ( my $i = 0 ; $i < $drawCnt ; $i++ ) {
 
 		# 11 Prepare IDrawer and Table drawing
 		my $p = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
@@ -151,20 +142,16 @@ sub OutputTemplate {
 # - Order term
 # - Number of Dodelavka
 # - All items where is necessery consider amount of production panel
-sub OutputSerialized {
+sub _OutputSerialized {
 	my $self    = shift;
 	my $JSONstr = shift;
-	my $lamType = shift;    # Build only specific lam type
-
 	# Values for replace
 	my $orderId    = shift;
 	my $extraOrder = shift;
 
 	die "JSON string is not defined " unless ( defined $JSONstr );
 	die "Order Id is not defined "    unless ( defined $orderId );
-
-	$self->__UpdateJSONTemplate( \$JSONstr, $orderId, $extraOrder );
-
+ 
 	my $result = 1;
 
 	my @JSONLam = split( JSONPAGESEP, $JSONstr );
@@ -213,84 +200,6 @@ sub GetOutputPath {
 	return $self->{"outputPath"};
 }
 
-sub __UpdateJSONTemplate {
-	my $self       = shift;
-	my $JSONstr    = shift;
-	my $orderId    = shift;
-	my $extraOrder = shift;    # number of extra production
-
-	my $infoIS = undef;
-
-	if ( $extraOrder > 0 ) {
-		$infoIS = ( HegMethods->GetProducOrderByOederId( $orderId, $extraOrder, "N" ) )[0];
-	}
-	else {
-		$infoIS = { HegMethods->GetAllByOrderId($orderId) };
-	}
-
-	my ($orderNum) = $orderId =~ m/\w\d{6}-(\d+)/;
-
-	my $pattern          = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S', );
-	my $orderDate        = $pattern->parse_datetime( $infoIS->{"datum_zahajeni"} )->dmy('.');    # start order date;
-	my $orderTerm        = $pattern->parse_datetime( $infoIS->{"termin"} )->dmy('.');            # order term;
-	my $orderExtraProduc = $extraOrder;
-
-	my $orderAmount    = undef;
-	my $orderAmountExt = undef;
-	my $orderAmountTot = undef;
-
-	if ( $extraOrder > 0 ) {
-
-		$orderAmount    = $infoIS->{"prirezy_dodelavka"};
-		$orderAmountExt = 0;
-		$orderAmountTot = $infoIS->{"prirezy_dodelavka"};
-
-	}
-	else {
-		$orderAmount    = $infoIS->{"pocet_prirezu"};
-		$orderAmountExt = $infoIS->{"prirezu_navic"};
-		$orderAmountTot = $infoIS->{"pocet_prirezu"} + $infoIS->{"prirezu_navic"};
-	}
-
-	my $v_KEYORDERNUM = ProcStckpEnums->KEYORDERNUM;
-	$$JSONstr =~ s/$v_KEYORDERNUM/$orderNum/ig;
-
-	my $v_KEYORDERDATE = ProcStckpEnums->KEYORDERDATE;
-	$$JSONstr =~ s/$v_KEYORDERDATE/$orderDate/ig;
-
-	my $v_KEYORDERTERM = ProcStckpEnums->KEYORDERTERM;
-	$$JSONstr =~ s/$v_KEYORDERTERM/$orderTerm/ig;
-
-	my $v_KEYORDEAMOUNTTOT = ProcStckpEnums->KEYORDEAMOUNTTOT;
-	$$JSONstr =~ s/$v_KEYORDEAMOUNTTOT\((\d+)\)/(($orderAmount+$orderAmountExt)*$1)."x"/eg;
-
-	my $v_KEYORDEAMOUNT = ProcStckpEnums->KEYORDEAMOUNT;
-	$$JSONstr =~ s/$v_KEYORDEAMOUNT/$orderAmount/g;
-
-	my $v_KEYORDEAMOUNTEXT = ProcStckpEnums->KEYORDEAMOUNTEXT;
-	$$JSONstr =~ s/$v_KEYORDEAMOUNTEXT/$orderAmountExt/g;
-
-	my @JSONstrUpdt = ();
-	foreach my $pageStr ( split( JSONPAGESEP, $$JSONstr ) ) {
-		my $v_KEYTOTALPACKG = ProcStckpEnums->KEYTOTALPACKG;
-		my ($pcbPerPackg)   = $pageStr =~ m/$v_KEYTOTALPACKG\((\d+\.?\d*)\)/g;
-		my $packgPerOrder   = ceil( $orderAmountTot / $pcbPerPackg );
-
-		my $packgPerOrderStr = ceil( $orderAmountTot / $pcbPerPackg ) . "plot (" . ceil( ceil( $orderAmountTot / $pcbPerPackg ) / 2 ) . "plot)";
-		$pageStr =~ s/$v_KEYTOTALPACKG\((\d+\.?\d*)\)/$packgPerOrderStr/eg;
-
-		push( @JSONstrUpdt, $pageStr );
-	}
-	$$JSONstr = join( JSONPAGESEP, @JSONstrUpdt );
-
-	my $extraOrderStr    = $extraOrder > 0 ? "DODĚLÁVKA Č:" : "";
-	my $extraOrderValStr = $extraOrder > 0 ? $extraOrder       : "";
-	my $v_KEYEXTRAPRODUC = ProcStckpEnums->KEYEXTRAPRODUC;
-	my $v_KEYEXTRAPRODUCVAL = ProcStckpEnums->KEYEXTRAPRODUCVAL;
-	$$JSONstr =~ s/$v_KEYEXTRAPRODUC/$extraOrderStr/ig;
-	$$JSONstr =~ s/$v_KEYEXTRAPRODUCVAL/$extraOrderValStr/ig;
-
-}
 
 sub __GetJSON {
 	my $self        = shift;
@@ -369,7 +278,7 @@ sub __MergeLamPDF {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Pdf::ProcessStackupPdf::ProcessStackupPdf';
+	use aliased 'Packages::Pdf::TravelerPdf::ProcessStackupPdf::ProcessStackupPdf';
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::Enums' => 'ProcStckpEnums';
 

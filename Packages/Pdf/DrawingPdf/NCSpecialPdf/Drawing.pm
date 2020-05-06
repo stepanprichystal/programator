@@ -3,7 +3,7 @@
 # Description: Drawing special NC operation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::NCSpecialPDF::Drawing;
+package Packages::Pdf::DrawingPdf::NCSpecialPdf::Drawing;
 use base('Packages::CAMJob::OutputData::Drawing::Drawing');
 
 #3th party libraryPackages::Pdf::

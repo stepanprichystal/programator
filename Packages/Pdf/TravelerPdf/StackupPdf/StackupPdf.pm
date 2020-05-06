@@ -3,7 +3,7 @@
 # Description: Modul is responsible for creation pdf stackup from prepared xml definition
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::StackupPdf::StackupPdf;
+package Packages::Pdf::TravelerPdf::StackupPdf::StackupPdf;
 
 #3th party library
 use strict;
@@ -13,7 +13,7 @@ use English;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::Pdf::StackupPdf::OutputPdf';
+use aliased 'Packages::Pdf::TravelerPdf::StackupPdf::OutputPdf';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
@@ -106,7 +106,7 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 
-use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
+use aliased 'Packages::Pdf::TravelerPdf::StackupPdf::StackupPdf';
 
 my $stackup      = StackupPdf->new("d113609");
 my $resultCreate = $stackup->Create(1,1,0);

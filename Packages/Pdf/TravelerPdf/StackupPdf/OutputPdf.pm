@@ -3,7 +3,7 @@
 # Description: Responsible for phzsic creation of pdf file with stackup
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package  Packages::Pdf::StackupPdf::OutputPdf;
+package  Packages::Pdf::TravelerPdf::StackupPdf::OutputPdf;
 
 #3th party library
 use strict;

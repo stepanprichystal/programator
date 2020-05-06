@@ -3,7 +3,7 @@
 # Description: Export impedance measurement PDF
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::ImpedancePdf::MeasureImpPdf;
+package Packages::Pdf::DrawingPdf::ImpedancePdf::MeasureImpPdf;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -298,7 +298,7 @@ sub __MergeAndImgPreviewOut {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Pdf::ImpedancePdf::MeasureImpPdf';
+	use aliased 'Packages::Pdf::DrawingPdf::ImpedancePdf::MeasureImpPdf';
 
 	use aliased 'Packages::InCAM::InCAM';
 

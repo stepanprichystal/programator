@@ -3,7 +3,7 @@
 # Description: Export pdf with special NC operation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::NCSpecialPdf::NCSpecialPdf;
+package Packages::Pdf::DrawingPdf::NCSpecialPdf::NCSpecialPdf;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -25,7 +25,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
-use aliased 'Packages::Pdf::NCSpecialPDF::Drawing';
+use aliased 'Packages::Pdf::DrawingPdf::NCSpecialPdf::Drawing';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::Export::NCExport::ExportMngr';
 
@@ -357,7 +357,7 @@ sub __ImgPreviewOut {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Pdf::NCSpecialPdf::NCSpecialPdf';
+	use aliased 'Packages::Pdf::DrawingPdf::NCSpecialPdf::NCSpecialPdf';
 
 	use aliased 'Packages::InCAM::InCAM';
 	use aliased 'CamHelpers::CamStep';

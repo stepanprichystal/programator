@@ -13,7 +13,7 @@ use File::Copy;
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
-use aliased 'Packages::Pdf::ProcessStackupPdf::ProcessStackupPdf';
+use aliased 'Packages::Pdf::TravelerPdf::ProcessStackupPdf::ProcessStackupPdf';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods

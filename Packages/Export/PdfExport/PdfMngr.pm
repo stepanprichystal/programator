@@ -21,11 +21,11 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
-use aliased 'Packages::Pdf::ProcessStackupPdf::ProcessStackupPdf';
+use aliased 'Packages::Pdf::TravelerPdf::StackupPdf::StackupPdf';
+use aliased 'Packages::Pdf::TravelerPdf::ProcessStackupPdf::ProcessStackupPdf';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
-use aliased 'Packages::Pdf::DrillMapPdf::DrillMapPdf';
-use aliased 'Packages::Pdf::NCSpecialPdf::NCSpecialPdf';
+use aliased 'Packages::Pdf::DrawingPdf::DrillMapPdf::DrillMapPdf';
+use aliased 'Packages::Pdf::DrawingPdf::NCSpecialPdf::NCSpecialPdf';
 use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::ProcessStackupTempl';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
