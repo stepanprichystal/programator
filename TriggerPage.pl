@@ -43,10 +43,16 @@ my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
 Log::Log4perl->init($logConfig);
 
 my $logger = get_logger("trigger");
-
 $logger->debug("Trigger page run");
 
 $logger->debug("Params before set default values. Order id: $orderId, Task type: $taskType, LoginId: $loginId");
+
+if ( $orderId !~ /^\w\d{6}-\d{2}$/ ) {
+
+	$logger->debug("Script is skipped, because order id is wrong:$orderId");
+	exit(0);
+
+}
 
 # Set default values for params
 
@@ -92,7 +98,7 @@ else {
 #-------------------------------------------------------------------------------------------#
 
 sub __PcbToProduce {
-	
+
 	# 1) Convert trevellers template to pdf
 	eval {
 
