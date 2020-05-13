@@ -1113,23 +1113,17 @@ sub __AdjustPrepregThickness {
 
 			# Get TOP  layer next by prepreg
 
-			my $topPL        = undef;    # Product layer
-			my $topPLSourceP = -1;       # Source product of product layer
-			if ( $i - 1 >= 0 && $layers[ $i - 1 ]->GetType() eq Enums->ProductL_MATERIAL ) {
-				$topPL        = $layers[ $i - 1 ];
-				$topPLSourceP = $curProduct;
-			}
-			elsif ( $i - 1 >= 0 && $layers[ $i - 1 ]->GetType() eq Enums->ProductL_PRODUCT ) {
-				$topPL        = $layers[ $i - 1 ]->GetData()->GetProductOuterMatLayer("last");
-				$topPLSourceP = $layers[ $i - 1 ]->GetData();
+			my $topPL = undef;    # Product layer
 
+			if ( $i - 1 >= 0 && $layers[ $i - 1 ]->GetType() eq Enums->ProductL_PRODUCT ) {
+				$topPL     = $layers[ $i - 1 ]->GetData()->GetProductOuterMatLayer("last");
 			}
 
 			my $topCopper = undef;
 
-			# Consider only copper which is core copper (not  foil only copper). Because in time of pressing above copper foil
-			#  is not eteched, thus no change of prepreg thickness due to copper foil ussage
-			if ( defined $topPL && $topPL->GetData()->GetType() eq Enums->MaterialType_COPPER && !$topPL->GetData()->GetIsFoil() ) {
+			# Consider only copper which is inside product. This mean copper si already etched
+			# (coper which is not insode copepr is foil type, which is not etched during current press)
+			if ( defined $topPL && $topPL->GetData()->GetType() eq Enums->MaterialType_COPPER ) {
 
 				$topCopper = $topPL->GetData();
 			}
@@ -1137,21 +1131,15 @@ sub __AdjustPrepregThickness {
 			# Get BOT  layer next by prepreg
 
 			my $botPL        = undef;    # Product layer
-			my $botPLSourceP = -1;       # Source product of product layer
-			if ( $i + 1 < scalar(@layers) && $layers[ $i + 1 ]->GetType() eq Enums->ProductL_MATERIAL ) {
-				$botPL        = $layers[ $i + 1 ];
-				$botPLSourceP = $curProduct;
-			}
-			elsif ( $i + 1 < scalar(@layers) && $layers[ $i + 1 ]->GetType() eq Enums->ProductL_PRODUCT ) {
+			if ( $i + 1 < scalar(@layers) && $layers[ $i + 1 ]->GetType() eq Enums->ProductL_PRODUCT ) {
 				$botPL        = $layers[ $i + 1 ]->GetData()->GetProductOuterMatLayer("first");
-				$botPLSourceP = $layers[ $i + 1 ]->GetData();
 			}
 
 			my $botCopper = undef;
 
-			# Consider only copper which is core copper (not  foil only copper). Because in time of pressing below copper foil
-			#  is not eteched, thus no change of prepreg thickness due to copper foil ussage
-			if ( defined $botPL && $botPL->GetData()->GetType() eq Enums->MaterialType_COPPER && !$botPL->GetData()->GetIsFoil()) {
+			# Consider only copper which is inside product. This mean copper si already etched
+			# (coper which is not insode copepr is foil type, which is not etched during current press)
+			if ( defined $botPL && $botPL->GetData()->GetType() eq Enums->MaterialType_COPPER  ) {
 
 				$botCopper = $botPL->GetData();
 			}
