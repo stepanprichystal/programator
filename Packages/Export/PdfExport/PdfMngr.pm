@@ -20,13 +20,16 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::Pdf::StackupPdf::StackupPdf';
-use aliased 'Packages::Pdf::ProcessStackupPdf::ProcessStackupPdf';
+use aliased 'Packages::Pdf::TravelerPdf::StackupPdf::StackupPdf';
+use aliased 'Packages::Pdf::TravelerPdf::ProcessStackupPdf::ProcessStackupPdf';
+use aliased 'Packages::Pdf::TravelerPdf::CvrlStencilPdf::CvrlStencilPdf';
+use aliased 'Packages::Pdf::TravelerPdf::PeelStencilPdf::PeelStencilPdf';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
-use aliased 'Packages::Pdf::DrillMapPdf::DrillMapPdf';
-use aliased 'Packages::Pdf::NCSpecialPdf::NCSpecialPdf';
-use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::ProcessStackupTempl';
+use aliased 'Packages::Pdf::DrawingPdf::DrillMapPdf::DrillMapPdf';
+use aliased 'Packages::Pdf::DrawingPdf::NCSpecialPdf::NCSpecialPdf';
+use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::ProcessStackupTmpl';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
@@ -50,6 +53,8 @@ sub new {
 	$self->{"exportPressfit"}      = shift;    # if export pressfit pdf
 	$self->{"exportToleranceHole"} = shift;    # if export tolerance hole pdf
 	$self->{"exportNCSpecial"}     = shift;    # if export NC special pdf
+	$self->{"exportCvrlStencil"}   = shift;    # if export coverlay stencil pdf
+	$self->{"exportPeelStencil"}   = shift;    # if export peelable stencil pdf
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
 
@@ -89,6 +94,14 @@ sub Run {
 
 	if ( $self->{"exportNCSpecial"} ) {
 		$self->__ExportNCSpecial();
+	}
+
+	if ( $self->{"exportCvrlStencil"} ) {
+		$self->__ExportCvrlStencil();
+	}
+
+	if ( $self->{"exportPeelStencil"} ) {
+		$self->__ExportPeelStencil();
 	}
 
 }
@@ -187,13 +200,13 @@ sub __ExportStackup {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $resultStackup = $self->_GetNewItem("Production stackup pdf");
+	my $resultStackup = $self->_GetNewItem("Production stackup traveler");
 
-	my $pDirStackup = JobHelper->GetJobArchive($jobId) . "tpvpostup\\";
-	my $pDirPdf     = JobHelper->GetJobArchive($jobId) . "pdf\\";
+	my $pDirTraveler = JobHelper->GetJobArchive($jobId) . "tpvpostup\\";
+	my $pDirPdf      = JobHelper->GetJobArchive($jobId) . "pdf\\";
 
-	unless ( -d $pDirStackup ) {
-		die "Unable to create dir: $pDirStackup" unless ( mkdir $pDirStackup );
+	unless ( -d $pDirTraveler ) {
+		die "Unable to create dir: $pDirTraveler" unless ( mkdir $pDirTraveler );
 	}
 
 	unless ( -d $pDirPdf ) {
@@ -201,17 +214,17 @@ sub __ExportStackup {
 	}
 
 	# 1) Clear old files
-	my @stakupTepl = FileHelper->GetFilesNameByPattern( $pDirStackup, "stackup" );
+	my @stakupTepl = FileHelper->GetFilesNameByPattern( $pDirTraveler, "stackup" );
 	unlink($_) foreach (@stakupTepl);
 
 	my @stakupPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "stackup" );
 	unlink($_) foreach (@stakupPdf);
 
-	my $pSerTempl = $pDirStackup . $jobId . "_template_stackup.txt";
-	my $pOutTempl = $pDirStackup . $jobId . "_template_stackup.pdf";
+	my $pSerTempl = $pDirTraveler . $jobId . "_template_stackup.txt";
+	my $pOutTempl = $pDirTraveler . $jobId . "_template_stackup.pdf";
 
 	my $stackup = ProcessStackupPdf->new($jobId);
-	my $procStack = ProcessStackupTempl->new( $inCAM, $jobId );
+	my $procStack = ProcessStackupTmpl->new( $inCAM, $jobId );
 
 	# 2) Check if there is any laminations
 
@@ -235,36 +248,37 @@ sub __ExportStackup {
 
 			unlink( $stackup->GetOutputPath() );
 
-			# 3) Output all orders in production
-#			my @PDFOrders = ();
-#			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
-#			@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
-#
-#			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
-#
-#			# Add all extro production
-#			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
-#
-#				my @extraOrders = HegMethods->GetProducOrderByOederId( $orderId, undef, "N" );
-#				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
-#				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
-#			}
-#
-#			my $serFromFile = FileHelper->ReadAsString($pSerTempl);
-#
-#			foreach my $order (@PDFOrders) {
-#
-#				$stackup->OutputSerialized( $serFromFile, $lamType, $order->{"orderId"}, $order->{"extraProducId"} );
-#
-#				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
-#
-#				unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
-#					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
-#				}
-#
-#				unlink( $stackup->GetOutputPath() );
-#
-#			}
+
+			#			# 3) Output all orders in production
+			#			my @PDFOrders = ();
+			#			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
+			#			@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
+			#
+			#			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
+			#
+			#			# Add all extro production
+			#			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
+			#
+			#				my @extraOrders = HegMethods->GetProducOrderByOederId( $orderId, undef, "N" );
+			#				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
+			#				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
+			#			}
+			#
+			#			my $serFromFile = FileHelper->ReadAsString($pSerTempl);
+			#
+			#			foreach my $order (@PDFOrders) {
+			#
+			#				$stackup->OutputSerialized( $serFromFile, $lamType, $order->{"orderId"}, $order->{"extraProducId"} );
+			#
+			#				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
+			#
+			#				unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
+			#					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
+			#				}
+			#
+			#				unlink( $stackup->GetOutputPath() );
+			#
+			#			}
 
 		}
 		else {
@@ -423,6 +437,141 @@ sub __ExportNCSpecial {
 		$self->_OnItemResult($resultNCSpecial);
 	}
 
+}
+
+sub __ExportCvrlStencil {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $result = $self->_GetNewItem("Coverlay stencil traveler");
+
+	my $pDirTraveler = JobHelper->GetJobArchive($jobId) . "tpvpostup\\";
+	my $pDirPdf      = JobHelper->GetJobArchive($jobId) . "pdf\\";
+
+	unless ( -d $pDirTraveler ) {
+		die "Unable to create dir: $pDirTraveler" unless ( mkdir $pDirTraveler );
+	}
+
+	unless ( -d $pDirPdf ) {
+		die "Unable to create dir: $pDirPdf" unless ( mkdir $pDirPdf );
+	}
+
+	# 1) Clear old files
+	my @stakupTepl = FileHelper->GetFilesNameByPattern( $pDirTraveler, "cvrlStncl" );
+	unlink($_) foreach (@stakupTepl);
+
+	my @stakupPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "cvrlStncl" );
+	unlink($_) foreach (@stakupPdf);
+
+	my $pSerTempl = $pDirTraveler . $jobId . "_template_cvrlstncl.txt";
+	my $pOutTempl = $pDirTraveler . $jobId . "_template_cvrlstncl.pdf";
+
+	my $travelerPdf = CvrlStencilPdf->new($jobId);
+	my @NClayers =
+	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_soldcMill, EnumsGeneral->LAYERTYPE_nplt_soldsMill ] );
+
+	# 2) Check if there is any laminations
+
+	if ( scalar(@NClayers) ) {
+
+		#my $lamType = ProcStckpEnums->LamType_CVRLPRODUCT;
+		 
+		my $ser          = "";
+		my $resultCreate = $travelerPdf->BuildTemplate( $inCAM, \$ser );
+
+		if ($resultCreate) {
+
+			# 1) Output serialized template
+			FileHelper->WriteString( $pSerTempl, $ser );
+
+			# 2) Output pdf template
+			$travelerPdf->OutputTemplate();
+			unless ( copy( $travelerPdf->GetOutputPath(), $pOutTempl ) ) {
+				$result->AddError( "Can not delete old pdf file (" . $pOutTempl . "). Maybe file is still open.\n" );
+			}
+
+			unlink( $travelerPdf->GetOutputPath() );
+
+		}
+		else {
+
+			$result->AddError("Failed to create pdf stackup");
+		}
+	}
+	else {
+
+		die "No lamination exists in job";
+	}
+
+	$self->_OnItemResult($result);
+}
+
+sub __ExportPeelStencil {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $result = $self->_GetNewItem("Peelable stencil traveler");
+
+	my $pDirTraveler = JobHelper->GetJobArchive($jobId) . "tpvpostup\\";
+	my $pDirPdf      = JobHelper->GetJobArchive($jobId) . "pdf\\";
+
+	unless ( -d $pDirTraveler ) {
+		die "Unable to create dir: $pDirTraveler" unless ( mkdir $pDirTraveler );
+	}
+
+	unless ( -d $pDirPdf ) {
+		die "Unable to create dir: $pDirPdf" unless ( mkdir $pDirPdf );
+	}
+
+	# 1) Clear old files
+	my @stakupTepl = FileHelper->GetFilesNameByPattern( $pDirTraveler, "peelstncl" );
+	unlink($_) foreach (@stakupTepl);
+
+	my @stakupPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "peelstncl" );
+	unlink($_) foreach (@stakupPdf);
+
+	my $pSerTempl = $pDirTraveler . $jobId . "_template_peelstncl.txt";
+	my $pOutTempl = $pDirTraveler . $jobId . "_template_peelstncl.pdf";
+
+	my $travelerPdf = PeelStencilPdf->new($jobId);
+	my @NClayers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_lcMill, EnumsGeneral->LAYERTYPE_nplt_lsMill ] );
+
+	# 2) Check if there is any laminations
+
+	if ( scalar(@NClayers) ) {
+
+		#my $lamType = ProcStckpEnums->LamType_CVRLPRODUCT;
+		my $ser          = "";
+		my $resultCreate = $travelerPdf->BuildTemplate( $inCAM, \$ser );
+
+		if ($resultCreate) {
+
+			# 1) Output serialized template
+			FileHelper->WriteString( $pSerTempl, $ser );
+
+			# 2) Output pdf template
+			$travelerPdf->OutputTemplate();
+			unless ( copy( $travelerPdf->GetOutputPath(), $pOutTempl ) ) {
+				$result->AddError( "Can not delete old pdf file (" . $pOutTempl . "). Maybe file is still open.\n" );
+			}
+
+			unlink( $travelerPdf->GetOutputPath() );
+
+		}
+		else {
+
+			$result->AddError("Failed to create pdf stackup");
+		}
+	}
+	else {
+
+		die "No lamination exists in job";
+	}
+	$self->_OnItemResult($result);
 }
 
 sub TaskItemsCount {

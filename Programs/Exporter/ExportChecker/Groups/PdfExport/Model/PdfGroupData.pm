@@ -146,6 +146,32 @@ sub GetExportNCSpecial {
 	return $self->{"data"}->{"exportNCSpecial"};
 }
 
+
+sub SetExportPeelStencil {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportPeelStencil"} = $value;
+}
+
+sub GetExportPeelStencil {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportPeelStencil"};
+}
+
+sub SetExportCvrlStencil {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportCvrlStencil"} = $value;
+}
+
+sub GetExportCvrlStencil {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportCvrlStencil"};
+}
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

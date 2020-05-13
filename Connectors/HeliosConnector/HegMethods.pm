@@ -2349,9 +2349,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my @mat = HegMethods->GetProducOrderByOederId( "d027248-58", 1, "N" );
+	my $mat = HegMethods->GetAllByPcbId( "X65285" );
 
-	dump(@mat);
+	dump($mat);
 	die;
 }
 

@@ -34,29 +34,32 @@ sub new {
 }
 
 sub Init {
-	my $self       = shift;
-	my $inCAM      = shift;
-	my $jobId      = shift;
-	
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
 	my $taskData = $self->{"taskData"};
 
-	$self->{"inCAM"}      = $inCAM;
-	$self->{"jobId"}      = $jobId;
-	
- 
+	$self->{"inCAM"} = $inCAM;
+	$self->{"jobId"} = $jobId;
 
-	my $exportControl = $taskData->GetExportControl();
-	my $controlStep   = $taskData->GetControlStep();
-	my $controlLang   = $taskData->GetControlLang();
-	my $infoToPdf = $taskData->GetInfoToPdf();
-	my $inclNestedStep = $taskData->GetControlInclNested();
-	my $exportStackup = $taskData->GetExportStackup();
-	my $exportPressfit = $taskData->GetExportPressfit();
+	my $exportControl       = $taskData->GetExportControl();
+	my $controlStep         = $taskData->GetControlStep();
+	my $controlLang         = $taskData->GetControlLang();
+	my $infoToPdf           = $taskData->GetInfoToPdf();
+	my $inclNestedStep      = $taskData->GetControlInclNested();
+	my $exportStackup       = $taskData->GetExportStackup();
+	my $exportPressfit      = $taskData->GetExportPressfit();
 	my $exportToleranceHole = $taskData->GetExportToleranceHole();
-	my $exportNCSpecial = $taskData->GetExportNCSpecial();
-	
+	my $exportNCSpecial     = $taskData->GetExportNCSpecial();
+	my $exportCvrlStencil   = $taskData->GetExportCvrlStencil();
+	my $exportPeelStencil   = $taskData->GetExportPeelStencil();
 
-	my $mngr = PdfMngr->new( $inCAM, $jobId, $exportControl, $controlStep, $controlLang, $infoToPdf, $inclNestedStep,$exportStackup, $exportPressfit, $exportToleranceHole, $exportNCSpecial );
+	my $mngr = PdfMngr->new(
+							 $inCAM,           $jobId,             $exportControl, $controlStep,    $controlLang,
+							 $infoToPdf,       $inclNestedStep,    $exportStackup, $exportPressfit, $exportToleranceHole,
+							 $exportNCSpecial, $exportCvrlStencil, $exportPeelStencil
+	);
 
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 

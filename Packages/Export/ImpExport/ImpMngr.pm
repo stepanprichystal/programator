@@ -21,7 +21,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::CAMJob::Stackup::StackupConvertor';
-use aliased 'Packages::Pdf::ImpedancePdf::MeasureImpPdf';
+use aliased 'Packages::Pdf::DrawingPdf::ImpedancePdf::MeasureImpPdf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

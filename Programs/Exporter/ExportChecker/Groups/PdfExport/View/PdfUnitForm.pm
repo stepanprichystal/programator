@@ -60,28 +60,23 @@ sub __SetLayout {
 
 	#define panels
 
-	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szMain       = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szMainWraper = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
 	my $control   = $self->__SetLayoutControl($self);
-	my $stackup   = $self->__SetLayoutStackup($self);
-	my $pressfit  = $self->__SetLayoutPressfit($self);
-	my $ncSpecial = $self->__SetLayoutNCSpecial($self);
+	my $travelers = $self->__SetLayoutTravelers($self);
+	my $drawings  = $self->__SetLayoutDrawings($self);
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $control, 0, &Wx::wxEXPAND );
+	$szMain->Add( $control,      0, &Wx::wxEXPAND );
+	$szMain->Add( $szMainWraper, 0, &Wx::wxEXPAND );
 
-	#$szMain->Add( 2, 2, 0, &Wx::wxEXPAND );
-	$szMain->Add( $stackup, 0, &Wx::wxEXPAND );
-
-	#$szMain->Add( 2, 2, 0, &Wx::wxEXPAND );
-	$szMain->Add( $pressfit, 0, &Wx::wxEXPAND );
-
-	#$szMain->Add( 2, 2, 0, &Wx::wxEXPAND );
-	$szMain->Add( $ncSpecial, 0, &Wx::wxEXPAND );
+	$szMainWraper->Add( $travelers, 1, &Wx::wxEXPAND );
+	$szMainWraper->Add( $drawings,  1, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
@@ -168,17 +163,17 @@ sub __SetLayoutControl {
 }
 
 # Set layout for Quick set box
-sub __SetLayoutStackup {
+sub __SetLayoutTravelers {
 	my $self   = shift;
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Production stackup' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Production travelers' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	# DEFINE CONTROLS
 
-	my $exportStackupChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
+	my $exportStackupChb = Wx::CheckBox->new( $statBox, -1, "Stackup", &Wx::wxDefaultPosition );
 
 	my $pcbType = $self->{"defaultInfo"}->GetPcbType();
 
@@ -192,31 +187,39 @@ sub __SetLayoutStackup {
 		$exportStackupChb->Disable();
 	}
 
+	my $exportPeelStencChb = Wx::CheckBox->new( $statBox, -1, "Peelable stenc.", &Wx::wxDefaultPosition );
+	my $exportCvrlStencChb = Wx::CheckBox->new( $statBox, -1, "Coverlay stenc.", &Wx::wxDefaultPosition );
+
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szStatBox->Add( $exportStackupChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportStackupChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportPeelStencChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportCvrlStencChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
-	$self->{"exportStackupChb"} = $exportStackupChb;
+	$self->{"exportStackupChb"}   = $exportStackupChb;
+	$self->{"exportPeelStencChb"} = $exportPeelStencChb;
+	$self->{"exportCvrlStencChb"} = $exportCvrlStencChb;
 
 	return $szStatBox;
 }
 
 # Set layout for Quick set box
-sub __SetLayoutPressfit {
+sub __SetLayoutDrawings {
 	my $self   = shift;
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Tolerance measurement' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Production drawings' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	# DEFINE CONTROLS
 
 	my $exportPressfitChb   = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",   &Wx::wxDefaultPosition );
 	my $exportTolMeasureChb = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)", &Wx::wxDefaultPosition );
+	my $exportNCChb         = Wx::CheckBox->new( $statBox, -1, "NC countersing",   &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 
@@ -224,35 +227,12 @@ sub __SetLayoutPressfit {
 
 	$szStatBox->Add( $exportPressfitChb,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $exportTolMeasureChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportNCChb,         1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 	$self->{"exportPressfitChb"}   = $exportPressfitChb;
 	$self->{"exportTolMeasureChb"} = $exportTolMeasureChb;
-
-	return $szStatBox;
-}
-
-# Set layout for Quick set box
-sub __SetLayoutNCSpecial {
-	my $self   = shift;
-	my $parent = shift;
-
-	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'NC countersink' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
-
-	# DEFINE CONTROLS
-
-	my $exportNCChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
-
-	# SET EVENTS
-
-	# BUILD STRUCTURE OF LAYOUT
-
-	$szStatBox->Add( $exportNCChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	# Set References
-	$self->{"exportNCSpecialChb"} = $exportNCChb;
+	$self->{"exportNCSpecialChb"}  = $exportNCChb;
 
 	return $szStatBox;
 }
@@ -343,6 +323,32 @@ sub DisableControls {
 	}
 	else {
 		$self->{"inclNestedChb"}->Disable();
+	}
+
+	my @NCCvrllayers =
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldsMill }
+	  $self->{"defaultInfo"}->GetNCLayers();
+
+	if ( scalar(@NCCvrllayers) ) {
+
+		$self->{"exportCvrlStencChb"}->Enable();
+	}
+	else {
+
+		$self->{"exportCvrlStencChb"}->Disable();
+	}
+
+	my @NCSoldlayers =
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lsMill }
+	  $self->{"defaultInfo"}->GetNCLayers();
+
+	if ( scalar(@NCSoldlayers) ) {
+
+		$self->{"exportPeelStencChb"}->Enable();
+	}
+	else {
+
+		$self->{"exportPeelStencChb"}->Disable();
 	}
 
 }
@@ -504,6 +510,44 @@ sub GetExportNCSpecial {
 	my $self = shift;
 
 	if ( $self->{"exportNCSpecialChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub SetExportPeelStencil {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"exportPeelStencChb"}->SetValue($val);
+}
+
+sub GetExportPeelStencil {
+	my $self = shift;
+
+	if ( $self->{"exportPeelStencChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub SetExportCvrlStencil {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"exportCvrlStencChb"}->SetValue($val);
+}
+
+sub GetExportCvrlStencil {
+	my $self = shift;
+
+	if ( $self->{"exportCvrlStencChb"}->IsChecked() ) {
 
 		return 1;
 	}
