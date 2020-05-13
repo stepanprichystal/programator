@@ -51,7 +51,7 @@ sub StackupTemplate2PDF {
 
 		foreach my $order (@PDFOrders) {
 
-			$stackup->OutputSerialized( $serFromFile, undef, $order->{"orderId"}, $order->{"extraProducId"} );
+			$stackup->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
 
 			my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
 

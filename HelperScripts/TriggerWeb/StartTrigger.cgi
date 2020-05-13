@@ -34,7 +34,7 @@ eval {
 	my $loginId  = $query->param("userid");
 	my $extraId  = $query->param("extraid");
 
-	my $wholeRequest = $query->url() . $ENV{'QUERY_STRING'} . "\n\n";
+	my $wholeRequest = $query->url() ."?". $ENV{'QUERY_STRING'} . "\n\n";
 	$logger->debug( "complete request: " . $wholeRequest );
 	if ( !defined $taskType || $taskType eq "" ) {
 		$taskType = 'not_defined';
