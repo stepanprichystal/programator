@@ -1149,8 +1149,9 @@ sub __AdjustPrepregThickness {
 
 			my $botCopper = undef;
 
-			# Consider all copper (core copper and only foil copper), because copper is already etched
-			if ( defined $botPL && $botPL->GetData()->GetType() eq Enums->MaterialType_COPPER ) {
+			# Consider only copper which is core copper (not  foil only copper). Because in time of pressing below copper foil
+			#  is not eteched, thus no change of prepreg thickness due to copper foil ussage
+			if ( defined $botPL && $botPL->GetData()->GetType() eq Enums->MaterialType_COPPER && !$botPL->GetData()->GetIsFoil()) {
 
 				$botCopper = $botPL->GetData();
 			}
