@@ -94,6 +94,8 @@ sub RefreshGUI {
 	$self->{"form"}->SetExportToleranceHole( $groupData->GetExportToleranceHole() );
 	$self->{"form"}->SetExportNCSpecial( $groupData->GetExportNCSpecial() );
 	$self->{"form"}->SetInfoToPdf( $groupData->GetInfoToPdf() );
+	$self->{"form"}->SetExportPeelStencil( $groupData->GetExportPeelStencil() );
+	$self->{"form"}->SetExportCvrlStencil( $groupData->GetExportCvrlStencil() );
 
 }
 
@@ -120,6 +122,8 @@ sub GetGroupData {
 		$groupData->SetExportToleranceHole( $frm->GetExportToleranceHole() );
 		$groupData->SetExportNCSpecial( $frm->GetExportNCSpecial() );
 		$groupData->SetInfoToPdf( $frm->GetInfoToPdf() );
+		$groupData->SetExportPeelStencil( $frm->GetExportPeelStencil() );
+		$groupData->SetExportCvrlStencil( $frm->GetExportCvrlStencil() );
 	}
 	else {
 

@@ -74,7 +74,6 @@ sub __SetLayout {
 
 	$szMain->Add( $control,      0, &Wx::wxEXPAND );
 	$szMain->Add( $szMainWraper, 0, &Wx::wxEXPAND );
-	 
 
 	$szMainWraper->Add( $travelers, 1, &Wx::wxEXPAND );
 	$szMainWraper->Add( $drawings,  1, &Wx::wxEXPAND );
@@ -220,7 +219,7 @@ sub __SetLayoutDrawings {
 
 	my $exportPressfitChb   = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",   &Wx::wxDefaultPosition );
 	my $exportTolMeasureChb = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)", &Wx::wxDefaultPosition );
-	my $exportNCChb         = Wx::CheckBox->new( $statBox, -1, "NC countersing",           &Wx::wxDefaultPosition );
+	my $exportNCChb         = Wx::CheckBox->new( $statBox, -1, "NC countersing",   &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 
@@ -324,6 +323,32 @@ sub DisableControls {
 	}
 	else {
 		$self->{"inclNestedChb"}->Disable();
+	}
+
+	my @NCCvrllayers =
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldsMill }
+	  $self->{"defaultInfo"}->GetNCLayers();
+
+	if ( scalar(@NCCvrllayers) ) {
+
+		$self->{"exportCvrlStencChb"}->Enable();
+	}
+	else {
+
+		$self->{"exportCvrlStencChb"}->Disable();
+	}
+
+	my @NCSoldlayers =
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lsMill }
+	  $self->{"defaultInfo"}->GetNCLayers();
+
+	if ( scalar(@NCSoldlayers) ) {
+
+		$self->{"exportPeelStencChb"}->Enable();
+	}
+	else {
+
+		$self->{"exportPeelStencChb"}->Disable();
 	}
 
 }

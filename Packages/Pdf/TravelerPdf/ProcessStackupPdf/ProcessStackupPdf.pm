@@ -1,65 +1,43 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Modul is responsible for creation pdf stackup from prepared xml definition
+# Description: Preparing PDF traveler for stackup
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::TravelerPdf::ProcessStackupPdf::ProcessStackupPdf;
+use base('Packages::Pdf::TravelerPdf::TravelerPdfBase');
 
 #3th party library
 use utf8;
 use strict;
 use warnings;
 use English;
-use PDF::API2;
 use DateTime::Format::Strptime;
 use DateTime;
-use POSIX qw(floor ceil);
 use File::Copy;
+use POSIX qw(floor ceil);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
-use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::ProcessStackupTempl';
-use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::Enums' => "ProcStckpEnums";
-use aliased 'Packages::Other::TableDrawing::Enums'                  => 'TblDrawEnums';
-use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing';
-use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsBuilder';
-use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
-use aliased 'Packages::Other::TableDrawing::TableDrawing';
-use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsDrawBldr';
-use aliased 'Packages::Other::TableDrawing::DrawingBuilders::GeometryHelper';
+use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::ProcessStackupTmpl';
+use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::Enums' => "ProcStckpEnums";
+use aliased 'Packages::Pdf::TravelerPdf::CvrlStencilPdf::CvrlStencilBuilder';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
+
 use constant JSONPAGESEP => "\n\n======= NEW PAGE =======\n\n";
 
 sub new {
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
-
-	$self->{"jobId"} = shift;
-
-	$self->{"paperWidth"}  = shift // 210;
-	$self->{"paperHeight"} = shift // 297;
-	$self->{"paperMargin"} = shift // 6;                               # margin of printer
-	$self->{"fitInCanvas"} = shift // 1;                               # Scale stackup to PDF page size
-	$self->{"HAlign"}      = shift // EnumsDrawBldr->HAlign_MIDDLE;    # Center stackup horizontall at page
-	$self->{"VAlign"}      = shift // EnumsDrawBldr->VAlign_MIDDLE;    # Center stackup verticall at page
-
-	$self->{"canvasX"} = $self->{"paperWidth"} - 2 * $self->{"paperMargin"};
-	$self->{"canvasY"} = $self->{"paperHeight"} - 2 * $self->{"paperMargin"};
-
-	# Customer stackup class
-	# Will be defined after Build function
-	$self->{"processStckp"} = undef;
-	$self->{"tblDrawings"}  = [];
-
-	$self->{"jsonStorable"} = JsonStorable->new();
 
 	return $self;
 }
@@ -75,75 +53,20 @@ sub BuildTemplate {
 	my $result = 0;
 
 	# 1) Init customer stackup
-	$self->{"processStckp"} = ProcessStackupTempl->new( $inCAM, $self->{"jobId"} );
+	my $stackupTmpl = ProcessStackupTmpl->new( $inCAM, $self->{"jobId"}, $lamType );
 
 	# 2) Check if there is any laminations
-
-	my $lamCnt = $self->{"processStckp"}->LamintaionCnt($lamType);
+	my $lamCnt = $stackupTmpl->LamintaionCnt($lamType);
 
 	if ($lamCnt) {
 
-		# 2) Build stackup
-		my @tblDrawings = ();
-		$result = $self->{"processStckp"}->Build( $self->{"canvasX"}, $self->{"canvasY"}, \@tblDrawings, $lamType );
-
-		if ( defined $serialized ) {
-
-			$$serialized = $self->__GetJSON( \@tblDrawings );
-
-		}
-
-		$self->{"tblDrawings"} = \@tblDrawings;
+		$result = $self->_BuildTemplate( $inCAM, $stackupTmpl, $serialized );
 	}
 
 	return $result;
 
 }
-
-# Output stackup template to PDF file
-sub OutputTemplate {
-	my $self    = shift;
-	my $lamType = shift;    # Build only specific lam type
-
-	die "Process stackup is not defined" unless ( defined $self->{"processStckp"} );
-
-	my $result = 1;
-
-	my $lamCnt       = $self->{"processStckp"}->LamintaionCnt($lamType);
-	my @drawBuilders = ();
-	my @lamFiles     = ();
-
-	for ( my $i = 0 ; $i < $lamCnt ; $i++ ) {
-
-		# 11 Prepare IDrawer and Table drawing
-		my $p = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
-		unlink($p);
-
-		my $IDrawer = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [ $self->{"canvasX"}, $self->{"canvasY"} ], $self->{"paperMargin"} );
-		my $tblDraw = $self->{"tblDrawings"}->[$i];
-
-		my ( $scaleX, $scaleY ) = 1;
-
-		( $scaleX, $scaleY ) = GeometryHelper->ScaleDrawingInCanvasSize( $tblDraw, $IDrawer ) if ( $self->{"fitInCanvas"} );
-		my $xOffset = GeometryHelper->HAlignDrawingInCanvasSize( $tblDraw, $IDrawer, $self->{"HAlign"}, $scaleX, $scaleY );
-		my $yOffset = GeometryHelper->VAlignDrawingInCanvasSize( $tblDraw, $IDrawer, $self->{"VAlign"}, $scaleX, $scaleY );
-
-		unless ( $tblDraw->Draw( $IDrawer, $scaleX, $scaleY, $xOffset, $yOffset ) ) {
-
-			print STDERR "Error during build lamination process id: $i";
-			$result = 0;
-		}
-
-		push( @lamFiles, $p );
-	}
-
-	# Merge all togehter to output file
-
-	$self->__MergeLamPDF( \@lamFiles );
-
-	return $result;
-}
-
+ 
 # Output stackup serialized Template to PDF file
 # Following values will be replaced:
 # - Order number
@@ -154,7 +77,6 @@ sub OutputTemplate {
 sub OutputSerialized {
 	my $self    = shift;
 	my $JSONstr = shift;
-	my $lamType = shift;    # Build only specific lam type
 
 	# Values for replace
 	my $orderId    = shift;
@@ -167,52 +89,20 @@ sub OutputSerialized {
 
 	my $result = 1;
 
-	my @JSONLam = split( JSONPAGESEP, $JSONstr );
-
-	my $lamCnt = scalar(@JSONLam);
-
-	my @drawBuilders = ();
-	my @lamFiles     = ();
-	for ( my $i = 0 ; $i < $lamCnt ; $i++ ) {
-
-		# 11 Prepare IDrawer and Table drawing
-		my $p = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
-		unlink($p);
-
-		my $IDrawer = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [ $self->{"canvasX"}, $self->{"canvasY"} ], $self->{"paperMargin"} );
-		my $tblDraw = TableDrawing->new( TblDrawEnums->Units_MM );
-
-		$tblDraw->LoadSerialized( $JSONLam[$i] );
-
-		my ( $scaleX, $scaleY ) = 1;
-
-		( $scaleX, $scaleY ) = GeometryHelper->ScaleDrawingInCanvasSize( $tblDraw, $IDrawer ) if ( $self->{"fitInCanvas"} );
-		my $xOffset = GeometryHelper->HAlignDrawingInCanvasSize( $tblDraw, $IDrawer, $self->{"HAlign"}, $scaleX, $scaleY );
-		my $yOffset = GeometryHelper->VAlignDrawingInCanvasSize( $tblDraw, $IDrawer, $self->{"VAlign"}, $scaleX, $scaleY );
-
-		unless ( $tblDraw->Draw( $IDrawer, $scaleX, $scaleY, $xOffset, $yOffset ) ) {
-
-			print STDERR "Error during build lamination process id: $i";
-			$result = 0;
-		}
-
-		push( @lamFiles, $p );
-	}
-
-	# Merge all togehter to output file
-
-	$self->__MergeLamPDF( \@lamFiles );
+	$self->_OutputSerialized( $JSONstr, $orderId, $extraOrder );
 
 	return $result;
 
 }
+ 
 
-sub GetOutputPath {
-	my $self = shift;
-
-	return $self->{"outputPath"};
-}
-
+# Output stackup serialized Template to PDF file
+# Following values will be replaced:
+# - Order number
+# - Order date
+# - Order term
+# - Number of Dodelavka
+# - All items where is necessery consider amount of production panel
 sub __UpdateJSONTemplate {
 	my $self       = shift;
 	my $JSONstr    = shift;
@@ -284,7 +174,7 @@ sub __UpdateJSONTemplate {
 	$$JSONstr = join( JSONPAGESEP, @JSONstrUpdt );
 
 	my $extraOrderStr    = $extraOrder > 0 ? "DODĚLÁVKA Č:" : "";
-	my $extraOrderValStr = $extraOrder > 0 ? $extraOrder       : "";
+	my $extraOrderValStr = $extraOrder > 0 ? $extraOrder              : "";
 	my $v_KEYEXTRAPRODUC = ProcStckpEnums->KEYEXTRAPRODUC;
 	my $v_KEYEXTRAPRODUCVAL = ProcStckpEnums->KEYEXTRAPRODUCVAL;
 	$$JSONstr =~ s/$v_KEYEXTRAPRODUC/$extraOrderStr/ig;
@@ -319,49 +209,7 @@ sub __GetJSON {
 
 	return $ser;
 }
-
-sub __MergeLamPDF {
-	my $self     = shift;
-	my @lamFiles = @{ shift(@_) };
-
-	# Merge all togehter
-	# the output file
-	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
-
-	my $pdf_out = PDF::API2->new( -file => $self->{"outputPath"} );
-
-	my $pagesTotal = 1;
-
-	foreach my $input_file (@lamFiles) {
-		my $pdf_in   = PDF::API2->open($input_file);
-		my @numpages = ( 1 .. $pdf_in->pages() );
-
-		foreach my $numpage (@numpages) {
-
-			my $page_in  = $pdf_in->openpage($numpage);
-			my $page_out = $pdf_out->page(0);
-
-			my @mbox = $page_in->get_mediabox;
-			$page_out->mediabox(@mbox);
-
-			my $xo = $pdf_out->importPageIntoForm( $pdf_in, $numpage );
-
-			my $gfx = $page_out->gfx;
-
-			#
-			$gfx->formimage(
-				$xo,
-				0, 0,    # x y
-				1
-			);
-
-			unlink($input_file);
-		}
-	}
-
-	$pdf_out->save();
-
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -371,13 +219,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Pdf::TravelerPdf::ProcessStackupPdf::ProcessStackupPdf';
 	use aliased 'Packages::InCAM::InCAM';
-	use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::Enums' => 'ProcStckpEnums';
+	use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::Enums' => 'ProcStckpEnums';
 
 	my $inCAM = InCAM->new();
 
 	#my $jobId    = "d087972"; # standard vv 14V
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
-	#my $jobId = "d270787";    #Outer RigidFLex BOT
+	my $jobId = "d270787";    #Outer RigidFLex BOT
 	#my $jobId    = "d261919"; # standard vv 10V
 	#my $jobId = "d274753"; # standard vv 8V
 	#my $jobId = "d274611"; # standard vv 10V bez postup laminace
@@ -390,7 +238,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $jobId = "d275112"; # standard 1v
 	#my $jobId = "d275162"; # standard 2v
 
-	my $jobId       = "d162595";
+	#my $jobId       = "d162595";
 	my $pDirStackup = EnumsPaths->Client_INCAMTMPOTHER . "pdfstackup\\";
 	my $pDirPdf     = EnumsPaths->Client_INCAMTMPOTHER . "pdf\\";
 
@@ -412,13 +260,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $pOutTempl = $pDirStackup . $jobId . "_template_stackup.pdf";
 
 	my $stackup = ProcessStackupPdf->new($jobId);
-	my $procStack = ProcessStackupTempl->new( $inCAM, $jobId );
+	my $procStack = ProcessStackupTmpl->new( $inCAM, $jobId );
 
 	# 2) Check if there is any laminations
 
 	if ( $procStack->LamintaionCnt() ) {
 
-		#my $lamType = ProcStckpEnums->LamType_CVRLPRODUCT;
+		#my $lamType = ProcStckpEnums->LamType_FLEXBASE;
 		my $lamType      = undef;
 		my $ser          = "";
 		my $resultCreate = $stackup->BuildTemplate( $inCAM, $lamType, \$ser );
@@ -439,7 +287,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			# 3) Output all orders in production
 			my @PDFOrders = ();
 			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
-			@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
+			#@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
 
 			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
 
@@ -455,7 +303,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 			foreach my $order (@PDFOrders) {
 
-				$stackup->OutputSerialized( $serFromFile, $lamType, $order->{"orderId"}, $order->{"extraProducId"} );
+				$stackup->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
 
 				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
 

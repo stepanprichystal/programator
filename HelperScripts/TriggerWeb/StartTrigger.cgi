@@ -31,17 +31,24 @@ eval {
 
 	my $jobId    = $query->param("jobid");
 	my $taskType = $query->param("request");
- 
+	my $loginId  = $query->param("userid");
+	my $extraId  = $query->param("extraid");
+
+	my $wholeRequest = $query->url() . $ENV{'QUERY_STRING'} . "\n\n";
+	$logger->debug( "complete request: " . $wholeRequest );
 	if ( !defined $taskType || $taskType eq "" ) {
 		$taskType = 'not_defined';
 	}
 
+	if ( !defined $extraId || $extraId eq "" ) {
+		$extraId = 0;
+	}
+	
 	# 1) Log before call TrigerPage.pl
-	$logger->info("Params of request: jobId = $jobId, task = $taskType");
- 
+	$logger->info("Params of request: jobId = $jobId, task = $taskType, extraId = $extraId");
 
 	# 2) Run TrigerPage.pl
-	my $result = __TriggerPage($jobId, $taskType);
+	my $result = __TriggerPage( $jobId, $taskType, $loginId, $extraId );
 
 	# 3) Tell to helios, all ists ok
 	print $result;
@@ -54,12 +61,15 @@ if ($@) {
 
 # Run script triggerPage in new window indipendently on this web
 sub __TriggerPage {
-	my $jobId = shift;
+	my $jobId    = shift;
 	my $taskType = shift;
+	my $loginId  = shift;
+	my $extraId  = shift;
 
 	my $result = "OK";
 
 	my $path = "\\\\incam\\incam_server\\site_data\\scripts\\TriggerPage.pl";
+
 	#my $path = 'c:\Perl\site\lib\TpvScripts\Scripts\TriggerPage.pl';
 
 	unless ( -e $path ) {
@@ -75,7 +85,8 @@ sub __TriggerPage {
 
 	my $perl = $Config{perlpath};
 	my $processObj2;
-	Win32::Process::Create( $processObj2, $perl, "perl -w " . $path . " " . $jobId. " " . $taskType, 0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
+	Win32::Process::Create( $processObj2, $perl, "perl -w " . $path . " " . $jobId . " " . $taskType . " " . $loginId." ".$extraId,
+							0, NORMAL_PRIORITY_CLASS | CREATE_NEW_CONSOLE, "." )
 	  || $logger->error("Error when launch TriggerPage.pl");
 
 	return $result;

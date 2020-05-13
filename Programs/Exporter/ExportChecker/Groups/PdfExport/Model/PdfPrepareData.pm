@@ -19,7 +19,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
-use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::ProcessStackupTempl';
+use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::ProcessStackupTmpl';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -121,12 +121,12 @@ sub OnPrepareGroupData {
 	# 5) default stackup export
 	my $defStackup = 0;
 
-	my $procStack = ProcessStackupTempl->new( $inCAM, $jobId );
+	my $procStack = ProcessStackupTmpl->new( $inCAM, $jobId );
 
 	# 2) Check if there is any laminations
 
 	if ( $procStack->LamintaionCnt() ) {
-		
+
 		$defStackup = 1;
 	}
 
@@ -154,6 +154,26 @@ sub OnPrepareGroupData {
 		$defNCSpec = 1;
 	}
 
+	# 8) default cvrl stencil
+	my $defCvrlStncl = 0;
+	my @NCCvrlStncl =
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldsMill }
+	  $defaultInfo->GetNCLayers();
+	if ( scalar(@NCCvrlStncl) ) {
+
+		$defCvrlStncl = 1;
+	}
+
+	# 9) default peelable stencil
+	my $defPeelStncl = 0;
+	my @NCPeelStncl =
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lsMill }
+	 $defaultInfo->GetNCLayers();
+	if ( scalar(@NCPeelStncl) ) {
+
+		$defPeelStncl = 1;
+	}
+
 	$groupData->SetExportControl($exportControl);
 	$groupData->SetControlStep($defStep);
 	$groupData->SetControlLang($defLang);
@@ -162,6 +182,8 @@ sub OnPrepareGroupData {
 	$groupData->SetExportPressfit($defPressfit);
 	$groupData->SetExportToleranceHole($defTolHole);
 	$groupData->SetExportNCSpecial($defNCSpec);
+	$groupData->SetExportPeelStencil($defPeelStncl);
+	$groupData->SetExportCvrlStencil($defCvrlStncl);
 
 	return $groupData;
 }

@@ -14,6 +14,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Packages::Pdf::TravelerPdf::ProcessStackupPdf::ProcessStackupPdf';
+use aliased 'Packages::Pdf::TravelerPdf::CvrlStencilPdf::CvrlStencilPdf';
+use aliased 'Packages::Pdf::TravelerPdf::PeelStencilPdf::PeelStencilPdf';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -22,8 +24,9 @@ use aliased 'Packages::Pdf::TravelerPdf::ProcessStackupPdf::ProcessStackupPdf';
 # Function convert stackup template to PDF and update order (or dodealvka) information
 # parameter $orderId is eg: F12345-01
 sub StackupTemplate2PDF {
-	my $self    = shift;
-	my $orderId = shift;
+	my $self          = shift;
+	my $orderId       = shift;
+	my $extraProducId = shift // 0;
 
 	my $jobId = $orderId;
 	$jobId =~ s/-.*$//;
@@ -36,14 +39,13 @@ sub StackupTemplate2PDF {
 	my $pTemplate   = $pDirStackup . $jobId . "_template_stackup.txt";
 
 	if ( -e $pTemplate ) {
-		
+
 		my $stackup = ProcessStackupPdf->new($jobId);
- 
+
 		# 3) Output all orders in production
 		my @PDFOrders = ();
-	 
-		push( @PDFOrders, map { { "orderId" => $orderId, "extraProducId" => 0 } } $orderId );
- 
+
+		push( @PDFOrders, map { { "orderId" => $orderId, "extraProducId" => $extraProducId } } $orderId );
 
 		my $serFromFile = FileHelper->ReadAsString($pTemplate);
 
@@ -56,11 +58,99 @@ sub StackupTemplate2PDF {
 			unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
 				die "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
 			}
-			
-			unlink($stackup->GetOutputPath());
+
+			unlink( $stackup->GetOutputPath() );
 
 		}
-	} 
+	}
+
+	return 1;
+}
+
+# Function convert peelable stencil template to PDF and update order (or dodealvka) information
+sub PeelStnclTemplate2PDF {
+	my $self          = shift;
+	my $orderId       = shift;
+	my $extraProducId = shift // 0;
+
+	my $jobId = $orderId;
+	$jobId =~ s/-.*$//;
+
+	my ($orderNum) = $orderId =~ m/^\w\d+-(\d*)$/;
+	$orderNum = int($orderNum);
+
+	my $pDirStackup = JobHelper->GetJobArchive($jobId) . "tpvpostup\\";
+	my $pDirPdf     = JobHelper->GetJobArchive($jobId) . "pdf\\";
+	my $pTemplate   = $pDirStackup . $jobId . "_template_peelstncl.txt";
+
+	if ( -e $pTemplate ) {
+
+		my $peelStncl = PeelStencilPdf->new($jobId);
+
+		# 3) Output all orders in production
+		my @PDFOrders = ();
+
+		push( @PDFOrders, map { { "orderId" => $orderId, "extraProducId" => $extraProducId } } $orderId );
+
+		my $serFromFile = FileHelper->ReadAsString($pTemplate);
+
+		foreach my $order (@PDFOrders) {
+
+			$peelStncl->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
+
+			my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_peelstncl.pdf";
+
+			unless ( copy( $peelStncl->GetOutputPath(), $pPdf ) ) {
+				die "Can not delete old pdf file (" . $pPdf . "). Maybe file is still open.\n";
+			}
+
+			unlink( $peelStncl->GetOutputPath() );
+		}
+	}
+
+	return 1;
+}
+
+# Function convert coverlay stencil template to PDF and update order (or dodealvka) information
+sub CvrlStnclTemplate2PDF {
+	my $self          = shift;
+	my $orderId       = shift;
+	my $extraProducId = shift // 0;
+
+	my $jobId = $orderId;
+	$jobId =~ s/-.*$//;
+
+	my ($orderNum) = $orderId =~ m/^\w\d+-(\d*)$/;
+	$orderNum = int($orderNum);
+
+	my $pDirStackup = JobHelper->GetJobArchive($jobId) . "tpvpostup\\";
+	my $pDirPdf     = JobHelper->GetJobArchive($jobId) . "pdf\\";
+	my $pTemplate   = $pDirStackup . $jobId . "_template_cvrlstncl.txt";
+
+	if ( -e $pTemplate ) {
+
+		my $cvrlStncl = CvrlStencilPdf->new($jobId);
+
+		# 3) Output all orders in production
+		my @PDFOrders = ();
+
+		push( @PDFOrders, map { { "orderId" => $orderId, "extraProducId" => $extraProducId } } $orderId );
+
+		my $serFromFile = FileHelper->ReadAsString($pTemplate);
+
+		foreach my $order (@PDFOrders) {
+
+			$cvrlStncl->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
+
+			my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_cvrlstncl.pdf";
+
+			unless ( copy( $cvrlStncl->GetOutputPath(), $pPdf ) ) {
+				die "Can not delete old pdf file (" . $pPdf . "). Maybe file is still open.\n";
+			}
+
+			unlink( $cvrlStncl->GetOutputPath() );
+		}
+	}
 
 	return 1;
 }

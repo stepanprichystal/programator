@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Modul is responsible for creation pdf stackup from prepared xml definition
+# Description: Modul is responsible for creating coverlay stencil traveler
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::TravelerPdf::CvrlStencilPdf::CvrlStencilPdf;
@@ -11,20 +11,21 @@ use utf8;
 use strict;
 use warnings;
 use English;
-use PDF::API2;
 use DateTime::Format::Strptime;
 use DateTime;
-use POSIX qw(floor ceil);
 use File::Copy;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::JobHelper';
-use aliased 'Packages::CAMJob::Traveler::UniTraveler::UniTraveler';
+use aliased 'Packages::CAMJob::Traveler::UniTravelerTmpl::UniTravelerTmpl';
 use aliased 'Packages::Pdf::TravelerPdf::CvrlStencilPdf::CvrlStencilBuilder';
-
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'Packages::CAMJob::Traveler::UniTravelerTmpl::Enums' => 'UniTrvlEnums';
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -41,30 +42,37 @@ sub BuildTemplate {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $serialized = shift;
-	my $result     = 0;
+
+	my $result = 0;
 
 	my $jobId = $self->{"jobId"};
 
 	# 1) Init traveler
-	my $travelerBuilder = CvrlStencilBuilder->new();
-	my $uniTraveler = UniTraveler->new( $inCAM, $jobId, $travelerBuilder );
 
-	# 2) Check build traveler
-	my $buildTraveler = 1;
+	my @NClayers =
+	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_soldcMill, EnumsGeneral->LAYERTYPE_nplt_soldsMill ] );
 
-	if ($buildTraveler) {
+	if ( scalar(@NClayers) ) {
 
-		$self->_BuildTemplate( $inCAM, $uniTraveler, $serialized );
+		my @bldrs = ();
+		foreach my $NC (@NClayers) {
+			push( @bldrs, CvrlStencilBuilder->new( $inCAM, $jobId, $NC->{"gROWname"} ) );
+		}
+
+		my $UniTravelerTmpl = UniTravelerTmpl->new( $inCAM, $jobId, \@bldrs );
+
+		# 2) Check build traveler
+		my $buildTraveler = 1;
+
+		if ($buildTraveler) {
+
+			$result = $self->_BuildTemplate( $inCAM, $UniTravelerTmpl, $serialized );
+		}
 	}
 
 	return $result;
 }
-
-sub OutputTemplate {
-	my $self = shift;
-
-	$self->_OutputTemplate();
-}
+ 
 
 # Output stackup serialized Template to PDF file
 # Following values will be replaced:
@@ -133,13 +141,13 @@ sub __UpdateJSONTemplate {
 		$orderAmountTot = $infoIS->{"pocet_prirezu"} + $infoIS->{"prirezu_navic"};
 	}
 
-	my $v_KEYORDERNUM = ProcStckpEnums->KEYORDERNUM;
+	my $v_KEYORDERNUM = UniTrvlEnums->KEYORDERNUM;
 	$$JSONstr =~ s/$v_KEYORDERNUM/$orderNum/ig;
 
-	my $v_KEYORDERDATE = ProcStckpEnums->KEYORDERDATE;
+	my $v_KEYORDERDATE = UniTrvlEnums->KEYORDERDATE;
 	$$JSONstr =~ s/$v_KEYORDERDATE/$orderDate/ig;
 
-	my $v_KEYORDERTERM = ProcStckpEnums->KEYORDERTERM;
+	my $v_KEYORDERTERM = UniTrvlEnums->KEYORDERTERM;
 	$$JSONstr =~ s/$v_KEYORDERTERM/$orderTerm/ig;
 
 }
@@ -157,9 +165,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
 	my $jobId = "d270787";    #Outer RigidFLex BOT
-	#my $jobId = "d266566"; # inner flex
-	#my $jobId = "d146753"; # 1v flex
-	#my $jobId = "d267628";    # flex 2v + stiff
+	                          #my $jobId = "d266566"; # inner flex
+	                          #my $jobId = "d146753"; # 1v flex
+	                          #my $jobId = "d267628";    # flex 2v + stiff
 
 	#my $jobId       = "d162595";
 	my $pDirTraveler = EnumsPaths->Client_INCAMTMPOTHER . "tpvpostup\\";
@@ -173,14 +181,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 		die "Unable to create dir: $pDirPdf" unless ( mkdir $pDirPdf );
 	}
 
-	my @stakupTepl = FileHelper->GetFilesNameByPattern( $pDirTraveler, "stackup" );
+	my @stakupTepl = FileHelper->GetFilesNameByPattern( $pDirTraveler, "Cvrl" );
 	unlink($_) foreach (@stakupTepl);
 
-	my @stakupPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "stackup" );
+	my @stakupPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "Cvrl" );
 	unlink($_) foreach (@stakupPdf);
 
-	my $pSerTempl = $pDirTraveler . $jobId . "_template_stackup.txt";
-	my $pOutTempl = $pDirTraveler . $jobId . "_template_stackup.pdf";
+	my $pSerTempl = $pDirTraveler . $jobId . "_template_Cvrlstncl.txt";
+	my $pOutTempl = $pDirTraveler . $jobId . "_template_Cvrlstncl.pdf";
 
 	my $travelerPDF = CvrlStencilPdf->new($jobId);
 
@@ -188,7 +196,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	if (1) {
 
-		#my $lamType = ProcStckpEnums->LamType_CVRLPRODUCT;
+		#my $lamType = ProcStckpEnums->LamType_CvrlPRODUCT;
 		my $lamType      = undef;
 		my $ser          = "";
 		my $resultCreate = $travelerPDF->BuildTemplate( $inCAM, \$ser );
@@ -208,7 +216,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			# 3) Output all orders in production
 			my @PDFOrders = ();
 			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
-			@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
+			#@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
 
 			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
 
@@ -226,7 +234,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 				$travelerPDF->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
 
-				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
+				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_cvrlstncl.pdf";
 
 				unless ( copy( $travelerPDF->GetOutputPath(), $pPdf ) ) {
 					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";

@@ -54,8 +54,9 @@ sub OnExportGroupData {
 	$exportData->SetExportPressfit( $groupData->GetExportPressfit() );
 	$exportData->SetExportToleranceHole( $groupData->GetExportToleranceHole() );
 	$exportData->SetExportNCSpecial( $groupData->GetExportNCSpecial() );
-
-	
+	$exportData->SetExportPeelStencil( $groupData->GetExportPeelStencil() );
+	$exportData->SetExportCvrlStencil( $groupData->GetExportCvrlStencil() );
+ 
 	 
 	return $exportData;
 

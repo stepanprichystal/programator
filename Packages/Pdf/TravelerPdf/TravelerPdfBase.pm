@@ -1,6 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Modul is responsible for creation pdf stackup from prepared xml definition
+# Description: Package contain helper methods responsible for:
+# - creating traveler templates
+# - updateing templates by specific order
+# - converting templates to PDF and storing to job archive
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::TravelerPdf::TravelerPdfBase;
@@ -13,7 +16,6 @@ use English;
 use PDF::API2;
 use DateTime::Format::Strptime;
 use DateTime;
-use POSIX qw(floor ceil);
 use File::Copy;
 
 #local library
@@ -21,8 +23,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
-use aliased 'Packages::CAMJob::Traveler::UniTraveler::UniTraveler';
-use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::Enums' => "ProcStckpEnums";
+use aliased 'Packages::CAMJob::Traveler::UniTravelerTmpl::UniTravelerTmpl';
 use aliased 'Packages::Other::TableDrawing::Enums'                  => 'TblDrawEnums';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsBuilder';
@@ -63,44 +64,15 @@ sub new {
 	return $self;
 }
 
-sub _BuildTemplate {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $ITraveler = shift;
+# Output template to PDF file
+sub OutputTemplate {
+	my $self = shift;
 
-	# if defined $serialized reference
-	# Method store here JSON string which contain array of JSON strings for eeach lamination
-	my $serialized = shift;
-
-	my $result = 0;
-
-	# 1) Init customer stackup
-	$self->{"ITraveler"} = $ITraveler;
-
- 
-	# 2) Build stackup
-	my @tblDrawings = ();
-	$result = $self->{"ITraveler"}->Build( $self->{"canvasX"}, $self->{"canvasY"}, \@tblDrawings );
-
-	if ( defined $serialized ) {
-		$$serialized = $self->__GetJSON( \@tblDrawings );
-	}
-
-	$self->{"tblDrawings"} = \@tblDrawings;
-
-	return $result;
-
-}
-
-# Output stackup template to PDF file
-sub _OutputTemplate {
-	my $self    = shift;
- 
 	die "Process stackup is not defined" unless ( defined $self->{"ITraveler"} );
 
 	my $result = 1;
 
-	my $drawCnt       = @{$self->{"tblDrawings"}};
+	my $drawCnt      = @{ $self->{"tblDrawings"} };
 	my @drawBuilders = ();
 	my @lamFiles     = ();
 
@@ -135,7 +107,51 @@ sub _OutputTemplate {
 	return $result;
 }
 
-# Output stackup serialized Template to PDF file
+
+# After every _OutputTeplate/_OutputSerialized function return path of PDF file
+sub GetOutputPath {
+	my $self = shift;
+
+	return $self->{"outputPath"};
+}
+
+
+
+
+# Build traveler and get serialiyed data from generated table drawings
+sub _BuildTemplate {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $ITraveler = shift; 
+
+	# if defined $serialized reference
+	# Method store here JSON string which contain array of JSON strings for eeach lamination
+	my $serialized = shift;
+
+	my $result = 0;
+
+	# 1) Init customer stackup
+	$self->{"ITraveler"} = $ITraveler;
+
+	# 2) Build stackup
+
+	$result = $self->{"ITraveler"}->Build( $self->{"canvasX"}, $self->{"canvasY"} );
+
+	if ($result) {
+
+		$self->{"tblDrawings"} = [ $self->{"ITraveler"}->GetTblDrawings() ];
+
+		if ( defined $serialized ) {
+			$$serialized = $self->__GetJSON( $self->{"tblDrawings"} );
+		}
+	}
+
+	return $result;
+
+}
+
+
+# Output  serialized traveler template to PDF file
 # Following values will be replaced:
 # - Order number
 # - Order date
@@ -145,13 +161,14 @@ sub _OutputTemplate {
 sub _OutputSerialized {
 	my $self    = shift;
 	my $JSONstr = shift;
+
 	# Values for replace
 	my $orderId    = shift;
 	my $extraOrder = shift;
 
 	die "JSON string is not defined " unless ( defined $JSONstr );
 	die "Order Id is not defined "    unless ( defined $orderId );
- 
+
 	my $result = 1;
 
 	my @JSONLam = split( JSONPAGESEP, $JSONstr );
@@ -194,13 +211,9 @@ sub _OutputSerialized {
 
 }
 
-sub GetOutputPath {
-	my $self = shift;
-
-	return $self->{"outputPath"};
-}
 
 
+# Return one stirng which contain all JSONS which are representing traveler pages
 sub __GetJSON {
 	my $self        = shift;
 	my @tblDrawings = @{ shift(@_) };
@@ -229,6 +242,7 @@ sub __GetJSON {
 	return $ser;
 }
 
+# If traveler has more pages, combine it to one file
 sub __MergeLamPDF {
 	my $self     = shift;
 	my @lamFiles = @{ shift(@_) };
@@ -280,7 +294,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Pdf::TravelerPdf::ProcessStackupPdf::ProcessStackupPdf';
 	use aliased 'Packages::InCAM::InCAM';
-	use aliased 'Packages::CAMJob::Stackup::ProcessStackupTempl::Enums' => 'ProcStckpEnums';
+	 
 
 	my $inCAM = InCAM->new();
 

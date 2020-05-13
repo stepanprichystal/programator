@@ -35,8 +35,9 @@ use aliased 'Connectors::TpvConnector::TaskOndemMethods';
 my $orderId  = shift;    # job order for process
 my $taskType = shift;    # type of task to process
 my $loginId  = shift;    # user which do request
+my $extraId  = shift;    # extra order id (number of extra product - dodelavka)
 
-#$orderId = "d279269-01";
+#$orderId = "d270787-03";
 #$taskType = TaskEnums->PCB_TOPRODUCE;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
@@ -46,7 +47,7 @@ my $logger = get_logger("trigger");
 
 $logger->debug("Trigger page run");
 
-$logger->debug("Params before set default values. Order id: $orderId, Task type: $taskType, LoginId: $loginId");
+$logger->debug("Params before set default values. Order id: $orderId, Task type: $taskType, LoginId: $loginId, ExtraId: $extraId");
 
 # Set default values for params
 
@@ -92,55 +93,87 @@ else {
 #-------------------------------------------------------------------------------------------#
 
 sub __PcbToProduce {
-	
-	# 1) Convert trevellers template to pdf
+
+	# 1) Convert stackup trevellers template to pdf
 	eval {
 
 		$logger->debug( "Before process trevelers template files --" . $orderId . "--" );
-		Travelers->StackupTemplate2PDF($orderId);
+		Travelers->StackupTemplate2PDF( $orderId, $extraId );
 		$logger->debug( "After process trevelers template files --" . $orderId . "--" );
 
 	};
 	if ($@) {
 
 		$processed = 0;
-		$logger->error( "\n Error when processing \"trevelers template\" job: $orderId.\n" . $@, 1 );
+		$logger->error( "\n Error when processing \"stackup trevelers template\" job: $orderId.\n" . $@, 1 );
 	}
 
-	# 2) change some lines in MDI xml files eval
+	# 2) Convert peel stencil trevellers template to pdf
 	eval {
 
-		$logger->debug( "Before process MDI files --" . $orderId . "--" );
-		MDIFiles->AddPartsNumber($orderId);
-		$logger->debug( "After process MDI files --" . $orderId . "--" );
+		$logger->debug( "Before process trevelers template files --" . $orderId . "--" );
+		Travelers->PeelStnclTemplate2PDF( $orderId, $extraId );
+		$logger->debug( "After process trevelers template files --" . $orderId . "--" );
 
 	};
 	if ($@) {
 
 		$processed = 0;
-		$logger->error( "\n Error when processing \"MDI files\" job: $orderId.\n" . $@, 1 );
+		$logger->error( "\n Error when processing \"peel stencil trevelers template\" job: $orderId.\n" . $@, 1 );
 	}
 
-	# 3) change drilled number in NC files
+	# 3) Convert peel stencil trevellers template to pdf
 	eval {
 
-		NCFiles->ChangePcbOrderNumber($orderId);
+		$logger->debug( "Before process trevelers template files --" . $orderId . "--" );
+		Travelers->CvrlStnclTemplate2PDF( $orderId, $extraId );
+		$logger->debug( "After process trevelers template files --" . $orderId . "--" );
+
 	};
 	if ($@) {
 
 		$processed = 0;
-		$logger->error( "\n Error when processing \"NC files\" (change pcb drilled nuimber) job: $orderId.\n" . $@, 1 );
+		$logger->error( "\n Error when processing \"cvrl stencil trevelers template\" job: $orderId.\n" . $@, 1 );
 	}
 
-	# 4) Add rout speed to NC rout operation
-	eval {
+	# Process only if order go to produce first time
+	if ( !defined $extraId ||  $extraId == 0 ) {
 
-		NCFiles->CompleteRoutFeed($orderId);
-	};
-	if ($@) {
+		# 2) change some lines in MDI xml files eval
+		eval {
 
-		$processed = 0;
-		$logger->error( "\n Error when processing \"NC files\" (add rout speed) job: $orderId.\n" . $@, 1 );
+			$logger->debug( "Before process MDI files --" . $orderId . "--" );
+			MDIFiles->AddPartsNumber($orderId);
+			$logger->debug( "After process MDI files --" . $orderId . "--" );
+
+		};
+		if ($@) {
+
+			$processed = 0;
+			$logger->error( "\n Error when processing \"MDI files\" job: $orderId.\n" . $@, 1 );
+		}
+
+		# 3) change drilled number in NC files
+		eval {
+
+			NCFiles->ChangePcbOrderNumber($orderId);
+		};
+		if ($@) {
+
+			$processed = 0;
+			$logger->error( "\n Error when processing \"NC files\" (change pcb drilled nuimber) job: $orderId.\n" . $@, 1 );
+		}
+
+		# 4) Add rout speed to NC rout operation
+		eval {
+
+			NCFiles->CompleteRoutFeed($orderId);
+		};
+		if ($@) {
+
+			$processed = 0;
+			$logger->error( "\n Error when processing \"NC files\" (add rout speed) job: $orderId.\n" . $@, 1 );
+		}
 	}
 }
 
