@@ -294,22 +294,16 @@ sub GetNominalThickness {
 }
 
 sub GetThicknessStiffener {
-	my $self = shift;
+	my $self      = shift;
+	my $stiffSide = shift;
 
 	my $t = $self->GetThicknessFlex();
 
-	my $topStiff = {};
-	if ( $self->GetExistStiff( "top", $topStiff ) ) {
+	my $stiff = {};
+	if ( $self->GetExistStiff( "top", $stiff ) ) {
 
-		$t += $topStiff->{"adhesiveThick"} * $self->{"adhReduction"};
-		$t += $topStiff->{"stiffThick"};
-	}
-
-	my $botStiff = {};
-	if ( $self->GetExistStiff( "bot", $botStiff ) ) {
-
-		$t += $botStiff->{"adhesiveThick"} * $self->{"adhReduction"};
-		$t += $botStiff->{"stiffThick"};
+		$t += $stiff->{"adhesiveThick"} * $self->{"adhReduction"};
+		$t += $stiff->{"stiffThick"};
 	}
 
 	return $t;

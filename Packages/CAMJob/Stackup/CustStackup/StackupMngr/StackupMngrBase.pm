@@ -175,9 +175,9 @@ sub GetExistStiff {
 
 			$stifInfo->{"stiffThick"} = $t;      # µm
 			$stifInfo->{"stiffTg"}    = undef;
-
+	 
 			# Try to get TG of stiffener adhesive
-			my $matKey = first { $mInf->{"nazev_subjektu"} =~ /$_/i } keys %{ $self->{"isMatKinds"} };
+			my $matKey = first { $mInf->{"dps_druh"} =~ /$_/i } keys %{ $self->{"isMatKinds"} };
 			if ( defined $matKey ) {
 				$stifInfo->{"stiffTg"} = $self->{"isMatKinds"}->{$matKey};
 			}

@@ -99,6 +99,12 @@ sub DefaultSectionsLayout {
 	$sec_E_STIFFENER->AddColumn( "matType",  EnumsStyle->ClmnWidth_mattype , undef, $borderStyle);
 	$sec_E_STIFFENER->AddColumn( "matThick", EnumsStyle->ClmnWidth_matthick );
 	
+	# Sec_F_STIFFENER
+
+	my $sec_F_STIFFENER = $secMngr->AddSection( Enums->Sec_F_STIFFENER );
+	$sec_F_STIFFENER->AddColumn( "matType",  EnumsStyle->ClmnWidth_mattype , undef, $borderStyle);
+	$sec_F_STIFFENER->AddColumn( "matThick", EnumsStyle->ClmnWidth_matthick );
+
 
 	# Sec_END
 	my $sec_END = $secMngr->AddSection( Enums->Sec_END );

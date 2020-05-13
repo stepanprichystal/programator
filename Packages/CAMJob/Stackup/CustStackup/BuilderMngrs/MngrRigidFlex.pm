@@ -35,7 +35,7 @@ sub new {
 	my $step       = shift;
 	my $tblDrawing = shift;
 
-	my $self = $class->SUPER::new( $inCAM, $jobId, $step,$tblDrawing );
+	my $self = $class->SUPER::new( $inCAM, $jobId, $step, $tblDrawing );
 	bless $self;
 
 	$self->{"stackupMngr"} = StackupMngrVV->new( $inCAM, $jobId, $step );
@@ -48,8 +48,8 @@ sub BuildSections {
 	my $sectionMngr = shift;
 
 	my $stackupMngr = $self->{"stackupMngr"};
-	
-	Helper->DefaultSectionsLayout($sectionMngr, $stackupMngr);
+
+	Helper->DefaultSectionsLayout( $sectionMngr, $stackupMngr );
 
 	# 1) Set section visibility
 
@@ -69,22 +69,30 @@ sub BuildSections {
 	$sec_D_FLEXTAIL->SetIsActive(0);
 
 	my $sec_E_STIFFENER = $sectionMngr->GetSection( Enums->Sec_E_STIFFENER );
- 	if($stackupMngr->GetExistStiff("top") || $stackupMngr->GetExistStiff("bot")){
+	if ( $stackupMngr->GetExistStiff("top") ) {
 		$sec_E_STIFFENER->SetIsActive(1);
-	}else{
+	}
+	else {
 		$sec_E_STIFFENER->SetIsActive(0);
 	}
-	
+
+	my $sec_F_STIFFENER = $sectionMngr->GetSection( Enums->Sec_F_STIFFENER );
+	if ( $stackupMngr->GetExistStiff("bot") ) {
+		$sec_F_STIFFENER->SetIsActive(1);
+	}
+	else {
+		$sec_F_STIFFENER->SetIsActive(0);
+	}
+
 	my $sec_END = $sectionMngr->GetSection( Enums->Sec_END );
 	$sec_END->SetIsActive(1);
 
 	# 2) Add extra columns
- 
 
 	# 3) Create columns
 
 	$self->_CreateSectionClmns($sectionMngr);
-	
+
 	return 1;
 
 }

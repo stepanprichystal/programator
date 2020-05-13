@@ -140,6 +140,20 @@ sub __BuildHeadRow {
 						   $tblMain->GetRowDefPos($row),
 						   undef, undef, "Thick [µm]", $txtStyle );
 	}
+	
+	# Sec_F_STIFFENER ---------------------------------------------
+	my $sec_F_STIFFENER = $secMngr->GetSection( Enums->Sec_F_STIFFENER );
+
+	if ( $sec_F_STIFFENER->GetIsActive() ) {
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_F_STIFFENER, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, undef, undef, undef, $borderStyle );
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_F_STIFFENER, "matThick" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Thick [µm]", $txtStyle );
+	}
 
 	# Sec_END
 	my $sec_END = $secMngr->GetSection( Enums->Sec_END );
@@ -245,6 +259,22 @@ sub __BuildThickRows {
 						   $tblMain->GetRowDefPos($rowComp),
 						   undef, undef, ( defined $cThick ? int($cThick) : "-" ), $txtStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
+						   $tblMain->GetRowDefPos($rowReq),
+						   undef, undef, ( defined $rThick ? int($rThick) : "-" ), $txtStyle );
+	}
+	
+	# Sec_F_STIFFENER ---------------------------------------------
+	my $sec_F_STIFFENER = $secMngr->GetSection( Enums->Sec_F_STIFFENER );
+
+	if ( $sec_F_STIFFENER->GetIsActive() ) {
+
+		my $cThick = $self->{"helper"}->GetComputedThick( Enums->Sec_F_STIFFENER );
+		my $rThick = $self->{"helper"}->GetRequiredThick( Enums->Sec_F_STIFFENER );
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_F_STIFFENER, "matThick" ),
+						   $tblMain->GetRowDefPos($rowComp),
+						   undef, undef, ( defined $cThick ? int($cThick) : "-" ), $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_F_STIFFENER, "matThick" ),
 						   $tblMain->GetRowDefPos($rowReq),
 						   undef, undef, ( defined $rThick ? int($rThick) : "-" ), $txtStyle );
 	}

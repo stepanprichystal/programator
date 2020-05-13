@@ -70,13 +70,21 @@ sub BuildSections {
 	$sec_D_FLEXTAIL->SetIsActive(0);
 
 	my $sec_E_STIFFENER = $sectionMngr->GetSection( Enums->Sec_E_STIFFENER );
-	if ( $stackupMngr->GetExistStiff("top") || $stackupMngr->GetExistStiff("bot") ) {
+	if ( $stackupMngr->GetExistStiff("top")  ) {
 		$sec_E_STIFFENER->SetIsActive(1);
 	}
 	else {
 		$sec_E_STIFFENER->SetIsActive(0);
 	}
-
+	
+	my $sec_F_STIFFENER = $sectionMngr->GetSection( Enums->Sec_F_STIFFENER );
+	if ( $stackupMngr->GetExistStiff("bot")  ) {
+		$sec_F_STIFFENER->SetIsActive(1);
+	}
+	else {
+		$sec_F_STIFFENER->SetIsActive(0);
+	}
+ 
 	my $sec_END = $sectionMngr->GetSection( Enums->Sec_END );
 	$sec_END->SetIsActive(1);
 
