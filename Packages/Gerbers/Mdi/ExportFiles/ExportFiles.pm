@@ -382,8 +382,8 @@ sub __GetFiducials {
 	my @fiducials = ();
 
 	# Left top mark can have suffix
-	my $fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top(-508.*)?$/i } @features )[0];
-	my $fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top(-508.*)?$/i } @features )[0];
+	my $fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top/i } @features )[0]; # left top mark can contain suffix
+	my $fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top/i } @features )[0];  # right top mark can contain suffix
 	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/i } @features )[0];
 	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/i } @features )[0];
 

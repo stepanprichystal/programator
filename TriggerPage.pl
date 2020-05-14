@@ -31,8 +31,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::TriggerFunction::Travelers';
 use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
 use aliased 'Connectors::TpvConnector::TaskOndemMethods';
-
-my $orderId  = shift;    # job order for process
+ 
+my $orderId  = shift;    # job order for process (Dxxxxxx-xx-Jx Core - Dxxxxxx-xx Order)
 my $taskType = shift;    # type of task to process
 my $loginId  = shift;    # user which do request
 my $extraId  = shift;    # extra order id (number of extra product - dodelavka)
@@ -60,20 +60,31 @@ $logger->debug("Params after set default values. Order id: $orderId, Task type: 
 
 my $processed = 1;
 
-if ( $taskType eq TaskEnums->PCB_TOPRODUCE ) {
+# Order Id can have following formats
+# - Dxxxxxx-xx-Jx Core
+# - Dxxxxxx-xx Order
+# Run only orders
+if ( $orderId =~ /^\w\d{6}-\d{2}$/ ) {
 
-	__PcbToProduce();
+	if ( $taskType eq TaskEnums->PCB_TOPRODUCE ) {
 
+		__PcbToProduce();
+
+	}
+	elsif ( $taskType eq TaskEnums->Data_COOPERATION ) {
+
+		__DataCooperation();
+
+	}
+	elsif ( $taskType eq TaskEnums->Data_CONTROL ) {
+
+		__DataControl();
+
+	}
 }
-elsif ( $taskType eq TaskEnums->Data_COOPERATION ) {
-
-	__DataCooperation();
-
-}
-elsif ( $taskType eq TaskEnums->Data_CONTROL ) {
-
-	__DataControl();
-
+else {
+	
+	$processed = 0;
 }
 
 # Log
@@ -137,7 +148,7 @@ sub __PcbToProduce {
 	}
 
 	# Process only if order go to produce first time
-	if ( !defined $extraId ||  $extraId == 0 ) {
+	if ( !defined $extraId || $extraId == 0 ) {
 
 		# 2) change some lines in MDI xml files eval
 		eval {

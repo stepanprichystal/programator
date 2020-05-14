@@ -559,7 +559,7 @@ sub GetDrilledNumber {
 	# select
 	if ( $position eq "vvframe" ) {
 
-		$scanMark = "drilled_pcbId_v2";
+		$scanMark = qr/^drilled_pcbId_v2/; # attribut value can have suffix
 	}
 	elsif ( $position eq "stdframe" ) {
 
