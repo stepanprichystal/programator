@@ -88,7 +88,7 @@ sub Init {
 	}
 
 	unless ( defined $self->{"sigLayerComp"} ) {
-		$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"} );
+		$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"}, $self->{"step"} );
 	}
 
 	unless ( defined $self->{"NCLayers"} ) {

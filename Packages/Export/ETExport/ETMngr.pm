@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::ETExport::ETMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -39,12 +39,13 @@ use aliased 'CamHelpers::CamNetlist';
 
 sub new {
 	my $class     = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
 	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $createFakeL = 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+ 
 
 	$self->{"stepToTest"}   = shift;    # step, which will be tested
 	$self->{"createEtStep"} = shift;    # 1 - et step will be created from scratch, 0 - already prepared et step
@@ -63,7 +64,7 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
+ 
 	# Remove "nestlist helper" steps
 	CamNetlist->RemoveNetlistSteps( $inCAM, $jobId );
 

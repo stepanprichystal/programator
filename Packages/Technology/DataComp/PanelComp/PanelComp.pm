@@ -29,19 +29,21 @@ sub new {
 
 	my $inCAM   = shift;
 	my $jobId   = shift;
+	my $step   = shift;
 	my $stackup = shift;
 
 	# PROPERTY
 
 	$self->{"inCAM"}   = $inCAM;
 	$self->{"jobId"}   = $jobId;
+	$self->{"step"}   = $step;
 	$self->{"stackup"} = $stackup; # only for multilayer pcb
 	                               #$self->{"delayCuAreaCalc"} = $delayCuArea;    # if 1, cu area at 2v pcb is calculated during call "MatComp" method
 
 	# Load helper property based on job type
 	$self->{"pcbType"} = JobHelper->GetPcbType($jobId);
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
-	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 	$self->{"pnlW"} = $lim{"xMax"} - $lim{"xMin"};
 	$self->{"pnlH"} = $lim{"yMax"} - $lim{"yMin"};
 
@@ -172,13 +174,14 @@ sub __Get2vCuUsage {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	my $step =  $self->{"step"};
 
 	my $u = 0;
 
 	if ( $self->{"layerCnt"} > 0 ) {
 
 		my $botL = "s" if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
-		my %usage = CamCopperArea->GetCuArea( 0, 0, $inCAM, $jobId, "panel", "c", $botL );
+		my %usage = CamCopperArea->GetCuArea( 0, 0, $inCAM, $jobId, $step, "c", $botL );
 		$u = $usage{"percentage"};
 	}
 

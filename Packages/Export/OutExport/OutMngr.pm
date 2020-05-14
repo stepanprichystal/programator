@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::OutExport::OutMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -34,12 +34,13 @@ use aliased 'Packages::ETesting::BasicHelper::Helper' => 'ETHelper';
 
 sub new {
 	my $class     = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
 	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $createFakeL = 0;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"}         = shift;
-	$self->{"jobId"}         = shift;
+ 
 	$self->{"exportCooper"}  = shift;
 	$self->{"cooperStep"}    = shift;
 	$self->{"exportEt"}      = shift;

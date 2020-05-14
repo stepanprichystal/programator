@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::ScoExport::ScoMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -37,12 +37,13 @@ use aliased 'Packages::TifFile::TifScore';
 
 sub new {
 	my $class     = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
 	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $createFakeL = 0;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"}     = shift;
-	$self->{"jobId"}     = shift;
+ 
 	$self->{"coreThick"} = shift;
 	$self->{"optimize"}  = shift;
 	$self->{"type"}      = shift;
@@ -84,6 +85,7 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+ 
 	
 	my $exportFiles = 1; # indicate if check, optimize are ok and we can export files
 	

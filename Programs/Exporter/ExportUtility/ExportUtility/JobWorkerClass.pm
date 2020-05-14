@@ -90,9 +90,7 @@ sub __RunTask {
 		}
 
 		# 2) Process groups
-		
-		FakeLayers->CreateFakeLayers( $self->{"inCAM"}, ${ $self->{"pcbId"} } );
-
+	 
 		for ( my $i = 0 ; $i < scalar(@keys) ; $i++ ) {
 
 			$self->{"logger"}->debug( "Thread group processing: $i/" . scalar(@keys) . ", pcb id:" . ${ $self->{"pcbId"} } );

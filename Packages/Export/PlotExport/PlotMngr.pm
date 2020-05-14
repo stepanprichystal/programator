@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::PlotExport::PlotMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -30,12 +30,13 @@ use aliased 'Packages::Export::PreExport::FakeLayers';
 
 sub new {
 	my $class     = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
 	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $createFakeL = 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"}         = shift;
-	$self->{"jobId"}         = shift;
+ 
 	$self->{"layers"}        = shift;
 	$self->{"sendToPlotter"} = shift;
 
@@ -54,9 +55,7 @@ sub Run {
 	my $jobId = $self->{"jobId"};
 
 	return 0 unless ( scalar( @{ $self->{"layers"} } ) );
-
-	#  1) Create fake layers which will be exported, but are created automatically
-	#FakeLayers->CreateFakeLayers($inCAM, $jobId );
+ 
 
 	# 2) Delete old format opfx files
 	$self->__DeleteOldFiles();

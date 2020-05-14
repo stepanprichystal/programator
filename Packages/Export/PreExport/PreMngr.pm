@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::PreExport::PreMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -34,12 +34,13 @@ use aliased 'Packages::CAMJob::Stackup::StackupConvertor';
 
 sub new {
 	my $class     = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
 	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $createFakeL = 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"}        = shift;
-	$self->{"jobId"}        = shift;
+ 
 	$self->{"signalLayers"} = shift;
 	$self->{"otherLayers"}  = shift;
 
@@ -50,12 +51,13 @@ sub new {
 
 	return $self;
 }
+ 
 
 sub Run {
 	my $self  = shift;
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-
+ 
 	my $isChanged = 0;    # tell if something was changed in pcb
 
 	CamHelper->SetStep( $inCAM, "panel" );
@@ -70,16 +72,7 @@ sub Run {
 	# if job is changed, save it
 	if ($isChanged) {
 
-		my $resultItemSave = $self->_GetNewItem("Saving job");
-
-		$inCAM->HandleException(1);
-
-		CamJob->SaveJob( $inCAM, $self->{"jobId"} );
-
-		$resultItemSave->AddError( $inCAM->GetExceptionError() );
-		$inCAM->HandleException(0);
-
-		$self->_OnItemResult($resultItemSave);
+		$self->_SaveJob();
 	}
 
 	# 2) Save info to tif file
