@@ -39,7 +39,11 @@ sub StackupTemplate2PDF {
 	my $pTemplate   = $pDirStackup . $jobId . "_template_stackup.txt";
 
 	if ( -e $pTemplate ) {
-
+		
+		# Remove former pdf from pdf folder
+		my @stakupPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "stackup" );
+		unlink($_) foreach (@stakupPdf);
+ 
 		my $stackup = ProcessStackupPdf->new($jobId);
 
 		# 3) Output all orders in production
@@ -84,6 +88,10 @@ sub PeelStnclTemplate2PDF {
 	my $pTemplate   = $pDirStackup . $jobId . "_template_peelstncl.txt";
 
 	if ( -e $pTemplate ) {
+		
+		# Remove former pdf from pdf folder
+		my @oldPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "peelstncl" );
+		unlink($_) foreach (@oldPdf);
 
 		my $peelStncl = PeelStencilPdf->new($jobId);
 
@@ -128,6 +136,10 @@ sub CvrlStnclTemplate2PDF {
 	my $pTemplate   = $pDirStackup . $jobId . "_template_cvrlstncl.txt";
 
 	if ( -e $pTemplate ) {
+		
+		# Remove former pdf from pdf folder
+		my @oldPdf = FileHelper->GetFilesNameByPattern( $pDirPdf, "cvrlstncl" );
+		unlink($_) foreach (@oldPdf);
 
 		my $cvrlStncl = CvrlStencilPdf->new($jobId);
 
