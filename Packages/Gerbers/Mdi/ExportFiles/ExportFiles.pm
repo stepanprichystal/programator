@@ -374,7 +374,10 @@ sub __GetFiducials {
 	my $f = Features->new();
 	$f->Parse( $inCAM, $jobId, $step, $drillLayer );
 
-	my @features = grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_((IN)|(2V))$/ } $f->GetFeatures();
+	# Features with text extra in pnl_place serve onlz for scoring
+	my @features =
+	  grep { defined $_->{"att"}->{".pnl_place"} && $_->{"att"}->{".pnl_place"} !~ /extra/ }
+	  grep { defined $_->{"att"}->{".geometry"}  && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_((IN)|(2V))$/ } $f->GetFeatures();
 
 	die "All fiducial marks (four marks, attribut: OLEC_otvor_<IN/2V>) were not found in layer: $drillLayer" unless ( scalar(@features) == 4 );
 
@@ -382,8 +385,8 @@ sub __GetFiducials {
 	my @fiducials = ();
 
 	# Left top mark can have suffix
-	my $fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top/i } @features )[0]; # left top mark can contain suffix
-	my $fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top/i } @features )[0];  # right top mark can contain suffix
+	my $fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top/i } @features )[0];     # left top mark can contain suffix
+	my $fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top/i } @features )[0];    # right top mark can contain suffix
 	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/i } @features )[0];
 	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/i } @features )[0];
 
@@ -392,10 +395,10 @@ sub __GetFiducials {
 	die "OLEC fiducial mark right-top was not found" if ( !defined $fRB );
 	die "OLEC fiducial mark left-bot was not found"  if ( !defined $fLB );
 
-	push( @fiducials, { "x" => $fLT->{"x1"}, "y" => $fLT->{"y1"} } );    # left-top
-	push( @fiducials, { "x" => $fRT->{"x1"}, "y" => $fRT->{"y1"} } );    # right-top
-	push( @fiducials, { "x" => $fRB->{"x1"}, "y" => $fRB->{"y1"} } );    # right-bot
-	push( @fiducials, { "x" => $fLB->{"x1"}, "y" => $fLB->{"y1"} } );    # left-bot
+	push( @fiducials, { "x" => $fLT->{"x1"}, "y" => $fLT->{"y1"} } );                   # left-top
+	push( @fiducials, { "x" => $fRT->{"x1"}, "y" => $fRT->{"y1"} } );                   # right-top
+	push( @fiducials, { "x" => $fRB->{"x1"}, "y" => $fRB->{"y1"} } );                   # right-bot
+	push( @fiducials, { "x" => $fLB->{"x1"}, "y" => $fLB->{"y1"} } );                   # left-bot
 
 	# Adjust fiducial position by real PCB dimension (move to InCAM job zero)
 	foreach my $f (@fiducials) {
@@ -590,7 +593,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d270787";
+	my $jobId    = "d280577";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -600,7 +603,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my %type = (
 				 Enums->Type_SIGNAL => "1",
-				 Enums->Type_MASK   => "1",
+				 Enums->Type_MASK   => "0",
 				 Enums->Type_PLUG   => "0",
 				 Enums->Type_GOLD   => "0"
 	);
