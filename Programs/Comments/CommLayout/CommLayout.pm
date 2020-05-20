@@ -64,16 +64,19 @@ sub MoveDown {
 }
 
 sub GetCommentById {
-	my $self = shift;
+	my $self   = shift;
+	my $commId = shift;
 
-	return @{ $self->{"tables"} };
+	die "Comment id: $commId doesn't exist" if ( $commId < 0 || $commId >= scalar( @{ $self->{"comments"} } ) );
+	
+	return $self->{"comments"}->[$commId];
 
 }
 
 sub GetAllComments {
 	my $self = shift;
 
-	return @{ $self->{"tables"} };
+	return @{ $self->{"comments"} };
 
 }
 

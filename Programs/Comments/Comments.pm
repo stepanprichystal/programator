@@ -13,7 +13,9 @@ use Switch;
 #local library
 
 use aliased 'Programs::Comments::CommLayout::CommLayout';
+use aliased 'Programs::Comments::CommLayout::CommSnglLayout';
 use aliased 'Helpers::JobHelper';
+use aliased 'Programs::Comments::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,6 +34,10 @@ sub new {
 		mkdir( $self->{"commDir"} ) or die "$_";
 	}
 
+	$self->{"commLayout"} = CommLayout->new();
+
+	$self->__LoadFromJob();
+
 	return $self;
 }
 
@@ -49,6 +55,12 @@ sub GetOutFiles {
 
 }
 
+sub GetLayout {
+	my $self = shift;
+
+	return $self->{"commLayout"};
+}
+
 # --------------------------------------
 # METHODS FOR BUILDING COMMENT general
 # --------------------------------------
@@ -56,8 +68,7 @@ sub AddComment {
 	my $self = shift;
 	my $type = shift;
 
-	my $comment = CommSnglLayout->new($type);
-	push( @{ $self->{"comments"} }, $comment );
+	my $comment = $self->{"commLayout"}->AddComment($type);
 
 	return $comment;
 }
@@ -111,8 +122,10 @@ sub SetType {
 sub SetText {
 	my $self      = shift;
 	my $commentId = shift;
+	my $text      = shift;
 
-	$self->{"text"} = shift;
+	my $comm = $self->{"commLayout"}->GetCommentById($commentId);
+	$comm->SetText($text);
 }
 
 sub AddFile {
@@ -121,8 +134,9 @@ sub AddFile {
 	my $name      = shift;
 	my $path      = shift;
 
-	my $f = CommFileLayout->new( $name, $path );
-	push( @{ $self->{"files"} }, $f );
+	my $comm = $self->{"commLayout"}->GetCommentById($commentId);
+
+	my $f = $comm->AddFile( $name, $path );
 
 	return $f;
 }
@@ -180,7 +194,7 @@ sub SetFileName {
 	my $self      = shift;
 	my $commentId = shift;
 	my $fileId    = shift;
-	
+
 	$self->{"fileName"} = shift;
 }
 
@@ -188,12 +202,26 @@ sub GetFileName {
 	my $self      = shift;
 	my $commentId = shift;
 	my $fileId    = shift;
-	
+
 	return $self->{"fileName"};
 }
 
 sub __LoadFromJob {
 	my $self = shift;
+
+	# test
+
+	$self->AddComment( Enums->CommentType_QUESTION );
+	$self->SetText( 0, "test jfdif djfosdifj fjdi" );
+	$self->AddFile( 0, "stakcup", 'c:/Export/test/noImage.png' );
+	$self->AddFile( 0, "stakcup", 'c:/Export/test/noImage_.png' );
+
+	$self->AddComment( Enums->CommentType_NOTE );
+	$self->SetText( 1, "test jfdif djfosdifj fjdi" );
+	$self->AddFile( 1, "stakcup", 'c:/Export/test/noImage.png' );
+#	$self->AddComment( Enums->CommentType_QUESTION );
+#	$self->SetText( 2, "test jfdif djfosdifj fjdi" );
+#		$self->AddFile( 2, "stakcup", 'c:/Export/test/noImage.png' );
 
 }
 

@@ -3,7 +3,7 @@
 # Description: Interface, allow build nif section
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Comments::CommLayout::CommLayout;
+package Programs::Comments::CommLayout::CommSnglLayout;
 use base qw(Programs::Comments::CommLayout::CommLayoutBase);
 
 use Class::Interface;
@@ -18,6 +18,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Comments::CommLayout::CommFileLayout';
+use aliased 'Programs::Comments::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -59,10 +60,22 @@ sub SetType {
 	$self->{"type"} = shift;
 }
 
+sub GetType {
+	my $self = shift;
+
+	return $self->{"type"};
+}
+
 sub SetText {
 	my $self = shift;
 
 	$self->{"text"} = shift;
+}
+
+sub GetText {
+	my $self = shift;
+
+	return $self->{"text"};
 }
 
 sub AddFile {
@@ -70,7 +83,23 @@ sub AddFile {
 	my $name = shift;
 	my $path = shift;
 
-	my $f = CommFileLayout->new( $name, $path );
+	my $prefix = "";
+
+	if ( $self->GetType() eq Enums->CommentType_NOTE ) {
+		$prefix = "n";
+	}
+	elsif ( $self->GetType() eq Enums->CommentType_QUESTION ) {
+		$prefix = "q";
+	}
+
+	my $suffix = "";
+
+	if ( $path =~ m/(\.\w+)$/ ) {
+		$suffix = $1;
+	}
+
+	my $f = CommFileLayout->new( $name, $prefix, $suffix, $path );
+	
 	push( @{ $self->{"files"} }, $f );
 
 	return $f;
