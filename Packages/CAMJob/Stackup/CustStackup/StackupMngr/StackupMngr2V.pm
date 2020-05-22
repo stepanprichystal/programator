@@ -122,7 +122,7 @@ sub GetExistCvrl {
 
 		if ( defined $inf ) {
 
-			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
+			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"}, $side );
 
 			my $thick    = $matInfo->{"vyska"} * 1000000;
 			my $thickAdh = $matInfo->{"doplnkovy_rozmer"} * 1000000;

@@ -214,7 +214,7 @@ sub __BuildMatListBody {
 		$valStr = "" if ( !defined $valStr );      # draw border
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matName") ),
 					   $tbl->GetRowDefPos($row),
-					   undef, undef, substr( $item->GetValText(), 0, 28 ),
+					   undef, undef, substr( $item->GetValText(), 0, 25 ),
 					   $txtStdStyle, undef, $borderStyle );
 
 		# Mat count

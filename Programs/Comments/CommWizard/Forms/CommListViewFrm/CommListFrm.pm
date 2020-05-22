@@ -37,6 +37,7 @@ sub new {
 	$self->__SetLayout();
 
 	#EVENTS
+ 
 
 	return $self;
 }

@@ -147,7 +147,7 @@ sub __AddCoverlayLayers {
 
 	return 0 unless (@cvrL);
 
-	my $matInfo = HegMethods->GetPcbCoverlayMat($jobId);
+	
 
 	@cvrL = map { $_->{"gROWname"} } @cvrL;
 
@@ -170,6 +170,9 @@ sub __AddCoverlayLayers {
 				last;
 			}
 		}
+		
+		my $matInfo = HegMethods->GetPcbCoverlayMat($jobId, ($cvrlPos eq "above" ? "top" : "bot"));
+		
 
 		# Build coverlay layer
 
@@ -195,7 +198,10 @@ sub __AddCoverlayLayers {
 		$layerInfo->{"text"}          = ( $name =~ /LF\s*(\d{4})/i )[0];
 		$layerInfo->{"typetext"}      = "Pyralux " . ( $name =~ /Coverlay\s+(\w+)\s*/i )[0];
 		$layerInfo->{"method"} =
-		  defined( first { $_->{"gROWname"} eq "coverlaypins" } @{ $self->{"boardBaseLayers"} } )
+		
+			( $sigL =~ /^v\d+$/ 
+			||   defined( first { $_->{"gROWname"} eq "coverlaypins" } @{ $self->{"boardBaseLayers"} } )
+			)
 		  ? Enums->Coverlay_SELECTIVE
 		  : Enums->Coverlay_FULL;
 		$layerInfo->{"copperName"} = $sigL;
@@ -711,7 +717,7 @@ sub __IdentifyFlexCoreProduct {
 			if (
 				 defined $P1Bot
 				 && ( $P1Bot->{"l"}->GetType() ne Enums->MaterialType_PREPREG
-					  || !$P1Top->{"l"}->GetIsNoFlow() )
+					  || !$P1Bot->{"l"}->GetIsNoFlow() )
 				 && $P1Bot->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
 			  )
 			{

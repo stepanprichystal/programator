@@ -36,6 +36,7 @@ sub new {
 
 	# DEFINE EVENTS
 	$self->{'onRemoveFileEvt'}     = Event->new();
+	$self->{'onEditFileEvt'}       = Event->new();
 	$self->{'onAddFileEvt'}        = Event->new();
 	$self->{'onChangeFileNameEvt'} = Event->new();
 
@@ -53,10 +54,14 @@ sub __SetLayout {
 
 	my $nb = Wx::Notebook->new( $self, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
-	my $btnRemove = Wx::Button->new( $self, -1, "Remove",           &Wx::wxDefaultPosition, [ 60, -1 ] );
-	my $btnEditGS = Wx::Button->new( $self, -1, "Edit in GShot",    &Wx::wxDefaultPosition, [ 60, -1 ] );
-	my $btnAddCAM = Wx::Button->new( $self, -1, "Add Snapshot CAM", &Wx::wxDefaultPosition, [ 60, -1 ] );
-	my $btnAddGS  = Wx::Button->new( $self, -1, "Add Snapshot GS",  &Wx::wxDefaultPosition, [ 60, -1 ] );
+	my $btnRemove = Wx::Button->new( $self, -1, "- Remove",   &Wx::wxDefaultPosition, [ 80, -1 ] );
+	my $btnEditGS = Wx::Button->new( $self, -1, "Edit in GS", &Wx::wxDefaultPosition, [ 80, -1 ] );
+	my $btnAddCAM = Wx::Button->new( $self, -1, "+ Add CAM",  &Wx::wxDefaultPosition, [ 80, -1 ] );
+	my $btnAddGS  = Wx::Button->new( $self, -1, "+ Add GS",   &Wx::wxDefaultPosition, [ 80, -1 ] );
+
+	# DEFINE EVENTS
+	Wx::Event::EVT_BUTTON( $btnAddCAM, -1, sub { $self->{"onAddFileEvt"}->Do( 1, 0 ) } );
+	Wx::Event::EVT_BUTTON( $btnAddGS,  -1, sub { $self->{"onAddFileEvt"}->Do( 0, 1 ) } );
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -106,42 +111,39 @@ sub AddFile {
 	unless ( -e $p ) {
 		$p = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\noImage.png";
 	}
-	
-	
-	
-	my $im = Wx::Image->new($p, &Wx::wxBITMAP_TYPE_PNG);
-	
-	use constant  MAXIMGW => 50; # 500px
-	use constant   MAXIMGH => 35; # 500px
-	
+
+	my $im = Wx::Image->new( $p, &Wx::wxBITMAP_TYPE_PNG );
+
+	use constant MAXIMGW => 50;    # 500px
+	use constant MAXIMGH => 35;    # 500px
+
 	my $w = $im->GetWidth();
 	my $h = $im->GetHeight();
-	
-	my $scale  = 1;
-	
-	my $scaleW = MAXIMGW/$w; 
-	my $scaleH = MAXIMGH/$h; 
-	
-	if(max($scaleW, $scaleH) < 1){
-		$scale = min($scaleW, $scaleH);
+
+	my $scale = 1;
+
+	my $scaleW = MAXIMGW / $w;
+	my $scaleH = MAXIMGH / $h;
+
+	if ( max( $scaleW, $scaleH ) < 1 ) {
+		$scale = min( $scaleW, $scaleH );
 	}
- 
-  
-	my $btmIco = Wx::Bitmap->new( $im->Scale($w*$scale, $h*$scale)  );    #wxBITMAP_TYPE_PNG;
- 
-	
-#
-#	my $btmIco = Wx::Bitmap->new( $p, &Wx::wxBITMAP_TYPE_PNG );    #wxBITMAP_TYPE_PNG;
- 	my $statBtmIco = Wx::StaticBitmap->new( $page, -1, $btmIco  );
-#	$statBtmIco->SetScaleMode();
-	                                                               # EVENTS
+
+	my $btmIco = Wx::Bitmap->new( $im->Scale( $w * $scale, $h * $scale ) );    #wxBITMAP_TYPE_PNG;
+
+	#
+	#	my $btmIco = Wx::Bitmap->new( $p, &Wx::wxBITMAP_TYPE_PNG );    #wxBITMAP_TYPE_PNG;
+	my $statBtmIco = Wx::StaticBitmap->new( $page, -1, $btmIco );
+
+	#	$statBtmIco->SetScaleMode();
+	# EVENTS
 
 	#Wx::Event::EVT_LEFT_DOWN( $statBtmIco, sub { print STDERR "obr click" } );
 
 	# DEFINE LAYOUT
 	$szTab->Add( $szHead, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szTab->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	 $szTab->Add( $statBtmIco, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szTab->Add( $statBtmIco, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szHead->Add( $fileNameTxt,         0, &Wx::wxALL, 1 );
 	$szHead->Add( $fileNamePrefValTxt,  0, &Wx::wxALL, 1 );
@@ -187,6 +189,8 @@ sub SetFilesLayout {
 	my $self        = shift;
 	my @filesLayout = @{ shift(@_) };
 
+	$self->Freeze();
+
 	$self->{"nb"}->DeleteAllPages();
 
 	for ( my $i = 0 ; $i < scalar(@filesLayout) ; $i++ ) {
@@ -196,6 +200,7 @@ sub SetFilesLayout {
 		$self->AddFile($fileLayout);
 	}
 
+	$self->Thaw();
 }
 
 # =====================================================================

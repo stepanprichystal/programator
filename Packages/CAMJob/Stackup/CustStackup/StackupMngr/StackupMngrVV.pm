@@ -176,7 +176,7 @@ sub GetTG {
 
 		$minTG = $1;
 	}
-	elsif ( $matKind =~ /.*-.*/ ) {
+	elsif ( $matKind =~ /HYBRID/ ) {
 
 		# hybrid material stackups
 

@@ -32,12 +32,16 @@ sub new {
 
 	bless($self);
 
-	$self->{"jobId"} = $jobId;
+	# DEFINE PROPERTIES
+
+	$self->{"commentId"} = undef;
+	$self->{"jobId"}     = $jobId;
 
 	$self->__SetLayout();
 
 	# DEFINE EVENTS
 	$self->{'onChangeTypeEvt'}     = Event->new();
+	$self->{'onEditFileEvt'}       = Event->new();
 	$self->{'onRemoveFileEvt'}     = Event->new();
 	$self->{'onAddFileEvt'}        = Event->new();
 	$self->{'onChangeFileNameEvt'} = Event->new();
@@ -58,13 +62,12 @@ sub __SetLayout {
 	# Add empty item
 
 	# DEFINE CONTROLS
-	my $commNameTxt = Wx::StaticText->new( $self, -1, "Number:", &Wx::wxDefaultPosition );
-	my $commNameValTxt = Wx::StaticText->new( $self, -1, "", &Wx::wxDefaultPosition );
+	my $commNameTxt    = Wx::StaticText->new( $self, -1, "Number:", &Wx::wxDefaultPosition );
+	my $commNameValTxt = Wx::StaticText->new( $self, -1, "",        &Wx::wxDefaultPosition );
 
 	my $commTypeTxt = Wx::StaticText->new( $self, -1, "Type:", &Wx::wxDefaultPosition );
 	my @cbVals = ( Enums->GetTypeTitle( Enums->CommentType_NOTE ), Enums->GetTypeTitle( Enums->CommentType_QUESTION ) );
 	my $commTypeValTxt = Wx::ComboBox->new( $self, -1, $cbVals[0], [ -1, -1 ], [ 100, 22 ], \@cbVals, &Wx::wxCB_READONLY );
-	 
 
 	my $commFilesBox = $self->__SetLayoutFiles($self);
 	my $commTextBox  = $self->__SetLayoutText($self);
@@ -75,8 +78,8 @@ sub __SetLayout {
 	# BUILD STRUCTURE OF LAYOUT
 	$szMain->Add( $szHead,       0,  &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $commFilesBox, 60, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $commTextBox,  25, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $commSuggBox,  15, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $commTextBox,  20, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $commSuggBox,  20, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szHead->Add( $commNameTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szHead->Add( $commNameValTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 4 );
@@ -100,12 +103,15 @@ sub __SetLayoutFiles {
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Files' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
-	 
 
 	my $commFilesFrm = CommFilesFrm->new($statBox);
 
 	$szStatBox->Add( $commFilesFrm, 1, &Wx::wxEXPAND );
-	 
+
+	# EVENTS
+	$commFilesFrm->{'onRemoveFileEvt'}->Add( sub { $self->{"onRemoveFileEvt"}->Do( $self->{"commentId"}, @_ ) } );
+	$commFilesFrm->{'onEditFileEvt'}->Add( sub { $self->{"onEditFileEvt"}->Do( $self->{"commentId"}, @_ ) } );
+	$commFilesFrm->{'onAddFileEvt'}->Add( sub { $self->{"onAddFileEvt"}->Do( $self->{"commentId"}, @_ ) } );
 
 	# SAVE REFERENCES
 	$self->{"commFilesFrm"} = $commFilesFrm;
@@ -120,13 +126,11 @@ sub __SetLayoutText {
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Text' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
-	 
 
 	my $richTxt = Wx::RichTextCtrl->new( $statBox, -1, 'Text...', &Wx::wxDefaultPosition, [ -1, -1 ], &Wx::wxRE_MULTILINE | &Wx::wxWANTS_CHARS );
 	$richTxt->SetEditable(1);
 	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);
 	$szStatBox->Add( $richTxt, 1, &Wx::wxEXPAND );
-	 
 
 	# SAVE REFERENCES
 	$self->{"richTxt"} = $richTxt;
@@ -141,7 +145,6 @@ sub __SetLayoutSuggestion {
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Suggestions' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
-	 
 
 	my $commSugessFrm = CommSugessFrm->new($statBox);
 
@@ -163,8 +166,9 @@ sub SetCommLayout {
 	my $comentId = shift;
 	my $layout   = shift;
 
-	 
-	$self->{"commNameValTxt"}->SetLabel($comentId + 1);
+	$self->{"commentId"} = $comentId;
+
+	$self->{"commNameValTxt"}->SetLabel( $comentId + 1 );
 
 	$self->{"commTypeValTxt"}->SetValue( Enums->GetTypeTitle( $layout->GetType() ) );
 
@@ -173,11 +177,8 @@ sub SetCommLayout {
 	$self->{"richTxt"}->Clear();
 	$self->{"richTxt"}->WriteText( $layout->GetText() );
 
- 
-	$self->{"commFilesFrm"}->SetFilesLayout([$layout->GetAllFiles()]);
+	$self->{"commFilesFrm"}->SetFilesLayout( [ $layout->GetAllFiles() ] );
 
-	
-	 
 }
 
 #-------------------------------------------------------------------------------------------#

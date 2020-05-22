@@ -47,7 +47,7 @@ sub new {
 	$self->{"form"} = CommWizardFrm->new( -1, $self->{"jobId"} );
 
 	# Manage group date (store/load group data from/to disc)
-	$self->{"comments"} = Comments->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"comments"} = undef;
 
 	return $self;
 }
@@ -60,6 +60,8 @@ sub Init {
 
 	$self->{"launcher"} = $launcher;
 	$self->{"inCAM"}    = $launcher->GetInCAM();
+
+	$self->{"comments"} = Comments->new( $self->{"inCAM"}, $self->{"jobId"} );
 
 	#set handlers for main app form
 	$self->__SetHandlers();
@@ -98,6 +100,52 @@ sub __OnSelCommChangedHndl {
 
 }
 
+sub __OnRemoveFileHndl {
+	my $self   = shift;
+	my $commId = shift;
+	my $fileId = shift;
+
+	$self->{"comments"}->RemoveFile( $commId, $fileId );
+	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+
+	$self->{"form"}->RefreshCommViewForm( $commId, $commLayout );
+}
+
+sub __OnEditFileHndl {
+	my $self   = shift;
+	my $commId = shift;
+
+	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+
+}
+
+sub __OnAddFileHndl {
+	my $self   = shift;
+	my $commId = shift;
+	my $addCAM = shift;
+	my $addGS  = shift;
+
+	my $p = undef;
+
+	if ($addCAM) {
+		$p = $self->{"comments"}->SnapshotCAM(0);
+	}
+	elsif ($addGS) {
+		$p = $self->{"comments"}->SnapshotGS(0);
+	}
+
+	$self->{"comments"}->AddFile( $commId, undef, $p );
+
+ 
+ 	# Refresh Comm view
+	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+	$self->{"form"}->RefreshCommViewForm( $commId, $commLayout );
+	
+	# Refresh Comm list
+	 
+
+}
+
 # ================================================================================
 # PRIVATE METHODS
 # ================================================================================
@@ -119,6 +167,10 @@ sub __SetHandlers {
 
 	$self->{"form"}->{"saveExitEvt"}->Add( sub         { $self->__SaveExitHndl(@_) } );
 	$self->{"form"}->{"onSelCommChangedEvt"}->Add( sub { $self->__OnSelCommChangedHndl(@_) } );
+
+	$self->{"form"}->{'onRemoveFileEvt'}->Add( sub { $self->__OnRemoveFileHndl(@_) } );
+	$self->{"form"}->{'onEditFileEvt'}->Add( sub   { $self->__OnEditFileHndl(@_) } );
+	$self->{"form"}->{'onAddFileEvt'}->Add( sub    { $self->__OnAddFileHndl(@_) } );
 
 }
 

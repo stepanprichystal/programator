@@ -381,7 +381,7 @@ sub __BuildStackupLayers {
 				my $text = "Standard";
 				if ($isFlex) {
 
-					$text .= $c->GetText() =~ m/(r)\s+\d+\/\d+/i ? " (RA)" : " (ED)";
+					$text .= $c->GetText() =~ m/R/ ? " (RA)" : " (ED)";
 
 				}
 

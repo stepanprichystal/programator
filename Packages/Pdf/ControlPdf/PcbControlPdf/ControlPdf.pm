@@ -524,7 +524,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "x65308";
+	my $jobId = "X65529";
 
 	my $mess = "";
 

@@ -2011,8 +2011,12 @@ sub GetPcbMat {
 sub GetPcbCoverlayMat {
 	my $self  = shift;
 	my $pcbId = shift;
+	my $side = shift; # top/bot
+	
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_MatCoverlay", Enums->SqlDbType_INT, 
+										($side eq "top" ? "d.material_coverlay_1" : "d.material_coverlay_2") ));
 	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
@@ -2021,7 +2025,7 @@ sub GetPcbCoverlayMat {
 				
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
-				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_coverlay
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=_MatCoverlay
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
@@ -2039,8 +2043,11 @@ sub GetPcbCoverlayMat {
 sub GetPcbStiffenerMat {
 	my $self  = shift;
 	my $pcbId = shift;
-
+	my $side = shift; # top/bot
+	
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_MatStiffener", Enums->SqlDbType_INT, 
+										($side eq "top" ? "d.material_stiffener_1" : "d.material_stiffener_2") ));
 	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
@@ -2049,7 +2056,38 @@ sub GetPcbStiffenerMat {
 				 
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
-				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_stiffener
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=_MatStiffener
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
+
+	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
+
+	my $res = undef;
+
+	if ( defined $matReference ) {
+		$res = $self->GetMatInfo($matReference);
+	}
+}
+
+# Return information of stiffener adhesive material in PCB
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
+sub GetPcbStiffenerAdhMat {
+	my $self  = shift;
+	my $pcbId = shift;
+	my $side = shift; # top/bot
+	
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_MatStiffenerAdh", Enums->SqlDbType_INT, 
+										($side eq "top" ? "d.lepidlo_stiffener_1" : "d.lepidlo_stiffener_2") ));
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
+
+	my $cmd = "select top 1
+				
+				kks.reference_subjektu
+				 
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=_MatStiffenerAdh
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 

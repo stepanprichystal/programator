@@ -35,7 +35,7 @@ use constant {
 	TxtSize_SMALL => 3.0,
 	TxtSize_NORMAL => 3.4,
 	TxtSize_BIG    => 4.0,
-	TxtSize_PCBID  => 4.3,
+	TxtSize_PCBID  => 5.0,
 
 };
 

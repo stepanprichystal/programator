@@ -66,10 +66,7 @@ sub Run {
 	my $self = shift;
 	my $jobId = $self->{"jobId"};
 	
-	
-	# Create fake layers
-	$self->_CreateFakeLayers();
-
+ 
 	# create folder for pdf files
 	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
 		mkdir( JobHelper->GetJobArchive($jobId) . "pdf" );

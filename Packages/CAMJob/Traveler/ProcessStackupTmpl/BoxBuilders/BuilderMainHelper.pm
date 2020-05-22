@@ -71,7 +71,7 @@ sub DrawMatStiff {
 	# Mat Type
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef, $matText, $txtStdBoldStyle, undef, $borderStyle );
+				   undef, undef, substr( $matText, 0, 25 ), $txtStdBoldStyle, undef, $borderStyle );
 
 	# Mat Thick
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matThick") ),
@@ -170,7 +170,7 @@ sub DrawMatAdhesive {
 	# Mat Type
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef, $matText, $txtStdBoldStyle, undef, $borderStyle );
+				   undef, undef,  substr( $matText, 0, 25 ), $txtStdBoldStyle, undef, $borderStyle );
 
 	# Mat Thick
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matThick") ),

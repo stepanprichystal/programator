@@ -225,7 +225,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $jobId    = "d087972"; # standard vv 14V
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
-	my $jobId = "d270787";    #Outer RigidFLex BOT
+	#my $jobId = "d270787";    #Outer RigidFLex BOT
 	#my $jobId    = "d261919"; # standard vv 10V
 	#my $jobId = "d274753"; # standard vv 8V
 	#my $jobId = "d274611"; # standard vv 10V bez postup laminace
@@ -238,8 +238,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $jobId = "d275112"; # standard 1v
 	#my $jobId = "d275162"; # standard 2v
 
-	#my $jobId       = "d162595";
-	my $pDirStackup = EnumsPaths->Client_INCAMTMPOTHER . "pdfstackup\\";
+	my $jobId       = "d276179";
+	my $pDirStackup = EnumsPaths->Client_INCAMTMPOTHER . "tpvpostup\\";
 	my $pDirPdf     = EnumsPaths->Client_INCAMTMPOTHER . "pdf\\";
 
 	unless ( -d $pDirStackup ) {

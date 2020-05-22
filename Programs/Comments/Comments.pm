@@ -9,6 +9,7 @@ package Programs::Comments::Comments;
 use strict;
 use warnings;
 use Switch;
+use File::Basename;
 
 #local library
 
@@ -16,6 +17,7 @@ use aliased 'Programs::Comments::CommLayout::CommLayout';
 use aliased 'Programs::Comments::CommLayout::CommSnglLayout';
 use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Comments::Enums';
+use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -29,7 +31,7 @@ sub new {
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"commDir"} = JobHelper->GetJobOutput( $self->{"jobId"} ) . "comments";
+	$self->{"commDir"} = JobHelper->GetJobOutput( $self->{"jobId"} ) . "comments\\";
 	unless ( -e $self->{"commDir"} ) {
 		mkdir( $self->{"commDir"} ) or die "$_";
 	}
@@ -37,6 +39,8 @@ sub new {
 	$self->{"commLayout"} = CommLayout->new();
 
 	$self->__LoadFromJob();
+
+	$self->__ClearOldFiles();
 
 	return $self;
 }
@@ -46,11 +50,32 @@ sub Save {
 
 }
 
-sub GetOutText {
+sub SnapshotCAM {
 	my $self = shift;
+	my $directly = shift // 1;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	unless ($directly) {
+
+		my $mess = "Prepare what you want to snapshot...";
+		$inCAM->PAUSE($mess);
+	}
+ 
+
+	my $fileName = "CAM_" . GeneralHelper->GetNumUID();
+	my $p        = $self->{"commDir"} . $fileName;
+	$inCAM->COM( "save_snapshot", "path" => $p . ".png" );
+
+	# Unlink extra files: .nte;  .txt;
+	unlink( $p . ".nte" );
+	unlink( $p . ".txt" );
+
+	return $p . ".png";
 }
 
-sub GetOutFiles {
+sub SnapshotGS {
 	my $self = shift;
 
 }
@@ -91,20 +116,6 @@ sub MoveUp {
 sub MoveDown {
 	my $self      = shift;
 	my $commentId = shift;
-
-}
-
-sub GetCommentById {
-	my $self = shift;
-
-	return @{ $self->{"tables"} };
-
-}
-
-sub GetAllComments {
-	my $self = shift;
-
-	return @{ $self->{"tables"} };
 
 }
 
@@ -151,14 +162,6 @@ sub RemoveFile {
 	splice @{ $self->{"files"} }, $fileId, 1;
 }
 
-sub GetAllFiles {
-	my $self      = shift;
-	my $commentId = shift;
-
-	return @{ $self->{"files"} };
-
-}
-
 sub AddSuggestion {
 	my $self      = shift;
 	my $commentId = shift;
@@ -176,14 +179,6 @@ sub RemoveSuggestion {
 	die "Suggestion id: $suggId doesn't exist" if ( $suggId < 0 || $suggId >= scalar( @{ $self->{"suggestions"} } ) );
 
 	splice @{ $self->{"suggestions"} }, $suggId, 1;
-}
-
-sub GetAllSuggestions {
-	my $self      = shift;
-	my $commentId = shift;
-
-	return @{ $self->{"suggestions"} };
-
 }
 
 # --------------------------------------
@@ -206,23 +201,50 @@ sub GetFileName {
 	return $self->{"fileName"};
 }
 
+# --------------------------------------
+# Private methods
+# --------------------------------------
+
 sub __LoadFromJob {
 	my $self = shift;
 
-	# test
+	# Add default comment
 
 	$self->AddComment( Enums->CommentType_QUESTION );
-	$self->SetText( 0, "test jfdif djfosdifj fjdi" );
-	$self->AddFile( 0, "stakcup", 'c:/Export/test/noImage.png' );
+	$self->SetText( 0, "" );
+
+	$self->AddFile( 0, "stakcup", $self->SnapshotCAM() );
 	$self->AddFile( 0, "stakcup", 'c:/Export/test/noImage_.png' );
 
 	$self->AddComment( Enums->CommentType_NOTE );
 	$self->SetText( 1, "test jfdif djfosdifj fjdi" );
 	$self->AddFile( 1, "stakcup", 'c:/Export/test/noImage.png' );
-#	$self->AddComment( Enums->CommentType_QUESTION );
-#	$self->SetText( 2, "test jfdif djfosdifj fjdi" );
-#		$self->AddFile( 2, "stakcup", 'c:/Export/test/noImage.png' );
 
+	#	$self->AddComment( Enums->CommentType_QUESTION );
+	#	$self->SetText( 2, "test jfdif djfosdifj fjdi" );
+	#		$self->AddFile( 2, "stakcup", 'c:/Export/test/noImage.png' );
+
+}
+
+sub __ClearOldFiles {
+	my $self = shift;
+
+	my @filesP = map { $_->GetFilePath() } map { $_->GetAllFiles() } $self->{"commLayout"}->GetAllComments();
+
+	my @filesN = map { ( fileparse($_) )[0] } @filesP;
+
+	opendir( DIR, $self->{"commDir"} ) or die $!;
+
+	while ( my $file = readdir(DIR) ) {
+
+		my ( $name, $path, $suffix ) = fileparse($file);
+
+		unless ( scalar( grep { $_ eq $name } @filesN ) ) {
+			unlink($self->{"commDir"}."$file");
+		}
+	}
+
+	close(DIR);
 }
 
 #-------------------------------------------------------------------------------------------#
