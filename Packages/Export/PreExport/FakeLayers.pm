@@ -203,7 +203,7 @@ sub __CreateFakeSMOLECLayers {
 		# Rotate OLEC marks
 
 		CamLayer->WorkLayer( $inCAM, $fakeSM );
-		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".geometry", "OLEC*" ) == 4 ) {
+		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, ".geometry", "OLEC_otvor*" ) == 4 ) {
 			$inCAM->COM( "sel_change_sym", "symbol" => ( $sourceL eq "mc" ? "cross_mask" : "cross_mask_x" ) );
 		}
 		else {
