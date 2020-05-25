@@ -75,18 +75,14 @@ sub new {
 	# Determine pcb material
 	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	$self->{"pcbMat"} = undef;
-
-	if ( $mat =~ /FR4|IS4\d{2}|PCL370HR|RO\d/i ) {
-
-		$self->{"pcbMat"} = Enums->PcbMat_FR4;
-	}
-	elsif ( $mat =~ /AL|PCL/i ) {
+ 
+	if ( $mat =~ /AL|PCL/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_ALU;
 	}
 	else {
 
-		$self->{"pcbMat"} = Enums->PcbMat_SPEC;
+		$self->{"pcbMat"} = Enums->PcbMat_FR4;
 	}
 
 	# List of all standards
