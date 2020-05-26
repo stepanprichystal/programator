@@ -289,9 +289,9 @@ sub OnCheckGroupData {
 
 			unless ( $stackKindStr =~ /$materialKindIS/ ) {
 				$dataMngr->_AddErrorResult(
-					"Stackup material",
-					"Stackup material doesn't match with material in Helios. Stackup material: $stackKindStr"
-					  . ", Helios material: $materialKindIS"
+											"Stackup material",
+											"Stackup material doesn't match with material in Helios. Stackup material: $stackKindStr"
+											  . ", Helios material: $materialKindIS"
 				);
 			}
 
@@ -576,11 +576,16 @@ sub OnCheckGroupData {
 
 	if ( $layerCnt <= 2 ) {
 
-		my $errMes = "";
-		my $matOk = MaterialInfo->BaseMatInStock( $jobId, $area, \$errMes );
+		# check material only if it is standard material
+		my $matSpec = $defaultInfo->GetPcbBaseInfo("material_vlastni");
 
-		unless ($matOk) {
-			$dataMngr->_AddErrorResult( "Base material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
+		if ( $matSpec =~ /^n$/i ) {
+			my $errMes = "";
+			my $matOk = MaterialInfo->BaseMatInStock( $jobId, $area, \$errMes );
+
+			unless ($matOk) {
+				$dataMngr->_AddErrorResult( "Base material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
+			}
 		}
 
 	}

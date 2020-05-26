@@ -36,6 +36,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Packages::TifFile::TifFile::TifFile';
+use aliased 'Packages::Export::PreExport::FakeLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -185,6 +186,8 @@ sub __ProcessJob {
 		}
 	}
 
+	FakeLayers->CreateFakeLayers( $inCAM, $jobId );
+
 	# export
 	my $export = ExportFiles->new( $inCAM, $jobId, "panel" );
 	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
@@ -193,6 +196,9 @@ sub __ProcessJob {
 	$self->{"errResults"} = \@result;
 
 	$export->Run( \%mdiInfo );
+	
+	FakeLayers->RemoveFakeLayers( $inCAM, $jobId  );
+	
 	$self->{"logger"}->debug("After export mdi files: $jobId");
 
 	# 3) save job
