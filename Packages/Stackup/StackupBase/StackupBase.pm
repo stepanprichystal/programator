@@ -180,6 +180,7 @@ sub GetStackupType {
 }
 
 # Return type of material, which stackup is composed from
+# Material names are without space
 sub GetStackupHybridTypes {
 	my $self = shift;
 
