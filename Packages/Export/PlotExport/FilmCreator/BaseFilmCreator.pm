@@ -139,14 +139,14 @@ sub __RunRule {
 							next;
 						}
 
-#						if ( $y > Enums->FilmSize_SmallY ) {
-#							$ruleSet->SetDimenison( Enums->FilmSize_Big );
-#						}
-#						else {
-#							$ruleSet->SetDimenison( Enums->FilmSize_Small );
-#						}
+						if ( $y > Enums->FilmSize_SmallY ) {
+							$ruleSet->SetDimenison( Enums->FilmSize_Big );
+						}
+						else {
+							$ruleSet->SetDimenison( Enums->FilmSize_Small );
+						}
 						# Temporary solution until big size will be processed
-						$ruleSet->SetDimenison( Enums->FilmSize_Big );
+						# $ruleSet->SetDimenison( Enums->FilmSize_Big );
 
 					}
 					elsif ( $rule->GetOrientation() eq Enums->Ori_HORIZONTAL ) {
@@ -155,15 +155,15 @@ sub __RunRule {
 						if ( $y > Enums->FilmSize_BigX || $x > Enums->FilmSize_BigY ) {
 							next;
 						}
-#						if ( $x > Enums->FilmSize_SmallY ) {
-#							$ruleSet->SetDimenison( Enums->FilmSize_Big );
-#						}
-#						else {
-#							$ruleSet->SetDimenison( Enums->FilmSize_Small );
-#						}
+						if ( $x > Enums->FilmSize_SmallY ) {
+							$ruleSet->SetDimenison( Enums->FilmSize_Big );
+						}
+						else {
+							$ruleSet->SetDimenison( Enums->FilmSize_Small );
+						}
 						
 						# Temporary solution until big size will be processed
-						$ruleSet->SetDimenison( Enums->FilmSize_Big );
+						# $ruleSet->SetDimenison( Enums->FilmSize_Big );
 
 					}
 

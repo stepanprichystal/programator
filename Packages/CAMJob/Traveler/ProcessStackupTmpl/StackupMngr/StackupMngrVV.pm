@@ -217,7 +217,7 @@ sub GetPressProgramInfo {
 	}
 	elsif ( $lamType eq Enums->LamType_CVRLPRODUCT ) {
 
-		$pInfo{"name"} = "RigidFlex_coverlay";
+		$pInfo{"name"} = "Flex_coverlay";
 
 	}
 	elsif ( $lamType eq Enums->LamType_RIGIDBASE ) {
