@@ -58,7 +58,7 @@ sub GetStandards {
 		Standard->new(
 			"name"    => Enums->Standard_307x407,
 			"pcbType" => Enums->PcbType_MULTI,
-			"pcbMat"  => Enums->PcbMat_FR4,
+			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# properties
 			"active"      => 1,
@@ -82,7 +82,7 @@ sub GetStandards {
 		Standard->new(
 			"name"    => Enums->Standard_307x486p2,
 			"pcbType" => Enums->PcbType_MULTI,
-			"pcbMat"  => Enums->PcbMat_FR4,
+			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
 			"active"      => 1,
@@ -106,7 +106,7 @@ sub GetStandards {
 		Standard->new(
 			"name"    => Enums->Standard_308x538,
 			"pcbType" => Enums->PcbType_MULTI,
-			"pcbMat"  => Enums->PcbMat_FR4,
+			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
 			"active"      => 1,
@@ -130,7 +130,7 @@ sub GetStandards {
 		Standard->new(
 			"name"    => Enums->Standard_295x355,
 			"pcbType" => Enums->PcbType_1V2V,
-			"pcbMat"  => Enums->PcbMat_FR4,
+			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
 			"active"      => 1,
@@ -150,7 +150,7 @@ sub GetStandards {
 		Standard->new(
 			"name"    => Enums->Standard_295x460,
 			"pcbType" => Enums->PcbType_1V2V,
-			"pcbMat"  => Enums->PcbMat_FR4,
+			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
 			"active"      => 1,
@@ -170,7 +170,7 @@ sub GetStandards {
 		Standard->new(
 			"name"    => Enums->Standard_297x508,
 			"pcbType" => Enums->PcbType_1V2V,
-			"pcbMat"  => Enums->PcbMat_FR4,
+			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
 			"active"      => 1,

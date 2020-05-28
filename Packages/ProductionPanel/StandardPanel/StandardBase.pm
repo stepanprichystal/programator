@@ -76,13 +76,13 @@ sub new {
 	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	$self->{"pcbMat"} = undef;
  
-	if ( $mat =~ /AL|PCL/i ) {
+	if ( $mat =~ /AL|CU/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_ALU;
 	}
 	else {
 
-		$self->{"pcbMat"} = Enums->PcbMat_FR4;
+		$self->{"pcbMat"} = Enums->PcbMat_STDLAM;
 	}
 
 	# List of all standards

@@ -99,12 +99,13 @@ sub new {
 sub Init {
 	my $self     = shift;
 	my $launcher = shift;    # contain InCAM library conencted to server
- 
+
 	# 1) Get InCAm from Launcher
 
 	$self->{"launcher"} = $launcher;
 	$self->{"inCAM"}    = $launcher->GetInCAM();
-
+	$self->{"inCAM"}->SetDisplay(0);
+	
 	# 2) Create fake layers which will be exported, but are created automatically
 	#$self->{"inCAM"}->SetDisplay(0);
 	FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, undef, 1 );
@@ -147,28 +148,22 @@ sub Init {
 
 	#set handlers for main app form
 	$self->__SetHandlers();
- 
 
 }
 
 sub Run {
 	my $self = shift;
 
+	$self->{"form"}->{"mainFrm"}->Show(1);
 
-		$self->{"form"}->{"mainFrm"}->Show(1);
+	#	# When all succesinit, close waiting form
+	#	if ( $self->{"loadingFrmPid"} ) {
+	#		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
+	#	}
 
-		#	# When all succesinit, close waiting form
-		#	if ( $self->{"loadingFrmPid"} ) {
-		#		Win32::Process::KillProcess( $self->{"loadingFrmPid"}, 0 );
-		#	}
+	#Helper->ShowAbstractQueueWindow(0,"Loading Exporter Checker");
 
-		#Helper->ShowAbstractQueueWindow(0,"Loading Exporter Checker");
-
-		$self->{"form"}->MainLoop();
-
-
-	
-	
+	$self->{"form"}->MainLoop();
 
 }
 

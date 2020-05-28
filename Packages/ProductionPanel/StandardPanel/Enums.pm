@@ -6,17 +6,15 @@ use constant {
 	Standard_307x407   => "standard_307x407",      # small VV
 	Standard_307x486p2 => "standard_307x486p2",    # big VV
 	Standard_308x538   => "standard_308x538",      # big VV 2nd version
-	
-	Standard_295x355   => "standard_295x355",      # small 1V2V
-	Standard_295x460   => "standard_295x460",      # big 1V2V
-	Standard_297x508   => "standard_297x508",      # big 1V2V 2nd version
-	
-	Standard_230x305   => "standard_230x305",      # small ALU
-	Standard_305x460   => "standard_305x460",      # big ALU
+
+	Standard_295x355 => "standard_295x355",        # small 1V2V
+	Standard_295x460 => "standard_295x460",        # big 1V2V
+	Standard_297x508 => "standard_297x508",        # big 1V2V 2nd version
+
+	Standard_230x305 => "standard_230x305",        # small ALU
+	Standard_305x460 => "standard_305x460",        # big ALU
 
 };
- 
-
 
 # Indicate if panel is standard, smaller than standard or bigger than standard
 use constant {
@@ -46,9 +44,9 @@ use constant {
 
 # Pcb material types in terms of standard definitions
 use constant {
-	PcbMat_SPEC => "PcbMat_SPEC",        # other than below defined materials
-	PcbMat_FR4  => "PcbMat_FR4",         #  FR4 material
-	PcbMat_ALU  => "PcbMat_ALU",         #   Alu material
+	PcbMat_SPEC   => "PcbMat_SPEC",      # other than below defined materials
+	PcbMat_STDLAM => "PcbMat_STDLAM",    # standard laminate
+	PcbMat_ALU    => "PcbMat_ALU",       # Alu material
 
 };
 
