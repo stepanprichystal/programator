@@ -524,7 +524,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d243615";
+	my $jobId = "d282449";
 
 	my $mess = "";
 
@@ -532,7 +532,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $SR = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
 
 	#my $nested = $SR;
-	my $detailPrev = 1;
+	my $detailPrev = 0;
 
 	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $detailPrev, "en", 1 );
 	

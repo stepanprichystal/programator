@@ -279,6 +279,8 @@ sub DrawTextMultiLine {
 	my $textFontFamily = shift;
 	my $textVAlign     = shift;
 	my $textHAlign     = shift;
+	
+	die "No text lines" unless(scalar( @{$textLines} ));
 
 	my $lH = $boxH / scalar( @{$textLines} );
 
