@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: App which automatically export et kooperation IPC  
+# Description: App which automatically export et kooperation IPC
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Services::TpvService::ServiceApps::ETKoopApp::ETKoopApp;
@@ -18,6 +18,8 @@ use Log::Log4perl qw(get_logger);
 use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 use POSIX qw(strftime);
 use List::MoreUtils qw(uniq);
+use DateTime::Format::Strptime;
+use DateTime;
 
 #local library
 #use aliased 'Connectors::TpvConnector::TpvMethods';
@@ -33,6 +35,9 @@ use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Packages::TifFile::TifFile::TifFile';
 use aliased 'Packages::Export::PreExport::FakeLayers';
+use aliased 'Packages::CAMJob::ElTest::CheckElTest';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
+use aliased "Packages::Export::OutExport::OutMngr";
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -41,7 +46,7 @@ use aliased 'Packages::Export::PreExport::FakeLayers';
 sub new {
 	my $class = shift;
 
-	my $appName = EnumsApp->App_MDIDATA;
+	my $appName = EnumsApp->App_ETKOOPER;
 	my $self = $class->SUPER::new( $appName, @_ );
 
 	#my $self = {};
@@ -88,6 +93,8 @@ sub Run {
 
 	};
 	if ($@) {
+
+		print STDERR $@;
 
 		my $err = "Aplication: " . $self->GetAppName() . " exited with error: \n$@";
 		$self->{"logger"}->error($err);
@@ -159,67 +166,38 @@ sub __ProcessJob {
 	my $inCAM = $self->{"inCAM"};
 
 	# 1) Open Job
+	my $acquireErr = "";
+	my $jobExist = AcquireJob->Acquire( $inCAM, $jobId, \$acquireErr );
 
-	unless ( CamJob->JobExist( $inCAM, $jobId ) ) {
-		$self->{"logger"}->debug("Job doesn't exist: $jobId");
-		return 0;
+	if ($jobExist) {
+
+		$self->_OpenJob( $jobId, 1 );
+
+		$self->{"logger"}->debug("After open job: $jobId");
+
+		# 2) Export mdi files
+		my $cooperStep = CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) ? "mpanel" : "o+1";
+		my $mngr = OutMngr->new( $inCAM, $jobId, 0, $cooperStep, 1 );
+
+		# export
+		$mngr->Run();
+
+		$self->{"logger"}->debug("After export IPC files: $jobId");
+
+		# 3) save job
+		$self->_CloseJob($jobId);
+	}
+	else {
+
+		$self->{"logger"}->error("Error during unarchive InCAM job. Error detail: $acquireErr") unless ($jobExist);
+
 	}
 
-	$self->_OpenJob( $jobId, 1 );
-	$self->{"logger"}->debug("After open job: $jobId");
-
-	# 2) Export mdi files
-
-	# getr dfault layer types to export
-	my %mdiInfo = MdiHelper->GetDefaultLayerTypes( $inCAM, $jobId );
-
-	# remove all job files
-	my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId );
-
-	foreach (@f) {
-		unless ( unlink($_) ) {
-			die "Can not delete mdi file $_.\n";
-		}
-	}
-
-	FakeLayers->CreateFakeLayers( $inCAM, $jobId );
-
-	# export
-	my $export = ExportFiles->new( $inCAM, $jobId, "panel" );
-	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
-
-	my @result = ();
-	$self->{"errResults"} = \@result;
-
-	$export->Run( \%mdiInfo );
-	
-	FakeLayers->RemoveFakeLayers( $inCAM, $jobId  );
-	
-	$self->{"logger"}->debug("After export mdi files: $jobId");
-
-	# 3) save job
-	$self->_CloseJob($jobId);
-
-	# If error during export, send err log to db
-	if ( @{ $self->{"errResults"} } ) {
-
-		my $errMess = join( "\n ", @{ $self->{"errResults"} } );
-
-		$self->__ProcessError( $jobId, $errMess );
-	}
+ 
 
 }
 
-# handler for mdi export results
-sub __OnExportLayer {
-	my $self = shift;
-	my $item = shift;
 
-	if ( $item->Result() eq ItemResEnums->ItemResult_Fail ) {
-
-		push( @{ $self->{"errResults"} }, $item->GetErrorStr() );
-	}
-}
 
 # Return pcb which not contain gerbers or xml in MDI folders
 sub __GetPcb2Export {
@@ -227,55 +205,62 @@ sub __GetPcb2Export {
 
 	my @pcb2Export = ();
 
-	my @pcbInProduc = map { $_->{'reference_subjektu'} } grep { $_->{"aktualni_krok"} =~ /ZADANO/i } HegMethods->GetOrdersByStatus(4);
+	my @pcbInProduc = map { $_->{'reference_subjektu'} } HegMethods->GetOrdersByStatus(45);
 
-	# all files from MDI folder
-	my @xmlAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.xml' );
-	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.ger' );
+	foreach my $orderId (@pcbInProduc) {
 
-	foreach my $jobId (@pcbInProduc) {
+		$orderId = lc($orderId);
+		my $jobId = ( $orderId =~ /^(\w\d+)-\d+$/ )[0];
 
-		$jobId = lc($jobId);
+		next if ( HegMethods->GetTypeOfPcb( $jobId, 1 ) =~ /^T$/i );    # stencil
+		my $testRequested = CheckElTest->ElTestRequested($jobId);
+		if ( defined $testRequested && $testRequested ) {
 
-		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
-		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
+			unless ( CheckElTest->IPCPrepared($jobId,1) ) {
 
-		if ( scalar(@xml) == 0 ) {
+				my %orderInfo = HegMethods->GetAllByOrderId($orderId);
 
-			push( @pcb2Export, $jobId );
+				my $pattern = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S', );
 
-		}
-		elsif ( scalar(@xml) ) {
+				my $dateStart = $pattern->parse_datetime( $orderInfo{"datum_zahajeni"} )->epoch();    # start order date
 
-			# check every xml, if there is gerber file of same name (if xml is order than 15 minutes)
-			foreach my $xmlFile (@xml) {
+				# diff creattion date
+				my $difCreation = undef;
+				my $p           = JobHelper->GetJobArchive($jobId) . "\\$jobId.dif";
+				$difCreation = ( stat($p) )[9] if ( -e $p );
 
-				my $created = ( stat($xmlFile) )[9];
+				my $diff = 0;
 
-				if ( $created + 15 * 60 < time() ) {
+				if ( defined $difCreation ) {
 
-					# chek if exist relevant gerber file
-					my $gerFile = $xmlFile;
-					$gerFile =~ s/\.xml/\.ger/;
+					$diff = DateTime->now( "time_zone" => 'Europe/Prague' )->epoch() - $difCreation;
+				}
+				else {
 
-					unless ( -e $gerFile ) {
-						push( @pcb2Export, $jobId );
-						last;
-					}
+					$diff = DateTime->now( "time_zone" => 'Europe/Prague' )->epoch() - $dateStart;
+
+				}
+
+				$self->{"logger"}->debug("El test for job: $orderId doesnt exist for $diff hours");
+
+				$diff /= 3600;    # to hours
+
+				if ( $diff > 10 ) {
+
+					push( @pcb2Export, $jobId );
 				}
 			}
+
 		}
 	}
 
 	# limit if more than 30jobs, in order don't block  another service apps
-	if ( scalar(@pcb2Export) > 30 ) {
-		@pcb2Export = @pcb2Export[ 0 .. 29 ];    # oricess max 30 jobs
+	if ( scalar(@pcb2Export) > 10 ) {
+		@pcb2Export = @pcb2Export[ 0 .. 9 ];    # oricess max 30 jobs
 	}
 
 	return @pcb2Export;
 }
-
- 
 
 # store err to logs
 sub __ProcessError {

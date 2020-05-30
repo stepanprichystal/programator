@@ -15,6 +15,7 @@ use warnings;
 use File::Copy;
 use File::Path 'rmtree';
 use Log::Log4perl qw(get_logger :levels);
+use File::Basename;
 
 #local library
 use aliased 'CamHelpers::CamJob';
@@ -114,34 +115,69 @@ sub __ExportCooperationET {
 	if ( $self->{"exportEt"} ) {
 
 		# Decide if SR profiles can be kept
-		my $keepProfile = 0;
-		if( CamStepRepeat->ExistStepAndRepeats($inCAM, $jobId, $self->{"cooperStep"})){
-			
-			if(ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"cooperStep"})){
-				$keepProfile = 1;
+
+		my $keepProfile  = 0;
+		my $processByTPV = 1;
+		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $self->{"cooperStep"} ) ) {
+
+			if ( ETHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"cooperStep"} ) ) {
+				$keepProfile  = 1;
+				$processByTPV = 0;
+			}
+		}else{
+			$processByTPV = 0;
+		}
+
+		my $ipcPath = $self->{"exportIPC"}->Export( "_kooperace", $keepProfile );
+
+		if ($processByTPV) {
+
+			# if script run on server, move el test to r:/El_tests
+
+			get_logger("abstractQueue")->debug( "Is tpv server: " . GeneralHelper->IsTPVServer() );
+
+			if ( GeneralHelper->IsTPVServer() ) {
+
+				get_logger("abstractQueue")->debug("path $ipcPath");
+
+				if ( -e $ipcPath ) {
+
+					if ( copy( $ipcPath, EnumsPaths->Jobs_ELTESTSIPC . $jobId . "t_kooperace.ipc" ) ) {
+						get_logger("abstractQueue")->debug("IPC local copy was coppied to R");
+
+						# Remove local copy
+						my ( $name, $ipcDir, $suffix ) = fileparse($ipcPath);
+						rmtree($ipcDir) or die "Unable to delete local copy of IPC ($ipcDir). " . $!;
+					}
+					else {
+						get_logger("abstractQueue")->debug(" IPC local file was NOT copied to R");
+					}
+				}
 			}
 		}
-		
-		$self->{"exportIPC"}->Export("kooperace", $keepProfile);
+		else {
 
-		# if script run on server, move el test to r:/El_tests
-		
-		get_logger("abstractQueue")->debug( "Is tpv server: ". GeneralHelper->IsTPVServer() );
-		
-		if ( GeneralHelper->IsTPVServer() ) {
-
-			my $ipcPath = EnumsPaths->Client_ELTESTS . $jobId . "_kooperace\\" . $jobId . "_kooperace.ipc";
-			
-			get_logger("abstractQueue")->debug( "path $ipcPath");
-			
 			if ( -e $ipcPath ) {
-				
-				get_logger("abstractQueue")->debug( "copy");
 
-				copy( $ipcPath, EnumsPaths->Jobs_ELTESTSIPC . $jobId . "_kooperace.ipc" );
+				my $srvElTestP = JobHelper->GetJobElTest( $jobId, 1 );
+				my ( $name, $srvElTestRootP, $suffix ) = fileparse($srvElTestP);
+
+				unless ( -e $srvElTestRootP ) {
+
+					# Create root dir
+					mkdir($srvElTestRootP) or die "Can't create dir: $srvElTestRootP" . $_;
+				}
+
+				unless ( -e $srvElTestP ) {
+
+					# Create jopb dir
+					mkdir($srvElTestP) or die "Can't create dir: " . $srvElTestP . $_;
+				}
+
+				copy( $ipcPath, $srvElTestP . "\\" . $jobId . "t_kooperace.ipc" );
 			}
-
 		}
+
 	}
 }
 

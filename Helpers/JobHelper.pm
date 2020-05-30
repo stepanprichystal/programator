@@ -17,6 +17,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::StackupBase::StackupBase';
 use aliased 'Packages::Stackup::Enums' => "StackEnums";
+
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -26,7 +27,6 @@ sub GetBaseCuThick {
 	my $self      = shift;
 	my $jobId     = shift;
 	my $layerName = shift;
-	
 
 	my $cuThick;
 
@@ -39,7 +39,7 @@ sub GetBaseCuThick {
 	}
 	else {
 
-		$cuThick = HegMethods->GetOuterCuThick( $jobId );
+		$cuThick = HegMethods->GetOuterCuThick($jobId);
 	}
 
 	return $cuThick;
@@ -158,10 +158,14 @@ sub ConvertJobIdNew2Old {
 
 # return path of job el test
 sub GetJobElTest {
-	my $self  = shift;
-	my $jobId = shift;
+	my $self   = shift;
+	my $jobId  = shift;
+	my $kooper = shift // 0;
 
-	return EnumsPaths->Jobs_ELTESTS . substr( $jobId, 0, 4 ) . "\\" . $jobId . "t\\";
+	my $p = EnumsPaths->Jobs_ELTESTS . substr( $jobId, 0, 4 ) . "\\" . $jobId . "t";
+	$p .= "_kooperace" if ($kooper);
+	$p .= "\\";
+	return $p
 
 }
 
@@ -318,12 +322,11 @@ sub GetIsFlex {
 # Return info if flex core is placed very or botttom at stackup
 # Return value = felxtop/flexbot
 sub GetORigidFlexType {
-	my $self  = shift;
-	my $jobId = shift;
-	my $stackup = shift // StackupBase->new($jobId);;
+	my $self    = shift;
+	my $jobId   = shift;
+	my $stackup = shift // StackupBase->new($jobId);
 
-	my $type    = undef;
-	 
+	my $type = undef;
 
 	my @allC = $stackup->GetAllCores();
 

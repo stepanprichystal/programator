@@ -32,6 +32,7 @@ use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::Jetpr
 use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::CleanJobDbApp::CleanJobDbApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckElTestsApp::CheckElTestsApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::ETKoopApp::ETKoopApp';
 
 use aliased 'Programs::Services::TpvService::ServiceApps::TmpApp::TmpApp';
 
@@ -184,6 +185,10 @@ sub __GetApp {
 	elsif ( $appName eq EnumsApp->App_CHECKELTESTS ) {
 
 		$app = CheckElTestsApp->new();
+	}
+	elsif ( $appName eq EnumsApp->App_ETKOOPER ) {
+
+		$app = ETKoopApp->new();
 	}
 	elsif ( $appName eq EnumsApp->App_TEST ) {
 
