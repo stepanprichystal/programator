@@ -44,14 +44,14 @@ sub GetAllLamination {
 	my $cvrlBotExist = $self->GetExistCvrl( "bot", $cvrlInfBot );
 
 	my $stiffInfTop = {};
-	my $stiffTopExist = $self->GetExistCvrl( "top", $stiffInfTop );
+	my $stiffTopExist = $self->GetExistStiff( "top", $stiffInfTop );
 
 	my $stiffInfBot = {};
-	my $stiffBotExist = $self->GetExistCvrl( "bot", $stiffInfBot );
+	my $stiffBotExist = $self->GetExistStiff( "bot", $stiffInfBot );
 
 	my @lam = ();
 
-	if ( $cvrlInfBot || $cvrlInfTop ) {
+	if ( $cvrlTopExist || $cvrlBotExist ) {
 		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_CVRLBASE, undef, "P" . ( scalar(@lam) + 1 ) );
 		push( @lam, $inf );
 	}

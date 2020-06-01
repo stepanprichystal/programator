@@ -360,6 +360,9 @@ sub GetMaterialParams {
 				&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
 		{
 			$materialFile = "HYBRID_I-TERA-FR4";
+		}else{
+			
+			die "CNC parameters file was not found for Hybrid: ".join(";", @types);
 		}
 	}
 
@@ -597,7 +600,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d270787";
+	my $jobId    = "d282545";
 	my $stepName = "panel";
 
 	my $materialName = "Hybrid";

@@ -259,11 +259,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d277311";
+	my $jobId = "d282545";
  
 	my $stackup = Stackup->new( $inCAM, $jobId );
 
-	#my $thick = $stackup->GetFinalThick();
+	my $thick = $stackup->GetStackupIsHybrid();
 
 	StackupTester->PrintStackupTree($stackup);
 

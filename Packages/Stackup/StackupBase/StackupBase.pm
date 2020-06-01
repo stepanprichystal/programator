@@ -183,15 +183,15 @@ sub GetStackupType {
 # Material names are without space
 sub GetStackupHybridTypes {
 	my $self = shift;
-
-	die "Stackup is not hybrid" unless ( $self->GetStackupIsHybrid() );
-
-	my @types = uniq( map( $_->GetTextType(), $self->GetAllCores() ) );
-
+ 
+	my @types = uniq(
+					  map( $_->GetTextType(),
+						   grep { $_->GetType() eq Enums->MaterialType_CORE || $_->GetType() eq Enums->MaterialType_PREPREG } $self->GetAllLayers() )
+	);
+	
 	for ( my $i = 0 ; $i < scalar(@types) ; $i++ ) {
 
 		$types[$i] =~ s/\s*//g;
-
 	}
 
 	@types;
@@ -202,7 +202,7 @@ sub GetStackupHybridTypes {
 sub GetStackupIsHybrid {
 	my $self = shift;
 
-	my @types = uniq( map( $_->GetTextType(), $self->GetAllCores() ) );
+	my @types = $self->GetStackupHybridTypes();
 
 	return scalar(@types) > 1 ? 1 : 0;
 }
