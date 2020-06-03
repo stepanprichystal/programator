@@ -275,6 +275,8 @@ sub GetPressProgramInfo {
 		$pInfo{"name"} = "Flex";
 
 	}
+	
+	$pInfo{"name"} .= "_$h";
  
 
 	# 2) Program dim
@@ -292,8 +294,7 @@ sub GetPressProgramInfo {
 	
 	die "Press program name was found for lamination type: $lamType" unless(defined $pInfo{"name"});
 	
-	$pInfo{"name"} .= "_<poč. pater>";
-	
+	 
 	return %pInfo;
 }
 
