@@ -164,7 +164,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
-	my $jobId = "d270787";    #Outer RigidFLex BOT
+	my $jobId = "d066725";    #Outer RigidFLex BOT
 	                          #my $jobId = "d266566"; # inner flex
 	                          #my $jobId = "d146753"; # 1v flex
 	                          #my $jobId = "d267628";    # flex 2v + stiff

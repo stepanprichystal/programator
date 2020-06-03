@@ -81,15 +81,13 @@ sub Build {
 										 TblDrawEnums->TextHAlign_LEFT,
 										 TblDrawEnums->TextVAlign_CENTER, 1 );
 
-	my $txtLCollBStyle = TextStyle->new(
-		TblDrawEnums->TextStyle_LINE,
-		EnumsStyle->TxtSize_NORMAL,
-		Color->new( 0, 0, 0 ),
-		TblDrawEnums->Font_BOLD,         undef,
-		TblDrawEnums->TextHAlign_RIGHT,
-		TblDrawEnums->TextVAlign_CENTER, 1
-	);
-	
+	my $txtLCollBStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+										 EnumsStyle->TxtSize_NORMAL,
+										 Color->new( 0, 0, 0 ),
+										 TblDrawEnums->Font_BOLD, undef,
+										 TblDrawEnums->TextHAlign_RIGHT,
+										 TblDrawEnums->TextVAlign_CENTER, 1 );
+
 	my $txtTitStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 									  EnumsStyle->TxtSize_NORMAL,
 									  Color->new( 0, 0, 0 ),
@@ -148,7 +146,7 @@ sub __BuildMatInfo {
 
 	my $pcbType = $stckpMngr->GetISPcbType();
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Typ desky:", $txtLCollStyle );
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $pcbType,           $txtRCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $pcbType,     $txtRCollStyle );
 
 	# Layer count
 	my $rowCuCnt = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
@@ -196,11 +194,11 @@ sub __BuildMatInfo {
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, "Přířezů navíc:", $txtLCollStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $amountExtraStr, $txtRCollStyle );
 
-	 
 	# Put info about dodelavka
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, Enums->KEYEXTRAPRODUC, $txtLCollBStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, Enums->KEYEXTRAPRODUC,
+				   $txtLCollBStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ),
 				   $tbl->GetRowCnt() - 1,
 				   undef, undef, Enums->KEYEXTRAPRODUCVAL, $txtRCollStyle );
@@ -276,6 +274,29 @@ sub __BuildPaketInfo {
 	my $totalPackgStr = Enums->KEYTOTALPACKG . "($amount)";
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Plotny/zakázku:", $txtLCollStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $totalPackgStr,     $txtRCollStyle );
+
+	# Pins yes or no
+
+	my $rowPins = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
+
+	my $lamType = $lam->GetLamType();
+	my $pinStr  = "Ne";
+
+	if (
+		    $lamType eq Enums->LamType_FLEXBASE
+		 || $lamType eq Enums->LamType_ORIGIDFLEXFINAL
+		 || $lamType eq Enums->LamType_IRIGIDFLEXFINAL
+		 || ( $lamType eq Enums->LamType_RIGIDFINAL && $stckpMngr->GetCuLayerCnt() >= 6 )
+		 || (    $lamType eq Enums->LamType_RIGIDFINAL
+			  && $stckpMngr->GetStackup()->GetCuLayerCnt() >= 4
+			  && $stckpMngr->GetStackup()->GetAllCores() > 1 )
+	  )
+	{
+		$pinStr = "Ano";
+	}
+
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Piny:", $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $pinStr, $txtRCollStyle );
 
 }
 

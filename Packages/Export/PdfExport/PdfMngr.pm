@@ -605,6 +605,14 @@ sub TaskItemsCount {
 	if ( $self->{"exportNCSpecial"} ) {
 		$totalCnt += 1;                                        # output nc special pdf
 	}
+	
+	if ( $self->{"exportCvrlStencil"} ) {
+		$totalCnt += 1;                                        # traveler coverlay stencil
+	}
+
+	if ( $self->{"exportPeelStencil"} ) {
+		$totalCnt += 1;                                        # traveler peel stencil
+	}
 
 	return $totalCnt;
 
