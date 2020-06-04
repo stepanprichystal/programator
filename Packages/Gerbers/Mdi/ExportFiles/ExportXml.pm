@@ -25,6 +25,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -193,39 +194,35 @@ sub __ExportXml {
 		# set power by mask color
 		my %mask = ();
 
-		if ( $layerName =~ /^m[cs]flex/ ) {
-
-			$power = 250;    # SD 2460 - UV FLEX
+		if ( $layerName =~ /^m[cs]2/ ) {
+			%mask = HegMethods->GetSolderMaskColor2($jobId);
 		}
 		else {
+			%mask = HegMethods->GetSolderMaskColor($jobId);
+		}
 
-			if ( $layerName =~ /^m[cs]2/ ) {
-				%mask = HegMethods->GetSolderMaskColor2($jobId);
-			}
-			else {
-				%mask = HegMethods->GetSolderMaskColor($jobId);
-			}
+		my $clr = $mask{ ( $layerName =~ /c/ ? "top" : "bot" ) };
 
-			my $clr = $mask{ ( $layerName =~ /c/ ? "top" : "bot" ) };
-
-			if ( $clr =~ /Z/i ) {
-				$power = 250;    # green #POZOR dle MH jiz nikdy nemenit hodnotu 250!
-			}
-			elsif ( $clr =~ /B/i ) {
-				$power = 240;    # black
-			}
-			elsif ( $clr =~ /M/i ) {
-				$power = 240;    # blue
-			}
-			elsif ( $clr =~ /W/i ) {
-				$power = 220;    # white
-			}
-			elsif ( $clr =~ /R/i ) {
-				$power = 240;    # red
-			}
-			else {
-				$power = 230;    # other
-			}
+		if ( $clr =~ /Z/i ) {
+			$power = 250;    # green #POZOR dle MH jiz nikdy nemenit hodnotu 250!
+		}
+		elsif ( $clr =~ /B/i ) {
+			$power = 240;    # black
+		}
+		elsif ( $clr =~ /M/i ) {
+			$power = 240;    # blue
+		}
+		elsif ( $clr =~ /W/i ) {
+			$power = 220;    # white
+		}
+		elsif ( $clr =~ /R/i ) {
+			$power = 240;    # red
+		}
+		elsif ( $clr =~ /G/i ) {
+			$power = 350;    # green SMD flex
+		}
+		else {
+			die "Energy for color: $clr is not defined";
 		}
 
 		$diameter   = 2.85;
