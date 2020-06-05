@@ -50,6 +50,10 @@ sub new {
 	return $self;
 }
 
+# Return
+# 0 - error
+# 1 - succes
+# 2 - no layer to export
 sub Create {
 	my $self           = shift;
 	my $drawProfile    = shift;
@@ -82,6 +86,13 @@ sub Create {
 	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} eq "silk_screen" } @dataLayers );
 	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} eq "solder_mask" } @dataLayers );
 	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} =~ /(siglnal)|(power_ground)|(mixed)/ } @dataLayers );
+
+	# If no layers for export return 0 
+	unless (scalar(@sorted)){
+		
+		$$message = "No layers";
+		return 2;
+	}
 
 	$_->{"sorted"} = 1 foreach (@sorted);
 	push( @sorted, grep { !defined $_->{"sorted"} } @dataLayers );
@@ -117,7 +128,7 @@ sub Create {
 	# clear job
 	$self->{"outputData"}->Clear();
 
-	return 1;
+	return $result;
 
 }
 
