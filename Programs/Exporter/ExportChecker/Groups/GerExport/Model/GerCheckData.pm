@@ -175,8 +175,7 @@ sub OnCheckGroupData {
 			$dataMngr->_AddErrorResult( "Jetprint data", $mess );
 		}
 	}
-	
-	
+ 
 }
 
 sub __PasteLayersExist {
