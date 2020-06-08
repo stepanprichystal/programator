@@ -73,7 +73,7 @@ sub Run {
 	}
 
 	if ( $self->{"exportControl"} ) {
-	#	$self->__ExportDataControl();
+		$self->__ExportDataControl();
 	}
 
 	if ( $self->{"exportStackup"} ) {
