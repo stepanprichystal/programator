@@ -28,19 +28,20 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
+	my $step = shift // 'panel'; 
 
 	# PROPERTY
 
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"jobId"}    = $jobId;
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $jobId);
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
 		$self->{"stackup"} = Stackup->new( $inCAM, $jobId );
 	}
 
-	$self->{"panelComp"} = PanelComp->new( $inCAM, $jobId, $self->{"stackup"} );
+	$self->{"panelComp"} = PanelComp->new( $inCAM, $jobId, $step, $self->{"stackup"} );
 
 	return $self;
 }

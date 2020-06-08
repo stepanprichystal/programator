@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::StnclExport::StnclMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -38,13 +38,14 @@ use aliased 'Packages::Export::StnclExport::MeasureData::MeasureData';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $class       = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $packageId   = __PACKAGE__;
+	my $createFakeL = 0;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"}         = shift;
-	$self->{"jobId"}         = shift;
+ 
 	$self->{"exportNif"}     = shift;
 	$self->{"exportData"}    = shift;
 	$self->{"exportPdf"}     = shift;

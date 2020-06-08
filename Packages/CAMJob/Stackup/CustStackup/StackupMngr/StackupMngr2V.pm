@@ -122,7 +122,7 @@ sub GetExistCvrl {
 
 		if ( defined $inf ) {
 
-			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
+			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"}, $side );
 
 			my $thick    = $matInfo->{"vyska"} * 1000000;
 			my $thickAdh = $matInfo->{"doplnkovy_rozmer"} * 1000000;
@@ -180,25 +180,19 @@ sub GetTG {
 }
 
 sub GetThicknessStiffener {
-	my $self = shift;
-	my $t    = $self->GetThickness();
+	my $self      = shift;
+	my $stiffSide = shift;
 
-	my $topStiff = {};
-	if ( $self->GetExistStiff( "top", $topStiff ) ) {
+	my $t = $self->GetThickness();
 
-		$t += $topStiff->{"adhesiveThick"} * $self->{"adhReduction"};
-		$t += $topStiff->{"stiffThick"};
-	}
+	my $stiff = {};
+	if ( $self->GetExistStiff( $stiffSide, $stiff ) ) {
 
-	my $botStiff = {};
-	if ( $self->GetExistStiff( "bot", $botStiff ) ) {
-
-		$t += $botStiff->{"adhesiveThick"} * $self->{"adhReduction"};
-		$t += $botStiff->{"stiffThick"};
+		$t += $stiff->{"adhesiveThick"} * $self->{"adhReduction"};
+		$t += $stiff->{"stiffThick"};
 	}
 
 	return $t;
-
 }
 
 # Real PCB thickness

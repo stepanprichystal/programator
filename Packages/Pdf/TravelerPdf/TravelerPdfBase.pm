@@ -369,7 +369,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			# Add all extro production
 			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
 
-				my @extraOrders = HegMethods->GetProducOrderByOederId( $orderId, undef, "N" );
+				my @extraOrders = HegMethods->GetProducOrderByOrderId( $orderId, undef, "N" );
 				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
 				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
 			}

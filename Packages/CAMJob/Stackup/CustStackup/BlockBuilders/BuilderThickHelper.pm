@@ -48,7 +48,11 @@ sub GetComputedThick {
 	
 	}elsif ( $section eq Enums->Sec_E_STIFFENER) {
 		
-		$t = $self->{"stackupMngr"}->GetThicknessStiffener();
+		$t = $self->{"stackupMngr"}->GetThicknessStiffener("top");
+	
+	}elsif ( $section eq Enums->Sec_F_STIFFENER) {
+		
+		$t = $self->{"stackupMngr"}->GetThicknessStiffener("bot");
 	}
 	
 

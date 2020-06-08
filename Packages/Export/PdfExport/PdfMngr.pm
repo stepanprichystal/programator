@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::PdfExport::PdfMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -38,12 +38,13 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 
 sub new {
 	my $class     = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
 	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $createFakeL = 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"}               = shift;
-	$self->{"jobId"}               = shift;
+ 
 	$self->{"exportControl"}       = shift;    # if export pdf data contro
 	$self->{"controlStep"}         = shift;    # which step export
 	$self->{"controlLang"}         = shift;    # which language use
@@ -63,16 +64,16 @@ sub new {
 
 sub Run {
 	my $self = shift;
-
 	my $jobId = $self->{"jobId"};
-
+	
+ 
 	# create folder for pdf files
 	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
 		mkdir( JobHelper->GetJobArchive($jobId) . "pdf" );
 	}
 
 	if ( $self->{"exportControl"} ) {
-		$self->__ExportDataControl();
+	#	$self->__ExportDataControl();
 	}
 
 	if ( $self->{"exportStackup"} ) {
@@ -249,36 +250,36 @@ sub __ExportStackup {
 			unlink( $stackup->GetOutputPath() );
 
 
-			#			# 3) Output all orders in production
-			#			my @PDFOrders = ();
-			#			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
-			#			@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
-			#
-			#			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
-			#
-			#			# Add all extro production
-			#			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
-			#
-			#				my @extraOrders = HegMethods->GetProducOrderByOederId( $orderId, undef, "N" );
-			#				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
-			#				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
-			#			}
-			#
-			#			my $serFromFile = FileHelper->ReadAsString($pSerTempl);
-			#
-			#			foreach my $order (@PDFOrders) {
-			#
-			#				$stackup->OutputSerialized( $serFromFile, $lamType, $order->{"orderId"}, $order->{"extraProducId"} );
-			#
-			#				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
-			#
-			#				unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
-			#					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
-			#				}
-			#
-			#				unlink( $stackup->GetOutputPath() );
-			#
-			#			}
+						# 3) Output all orders in production
+						my @PDFOrders = ();
+						my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
+						@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
+			
+						push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
+			
+						# Add all extro production
+						foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
+			
+							my @extraOrders = HegMethods->GetProducOrderByOrderId( $orderId, undef, "N" );
+							@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
+							push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
+						}
+			
+						my $serFromFile = FileHelper->ReadAsString($pSerTempl);
+			
+						foreach my $order (@PDFOrders) {
+			
+							$stackup->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
+			
+							my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
+			
+							unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
+								print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
+							}
+			
+							unlink( $stackup->GetOutputPath() );
+			
+						}
 
 		}
 		else {

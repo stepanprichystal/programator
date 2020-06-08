@@ -1,33 +1,9 @@
-#!/usr/bin/perl-w
-#################################
+sub DESTROY {
+	my $self = shift;
 
+	# check for an overridden destructor...
+	$self->SUPER::DESTROY if $self->can("SUPER::DESTROY");
 
-
-
-#necessary for load pall packages
-use FindBin;
-use lib "$FindBin::Bin/../";
-use PackagesLib;
-
-use aliased 'Connectors::HeliosConnector::HegMethods';
-use LWP::Simple;
-
-
-my $jobName = 'D122826';
-
-my @infoPcbOffer = HegMethods->GetExternalDoc($jobName);
-							
-my @dokuments = split /,/ ,$infoPcbOffer[0]->{'externi_dokumenty'};
-
-foreach my $oneDoc (@dokuments) {
-	
-	system("c:/Program Files (x86)/Internet Explorer/iexplore.exe", $oneDoc);
-
-	
-	print $oneDoc , "\n";
-	
-	
+	# now do your own thing before or after
 }
-
-
-
+docstore . mik . ua / orelly / perl3 / prog / ch12_06 . htm

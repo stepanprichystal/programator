@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::GerExport::GerMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -32,12 +32,13 @@ use aliased 'Packages::Export::PreExport::FakeLayers';
 
 sub new {
 	my $class     = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
 	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $createFakeL = 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"}        = shift;
-	$self->{"jobId"}        = shift;
+ 
 	$self->{"exportLayers"} = shift;
 	$self->{"layers"}       = shift;
 	$self->{"paste"}        = shift;
@@ -64,6 +65,7 @@ sub Run {
 	
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+ 
 
 	$self->__DeleteOldFiles();
 

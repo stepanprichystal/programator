@@ -17,7 +17,7 @@ my $inCAM = InCAM->new();
 #my $jobId    = "d270787"; #Outer RigidFLex BOT
 #my $jobId    = "d261919"; # standard vv 10V
 #my $jobId = "d274753"; # standard vv 8V
-my $jobId = "d274986"; # standard vv 4V
+#my $jobId = "d274986"; # standard vv 4V
 #my $jobId = "d266566"; # inner flex
 #my $jobId = "d146753"; # 1v flex
 #my $jobId = "d267628" ; # flex 2v + stiff
@@ -26,8 +26,11 @@ my $jobId = "d274986"; # standard vv 4V
 #my $jobId = "d275162"; # standard 2v
 
 
+my $jobId = "x65925"; # standard vv 4V
+my $step = "panel";
+
 # 1) Init customer stackup class
-my $newCustStckp = CustStackup->new($inCAM, $jobId);
+my $newCustStckp = CustStackup->new($inCAM, $jobId,$step);
 
 # 2) Build stackup
 $newCustStckp->Build();
@@ -55,7 +58,7 @@ my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [$canvasX,
  
 # Gemerate output
 
-$newCustStckp->Output($drawBuilder, 0 ,0);
+$newCustStckp->Output($drawBuilder, 1);
 
 
 

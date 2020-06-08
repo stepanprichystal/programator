@@ -30,6 +30,7 @@ use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
 use aliased 'Packages::Input::HelperInput';
 use aliased 'Packages::GuideSubs::Netlist::NetlistControl';
 use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 
 
 use aliased 'CamHelpers::CamHelper';
@@ -94,7 +95,7 @@ unless ($ENV{JOB}) {
 	$jobName = "$ENV{JOB}";
 }
 
-#$jobName= "d123626";
+#$jobName= "d283187";
 
 my $inCAM = InCAM->new();
 my @errorMessageArr = ();
@@ -202,6 +203,18 @@ unless ($panelSizeCheck == 0) {
 						CompareLayers->CompareOrigLayers($inCAM, $jobName);
 				}
 			}
+			
+		# Warning when cut panel
+		my $cutType = undef;
+		if(  JobDim->GetCutPanel( $inCAM, $jobName, \$cutType )){
+	 		
+	 		my $messMngr = MessageMngr->new($jobName);
+	 		my @mess = ("Pozor, prirez bude behem vyroby ostrizen, panelizuj kusy pouze na oktivni oblast danou strihem");
+	 		push(@mess, "\nTyp strihu: <b> ".$cutType );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess ); 	
+		 }
+		
+			
 		# Run panelize GUI
 		_GUIpanelizace();
 		

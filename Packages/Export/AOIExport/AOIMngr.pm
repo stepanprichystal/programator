@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::AOIExport::AOIMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -39,20 +39,20 @@ use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $class       = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $packageId   = __PACKAGE__;
+	my $createFakeL = 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-
-	$self->{"stepToTest"}      = shift;         # step, which will be tested
-	$self->{"layerNames"}      = shift;         # step, which will be tested
-	$self->{"sendToServer"}    = shift;         # if AOI data shoul be send to server from ot folder
+	$self->{"stepToTest"}     = shift;         # step, which will be tested
+	$self->{"layerNames"}     = shift;         # step, which will be tested
+	$self->{"sendToServer"}   = shift;         # if AOI data shoul be send to server from ot folder
 	$self->{"incldMpanelFrm"} = shift // 1;    # if pcb step is placed in SR panel, test optically panel frame
 
-	$self->{"attemptCnt"}  = 50;                # max count of attempt
+	$self->{"attemptCnt"}  = 50;               # max count of attempt
 	$self->{"machineName"} = "fusion";
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
@@ -71,7 +71,7 @@ sub Run {
 	my @signalLayers = @{ $self->{"layerNames"} };
 
 	if ( $self->{"layerCnt"} > 2 ) {
-		$self->{"stackup"} = Stackup->new($inCAM, $jobId);
+		$self->{"stackup"} = Stackup->new( $inCAM, $jobId );
 	}
 
 	# Delete old files
@@ -298,11 +298,11 @@ sub __ExportAOI {
 
 	# Set step to test
 	my @steps = ();
-	
+
 	if ( $stepToTest eq "mpanel" ) {
 
 		if ( $self->{"incldMpanelFrm"} ) {
-			@steps = ( {"stepName" => $stepToTest} );
+			@steps = ( { "stepName" => $stepToTest } );
 		}
 		else {
 			@steps = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepToTest );
@@ -323,9 +323,9 @@ sub __ExportAOI {
 	}
 	else {
 
-		@steps = ({"stepName" => $stepToTest} );
+		@steps = ( { "stepName" => $stepToTest } );
 	}
-	
+
 	CamStepRepeat->RemoveCouponSteps( \@steps, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
 
 	@steps = map { $_->{"stepName"} } @steps;
@@ -495,7 +495,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $stepName  = "o+1";
 	my $layerName = "c";
 
-	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, [ "c", "s" ],  0, 1);
+	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, [ "c", "s" ], 0, 1 );
 	$mngr->Run();
 }
 

@@ -37,17 +37,16 @@ sub GetAllLamination {
 	my $self = shift;
 	my $lamType = shift;
 
-	my $cvrlInfTop = {};
-	my $cvrlTopExist = $self->GetExistCvrl( "top", $cvrlInfTop );
+	my $cvrlTopExist = $self->GetExistCvrl( "top" );
 
-	my $cvrlInfBot = {};
-	my $cvrlBotExist = $self->GetExistCvrl( "bot", $cvrlInfBot );
+	
+	my $cvrlBotExist = $self->GetExistCvrl( "bot" );
 
-	my $stiffInfTop = {};
-	my $stiffTopExist = $self->GetExistStiff( "top", $stiffInfTop );
 
-	my $stiffInfBot = {};
-	my $stiffBotExist = $self->GetExistStiff( "bot", $stiffInfBot );
+	my $stiffTopExist = $self->GetExistStiff( "top" );
+
+	
+	my $stiffBotExist = $self->GetExistStiff( "bot" );
 
 	my @lam = ();
 
@@ -196,7 +195,7 @@ sub GetExistCvrl {
 
 		if ( defined $inf ) {
 
-			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
+			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"}, $side );
 
 			$inf->{"cvrlISRef"} = $matInfo->{"reference_subjektu"};
 
@@ -272,7 +271,7 @@ sub GetPressProgramInfo {
 	}
 	elsif ( $lamType eq Enums->LamType_CVRLBASE ) {
 
-		$pInfo{"name"} = "Flex";
+		$pInfo{"name"} = "Flex_coverlay";
 
 	}
 	

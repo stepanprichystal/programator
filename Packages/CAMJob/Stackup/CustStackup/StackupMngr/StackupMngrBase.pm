@@ -149,10 +149,12 @@ sub GetExistStiff {
 
 		if ( defined $stifInfo ) {
 
-			my $mInf = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
+			my $mInf = HegMethods->GetPcbStiffenerMat( $self->{"jobId"}, $side );
+			my $mAdhInf = HegMethods->GetPcbStiffenerAdhMat( $self->{"jobId"}, $side );
+			my @nAdh = split( /\s/, $mAdhInf->{"nazev_subjektu"} );
 
-			$stifInfo->{"adhesiveText"}  = "3M 467MP tape";
-			$stifInfo->{"adhesiveThick"} = 50;          # ? is not store
+			$stifInfo->{"adhesiveText"}  = $mAdhInf->{"nazev_subjektu"} ;
+			$stifInfo->{"adhesiveThick"} = $mAdhInf->{"vyska"} * 1000000;      #
 			$stifInfo->{"adhesiveTg"}    = 204;
 
 			my @n = split(/\s/, $mInf->{"nazev_subjektu"});
@@ -175,9 +177,9 @@ sub GetExistStiff {
 
 			$stifInfo->{"stiffThick"} = $t;      # µm
 			$stifInfo->{"stiffTg"}    = undef;
-
+	 
 			# Try to get TG of stiffener adhesive
-			my $matKey = first { $mInf->{"nazev_subjektu"} =~ /$_/i } keys %{ $self->{"isMatKinds"} };
+			my $matKey = first { $mInf->{"dps_druh"} =~ /$_/i } keys %{ $self->{"isMatKinds"} };
 			if ( defined $matKey ) {
 				$stifInfo->{"stiffTg"} = $self->{"isMatKinds"}->{$matKey};
 			}

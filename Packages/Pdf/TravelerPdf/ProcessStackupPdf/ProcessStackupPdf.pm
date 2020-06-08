@@ -112,7 +112,7 @@ sub __UpdateJSONTemplate {
 	my $infoIS = undef;
 
 	if ( $extraOrder > 0 ) {
-		$infoIS = ( HegMethods->GetProducOrderByOederId( $orderId, $extraOrder, undef ) )[0];
+		$infoIS = ( HegMethods->GetProducOrderByOrderId( $orderId, $extraOrder, undef ) )[0];
 	}
 	else {
 		$infoIS = { HegMethods->GetAllByOrderId($orderId) };
@@ -239,7 +239,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $jobId = "d275162"; # standard 2v
 
 	my $jobId       = "d270787";
-	my $pDirStackup = EnumsPaths->Client_INCAMTMPOTHER . "pdfstackup\\";
+	my $pDirStackup = EnumsPaths->Client_INCAMTMPOTHER . "tpvpostup\\";
 	my $pDirPdf     = EnumsPaths->Client_INCAMTMPOTHER . "pdf\\";
 
 	unless ( -d $pDirStackup ) {
@@ -294,7 +294,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			# Add all extro production
 			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
 
-				my @extraOrders = HegMethods->GetProducOrderByOederId( $orderId, undef,undef );
+				my @extraOrders = HegMethods->GetProducOrderByOrderId( $orderId, undef,undef );
 				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
 				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
 			}

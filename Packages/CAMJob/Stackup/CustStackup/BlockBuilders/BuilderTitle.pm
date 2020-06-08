@@ -160,7 +160,7 @@ sub __BuildRow2 {
 	my $stckpMngr = $self->{"stackupMngr"};
 	my $secMngr   = $self->{"sectionMngr"};
 
-	my @secLetters = ( 'A', 'B', 'C', 'D', 'E' );
+	my @secLetters = ( 'A', 'B', 'C', 'D', 'E', 'F' );
 
 	my $pcbType = $stckpMngr->GetPcbType();
 
@@ -273,6 +273,20 @@ sub __BuildRow2 {
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ),
 						   $tblMain->GetRowDefPos($row),
 						   $sec_E_STIFFENER->GetColumnCnt(),
+						   undef, $txt, $txtStyle, undef, $borderStyle );
+
+	}
+	
+	# Sec_F_STIFFENER
+	my $sec_F_STIFFENER = $secMngr->GetSection( Enums->Sec_F_STIFFENER );
+
+	if ( $sec_F_STIFFENER->GetIsActive() ) {
+
+		my $txt = "SECTION STIFFENER (" . ( shift @secLetters ) . ")";
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_F_STIFFENER, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   $sec_F_STIFFENER->GetColumnCnt(),
 						   undef, $txt, $txtStyle, undef, $borderStyle );
 
 	}

@@ -77,7 +77,6 @@ sub new {
 	$self->{"tolHoleExist"}    = undef;    # if tolerance hole exist in job
 	$self->{"pcbBaseInfo"}     = undef;    # contain base info about pcb from IS
 	$self->{"reorder"}         = undef;    # indicate id in time in export exist reorder
-	$self->{"panelType"}       = undef;    # return type of panel from Enums::EnumsProducPanel
 	$self->{"pcbSurface"}      = undef;    # surface from IS
 	$self->{"pcbThick"}        = undef;    # total thick of pcb
 	$self->{"pcbClass"}        = undef;    # pcb class of outer layer
@@ -460,14 +459,6 @@ sub GetIsReorder {
 	}
 }
 
-# Return type of "produce panel" from Enums::EnumsProducPanel
-sub GetPanelType {
-	my $self = shift;
-
-	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
-
-	return $self->{"panelType"};
-}
 
 # Return pcb surface from IS
 sub GetPcbSurface {
@@ -600,7 +591,6 @@ sub __Init {
 
 	$self->{"reorder"} = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
 
-	$self->{"panelType"} = PanelDimension->GetPanelType( $inCAM, $self->{"jobId"} );
 
 	$self->{"pcbSurface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
 
@@ -608,9 +598,9 @@ sub __Init {
 
 	$self->{"pcbIsFlex"} = JobHelper->GetIsFlex( $self->{"jobId"} );
 
-	$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"} );
+	$self->{"sigLayerComp"} = SigLayerComp->new( $inCAM, $self->{"jobId"}, $self->{"step"} );
 
-	$self->{"NCLayerComp"} = NCLayerComp->new( $inCAM, $self->{"jobId"} );
+	$self->{"NCLayerComp"} = NCLayerComp->new( $inCAM, $self->{"jobId"}, $self->{"step"} );
 
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $self->{"jobId"}, $self->{"step"} );
 	$self->{"profLim"} = \%lim;

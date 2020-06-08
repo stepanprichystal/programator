@@ -10,7 +10,6 @@ use strict;
 use warnings;
 use List::Util qw(first min);
 
-
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
@@ -27,8 +26,6 @@ use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::Enums';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-
-
 sub new {
 	my $class = shift;
 	my $self  = {};
@@ -42,7 +39,6 @@ sub new {
 	$self->{"pcbInfoIS"} = ( HegMethods->GetAllByPcbId( $self->{"jobId"} ) )[0];
 
 	# Get order info of active orders (take order with smaller reference)
- 
 
 	$self->{"nifFile"} = NifFile->new( $self->{"jobId"} );
 
@@ -66,9 +62,8 @@ sub new {
 sub GetOrderId {
 	my $self = shift;
 
-	my $orderName = $self->{"jobId"} ."-".Enums->KEYORDERNUM;
-	
- 
+	my $orderName = $self->{"jobId"} . "-" . Enums->KEYORDERNUM;
+
 	return $orderName;
 
 }
@@ -90,11 +85,11 @@ sub GetCustomerName {
 sub GetPCBEmployeeInfo {
 	my $self = shift;
 
-	my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"},"user_name");
+	my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
 
 	my %employyInf = ();
 
-	if ( defined $name && $name ne"") {
+	if ( defined $name && $name ne "" ) {
 
 		%employyInf = %{ HegMethods->GetEmployyInfo($name) }
 
@@ -108,13 +103,13 @@ sub GetOrderTerm {
 
 	my $dateTerm = Enums->KEYORDERTERM;
 
-#	if ( defined $self->{"orderInfoIS"} ) {
-#
-#		my $pattern = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S', );
-#
-#		$dateTerm = $pattern->parse_datetime( $self->{"orderInfoIS"}->{"termin"} )->dmy('.');    # order term
-#
-#	}
+	#	if ( defined $self->{"orderInfoIS"} ) {
+	#
+	#		my $pattern = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S', );
+	#
+	#		$dateTerm = $pattern->parse_datetime( $self->{"orderInfoIS"}->{"termin"} )->dmy('.');    # order term
+	#
+	#	}
 
 	return $dateTerm;
 }
@@ -123,14 +118,13 @@ sub GetOrderDate {
 	my $self = shift;
 
 	my $dateStart = Enums->KEYORDERDATE;
- 
 
-#	if ( defined $self->{"orderInfoIS"} ) {
-#
-#		my $pattern = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S', );
-#		$dateStart = $pattern->parse_datetime( $self->{"orderInfoIS"}->{"datum_zahajeni"} )->dmy('.');    # start order date
-#
-#	}
+	#	if ( defined $self->{"orderInfoIS"} ) {
+	#
+	#		my $pattern = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M:%S', );
+	#		$dateStart = $pattern->parse_datetime( $self->{"orderInfoIS"}->{"datum_zahajeni"} )->dmy('.');    # start order date
+	#
+	#	}
 
 	return $dateStart;
 }
@@ -198,10 +192,9 @@ sub GetPcbType {
 
 sub GetISPcbType {
 	my $self = shift;
-	
-	return HegMethods->GetTypeOfPcb($self->{"jobId"})
-}
 
+	return HegMethods->GetTypeOfPcb( $self->{"jobId"} );
+}
 
 #
 #sub GetPlatedNC {
@@ -241,7 +234,7 @@ sub GetExistStiff {
 	my $side     = shift;    # top/bot
 	my $stifInfo = shift;    # reference for storing info
 
-	my $l = $side eq"top"?"stiffc":"stiffs";
+	my $l = $side eq "top" ? "stiffc" : "stiffs";
 
 	my $exist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
 
@@ -249,22 +242,25 @@ sub GetExistStiff {
 
 		if ( defined $stifInfo ) {
 
-			my $mInf = HegMethods->GetPcbStiffenerMat( $self->{"jobId"} );
-			$stifInfo->{"adhesiveISRef"} ="0319000045";
-			$stifInfo->{"adhesiveKind"}  ="";
-			$stifInfo->{"adhesiveText"}  ="3 M 467 MP tape";
-			$stifInfo->{"adhesiveThick"} = 50;                # ? is not store
+			my $mInf = HegMethods->GetPcbStiffenerMat( $self->{"jobId"}, $side );
+			my $mAdhInf = HegMethods->GetPcbStiffenerAdhMat( $self->{"jobId"}, $side );
+			my @nAdh = split( /\s/, $mAdhInf->{"nazev_subjektu"} );
+
+			$stifInfo->{"adhesiveISRef"} = $mAdhInf->{"reference_subjektu"};
+			$stifInfo->{"adhesiveKind"}  = "";
+			$stifInfo->{"adhesiveText"}  = $mAdhInf->{"nazev_subjektu"} ;
+			$stifInfo->{"adhesiveThick"} = $mAdhInf->{"vyska"} * 1000000;      #
 			$stifInfo->{"adhesiveTg"}    = 204;
 
 			my @n = split( /\s/, $mInf->{"nazev_subjektu"} );
 			shift(@n) if ( $n[0] =~ /lam/i );
-			
+
 			$_ =~ s/mm//gi foreach (@n);
-			
 
 			$stifInfo->{"stiffISRef"} = $mInf->{"reference_subjektu"};
-			$stifInfo->{"stiffKind"}  = $n[0];
-			$stifInfo->{"stiffText"}  = $n[2] ."mm". $n[1];
+			$stifInfo->{"stiffKind"}  = $mInf->{"dps_druh"};
+			$stifInfo->{"stiffText"}  = $mInf->{"nazev_subjektu"};
+		 
 			my $t = $n[2];
 			$t =~ s/,/\./;
 			$t *= 1000;
@@ -278,27 +274,27 @@ sub GetExistStiff {
 				$stifInfo->{"stiffTg"} = $self->{"isMatKinds"}->{$matKey};
 			}
 
-			die"Stiffener adhesive material name was not found at material :". $mInf->{"nazev_subjektu"}
+			die "Stiffener adhesive material name was not found at material :" . $mInf->{"nazev_subjektu"}
 			  unless ( defined $stifInfo->{"adhesiveText"} );
-			die"Stiffener adhesive material thick was not found at material :". $mInf->{"nazev_subjektu"}
+			die "Stiffener adhesive material thick was not found at material :" . $mInf->{"nazev_subjektu"}
 			  unless ( defined $stifInfo->{"adhesiveThick"} );
-			die"Stiffener material name was not found at material :". $mInf->{"nazev_subjektu"} unless ( defined $stifInfo->{"stiffText"} );
-			die"Stiffener thickness was not found at material :". $mInf->{"nazev_subjektu"}     unless ( defined $stifInfo->{"stiffThick"} );
-			die"Stiffener TG was not found at material :". $mInf->{"nazev_subjektu"}            unless ( defined $stifInfo->{"stiffTg"} );
+			die "Stiffener material name was not found at material :" . $mInf->{"nazev_subjektu"} unless ( defined $stifInfo->{"stiffText"} );
+			die "Stiffener thickness was not found at material :" . $mInf->{"nazev_subjektu"}     unless ( defined $stifInfo->{"stiffThick"} );
+			die "Stiffener TG was not found at material :" . $mInf->{"nazev_subjektu"}            unless ( defined $stifInfo->{"stiffTg"} );
 		}
 	}
 
 	return $exist;
 
 }
- 
+
 sub GetSteelPlateInfo {
 	my $self = shift;
 
 	my $inf = {};
 
 	$inf->{"ISRef"} = undef;
-	$inf->{"text"}  ="Sttel plate";
+	$inf->{"text"}  = "Sttel plate";
 	$inf->{"thick"} = 1000;            # 1000µm
 
 	return $inf;
@@ -309,18 +305,17 @@ sub GetAluPlateInfo {
 
 	my $inf = {};
 
-	$inf->{"ISRef"} ="0401000021";
-	$inf->{"text"}  ="ALU entry boards A18,";
-	$inf->{"thick"} = 200;            # 1000µm
+	$inf->{"ISRef"} = "0401000021";
+	$inf->{"text"}  = "ALU entry boards A18,";
+	$inf->{"thick"} = 200;                       # 1000µm
 
 	return $inf;
 }
 
-
 sub GetPressPad01FGKInfo {
 	my $self = shift;
 
-	my $isId ="0318000010";
+	my $isId = "0318000010";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
@@ -329,7 +324,7 @@ sub GetPressPad01FGKInfo {
 sub GetPressPadTB317KInfo {
 	my $self = shift;
 
-	my $isId ="0318000019";
+	my $isId = "0318000019";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
@@ -338,7 +333,7 @@ sub GetPressPadTB317KInfo {
 sub GetPressPadFF10NInfo {
 	my $self = shift;
 
-	my $isId ="0318000018";
+	my $isId = "0318000018";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
@@ -347,7 +342,7 @@ sub GetPressPadFF10NInfo {
 sub GetPresspad5500Info {
 	my $self = shift;
 
-	my $isId ="0319000029";
+	my $isId = "0319000029";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
@@ -356,7 +351,7 @@ sub GetPresspad5500Info {
 sub GetReleaseFilm1500HTInfo {
 	my $self = shift;
 
-	my $isId ="0319000031";
+	my $isId = "0319000031";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
@@ -365,7 +360,7 @@ sub GetReleaseFilm1500HTInfo {
 sub GetReleaseFilmPacoViaInfo {
 	my $self = shift;
 
-	my $isId ="0319000041";
+	my $isId = "0319000041";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
@@ -374,7 +369,7 @@ sub GetReleaseFilmPacoViaInfo {
 sub GetFilmPacoflexUltraInfo {
 	my $self = shift;
 
-	my $isId ="0319000032";
+	my $isId = "0319000032";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
@@ -383,13 +378,11 @@ sub GetFilmPacoflexUltraInfo {
 sub GetFilmPacoplus4500Info {
 	my $self = shift;
 
-	my $isId ="0319000030";
+	my $isId = "0319000030";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
 }
-
-
 
 sub __GetPresspadInfo {
 	my $self   = shift;
@@ -411,8 +404,8 @@ sub __GetPresspadInfo {
 
 	$inf->{"thick"} = $t;
 
-	die"Pad material name was not found  for material IS reference :". $matRef  unless ( defined $inf->{"text"} );
-	die"Pad material thick was not found for material IS reference :". $matRef unless ( defined $inf->{"thick"} );
+	die "Pad material name was not found  for material IS reference :" . $matRef unless ( defined $inf->{"text"} );
+	die "Pad material thick was not found for material IS reference :" . $matRef unless ( defined $inf->{"thick"} );
 
 	return $inf;
 }
@@ -469,12 +462,11 @@ sub GetIsFlex {
 	return $self->{"isFlex"};
 }
 
-sub GetCuLayerCnt{
+sub GetCuLayerCnt {
 	my $self = shift;
-	
-	return CamJob->GetSignalLayerCnt($self->{"inCAM"}, $self->{"jobId"});
-}
 
+	return CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+}
 
 #
 #

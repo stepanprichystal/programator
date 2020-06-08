@@ -839,6 +839,31 @@ sub OnCheckGroupData {
 
 	}
 
+	# 24) If mpanel and stiffener exist, pattern fill is not alowed from stiffener side
+	my @stiff = grep { $_->{"gROWlayer_type"} eq "stiffener" } $defaultInfo->GetBoardBaseLayers();
+	if ( scalar(@stiff)
+		 && $defaultInfo->StepExist("mpanel") )
+	{
+
+		foreach my $stiffL (@stiff) {
+			my $sigL = ( $stiffL->{"gROWname"} =~ /^\w+([csv]\d*)$/ )[0];
+
+			my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "mpanel", $sigL, 0 );
+			if ( defined $attHist{".pattern_fill"} ) {
+
+				$dataMngr->_AddErrorResult(
+											"Mpanel - výplň",
+											"Pokud DPS obsauje stiffner, mpanel nesmí obsahovat ze strany stiffeneru v signálové vrstvě ("
+											  . $sigL
+											  . ") šrafování."
+											  . " Rozpoznáno podle atributu: \".paaatern_fill\" ."
+				);
+			}
+
+		}
+
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

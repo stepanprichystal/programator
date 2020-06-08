@@ -159,6 +159,8 @@ sub __CreateFakeSMOLECLayers {
 	my $step  = shift;
 
 	my @fakeLayers = ();
+	
+	return @fakeLayers if ( $step ne "panel" );
 
 	return @fakeLayers if ( !JobHelper->GetIsFlex($jobId) );
 
@@ -282,8 +284,7 @@ sub __CreateFakeOuterCoreLayers {
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $step        = shift;
-	my $emptyLayers = shift // 0;    # Create layer without any data
-
+ 
 	my @fakeLayers = ();
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );

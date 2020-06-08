@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::NifExport::NifMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -37,12 +37,13 @@ use aliased 'Packages::NifFile::NifFile';
 
 sub new {
 	my $class     = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
 	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $createFakeL = 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"}   = shift;
-	$self->{"jobId"}   = shift;
+ 
 	$self->{"nifData"} = shift;
 
 	my @sections = ();
@@ -61,6 +62,7 @@ sub new {
 # Every builder create sligtly different NIF file
 sub Run {
 	my $self = shift;
+ 
 
 	#information necessary for making decision which nif builder use
 	my $typeCu   = JobHelper->GetPcbType( $self->{"jobId"} );
