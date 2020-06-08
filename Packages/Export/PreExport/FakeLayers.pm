@@ -42,7 +42,10 @@ sub CreateFakeLayers {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $step  = shift // "panel";
+
+	my $step = "panel";
+
+	my @fake = ();
 
 	$self->RemoveFakeLayers( $inCAM, $jobId, $step );
 
@@ -52,7 +55,6 @@ sub CreateFakeLayers {
 	my @coreDrillFake = $self->__CreateCoreDrillLayers( $inCAM, $jobId, $step );
 	my @plgFake = $self->__CreateFakePLGLayers( $inCAM, $jobId, $step );
 
-	my @fake = ();
 	push( @fake, @smFake )     if (@smFake);
 	push( @fake, @outerFake )  if (@outerFake);
 	push( @fake, @smOLECFake ) if (@smOLECFake);
@@ -71,7 +73,8 @@ sub RemoveFakeLayers {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $step  = shift // "panel";
+
+	my $step = "panel";
 
 	foreach my $l ( CamJob->GetBoardLayers( $inCAM, $jobId ) ) {
 
@@ -159,7 +162,7 @@ sub __CreateFakeSMOLECLayers {
 	my $step  = shift;
 
 	my @fakeLayers = ();
-	
+
 	return @fakeLayers if ( $step ne "panel" );
 
 	return @fakeLayers if ( !JobHelper->GetIsFlex($jobId) );
@@ -258,11 +261,10 @@ sub __CreateFakeSMOLECLayers {
 # But OLEC machine need films from both side in order register films
 # For Multilayer PCB only (rest of PCB is exposed without cameras??)
 sub __CreateFakePLGLayers {
-	my $self        = shift;
-	my $inCAM       = shift;
-	my $jobId       = shift;
-	my $step        = shift;
- 
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
 
 	my @fakeLayers = ();
 
@@ -280,18 +282,18 @@ sub __CreateFakePLGLayers {
 
 # Outer layers for PCB with outer core at stackup
 sub __CreateFakeOuterCoreLayers {
-	my $self        = shift;
-	my $inCAM       = shift;
-	my $jobId       = shift;
-	my $step        = shift;
- 
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+
 	my @fakeLayers = ();
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	return @fakeLayers if ( $layerCnt <= 2 );
 
-	my @IProducts = ();              # top/bot/both
+	my @IProducts = ();    # top/bot/both
 	if ( StackupOperation->OuterCore( $inCAM, $jobId, \@IProducts ) ) {
 
 		CamHelper->SetStep( $inCAM, $step );

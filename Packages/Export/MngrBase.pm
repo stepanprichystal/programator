@@ -13,6 +13,7 @@ use warnings;
 #local library
 use aliased 'Packages::Export::PreExport::FakeLayers';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,7 +32,8 @@ sub new {
 	$self->{"inCAM"}       = $inCAM;
 	$self->{"jobId"}       = $jobId;
 
-	FakeLayers->CreateFakeLayers( $inCAM, $jobId ) if ($createFakeL);
+	# If panel doesn't exist, do note create any fake layers
+	FakeLayers->CreateFakeLayers( $inCAM, $jobId ) if ( $createFakeL && CamHelper->StepExists( $inCAM, $jobId, "panel" ) );
 
 	return $self;
 }
@@ -44,7 +46,7 @@ sub _SaveJob {
 
 	# Before saving, remove fake layers if exist
 	my $recreateFake = 0;
-	if ( $self->{"createFakeL"} ) {
+	if ( $self->{"createFakeL"} && CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
 
 		FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
 		$recreateFake = 1;
@@ -61,7 +63,7 @@ sub _SaveJob {
 
 	$self->_OnItemResult($resultItemSave);
 
-	if ( $self->{"createFakeL"} ) {
+	if ( $self->{"createFakeL"} && CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
 		FakeLayers->CreateFakeLayers( $inCAM, $jobId );
 	}
 }
