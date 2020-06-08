@@ -206,7 +206,7 @@ unless ($panelSizeCheck == 0) {
 			
 		# Warning when cut panel
 		my $cutType = undef;
-		if(  JobDim->GetCutPanel( $inCAM, $jobName, \$cutType )){
+		if( CamHelper->StepExists( $inCAM, $jobName, 'panel') &&  JobDim->GetCutPanel( $inCAM, $jobName, \$cutType )){
 	 		
 	 		my $messMngr = MessageMngr->new($jobName);
 	 		my @mess = ("Pozor, prirez bude behem vyroby ostrizen, panelizuj kusy pouze na oktivni oblast danou strihem");
