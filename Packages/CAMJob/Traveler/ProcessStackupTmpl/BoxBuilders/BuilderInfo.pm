@@ -425,7 +425,8 @@ sub __BuildNoteInfo {
 
 	# Put note about noflow prepreg
 	my @noflow = map { $_->GetValExtraId() } grep { $_->GetItemType() eq Enums->ItemType_MATFLEXPREPREG } $lam->GetItems();
-	if ( scalar( uniq(@noflow) ) > 1 ) {
+	
+	if ( scalar( uniq(@noflow) ) ) {
 
 		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
@@ -441,6 +442,29 @@ sub __BuildNoteInfo {
 		my $str = "Pozor na správný výběr NoFlow prepregů dle složení ";
 		$str .= "(ID: " . join( " vs ", @noflow ) . ")";
 
+		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, 2, undef, $str, $txtStyle );
+	}
+
+
+	# Put info about program settings
+ 
+	if ($stckpMngr->GetIsFlex() ) {
+
+		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+
+		$tbl->AddRowDef( $tbl->GetRowCnt(), 5 * EnumsStyle->RowHeight_STD );
+
+		my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_PARAGRAPH,
+									   EnumsStyle->TxtSize_NORMAL,
+									   Color->new( 255, 0, 0 ),
+									   TblDrawEnums->Font_NORMAL, undef,
+									   TblDrawEnums->TextHAlign_LEFT,
+									   TblDrawEnums->TextVAlign_CENTER, 1 );
+
+		my $str = "Pozor, nezapomen, vyplnit: pocet pater + pocet paketu na plotne:\n\n";
+		 $str .= " - Quant. of act. openings\n";
+		 $str .= " - Amount of press package\n";
+ 
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, 2, undef, $str, $txtStyle );
 	}
 

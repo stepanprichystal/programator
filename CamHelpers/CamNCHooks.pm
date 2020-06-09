@@ -324,46 +324,15 @@ sub GetMaterialParams {
 	elsif ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
 
 		$materialFile = "COVERLAY";
-	}
 
-	if ( $materialName =~ /Hybrid/i ) {
+	}
+	elsif ( $materialName =~ /Hybrid/i ) {
 
 		$materialFile = undef;
 
 		# Get proper material type from stackup
+		$materialFile = $self->GetHybridMatCode($jobId);
 
-		my $stackup = StackupBase->new($jobId);
-		my @types   = $stackup->GetStackupHybridTypes();
-
-		if (    scalar( grep { $_ =~ /(PYRALUX)/i } @types )
-			 && scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-		{
-			$materialFile = "HYBRID_PYRALUX-FR4";
-		}
-		elsif (    scalar( grep { $_ =~ /(RO3)/i } @types )
-				&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-		{
-			$materialFile = "HYBRID_RO3-FR4";
-		}
-		elsif (    scalar( grep { $_ =~ /(RO4)/i } @types )
-				&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-		{
-			$materialFile = "HYBRID_RO4-FR4";
-		}
-		elsif (    scalar( grep { $_ =~ /(R58X0)/i } @types )
-				&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-		{
-			$materialFile = "HYBRID_R58X0-FR4";
-
-		}
-		elsif (    scalar( grep { $_ =~ /(I-TERA)/i } @types )
-				&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-		{
-			$materialFile = "HYBRID_I-TERA-FR4";
-		}else{
-			
-			die "CNC parameters file was not found for Hybrid: ".join(";", @types);
-		}
 	}
 
 	# 1) parse Drilling parameter
@@ -588,6 +557,54 @@ sub GetDrilledNumber {
 	return $numberStr;
 }
 
+# Material codes for hybrid materials
+# This code clearly describes which materials are combined together
+# Return values
+
+sub GetHybridMatCode {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my $matCode = undef;
+
+	my $stackup = StackupBase->new($jobId);
+	my @types   = $stackup->GetStackupHybridTypes();
+
+	if (    scalar( grep { $_ =~ /(PYRALUX)/i } @types )
+		 && scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_PYRALUX__FR4;
+	}
+	elsif (    scalar( grep { $_ =~ /(RO3)/i } @types )
+			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_RO3__FR4;
+	}
+	elsif (    scalar( grep { $_ =~ /(RO4)/i } @types )
+			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_RO4__FR4;
+	}
+	elsif (    scalar( grep { $_ =~ /(R58X0)/i } @types )
+			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_R58X0__FR4;
+
+	}
+	elsif (    scalar( grep { $_ =~ /(I-TERA)/i } @types )
+			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_ITERA__FR4;
+
+	}
+	else {
+
+		die "Hybrid material code was not found for material types: " . join( ";", @types );
+	}
+
+	return $matCode;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -600,7 +617,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d282545";
+	my $jobId    = "d283335";
 	my $stepName = "panel";
 
 	my $materialName = "Hybrid";

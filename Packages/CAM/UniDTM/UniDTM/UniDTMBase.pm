@@ -15,6 +15,7 @@ use XML::Simple;
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamDTMSurf';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamNCHooks';
 use aliased 'Packages::CAM::UniDTM::UniTool::UniToolBase';
 use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTM';
 use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTMSURF';
@@ -50,14 +51,14 @@ sub new {
 	$self->{"magazineDef"}  = undef;
 	$self->{"magazineSpec"} = undef;
 
-	$self->{"materialName"} = HegMethods->GetMaterialKind( $jobId );
+	$self->{"materialName"} = HegMethods->GetMaterialKind($jobId);
 
 	my @t = ();
 	$self->{"tools"} = \@t;
 
 	$self->__LoadMagazineXml();
 
-	$self->__InitUniDTM($inCAM, $jobId);
+	$self->__InitUniDTM( $inCAM, $jobId );
 
 	$self->{"check"} = UniDTMCheck->new($self);
 
@@ -204,7 +205,7 @@ sub __InitUniDTM {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	
+
 	my $step  = $self->{"step"};
 	my $layer = $self->{"layer"};
 
@@ -260,18 +261,18 @@ sub __InitUniDTM {
 	}
 
 	# 3) Add pilot hole definitions if tools diameter is bigger than 5.3mm
-	$self->__AddPilotHolesDefinition($inCAM, $jobId);
+	$self->__AddPilotHolesDefinition( $inCAM, $jobId );
 
 	# 4) Load magazine code by magazine info
 
-	$self->__LoadToolsMagazine($inCAM, $jobId);
+	$self->__LoadToolsMagazine( $inCAM, $jobId );
 
 }
 
 # Add pilot tool definitions
 sub __AddPilotHolesDefinition {
-	my $self  = shift;
-	
+	my $self = shift;
+
 	my $inCAM = shift;
 	my $jobId = shift;
 
@@ -301,7 +302,6 @@ sub __AddPilotHolesDefinition {
 		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE }
 		  @{ $self->{"tools"} };
 		$self->__AddPilotHoles( \@tools1, 1200 );
-
 	}
 
 	# 2) Go throught pilot holes and create their tool definition
@@ -332,11 +332,12 @@ sub __AddPilotHoles {
 }
 
 sub __LoadToolsMagazine {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 
 	my $materialName = $self->{"materialName"};
+	$materialName = CamNCHooks->GetHybridMatCode($jobId) if ( $materialName =~ /^Hybrid$/i );
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
 
@@ -383,6 +384,7 @@ sub __LoadToolsMagazine {
 
 			if ( defined $magazines ) {
 				my @mArr = @{$magazines};
+ 
 				my $m = ( grep { $_->{"material"} =~ /^$materialName$/i } @mArr )[0];
 
 				if ( defined $m ) {

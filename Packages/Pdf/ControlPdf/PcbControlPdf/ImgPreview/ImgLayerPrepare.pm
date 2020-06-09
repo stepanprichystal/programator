@@ -81,7 +81,24 @@ sub PrepareLayers {
 	$self->__PrepareLayers($layerList);
 
 	# 3) Remove special overlays
-	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"bendAreaL"} ) if ( defined $self->{"bendAreaL"} );    # bend area
+	# TODO Temporary, we need to fix bug. Copy layer to ori step
+	if ( defined $self->{"bendAreaL"} ) {
+		my $oriStep = $self->{"pdfStep"};
+		$oriStep =~ s/pdf_//;
+		$inCAM->COM(
+			'copy_layer',
+			"source_job"   => $jobId,
+			"source_step"  => $self->{"pdfStep"},
+			"source_layer" => $self->{"bendAreaL"},
+			"dest"         => 'layer_name',
+			"dest_step"    => $oriStep,
+			"dest_layer"   => "bend_area_wong_pdf",
+			"mode"         => 'replace',
+			"invert"       => 'no'
+		);
+	}
+
+	#CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"bendAreaL"} ) if ( defined $self->{"bendAreaL"} );    # bend area
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"coverlaysL"}->{$_} ) foreach ( keys %{ $self->{"coverlaysL"} } );    # coverlays
 }
 
@@ -1013,7 +1030,8 @@ sub __GetOverlayBendArea {
 			CamLayer->WorkLayer( $inCAM, $bendNegL );
 		}
 
-		$inCAM->COM( "sel_change_sym", "symbol" => "r0", "reset_angle" => "no" );
+		 
+		$inCAM->COM( "sel_change_sym", "symbol" => "r10", "reset_angle" => "no" ); # r10 because when smaller diemater, countourze not work properly
 		CamLayer->Contourize( $inCAM, $bendNegL, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
 		CamLayer->WorkLayer( $inCAM, $bendNegL );
 

@@ -57,5 +57,22 @@ use constant {
 			   ViaFill_INNER => "viaFillTopBlind"
 };
 
+# Material codes for hybrid materials
+# This code clearly describes which materials are combined together
+# Code is used for:
+# - parameters files filename
+# - choosing right tool magazine
+# WARNING:
+# - Do not use dashes in constant values 
+#  (we want to constant name was as same as constant values, and dash is not alowed in constant name)
+# - If constant values is changed, all filenames has to be ranamed to
+use constant {
+	HYBRID_PYRALUX__FR4 => 'HYBRID_PYRALUX-FR4',
+	HYBRID_RO3__FR4     => 'HYBRID_RO3-FR4',
+	HYBRID_RO4__FR4     => 'HYBRID_RO4-FR4',
+	HYBRID_R58X0__FR4   => 'HYBRID_R58X0-FR4',
+	HYBRID_ITERA__FR4   => 'HYBRID_ITERA-FR4'
+};
+
 1;
 

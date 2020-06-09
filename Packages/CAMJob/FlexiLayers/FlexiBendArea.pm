@@ -533,7 +533,7 @@ sub PrepareRoutPrepreg {
 
 			$inCAM->COM( "chain_list_add", "chain"  => 1 );
 			$inCAM->COM( "chain_cancel",   "layer"  => $lTmp, "keep_surface" => "no" );
-			$inCAM->COM( "sel_change_sym", "symbol" => "r0" );
+			$inCAM->COM( "sel_change_sym", "symbol" => "r10" ); # r0 is not working for countourize, thats way r10
 			CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
 			CamLayer->WorkLayer( $inCAM, $lTmp );
 			$inCAM->COM(

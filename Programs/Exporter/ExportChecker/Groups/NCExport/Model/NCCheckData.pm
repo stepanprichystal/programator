@@ -714,7 +714,9 @@ sub OnCheckGroupData {
 		if ( defined $attHist{".fiducial_name"} ) {
 
 			foreach my $l (@specL) {
-
+				
+				next if($l->{"gROWdrl_start"} !~ /[cs]$/);
+ 
 				my %lAttHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "mpanel", $l->{"gROWname"} );
 
 				if ( !defined $lAttHist{".fiducial_name"})  {
