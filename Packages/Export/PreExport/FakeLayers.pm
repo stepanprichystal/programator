@@ -32,6 +32,7 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
 
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -268,11 +269,23 @@ sub __CreateFakePLGLayers {
 
 	my @fakeLayers = ();
 
+	return @fakeLayers if ( $step ne "panel" );
+
 	my @layers = CamJob->GetBoardLayers( $inCAM, $jobId );
 
 	if ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) ) {
 
 		@fakeLayers = PlugLayer->CreateCopperPlugLayersAllSteps( $inCAM, $jobId, undef );
+
+		my $schema = "plg-2v";
+
+		if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
+			$schema = '"plg-vv';
+		}
+
+		CamHelper->SetStep( $inCAM, "panel" );
+
+		$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => $step, "pcb" => 'o+1', "scheme" => $schema );
 
 	}
 
@@ -506,7 +519,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d113608";
+	my $jobId    = "d283241";
 	my $stepName = "panel";
 
 	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );

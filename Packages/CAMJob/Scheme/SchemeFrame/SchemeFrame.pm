@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for AOI files creation
+# Description: Inserting and deleting schema
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Scheme::SchemeFrame::SchemeFrame;
@@ -117,7 +117,7 @@ sub AddFrame {
 	$inCAM->COM( 'autopan_run_scheme', job => $jobId, panel => EnumsProducPanel->PANEL_NAME, pcb => 'o+1', scheme => $schema );
 
 	#set $value for attribute on specific layer
-	CamAttributes->SetLayerAttribute( $inCAM, "add_schema", "no", $jobId, $self->{"step"}, $lName );
+	CamAttributes->SetLayerAttribute( $inCAM, "add_schema", "no", $jobId, $self->{"step"}, $lName);
 
 	# 3) This actions, set attribute pattern_frame to new added symbols(pattern frame)
 	CamLayer->WorkLayer( $inCAM, $lName );    # select layer and copy to help layer
