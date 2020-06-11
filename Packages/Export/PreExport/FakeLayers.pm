@@ -32,7 +32,6 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -56,10 +55,11 @@ sub CreateFakeLayers {
 	my @coreDrillFake = $self->__CreateCoreDrillLayers( $inCAM, $jobId, $step );
 	my @plgFake = $self->__CreateFakePLGLayers( $inCAM, $jobId, $step );
 
-	push( @fake, @smFake )     if (@smFake);
-	push( @fake, @outerFake )  if (@outerFake);
-	push( @fake, @smOLECFake ) if (@smOLECFake);
-	push( @fake, @plgFake )    if (@plgFake);
+	push( @fake, @smFake )        if (@smFake);
+	push( @fake, @outerFake )     if (@outerFake);
+	push( @fake, @smOLECFake )    if (@smOLECFake);
+	push( @fake, @plgFake )       if (@plgFake);
+	push( @fake, @coreDrillFake ) if (@coreDrillFake);
 
 	foreach my $l (@fake) {
 
@@ -519,10 +519,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d283241";
+	my $jobId    = "d283629";
 	my $stepName = "panel";
 
-	my %types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
+	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
+	FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
 
 }
 

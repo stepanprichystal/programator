@@ -61,14 +61,14 @@ sub GetStandards {
 			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# properties
-			"active"      => 1,
-			"w"           => 307,
-			"h"           => 407,
-			"bl"  => 21,
-			"br" => 21,
-			"bt"   => 41.6,
-			"bb"   => 41.6,
-			
+			"active" => 1,
+			"w"      => 307,
+			"h"      => 407,
+			"bl"     => 21,
+			"br"     => 21,
+			"bt"     => 41.6,
+			"bb"     => 41.6,
+
 			# used prepreg size
 			"pW" => 307,
 			"pH" => 360
@@ -85,21 +85,21 @@ sub GetStandards {
 			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
-			"active"      => 1,
-			"w"           => 307,
-			"h"           => 486.2,
-			"bl"  => 21,
-			"br" => 21,
-			"bt"   => 41.6,
-			"bb"   => 41.6,
-			
+			"active" => 1,
+			"w"      => 307,
+			"h"      => 486.2,
+			"bl"     => 21,
+			"br"     => 21,
+			"bt"     => 41.6,
+			"bb"     => 41.6,
+
 			# used prepreg size
 			"pW" => 307,
 			"pH" => 440
 		)
 	);
-	
-		# ======== Standard Multilayer "newBIG" ========
+
+	# ======== Standard Multilayer "newBIG" ========
 
 	push(
 		@l,
@@ -109,14 +109,14 @@ sub GetStandards {
 			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
-			"active"      => 1,
-			"w"           => 308,
-			"h"           => 538,
-			"bl"  => 21,
-			"br" => 21,
-			"bt"   => 36.5,
-			"bb"   => 36.5,
-			
+			"active" => 1,
+			"w"      => 308,
+			"h"      => 538,
+			"bl"     => 21,
+			"br"     => 21,
+			"bt"     => 36.5,
+			"bb"     => 36.5,
+
 			# used prepreg size
 			"pW" => 308,
 			"pH" => 492
@@ -133,13 +133,13 @@ sub GetStandards {
 			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
-			"active"      => 1,
-			"w"           => 295,
-			"h"           => 355,
-			"bl"  => 15,
-			"br" => 15,
-			"bt"   => 15,
-			"bb"   => 15
+			"active" => 1,
+			"w"      => 295,
+			"h"      => 355,
+			"bl"     => 15,
+			"br"     => 15,
+			"bt"     => 15,
+			"bb"     => 15
 		)
 	);
 
@@ -153,17 +153,17 @@ sub GetStandards {
 			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
-			"active"      => 1,
-			"w"           => 295,
-			"h"           => 460,
-			"bl"  => 15,
-			"br" => 15,
-			"bt"   => 15,
-			"bb"   => 15
+			"active" => 1,
+			"w"      => 295,
+			"h"      => 460,
+			"bl"     => 15,
+			"br"     => 15,
+			"bt"     => 15,
+			"bb"     => 15
 		)
 	);
-	
-		# ======== Standard Single layer "New Big" ========
+
+	# ======== Standard Single layer "New Big" ========
 
 	push(
 		@l,
@@ -173,13 +173,13 @@ sub GetStandards {
 			"pcbMat"  => Enums->PcbMat_STDLAM,
 
 			# Properties
-			"active"      => 1,
-			"w"           => 297,
-			"h"           => 508,
-			"bl"  => 15,
-			"br" => 15,
-			"bt"   => 15,
-			"bb"   => 15
+			"active" => 1,
+			"w"      => 297,
+			"h"      => 508,
+			"bl"     => 15,
+			"br"     => 15,
+			"bt"     => 15,
+			"bb"     => 15
 		)
 	);
 
@@ -193,13 +193,13 @@ sub GetStandards {
 			"pcbMat"  => Enums->PcbMat_ALU,
 
 			# Properties
-			"active"      => 1,
-			"w"           => 230,
-			"h"           => 305,
-			"bl"  => 15,
-			"br" => 15,
-			"bt"   => 15,
-			"bb"   => 15
+			"active" => 1,
+			"w"      => 230,
+			"h"      => 305,
+			"bl"     => 15,
+			"br"     => 15,
+			"bt"     => 15,
+			"bb"     => 15
 		)
 	);
 
@@ -213,13 +213,13 @@ sub GetStandards {
 			"pcbMat"  => Enums->PcbMat_ALU,
 
 			# Properties
-			"active"      => 1,
-			"w"           => 305,
-			"h"           => 460,
-			"bl"  => 15,
-			"br" => 15,
-			"bt"   => 15,
-			"bb"   => 15
+			"active" => 1,
+			"w"      => 305,
+			"h"      => 460,
+			"bl"     => 15,
+			"br"     => 15,
+			"bt"     => 15,
+			"bb"     => 15
 		)
 	);
 

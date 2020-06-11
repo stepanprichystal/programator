@@ -33,6 +33,8 @@ sub new {
 
 	# SET PROPERTIES
 
+	$self->{"inCAM"} = $inCAM;
+
 	$self->{"NCPresses"} = [];
 	$self->{"NCInputs"}  = [];
 	$self->{"NCCores"}   = [];

@@ -55,7 +55,10 @@ sub Build {
 	my $export       = ExportMngr->new( $inCAM, $jobId, $stepName );
 	my @opItems      = ();
 
-	foreach my $opItem ( $export->GetOperationMngr()->GetOperationItems() ) {
+	
+	my @oriOpitems =  $export->GetOperationMngr()->GetOperationItems();
+
+	foreach my $opItem ( @oriOpitems ) {
 
 		if ( defined $opItem->GetOperationGroup() ) {
 
@@ -72,7 +75,7 @@ sub Build {
 
 			my $isInGroup = scalar(
 							   grep { $_->GetName() eq $o->GetName() }
-							   map { $_->GetOperations() } grep { defined $_->GetOperationGroup() } $export->GetOperationMngr()->GetOperationItems()
+							   map { $_->GetOperations() } grep { defined $_->GetOperationGroup() } @oriOpitems
 			);
 
 			push( @opItems, $opItem ) if ( !$isInGroup );
