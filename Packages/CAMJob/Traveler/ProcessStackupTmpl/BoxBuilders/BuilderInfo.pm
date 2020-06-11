@@ -430,7 +430,7 @@ sub __BuildNoteInfo {
 
 		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
-		$tbl->AddRowDef( $tbl->GetRowCnt(), 5 * EnumsStyle->RowHeight_STD );
+		$tbl->AddRowDef( $tbl->GetRowCnt(), 2 * EnumsStyle->RowHeight_STD );
 
 		my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_PARAGRAPH,
 									   EnumsStyle->TxtSize_NORMAL,
@@ -461,9 +461,9 @@ sub __BuildNoteInfo {
 									   TblDrawEnums->TextHAlign_LEFT,
 									   TblDrawEnums->TextVAlign_CENTER, 1 );
 
-		my $str = "Pozor, nezapomen, vyplnit: pocet pater + pocet paketu na plotne:\n\n";
-		 $str .= " - Quant. of act. openings\n";
-		 $str .= " - Amount of press package\n";
+		my $str = "Pozor, nezapomen, vyplnit: pocet pater + pocet paketu na plotne (";
+		 $str .= "Quant. of act. openings + Amount of press package)";
+
  
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, 2, undef, $str, $txtStyle );
 	}

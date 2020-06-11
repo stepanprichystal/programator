@@ -15,6 +15,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::Enums';
 use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::EnumsStyle';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -82,17 +83,41 @@ sub Build {
 
 		if ( $pLayer->GetType() eq StackEnums->ProductL_MATERIAL ) {
 
+			my $coverlay     = undef;
+			my $coverlaySide = undef;
+
 			if (    $pLayer->GetType() eq StackEnums->ProductL_MATERIAL
 				 && $pLayer->GetData()->GetType() eq StackEnums->MaterialType_PREPREG
 				 && $pLayer->GetData()->GetIsNoFlow()
 				 && $pLayer->GetData()->GetIsCoverlayIncl() )
 			{
 
-				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pLayer->GetData()->GetCoverlay() );
+				$coverlay = $pLayer->GetData()->GetCoverlay();
 
 			}
 
-			$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pLayer->GetData() );
+			if ( defined $coverlay ) {
+
+				my $cuLayer = $coverlay->GetCoveredCopperName();
+
+				my %lPars = JobHelper->ParseSignalLayerName($cuLayer);
+				$coverlaySide =
+				  $stckpMngr->GetStackup()->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+			}
+
+			if ( defined $coverlay && $coverlaySide eq "top" ) {
+				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pLayer->GetData() );
+				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $coverlay );
+			}
+
+			
+
+			if ( defined $coverlay && $coverlaySide eq "bot" ) {
+				
+				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $coverlay );
+				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pLayer->GetData() );
+			}
 		}
 		elsif ( $pLayer->GetType() eq StackEnums->ProductL_PRODUCT ) {
 

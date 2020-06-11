@@ -55,12 +55,14 @@ sub Init {
 		$layersSingle->[$i]->{"inRuleSets"} = \@ruleSet;
 	}
 
+
 	my $multi = MultiFilmCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $layersMulti, $smallLim, $bigLim );
+	push( @{ $self->{"filmCreators"} }, $multi );
 
 	# Single cerator create rules, based on results from multi creator
-	my $single = SingleFilmCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $layersSingle, $smallLim, $bigLim, $multi );
+	my $single = SingleFilmCreator->new( $self->{"inCAM"}, $self->{"jobId"}, $layersSingle, $smallLim, $bigLim );
 
-	push( @{ $self->{"filmCreators"} }, $multi );
+	
 	push( @{ $self->{"filmCreators"} }, $single );
 }
 

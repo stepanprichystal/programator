@@ -53,9 +53,7 @@ sub Build {
 				   $rubberPadInf->{"text"},
 				   $rubberPadInf->{"thick"} );
 
-	# LAYER: Top release film
-	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
-				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+	 
 
 	# MATERIAL LAYERS
 
@@ -87,10 +85,7 @@ sub Build {
 			}
 		}
 	}
-
-	# LAYER: Bot release film
-	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
-				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+ 
 
 	# LAYER: Bot rubber pad
 	$lam->AddItem( $rubberPadInf->{"ISRef"},
