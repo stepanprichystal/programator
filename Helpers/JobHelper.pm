@@ -13,7 +13,7 @@ use XML::Simple;
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsGeneral';
-
+use aliased 'Enums::EnumsDrill';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::StackupBase::StackupBase';
 use aliased 'Packages::Stackup::Enums' => "StackEnums";
@@ -381,6 +381,56 @@ sub GetCoverlaySigLayers {
 
 	return @sigLayers;
 }
+
+
+# Material codes for hybrid materials
+# This code clearly describes which materials are combined together
+# Return values
+
+sub GetHybridMatCode {
+	my $self  = shift;
+	my $jobId = shift;
+
+	my $matCode = undef;
+
+	my $stackup = StackupBase->new($jobId);
+	my @types   = $stackup->GetStackupHybridTypes();
+
+	if (    scalar( grep { $_ =~ /(PYRALUX)/i } @types )
+		 && scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_PYRALUX__FR4;
+	}
+	elsif (    scalar( grep { $_ =~ /(RO3)/i } @types )
+			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_RO3__FR4;
+	}
+	elsif (    scalar( grep { $_ =~ /(RO4)/i } @types )
+			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_RO4__FR4;
+	}
+	elsif (    scalar( grep { $_ =~ /(R58X0)/i } @types )
+			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_R58X0__FR4;
+
+	}
+	elsif (    scalar( grep { $_ =~ /(I-TERA)/i } @types )
+			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+	{
+		$matCode = EnumsDrill->HYBRID_ITERA__FR4;
+
+	}
+	else {
+
+		die "Hybrid material code was not found for material types: " . join( ";", @types );
+	}
+
+	return $matCode;
+}
+
 
 sub GetIsolationByClass {
 	my $self  = shift;

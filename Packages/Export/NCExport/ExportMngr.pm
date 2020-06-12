@@ -238,7 +238,6 @@ sub __SetRoutFeedSpeed {
 	if ( $pcbStatus == 4 || $pcbStatus == 12 || JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 
 		my $info    = HegMethods->GetInfoAfterStartProduce($lastOrder);
-		my $matKind = HegMethods->GetMaterialKind( $self->{"jobId"} );
 
 		die "pocet_prirezu is no defined in HEG for orderid: $lastOrder"
 		  if ( !defined $info->{'pocet_prirezu'} || !defined $info->{'prirezu_navic'} );
@@ -246,7 +245,7 @@ sub __SetRoutFeedSpeed {
 		my $totalPnlCnt = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
 
 		my $errMess = "";
-		unless ( RoutSpeed->CompleteRoutSpeed( $self->{"jobId"}, $totalPnlCnt, $matKind, \$errMess ) ) {
+		unless ( RoutSpeed->CompleteRoutSpeed( $self->{"jobId"}, $totalPnlCnt, \$errMess ) ) {
 
 			$resultItem->AddError($errMess);
 		}

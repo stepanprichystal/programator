@@ -81,7 +81,7 @@ sub CheckNCLayers {
 
 		}
 
-		$l->{"uniDTM"} = UniDTM->new( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
+		$l->{"uniDTM"} = UniDTM->new( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1,1 );
 
 	}
 

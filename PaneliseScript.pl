@@ -95,7 +95,7 @@ unless ($ENV{JOB}) {
 	$jobName = "$ENV{JOB}";
 }
 
-#$jobName= "d283187";
+$jobName= "d283755";
 
 my $inCAM = InCAM->new();
 my @errorMessageArr = ();
@@ -510,12 +510,12 @@ sub _GUIpanelizace {
 											
 											
 											
-											my $messWarn = "";
-											my $resultWarn = LayerWarnInfo->CheckNCLayers( $inCAM, $jobName, "o+1", undef, \$messWarn );
-											
-											if ($resultWarn == 0) {
-													push @warnMessageArr, $messWarn;
-											}
+#											my $messWarn = "";
+#											my $resultWarn = LayerWarnInfo->CheckNCLayers( $inCAM, $jobName, "o+1", undef, \$messWarn );
+#											
+#											if ($resultWarn == 0) {
+#													push @warnMessageArr, $messWarn;
+#											}
 											
 											# contain error messages
 											my $mess = "";

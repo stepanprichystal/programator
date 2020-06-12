@@ -41,9 +41,10 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
-	$self->{"step"}    = shift;
-	$self->{"layer"}   = shift;
-	$self->{"breakSR"} = shift;
+	$self->{"step"}         = shift;
+	$self->{"layer"}        = shift;
+	$self->{"breakSR"}      = shift;
+	$self->{"loadMagazine"} = shift // 0;    # Load tool magazine by material
 
 	my @pilots = ();
 	$self->{"pilotDefs"} = \@pilots;
@@ -56,9 +57,11 @@ sub new {
 	my @t = ();
 	$self->{"tools"} = \@t;
 
-	$self->__LoadMagazineXml();
-
+	# 1) Init tools by InCAM DTM
 	$self->__InitUniDTM( $inCAM, $jobId );
+
+	# 2) Load magazine code by magazine info and PCB material
+	$self->__LoadToolsMagazine( $inCAM, $jobId ) if ( $self->{"loadMagazine"} );
 
 	$self->{"check"} = UniDTMCheck->new($self);
 
@@ -260,12 +263,16 @@ sub __InitUniDTM {
 		push( @{ $self->{"tools"} }, $uniT );
 	}
 
-	# 3) Add pilot hole definitions if tools diameter is bigger than 5.3mm
+	# 3) Sett tool operation
+	foreach my $uniT ( @{ $self->{"tools"} } ) {
+
+		my $operation = CamDrilling->GetToolOperation( $inCAM, $jobId, $layer, $uniT->GetTypeProcess() );
+		$uniT->SetToolOperation($operation);
+	}
+	
+	# 4) Add pilot hole definitions if tools diameter is bigger than 5.3mm
 	$self->__AddPilotHolesDefinition( $inCAM, $jobId );
-
-	# 4) Load magazine code by magazine info
-
-	$self->__LoadToolsMagazine( $inCAM, $jobId );
+	
 
 }
 
@@ -336,15 +343,19 @@ sub __LoadToolsMagazine {
 	my $inCAM = shift;
 	my $jobId = shift;
 
+	$self->__LoadMagazineXml();
+
 	my $materialName = $self->{"materialName"};
-	$materialName = CamNCHooks->GetHybridMatCode($jobId) if ( $materialName =~ /^Hybrid$/i );
+
+	if ( $materialName =~ /^Hybrid$/i ) {
+
+		# If material is hybrid, real used material is possible get only from stackup
+		die "Stackup must exist to load tool magazine" unless ( JobHelper->StackupExist($jobId) );
+		$materialName = JobHelper->GetHybridMatCode($jobId);
+	}
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
-
-		my $operation = CamDrilling->GetToolOperation( $inCAM, $jobId, $self->{"layer"}, $t->GetTypeProcess() );
-
-		$t->SetToolOperation($operation);
-
+ 
 		my $mInfo = $t->GetMagazineInfo();
 
 		# load special tool
@@ -380,11 +391,11 @@ sub __LoadToolsMagazine {
 		# load default tool
 		else {
 
-			my $magazines = $self->{"magazineDef"}->{"tooloperation"}->{$operation}->{"magazine"};
+			my $magazines = $self->{"magazineDef"}->{"tooloperation"}->{$t->GetToolOperation()}->{"magazine"};
 
 			if ( defined $magazines ) {
 				my @mArr = @{$magazines};
- 
+
 				my $m = ( grep { $_->{"material"} =~ /^$materialName$/i } @mArr )[0];
 
 				if ( defined $m ) {

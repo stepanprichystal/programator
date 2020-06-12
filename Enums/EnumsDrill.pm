@@ -49,13 +49,6 @@ use constant {
 			   ToolOp_COVERLAYROUT   => "CoverlayRout",
 };
 
-# Possible types of via filling from inner/outer placement point of view
-#- ViaFill_OUTER => Via fill drilling which start/end on outer layers of stackup (c;s layer)
-#- ViaFill_INNER   => Via fill drilling which start/end inside stackup (v\d layer)
-use constant {
-			   ViaFill_OUTER => "viaFillTopThrough",
-			   ViaFill_INNER => "viaFillTopBlind"
-};
 
 # Material codes for hybrid materials
 # This code clearly describes which materials are combined together
@@ -73,6 +66,18 @@ use constant {
 	HYBRID_R58X0__FR4   => 'HYBRID_R58X0-FR4',
 	HYBRID_ITERA__FR4   => 'HYBRID_ITERA-FR4'
 };
+
+
+
+# Possible types of via filling from inner/outer placement point of view
+#- ViaFill_OUTER => Via fill drilling which start/end on outer layers of stackup (c;s layer)
+#- ViaFill_INNER   => Via fill drilling which start/end inside stackup (v\d layer)
+use constant {
+			   ViaFill_OUTER => "viaFillTopThrough",
+			   ViaFill_INNER => "viaFillTopBlind"
+};
+
+
 
 1;
 

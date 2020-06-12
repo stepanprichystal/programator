@@ -331,7 +331,7 @@ sub GetMaterialParams {
 		$materialFile = undef;
 
 		# Get proper material type from stackup
-		$materialFile = $self->GetHybridMatCode($jobId);
+		$materialFile = JobHelper->GetHybridMatCode($jobId);
 
 	}
 
@@ -557,53 +557,7 @@ sub GetDrilledNumber {
 	return $numberStr;
 }
 
-# Material codes for hybrid materials
-# This code clearly describes which materials are combined together
-# Return values
 
-sub GetHybridMatCode {
-	my $self  = shift;
-	my $jobId = shift;
-
-	my $matCode = undef;
-
-	my $stackup = StackupBase->new($jobId);
-	my @types   = $stackup->GetStackupHybridTypes();
-
-	if (    scalar( grep { $_ =~ /(PYRALUX)/i } @types )
-		 && scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-	{
-		$matCode = EnumsDrill->HYBRID_PYRALUX__FR4;
-	}
-	elsif (    scalar( grep { $_ =~ /(RO3)/i } @types )
-			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-	{
-		$matCode = EnumsDrill->HYBRID_RO3__FR4;
-	}
-	elsif (    scalar( grep { $_ =~ /(RO4)/i } @types )
-			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-	{
-		$matCode = EnumsDrill->HYBRID_RO4__FR4;
-	}
-	elsif (    scalar( grep { $_ =~ /(R58X0)/i } @types )
-			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-	{
-		$matCode = EnumsDrill->HYBRID_R58X0__FR4;
-
-	}
-	elsif (    scalar( grep { $_ =~ /(I-TERA)/i } @types )
-			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-	{
-		$matCode = EnumsDrill->HYBRID_ITERA__FR4;
-
-	}
-	else {
-
-		die "Hybrid material code was not found for material types: " . join( ";", @types );
-	}
-
-	return $matCode;
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
