@@ -95,7 +95,7 @@ unless ($ENV{JOB}) {
 	$jobName = "$ENV{JOB}";
 }
 
-$jobName= "d283755";
+#$jobName= "d283755";
 
 my $inCAM = InCAM->new();
 my @errorMessageArr = ();
