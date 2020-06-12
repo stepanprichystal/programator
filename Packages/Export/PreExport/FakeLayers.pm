@@ -280,7 +280,7 @@ sub __CreateFakePLGLayers {
 		my $schema = "plg-2v";
 
 		if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
-			$schema = '"plg-vv';
+			$schema = "plg-vv";
 		}
 
 		CamHelper->SetStep( $inCAM, "panel" );
@@ -519,11 +519,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d283629";
+	my $jobId    = "d279766";
 	my $stepName = "panel";
 
 	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
-	FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
+	#FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
 
 }
 
