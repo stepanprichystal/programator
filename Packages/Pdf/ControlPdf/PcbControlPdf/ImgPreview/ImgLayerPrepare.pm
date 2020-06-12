@@ -482,10 +482,7 @@ sub __PrepareFLEXMASK {
 
 		$inCAM->COM( "merge_layers", "source_layer" => $maskLayer, "dest_layer" => $lName );
 
-		CamLayer->WorkLayer( $inCAM, $lName );
-
-		CamLayer->NegativeLayerData( $self->{"inCAM"}, $lName, $self->{"profileLim"} );
-
+		 
 		$layer->SetOutputLayer($lName);
 
 	}

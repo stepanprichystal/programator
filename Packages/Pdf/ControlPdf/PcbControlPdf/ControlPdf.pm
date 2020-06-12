@@ -530,16 +530,16 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d031091";
+	my $jobId = "d283335";
  
 
 	my $mess = "";
 
-	my $step = "mpanel";
+	my $step = "o+1";
 	my $SR = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
 
 	#my $nested = $SR;
-	my $detailPrev = 1;
+	my $detailPrev = 0;
 
 	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $detailPrev, "en", 1 );
 
@@ -555,7 +555,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#$control->AddInfoPreview( \$mess );
 
 	#$control->AddStackupPreview( \$mess );
-	#$control->AddImagePreview( \$mess, 1, 0 );
+	$control->AddImagePreview( \$mess, 0, 1 );
 
 	$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
