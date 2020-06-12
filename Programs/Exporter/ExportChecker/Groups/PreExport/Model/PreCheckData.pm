@@ -470,6 +470,20 @@ sub OnCheckGroupData {
 			);
 		}
 	}
+	
+	# If panel will be cut during production, check if there is proper set active area
+	if($cutPnl !~ /^no$/i ){
+		
+		my $pnl = StandardBase->new( $inCAM, $jobId );
+		if( $pnl->HArea() > 470){
+			$dataMngr->_AddErrorResult( "Výška aktivní plochy panelu",
+										"Výška aktivní plochy neodpovídá střihu. Zkontroluj, jestli kusy nejsou panelizované za hranicí střihu panelu."
+										
+			);
+		}
+		 
+		
+	}
 
 	# 11) Check gold finger layers (goldc, golds)
 	my $goldFinger       = 0;
