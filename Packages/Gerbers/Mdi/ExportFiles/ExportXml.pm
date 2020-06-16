@@ -20,6 +20,7 @@ use aliased 'Packages::NifFile::NifFile';
 use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
@@ -252,6 +253,26 @@ sub __ExportXml {
 
 	if ( $fileName =~ /outer/ ) {
 		$fileName = Helper->ConverOuterName2FileName( $layerName, $self->{"layerCnt"} );
+	}
+	elsif ( $layerName =~ /^v\d+$/ ) {
+
+		my %lPars = JobHelper->ParseSignalLayerName($layerName);
+
+		my $p = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+		if ( $p->GetProductType() eq StackEnums->Product_PRESS ) {
+
+			my $side = $self->{"stackup"}->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+			my $matL = $p->GetProductOuterMatLayer( $side eq "top" ? "first" : "last" )->GetData();
+
+			if ( $matL->GetType() eq StackEnums->MaterialType_COPPER && !$matL->GetIsFoil() ) {
+
+				# Convert standard inner signal layer name to name "after press"
+				$fileName = Helper->ConverInnerName2AfterPressFileName($layerName);
+			}
+		}
+
 	}
 
 	$templ->{"job_params"}->[0]->{"job_name"}->[0] = $jobId . $fileName . "_mdi";

@@ -36,6 +36,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Packages::Stackup::Stackup::Stackup';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,6 +56,11 @@ sub new {
 	# Info about  pcb ===========================
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+
+	if ( $self->{"layerCnt"} > 2 ) {
+
+		$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
+	}
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -154,8 +161,31 @@ sub __ExportLayers {
 		# 8) Copy file to mdi folder after exportig xml template
 		my $fileName = $l->{"gROWname"};
 
-		if ( $fileName =~ /outer/ ) {
+		if ( $l->{"gROWname"} =~ /outer/ ) {
+
+			# Convert outer signal layer name to standard layer name
 			$fileName = Helper->ConverOuterName2FileName( $l->{"gROWname"}, $self->{"layerCnt"} );
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^v\d+$/ ) {
+
+			my %lPars = JobHelper->ParseSignalLayerName( $l->{"gROWname"} );
+
+			my $p = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+			if ( $p->GetProductType() eq StackEnums->Product_PRESS ) {
+
+				my $side = $self->{"stackup"}->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+				my $matL = $p->GetProductOuterMatLayer( $side eq "top" ? "first" : "last" )->GetData();
+
+				if ( $matL->GetType() eq StackEnums->MaterialType_COPPER && !$matL->GetIsFoil() ) {
+
+					# Convert standard inner signal layer name to name "after press"
+					$fileName = Helper->ConverInnerName2AfterPressFileName($fileName);
+				}
+			}
+
 		}
 
 		my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $fileName . "_mdi.ger";
@@ -178,8 +208,8 @@ sub __DeleteOldFiles {
 
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . '^[csv]\d*_mdi' );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . '^[csv]\d*_mdi' );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . '^[csv]\d*' );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . '^[csv]\d*' );
 
 		push( @file2del, ( @f, @f2 ) );
 	}
@@ -593,7 +623,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d113608";
+	my $jobId    = "d282545";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';

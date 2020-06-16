@@ -90,6 +90,18 @@ sub ConverOuterName2FileName {
 	return $fileName;
 }
 
+# Convert inner layer to filename with suffix "after pressing" exported for MDI
+sub ConverInnerName2AfterPressFileName {
+	my $self  = shift;
+	my $lName = shift;
+
+	die "Layer name: $lName is in wrong format" unless($lName =~ /^v\d+$/);
+
+
+	return $lName."_po_lisovani";
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
