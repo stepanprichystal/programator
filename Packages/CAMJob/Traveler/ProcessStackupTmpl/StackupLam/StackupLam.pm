@@ -118,13 +118,17 @@ sub GetPaketThick {
 			next;
 		}
 
-		
-
 		if ( scalar(@pItems) > 1 && $start && $item->GetItemType() eq Enums->ItemType_PADSTEEL ) {
 			last;
 		}
-		
-		push( @pItems, $item ) if ($start);
+
+		if ($start) {
+
+			push( @pItems, $item );
+			push( @pItems, $item->GetChildTop() ) if ( defined $item->GetChildTop() );
+			push( @pItems, $item->GetChildBot() ) if ( defined $item->GetChildBot() );
+		}
+
 	}
 
 	@pItems = grep { !$_->GetIsPad() } @pItems unless ($inclPads);

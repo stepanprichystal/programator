@@ -41,8 +41,13 @@ sub Build {
 
 	# Pad info
 	my $steelPlateInf = $stckpMngr->GetSteelPlateInfo();
-	my $rubberPadInf  = $stckpMngr->GetPressPadFF10NInfo();
-	my $filmInf       = $stckpMngr->GetReleaseFilmPacoViaInfo();
+
+	#my $rubberPadInf  = $stckpMngr->GetPressPadTB317KInfo();
+	#my $filmInf       = $stckpMngr->GetReleaseFilmPacoViaInfo();
+
+	my $filmInf     = $stckpMngr->GetFilmPacoplus4500Info();
+	my $releaseInf  = $stckpMngr->GetReleaseFilm1500HTInfo();
+	my $presspadInf = $stckpMngr->GetPresspad5500Info();
 
 	my $cvrlTopInfo = {};
 
@@ -62,20 +67,36 @@ sub Build {
 	# LAYER: Steel plate top
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );
 
+	#	# LAYER: Top rubber pad
+	#	$lam->AddItem( $rubberPadInf->{"ISRef"},
+	#				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+	#				   undef, undef,
+	#				   $rubberPadInf->{"text"},
+	#				   $rubberPadInf->{"thick"} );
+	#
+	#	# LAYER: Top release film
+	#	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
+	#				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+
+	#   Add pacothane sendwitch TEMPORARY UNTIL move to big panel, then flexpad + MSC
+
+	$lam->AddItem( $releaseInf->{"ISRef"},
+				   Enums->ItemType_PADRELEASE,
+				   EnumsStyle->GetItemTitle( Enums->ItemType_PADRELEASE ),
+				   undef, undef, $releaseInf->{"text"}, $releaseInf->{"thick"} );
+
 	if ($prpgTopExist) {
 
-		# LAYER: Top rubber pad
-		$lam->AddItem( $rubberPadInf->{"ISRef"},
-					   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+		$lam->AddItem( $presspadInf->{"ISRef"},
+					   Enums->ItemType_PADPAPER, EnumsStyle->GetItemTitle( Enums->ItemType_PADPAPER ),
 					   undef, undef,
-					   $rubberPadInf->{"text"},
-					   $rubberPadInf->{"thick"} );
+					   $presspadInf->{"text"},
+					   $presspadInf->{"thick"} );
+
+		$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
+					   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
 
 	}
-
-	# LAYER: Top release film
-	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
-				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
 
 	# MATERIAL LAYERS
 
@@ -109,13 +130,14 @@ sub Build {
 			if ( defined $coverlay && $coverlaySide eq "top" ) {
 				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pLayer->GetData() );
 				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $coverlay );
+
 			}
+			elsif ( defined $coverlay && $coverlaySide eq "bot" ) {
 
-			
-
-			if ( defined $coverlay && $coverlaySide eq "bot" ) {
-				
 				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $coverlay );
+				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pLayer->GetData() );
+			}
+			else {
 				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pLayer->GetData() );
 			}
 		}
@@ -129,20 +151,36 @@ sub Build {
 		}
 	}
 
-	# LAYER: Bot release film
-	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
-				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+	#	# LAYER: Bot release film
+	#	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
+	#				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+	#
+	#	# LAYER: Top rubber pad
+	#	$lam->AddItem( $rubberPadInf->{"ISRef"},
+	#				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+	#				   undef, undef,
+	#				   $rubberPadInf->{"text"},
+	#				   $rubberPadInf->{"thick"} );
+
+	#   Add pacothane sendwitch TEMPORARY UNTIL move to big panel, then flexpad + MSC
 
 	if ($prpgBotExist) {
 
-		# LAYER: Top rubber pad
-		$lam->AddItem( $rubberPadInf->{"ISRef"},
-					   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+		$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
+					   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+
+		$lam->AddItem( $presspadInf->{"ISRef"},
+					   Enums->ItemType_PADPAPER, EnumsStyle->GetItemTitle( Enums->ItemType_PADPAPER ),
 					   undef, undef,
-					   $rubberPadInf->{"text"},
-					   $rubberPadInf->{"thick"} );
+					   $presspadInf->{"text"},
+					   $presspadInf->{"thick"} );
 
 	}
+
+	$lam->AddItem( $releaseInf->{"ISRef"},
+				   Enums->ItemType_PADRELEASE,
+				   EnumsStyle->GetItemTitle( Enums->ItemType_PADRELEASE ),
+				   undef, undef, $releaseInf->{"text"}, $releaseInf->{"thick"} );
 
 	# LAYER: Steel plate Bot
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );

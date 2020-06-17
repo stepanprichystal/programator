@@ -28,6 +28,7 @@ use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle
 use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::BoxBuilders::BuilderMainHelper';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -283,13 +284,22 @@ sub __BuildPaketInfo {
 	my $pinStr  = "Ne";
 
 	if (
-		    $lamType eq Enums->LamType_FLEXBASE
-		 || $lamType eq Enums->LamType_ORIGIDFLEXFINAL
-		 || $lamType eq Enums->LamType_IRIGIDFLEXFINAL
-		 || ( $lamType eq Enums->LamType_RIGIDFINAL && $stckpMngr->GetCuLayerCnt() >= 6 )
-		 || (    $lamType eq Enums->LamType_RIGIDFINAL
-			  && $stckpMngr->GetStackup()->GetCuLayerCnt() >= 4
-			  && $stckpMngr->GetStackup()->GetAllCores() > 1 )
+		   $lamType eq Enums->LamType_FLEXBASE
+		|| $lamType eq Enums->LamType_ORIGIDFLEXFINAL
+		|| $lamType eq Enums->LamType_IRIGIDFLEXFINAL
+		|| ( $lamType eq Enums->LamType_RIGIDFINAL && $stckpMngr->GetCuLayerCnt() >= 6 )
+		|| (    $lamType eq Enums->LamType_RIGIDFINAL
+			 && $stckpMngr->GetStackup()->GetCuLayerCnt() >= 4
+			 && $stckpMngr->GetStackup()->GetAllCores() > 1 )
+
+		|| (
+			    $lamType eq Enums->LamType_RIGIDFINAL
+			 && $stckpMngr->GetStackup()->GetCuLayerCnt() >= 4
+			 && scalar(
+						map  { $_->GetAllPrepregs() }
+						grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stckpMngr->GetStackup()->GetAllLayers()
+			 ) >= 6
+		)
 	  )
 	{
 		$pinStr = "Ano";
@@ -425,7 +435,7 @@ sub __BuildNoteInfo {
 
 	# Put note about noflow prepreg
 	my @noflow = map { $_->GetValExtraId() } grep { $_->GetItemType() eq Enums->ItemType_MATFLEXPREPREG } $lam->GetItems();
-	
+
 	if ( scalar( uniq(@noflow) ) ) {
 
 		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
@@ -445,10 +455,9 @@ sub __BuildNoteInfo {
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, 2, undef, $str, $txtStyle );
 	}
 
-
 	# Put info about program settings
- 
-	if ($stckpMngr->GetIsFlex() ) {
+
+	if ( $stckpMngr->GetIsFlex() ) {
 
 		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
@@ -462,9 +471,8 @@ sub __BuildNoteInfo {
 									   TblDrawEnums->TextVAlign_CENTER, 1 );
 
 		my $str = "Pozor, nezapomen, vyplnit: pocet pater + pocet paketu na plotne (";
-		 $str .= "Quant. of act. openings + Amount of press package)";
+		$str .= "Quant. of act. openings + Amount of press package)";
 
- 
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, 2, undef, $str, $txtStyle );
 	}
 

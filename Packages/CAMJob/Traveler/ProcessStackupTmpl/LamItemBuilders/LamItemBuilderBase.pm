@@ -139,6 +139,8 @@ sub _ProcessStckpMatLayer {
 			$itemType = Enums->ItemType_MATFLEXCORE;
 		}
 
+  
+
 		my $item = $lam->AddItem( $layerISRef, $itemType,
 								  EnumsStyle->GetItemTitle($itemType),
 								  "J" . $stckpLayer->GetCoreNumber(),
@@ -146,8 +148,8 @@ sub _ProcessStckpMatLayer {
 								  $stckpLayer->GetText(),
 								  $stckpLayer->GetThick() );
 
-		$lam->AddChildItem( $item, "top", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $topCuLayer->GetCopperName(), undef, undef, undef, undef );
-		$lam->AddChildItem( $item, "bot", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $botCuLayer->GetCopperName(), undef, undef, undef, undef );
+		$lam->AddChildItem( $item, "top", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $topCuLayer->GetCopperName(), undef, undef, $stckpLayer->GetTopCopperLayer()->GetThick(), undef );
+		$lam->AddChildItem( $item, "bot", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $botCuLayer->GetCopperName(), undef, undef, $stckpLayer->GetBotCopperLayer()->GetThick(), undef );
 
 	}
 	elsif ( $stckpLayer->GetType() eq StackEnums->MaterialType_COVERLAY ) {
