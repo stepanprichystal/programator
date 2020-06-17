@@ -214,6 +214,7 @@ sub __InitUniDTM {
 
 	my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $layer, $self->{"breakSR"} );
 	my @DTMSurfTools = CamDTMSurf->GetDTMTools( $inCAM, $jobId, $step, $layer, $self->{"breakSR"} );
+	
 
 	# 1) Process tool from standard DTM
 
@@ -263,16 +264,35 @@ sub __InitUniDTM {
 		push( @{ $self->{"tools"} }, $uniT );
 	}
 
-	# 3) Sett tool operation
+	# 3) Set tool operation
 	foreach my $uniT ( @{ $self->{"tools"} } ) {
 
 		my $operation = CamDrilling->GetToolOperation( $inCAM, $jobId, $layer, $uniT->GetTypeProcess() );
 		$uniT->SetToolOperation($operation);
 	}
-	
-	# 4) Add pilot hole definitions if tools diameter is bigger than 5.3mm
+
+	# 4) Set special tool parameters
+	$self->__LoadToolSpecMagazineXml();
+	foreach my $t ( @{ $self->{"tools"} } ) {
+
+		my $mInfo = $t->GetMagazineInfo();
+
+		# load special tool
+		if ( defined $mInfo && $mInfo ne "" ) {
+
+			my $xmlTool = $self->{"magazineSpec"}->{"tool"}->{$mInfo};
+
+			# if exist geven magazine info eg "6.5_90st";
+			if ($xmlTool) {
+
+				$t->SetSpecial(1);
+				$t->SetAngle( $xmlTool->{"angle"} );
+			}
+		}
+	}
+
+	# 5) Add pilot hole definitions if tools diameter is bigger than 5.3mm
 	$self->__AddPilotHolesDefinition( $inCAM, $jobId );
-	
 
 }
 
@@ -343,7 +363,7 @@ sub __LoadToolsMagazine {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	$self->__LoadMagazineXml();
+	$self->__LoadToolDefMagazineXml();
 
 	my $materialName = $self->{"materialName"};
 
@@ -355,19 +375,16 @@ sub __LoadToolsMagazine {
 	}
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
- 
+
 		my $mInfo = $t->GetMagazineInfo();
 
 		# load special tool
-		if ( defined $mInfo && $mInfo ne "" ) {
+		if ( $t->GetSpecial() ) {
 
 			my $xmlTool = $self->{"magazineSpec"}->{"tool"}->{$mInfo};
 
 			# if exist geven magazine info eg "6.5_90st";
 			if ($xmlTool) {
-
-				$t->SetSpecial(1);
-				$t->SetAngle( $xmlTool->{"angle"} );
 
 				# search magazine by materal of pcb
 				my $m = undef;
@@ -391,7 +408,7 @@ sub __LoadToolsMagazine {
 		# load default tool
 		else {
 
-			my $magazines = $self->{"magazineDef"}->{"tooloperation"}->{$t->GetToolOperation()}->{"magazine"};
+			my $magazines = $self->{"magazineDef"}->{"tooloperation"}->{ $t->GetToolOperation() }->{"magazine"};
 
 			if ( defined $magazines ) {
 				my @mArr = @{$magazines};
@@ -408,7 +425,7 @@ sub __LoadToolsMagazine {
 	}
 }
 
-sub __LoadMagazineXml {
+sub __LoadToolDefMagazineXml {
 	my $self = shift;
 
 	my $templPath1 = GeneralHelper->Root() . "\\Config\\MagazineDef.xml";
@@ -422,6 +439,11 @@ sub __LoadMagazineXml {
 		# KeepRoot   => 1
 	);
 
+}
+
+sub __LoadToolSpecMagazineXml {
+	my $self = shift;
+
 	my $templPath2 = GeneralHelper->Root() . "\\Config\\MagazineSpec.xml";
 	my $templXml2  = FileHelper->Open($templPath2);
 
@@ -431,7 +453,6 @@ sub __LoadMagazineXml {
 		#ForceArray => 1,
 		# KeepRoot   => 1
 	);
-
 }
 
 #-------------------------------------------------------------------------------------------#
