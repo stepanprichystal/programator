@@ -53,7 +53,7 @@ sub Run {
 
 		my $unitRTM = UniRTM->new( $inCAM, $jobId, "o+1", "f" );
 
-		my @outlines = $unitRTM->GetOutlineChains();
+		my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 		my @chains = $unitRTM->GetChains();
 		my $onBridges = CamAttributes->GetStepAttrByName( $inCAM, $jobId, "o+1", "rout_on_bridges" );

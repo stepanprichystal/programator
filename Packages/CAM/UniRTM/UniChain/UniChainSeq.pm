@@ -27,10 +27,11 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"chain"}     = shift;
+	$self->{"chain"} = shift;
+	
+
 	$self->{"cyclic"}    = undef;
 	$self->{"direction"} = undef;
-
 	$self->{"startEdge"} = undef;
 
 	my @foots = ();
@@ -56,6 +57,8 @@ sub new {
 
 	return $self;
 }
+
+
 
 # Helper methods -------------------------------------
 
@@ -135,6 +138,9 @@ sub GetStrInfo {
 }
 
 # GET/SET Properties -------------------------------------
+
+ 
+
 
 sub GetFeatures {
 	my $self = shift;

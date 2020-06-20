@@ -873,7 +873,7 @@ sub __PrepareNPLTTHROUGHNC {
 		my @outFeatsId =
 		  map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() && !$_->GetIsInside() } $unitRTM->GetMultiChainSeqList();
 
-		#my @outline = $unitRTM->GetOutlineChains();
+		#my @outline = $unitRTM->GetOutlineChainSeqs();
 		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
 
 		CamFilter->SelectByFeatureIndexes( $inCAM, $self->{"jobId"}, \@outFeatsId );

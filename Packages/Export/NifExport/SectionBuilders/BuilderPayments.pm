@@ -106,7 +106,7 @@ sub Build {
 
 	# check inner layers
 	my $unitRTM   = UniRTM->new( $inCAM, $jobId, "o+1", "f" );
-	my @out       = $unitRTM->GetOutlineChains();
+	my @out       = $unitRTM->GetOutlineChainSeqs();
 	my $extraMill = 0;
 
 	if ( scalar(@out) == 1 ) {

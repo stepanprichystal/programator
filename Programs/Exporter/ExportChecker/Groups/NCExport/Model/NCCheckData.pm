@@ -193,7 +193,7 @@ sub OnCheckGroupData {
 
 		my $rtm = UniRTM->new( $inCAM, $jobId, "panel", $checkL, 1 );
 
-		my @outline = $rtm->GetOutlineChains();
+		my @outline = $rtm->GetOutlineChainSeqs();
 
 		my %hist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, "panel", $checkL, 1 );
 

@@ -21,6 +21,7 @@ use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::Polygon::PointsTransform';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -51,7 +52,6 @@ sub FindStart {
 
 	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
-
 		$self->__RemoveFootAttr($s);
 
 		$self->__FindStart( $s, $resultItem );
@@ -60,7 +60,6 @@ sub FindStart {
 
 	return $resultItem;
 }
-
 
 sub __FindStart {
 	my $self    = shift;
@@ -72,8 +71,10 @@ sub __FindStart {
 
 	# reset attribut "rout_on_bridges" to NO, thus pcb is not on bridges
 
-	my $unitRTM  = $stepRot->GetUniRTM();
-	my @outlines = $unitRTM->GetOutlineChains();
+	my $unitRTM = $stepRot->GetUniRTM();
+
+	# 1) Set rout start for outlines (no outline on bridges)
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	foreach my $outline (@outlines) {
 
@@ -131,7 +132,7 @@ sub __FindStart {
 
 					my @delete = grep { $_->{"id"} > 0 } @features;
 
-					$draw->DeleteRoute( [$outline->GetOriFeatures()] ); # dlete ori features
+					$draw->DeleteRoute( [ $outline->GetOriFeatures() ] );    # dlete ori features
 
 					$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"}, 1 );    # draw new
 
@@ -209,6 +210,73 @@ sub __FindStart {
 			$resItem->AddError($m);
 
 		}
+	}
+
+	# 2) Set rout start for outlines on bridges
+	my @outlinesOnBridges = $unitRTM->GetOutlineChainsOnBridges();
+
+	foreach my $outlineChain (@outlinesOnBridges) {
+
+		my @seq = $outlineChain->GetChainSequences();
+
+		# Consider only starting edge of each sequence
+		my @candidates = map { ( $_->GetFeatures() )[0] } @seq;
+		my $startEdge = undef;
+
+		my @points = ();
+		foreach my $e (@candidates) {
+			push( @points, { "x" => $e->{"x1"}, "y" => $e->{"y1"} } );
+		}
+
+		my %lim = PointsTransform->GetLimByPoints( \@points );
+
+		#Compute nearest distance from ledt-top corner of polygon points from selected features.
+		my $min  = undef;
+		my $idx  = -1;
+		my $dist = 0;
+
+		for ( my $i = 0 ; $i < scalar(@candidates) ; $i++ ) {
+
+			$dist =
+			  sqrt( ( $lim{"xMin"} - $candidates[$i]{"x2"} )**2 + ( ( $lim{"yMax"} - $lim{"yMin"} ) - ( $candidates[$i]{"y2"} - $lim{"yMin"} ) )**2 );
+
+			if ( !defined $min || $dist < $min ) {
+				$min = $dist;
+				$idx = $i;
+			}
+		}
+
+		# Set start feature
+		if ($idx >= 0) {
+
+			my $startFeat = $candidates[$idx];
+
+			# 1)  set rout start attribute
+			my $f = FeatureFilter->new( $inCAM, $jobId, $stepRot->GetRoutLayer() );
+			my @ids = ( $startFeat->{"id"} );
+			$f->AddFeatureIndexes( \@ids );
+
+			if ( $f->Select() ) {
+
+				$inCAM->COM(
+							 "chain_set_plunge",
+							 "start_of_chain" => "yes",
+							 "mode"           => "straight",
+							 "apply_to"       => "all",
+							 "inl_mode"       => "straight",
+							 "layer"          => $stepRot->GetRoutLayer(),
+							 "type"           => "open"
+				);
+
+			}
+			else {
+				die "Rout start was not selected for outline rout on bridges\n";
+			}
+		}
+		else {
+			die "Rout start was not selected for outline rout on bridges\n";
+		}
+
 	}
 
 	# Reload UniRTM for "rotated step" layer, because set route start or rout modification, changed feature ids

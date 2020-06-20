@@ -10,6 +10,7 @@ use utf8;
 use strict;
 use warnings;
 use Storable qw(dclone);
+use List::Util qw(first);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -33,15 +34,15 @@ sub new {
 	$self->{"inCAM"}       = shift;
 	$self->{"jobId"}       = shift;
 	$self->{"chainGroups"} = shift;
-	
+
 	# contain hash, where key is old step chain nuber and value is GUID represent new chain in flatenned layer
 	# Theses values are available by "group chain guid", which represent all chains in step
-	$self->{"convTable"}   = shift; 
-	$self->{"step"}        = shift;
-	$self->{"flatLayer"}   = shift;
-	$self->{"resultItem"}  = shift;
+	$self->{"convTable"}  = shift;
+	$self->{"step"}       = shift;
+	$self->{"flatLayer"}  = shift;
+	$self->{"resultItem"} = shift;
 
-	$self->{"toolOrderNum"} = 1;       # start renumber chain from number one
+	$self->{"toolOrderNum"} = 1;    # start renumber chain from number one
 
 	return $self;
 }
@@ -53,16 +54,30 @@ sub SetInnerOrder {
 
 	# create tool queue
 	my %toolQueues = ();
- 
+
 	foreach my $chGroup ( @{ $self->{"chainGroups"} } ) {
 
 		# get not outline chain tool list
 		my @chainList = $chGroup->GetGroupUniRTM()->GetChainListByOutline(0);
+
+		if ( $chGroup->GetOnBridges() ) {
+
+			# remove potentional rout on bridges UniChanTool
+			my @chainListOnBridges = $chGroup->GetGroupUniRTM()->GetChainListByOutlineOnBridges();
+
+			for ( my $i = scalar(@chainList) - 1 ; $i >= 0 ; $i-- ) {
+
+				if ( scalar( grep { $_->GetChainOrder() == $chainList[$i]->GetChainOrder() } @chainListOnBridges ) ) {
+					splice @chainList, $i, 1;
+				}
+			}
+		}
+
 		$toolQueues{ $chGroup->GetGroupId() } = \@chainList;
-		
+
 	}
-	
-	# check if outline tools are same diameter, 
+
+	# check if outline tools are same diameter,
 	# if so consider this tool in  NO outline tool sorting
 	my $outlineTool = $self->__GetOutlineTool();
 
@@ -87,7 +102,16 @@ sub SetOutlineOrder {
 
 		# get not outline chain tool list
 
-		my @chainList       = $chGroup->GetGroupUniRTM()->GetChainListByOutline(1);
+		my @chainList = $chGroup->GetGroupUniRTM()->GetChainListByOutline(1);
+
+		if ( $chGroup->GetOnBridges() ) {
+
+			# remove potentional rout on bridges UniChanTool
+			my @chainListOnBridges = $chGroup->GetGroupUniRTM()->GetChainListByOutlineOnBridges();
+
+			push( @chainList, @chainListOnBridges ) if ( scalar(@chainListOnBridges) );
+		}
+
 		my @chainListStarts = ();
 
 		# get all start for specific  "step place"
@@ -179,7 +203,7 @@ sub ToolRenumberCheck {
 	}
 
 	# 3) Check if tool with foot down are last
-	my @outlines = $unitRTM->GetOutlineChains();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	my $outlineStart = 0;
 	foreach my $ch ( $unitRTM->GetChains() ) {
@@ -194,7 +218,25 @@ sub ToolRenumberCheck {
 
 			# if first outline was passed, all chain after has to be outline
 			if ($outlineStart) {
-				unless ( $chSeq->IsOutline() ) {
+
+				# Checki if chain is rout on bridges
+				my $featGroupId = ( $ch->GetFeatures() )[0]->{"att"}->{"feat_group_id"};
+
+				# Search for group id
+				my $chainGroup = undef;
+				foreach my $gId ( keys %{ $self->{"convTable"} } ) {
+
+					foreach my $toolOrder ( keys %{ $self->{"convTable"}->{$gId} } ) {
+
+						if ( $self->{"convTable"}->{$gId}->{$toolOrder} eq $featGroupId ) {
+							$chainGroup = first { $_->GetGroupId() eq $gId } @{ $self->{"chainGroups"} };
+							last;
+						}
+						last if ( defined $chainGroup );
+					}
+				}
+
+				if ( !$chSeq->IsOutline() &&  !$chainGroup->GetOnBridges() ) {
 
 					$self->{"resultItem"}->AddError("Error during sorting tools in fsch layer. Some outline chain is not last in rout list.\n");
 					last;
@@ -247,26 +289,26 @@ sub __GetOutlineTool {
 
 	my $tool = undef;
 
-	# outline chains 
+	# outline chains
 	my @outlineTools = ();
 
 	foreach my $chGroup ( @{ $self->{"chainGroups"} } ) {
- 
-		# check if outline tools are same diameter, 
+
+		# check if outline tools are same diameter,
 		# if so consider this tool in  NO outline tool sorting
-		push( @outlineTools, $chGroup->GetGroupUniRTM()->GetChainListByOutline(1));		
+		push( @outlineTools, $chGroup->GetGroupUniRTM()->GetChainListByOutline(1) );
 	}
-	
-	if(scalar(@outlineTools)){
-		
+
+	if ( scalar(@outlineTools) ) {
+
 		# find if tools are all same
-		my @sameTools = grep { $_->GetChainSize() == $outlineTools[0]->GetChainSize()} @outlineTools;
-		
-		if(scalar(@outlineTools) == scalar(@sameTools)){
-			$tool = dclone($outlineTools[0]);
+		my @sameTools = grep { $_->GetChainSize() == $outlineTools[0]->GetChainSize() } @outlineTools;
+
+		if ( scalar(@outlineTools) == scalar(@sameTools) ) {
+			$tool = dclone( $outlineTools[0] );
 		}
 	}
-	
+
 	return $tool;
 }
 
