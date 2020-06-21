@@ -875,7 +875,6 @@ sub OnCheckGroupData {
 			}
 
 		}
-
 	}
 
 }

@@ -71,6 +71,7 @@ sub GetAllByPcbId {
 				 d.zlaceni,
 				 d.lak_typ,
 				 d.stiffener,
+				 d.ipc_class_3,
 				 dn.kus_x n_kus_x,
 				 dn.kus_y n_kus_y,
 				 dn.panel_x n_mpanel_x,
@@ -311,6 +312,7 @@ sub GetBasePcbInfo {
 				 d.srazeni_hran,
 				 d.zlaceni,
 				 d.zaplneni_otvoru,
+				 d.ipc_class_3,
 				 z.pooling,
 				 d.stav
 				 from lcs.desky_22 d with (nolock)

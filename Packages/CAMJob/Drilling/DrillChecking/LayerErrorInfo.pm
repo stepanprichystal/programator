@@ -574,22 +574,27 @@ sub CheckToolParameters {
 
 		}
 
-		# 2) Check if DTM type is set (vrtane/vzsledne)
-		my $DTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
+		# Check vysledne/vrtane only if thera are some features
+		if ( scalar( $l->{"uniDTM"}->GetTools() ) > 0 ) {
 
-		if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
-			$result = 0;
-			$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
-			$$mess .= "Layer, which contains plated routing/drilling must have set DTM type \"vrtane\" or \"vysledne\" at least in nested steps.\n";
-		}
+			# 2) Check if DTM type is set (vrtane/vzsledne)
+			my $DTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
 
-		# 3) If "neplat/1 side pcb" check if DTM type is "vrtane"
-		if ( $layerCnt < 2 ) {
-
-			if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
+			if ( $DTMType ne EnumsDrill->DTM_VRTANE && $DTMType ne EnumsDrill->DTM_VYSLEDNE ) {
 				$result = 0;
 				$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
-				$$mess .= "Pcb which is NOT plated has to set Drill Tool Manager type: \"vrtane\" not type: \"vysledne\". \n";
+				$$mess .=
+				  "Layer, which contains plated routing/drilling must have set DTM type \"vrtane\" or \"vysledne\" at least in nested steps.\n";
+			}
+
+			# 3) If "neplat/1 side pcb" check if DTM type is "vrtane"
+			if ( $layerCnt < 2 ) {
+
+				if ( $DTMType eq EnumsDrill->DTM_VYSLEDNE ) {
+					$result = 0;
+					$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
+					$$mess .= "Pcb which is NOT plated has to set Drill Tool Manager type: \"vrtane\" not type: \"vysledne\". \n";
+				}
 			}
 		}
 

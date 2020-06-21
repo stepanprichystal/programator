@@ -45,7 +45,8 @@ use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::NegSignalLayer';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsDrill';
-use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
+use aliased 'Packages::CAM::SymbolDrawing::Enums'    => 'DrawEnums';
+use aliased 'Packages::CAMJob::Microsection::Helper' => "CouponRoute";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -179,70 +180,18 @@ sub Generate {
 		my $countorTypeV = $routLayout->GetCountourTypeY();
 
 		CamHelper->SetStep( $inCAM, $layout->GetStepName() );
+		
+		# 1) process routed edges
 
-		# Set step attribute "rout on bridges"rout_on_b
-		CamAttributes->SetStepAttribute( $inCAM, $jobId, $layout->GetStepName(), "rout_on_bridges", "yes" );
-
-		# 1) process routed edge
-
-		if ( $countorTypeH =~ /rout/i || $countorTypeV =~ /rout/i ) {
-
-			my $featStart = undef;
-
-			CamMatrix->CreateLayer( $inCAM, $jobId, "f", "rout", "positive", 1 ) unless ( CamHelper->LayerExists( $inCAM, $jobId, "f" ) );
-			CamLayer->WorkLayer( $inCAM, "f" );
-			my $t = 2;
-
-			if ( $countorTypeH =~ /rout/i ) {
-
-				# Draw TOP horizontal edge
-				$featStart = $self->__DrawOutlineRout(
-													   $inCAM,
-													   { "x" => 0,                   "y" => $layout->GetHeight() },
-													   { "x" => $layout->GetWidth(), "y" => $layout->GetHeight() },
-													   $routLayout->GetCountourBridgesCntX(),
-													   $routLayout->GetBridgesWidth() / 1000
-				);
-
-				# Draw BOT horizontal edge
-				$featStart = $self->__DrawOutlineRout( $inCAM,
-													   { "x" => $layout->GetWidth(), "y" => 0 },
-													   { "x" => 0,                   "y" => 0 },
-													   $routLayout->GetCountourBridgesCntX(),
-													   $routLayout->GetBridgesWidth() / 1000 );
-			}
-
-			if ( $countorTypeV =~ /rout/i ) {
-
-				# Draw LEFT verticall edge
-				$featStart = $self->__DrawOutlineRout( $inCAM,
-													   { "x" => 0, "y" => 0 },
-													   { "x" => 0, "y" => $layout->GetHeight() },
-													   $routLayout->GetCountourBridgesCntY(),
-													   $routLayout->GetBridgesWidth() / 1000 );
-
-				# Draw RIGHT horizontal edge
-				$featStart = $self->__DrawOutlineRout(
-													   $inCAM,
-													   { "x" => $layout->GetWidth(), "y" => $layout->GetHeight() },
-													   { "x" => $layout->GetWidth(), "y" => 0 },
-													   $routLayout->GetCountourBridgesCntY(),
-													   $routLayout->GetBridgesWidth() / 1000
-				);
-			}
-
-			# Add chain
-			$inCAM->COM(
-				'chain_add',
-				"layer"          => "f",
-				"chain"          => 1,
-				"size"           => $t,
-				"comp"           => "left",
-				"first"          => defined $featStart ? $featStart - 1 : 0,    # id of edge, which should route start - 1 (-1 is necessary)
-				"chng_direction" => 0
-			);
-
-		}
+		CouponRoute->PrepareProfileRoutOnBridges(
+												  $inCAM, $jobId,
+												  $layout->GetStepName(), 
+												  ( $countorTypeH =~ /rout/i ? 1 : 0 ),
+												  ( $countorTypeV =~ /rout/i ? 1 : 0 ), 
+												  $routLayout->GetCountourBridgesCntX(),
+												  $routLayout->GetCountourBridgesCntY(), 
+												  $routLayout->GetBridgesWidth()
+		);
 
 		# 2) process scored edges
 
@@ -396,10 +345,10 @@ sub __GenerateSingle {
 
 			  case EnumsImp->Model_COATED_UPPER_EMBEDDED { $modelBuilder = CoatedUpperEmbedded->new() }
 
-			  case EnumsImp->Model_COATED_UPPER_EMBEDDED_2T { $modelBuilder = CoatedUpperEmbedded2T->new() }		  
-			  
+			  case EnumsImp->Model_COATED_UPPER_EMBEDDED_2T { $modelBuilder = CoatedUpperEmbedded2T->new() }
+
 			  case EnumsImp->Model_UNCOATED_UPPER_EMBEDDED { $modelBuilder = UncoatedUpperEmbedded->new() }
-			  
+
 			  case EnumsImp->Model_UNCOATED_UPPER_EMBEDDED_2T { $modelBuilder = UncoatedUpperEmbedded2T->new() }
 
 			  else { die "Microstirp model: " . $stripLayout->GetModel() . " is not implemented"; }
@@ -493,64 +442,7 @@ sub __GenerateSingle {
 	}
 
 }
-
-# Draw rout with bridges for coupon edge
-sub __DrawOutlineRout {
-	my $self         = shift;
-	my $inCAM        = shift;
-	my $startP       = shift;
-	my $endP         = shift;
-	my $bridgesCnt   = shift;
-	my $bridgesWidth = shift;
-
-	my $type;
-
-	if ( abs( $startP->{"y"} - $endP->{"y"} ) == 0 ) {
-
-		$type = "h";
-	}
-	elsif ( abs( $startP->{"x"} - $endP->{"x"} ) == 0 ) {
-		$type = "v";
-	}
-	else {
-
-		die "Wrong start end point coupon rout slots point.";
-	}
-
-	my $edgeLen = $type eq "v" ? abs( $startP->{"y"} - $endP->{"y"} ) : abs( $startP->{"x"} - $endP->{"x"} );
-	my $toolw = 2;    # tool size 2mm
-
-	my $slotLen = $edgeLen;
-
-	if ( $bridgesCnt > 0 ) {
-		$slotLen = ( $slotLen - $bridgesCnt * ( $bridgesWidth + $toolw ) ) / ( $bridgesCnt + 1 );
-	}
-
-	my $curX = $startP->{"x"};
-	my $curY = $startP->{"y"};
-	for ( my $i = 0 ; $i < scalar( $bridgesCnt + 1 ) ; $i++ ) {
-
-		if ( $type eq "h" ) {
-
-			my $sign = $endP->{"x"} - $startP->{"x"} > 1 ? 1 : -1;
-
-			CamSymbol->AddLine( $inCAM, { "x" => $curX, "y" => $curY }, { "x" => $curX + $sign * $slotLen, "y" => $curY }, "r200", "positive" );
-
-			$curX += $sign * ( $slotLen + $bridgesWidth + $toolw );
-
-		}
-		elsif ( $type eq "v" ) {
-
-			my $sign = $endP->{"y"} - $startP->{"y"} > 1 ? 1 : -1;
-
-			CamSymbol->AddLine( $inCAM, { "x" => $curX, "y" => $curY }, { "x" => $curX, "y" => $curY + $sign * $slotLen }, "r200", "positive" );
-			$curY += $sign * ( $slotLen + $bridgesWidth + $toolw );
-		}
-	}
-
-	return $inCAM->GetReply();
-
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

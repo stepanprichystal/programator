@@ -12,6 +12,7 @@ use strict;
 use warnings;
 use File::Copy;
 use List::Util qw[max min];
+use List::Util qw(first);
 
 #local library
 use aliased 'CamHelpers::CamLayer';
@@ -776,6 +777,29 @@ sub OnCheckGroupData {
 												. $h
 				);
 			}
+		}
+	}
+
+	# X) If IPC3 request in IS, check if exist at least one IPC3 coupons, max 3
+	my $ipc3type = $defaultInfo->GetPcbBaseInfo()->{"ipc_class_3"};
+	if ( defined $ipc3type ) {
+		my @allSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepName );
+
+		my $IPC3step = first { $_->{"stepName"} eq EnumsGeneral->Coupon_IPC3MAIN } @allSteps;
+
+		if ( !defined $IPC3step ) {
+
+			$dataMngr->_AddErrorResult(
+										"IPC-3 zákaznický kupón",
+										"V IS je požadavek na IPC-3 (typ: $ipc3type), ale v panelu nebyl dohledán kupón: "
+										  . EnumsGeneral->Coupon_IPC3MAIN
+										  . " Vlož do panelu 1-3 kopóny."
+			);
+		}
+		elsif ( $IPC3step->{"totalCnt"} < 1 || $IPC3step->{"totalCnt"} > 3 ) {
+			$dataMngr->_AddWarningResult( "IPC3 zákaznický kupón - špatný počet",
+										  "Při požadavku na IPC3, musí být v panelu minimálně 1 maximálně 3 kupóny. Aktuální počet: ".$IPC3step->{"totalCnt"} );
+
 		}
 	}
 
