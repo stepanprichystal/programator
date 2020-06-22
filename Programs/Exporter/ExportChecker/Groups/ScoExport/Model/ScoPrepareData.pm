@@ -70,6 +70,8 @@ sub OnPrepareGroupData {
 	my $custScoreCoreThick = $customerNote->ScoreCoreThick();
 	my $tifSco             = TifScore->new($jobId);
 
+	# 1 ) Score thickness
+
 	if ( defined $tifSco->GetScoreThick() ) {
 
 		$groupData->SetCoreThick( $tifSco->GetScoreThick() );
@@ -83,7 +85,8 @@ sub OnPrepareGroupData {
 		$groupData->SetCoreThick(0.3);           # default material rest is 0.3mm
 	}
 
-	$groupData->SetOptimize( ScoEnums->Optimize_YES );
+	
+	# 2) scoring mode
 
 	my $scoringType = ScoEnums->Type_CLASSIC;
 
@@ -95,13 +98,25 @@ sub OnPrepareGroupData {
 
 	$groupData->SetScoringType($scoringType);
 
-	my $scoreChecker = $defaultInfo->GetScoreChecker();
-	my $jump         = 0;
-	if ($scoreChecker) {
-		$jump = $scoreChecker->CustomerJumpScoring();
-	}
 
-	$groupData->SetCustomerJump($jump);
+	# 3) Customer jumpscoring
+	 
+	my $scoreChecker = $defaultInfo->GetScoreChecker();
+	my $jumpscoring         = 0;
+	if ($scoreChecker) {
+		$jumpscoring = $scoreChecker->CustomerJumpScoring();
+	}
+	$groupData->SetCustomerJump($jumpscoring);
+	
+	
+	# 4) Score optimization
+	if($jumpscoring){
+		$groupData->SetOptimize( ScoEnums->Optimize_NO );
+		
+	}else{
+		
+		$groupData->SetOptimize( ScoEnums->Optimize_YES );
+	}
 
 	return $groupData;
 }

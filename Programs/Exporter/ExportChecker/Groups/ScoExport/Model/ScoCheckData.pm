@@ -71,12 +71,13 @@ sub OnCheckGroupData {
 	if ( ( ( $defaultInfo->GetPcbThick() - $thick * 1000 ) / 2 ) <= $minScoreDepth ) {
 
 		$dataMngr->_AddWarningResult(
-			"Malá hloubka drážkování",
-			"Hloubka drážkování z každé strany bude: "
-			  . $scoringDepth
-			  . "µm. (tloušťka DPS: "
-			  . $defaultInfo->GetPcbThick()
-			  . "µm). Zmenši zůstatek materiálu po drážkování." );
+									  "Malá hloubka drážkování",
+									  "Hloubka drážkování z každé strany bude: "
+										. $scoringDepth
+										. "µm. (tloušťka DPS: "
+										. $defaultInfo->GetPcbThick()
+										. "µm). Zmenši zůstatek materiálu po drážkování."
+		);
 	}
 
 	my $opt = $groupData->GetOptimize();
@@ -131,6 +132,14 @@ sub OnCheckGroupData {
 			);
 		}
 
+	}
+
+	# 5) If customer jumscoring, optimize must be NO or Manual
+
+	if ( $groupData->GetCustomerJump() && $groupData->GetOptimize() ne ScoEnums->Optimize_NO ) {
+
+		$dataMngr->_AddErrorResult( "Jump-scoring zákazníka",
+			   "Pokud má zákazník na DPS vlastní jums-coring, nelze použít omptimalizaci drážky." . " Změň optimalizaci na: Manual nebo No" );
 	}
 
 }
