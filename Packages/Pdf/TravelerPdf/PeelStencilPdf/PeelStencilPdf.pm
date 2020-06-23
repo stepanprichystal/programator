@@ -26,6 +26,7 @@ use aliased 'Packages::Pdf::TravelerPdf::PeelStencilPdf::PeelStencilBuilder';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::CAMJob::Traveler::UniTravelerTmpl::Enums' => 'UniTrvlEnums';
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -49,10 +50,11 @@ sub BuildTemplate {
 
 	# 1) Init traveler
 
-	my @NClayers =
-	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_lcMill, EnumsGeneral->LAYERTYPE_nplt_lsMill ] );
+	my @NClayers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_lcMill, EnumsGeneral->LAYERTYPE_nplt_lsMill ] );
+	my $ISInfo = ( HegMethods->GetAllByPcbId($jobId) )[0];
 
-	if ( scalar(@NClayers) ) {
+	# if there is prepared rout layer and no customer peelable (customer peelable is always screen printing)
+	if ( scalar(@NClayers) && !defined $ISInfo->{"lak_typ"} ) {
 
 		my @bldrs = ();
 		foreach my $NC (@NClayers) {
@@ -72,7 +74,6 @@ sub BuildTemplate {
 
 	return $result;
 }
- 
 
 # Output stackup serialized Template to PDF file
 # Following values will be replaced:
@@ -216,6 +217,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			# 3) Output all orders in production
 			my @PDFOrders = ();
 			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
+
 			#@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
 
 			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );

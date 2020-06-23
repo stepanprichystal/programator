@@ -67,18 +67,18 @@ sub Build {
 		# Via hole can start just near track pad, because coupon contains alwazs only one (diff) or two (2 x SE in two pools)
 		# microstrip
 		my $origin  = $self->{"cpnSingle"}->GetMicrostripOrigin($stripVariant);
-		my $xPosCnt = $self->{"cpnSingle"}->GetMicrostripPosCnt($stripVariant, "x");
-		my $p2pDist = $cpnSingleSett->GetTrackPad2TrackPad() / 1000;              # in mm
+		my $xPosCnt = $self->{"cpnSingle"}->GetMicrostripPosCnt( $stripVariant, "x" );
+		my $p2pDist = $cpnSingleSett->GetTrackPad2TrackPad() / 1000;                     # in mm
 
-		my $tOrigin;                                                              # origin of track pad
+		my $tOrigin;                                                                     # origin of track pad
 		if ( $self->{"stripVariant"}->Pool() == 0 ) {
 
-			$tOrigin = PointLayout->new( $origin->X() + ($xPosCnt-1) * $p2pDist, $origin->Y() );
+			$tOrigin = PointLayout->new( $origin->X() + ( $xPosCnt - 1 ) * $p2pDist, $origin->Y() );
 		}
 		elsif ( $self->{"stripVariant"}->Pool() == 1 ) {
 
 			$tOrigin =
-			  PointLayout->new( $origin->X() + ($xPosCnt-1) * $p2pDist, $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
+			  PointLayout->new( $origin->X() + ( $xPosCnt - 1 ) * $p2pDist, $origin->Y() + $self->{"cpnSingleSett"}->GetPad2PadDist() / 1000 );
 		}
 
 		my $viaHoleOffset =
@@ -86,7 +86,7 @@ sub Build {
 		my $viaHoleArea = ( $cpnSingleSett->GetCpnSingleWidth() - 2 * $tOrigin->X() - 2 * $viaHoleOffset );
 
 		my $viaCnt = int( $viaHoleArea / ( $cpnSett->GetGNDViaHoleDX() / 1000 ) ) + 1;
-		my $areaLeft = $viaHoleArea % ( $cpnSett->GetGNDViaHoleDX() / 1000 );
+		my $areaLeft = ( $viaHoleArea %  $cpnSett->GetGNDViaHoleDX()  ) / 1000;
 
 		my $yPosTopVia =
 		  $tOrigin->Y() +
