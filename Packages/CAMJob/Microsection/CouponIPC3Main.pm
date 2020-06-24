@@ -439,7 +439,7 @@ sub __DrawCoupon {
 										   $TEXT_SIZE / 1000,
 										   ($TEXT_WIDTH),
 										   $mirror, 90,
-										   DrawEnums->Polar_NEGATIVE
+										   $l->{"gROWpolarity"} eq "positive" ? DrawEnums->Polar_NEGATIVE : DrawEnums->Polar_POSITIVE
 		);
 
 		$drawLayrNum->AddPrimitive($layerNeg);
