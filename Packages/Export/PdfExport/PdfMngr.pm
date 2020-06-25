@@ -37,14 +37,14 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
+	my $class       = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
-	my $packageId = __PACKAGE__;
+	my $packageId   = __PACKAGE__;
 	my $createFakeL = 1;
-	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL );
 	bless $self;
- 
+
 	$self->{"exportControl"}       = shift;    # if export pdf data contro
 	$self->{"controlStep"}         = shift;    # which step export
 	$self->{"controlLang"}         = shift;    # which language use
@@ -63,10 +63,9 @@ sub new {
 }
 
 sub Run {
-	my $self = shift;
+	my $self  = shift;
 	my $jobId = $self->{"jobId"};
-	
- 
+
 	# create folder for pdf files
 	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
 		mkdir( JobHelper->GetJobArchive($jobId) . "pdf" );
@@ -249,37 +248,36 @@ sub __ExportStackup {
 
 			unlink( $stackup->GetOutputPath() );
 
+			# 3) Output all orders in production
+			my @PDFOrders = ();
+			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
+			@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
 
-						# 3) Output all orders in production
-						my @PDFOrders = ();
-						my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
-						@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
-			
-						push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
-			
-						# Add all extro production
-						foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
-			
-							my @extraOrders = HegMethods->GetProducOrderByOrderId( $orderId, undef, "N" );
-							@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
-							push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
-						}
-			
-						my $serFromFile = FileHelper->ReadAsString($pSerTempl);
-			
-						foreach my $order (@PDFOrders) {
-			
-							$stackup->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
-			
-							my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
-			
-							unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
-								print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
-							}
-			
-							unlink( $stackup->GetOutputPath() );
-			
-						}
+			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
+
+			# Add all extro production
+			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
+
+				my @extraOrders = HegMethods->GetProducOrderByOrderId( $orderId, undef, "N" );
+				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
+				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
+			}
+
+			my $serFromFile = FileHelper->ReadAsString($pSerTempl);
+
+			foreach my $order (@PDFOrders) {
+
+				$stackup->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
+
+				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_stackup.pdf";
+
+				unless ( copy( $stackup->GetOutputPath(), $pPdf ) ) {
+					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
+				}
+
+				unlink( $stackup->GetOutputPath() );
+
+			}
 
 		}
 		else {
@@ -478,8 +476,8 @@ sub __ExportCvrlStencil {
 	if ( scalar(@NClayers) ) {
 
 		#my $lamType = ProcStckpEnums->LamType_CVRLPRODUCT;
-		 
-		my $ser          = "";
+
+		my $ser = "";
 		my $resultCreate = $travelerPdf->BuildTemplate( $inCAM, \$ser );
 
 		if ($resultCreate) {
@@ -494,6 +492,37 @@ sub __ExportCvrlStencil {
 			}
 
 			unlink( $travelerPdf->GetOutputPath() );
+
+			# 3) Output all orders in production
+			my @PDFOrders = ();
+			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
+			@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
+
+			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
+
+			# Add all extro production
+			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
+
+				my @extraOrders = HegMethods->GetProducOrderByOrderId( $orderId, undef, "N" );
+				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
+				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
+			}
+
+			my $serFromFile = FileHelper->ReadAsString($pSerTempl);
+
+			foreach my $order (@PDFOrders) {
+
+				$travelerPdf->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
+
+				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_cvrlstncl.pdf";
+
+				unless ( copy( $travelerPdf->GetOutputPath(), $pPdf ) ) {
+					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
+				}
+
+				unlink( $travelerPdf->GetOutputPath() );
+
+			}
 
 		}
 		else {
@@ -546,7 +575,7 @@ sub __ExportPeelStencil {
 	if ( scalar(@NClayers) ) {
 
 		#my $lamType = ProcStckpEnums->LamType_CVRLPRODUCT;
-		my $ser          = "";
+		my $ser = "";
 		my $resultCreate = $travelerPdf->BuildTemplate( $inCAM, \$ser );
 
 		if ($resultCreate) {
@@ -561,6 +590,37 @@ sub __ExportPeelStencil {
 			}
 
 			unlink( $travelerPdf->GetOutputPath() );
+
+			# 3) Output all orders in production
+			my @PDFOrders = ();
+			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
+			@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
+
+			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
+
+			# Add all extro production
+			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
+
+				my @extraOrders = HegMethods->GetProducOrderByOrderId( $orderId, undef, "N" );
+				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
+				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
+			}
+
+			my $serFromFile = FileHelper->ReadAsString($pSerTempl);
+
+			foreach my $order (@PDFOrders) {
+
+				$travelerPdf->OutputSerialized( $serFromFile, $order->{"orderId"}, $order->{"extraProducId"} );
+
+				my $pPdf = $pDirPdf . $order->{"orderId"} . "-DD-" . $order->{"extraProducId"} . "_peelstncl.pdf";
+
+				unless ( copy( $travelerPdf->GetOutputPath(), $pPdf ) ) {
+					print STDERR "Can not delete old pdf stackup file (" . $pPdf . "). Maybe file is still open.\n";
+				}
+				
+				unlink( $travelerPdf->GetOutputPath() );
+
+			}
 
 		}
 		else {
@@ -606,7 +666,7 @@ sub TaskItemsCount {
 	if ( $self->{"exportNCSpecial"} ) {
 		$totalCnt += 1;                                        # output nc special pdf
 	}
-	
+
 	if ( $self->{"exportCvrlStencil"} ) {
 		$totalCnt += 1;                                        # traveler coverlay stencil
 	}

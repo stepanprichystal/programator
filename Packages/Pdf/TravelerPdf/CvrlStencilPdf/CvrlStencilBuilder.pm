@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------------------#
-# Description: 
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Pdf::TravelerPdf::CvrlStencilPdf::CvrlStencilBuilder;
@@ -39,11 +39,10 @@ sub new {
 sub BuildTraveler {
 	my $self     = shift;
 	my $traveler = shift;
- 
-	$traveler->SetTravelerType(UniTrvlEnums->ProductType_STENCILFLEX);
+
+	$traveler->SetTravelerType( UniTrvlEnums->ProductType_STENCILFLEX );
 }
 
- 
 sub BuildOperations {
 	my $self     = shift;
 	my $traveler = shift;
@@ -51,8 +50,8 @@ sub BuildOperations {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
-	
-	my $side = $self->{"NCLayer"} =~ /c$/? "c" : "s";
+
+	my $side = $self->{"NCLayer"} =~ /c$/ ? "c" : "s";
 
 	# 1) Add material preparation
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
@@ -64,13 +63,12 @@ sub BuildOperations {
 
 	# 2) Add Drill program
 
-	my $CNCP = $jobId . "_sold$side".".";
+	my $CNCP = $jobId . "_sold$side" . ".";
 	my $p    = JobHelper->GetJobArchive($jobId) . "nc\\$CNCP";
-	$traveler->AddOperation( "Frézování šablony $CNCP", "$p" );
-
+	$traveler->AddOperation( "Frézování šablony pro coverlay $CNCP", "$p" );
 
 	# 3) Put it to press room
-	$traveler->AddOperation( "Předat na lis");
+	$traveler->AddOperation("Předat na lis");
 
 }
 
@@ -81,13 +79,14 @@ sub BuildInfoBoxes {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
-	
+
 	# Stencil side
-	my $side = $self->{"NCLayer"} =~ /c$/? "top" : "bot";
+	my $side = $self->{"NCLayer"} =~ /c$/ ? "top" : "bot";
 
 	# Add box PCB info
 	my $infoBox = $traveler->AddInfoBox("Info zakázka");
-	$infoBox->AddItem( "Typ desky",          "Šablona flex ".uc($side) );
+	$infoBox->AddItem( "Typ desky",          "Šablona pro " );
+	$infoBox->AddItem( "",                   "coverlay" . uc($side) );
 	$infoBox->AddItem( "Počet přířezů", "1" );
 
 	# Add box PCB info
@@ -97,9 +96,10 @@ sub BuildInfoBoxes {
 	my $h = abs( $lim{"yMax"} - $lim{"yMin"} );
 
 	my $infoMat = $traveler->AddInfoBox("Info materiál");
+
 	# put material in 2 rows
 	$infoMat->AddItem( "Materiál",          "Hnědá frézovací" );
-	$infoMat->AddItem( "",          "podložka" ); 
+	$infoMat->AddItem( "",                   "podložka" );
 	$infoMat->AddItem( "Tloušťka",         "0,8mm" );
 	$infoMat->AddItem( "Rozměr přířezu", "$w x $h mm" );
 
