@@ -1,11 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Table drawer which generates PDF output file
+# Description: Table drawer which generates prepared InCAM layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing;
-
-#use base('Packages::Export::NifExport::NifBuilders::NifBuilderBase');
+package Packages::Other::TableDrawing::DrawingBuilders::InCAMDrawing::InCAMDrawing;
 
 use Class::Interface;
 &implements('Packages::Other::TableDrawing::IDrawingBuilder');
@@ -18,6 +16,7 @@ use PDF::API2;
 #local library
 use aliased 'Packages::Other::TableDrawing::Enums' => 'EnumsDraw';
 use aliased 'Helpers::GeneralHelper';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -31,14 +30,14 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"units"} = shift;
+	$self->{"inCAM"}       = shift;    # InCAM library
+	$self->{"jobId"}       = shift;
+	$self->{"step"}        = shift;
+	$self->{"outputLayer"} = shift;    # Set layer name for generating table
 
-	$self->{"outputPath"}   = shift;    # Set if new PDF shoudl be created
-	$self->{"existPdfPath"} = shift;    # Set if update existing PDF
-
-	$self->{"mediaSize"} = shift;       # Set onl if new PDF page
-	$self->{"margin"}    = shift // 0;
-	$self->{"rotate"}    = shift;       # 90/180/270
+	$self->{"units"}      = shift;
+	$self->{"canvasSize"} = shift;        #
+	$self->{"margin"}     = shift // 0;
 
 	$self->{"coord"} = EnumsDraw->CoordSystem_LEFTBOT;
 
@@ -50,7 +49,6 @@ sub new {
 		die;
 	}
 
-	$self->{"pdf"}     = undef;
 	$self->{"counter"} = 1;
 
 	return $self;
@@ -74,8 +72,8 @@ sub GetCanvasSize {
 	my $self = shift;
 	my $considerMargin = shift // 1;
 
-	my $w = $self->{"mediaSize"}->[0];
-	my $h = $self->{"mediaSize"}->[1];
+	my $w = $self->{"canvasSize"}->[0];
+	my $h = $self->{"canvasSize"}->[1];
 
 	$w -= 2 * $self->{"margin"} if ($considerMargin);
 	$h -= 2 * $self->{"margin"} if ($considerMargin);
@@ -92,51 +90,19 @@ sub GetCanvasMargin {
 sub Init {
 	my $self = shift;
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# 1) Set step
+	CamHelper->SetStep( $self->{"step"} );
+
 	# Init PDF page
-	if ( $self->{"existPdfPath"} ) {
+	if ( !CamHelper->LayerExists( $self->{"outputLayer"} ) ) {
 
-		# Existing PDF file
-
-		die "PDF file: " . $self->{"existPdfPath"} . " doesn't exists" unless ( -e $self->{"existPdfPath"} );
-		$self->{"pdf"}  = PDF::API2->open( $self->{"existPdfPath"} );
-		$self->{"page"} = $self->{"pdf"}->openpage(1);
-		my @m = $self->{"page"}->get_mediabox;    # pdf limits in points
-
-		$self->{"mediaSize"} = [ abs( $m[2] - $m[0] ) * $self->{"unitConv"}, abs( $m[3] - $m[1] ) * $self->{"unitConv"} ];
-	}
-	else {
-
-		# New PDF file
-
-		die "PDF file already exists" if ( -e $self->{"outputPath"} );
-		die 'Media size is not defined' unless ( defined $self->{"mediaSize"} );
-		$self->{"pdf"} = PDF::API2->new( -file => $self->{"outputPath"} );
-		$self->{"page"} = $self->{"pdf"}->page();
-
-		$self->{"page"}->mediabox( $self->{"mediaSize"}->[0] / $self->{"unitConv"}, $self->{"mediaSize"}->[1] / $self->{"unitConv"} );
-
+		CamMatrix->CreateLayer( $inCAM, $jobId, $self->{"outputLayer"}, "document", "positive", 0 );
 	}
 
-	# Init some fonts
-	my $pResources = GeneralHelper->Root() . "\\Packages\\Other\\TableDrawing\\DrawingBuilders\\PDFDrawing\\Resources\\";
-
-	$self->{"fonts"} = {
-		EnumsDraw->FontFamily_ARIAL => {
-			EnumsDraw->Font_BOLD => $self->{"pdf"}->ttfont( $pResources . "arial_bold.ttf" ),
-			EnumsDraw->Font_NORMAL => $self->{"pdf"}->ttfont( $pResources . "arial.ttf" ),
-			EnumsDraw->Font_ITALIC => $self->{"pdf"}->corefont( 'Arial-Italic', -encoding => 'latin1' ),
-		},
-		EnumsDraw->FontFamily_TIMES => {
-										 EnumsDraw->Font_BOLD   => $self->{"pdf"}->corefont( 'Times-Bold',   -encoding => 'latin1' ),
-										 EnumsDraw->Font_NORMAL => $self->{"pdf"}->corefont( 'Times',        -encoding => 'latin1' ),
-										 EnumsDraw->Font_ITALIC => $self->{"pdf"}->corefont( 'Times-Italic', -encoding => 'latin1' ),
-		},
-	};
-
-	#$self->{"page"}->bleedbox( $self->{"mediaSize"}->[0] / $self->{"unitConv"}, $self->{"mediaSize"}->[1] / $self->{"unitConv"} );
-	#$self->{"page"}->cropbox( $self->{"mediaSize"}->[0] / $self->{"unitConv"}, $self->{"mediaSize"}->[1] / $self->{"unitConv"} );
-	#$self->{"page"}->artbox( $self->{"mediaSize"}->[0] / $self->{"unitConv"}, $self->{"mediaSize"}->[1] / $self->{"unitConv"} );
-
+	CamLayer->WorkLayer( $inCAM, $self->{"outputLayer"} );
 }
 
 sub DrawRectangle {
@@ -149,10 +115,13 @@ sub DrawRectangle {
 
 	my $box = $self->{"page"}->gfx();    # Render first (text is rendered on top of it)
 
-	$self->{"counter"}++;
+	 
 	if ( $backgStyle->GetBackgStyle() eq EnumsDraw->BackgStyle_SOLIDCLR ) {
-		my $clr = $backgStyle->GetBackgColor()->GetHexCode();
-		$box->fillcolor($clr);
+		my $val = $backgStyle->GetBackgColor()->GetGrayScale();
+		
+		
+		
+		 
 
 		#$box->fillcolor('#0000ff');
 	}
@@ -278,8 +247,8 @@ sub DrawTextMultiLine {
 	my $textFontFamily = shift;
 	my $textVAlign     = shift;
 	my $textHAlign     = shift;
-	
-	die "No text lines" unless(scalar( @{$textLines} ));
+
+	die "No text lines" unless ( scalar( @{$textLines} ) );
 
 	my $lH = $boxH / scalar( @{$textLines} );
 
@@ -325,11 +294,11 @@ sub DrawTextParagraph {
 
 	# Compute vertical aligment
 	$y = $boxStartY;
-	
+
 	# Adjust box width (cut box, bz longest word in text)
 	# Because last word on the end of line is put to this line even if whole match to box width
-	my $wordLen = length((sort{length($b) <=> length($a)}split(/\s/, $text))[0]);
-	$boxW -= $wordLen*$size ;
+	my $wordLen = length( ( sort { length($b) <=> length($a) } split( /\s/, $text ) )[0] );
+	$boxW -= $wordLen * $size;
 
 	$txt->textstart;
 

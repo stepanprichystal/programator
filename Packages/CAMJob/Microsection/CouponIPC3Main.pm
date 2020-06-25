@@ -5,11 +5,14 @@
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Microsection::CouponIPC3Main;
 
+use Class::Interface;
+&implements('Packages::CAMJob::Microsection::ICouponDrillMap');
+
 #3th party library
 use strict;
 use warnings;
 use JSON;
-use List::Util qw[max min];
+use List::Util qw[max min first];
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -89,9 +92,11 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"step"}  = shift // EnumsGeneral->Coupon_IPC3MAIN;
 
-	$self->{"step"} = EnumsGeneral->Coupon_IPC3MAIN;
-
+	# Init holes types and compute holes positions
+	$self->{"holes"}    = [ $self->GetHoles(1) ];
+	$self->{"holesPos"} = [ $self->__GetLayoutHoles() ];
 	return $self;
 }
 
@@ -107,26 +112,33 @@ sub CreateCoupon {
 
 	return 0 unless ( scalar(@uniqueSR) );
 
-	# 1) Get holes types and compute holes positions
-	my @holes    = $self->GetHoles(1);
-	my @holesPos = $self->__GetLayoutHoles( \@holes );
-
 	# 2) Create coupon step
-	my ( $wCpn, $hCpn ) = $self->__GetLayoutDimensions( \@holes, \@holesPos );
+	my ( $wCpn, $hCpn ) = $self->__GetLayoutDimensions();
 
 	my $step = SRStep->new( $inCAM, $jobId, $self->{"step"} );
 	$step->Create( $wCpn, $hCpn, 0, 0, 0, 0 );
 	CamHelper->SetStep( $inCAM, $self->{"step"} );
 
-	$self->__DrawCoupon( $wCpn, $hCpn, \@holes, \@holesPos );
+	$self->__DrawCoupon( $wCpn, $hCpn, );
 
 	return $result;
 
 }
 
+sub GetStep {
+	my $self = shift;
+
+	return $self->{"step"};
+}
+
 # Return array of holes where each array item contains:
-# - tool = info about tool drill size + depth
-# - layer = info about NC layer
+# - tools = array with tool in specific layer
+#           - drillSize
+#           - drillDepth
+# - layer = hash sttructure with info about NC layer
+#           - "gROWname"
+#           - "NCSigStartOrder"
+#           - etc....
 sub GetHoles {
 	my $self       = shift;
 	my $addDefHole = shift;    # add 1mm plt thorugh hole if not exists in PCB
@@ -159,7 +171,7 @@ sub GetHoles {
 			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s, $l->{"gROWname"}, 1 );
 			next if ( $hist{"total"} == 0 );
 
-			my $unitDTM = UniDTM->new( $inCAM, $jobId, $s, $l->{"gROWname"}, 1 );
+			my $unitDTM = UniDTM->new( $inCAM, $jobId, $s, $l->{"gROWname"}, 1, 0, 0 );
 			my $uniTool = $unitDTM->GetMinTool( EnumsDrill->TypeProc_HOLE, 1 );
 
 			if ( !defined $minTool || $uniTool->GetDrillSize() < $minTool->GetDrillSize() ) {
@@ -171,8 +183,13 @@ sub GetHoles {
 
 			my %inf = ();
 			$inf{"layer"} = $l;
-			$inf{"tool"}->{"drillSize"} = $minTool->GetDrillSize();
-			$inf{"tool"}->{"depth"} = defined $minTool->GetDepth() ? $minTool->GetDepth() : 0;
+			$inf{"tools"} = [];    # So far we are interested in only one tool per layer
+
+			my %toolInf = ();
+			$toolInf{"drillSize"} = $minTool->GetDrillSize();
+			$toolInf{"drillDepth"} = defined $minTool->GetDepth() ? $minTool->GetDepth() : 0;
+
+			push( @{ $inf{"tools"} }, \%toolInf );
 
 			push( @holes, \%inf );
 
@@ -181,40 +198,90 @@ sub GetHoles {
 
 	# Add default hole 1mm
 	if ($addDefHole) {
-		my $inf =
-		  grep { $_->{"layer"}->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill && $_->{"tool"}->{"drillSize"} == 1000 } @holes;
+		my @tool1MM =
+		  grep { $_->{"drillSize"} == 1000 }
+		  map  { @{ $_->{"tools"} } }
+		  grep { $_->{"layer"}->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill } @holes;
 
 		my @through = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
 		CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@through );
 		@through = grep { $_->{"NCSigStartOrder"} == 1 } @through;
 
-		if ( !scalar($inf) && scalar(@through) ) {
-			my %inf = ();
-			$inf{"layer"}               = $through[0];
-			$inf{"tool"}->{"drillSize"} = 1000;
-			$inf{"tool"}->{"depth"}     = 0;
+		if ( !scalar(@tool1MM) && scalar(@through) ) {
 
-			push( @holes, \%inf );
+			# Find existing layer type
+			my $hole = first { $_->{"layer"}->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill } @holes;
+
+			my %infTool = ();
+			$infTool{"drillSize"}  = 1000;
+			$infTool{"drillDepth"} = 0;
+
+			push( @{ $hole->{"tools"} }, \%infTool );
+
 		}
 	}
 
-	# Sort holes by size
+	# Sort holes in each layer group
+	for ( my $i = 0 ; $i < scalar(@holes) ; $i++ ) {
+		$holes[$i]->{"tools"} = [ sort { $b->{"drillSize"} <=> $a->{"drillSize"} } @{ $holes[$i]->{"tools"} } ];
+	}
 
-	@holes = sort { $b->{"tool"}->{"drillSize"} <=> $a->{"tool"}->{"drillSize"} } @holes;
+	# Sort holes by size by foirst hole in layer
+	@holes = sort { $b->{"tools"}->[0]->{"drillSize"} <=> $a->{"tools"}->[0]->{"drillSize"} } @holes;
 	return @holes;
 }
 
-sub __DrawCoupon {
-	my $self     = shift;
-	my $wCpn     = shift;
-	my $hCpn     = shift;
-	my @holes    = @{ shift(@_) };
-	my @holesPos = @{ shift(@_) };
+# Return array of postions for specific, drillSize + layer name
+sub GetHoleCouponPos {
+	my $self      = shift;
+	my $layer     = shift;
+	my $drillSize = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my ( $wHoles, $hHoles ) = $self->__GetLayoutHolesLimits( \@holes, \@holesPos );
+	my @points = ();
+
+	my @holes    = @{ $self->{"holes"} };
+	my @holesPos = @{ $self->{"holesPos"} };
+
+	my $hOriX = ( $LR_AREA_WIDTH + $MIDDLE_AREA_MARGIN + $holesPos[0]->{"tools"}->[0]->{"drillSize"} / 2 + $HOLE_RING ) / 1000;
+	my $hOriY = ( $MIDDLE_AREA_MARGIN + max( map { $_->{"drillSize"} } map { @{ $_->{"tools"} } } @holes ) / 2 + $HOLE_RING ) / 1000;
+
+	my $drawSgnlPads = SymbolDrawing->new( $inCAM, $jobId, Point->new( $hOriX, $hOriY ) );
+
+	foreach my $holeInf (@holesPos) {
+
+		if ( $holeInf->{"layer"}->{"gROWname"} eq $layer ) {
+
+			foreach my $tool ( @{ $holeInf->{"tools"} } ) {
+
+				if ( $tool->{"drillSize"} eq $drillSize ) {
+
+					@points = map { Point->new( $hOriX + $_->X(), $hOriY + $_->Y() ) } @{ $tool->{"positions"} };
+					last;
+				}
+			}
+		}
+
+		last if ( scalar(@points) );
+	}
+
+	return @points;
+}
+
+sub __DrawCoupon {
+	my $self = shift;
+	my $wCpn = shift;
+	my $hCpn = shift;
+
+	my @holes    = @{ $self->{"holes"} };
+	my @holesPos = @{ $self->{"holesPos"} };
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my ( $wHoles, $hHoles ) = $self->__GetLayoutHolesLimits();
 
 	# Define countour polyline
 	my @contourP = ();
@@ -259,26 +326,30 @@ sub __DrawCoupon {
 	# 2) Draw pads for ncdrill to signal layers
 	# ------------------------------------------------------------------------------------------------
 
-	my $hOriX = ( $LR_AREA_WIDTH + $MIDDLE_AREA_MARGIN + $holesPos[0]->{"hole"}->{"tool"}->{"drillSize"} / 2 + $HOLE_RING ) / 1000;
-	my $hOriy = ( $MIDDLE_AREA_MARGIN + max( map { $_->{"tool"}->{"drillSize"} } @holes ) / 2 + $HOLE_RING ) / 1000;
+	#my $hOriX = ( $LR_AREA_WIDTH + $MIDDLE_AREA_MARGIN + $holesPos[0]->{"hole"}->{"tools"}->[0]->{"drillSize"} / 2 + $HOLE_RING ) / 1000;
+	#my $hOriy = ( $MIDDLE_AREA_MARGIN + max( map { $_->{"drillSize"} } map { @{$_->{"tools"}} } @holes ) / 2 + $HOLE_RING ) / 1000;
 
-	my $drawSgnlPads = SymbolDrawing->new( $inCAM, $jobId, Point->new( $hOriX, $hOriy ) );
+	my $drawSgnlPads = SymbolDrawing->new( $inCAM, $jobId, Point->new( 0, 0 ) );
 
 	foreach my $holeInf (@holesPos) {
 
-		foreach my $hPos ( @{ $holeInf->{"positions"} } ) {
+		foreach my $toolInf ( @{ $holeInf->{"tools"} } ) {
 
-			my $padNeg =
-			  PrimitivePad->new( "r" . ( $holeInf->{"hole"}->{"tool"}->{"drillSize"} + 2 * $HOLE_RING + $GND_ISOLATION ),
-								 $hPos, 0, DrawEnums->Polar_NEGATIVE );
+			my @pos = $self->GetHoleCouponPos( $holeInf->{"layer"}->{"gROWname"}, $toolInf->{"drillSize"} );
 
-			$drawSgnlPads->AddPrimitive($padNeg);
+			foreach my $pPos (@pos) {
 
-			my $pad =
-			  PrimitivePad->new( "r" . ( $holeInf->{"hole"}->{"tool"}->{"drillSize"} + 2 * $HOLE_RING ), $hPos, 0, DrawEnums->Polar_POSITIVE );
+				my $padNeg =
+				  PrimitivePad->new( "r" . ( $toolInf->{"drillSize"} + 2 * $HOLE_RING + $GND_ISOLATION ), $pPos, 0, DrawEnums->Polar_NEGATIVE );
 
-			$drawSgnlPads->AddPrimitive($pad);
+				$drawSgnlPads->AddPrimitive($padNeg);
 
+				my $pad =
+				  PrimitivePad->new( "r" . ( $toolInf->{"drillSize"} + 2 * $HOLE_RING ), $pPos, 0, DrawEnums->Polar_POSITIVE );
+
+				$drawSgnlPads->AddPrimitive($pad);
+
+			}
 		}
 	}
 
@@ -489,27 +560,41 @@ sub __DrawCoupon {
 
 	foreach my $holeInf (@holesPos) {
 
-		my $drawDrillPads = SymbolDrawing->new( $inCAM, $jobId, Point->new( $hOriX, $hOriy ) );
-		CamLayer->WorkLayer( $inCAM, $holeInf->{"hole"}->{"layer"}->{"gROWname"} );
-		foreach my $hPos ( @{ $holeInf->{"positions"} } ) {
+		my $drawDrillPads = SymbolDrawing->new( $inCAM, $jobId, Point->new( 0, 0 ) );
+		CamLayer->WorkLayer( $inCAM, $holeInf->{"layer"}->{"gROWname"} );
 
-			my $pad =
-			  PrimitivePad->new( "r" . ( $holeInf->{"hole"}->{"tool"}->{"drillSize"} ), $hPos, 0, DrawEnums->Polar_POSITIVE );
+		my $defDTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, "panel", $holeInf->{"layer"}->{"gROWname"}, 1 );
 
-			$drawDrillPads->AddPrimitive($pad);
+		foreach my $toolInf ( @{ $holeInf->{"tools"} } ) {
 
+			my @pos = $self->GetHoleCouponPos( $holeInf->{"layer"}->{"gROWname"}, $toolInf->{"drillSize"} );
+
+			foreach my $pPos (@pos) {
+				my $pad =
+				  PrimitivePad->new( "r" . ( $toolInf->{"drillSize"} ), $pPos, 0, DrawEnums->Polar_POSITIVE );
+
+				$drawDrillPads->AddPrimitive($pad);
+			}
 		}
 
 		$drawDrillPads->Draw();
 
-		my $defDTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, "panel", $holeInf->{"hole"}->{"layer"}->{"gROWname"}, 1 );
+		# Set Depths
 
-		my @tools = CamDTM->GetDTMTools( $inCAM, $jobId, $self->{"step"}, $holeInf->{"hole"}->{"layer"}->{"gROWname"} );
-		$tools[0]->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = $holeInf->{"hole"}->{"tool"}->{"depth"};
+		my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, $self->{"step"}, $holeInf->{"layer"}->{"gROWname"} );
 
-		CamDTM->SetDTMTools( $inCAM, $jobId, $self->{"step"}, $holeInf->{"hole"}->{"layer"}->{"gROWname"}, \@tools, $defDTMType );
+		foreach my $toolInf ( @{ $holeInf->{"tools"} } ) {
 
-		# set depths
+			if ( $toolInf->{"drillDepth"} ) {
+
+				my $DTMTool = first { $_->{"gTOOLdrill_size"} == $toolInf->{"drillSize"} } @DTMTools;
+
+				$DTMTool->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = $toolInf->{"drillDepth"};
+			}
+		}
+
+		CamDTM->SetDTMTools( $inCAM, $jobId, $self->{"step"}, $holeInf->{"layer"}->{"gROWname"}, \@DTMTools, $defDTMType );
+
 	}
 
 	# ------------------------------------------------------------------------------------------------
@@ -522,19 +607,24 @@ sub __DrawCoupon {
 
 	# Unmask holes
 
-	my $drawUnmaskPads = SymbolDrawing->new( $inCAM, $jobId, Point->new( $hOriX, $hOriy ) );
+	my $drawUnmaskPads = SymbolDrawing->new( $inCAM, $jobId, Point->new( 0, 0 ) );
 
 	foreach my $holeInf (@holesPos) {
 
-		foreach my $hPos ( @{ $holeInf->{"positions"} } ) {
+		foreach my $toolInf ( @{ $holeInf->{"tools"} } ) {
 
-			my $pad =
-			  PrimitivePad->new( "r" . ( $holeInf->{"hole"}->{"tool"}->{"drillSize"} + 2 * $HOLE_RING + 2 * $HOLE_UNMASK ),
-								 $hPos, 0, DrawEnums->Polar_POSITIVE );
+			my @pos = $self->GetHoleCouponPos( $holeInf->{"layer"}->{"gROWname"}, $toolInf->{"drillSize"} );
 
-			$drawUnmaskPads->AddPrimitive($pad);
+			foreach my $pPos (@pos) {
+				my $pad =
+				  PrimitivePad->new( "r" . ( $toolInf->{"drillSize"} + 2 * $HOLE_RING + 2 * $HOLE_UNMASK ), $pPos, 0, DrawEnums->Polar_POSITIVE );
+
+				$drawUnmaskPads->AddPrimitive($pad);
+			}
 		}
+
 	}
+
 	$drawUnmaskPads->Draw();
 
 	# UnMask mount holes
@@ -635,14 +725,15 @@ sub __DrawCoupon {
 # Return dimension of complete coupon
 # Dimension are dynamic and depands on drill hole amount, text sizes, etc..
 sub __GetLayoutDimensions {
-	my $self     = shift;
-	my @holes    = @{ shift(@_) };
-	my @holesPos = @{ shift(@_) };
+	my $self = shift;
+
+	my @holes    = @{ $self->{"holes"} };
+	my @holesPos = @{ $self->{"holesPos"} };
 
 	my $xStart = 0;
 	my $xEnd   = 0;
 
-	my ( $wHoles, $hHoles ) = $self->__GetLayoutHolesLimits( \@holes, \@holesPos );
+	my ( $wHoles, $hHoles ) = $self->__GetLayoutHolesLimits();
 
 	$xEnd += $LR_AREA_WIDTH;
 	$xEnd += $MIDDLE_AREA_MARGIN;
@@ -671,37 +762,52 @@ sub __GetLayoutDimensions {
 # First hole starts in 0,0
 # First line y = 0, next lines y > 0
 sub __GetLayoutHoles {
-	my $self  = shift;
-	my @holes = @{ shift(@_) };
+	my $self = shift;
+
+	my @holes = @{ $self->{"holes"} };
 
 	my @holesPos = ();
 
 	my $posX = 0;
 
-	for ( my $j = 0 ; $j < scalar(@holes) ; $j++ ) {
+	for ( my $i = 0 ; $i < scalar(@holes) ; $i++ ) {
 
-		my $tool = $holes[$j]->{"tool"};
+		my @tools = @{ $holes[$i]->{"tools"} };
 
-		if ( $j > 0 ) {
-			$posX += $MIN_HOLE_SPACE / 1000 + $tool->{"drillSize"} / 1000 / 2 + $HOLE_RING / 1000;
+		my %gInf = ();
+		$gInf{"layer"} = $holes[$i]->{"layer"};
+		$gInf{"tools"} = [];
+
+		for ( my $j = 0 ; $j < scalar(@tools) ; $j++ ) {
+
+			my $tool = $tools[$j];
+
+			if ( $i > 0 || $j > 0 ) {
+				$posX += $MIN_HOLE_SPACE / 1000 + $tool->{"drillSize"} / 1000 / 2 + $HOLE_RING / 1000;
+			}
+
+			my $posY     = 0;
+			my @posLines = ();
+			for ( my $i = 0 ; $i < $HOLE_LINES ; $i++ ) {
+
+				push( @posLines, Point->new( $posX, $posY ) );
+
+				# Find diameter of biigest hole
+				my $maxDim = max( map { $_->{"drillSize"} } map { @{ $_->{"tools"} } } @holes );
+				$posY += $maxDim / 1000 + 2 * $HOLE_RING / 1000 + $MIN_HOLE_SPACE / 1000;
+			}
+
+			my %infTool = ();
+			$infTool{"drillSize"}  = $tool->{"drillSize"};
+			$infTool{"drillDepth"} = $tool->{"drillDepth"};
+			$infTool{"positions"}  = \@posLines;
+
+			$posX += $tool->{"drillSize"} / 1000 / 2 + $HOLE_RING / 1000;
+
+			push( @{ $gInf{"tools"} }, \%infTool );
 		}
 
-		my $posY     = 0;
-		my @posLines = ();
-		for ( my $i = 0 ; $i < $HOLE_LINES ; $i++ ) {
-
-			push( @posLines, Point->new( $posX, $posY ) );
-
-			# Find diameter of biigest hole
-			my $maxDim = max( map { $_->{"tool"}->{"drillSize"} } @holes );
-			$posY += $maxDim / 1000 + 2 * $HOLE_RING / 1000 + $MIN_HOLE_SPACE / 1000;
-		}
-
-		my %inf = ( "hole" => $holes[$j], "positions" => \@posLines );
-		$posX += $tool->{"drillSize"} / 1000 / 2 + $HOLE_RING / 1000;
-
-		push( @holesPos, \%inf );
-
+		push( @holesPos, \%gInf );
 	}
 
 	return @holesPos;
@@ -709,16 +815,17 @@ sub __GetLayoutHoles {
 
 # Return width and height of rectangle, which is created by limits of all drill holes (+ theirs Cu rings)
 sub __GetLayoutHolesLimits {
-	my $self     = shift;
-	my @holes    = @{ shift(@_) };
-	my @holesPos = @{ shift(@_) };
+	my $self = shift;
+
+	my @holes    = @{ $self->{"holes"} };
+	my @holesPos = @{ $self->{"holesPos"} };
 
 	my $w =
-	  ( $holesPos[0]->{"hole"}->{"tool"}->{"drillSize"} / 2 + $HOLE_RING ) / 1000 +
-	  ( $holesPos[-1]->{"hole"}->{"tool"}->{"drillSize"} / 2 + $HOLE_RING ) / 1000 +
-	  $holesPos[-1]->{"positions"}->[0]->X();
+	  ( $holesPos[0]->{"tools"}->[0]->{"drillSize"} / 2 + $HOLE_RING ) / 1000 +
+	  ( $holesPos[-1]->{"tools"}->[0]->{"drillSize"} / 2 + $HOLE_RING ) / 1000 +
+	  $holesPos[-1]->{"tools"}->[-1]->{"positions"}->[-1]->X();
 
-	my $maxDim = max( map { $_->{"tool"}->{"drillSize"} } @holes );
+	my $maxDim = max( map { $_->{"drillSize"} } map { @{ $_->{"tools"} } } @holes );
 
 	my $h = ( $HOLE_LINES * ( $maxDim + 2 * $HOLE_RING ) + ( $HOLE_LINES - 1 ) * $MIN_HOLE_SPACE ) / 1000;
 

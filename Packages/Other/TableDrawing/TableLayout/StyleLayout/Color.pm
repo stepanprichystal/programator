@@ -63,6 +63,21 @@ sub GetHexCode {
 
 }
 
+# Coonver color to gray scale
+# Return value 0-255
+# 0 - black
+# 255 - white
+sub GetGrayScale {
+	my $self = shift;
+ 
+	my $val =   0.30 * $self->{"R"} + 0.59 * $self->{"G"} + 0.11 * $self->{"B"};
+
+	return $val;
+}
+
+
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

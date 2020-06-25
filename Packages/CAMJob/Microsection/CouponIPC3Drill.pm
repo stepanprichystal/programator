@@ -5,6 +5,9 @@
 #-------------------------------------------------------------------------------------------#
 package Packages::CAMJob::Microsection::CouponIPC3Drill;
 
+use Class::Interface;
+&implements('Packages::CAMJob::Microsection::ICouponDrillMap');
+
 #3th party library
 use strict;
 use warnings;
@@ -80,8 +83,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-
-	$self->{"step"} = EnumsGeneral->Coupon_DRILL;
+	$self->{"step"}  = shift // EnumsGeneral->Coupon_DRILL;
 
 	$self->{"holes"}         = [ $self->GetHoles() ];
 	$self->{"holesGroupPos"} = [ $self->__GetLayoutHoles() ];
@@ -117,8 +119,13 @@ sub CreateCoupon {
 }
 
 # Return array of holes where each array item contains:
-# - tool = info about tool drill size + depth
-# - layer = info about NC layer
+# - tools = array with tool in specific layer
+#           - drillSize
+#           - drillDepth
+# - layer = hash sttructure with info about NC layer
+#           - "gROWname"
+#           - "NCSigStartOrder"
+#           - etc....
 sub GetHoles {
 	my $self       = shift;
 	my $addDefHole = shift;    # add 1mm plt thorugh hole if not exists in PCB
@@ -127,20 +134,18 @@ sub GetHoles {
 	my $jobId = $self->{"jobId"};
 
 	my @layers = CamDrilling->GetNCLayersByTypes(
-		$inCAM, $jobId,
-		[
-		   EnumsGeneral->LAYERTYPE_plt_nDrill,        EnumsGeneral->LAYERTYPE_plt_bDrillTop,
-		   EnumsGeneral->LAYERTYPE_plt_bDrillBot,     EnumsGeneral->LAYERTYPE_plt_nFillDrill,
-		   EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
-		   EnumsGeneral->LAYERTYPE_plt_cDrill,        EnumsGeneral->LAYERTYPE_plt_cFillDrill
-		]
+												  $inCAM, $jobId,
+												  [
+													 EnumsGeneral->LAYERTYPE_plt_nDrill,        EnumsGeneral->LAYERTYPE_plt_bDrillTop,
+													 EnumsGeneral->LAYERTYPE_plt_bDrillBot,     EnumsGeneral->LAYERTYPE_plt_nFillDrill,
+													 EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
+													 EnumsGeneral->LAYERTYPE_plt_cDrill,        EnumsGeneral->LAYERTYPE_plt_cFillDrill
+												  ]
 	);
 
 	#my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_plt_bDrillTop ] );
- 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
-	@layers = sort{ abs($b->{"NCSigEndOrder"} - $b->{"NCSigStartOrder"}) <=> abs($a->{"NCSigEndOrder"} - $a->{"NCSigStartOrder"}) } @layers;
-
-
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+	@layers = sort { abs( $b->{"NCSigEndOrder"} - $b->{"NCSigStartOrder"} ) <=> abs( $a->{"NCSigEndOrder"} - $a->{"NCSigStartOrder"} ) } @layers;
 
 	my @uniqueSR = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 
@@ -157,7 +162,7 @@ sub GetHoles {
 			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s, $l->{"gROWname"}, 1 );
 			next if ( $hist{"total"} == 0 );
 
-			my $unitDTM = UniDTM->new( $inCAM, $jobId, $s, $l->{"gROWname"}, 1 );
+			my $unitDTM = UniDTM->new( $inCAM, $jobId, $s, $l->{"gROWname"}, 1, 0, 0 );
 
 			my @uniTools = $unitDTM->GetUniqueTools();
 
@@ -179,21 +184,21 @@ sub GetHoles {
 
 		}
 	}
- 
 
 	return @holesGroup;
 }
 
-sub GetHoleCpnPos {
+# Return array of postions for specific, drillSize + layer name
+sub GetHoleCouponPos {
 	my $self      = shift;
 	my $layer     = shift;
 	my $drillSize = shift;
 
-	my $p;
+	my @points = ();
 
 	my @holesGroupPos = @{ $self->{"holesGroupPos"} };
 
-	my $groupOriX = ( $CPN_MARGIN + $TEXT_AREA_WIDTH   + $GROUP_MARGIN ) / 1000;
+	my $groupOriX = ( $CPN_MARGIN + $TEXT_AREA_WIDTH + $GROUP_MARGIN ) / 1000;
 	my $groupOriY = ( $CPN_MARGIN + $GROUP_MARGIN ) / 1000;
 
 	if ( $MIN_CPN_HEIGHT > ( $holesGroupPos[0]->{"gHeight"} + 2 * $CPN_MARGIN + $GROUP_MARGIN ) ) {
@@ -207,19 +212,25 @@ sub GetHoleCpnPos {
 
 			if ( $groupInf->{"layer"}->{"gROWname"} eq $layer && $toolInf->{"drillSize"} eq $drillSize ) {
 
-				$p = Point->new( $groupOriX + $toolInf->{"pos"}->X() / 1000, $groupOriY + $toolInf->{"pos"}->Y() / 1000 );
+				@points = ( Point->new( $groupOriX + $toolInf->{"pos"}->X() / 1000, $groupOriY + $toolInf->{"pos"}->Y() / 1000 ) );
 				last;
 			}
 
 		}
 
-		last if ( defined $p );
+		last if ( scalar(@points) );
 
-		$groupOriX += ( $groupInf->{"gWidth"} + $GROUP_MARGIN + $GROUP_DIST + $TEXT_AREA_WIDTH +   $GROUP_MARGIN ) / 1000;
+		$groupOriX += ( $groupInf->{"gWidth"} + $GROUP_MARGIN + $GROUP_DIST + $TEXT_AREA_WIDTH + $GROUP_MARGIN ) / 1000;
 
 	}
 
-	return $p;
+	return @points;
+}
+
+sub GetStep {
+	my $self = shift;
+
+	return $self->{"step"};
 }
 
 sub __DrawCoupon {
@@ -260,7 +271,7 @@ sub __DrawCoupon {
 
 		foreach my $toolInf ( @{ $groupInf->{"tools"} } ) {
 
-			my $pPos = $self->GetHoleCpnPos( $groupInf->{"layer"}->{"gROWname"}, $toolInf->{"drillSize"} );
+			my $pPos = ( $self->GetHoleCouponPos( $groupInf->{"layer"}->{"gROWname"}, $toolInf->{"drillSize"} ) )[0];
 
 			my $padNeg =
 			  PrimitivePad->new( "r" . ( $toolInf->{"drillSize"} + 2 * $HOLE_RING + $GND_ISOLATION ), $pPos, 0, DrawEnums->Polar_NEGATIVE );
@@ -298,7 +309,7 @@ sub __DrawCoupon {
 		$drawBackgText->AddPrimitive($textAreaP);
 
 		# Add gaps
-		$groupOriX += ( $TEXT_AREA_WIDTH +   $GROUP_MARGIN + $groupInf->{"gWidth"} + $GROUP_MARGIN + $GROUP_DIST ) / 1000;
+		$groupOriX += ( $TEXT_AREA_WIDTH + $GROUP_MARGIN + $groupInf->{"gWidth"} + $GROUP_MARGIN + $GROUP_DIST ) / 1000;
 	}
 
 	$drawBackgText->Draw();
@@ -372,7 +383,7 @@ sub __DrawCoupon {
 
 			#$drawLayrNum->AddPrimitive($layer);
 
-			$groupTextOriX += ( $TEXT_AREA_WIDTH +   $GROUP_MARGIN + $groupInf->{"gWidth"} + $GROUP_MARGIN + $GROUP_DIST ) / 1000;
+			$groupTextOriX += ( $TEXT_AREA_WIDTH + $GROUP_MARGIN + $groupInf->{"gWidth"} + $GROUP_MARGIN + $GROUP_DIST ) / 1000;
 
 		}
 
@@ -394,7 +405,7 @@ sub __DrawCoupon {
 
 		foreach my $toolInf ( @{ $groupInf->{"tools"} } ) {
 
-			my $pPos = $self->GetHoleCpnPos( $groupInf->{"layer"}->{"gROWname"}, $toolInf->{"drillSize"} );
+			my $pPos = ( $self->GetHoleCouponPos( $groupInf->{"layer"}->{"gROWname"}, $toolInf->{"drillSize"} ) )[0];
 
 			my $pad =
 			  PrimitivePad->new( "r" . ( $toolInf->{"drillSize"} ), $pPos, 0, DrawEnums->Polar_POSITIVE );
@@ -436,7 +447,7 @@ sub __DrawCoupon {
 
 		foreach my $toolInf ( @{ $groupInf->{"tools"} } ) {
 
-			my $pPos = $self->GetHoleCpnPos( $groupInf->{"layer"}->{"gROWname"}, $toolInf->{"drillSize"} );
+			my $pPos = ( $self->GetHoleCouponPos( $groupInf->{"layer"}->{"gROWname"}, $toolInf->{"drillSize"} ) )[0];
 
 			my $pad =
 			  PrimitivePad->new( "r" . ( $toolInf->{"drillSize"} + 2 * $HOLE_RING + 2 * $HOLE_UNMASK ), $pPos, 0, DrawEnums->Polar_POSITIVE );
@@ -486,7 +497,7 @@ sub __GetLayoutDimensions {
 		my $g = $holesGroupPos[$i];
 
 		$xEnd += $TEXT_AREA_WIDTH;
-	 
+
 		$xEnd += $GROUP_MARGIN;
 		$xEnd += $g->{"gWidth"};
 		$xEnd += $GROUP_MARGIN;
@@ -579,7 +590,7 @@ sub __GetLayoutHoles {
 					push( @{ $gInf{"tools"} }, \%tInf );
 				}
 
-				$curX += 2 * $HOLE_RING + $MIN_HOLE_SPACE + $maxDSize if($ci < $hPerLine-1);
+				$curX += 2 * $HOLE_RING + $MIN_HOLE_SPACE + $maxDSize if ( $ci < $hPerLine - 1 );
 			}
 
 			$gInf{"gWidth"} = $curX + $maxDSize / 2 + $HOLE_RING;
