@@ -30,8 +30,9 @@ sub GetCompensation {
 
 	my %compensationAttr = ();
 
-	#print STDERR "MED $cuThickness $constrClass";
-
+	# Temporary solution 12µm Cu have same compensation as 9µm
+	$cuThickness = 9 if($cuThickness == 12);
+	
 	if ( !$isPlated ) {
 		%compensationAttr = (
 							  '5' => {
