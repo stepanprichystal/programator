@@ -55,6 +55,7 @@ use constant {
 			   Layers_V16 => "v16"
 };
 
+
 # Define type of NC layers, as we defined for opur purposes
 use constant {
 	LAYERTYPE_plt_nDrill        => "plt_nDrill",           # normall through holes plated
@@ -117,9 +118,9 @@ use constant {
 # names of special coupon steps
 use constant {
 	Coupon_IMPEDANCE => 'coupon_impedance',    # coupon for impedance measurement
-	Coupon_DRILL     => => 'coupon_drill',      # coupon for drill hole measrument
-	  Coupon_IPC3MAIN   => => 'coupon_ipc3main',      # coupon for IPC class 3 - contain holes + lines
-	  Coupon_IPC3DRILL   => => 'coupon_ipc3drill'      # coupon for IPC class 3 - contain all plated holes
+	Coupon_DRILL     => 'coupon_drill',      # coupon for drill hole measrument
+	Coupon_IPC3MAIN => 'coupon_ipc3main',      # coupon for IPC class 3 - contain holes + lines
+	Coupon_IPC3DRILL => 'coupon_ipc3drill'      # coupon for IPC class 3 - contain all plated holes
 };
 
 1;

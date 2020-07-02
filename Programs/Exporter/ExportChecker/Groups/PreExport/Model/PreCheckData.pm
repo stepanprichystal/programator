@@ -58,8 +58,6 @@ sub OnCheckGroupData {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
 
- 
-
 	my $groupData = $dataMngr->GetGroupData();
 	my $inCAM     = $dataMngr->{"inCAM"};
 	my $jobId     = $dataMngr->{"jobId"};
@@ -70,19 +68,13 @@ sub OnCheckGroupData {
 	my @sig      = $defaultInfo->GetSignalLayers();
 	my $layerCnt = $defaultInfo->GetLayerCnt();
 
+	my %profLimTMP = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
 
-	my %profLimTMP  = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
- 
-	if( abs( $profLimTMP{"yMax"} - $profLimTMP{"yMin"} ) < 500){
-		
-		$dataMngr->_AddErrorResult(
-										  "Pozor - stěhování galvaniky",
-										  " Dej vše ideálně na nový velký přířez"
-			);
-		
+	if ( abs( $profLimTMP{"yMax"} - $profLimTMP{"yMin"} ) < 500 ) {
+
+		$dataMngr->_AddErrorResult( "Pozor - stěhování galvaniky", " Dej vše ideálně na nový velký přířez" );
+
 	}
-
-
 
 	# 1) Check if pcb class is at lest 3
 	my $pcbClass = $defaultInfo->GetPcbClass();
@@ -470,19 +462,19 @@ sub OnCheckGroupData {
 			);
 		}
 	}
-	
+
 	# If panel will be cut during production, check if there is proper set active area
-	if($cutPnl !~ /^no$/i ){
-		
+	if ( $cutPnl !~ /^no$/i ) {
+
 		my $pnl = StandardBase->new( $inCAM, $jobId );
-		if( $pnl->HArea() > 470){
-			$dataMngr->_AddErrorResult( "Výška aktivní plochy panelu",
-										"Výška aktivní plochy neodpovídá střihu. Zkontroluj, jestli kusy nejsou panelizované za hranicí střihu panelu."
-										
+		if ( $pnl->HArea() > 470 ) {
+			$dataMngr->_AddErrorResult(
+				"Výška aktivní plochy panelu",
+				"Výška aktivní plochy neodpovídá střihu. Zkontroluj, jestli kusy nejsou panelizované za hranicí střihu panelu."
+
 			);
 		}
-		 
-		
+
 	}
 
 	# 11) Check gold finger layers (goldc, golds)
@@ -877,6 +869,20 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# X) Check RigidFlex minimal thickness
+	# RigidFlex Inner > 1,5mm
+	# RigidFlex Outer > 1,0mm
+	if ( $pcbThick < 1000 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXO ) {
+
+		$dataMngr->_AddErrorResult( "Minimální tloušťka RigidFlex",
+								 "Minimální vyrobitelná tloušťka RigidFlex Outer je : 1000µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
+	}
+
+	if ( $pcbThick < 1500 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
+
+		$dataMngr->_AddErrorResult( "Minimální tloušťka RigidFlex",
+								  "Minimální vyrobitelná tlošťka RigidFlex Inner je : 1500µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
