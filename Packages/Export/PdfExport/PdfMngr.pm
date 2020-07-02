@@ -31,6 +31,7 @@ use aliased 'Packages::Pdf::DrawingPdf::DrillMapPdf::DrillMapPdf';
 use aliased 'Packages::Pdf::DrawingPdf::NCSpecialPdf::NCSpecialPdf';
 use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::ProcessStackupTmpl';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::Pdf::DrawingPdf::DrillMapDrillCpnPdf::DrillMapCouponPdf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
