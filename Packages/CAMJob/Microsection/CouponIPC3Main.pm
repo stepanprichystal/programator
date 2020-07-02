@@ -141,7 +141,7 @@ sub GetStep {
 #           - etc....
 sub GetHoles {
 	my $self       = shift;
-	my $addDefHole = shift;    # add 1mm plt thorugh hole if not exists in PCB
+	my $addDefHole = shift // 1;    # add 1mm plt thorugh hole if not exists in PCB
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};

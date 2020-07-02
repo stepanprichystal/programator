@@ -154,6 +154,17 @@ sub OnPrepareGroupData {
 		$defNCSpec = 1;
 	}
 
+	# 7) default Customer IPC3 coupon drill map
+	my $defCustIPC3  = 0;
+	my $defDrillIPC3 = 0;
+
+	my $baseInf = $defaultInfo->GetPcbBaseInfo();
+	if ( defined $baseInf->{"ipc_class_3"} && $baseInf->{"ipc_class_3"} ne "" ) {
+
+		$defCustIPC3  = 1;
+		$defDrillIPC3 = 1;
+	}
+
 	# 8) default cvrl stencil
 	my $defCvrlStncl = 0;
 	my @NCCvrlStncl =
@@ -167,8 +178,7 @@ sub OnPrepareGroupData {
 	# 9) default peelable stencil
 	my $defPeelStncl = 0;
 	my @NCPeelStncl =
-	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lsMill }
-	 $defaultInfo->GetNCLayers();
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lsMill } $defaultInfo->GetNCLayers();
 	if ( scalar(@NCPeelStncl) ) {
 
 		$defPeelStncl = 1;
@@ -182,6 +192,8 @@ sub OnPrepareGroupData {
 	$groupData->SetExportPressfit($defPressfit);
 	$groupData->SetExportToleranceHole($defTolHole);
 	$groupData->SetExportNCSpecial($defNCSpec);
+	$groupData->SetExportCustCpnIPC3Map($defCustIPC3);
+	$groupData->SetExportDrillCpnIPC3Map($defDrillIPC3);
 	$groupData->SetExportPeelStencil($defPeelStncl);
 	$groupData->SetExportCvrlStencil($defCvrlStncl);
 

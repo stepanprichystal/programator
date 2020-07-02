@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use aliased 'Packages::Other::TableDrawing::TableDrawing';
-use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing';
+use aliased 'Packages::Other::TableDrawing::DrawingBuilders::InCAMDrawing::InCAMDrawing';
 use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::GeometryHelper';
@@ -14,6 +14,7 @@ use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::StrokeStyl
 use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BorderStyle';
 use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::TextStyle';
 use aliased 'Packages::Other::TableDrawing::Enums';
+use aliased 'Packages::InCAM::InCAM';
 
 my $tDrawing = TableDrawing->new( Enums->Units_MM );
 
@@ -34,7 +35,7 @@ $tMain->AddColDef( "zone_0", 5, undef, $clmn1BorderStyle );
 my $c2BackStyle = BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 200, 100, 50 ) );
 
 $tMain->AddColDef( "zone_a", 10, $c2BackStyle );
-$tMain->AddColDef( "zone_b", 20,  );
+$tMain->AddColDef( "zone_b", 20, );
 $tMain->AddColDef( "zone_c", 30 );
 
 # Add rows
@@ -61,7 +62,7 @@ my $paragraph = "erci ent ulluptat vel eum zzriure feuguero core conseni
 Orpero do odipit ercilis ad er augait ing ex elit autatio od minisis a
 +mconsequam";
 
-$tMain->AddCell( 0, 0, 3,     undef, $paragraph, $c1TextStyle, BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 255, 0,   0 ) ) );
+#$tMain->AddCell( 0, 0, 3,     undef, $paragraph, $c1TextStyle, BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 255, 0,   0 ) ) );
 $tMain->AddCell( 1, 1, undef, undef, undef,      undef,        BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 0,   255, 0 ) ) );
 $tMain->AddCell( 2, 2, undef, undef, undef,      undef,        BackgStyle->new( Enums->BackgStyle_SOLIDCLR, Color->new( 0,   0,   255 ) ) );
 
@@ -76,16 +77,16 @@ $c3BorderStyle->AddEdgeStyle( "right", Enums->EdgeStyle_DASHED,      2, Color->n
 $tMain->AddCell( 3, 3, undef, undef, undef, undef, $c3BackStyle, $c3BorderStyle );
 
 # Init Draw Builder
-my @media  = ( 150, 200 );
-my $margin = 0;
-my $p      = 'c:/Export/Test/test.pdf';
+my $inCAM = InCAM->new();
+my $jobId = "d277171";
+my $step  = "o+1";
+my $lName = "test";
 
-unlink($p);
-my $drawBuilder = PDFDrawing->new( Enums->Units_MM, \@media, $margin, $p );
-my ( $scaleX, $scaleY ) = GeometryHelper->ScaleDrawingInCanvasSize( $tDrawing, $drawBuilder );
-my $xOffset = GeometryHelper->HAlignDrawingInCanvasSize( $tDrawing, $drawBuilder, EnumsBuilder->HAlign_LEFT, $scaleX, $scaleY );
-my $yOffset = GeometryHelper->VAlignDrawingInCanvasSize( $tDrawing, $drawBuilder, EnumsBuilder->VAlign_BOT, $scaleX, $scaleY );
+my @media = ( 500, 500 );
+my $margin = 0;
+
+my $drawBuilder = InCAMDrawing->new( $inCAM, $jobId, $step, $lName, Enums->Units_MM, \@media, $margin );
 
 #my  = $tDrawing->FitToCanvas( $w, $h );
 
-$tDrawing->Draw( $drawBuilder, $scaleX, $scaleY, $xOffset, $yOffset );
+$tDrawing->Draw($drawBuilder);

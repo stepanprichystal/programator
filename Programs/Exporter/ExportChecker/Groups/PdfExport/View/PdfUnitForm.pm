@@ -217,9 +217,11 @@ sub __SetLayoutDrawings {
 
 	# DEFINE CONTROLS
 
-	my $exportPressfitChb   = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",   &Wx::wxDefaultPosition );
-	my $exportTolMeasureChb = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)", &Wx::wxDefaultPosition );
-	my $exportNCChb         = Wx::CheckBox->new( $statBox, -1, "NC countersing",   &Wx::wxDefaultPosition );
+	my $exportPressfitChb   = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",    &Wx::wxDefaultPosition );
+	my $exportTolMeasureChb = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)",  &Wx::wxDefaultPosition );
+	my $exportNCChb         = Wx::CheckBox->new( $statBox, -1, "NC countersing",    &Wx::wxDefaultPosition );
+	my $exportDrillIPC3Chb  = Wx::CheckBox->new( $statBox, -1, "Customer IPC3 cpn", &Wx::wxDefaultPosition );
+	my $exportCustIPC3Chb   = Wx::CheckBox->new( $statBox, -1, "Internal IPC3 cpn", &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 
@@ -228,11 +230,15 @@ sub __SetLayoutDrawings {
 	$szStatBox->Add( $exportPressfitChb,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $exportTolMeasureChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $exportNCChb,         1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportDrillIPC3Chb,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportCustIPC3Chb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 	$self->{"exportPressfitChb"}   = $exportPressfitChb;
 	$self->{"exportTolMeasureChb"} = $exportTolMeasureChb;
 	$self->{"exportNCSpecialChb"}  = $exportNCChb;
+	$self->{"exportDrillIPC3Chb"}  = $exportDrillIPC3Chb;
+	$self->{"exportCustIPC3Chb"}   = $exportCustIPC3Chb;
 
 	return $szStatBox;
 }
@@ -315,6 +321,16 @@ sub DisableControls {
 	else {
 
 		$self->{"exportNCSpecialChb"}->Disable();
+	}
+	my $baseInf = $self->{"defaultInfo"}->GetPcbBaseInfo();
+	if ( defined $baseInf->{"ipc_class_3"} && $baseInf->{"ipc_class_3"} ne "" ) {
+
+		$self->{"exportDrillIPC3Chb"}->Enable();
+		$self->{"exportCustIPC3Chb"}->Enable();
+	}
+	else {
+		$self->{"exportDrillIPC3Chb"}->Disable();
+		$self->{"exportCustIPC3Chb"}->Disable();
 	}
 
 	if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepCb"}->GetValue() ) ) {
@@ -510,6 +526,44 @@ sub GetExportNCSpecial {
 	my $self = shift;
 
 	if ( $self->{"exportNCSpecialChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub SetExportCustCpnIPC3Map {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"exportCustIPC3Chb"}->SetValue($val);
+}
+
+sub GetExportCustCpnIPC3Map {
+	my $self = shift;
+
+	if ( $self->{"exportCustIPC3Chb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub SetExportDrillCpnIPC3Map {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"exportDrillIPC3Chb"}->SetValue($val);
+}
+
+sub GetExportDrillCpnIPC3Map {
+	my $self = shift;
+
+	if ( $self->{"exportDrillIPC3Chb"}->IsChecked() ) {
 
 		return 1;
 	}
