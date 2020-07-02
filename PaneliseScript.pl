@@ -1215,7 +1215,13 @@ sub _Panelize {
 	        
 			
 			
-			
+			my $pcbInf = HegMethods->GetBasePcbInfo($jobName);
+	
+			if ( defined $pcbInf->{"ipc_class_3"} && $pcbInf->{"ipc_class_3"} ne "" ) {
+				
+				my $messMngr = MessageMngr->new($jobName);
+				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["DPS je v IPC 3, vloz 3 kupony: coupon_IPC3main na vone misto do panelu."] ); 
+			}
 			
 			
 			
