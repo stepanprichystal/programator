@@ -326,7 +326,7 @@ sub __ExportAOI {
 		@steps = ( { "stepName" => $stepToTest } );
 	}
 
-	CamStepRepeat->RemoveCouponSteps( \@steps, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
+	CamStepRepeat->RemoveCouponSteps( \@steps, 1, [ EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN ] );
 
 	@steps = map { $_->{"stepName"} } @steps;
 

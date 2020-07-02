@@ -1272,7 +1272,7 @@ sub _Panelize {
 			}else{
 			
 				# If panel contain more drifrent step, the fsch create
-				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
+				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName, 1, [EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN]);
 				if ( scalar(@uniqueSteps) > 1 ){
 							my $fsch = CreateFsch->new( $inCAM, $jobName);
 							   $fsch->Create();

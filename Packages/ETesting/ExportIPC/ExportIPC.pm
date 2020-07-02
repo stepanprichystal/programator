@@ -214,7 +214,7 @@ sub __CreateEtStepPcbPanel {
 			die $mess;
 		}
 
-		@keepProfileSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
+		@keepProfileSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN ] );
 	}
 
 	# 2) Prepare ET step

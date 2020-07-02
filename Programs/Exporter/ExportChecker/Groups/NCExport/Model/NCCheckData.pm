@@ -120,7 +120,7 @@ sub OnCheckGroupData {
 	}
 
 	# 3) If panel contain more drifrent step, check if fsch exist
-	my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
+	my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN ] );
 
 	if ( scalar(@uniqueSteps) > 1 && !$defaultInfo->LayerExist("fsch") ) {
 
@@ -132,7 +132,7 @@ sub OnCheckGroupData {
 
 	if ( scalar(@uniqueSteps) == 1 ) {
 
-		my @repeatsSR = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
+		my @repeatsSR = CamStepRepeatPnl->GetRepeatStep( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN ] );
 
 		my $angle = $repeatsSR[0]->{"angle"};
 		my @diffAngle = grep { $_->{"angle"} != $angle } @repeatsSR;
