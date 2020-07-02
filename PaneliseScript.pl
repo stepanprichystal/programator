@@ -81,6 +81,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpPool';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'Packages::CAMJob::Microsection::CouponIPC3Main';
 
 
 
@@ -95,7 +96,7 @@ unless ($ENV{JOB}) {
 	$jobName = "$ENV{JOB}";
 }
 
-#$jobName= "d283755";
+#$jobName= "d285728";
 
 my $inCAM = InCAM->new();
 my @errorMessageArr = ();
@@ -1010,6 +1011,13 @@ sub _Panelize {
 					}
 					 $impCouponText = 'Pozor pridej impedancni kupon';
 			}
+			
+			# Add IPC3 coupon
+			
+
+			
+			
+			
 			$inCAM->COM ('set_step',name=> 'panel');
 			
 			
@@ -1073,7 +1081,7 @@ sub _Panelize {
 				
 				
 				
-				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy . _GetOptimalSpace("$jobName") . '     ' . $impCouponText );
+				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy . _GetOptimalSpace("$jobName") . '     ' . $impCouponText);
 			}
 			
 			# Check if there were put impedance step in the panel
@@ -1084,6 +1092,23 @@ sub _Panelize {
 						exit;
 					}
 
+			}
+			
+			
+			my $pcbInf = HegMethods->GetBasePcbInfo($jobName);
+			 
+			if ( defined $pcbInf->{"ipc_class_3"} && $pcbInf->{"ipc_class_3"} ne "" ) {
+				
+		 		$inCAM->SetDisplay(0);
+				my $cpn = CouponIPC3Main->new( $inCAM, $jobName );
+				$cpn->CreateCoupon();
+				$inCAM->SetDisplay(1);
+				CamHelper->SetStep($inCAM, 'panel');
+		 		
+		 		my $messMngr = MessageMngr->new($jobName);
+				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ['Pozor, DPS je v IPC 3, vloz 3 kupony na volne misto do panelu.'] ); 
+ 
+			 	$inCAM->PAUSE("Vloz 3x IPC3 coupon. Step: coupon_IPC3main");
 			}
 			
 			
@@ -1215,13 +1240,7 @@ sub _Panelize {
 	        
 			
 			
-			my $pcbInf = HegMethods->GetBasePcbInfo($jobName);
-	
-			if ( defined $pcbInf->{"ipc_class_3"} && $pcbInf->{"ipc_class_3"} ne "" ) {
-				
-				my $messMngr = MessageMngr->new($jobName);
-				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["DPS je v IPC 3, vloz 3 kupony: coupon_IPC3main na vone misto do panelu."] ); 
-			}
+
 			
 			
 			
