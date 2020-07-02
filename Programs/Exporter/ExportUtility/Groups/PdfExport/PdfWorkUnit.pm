@@ -52,13 +52,15 @@ sub Init {
 	my $exportPressfit      = $taskData->GetExportPressfit();
 	my $exportToleranceHole = $taskData->GetExportToleranceHole();
 	my $exportNCSpecial     = $taskData->GetExportNCSpecial();
-	my $exportCvrlStencil   = $taskData->GetExportCvrlStencil();
-	my $exportPeelStencil   = $taskData->GetExportPeelStencil();
+	my $exportCustCpnIPC3Map  = $taskData->GetExportCustCpnIPC3Map();
+	my $exportDrillCpnIPC3Map = $taskData->GetExportDrillCpnIPC3Map();
+	my $exportCvrlStencil = $taskData->GetExportCvrlStencil();
+	my $exportPeelStencil = $taskData->GetExportPeelStencil();
 
 	my $mngr = PdfMngr->new(
 							 $inCAM,           $jobId,             $exportControl, $controlStep,    $controlLang,
 							 $infoToPdf,       $inclNestedStep,    $exportStackup, $exportPressfit, $exportToleranceHole,
-							 $exportNCSpecial, $exportCvrlStencil, $exportPeelStencil
+							 $exportNCSpecial, $exportCustCpnIPC3Map, $exportDrillCpnIPC3Map, $exportCvrlStencil, $exportPeelStencil
 	);
 
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );

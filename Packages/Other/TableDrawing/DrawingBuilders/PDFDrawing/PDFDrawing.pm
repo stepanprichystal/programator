@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Nif Builder is responsible for creation nif file depend on pcb type
-# Builder for one layer
+# Description: Table drawer which generates PDF output file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing;

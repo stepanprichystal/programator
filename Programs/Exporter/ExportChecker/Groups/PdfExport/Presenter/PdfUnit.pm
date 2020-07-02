@@ -93,6 +93,8 @@ sub RefreshGUI {
 	$self->{"form"}->SetExportPressfit( $groupData->GetExportPressfit() );
 	$self->{"form"}->SetExportToleranceHole( $groupData->GetExportToleranceHole() );
 	$self->{"form"}->SetExportNCSpecial( $groupData->GetExportNCSpecial() );
+	$self->{"form"}->SetExportCustCpnIPC3Map( $groupData->GetExportCustCpnIPC3Map() );
+	$self->{"form"}->SetExportDrillCpnIPC3Map( $groupData->GetExportDrillCpnIPC3Map() );
 	$self->{"form"}->SetInfoToPdf( $groupData->GetInfoToPdf() );
 	$self->{"form"}->SetExportPeelStencil( $groupData->GetExportPeelStencil() );
 	$self->{"form"}->SetExportCvrlStencil( $groupData->GetExportCvrlStencil() );
@@ -121,6 +123,8 @@ sub GetGroupData {
 		$groupData->SetExportPressfit( $frm->GetExportPressfit() );
 		$groupData->SetExportToleranceHole( $frm->GetExportToleranceHole() );
 		$groupData->SetExportNCSpecial( $frm->GetExportNCSpecial() );
+		$groupData->SetExportCustCpnIPC3Map( $frm->GetExportCustCpnIPC3Map() );
+		$groupData->SetExportDrillCpnIPC3Map( $frm->GetExportDrillCpnIPC3Map() );
 		$groupData->SetInfoToPdf( $frm->GetInfoToPdf() );
 		$groupData->SetExportPeelStencil( $frm->GetExportPeelStencil() );
 		$groupData->SetExportCvrlStencil( $frm->GetExportCvrlStencil() );

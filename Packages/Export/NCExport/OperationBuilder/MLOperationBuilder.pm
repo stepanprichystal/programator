@@ -688,7 +688,7 @@ sub __DefineNPlatedOperations {
 
 		my ($prepregNum) = $l->{"gROWname"} =~ /^fprepreg(\d)$/;
 
-		$opManager->AddOperationDef( "prpg" . $prepregNum, [$l], -1 );
+		$opManager->AddOperationDef( "prprg" . $prepregNum, [$l], -1 );
 	}
 
 	# 12) Operation name = fstiffc - can contain layer

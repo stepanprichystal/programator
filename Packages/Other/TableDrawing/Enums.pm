@@ -7,8 +7,9 @@ use constant {
 };
 
 use constant {
-			   Units_MM => "units_mm",                          # i inch = 72points; 1mm = 1/25,4inch
-			   Units_PT => "units_pt",                          # i inch = 72points; 1mm = 1/25,4inch
+			   Units_MM => "units_mm",                          # 1 inch = 72points; 1mm = 1/25,4inch
+			   Units_PT => "units_pt",                          # 1 inch = 72points; 1mm = 1/25,4inch
+			   Units_UM => "units_um",                          # microns
 };
 
 use constant {
@@ -29,8 +30,9 @@ use constant {
 };
 
 use constant {
-			   FontFamily_ARIAL => "FontFamily_Arial",          # none color
-			   FontFamily_TIMES => "FontFamily_Times",          # none color
+			   FontFamily_ARIAL => "FontFamily_Arial",          # Arial
+			   FontFamily_TIMES => "FontFamily_Times",          # Times
+			   FontFamily_STANDARD => "FontFamily_Standard",          # Standard (InCAM font)
 };
 
 use constant {

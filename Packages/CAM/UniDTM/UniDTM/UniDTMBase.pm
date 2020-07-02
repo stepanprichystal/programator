@@ -41,10 +41,11 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
-	$self->{"step"}         = shift;
-	$self->{"layer"}        = shift;
-	$self->{"breakSR"}      = shift;
-	$self->{"loadMagazine"} = shift // 0;    # Load tool magazine by material
+	$self->{"step"}           = shift;
+	$self->{"layer"}          = shift;
+	$self->{"breakSR"}        = shift;
+	$self->{"loadMagazine"}   = shift // 0;    # Load tool magazine by material
+	$self->{"loadPilotHoles"} = shift // 1;    # Load pilot holes for big diameters
 
 	my @pilots = ();
 	$self->{"pilotDefs"} = \@pilots;
@@ -60,7 +61,10 @@ sub new {
 	# 1) Init tools by InCAM DTM
 	$self->__InitUniDTM( $inCAM, $jobId );
 
-	# 2) Load magazine code by magazine info and PCB material
+	# 2) Add pilot hole definitions if tools diameter is bigger than 5.3mm
+	$self->__AddPilotHolesDefinition( $inCAM, $jobId ) if ( $self->{"loadPilotHoles"} );
+
+	# 3) Load magazine code by magazine info and PCB material
 	$self->__LoadToolsMagazine( $inCAM, $jobId ) if ( $self->{"loadMagazine"} );
 
 	$self->{"check"} = UniDTMCheck->new($self);
@@ -214,7 +218,6 @@ sub __InitUniDTM {
 
 	my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $layer, $self->{"breakSR"} );
 	my @DTMSurfTools = CamDTMSurf->GetDTMTools( $inCAM, $jobId, $step, $layer, $self->{"breakSR"} );
-	
 
 	# 1) Process tool from standard DTM
 
@@ -290,9 +293,6 @@ sub __InitUniDTM {
 			}
 		}
 	}
-
-	# 5) Add pilot hole definitions if tools diameter is bigger than 5.3mm
-	$self->__AddPilotHolesDefinition( $inCAM, $jobId );
 
 }
 

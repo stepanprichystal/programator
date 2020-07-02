@@ -5,7 +5,6 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::PdfExport::Model::PdfExportData;
- 
 
 #3th party library
 use strict;
@@ -13,7 +12,6 @@ use warnings;
 use File::Copy;
 
 #local library
- 
 
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::PdfData';
 
@@ -21,15 +19,14 @@ use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-
 sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
 
-	return $self;    
+	return $self;
 }
- 
+
 # Export data, (from prepared group data), which will consume exporter utility
 # are prepared in this method
 sub OnExportGroupData {
@@ -44,8 +41,8 @@ sub OnExportGroupData {
 	my $stepName = "panel";
 
 	my $exportData = PdfData->new();
- 
- 	$exportData->SetExportControl( $groupData->GetExportControl() );
+
+	$exportData->SetExportControl( $groupData->GetExportControl() );
 	$exportData->SetControlStep( $groupData->GetControlStep() );
 	$exportData->SetControlLang( $groupData->GetControlLang() );
 	$exportData->SetInfoToPdf( $groupData->GetInfoToPdf() );
@@ -54,14 +51,14 @@ sub OnExportGroupData {
 	$exportData->SetExportPressfit( $groupData->GetExportPressfit() );
 	$exportData->SetExportToleranceHole( $groupData->GetExportToleranceHole() );
 	$exportData->SetExportNCSpecial( $groupData->GetExportNCSpecial() );
+	$exportData->SetExportCustCpnIPC3Map( $groupData->GetExportCustCpnIPC3Map() );
+	$exportData->SetExportDrillCpnIPC3Map( $groupData->GetExportDrillCpnIPC3Map() );
 	$exportData->SetExportPeelStencil( $groupData->GetExportPeelStencil() );
 	$exportData->SetExportCvrlStencil( $groupData->GetExportCvrlStencil() );
- 
-	 
+
 	return $exportData;
 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -85,6 +82,4 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-
-
 
