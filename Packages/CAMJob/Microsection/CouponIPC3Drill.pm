@@ -83,7 +83,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
-	$self->{"step"}  = shift // EnumsGeneral->Coupon_DRILL;
+	$self->{"step"}  = shift // EnumsGeneral->Coupon_IPC3DRILL;
 
 	$self->{"holes"}         = [ $self->GetHoles() ];
 	$self->{"holesGroupPos"} = [ $self->__GetLayoutHoles() ];

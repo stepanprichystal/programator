@@ -26,7 +26,7 @@ my $inCAM = InCAM->new();
 #my $jobId = "d275162"; # standard 2v
 
 
-my $jobId = "x66093"; # standard vv 4V
+my $jobId = "x66727"; # standard vv 4V
 my $step = "panel";
 
 # 1) Init customer stackup class
@@ -49,7 +49,7 @@ my $canvasY = $rotation ? $a4W : $a4H;
 my $margin = 15;
 
 
-my $p      = 'c:/Export/Test/test.pdf';
+my $p      = 'c:/Export/Test/'.$jobId.'_stackup.pdf';
 
 unlink($p);
 my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [$canvasX, $canvasY], $margin, $rotation );

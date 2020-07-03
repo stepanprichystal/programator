@@ -17,6 +17,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamDTM';
@@ -62,6 +63,30 @@ my $TABLE_TEXT_WIDTH = 150 * $magicConstant;
 my $TITLE_CPN_GAP = 8000;                      # 15 mm between title CPN gap
 my $CPN_TABLE_GAP = 5000;                      # 15 mm between coupon and table
 
+# Table  styles
+
+my $headTextStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+									$TABLE_TEXT_SIZE / 1000,
+									undef, TblDrawEnums->Font_BOLD, TblDrawEnums->FontFamily_STANDARD,
+									undef, TblDrawEnums->TextVAlign_CENTER, 1 );
+
+my $stdTextStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+								   $TABLE_TEXT_SIZE / 1000,
+								   undef, TblDrawEnums->Font_NORMAL, TblDrawEnums->FontFamily_STANDARD,
+								   undef, TblDrawEnums->TextVAlign_CENTER, 1 );
+
+my $thinBorderStyle = BorderStyle->new();
+$thinBorderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1 );
+$thinBorderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1 );
+$thinBorderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1 );
+$thinBorderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1 );
+
+my $thickBorderStyle = BorderStyle->new();
+$thickBorderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
+$thickBorderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
+$thickBorderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
+$thickBorderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
+
 sub new {
 	my $self = shift;
 	$self = {};
@@ -80,12 +105,12 @@ sub CreateIPC3Main {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
+
 	my $m = CouponIPC3Main->new( $inCAM, $jobId );
 
 	my $title = uc( $self->{"jobId"} ) . " - IPC-3 customer coupon drill map";
 
-	return $self->__Create( $m, $title, "" );
+	return $self->__Create( $m, $title, "",1, 0, 1, 0  );
 
 }
 
@@ -99,7 +124,7 @@ sub CreateIPC3Drill {
 
 	my $title = uc( $self->{"jobId"} ) . " - IPC-3 drill coupon drill map";
 
-	return $self->__Create( $m, $title, "" );
+	return $self->__Create( $m, $title, "", 1, 1, 1, 0 );
 
 }
 
@@ -108,6 +133,10 @@ sub __Create {
 	my $couponObj = shift;    # inspected layers
 	my $titleText = shift;    # titles
 	my $noteText  = shift;    # note under drill table
+	my $tblColDrillSize = shift;
+	my $tblColFinSize   = shift;
+	my $tblColDepth     = shift;
+	my $tblColTol       = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -119,7 +148,8 @@ sub __Create {
 	CamHelper->SetStep( $inCAM, $couponObj->GetStep() );
 
 	# 1) Prepare drill map layer
-	my $drillMapL = $self->__PrepareDrillMapLayer($couponObj);
+	my $drillMapL = $self->__PrepareDrillMapLayer($couponObj, $tblColDrillSize, $tblColFinSize, $tblColDepth, $tblColTol);
+ 
 
 	# 2) Prepare title
 	my %lim = CamJob->GetLayerLimits2( $inCAM, $jobId, $couponObj->GetStep(), "c" );
@@ -198,9 +228,9 @@ sub __PdfOutput {
 sub __PrepareDrillMapLayer {
 	my $self         = shift;
 	my $couponObj    = shift;
-	my $colDrillSize = shift // 1;
-	my $colFinSize   = shift // 1;
-	my $colDepth     = shift // 1;
+	my $colDrillSize = shift // 0;
+	my $colFinSize   = shift // 0;
+	my $colDepth     = shift // 0;
 	my $colTol       = shift // 0;
 
 	my $inCAM = $self->{"inCAM"};
@@ -263,32 +293,6 @@ sub __PrepareDrillMapLayer {
 
 	my $tDrawing = TableDrawing->new( TblDrawEnums->Units_MM );
 
-	# Define styles
-
-	my $headTextStyle =
-	  TextStyle->new( TblDrawEnums->TextStyle_LINE,
-					  $TABLE_TEXT_SIZE / 1000,
-					  undef, TblDrawEnums->Font_BOLD, TblDrawEnums->FontFamily_STANDARD,
-					  undef, TblDrawEnums->TextVAlign_CENTER, 1 );
-
-	my $stdTextStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-									   $TABLE_TEXT_SIZE / 1000,
-									   undef, TblDrawEnums->Font_NORMAL, TblDrawEnums->FontFamily_STANDARD,
-									   undef, TblDrawEnums->TextVAlign_CENTER, 1 );
-
-	my $thinBorderStyle = BorderStyle->new();
-
-	$thinBorderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1 );
-	$thinBorderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1 );
-	$thinBorderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1 );
-	$thinBorderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.1 );
-
-	my $thickBorderStyle = BorderStyle->new();
-	$thickBorderStyle->AddEdgeStyle( "top",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
-	$thickBorderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
-	$thickBorderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
-	$thickBorderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
-
 	my $tMain = $tDrawing->AddTable( "Main", { "x" => 0, "y" => 0 }, $thickBorderStyle );
 
 	# Add columns
@@ -324,53 +328,48 @@ sub __PrepareDrillMapLayer {
 	my $curSymNum2 = 1;
 	foreach my $holeGroupInf (@holeGroups) {
 
-		my $unitDTM = UniDTM->new( $inCAM, $jobId, "panel", $holeGroupInf->{"layer"}->{"gROWname"}, 1, 0, 0 );
-		my @uniTools = $unitDTM->GetTools();
+		# Get tools from panel nested step, except coupons
+		my @steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+		my @uniTools = ();
+
+		foreach my $s (@steps) {
+			my $unitDTM = UniDTM->new( $inCAM, $jobId, $s, $holeGroupInf->{"layer"}->{"gROWname"}, 1, 0, 0 );
+			push( @uniTools, $unitDTM->GetTools() );
+		}
 
 		foreach my $toolInf ( @{ $holeGroupInf->{"tools"} } ) {
 
-			$tMain->AddRowDef( $tMain->GetRowCnt(), 3, undef, $thinBorderStyle );
-
 			my $l = $holeGroupInf->{"layer"};
 
-			# Tool Id
-			$tMain->AddCell( $tMain->GetCollByKey("col_id")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, "T" . $curSymNum2, $stdTextStyle,
-							 undef );
+			# There can be more tools with same Drill size but different finish size
+			my @uniTools = grep { $_->GetDrillSize() == $toolInf->{"drillSize"} } @uniTools;
 
-			# Tool layer
-			my $lText = "L" . $l->{"NCSigStartOrder"} . "-" . "L" . $l->{"NCSigEndOrder"};
-			$tMain->AddCell( $tMain->GetCollByKey("col_layer")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $lText, $stdTextStyle, undef );
+			if ( scalar(@uniTools) == 1 ) {
 
-			# Tool size
-			my $tDrillSize = sprintf( "%.3f", $toolInf->{"drillSize"} / 1000 );
-			$tMain->AddCell( $tMain->GetCollByKey("col_drillSize")->GetId(),
-							 $tMain->GetRowCnt() - 1,
-							 undef, undef, $tDrillSize, $stdTextStyle, undef )
-			  if ($colDrillSize);
+				$self->__PrepareDrillMapTableRow(
+												  $l,          $toolInf->{"drillSize"}, $uniTools[0],  $tMain,
+												  $curSymNum2, undef,                   $colDrillSize, $colFinSize,
+												  $colDepth,   $colTol
+				);
 
-			my $uniTool = first { $_->GetDrillSize() == $toolInf->{"drillSize"} } @uniTools;
-			if ( defined $uniTool ) {
+			}
+			elsif ( scalar(@uniTools) > 1 ) {
 
-				# some tools can by fake and not physically on PCB
-				# Thus we cant find them in panel
+				for ( my $i = 0 ; $i < scalar(@uniTools) ; $i++ ) {
 
-				# Tool size
-				my $tFinSize = sprintf( "%.3f", $uniTool->GetFinishSize() / 1000 );
-				$tMain->AddCell( $tMain->GetCollByKey("col_finSize")->GetId(),
-								 $tMain->GetRowCnt() - 1,
-								 undef, undef, $tFinSize, $stdTextStyle, undef )
-				  if ($colFinSize);
-
-				# Tool depth
-				if ( $colDepth && $uniTool->GetDepth() ) {
-					my $tDepth = sprintf( "%.3f", $uniTool->GetDepth() );
-					$tMain->AddCell( $tMain->GetCollByKey("col_depth")->GetId(),
-									 $tMain->GetRowCnt() - 1,
-									 undef, undef, $tDepth, $stdTextStyle, undef );
+					$self->__PrepareDrillMapTableRow(
+													  $l,          $toolInf->{"drillSize"}, $uniTools[$i],   $tMain,
+													  $curSymNum2, $i + 1,                  $colDrillSize, $colFinSize,
+													  $colDepth,   $colTol
+					);
 				}
 
-				$tMain->AddCell( $tMain->GetCollByKey("col_tol")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, "NAN", $stdTextStyle, undef )
-				  if ($colTol);
+			}
+			else {
+
+				# Fake hole which is not in any PCB
+				$self->__PrepareDrillMapTableRow( $l, $toolInf->{"drillSize"},
+												  undef, $tMain, $curSymNum2, undef, $colDrillSize, $colFinSize, $colDepth, $colTol );
 
 			}
 
@@ -415,6 +414,55 @@ sub __PrepareDrillMapLayer {
 
 }
 
+sub __PrepareDrillMapTableRow {
+	my $self         = shift;
+	my $l            = shift;
+	my $drillSize    = shift;
+	my $uniDTMTool   = shift;
+	my $tMain        = shift;
+	my $symId        = shift;
+	my $symIdSub     = shift;
+	my $colDrillSize = shift ;
+	my $colFinSize   = shift ;
+	my $colDepth     = shift ;
+	my $colTol       = shift ;
+
+	$tMain->AddRowDef( $tMain->GetRowCnt(), 3, undef, $thinBorderStyle );
+
+	# Tool Id
+	$tMain->AddCell( $tMain->GetCollByKey("col_id")->GetId() ,
+					 $tMain->GetRowCnt() - 1,
+					 undef, undef, "T" . $symId. ( defined $symIdSub ? ".$symIdSub" : "" ),
+					 $stdTextStyle, undef );
+
+	# Tool layer
+	my $lText = "L" . $l->{"NCSigStartOrder"} . "-" . "L" . $l->{"NCSigEndOrder"};
+	$tMain->AddCell( $tMain->GetCollByKey("col_layer")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $lText, $stdTextStyle, undef );
+
+	# Tool size
+	my $tDrillSize = sprintf( "%.3f", $drillSize / 1000 );
+	$tMain->AddCell( $tMain->GetCollByKey("col_drillSize")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $tDrillSize, $stdTextStyle, undef )
+	  if ($colDrillSize);
+
+	# some tools can by fake and not physically on PCB
+	# Thus we cant find them in panel
+
+	# Tool size
+	my $tFinSize = sprintf( "%.3f", $uniDTMTool->GetFinishSize() / 1000 );
+	$tMain->AddCell( $tMain->GetCollByKey("col_finSize")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $tFinSize, $stdTextStyle, undef )
+	  if ($colFinSize);
+
+	# Tool depth
+	if ( $colDepth && $uniDTMTool->GetDepth() ) {
+		my $tDepth = sprintf( "%.3f", $uniDTMTool->GetDepth() );
+		$tMain->AddCell( $tMain->GetCollByKey("col_depth")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $tDepth, $stdTextStyle, undef );
+	}
+
+	$tMain->AddCell( $tMain->GetCollByKey("col_tol")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, "NAN", $stdTextStyle, undef )
+	  if ($colTol);
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -426,7 +474,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d277171";
+	my $jobId = "d285728";
 	my $map = DrillMapCouponPdf->new( $inCAM, $jobId );
 	$map->CreateIPC3Drill();
 
