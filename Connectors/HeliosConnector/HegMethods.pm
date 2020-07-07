@@ -313,6 +313,7 @@ sub GetBasePcbInfo {
 				 d.zlaceni,
 				 d.zaplneni_otvoru,
 				 d.ipc_class_3,
+				 d.lak_typ,
 				 z.pooling,
 				 d.stav
 				 from lcs.desky_22 d with (nolock)

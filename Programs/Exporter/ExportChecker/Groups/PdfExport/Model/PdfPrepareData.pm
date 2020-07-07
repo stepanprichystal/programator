@@ -179,7 +179,11 @@ sub OnPrepareGroupData {
 	my $defPeelStncl = 0;
 	my @NCPeelStncl =
 	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lsMill } $defaultInfo->GetNCLayers();
-	if ( scalar(@NCPeelStncl) ) {
+
+	my $ISInfo = $defaultInfo->GetPcbBaseInfo();
+
+	# if there is prepared rout layer and no customer peelable (customer peelable is always screen printing)
+	if ( scalar(@NCPeelStncl) && !defined $ISInfo->{"lak_typ"} ) {
 
 		$defPeelStncl = 1;
 	}

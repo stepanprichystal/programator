@@ -51,10 +51,8 @@ sub BuildTemplate {
 	# 1) Init traveler
 
 	my @NClayers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_lcMill, EnumsGeneral->LAYERTYPE_nplt_lsMill ] );
-	my $ISInfo = ( HegMethods->GetAllByPcbId($jobId) )[0];
-
-	# if there is prepared rout layer and no customer peelable (customer peelable is always screen printing)
-	if ( scalar(@NClayers) && !defined $ISInfo->{"lak_typ"} ) {
+	# if there is prepared rout layer
+	if ( scalar(@NClayers) ) {
 
 		my @bldrs = ();
 		foreach my $NC (@NClayers) {
@@ -165,7 +163,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
-	my $jobId = "d066725";    #Outer RigidFLex BOT
+	my $jobId = "d285183";    #Outer RigidFLex BOT
 	                          #my $jobId = "d266566"; # inner flex
 	                          #my $jobId = "d146753"; # 1v flex
 	                          #my $jobId = "d267628";    # flex 2v + stiff

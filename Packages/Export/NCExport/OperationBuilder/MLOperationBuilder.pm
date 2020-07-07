@@ -509,7 +509,7 @@ sub __DefinePlatedOperations {
 			# Get core frame drilling for this specific core
 			my $vCore = first { $_->{"gROWname"} eq "v1j$coreNum" } @plt_fcDrill;
 
-			$opManager->AddOperationDef( "v$coreNum", [$vCore], $stackup->GetPressCount() ) if(defined $vCore);
+			$opManager->AddOperationDef( "j$coreNum", [$vCore], $stackup->GetPressCount() ) if(defined $vCore);
 		}
 	}
 
