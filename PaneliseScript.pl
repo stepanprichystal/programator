@@ -82,7 +82,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpP
 
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Packages::CAMJob::Microsection::CouponIPC3Main';
-
+use aliased 'Packages::CAM::UniDTM::UniDTM';
 
 
 unless ($ENV{JOB}) {
@@ -510,14 +510,26 @@ sub _GUIpanelizace {
 											_CheckStateOfVeVyrobe($jobName);
 											
 											
+											# Check holes 500 in rout	
+											 
+											if(CamHelper->LayerExists($inCAM, $jobName, "f")){
+												
+												my $uniDTM = UniDTM->new( $inCAM, $jobName, "o+1", "f");
+												my @unitTools =$uniDTM->GetTools();									
 											
-#											my $messWarn = "";
-#											my $resultWarn = LayerWarnInfo->CheckNCLayers( $inCAM, $jobName, "o+1", undef, \$messWarn );
-#											
-#											if ($resultWarn == 0) {
-#													push @warnMessageArr, $messWarn;
-#											}
-											
+												foreach my $t (@unitTools) {
+
+													if ( $t->GetDrillSize() < 500 ) {
+														my  $messWarn .=
+					    								"Routing layers should not contain tools diamaeter smaller than 500µm. Layer contains tool diameter: "
+					  									. $t->GetDrillSize()
+					  									. "µm.\n";
+					  									
+					  									push @errorMessageArr, $messWarn;
+													}
+												}
+											} 
+	 
 											# contain error messages
 											my $mess = "";
 											#
