@@ -249,7 +249,10 @@ sub __SetIsInnerLayerEmpty {
 
 				$f->Parse( $inCAM, $jobId, $step, $l->GetCopperName(), 0, 0 );
 
-				if ( defined first { !defined $_->{"attr"}->{".string"} } grep { $_->{"polarity"} eq "P" } $f->GetFeatures() ) {
+				my @pFeats =  grep { $_->{"polarity"} eq "P" } $f->GetFeatures();
+				my @stringFeats = grep { defined $_->{"attr"}->{".string"}} @pFeats;
+
+				if ( scalar(@pFeats) && scalar(@pFeats) > scalar(@stringFeats)   ) {
 					$isEmpty = 0;
 					last;
 				}

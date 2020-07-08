@@ -81,8 +81,11 @@ sub Run {
 	if ( $self->{"exportStackup"} ) {
 		$self->__ExportStackup();
 
-		if ( CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} ) > 2 ) {
-			$self->__ExportStackupOld();
+		if ( !JobHelper->GetIsFlex($jobId) ) {
+
+			if ( CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} ) > 2 ) {
+				$self->__ExportStackupOld();
+			}
 		}
 
 	}
