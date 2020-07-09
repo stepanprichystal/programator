@@ -204,7 +204,7 @@ sub __BuildMatListBody {
 
 	my $currItemType = undef;
 
-	foreach my $item ( @mats, @pads ) {
+	foreach my $item ( @uniqMats, @uniqPads ) {
 
 		my $itemType = $item->GetIsPad() ? "pad" : "mat";
 
