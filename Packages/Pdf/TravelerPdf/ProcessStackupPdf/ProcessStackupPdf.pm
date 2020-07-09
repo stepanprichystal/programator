@@ -159,6 +159,10 @@ sub __UpdateJSONTemplate {
 
 	my $v_KEYORDEAMOUNTEXT = ProcStckpEnums->KEYORDEAMOUNTEXT;
 	$$JSONstr =~ s/$v_KEYORDEAMOUNTEXT/$orderAmountExt/g;
+	
+	 
+	$$JSONstr =~ s/$v_KEYORDEAMOUNTTOT/$orderAmountTot/g;
+	
 
 	my @JSONstrUpdt = ();
 	foreach my $pageStr ( split( JSONPAGESEP, $$JSONstr ) ) {

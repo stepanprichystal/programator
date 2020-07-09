@@ -95,7 +95,7 @@ sub __BuildStckpTitle {
 
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 								   EnumsStyle->TxtSize_NORMAL,
-								   Color->new( 0, 0, 0 ),
+								   Color->new( EnumsStyle->Clr_TITLETXT ),
 								   TblDrawEnums->Font_BOLD, undef,
 								   TblDrawEnums->TextHAlign_LEFT,
 								   TblDrawEnums->TextVAlign_CENTER, 1 );

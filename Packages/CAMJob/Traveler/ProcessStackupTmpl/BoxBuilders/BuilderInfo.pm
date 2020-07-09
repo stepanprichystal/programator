@@ -75,41 +75,51 @@ sub Build {
 										TblDrawEnums->TextHAlign_LEFT,
 										TblDrawEnums->TextVAlign_CENTER, 1 );
 
+	my $txtCntrCollStyle = TextStyle->new(
+		TblDrawEnums->TextStyle_LINE,
+		EnumsStyle->TxtSize_NORMAL,
+		Color->new( 0, 0, 0 ),
+		TblDrawEnums->Font_NORMAL, undef,
+		TblDrawEnums->TextHAlign_CENTER,
+		TblDrawEnums->TextVAlign_CENTER, 1
+	);
+
 	my $txtRCollBStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-										 EnumsStyle->TxtSize_NORMAL,
+										 EnumsStyle->TxtSize_BIG,
 										 Color->new( 0, 0, 0 ),
-										 TblDrawEnums->Font_NORMAL, undef,
+										 TblDrawEnums->Font_BOLD, undef,
 										 TblDrawEnums->TextHAlign_LEFT,
 										 TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	my $txtLCollBStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-										 EnumsStyle->TxtSize_NORMAL,
+										 EnumsStyle->TxtSize_BIG,
 										 Color->new( 0, 0, 0 ),
 										 TblDrawEnums->Font_BOLD, undef,
 										 TblDrawEnums->TextHAlign_RIGHT,
 										 TblDrawEnums->TextVAlign_CENTER, 1 );
 
-	my $txtTitStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-									  EnumsStyle->TxtSize_NORMAL,
-									  Color->new( 0, 0, 0 ),
-									  TblDrawEnums->Font_BOLD, undef,
-									  TblDrawEnums->TextHAlign_LEFT,
-									  TblDrawEnums->TextVAlign_CENTER, 1 );
+	my $txtTitStyle = TextStyle->new(TblDrawEnums->TextStyle_LINE,
+								   EnumsStyle->TxtSize_NORMAL,
+								   Color->new( EnumsStyle->Clr_TITLETXT ),
+								   TblDrawEnums->Font_BOLD, undef,
+								   TblDrawEnums->TextHAlign_LEFT,
+								   TblDrawEnums->TextVAlign_CENTER, 1);
 
 	my $borderTitleStyle = BorderStyle->new();
 	$borderTitleStyle->AddEdgeStyle( "top", TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
 	$borderTitleStyle->AddEdgeStyle( "bot", TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
 
-	$self->__BuildMatInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $txtLCollBStyle, $borderTitleStyle );
+	$self->__BuildMatInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $txtLCollBStyle, $txtRCollBStyle, $borderTitleStyle );
+	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+ 
+
+	$self->__BuildPaketInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $txtLCollBStyle, $txtRCollBStyle, $borderTitleStyle );
+	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+
+	$self->__BuildLamInfo( $txtTitStyle, $txtCntrCollStyle, $borderTitleStyle );
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
 	$self->__BuildOperInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $borderTitleStyle );
-	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
-
-	$self->__BuildLamInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $txtRCollBStyle, $borderTitleStyle );
-	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
-	$self->__BuildPaketInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $txtRCollBStyle, $borderTitleStyle );
-
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
 	$self->__BuildNoteInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $borderTitleStyle );
@@ -128,6 +138,7 @@ sub __BuildMatInfo {
 	my $txtLCollStyle    = shift;
 	my $txtRCollStyle    = shift;
 	my $txtLCollBStyle   = shift;
+	my $txtRCollBStyle   = shift;
 	my $borderTitleStyle = shift;
 
 	my $tbl       = $self->{"table"};
@@ -195,6 +206,14 @@ sub __BuildMatInfo {
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, "Přířezů navíc:", $txtLCollStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $amountExtraStr, $txtRCollStyle );
 
+	# Panle amount total
+	my $rowAmountTot = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
+
+	my $amountTotStr = Enums->KEYORDEAMOUNTTOT;
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, "Přířezů celkem:",
+				   $txtLCollBStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $amountTotStr, $txtRCollBStyle );
+
 	# Put info about dodelavka
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
@@ -211,6 +230,7 @@ sub __BuildPaketInfo {
 	my $txtTitStyle      = shift;
 	my $txtLCollStyle    = shift;
 	my $txtRCollStyle    = shift;
+	my $txtLCollBStyle   = shift;
 	my $txtRCollBStyle   = shift;
 	my $borderTitleStyle = shift;
 
@@ -242,39 +262,10 @@ sub __BuildPaketInfo {
 	my $paketThickStr = sprintf( "%.2fmm", $paketThick / 1000 );
 	$paketThickStr =~ s/\./,/g;
 
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Vč. podložek:", $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Vč. podložek:", $txtLCollBStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $paketThickStr,    $txtRCollBStyle );
 
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
-
-	# Amount per press paket
-	use constant PAKETHEIGHT  => 20000;    # paket height for pressing 20mm
-	use constant INSTEELPLATE => 1000;     # one outer steel plate has 1mm thickness
-
-	my $availableH = PAKETHEIGHT - INSTEELPLATE;    # one extra bottom steel plate
-
-	my @outerPads = $lam->GetOuterPresspads();      # outer pads (top/bot), which are outer of inner steel plates
-	if ( scalar(@outerPads) ) {
-
-		my $padsT = 0;
-		$padsT += $_->GetValThick() foreach @outerPads;
-		$availableH -= $padsT;
-	}
-
-	my $amount = $availableH / ( $paketThick + INSTEELPLATE );
-	my $amountStr = floor($amount) . "př (" . ( 2 * floor($amount) ) . "př)";
-	$amountStr =~ s/\./,/g;
-	my $rowAmount = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
-
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, "Přířezů/plotnu:", $txtLCollStyle );
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $amountStr, $txtRCollStyle );
-
-	# Amount of final packages per whole order
-
-	my $rowFinPackg = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
-	my $totalPackgStr = Enums->KEYTOTALPACKG . "($amount)";
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Plotny/zakázku:", $txtLCollStyle );
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $totalPackgStr,     $txtRCollStyle );
 
 	# Pins yes or no
 
@@ -308,6 +299,35 @@ sub __BuildPaketInfo {
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Piny:", $txtLCollStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $pinStr, $txtRCollStyle );
 
+	# Amount per press paket
+	use constant PAKETHEIGHT  => 20000;    # paket height for pressing 20mm
+	use constant INSTEELPLATE => 1000;     # one outer steel plate has 1mm thickness
+
+	my $availableH = PAKETHEIGHT - INSTEELPLATE;    # one extra bottom steel plate
+
+	my @outerPads = $lam->GetOuterPresspads();      # outer pads (top/bot), which are outer of inner steel plates
+	if ( scalar(@outerPads) ) {
+
+		my $padsT = 0;
+		$padsT += $_->GetValThick() foreach @outerPads;
+		$availableH -= $padsT;
+	}
+
+	my $amount = $availableH / ( $paketThick + INSTEELPLATE );
+	my $amountStr = floor($amount) . "př (" . ( 2 * floor($amount) ) . "př)";
+	$amountStr =~ s/\./,/g;
+	my $rowAmount = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
+
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, "Přířezů/plotnu:", $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $amountStr, $txtRCollStyle );
+
+	# Amount of final packages per whole order
+
+	my $rowFinPackg = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
+	my $totalPackgStr = Enums->KEYTOTALPACKG . "($amount)";
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Plotny/zakázku:", $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $totalPackgStr,     $txtRCollStyle );
+
 }
 
 sub __BuildOperInfo {
@@ -321,6 +341,10 @@ sub __BuildOperInfo {
 	my $stckpMngr = $self->{"stackupMngr"};
 	my $lam       = $self->{"lamination"};
 
+	my @allLam = $stckpMngr->GetAllLamination();
+	
+	return 0 if(@allLam <= 1);
+
 	# 1) Define title cell
 
 	#my $BACKtmp = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new("255, 100, 50") );
@@ -330,7 +354,7 @@ sub __BuildOperInfo {
 
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
 
-	my @allLam = $stckpMngr->GetAllLamination();
+	
 
 	for ( my $i = 0 ; $i < scalar(@allLam) ; $i++ ) {
 
@@ -376,9 +400,7 @@ sub __BuildOperInfo {
 sub __BuildLamInfo {
 	my $self             = shift;
 	my $txtTitStyle      = shift;
-	my $txtLCollStyle    = shift;
-	my $txtRCollStyle    = shift;
-	my $txtRCollBStyle   = shift;
+	my $txtCntrCollStyle = shift;
 	my $borderTitleStyle = shift;
 
 	my $tbl       = $self->{"table"};
@@ -400,19 +422,19 @@ sub __BuildLamInfo {
 	if ( defined $pInfo{"name"} ) {
 		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
-		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, $pInfo{"name"}, $txtRCollBStyle );
+		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, 2, undef, $pInfo{"name"}, $txtCntrCollStyle );
 
 	}
 
-	# Program dimension
-	if ( defined $pInfo{"dimX"} && defined $pInfo{"dimY"} ) {
-
-		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
-
-		my $dimStr = int( $pInfo{"dimX"} ) . " x " . int( $pInfo{"dimY"} ) . "mm";
-		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Rozměry:", $txtLCollStyle );
-		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $dimStr,     $txtRCollStyle );
-	}
+	#	# Program dimension
+	#	if ( defined $pInfo{"dimX"} && defined $pInfo{"dimY"} ) {
+	#
+	#		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
+	#
+	#		my $dimStr = int( $pInfo{"dimX"} ) . " x " . int( $pInfo{"dimY"} ) . "mm";
+	#		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Rozměry:", $txtLCollStyle );
+	#		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $dimStr,     $txtRCollStyle );
+	#	}
 }
 
 sub __BuildNoteInfo {
