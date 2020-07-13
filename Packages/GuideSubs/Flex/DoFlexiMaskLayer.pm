@@ -34,7 +34,7 @@ push( @messHead, "<g>============================================</g>" );
 push( @messHead, "<g>Průvodce vytvořením vrstvy pro UV flex masku</g>" );
 push( @messHead, "<g>============================================</g>\n" );
 
-my $OVERLAP2RIGID = 500;    # Overlap of flexi solder mask to rigid boards
+my $OVERLAP2RIGID = 750;    # Overlap of flexi solder mask to rigid boards
 
 # Set impedance lines
 sub PrepareFlexiMaskLayers {
@@ -126,7 +126,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d274012";
+	my $jobId = "d283335";
 
 	my $notClose = 0;
 

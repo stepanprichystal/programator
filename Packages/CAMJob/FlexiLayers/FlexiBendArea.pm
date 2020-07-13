@@ -198,11 +198,11 @@ sub PrepareFlexMask {
 	my $jobId   = shift;
 	my $step    = shift;
 	my $layer   = shift;
-	my $overlap = shift // 400;    # Overlap of flexible mask torigid part
+	my $overlap = shift // 750;    # Overlap of flexible mask torigid part
 
 	my $result = 1;
 
-	my $parser = BendAreaParser->new( $inCAM, $jobId, $step, undef, 2*$overlap );
+	my $parser = BendAreaParser->new( $inCAM, $jobId, $step, undef, 2 * $overlap );
 	my $errMess = "";
 	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
 
@@ -216,30 +216,43 @@ sub PrepareFlexMask {
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $layer );
 	CamMatrix->CreateLayer( $inCAM, $jobId, $layer, "solder_mask", "positive", 1, $signalL, ( $signalL eq "c" ? "before" : "after" ) );
 
-	CamLayer->WorkLayer( $inCAM, $layer );
+	
 
-#	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
-#	my @pointsLim = ();
+	#	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+	#	my @pointsLim = ();
 
-#	my $flexClearance = 2000;    # 2000µm from PCB profile
-#
-#	push( @pointsLim, { "x" => $lim{"xMin"} - $flexClearance / 1000, "y" => $lim{"yMin"} - $flexClearance / 1000 } );
-#	push( @pointsLim, { "x" => $lim{"xMin"} - $flexClearance / 1000, "y" => $lim{"yMax"} + $flexClearance / 1000 } );
-#	push( @pointsLim, { "x" => $lim{"xMax"} + $flexClearance / 1000, "y" => $lim{"yMax"} + $flexClearance / 1000 } );
-#	push( @pointsLim, { "x" => $lim{"xMax"} + $flexClearance / 1000, "y" => $lim{"yMin"} - $flexClearance / 1000 } );
-#
-#	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
-#
-#	CamLayer->ClipAreaByProf( $inCAM, $layer, $flexClearance );
-#	CamLayer->WorkLayer( $inCAM, $layer );
+	#	my $flexClearance = 2000;    # 2000µm from PCB profile
+	#
+	#	push( @pointsLim, { "x" => $lim{"xMin"} - $flexClearance / 1000, "y" => $lim{"yMin"} - $flexClearance / 1000 } );
+	#	push( @pointsLim, { "x" => $lim{"xMin"} - $flexClearance / 1000, "y" => $lim{"yMax"} + $flexClearance / 1000 } );
+	#	push( @pointsLim, { "x" => $lim{"xMax"} + $flexClearance / 1000, "y" => $lim{"yMax"} + $flexClearance / 1000 } );
+	#	push( @pointsLim, { "x" => $lim{"xMax"} + $flexClearance / 1000, "y" => $lim{"yMin"} - $flexClearance / 1000 } );
+	#
+	#	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsLim, 1, "positive" );
+	#
+	#	CamLayer->ClipAreaByProf( $inCAM, $layer, $flexClearance );
+	#	CamLayer->WorkLayer( $inCAM, $layer );
 
 	foreach my $bendArea (@bendAreas) {
+		
+		CamLayer->WorkLayer( $inCAM, $layer );
 
 		my @pointsSurf = $bendArea->GetPoints();
-		 
-		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, "positive" );
 
-		#CamSymbol->AddPolyline( $inCAM, \@points, "r" . ( 2 * $overlap ), "negative" );
+		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, "positive" );
+		CamLayer->WorkLayer( $inCAM, $layer );
+		                                          # Round corners
+		$inCAM->COM(
+					 "sel_feat2outline",
+					 "width"         => $overlap,
+					 "location"      => "inner",
+					 "offset"        => "0",
+					 "polarity"      => "as_feature",
+					 "keep_original" => "no",
+					 "text2limit"    => "no"
+		);
+		CamLayer->Contourize( $inCAM, $layer, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+
 	}
 
 	CamLayer->ClearLayers($inCAM);
@@ -364,7 +377,9 @@ sub PrepareRoutCoverlay {
 			my $startFeat;
 			for ( my $i = scalar(@feats) - 1 ; $i >= 0 ; $i-- ) {
 
-				if ( $feats[$i]->{"att"}->{".string"} eq EnumsPins->PinString_ENDLINEIN || $feats[$i]->{"att"}->{".string"} eq EnumsPins->PinString_ENDLINEOUT ) {
+				if (    $feats[$i]->{"att"}->{".string"} eq EnumsPins->PinString_ENDLINEIN
+					 || $feats[$i]->{"att"}->{".string"} eq EnumsPins->PinString_ENDLINEOUT )
+				{
 
 					if ( !defined $startFeat ) {
 						$startFeat = ( $i + 1 > scalar(@feats) - 1 ) ? $feats[0] : $feats[ $i + 1 ];
@@ -374,7 +389,9 @@ sub PrepareRoutCoverlay {
 				}
 			}
 
-			@feats = grep { $_->{"att"}->{".string"} ne EnumsPins->PinString_ENDLINEIN || $_->{"att"}->{".string"} ne EnumsPins->PinString_ENDLINEOUT } @feats;
+			@feats =
+			  grep { $_->{"att"}->{".string"} ne EnumsPins->PinString_ENDLINEIN || $_->{"att"}->{".string"} ne EnumsPins->PinString_ENDLINEOUT }
+			  @feats;
 
 			$draw->DrawRoute( \@feats, $routTool, "right", $startFeat, undef, [".string"] );
 
@@ -533,7 +550,7 @@ sub PrepareRoutPrepreg {
 
 			$inCAM->COM( "chain_list_add", "chain"  => 1 );
 			$inCAM->COM( "chain_cancel",   "layer"  => $lTmp, "keep_surface" => "no" );
-			$inCAM->COM( "sel_change_sym", "symbol" => "r10" ); # r0 is not working for countourize, thats way r10
+			$inCAM->COM( "sel_change_sym", "symbol" => "r10" );                           # r0 is not working for countourize, thats way r10
 			CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
 			CamLayer->WorkLayer( $inCAM, $lTmp );
 			$inCAM->COM(

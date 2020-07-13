@@ -33,6 +33,9 @@ eval {
 	my $taskType = $query->param("request");
 	my $loginId  = $query->param("userid");
 	my $extraId  = $query->param("extraid");
+	
+	# TODO bug extraRid instead of extraid
+	$extraId = $query->param("extrarid") if ( !defined $extraId);
 
 	my $wholeRequest = $query->url() ."?". $ENV{'QUERY_STRING'} . "\n\n";
 	$logger->debug( "complete request: " . $wholeRequest );

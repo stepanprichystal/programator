@@ -70,7 +70,9 @@ sub AddFlexiHoles {
 									   $inCAM, $jobId,
 									   [
 										  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
-										  EnumsGeneral->LAYERTYPE_nplt_prepregMill
+										  EnumsGeneral->LAYERTYPE_nplt_prepregMill,
+										   EnumsGeneral->LAYERTYPE_nplt_cbMillTop,
+										    EnumsGeneral->LAYERTYPE_nplt_cbMillBot,
 									   ]
 	  );
 
