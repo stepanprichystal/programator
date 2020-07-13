@@ -75,35 +75,31 @@ sub Build {
 										TblDrawEnums->TextHAlign_LEFT,
 										TblDrawEnums->TextVAlign_CENTER, 1 );
 
-	my $txtCntrCollStyle = TextStyle->new(
-		TblDrawEnums->TextStyle_LINE,
-		EnumsStyle->TxtSize_NORMAL,
-		Color->new( 0, 0, 0 ),
-		TblDrawEnums->Font_NORMAL, undef,
-		TblDrawEnums->TextHAlign_CENTER,
-		TblDrawEnums->TextVAlign_CENTER, 1
-	);
+	my $txtCntrCollStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+										   EnumsStyle->TxtSize_NORMAL,
+										   Color->new( 0, 0, 0 ),
+										   TblDrawEnums->Font_NORMAL, undef,
+										   TblDrawEnums->TextHAlign_CENTER,
+										   TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	my $txtRCollBStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-										 EnumsStyle->TxtSize_BIG,
-										 Color->new( 0, 0, 0 ),
+										 EnumsStyle->TxtSize_BIG, Color->new( 0, 0, 0 ),
 										 TblDrawEnums->Font_BOLD, undef,
 										 TblDrawEnums->TextHAlign_LEFT,
 										 TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	my $txtLCollBStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-										 EnumsStyle->TxtSize_BIG,
-										 Color->new( 0, 0, 0 ),
+										 EnumsStyle->TxtSize_BIG, Color->new( 0, 0, 0 ),
 										 TblDrawEnums->Font_BOLD, undef,
 										 TblDrawEnums->TextHAlign_RIGHT,
 										 TblDrawEnums->TextVAlign_CENTER, 1 );
 
-	my $txtTitStyle = TextStyle->new(TblDrawEnums->TextStyle_LINE,
-								   EnumsStyle->TxtSize_NORMAL,
-								   Color->new( EnumsStyle->Clr_TITLETXT ),
-								   TblDrawEnums->Font_BOLD, undef,
-								   TblDrawEnums->TextHAlign_LEFT,
-								   TblDrawEnums->TextVAlign_CENTER, 1);
+	my $txtTitStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
+									  EnumsStyle->TxtSize_NORMAL,
+									  Color->new( EnumsStyle->Clr_TITLETXT ),
+									  TblDrawEnums->Font_BOLD, undef,
+									  TblDrawEnums->TextHAlign_LEFT,
+									  TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	my $borderTitleStyle = BorderStyle->new();
 	$borderTitleStyle->AddEdgeStyle( "top", TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
@@ -111,7 +107,6 @@ sub Build {
 
 	$self->__BuildMatInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $txtLCollBStyle, $txtRCollBStyle, $borderTitleStyle );
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
- 
 
 	$self->__BuildPaketInfo( $txtTitStyle, $txtLCollStyle, $txtRCollStyle, $txtLCollBStyle, $txtRCollBStyle, $borderTitleStyle );
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
@@ -272,24 +267,27 @@ sub __BuildPaketInfo {
 	my $rowPins = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
 	my $lamType = $lam->GetLamType();
+	my $lamData = $lam->GetLamData();
 	my $pinStr  = "Ne";
+
+	
 
 	if (
 		   $lamType eq Enums->LamType_FLEXBASE
 		|| $lamType eq Enums->LamType_ORIGIDFLEXFINAL
 		|| $lamType eq Enums->LamType_IRIGIDFLEXFINAL
-		|| ( $lamType eq Enums->LamType_RIGIDFINAL && $stckpMngr->GetCuLayerCnt() >= 6 )
-		|| (    $lamType eq Enums->LamType_RIGIDFINAL
-			 && $stckpMngr->GetStackup()->GetCuLayerCnt() >= 4
-			 && $stckpMngr->GetStackup()->GetAllCores() > 1 )
+		|| ( $lamType eq Enums->LamType_RIGIDFINAL
+			 && scalar( $lamData->GetLayers( StackEnums->ProductL_PRODUCT ) ) > 1 )
 
 		|| (
-			    $lamType eq Enums->LamType_RIGIDFINAL
-			 && $stckpMngr->GetStackup()->GetCuLayerCnt() >= 4
-			 && scalar(
-						map  { $_->GetAllPrepregs() }
-						grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } $stckpMngr->GetStackup()->GetAllLayers()
-			 ) >= 6
+			   $lamType eq Enums->LamType_RIGIDFINAL
+			&& scalar( $lamData->GetLayers( StackEnums->ProductL_PRODUCT ) <= 1 )
+			&& scalar(
+					   map  { $_->GetAllPrepregs() }
+					   grep { $_->GetType() eq StackEnums->MaterialType_PREPREG }
+					   map  { $_->GetData() } $lamData->GetLayers( StackEnums->ProductL_MATERIAL() )
+			) >= 6
+
 		)
 	  )
 	{
@@ -342,8 +340,8 @@ sub __BuildOperInfo {
 	my $lam       = $self->{"lamination"};
 
 	my @allLam = $stckpMngr->GetAllLamination();
-	
-	return 0 if(@allLam <= 1);
+
+	return 0 if ( @allLam <= 1 );
 
 	# 1) Define title cell
 
@@ -353,8 +351,6 @@ sub __BuildOperInfo {
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, undef, undef, "Operace na postupu", $txtTitStyle );
 
 	$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
-
-	
 
 	for ( my $i = 0 ; $i < scalar(@allLam) ; $i++ ) {
 
