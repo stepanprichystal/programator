@@ -865,23 +865,22 @@ sub OnCheckGroupData {
 											  . " Rozpoznáno podle atributu: \".paaatern_fill\" ."
 				);
 			}
-
 		}
 	}
 
 	# X) Check RigidFlex minimal thickness
-	# RigidFlex Inner > 1,5mm
-	# RigidFlex Outer > 1,0mm
-	if ( $pcbThick < 1000 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXO ) {
+	# RigidFlex Inner > 1,2mm
+	# RigidFlex Outer > 0,8mm
+	if ( $pcbThick < 800 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXO ) {
 
 		$dataMngr->_AddErrorResult( "Minimální tloušťka RigidFlex",
-								 "Minimální vyrobitelná tloušťka RigidFlex Outer je : 1000µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
+								 "Minimální vyrobitelná tloušťka RigidFlex Outer je : 800µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
 	}
 
-	if ( $pcbThick < 1500 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
+	if ( $pcbThick < 1200 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
 
 		$dataMngr->_AddErrorResult( "Minimální tloušťka RigidFlex",
-								  "Minimální vyrobitelná tlošťka RigidFlex Inner je : 1500µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
+								  "Minimální vyrobitelná tlošťka RigidFlex Inner je : 1200µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
 	}
 }
 

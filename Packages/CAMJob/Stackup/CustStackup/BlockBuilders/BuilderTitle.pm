@@ -118,7 +118,7 @@ sub __BuildRow1 {
 
 	# Add job Id
 
-	$titleStr .= "; Id: " . uc($jobId);
+	$titleStr .= "; Id: " . uc($stckpMngr->GetJobId());
 
 	# CELL DEF: Add left cell with title
 

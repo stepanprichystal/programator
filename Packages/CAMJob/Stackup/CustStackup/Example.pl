@@ -9,6 +9,7 @@ use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDraw
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsBuilder';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::InCAM::InCAM';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 
 
@@ -26,7 +27,7 @@ my $inCAM = InCAM->new();
 #my $jobId = "d275162"; # standard 2v
 
 
-my $jobId = "x66981"; # standard vv 4V
+my $jobId = "d282870"; # standard vv 4V
 my $step = "panel";
 
 # 1) Init customer stackup class
@@ -49,7 +50,7 @@ my $canvasY = $rotation ? $a4W : $a4H;
 my $margin = 15;
 
 
-my $p      = 'c:/Export/Test/'.$jobId.'_stackup.pdf';
+my $p      = 'c:/Export/Test/'.GetJobId($jobId).'_stackup.pdf';
 
 unlink($p);
 my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [$canvasX, $canvasY], $margin, $rotation );
@@ -129,3 +130,17 @@ $newCustStckp->Output($drawBuilder, 1);
 ##my  = $tDrawing->FitToCanvas( $w, $h );
 #
 #$tDrawing->Draw( $drawBuilder, $scaleX, $scaleY, $xOffset, $yOffset );
+
+
+sub GetJobId {
+	my $jobId = shift;
+
+	my $order = ( HegMethods->GetPcbOrderNumbers($jobId ) )[0];
+
+	my $id = $order->{"reference_subjektu"};
+
+	# Remove -<order number>
+	$id =~ s/-\d+$//i;
+
+	return $id;
+}

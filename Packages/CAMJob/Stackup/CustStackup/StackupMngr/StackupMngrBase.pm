@@ -51,17 +51,17 @@ sub new {
 	$self->{"pcbType"}    = JobHelper->GetPcbType( $self->{"jobId"} );
 	$self->{"isFlex"}     = JobHelper->GetIsFlex( $self->{"jobId"} );
 	$self->{"isMatKinds"} = { HegMethods->GetAllMatKinds() };
-	
-	$self->{"adhReduction"} = 0.75; # Adhesives are reduced by 25% after pressing (copper gaps are filled with adhesive)
-	$self->{"SMReduction"} = 0.50; # SM are reduced by 50% after processing (copper gaps are filled with SM)
+
+	$self->{"adhReduction"} = 0.75;    # Adhesives are reduced by 25% after pressing (copper gaps are filled with adhesive)
+	$self->{"SMReduction"}  = 0.50;    # SM are reduced by 50% after processing (copper gaps are filled with SM)
 
 	return $self;
 }
 
 sub GetExistSM {
 	my $self = shift;
-	my $side = shift;    # top/bot
-	my $info = shift;    # reference to store additional information
+	my $side = shift;                  # top/bot
+	my $info = shift;                  # reference to store additional information
 
 	my $l = $side eq "top" ? "mc" : "ms";
 
@@ -153,13 +153,18 @@ sub GetExistStiff {
 			my $mAdhInf = HegMethods->GetPcbStiffenerAdhMat( $self->{"jobId"}, $side );
 			my @nAdh = split( /\s/, $mAdhInf->{"nazev_subjektu"} );
 
-			$stifInfo->{"adhesiveText"}  = $mAdhInf->{"nazev_subjektu"} ;
-			$stifInfo->{"adhesiveThick"} = $mAdhInf->{"vyska"} * 1000000;      #
+			$stifInfo->{"adhesiveText"}  = $mAdhInf->{"nazev_subjektu"}; 
+			# make name shorter
+			if( $stifInfo->{"adhesiveText"} =~ /^(3m)\s+(.*)\s+/i){
+				$stifInfo->{"adhesiveText"} = $1." ".$2;
+			}
+			
+			$stifInfo->{"adhesiveThick"} = $mAdhInf->{"vyska"} * 1000000;    #
 			$stifInfo->{"adhesiveTg"}    = 204;
 
-			my @n = split(/\s/, $mInf->{"nazev_subjektu"});
-			shift(@n) if($n[0] =~ /lam/i);
-			
+			my @n = split( /\s/, $mInf->{"nazev_subjektu"} );
+			shift(@n) if ( $n[0] =~ /lam/i );
+
 			$stifInfo->{"stiffText"} = $n[0];
 			my $t = $mInf->{"vyska"};
 			$t =~ s/,/\./;
@@ -177,7 +182,7 @@ sub GetExistStiff {
 
 			$stifInfo->{"stiffThick"} = $t;      # µm
 			$stifInfo->{"stiffTg"}    = undef;
-	 
+
 			# Try to get TG of stiffener adhesive
 			my $matKey = first { $mInf->{"dps_druh"} =~ /$_/i } keys %{ $self->{"isMatKinds"} };
 			if ( defined $matKey ) {
@@ -249,12 +254,25 @@ sub GetIsFlex {
 	return $self->{"isFlex"};
 }
 
-
-
 sub GetBoardBaseLayers {
 	my $self = shift;
 
 	return @{ $self->{"boardBaseLayers"} };
+}
+
+# Get Dxxxxx OR Nxxxxxx
+# If price offer show number of price offer (N) not Deska (X)
+sub GetJobId {
+	my $self = shift;
+
+	my $order = ( HegMethods->GetPcbOrderNumbers( $self->{"jobId"} ) )[0];
+
+	my $id = $order->{"reference_subjektu"};
+
+	# Remove -<order number>
+	$id =~ s/-\d+$//i;
+
+	return $id;
 }
 
 # Return TG of layer stiffener, adhesive, ...
@@ -279,7 +297,7 @@ sub _GetSpecLayerTg {
 
 	return min(@allTg);
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

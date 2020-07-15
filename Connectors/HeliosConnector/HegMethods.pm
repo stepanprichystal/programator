@@ -910,9 +910,10 @@ sub GetPcbOrderNumber {
 sub GetPcbOrderNumbers {
 	my $self  = shift;
 	my $pcbId = shift;
-
+	 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
-
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
+	
 	my $cmd = "select 				  
 				 z.reference_subjektu,
 				 z.stav,
@@ -921,7 +922,7 @@ sub GetPcbOrderNumbers {
 				 
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId 
 				 order by z.reference_subjektu desc";
 
 	my @res = Helper->ExecuteDataSet( $cmd, \@params );
@@ -2436,7 +2437,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my @mat = HegMethods->GetAllByPcbId("X65217");
+	my @mat = HegMethods->GetPcbOrderNumbers("x66991");
 
 	dump(@mat);
 	die;
