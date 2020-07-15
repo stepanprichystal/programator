@@ -110,6 +110,7 @@ sub OnPrepareGroupData {
 	
 	
 	# 4) Score optimization
+	
 	if($jumpscoring){
 		$groupData->SetOptimize( ScoEnums->Optimize_NO );
 		
@@ -131,6 +132,13 @@ sub OnPrepareReorderGroupData {
 	my $jobId = $dataMngr->{"jobId"};
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
+	my $tifSco             = TifScore->new($jobId);
+	
+	# Load optimiyation from former export settings
+		
+	if ( defined $tifSco->GetScoreOptimize() ) {
+		$groupData->SetOptimize( $tifSco->GetScoreOptimize() );
+	}
 
 }
 

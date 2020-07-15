@@ -482,7 +482,7 @@ sub __RotateAndMovePoint {
 }
 
 # Return minimal gap between all pcbs in step
-sub __GetMinPcbGap {
+sub GetMinPcbGap {
 	my $self = shift;
 
 	my @pcbs = @{ $self->{"pcbs"} };

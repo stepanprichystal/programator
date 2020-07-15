@@ -85,7 +85,7 @@ sub Create {
 
 	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} eq "silk_screen" } @dataLayers );
 	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} eq "solder_mask" } @dataLayers );
-	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} =~ /(siglnal)|(power_ground)|(mixed)/ } @dataLayers );
+	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} =~ /(signal)|(power_ground)|(mixed)/ } @dataLayers );
 
 	# If no layers for export return 0 
 	unless (scalar(@sorted)){

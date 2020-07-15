@@ -68,8 +68,9 @@ sub new {
 # Return IPC file path
 sub Export {
 	my $self           = shift;
-	my $outFileSuffix    = shift;    # name for ipc file
+	my $outFileSuffix  = shift;    # name for ipc file
 	my $keepSRProfiles = shift;    # Keep profiles for SR steps
+	my $netPoinReport  = shift;    # Ref to storing Test Point report after optimization
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -108,7 +109,7 @@ sub Export {
 
 	$self->__ResulETStepCreated();
 
-	return $self->__CreateIpc( $etStepName, \@optSteps, $outFileSuffix );
+	return $self->__CreateIpc( $etStepName, \@optSteps, $outFileSuffix, $netPoinReport );
 
 }
 
@@ -214,7 +215,8 @@ sub __CreateEtStepPcbPanel {
 			die $mess;
 		}
 
-		@keepProfileSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN ] );
+		@keepProfileSteps = map { $_->{"stepName"} }
+		  CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN ] );
 	}
 
 	# 2) Prepare ET step
@@ -534,10 +536,11 @@ sub __CleanLayers {
 # Export it
 # Function watch all InCAM error what happen in this function
 sub __CreateIpc {
-	my $self        = shift;
-	my $etStep      = shift;
-	my $optSteps    = shift;
+	my $self          = shift;
+	my $etStep        = shift;
+	my $optSteps      = shift;
 	my $outFileSuffix = shift;
+	my $netPoinReport = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -565,7 +568,7 @@ sub __CreateIpc {
 
 	# 1) Optimize ET
 	my $optName;
-	my $resultOpSet = OptSet->OptSetCreate( $inCAM, $jobId, $etStep, $setupOptName, $optSteps, \$optName );
+	my $resultOpSet = OptSet->OptSetCreate( $inCAM, $jobId, $etStep, $setupOptName, $optSteps, \$optName, $netPoinReport );
 
 	foreach my $sm (@emptySM) {
 		CamLayer->SetLayerContextLayer( $inCAM, $jobId, $sm, "board" );
@@ -588,15 +591,15 @@ sub __CreateIpc {
 		$resultItemEtSet->AddError( $inCAM->GetExceptionError() );
 	}
 
-	my $outPath = EnumsPaths->Client_ELTESTS . $jobId;
+	my $outPath     = EnumsPaths->Client_ELTESTS . $jobId;
 	my $outFileName = $jobId;
 	my $outFileSuff = "ipc";
-	$outPath .= "t";
+	$outPath     .= "t";
 	$outFileName .= "t";
 
 	if ($outFileSuffix) {
-		$outPath .=  $outFileSuffix;
-		$outFileName .=  $outFileSuffix;
+		$outPath     .= $outFileSuffix;
+		$outFileName .= $outFileSuffix;
 	}
 
 	# 3) Output IPC
@@ -618,8 +621,8 @@ sub __CreateIpc {
 	if ( OptSet->OptSetExist( $inCAM, $jobId, $etStep, $optName ) ) {
 		OptSet->OptSetDelete( $inCAM, $jobId, $etStep, $optName );
 	}
-	
-	return $outPath."\\".$outFileName.".".$outFileSuff;
+
+	return $outPath . "\\" . $outFileName . "." . $outFileSuff;
 
 }
 

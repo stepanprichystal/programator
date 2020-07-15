@@ -3,7 +3,7 @@
 # Description: Build section for  NC operation duration
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NifExport::SectionBuilders::BuilderNCDuration;
+package Packages::Export::NifExport::SectionBuilders::BuilderOpEstimate;
 use base('Packages::Export::NifExport::SectionBuilders::BuilderBase');
 
 use Class::Interface;
@@ -26,6 +26,7 @@ use aliased 'Packages::CAMJob::Drilling::DrillDuration::DrillDuration';
 use aliased 'Packages::CAMJob::Routing::RoutDuration::RoutDuration';
 use aliased 'Packages::Export::NCExport::ExportMngr';
 use aliased 'Packages::CAMJob::Dim::JobDim';
+use aliased 'Packages::TifFile::TifET';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -55,10 +56,9 @@ sub Build {
 	my $export       = ExportMngr->new( $inCAM, $jobId, $stepName );
 	my @opItems      = ();
 
-	
-	my @oriOpitems =  $export->GetOperationMngr()->GetOperationItems();
+	my @oriOpitems = $export->GetOperationMngr()->GetOperationItems();
 
-	foreach my $opItem ( @oriOpitems ) {
+	foreach my $opItem (@oriOpitems) {
 
 		if ( defined $opItem->GetOperationGroup() ) {
 
@@ -73,10 +73,8 @@ sub Build {
 
 			my $o = ( $opItem->GetOperations() )[0];
 
-			my $isInGroup = scalar(
-							   grep { $_->GetName() eq $o->GetName() }
-							   map { $_->GetOperations() } grep { defined $_->GetOperationGroup() } @oriOpitems
-			);
+			my $isInGroup = scalar( grep { $_->GetName() eq $o->GetName() }
+									map { $_->GetOperations() } grep { defined $_->GetOperationGroup() } @oriOpitems );
 
 			push( @opItems, $opItem ) if ( !$isInGroup );
 		}
@@ -105,6 +103,22 @@ sub Build {
 
 	}
 
+	# Comment
+	$section->AddComment("Pocet TP (test point) na jeden kus");
+
+	#tac_et
+	if ( $self->_IsRequire("tac_et") ) {
+
+		my $tif          = TifET->new($jobId);
+		my $testPointCnt = ""; # This value will be during ET group exporting or from DIF file
+
+		if ( $tif->TifFileExist() && defined $tif->GetTotalTestPoint() ) {
+						
+			$testPointCnt = $tif->GetTotalTestPoint();
+		}
+
+		$section->AddRow( "tac_et", $testPointCnt );
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

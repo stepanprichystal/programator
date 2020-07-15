@@ -36,14 +36,14 @@ use aliased 'Packages::TifFile::TifScore';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
+	my $class       = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
-	my $packageId = __PACKAGE__;
+	my $packageId   = __PACKAGE__;
 	my $createFakeL = 0;
-	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL );
 	bless $self;
- 
+
 	$self->{"coreThick"} = shift;
 	$self->{"optimize"}  = shift;
 	$self->{"type"}      = shift;
@@ -85,11 +85,8 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
-	
-	my $exportFiles = 1; # indicate if check, optimize are ok and we can export files
-	
-	
+
+	my $exportFiles = 1;    # indicate if check, optimize are ok and we can export files
 
 	my $checkScoreRes = $self->_GetNewItem("Score check");
 
@@ -110,13 +107,15 @@ sub Run {
 		$checkScoreRes->AddError($errMess);
 	}
 
-	if ( !$self->{"scoreCheck"}->IsStraight() && !$self->{"scoreCheck"}->PcbDistanceOk() ) {
-
-		$checkScoreRes->AddError("Small gap between pcb steps (minimal gap is 4.5mm). ");
+	if (
+		    !$self->{"scoreCheck"}->IsStraight()
+		 && !$self->{"scoreCheck"}->PcbDistanceOk()
+		 && (    $self->{"optimize"} ne Enums->Optimize_MANUAL
+			  && $self->{"optimize"} ne Enums->Optimize_NO )
+	  )
+	{
+		$checkScoreRes->AddError("Small gap between pcb steps (minimal gap is 6.5mm)");
 	}
-	
-	# Check if pcb distance is ok. This was commented, because distance is important only when score is not straight..
-	#unless ( $self->{"scoreCheck"}->PcbDistanceOk() ) {
 
 	#	$checkScoreRes->AddError("Gap between pcb is too small. Do bigger gap, min 4.5mm.");
 	#}
@@ -161,24 +160,22 @@ sub Run {
 
 	# 5) Put control lines to solder and signal layers
 	$self->{"marker"}->Run();
-	CamJob->SaveJob($inCAM, $jobId);
+	CamJob->SaveJob( $inCAM, $jobId );
 
 	# 6) Export program for machine
-	
+
 	$self->__DeleteOldFiles();
-	
-	unless($exportFiles){
+
+	unless ($exportFiles) {
 		return 0;
 	}
-	
+
 	$self->{"creator"}->Build( $self->{"type"}, $self->{"optimizeData"} );
 
 	my $fileSave = $self->_GetNewItem("Saving file");
-	
-
 
 	if ( $self->{"optimizeData"}->ExistVScore() ) {
- 
+
 		unless ( $self->{"creator"}->SaveFile( ScoEnums->Dir_VSCORE ) ) {
 
 			$fileSave->AddError("Failed when saving verticall score file.");
@@ -186,41 +183,38 @@ sub Run {
 	}
 
 	if ( $self->{"optimizeData"}->ExistHScore() ) {
- 
+
 		unless ( $self->{"creator"}->SaveFile( ScoEnums->Dir_HSCORE ) ) {
 			$fileSave->AddError("Failed when saving horizontall score file.");
 		}
 	}
-	
+
 	$self->_OnItemResult($fileSave);
-	
-	# 7) Save material thickness to tof
-	
+
+	# 7) Save material thickness and optimiyation type to tif
+
 	my $tif = TifScore->new($jobId);
-	
-	die "Tif file doesn't exists" if(!$tif->TifFileExist());
-	
-	$tif->SetScoreThick($self->{"coreThick"});
-	 
+
+	die "Tif file doesn't exists" if ( !$tif->TifFileExist() );
+
+	$tif->SetScoreThick( $self->{"coreThick"} );
+	$tif->SetScoreOptimize( $self->{"optimize"} );
+
 	print STDERR $errMess;
-
 }
-
 
 # If export all, delete all files in job atchiov nc directory
 sub __DeleteOldFiles {
 	my $self = shift;
 
 	my $path = JobHelper->GetJobArchive( $self->{"jobId"} );
-	 
 
 	my $archivePath = JobHelper->GetJobArchive( $self->{"jobId"} );
- 	
+
 	my @jum = FileHelper->GetFilesNameByPattern( $archivePath, ".jum" );
 	my @cut = FileHelper->GetFilesNameByPattern( $archivePath, ".cut" );
-	 
- 
-	foreach my $f ( (@jum, @cut) ) {
+
+	foreach my $f ( ( @jum, @cut ) ) {
 		unlink $f;
 	}
 }
@@ -265,16 +259,16 @@ sub TaskItemsCount {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::Export::ScoExport::ScoreMngr';
-#
-#	use aliased 'Packages::InCAM::InCAM';
-#
-#	my $inCAM = InCAM->new();
-#
-#	my $jobId = "f13610";
-#
-#	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES, Enums->Type_CLASSIC );
-#	$mngr->Run();
+	#	use aliased 'Packages::Export::ScoExport::ScoreMngr';
+	#
+	#	use aliased 'Packages::InCAM::InCAM';
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $jobId = "f13610";
+	#
+	#	my $mngr = ScoreMngr->new( $inCAM, $jobId, 0.3, Enums->Optimize_YES, Enums->Type_CLASSIC );
+	#	$mngr->Run();
 }
 
 1;

@@ -32,20 +32,22 @@ use aliased 'Managers::AsyncJobMngr::Helper' => 'AsyncHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamNetlist';
+use aliased 'Packages::TifFile::TifET';
+use aliased 'Packages::CAMJob::Dim::JobDim';
+use aliased 'Packages::NifFile::NifFile';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
+	my $class       = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
-	my $packageId = __PACKAGE__;
+	my $packageId   = __PACKAGE__;
 	my $createFakeL = 1;
-	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL );
 	bless $self;
- 
 
 	$self->{"stepToTest"}   = shift;    # step, which will be tested
 	$self->{"createEtStep"} = shift;    # 1 - et step will be created from scratch, 0 - already prepared et step
@@ -64,11 +66,12 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
+
 	# Remove "nestlist helper" steps
 	CamNetlist->RemoveNetlistSteps( $inCAM, $jobId );
 
-	$self->{"exportIPC"}->Export( undef, $self->{"keepProfile"} );
+	my $netPointReport;
+	$self->{"exportIPC"}->Export( undef, $self->{"keepProfile"}, \$netPointReport );
 
 	# Copy created IPC to server where are ipc stored
 	if ( $self->{"serverCopy"} ) {
@@ -86,6 +89,39 @@ sub Run {
 
 			rmtree($ipcPath) or die "Unable to delete local copy of IPC ($ipcPath). " . $!;
 		}
+	}
+
+	# Store Net point report values to DIF/NIF
+	# If exist NIF store it to NIF, but also to DIF
+	# When NIF is being exported repeatedly, script try to find Net Point values in DIF
+
+	if ( $self->{"stepToTest"} eq "panel" && defined $netPointReport ) {
+
+		# Consider S&R for test points
+		my $testPointCnt = $netPointReport->GetTopTestPointCnt() + $netPointReport->GetBotTestPointCnt();
+
+		my %multipl = JobDim->GetDimension( $inCAM, $jobId );    # multiple of panel
+
+		# store TP count per one piece
+		unless ( $self->{"keepProfile"} ) {
+			$testPointCnt /= $multipl{"nasobnost"};
+		}
+
+		# Store to DIF
+		my $tif = TifET->new($jobId);
+		if ( $tif->TifFileExist() ) {
+
+			$tif->SetTotalTestPoint($testPointCnt);
+		}
+
+		# Store to NIF
+		my $nif = NifFile->new($jobId);
+		my $nifAttr = "tac_et";
+		if ( $nif->Exist() && $nif->AttributeExists($nifAttr) ) {
+
+			$nif->ReplaceValue($nifAttr, $testPointCnt);
+		}
+
 	}
 
 }
@@ -107,13 +143,14 @@ sub __CopyIPCToETServer {
 
 		my $p = EnumsPaths->Jobs_ELTESTS . substr( uc($jobId), 0, 4 );
 
-		
 		unless ( -e $p ) {
+
 			# Create parent dir
 			mkdir($p) or die "Can't create dir: $p" . $_;
 		}
 
 		unless ( -e JobHelper->GetJobElTest($jobId) ) {
+
 			# Create jopb dir
 			mkdir( JobHelper->GetJobElTest($jobId) ) or die "Can't create dir: " . JobHelper->GetJobElTest($jobId) . $_;
 		}
@@ -200,7 +237,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId = "d222769";
 
-	my $et = ETMngr->new( $inCAM, $jobId, "panel", 1, 1,1 );
+	my $et = ETMngr->new( $inCAM, $jobId, "panel", 1, 1, 1 );
 
 	$et->Run()
 

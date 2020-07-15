@@ -3,7 +3,7 @@
 # Description: TifFile - interface for score programs
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::TifFile::TifScore;
+package Packages::TifFile::TifET;
 use base ('Packages::TifFile::TifFile::TifFile');
 
 #3th party library
@@ -23,43 +23,27 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"key"} = "score";
+	$self->{"key"} = "et";
 
 	return $self;
 }
 
-sub GetScoreThick {
+sub GetTotalTestPoint {
 	my $self = shift;
 
-	return  $self->{"tifData"}->{ $self->{"key"} }->{"materialThickness"};
+	return  $self->{"tifData"}->{ $self->{"key"} }->{"totalTestPointCnt"};
 
 }
 
-sub SetScoreThick {
+sub SetTotalTestPoint {
 	my $self         = shift;
-	my $matThickness = shift;
+	my $TPCount = shift;
 
-	$self->{"tifData"}->{ $self->{"key"} }->{"materialThickness"} = $matThickness;
+	$self->{"tifData"}->{ $self->{"key"} }->{"totalTestPointCnt"} = $TPCount;
 
 	$self->_Save();
 }
-
-sub GetScoreOptimize {
-	my $self = shift;
-
-	return  $self->{"tifData"}->{ $self->{"key"} }->{"optimize"};
-
-}
-
-sub SetScoreOptimize {
-	my $self         = shift;
-	my $optimize = shift;
-
-	$self->{"tifData"}->{ $self->{"key"} }->{"optimize"} = $optimize;
-
-	$self->_Save();
-}
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

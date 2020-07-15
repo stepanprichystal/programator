@@ -22,13 +22,15 @@ use aliased 'CamHelpers::CamAttributes';
 
 # Return hash with values for HEG columns:
 # nasobnost_panelu
-# nasobnost
+# nasobnost - If pool mas
 # single_x
 # single_y
 # panel_x
 # panel_y
 #
+# Notes:
 # If job is POOL child, doesn't return value: nasobnost
+# If job is POOL master, nasobnost = multiplicity of o+1 step.. (ignore other steps)
 sub GetDimension {
 
 	my $self  = shift;

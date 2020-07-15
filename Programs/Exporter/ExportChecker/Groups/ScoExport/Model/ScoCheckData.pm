@@ -139,7 +139,28 @@ sub OnCheckGroupData {
 	if ( $groupData->GetCustomerJump() && $groupData->GetOptimize() ne ScoEnums->Optimize_NO ) {
 
 		$dataMngr->_AddErrorResult( "Jump-scoring zákazníka",
-			   "Pokud má zákazník na DPS vlastní jums-coring, nelze použít omptimalizaci drážky." . " Změň optimalizaci na: Manual nebo No" );
+			 "Pokud má zákazník na DPS vlastní jums-coring, nelze použít omptimalizaci drážky." . " Změň optimalizaci na: Manual nebo No" );
+	}
+
+	# 6) Check minimal distance between PCB
+	my $minPCBDist;
+	if (
+		    !$scoreChecker->IsStraight()
+		 && !$scoreChecker->PcbDistanceOk( \$minPCBDist )
+		 && (    $groupData->GetOptimize() ne ScoEnums->Optimize_MANUAL
+			  && $groupData->GetOptimize() ne ScoEnums->Optimize_NO )
+	  )
+	{
+
+		$dataMngr->_AddErrorResult(
+									"Drážka, kusy blízko sebe",
+									"Kusy na panelu jsou rozmístěny příliš blízko u sebe ("
+									  . sprintf( "%.1f", $minPCBDist/1000) . "mm). "
+									  . "Hrozí, že DPS nebudou dodrážkovány až do kraje. Buď:"
+									  . "\na) Panelizuj kusy dál od sebe (min 6mm)"
+									  . "\nb) Změň optimalizaci na: MANUAL a připrav score_layer vrstvu"
+									  . "\nc) Změň optimalizaci na: NO (drážka povede až k profilu PCB)"
+		);
 	}
 
 }

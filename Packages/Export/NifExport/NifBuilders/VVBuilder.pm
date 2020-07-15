@@ -28,7 +28,7 @@ use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDrillVV';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDrillCore';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRoutVV';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRoutCore';
-use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderNCDuration';
+use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderOpEstimate';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -208,10 +208,10 @@ sub Build {
 	
 	$nifMngr->AddSection("Vrtani jader", BuilderDrillCore->new(\@req));
 
-	# NC operation duration
-	@req = ();
+	# Process operation estimate
+	@req = ("tac_et");
  	
-	$nifMngr->AddSection("Delka NC operaci", BuilderNCDuration->new(\@req));
+	$nifMngr->AddSection("Odhad delky operaci", BuilderOpEstimate->new(\@req));
 	
 
 

@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="sel_feat2outline,width=1000,location=inner,offset=0,polarity=as_feature,keep_original=no,text2limit=no";
+my $inputLine ="COM et_optimization_text_report,output=file,out_file=/test_report";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

@@ -64,13 +64,11 @@ sub GetPcbPlace {
 	}
 }
 
-
 sub GetStep {
 	my $self = shift;
 
 	return $self->{"step"};
 }
-
 
 sub GetAccuracy {
 	my $self = shift;
@@ -164,11 +162,12 @@ sub IsStraight {
 
 # Tell if there at least minimal space 4.5mm
 sub PcbDistanceOk {
-	my $self = shift;
+	my $self         = shift;
+	my $measuredDist = shift;    # ref to store measured PCB dist
 
 	my $distOk = 1;
 
-	if ( $self->GetReduceDist() == -1 ) {
+	if ( $self->GetReduceDist($measuredDist) == -1 ) {
 
 		$distOk = 0;
 	}
@@ -178,18 +177,20 @@ sub PcbDistanceOk {
 
 # Return length, which score has to be cutted in each step from profile
 sub GetReduceDist {
-	my $self = shift;
+	my $self         = shift;
+	my $measuredDist = shift;    # ref to store measured PCB dist
 
-	my $dist         = undef;
-	my $standardDist = 4000;
-	my $minPcbDist   = 4500;
-	my $passDist     = 11000;    # distance, which score machine pass end of line 11 mm
+	my $stdReduceScore = 4000;   # Reduction of score line 4mm from PCB profile
+	my $minPcbDist     = 6000;   # Minimal possible distance bewteen PCB in panel, for save scoring
+	                             # If distance is smaller, PCB has not be scored in whole dimension
+	my $overScoring    = 10000;  # distance, which score machine pass end of line 10 mm
 
-	my $gap = $self->{"pcbPlace"}->__GetMinPcbGap();
-	 
+	my $gap = $self->{"pcbPlace"}->GetMinPcbGap();
+
+	$$measuredDist = $gap if ( defined $measuredDist ); # store measured Gap
 
 	unless ( defined $gap ) {
-		return $standardDist;
+		return $stdReduceScore;
 	}
 
 	# test if pcb are not too close each other
@@ -199,12 +200,12 @@ sub GetReduceDist {
 	}
 
 	#  Machine pass 11mm, but for insurence, count with 11mm
-	if ( $gap > $passDist ) {
+	if ( $gap > $overScoring ) {
 
 		return 0;    # don't reduce
 	}
 
-	my $reduceScore = ( $passDist - $gap );
+	my $reduceScore = ( $overScoring - $gap );
 
 	return $reduceScore;
 
@@ -218,15 +219,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Scoring::ScoreChecker::ScoreChecker';
 	use aliased 'Packages::InCAM::InCAM';
-#
+	#
 	my $jobId = "d229010";
-#
+	#
 	my $inCAM = InCAM->new();
-#
+	#
 	my $checker = ScoreChecker->new( $inCAM, $jobId, "panel", "score", 1 );
 	$checker->Init();
-#
-#	print 1;
+	#
+	#	print 1;
 
 }
 
