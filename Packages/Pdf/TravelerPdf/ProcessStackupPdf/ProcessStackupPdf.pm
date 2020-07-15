@@ -117,6 +117,8 @@ sub __UpdateJSONTemplate {
 	else {
 		$infoIS = { HegMethods->GetAllByOrderId($orderId) };
 	}
+	
+	die "Order info from IS is not defined" unless(defined $infoIS);
 
 	my ($orderNum) = $orderId =~ m/\w\d{6}-(\d+)/;
 
