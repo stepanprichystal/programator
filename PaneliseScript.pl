@@ -191,6 +191,9 @@ unless ($panelSizeCheck == 0) {
  		#			$inCAM->COM ('set_step',name=> 'o+1');
  		#}
  			
+ 		# Move drills  < 1 to m
+ 		$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/_from_z/npth2m.pl",dirmode=>'global');
+ 			
  			
 		# check CompareLayers
 		my %att = CamAttributes->GetStepAttr( $inCAM, $jobName, 'o+1' );
@@ -1618,7 +1621,7 @@ sub _CheckTableDrill {
 			
 			foreach my $oneDrill (@hodnotyDrill) {
 				if ($oneDrill == 0) {
-					push @errorMessageArr,  '- Pozor v seznamu VRTANI ve vrstve: $lName jsou nulove hodnoty!';
+					push @errorMessageArr,  "- Pozor v seznamu VRTANI ve vrstve: $lName jsou nulove hodnoty!";
 				}
 			} 
 			
