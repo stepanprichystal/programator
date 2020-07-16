@@ -423,9 +423,8 @@ sub __GetFiducials {
 	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/i } @features )[0];
 	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/i } @features )[0];
 
-	if ( !defined $fLT ){
+
 	die "OLEC fiducial mark left-top was not found"  if ( !defined $fLT );
-	}
 	die "OLEC fiducial mark right-top was not found" if ( !defined $fRT );
 	die "OLEC fiducial mark right-top was not found" if ( !defined $fRB );
 	die "OLEC fiducial mark left-bot was not found"  if ( !defined $fLB );
