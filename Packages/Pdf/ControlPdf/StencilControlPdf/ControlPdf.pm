@@ -373,7 +373,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d276512";
+	my $jobId = "d277289";
 
 	#	foreach my $l ( CamJob->GetAllLayers( $inCAM, $jobId ) ) {
 	#
@@ -386,8 +386,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $mess = "";
 
 	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en", 1 );
-	$control->AddInfoPreview( \$mess );
-	$control->AddImagePreview( \$mess, 1, 1 );
+	#$control->AddInfoPreview( \$mess );
+	#$control->AddImagePreview( \$mess, 1, 1 );
 	$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 

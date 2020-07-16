@@ -708,7 +708,7 @@ sub __DrawInfoTable {
 	my $self     = shift;
 	my $xPos     = shift;
 	my $yPos     = shift;
-	my $tabWidth = shift;
+	my $tabWidth = shift; # in mm
 	my $data     = shift;
 	my $page     = shift;
 	my $pdf      = shift;
@@ -847,9 +847,12 @@ sub __DrawInfoTable {
 	#$txtInf->translate( $xPos + $txtMargin, $yPos + $txtMargin );
 	$txtInfTxt->translate( $xPos + $txtMargin + $leftClmnW, $yPos + $txtMargin );
 
-	if ( $txtSize * length( $data->{"info"} ) > $rightClmnW ) {
+	 
+	if ( ($txtSize * length( $data->{"info"} ) + 2*$txtMargin) > $rightClmnW ) {
 
-		$txtSize = $rightClmnW / length( $data->{"info"} ) * 2.2;
+		my $newTxtSize = ($rightClmnW - 2*$txtMargin) / length( $data->{"info"} ) * 2.2;
+		
+		$txtSize = $newTxtSize if($newTxtSize < $txtSize);
 
 	}
 

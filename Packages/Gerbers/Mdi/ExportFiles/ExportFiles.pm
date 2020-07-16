@@ -17,14 +17,15 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamMatrix';
-use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::Gerbers::Export::ExportLayers';
@@ -375,7 +376,7 @@ sub __GetFiducials {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	# Decide wich drill layer take fiducial position from
+	# 1) Decide wich drill layer take fiducial position from
 	# v - panel profile frame drilling
 	# v1 - core frame drilling
 
@@ -391,44 +392,48 @@ sub __GetFiducials {
 		$drillLayer = "v";
 	}
 
-	#	# Exceptions for Outer Rigid-Flex with top coverlay
-	#	if ( $layerName =~ /^[cs]$/ && JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
-	#
-	#		if (    JobHelper->GetPcbType($jobId) eq EnumsGeneral->PcbType_RIGIDFLEXO
-	#			 && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) )
-	#		{
-	#			$drillLayer = "v1";
-	#		}
-	#	}
-
+	# 2) Choose proper 4 camera marks
 	my $f = Features->new();
 	$f->Parse( $inCAM, $jobId, $step, $drillLayer );
 
-	# Features with text extra in pnl_place serve onlz for scoring
 	my @features =
-	  grep { defined $_->{"att"}->{".pnl_place"} && $_->{"att"}->{".pnl_place"} !~ /extra/ }
-	  grep { defined $_->{"att"}->{".geometry"}  && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_((IN)|(2V))$/ } $f->GetFeatures();
+	  grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_((IN)|(2V))$/ } $f->GetFeatures();
 
-	die "All fiducial marks (four marks, attribut: OLEC_otvor_<IN/2V>) were not found in layer: $drillLayer" unless ( scalar(@features) == 4 );
+	my $useCut = ( $layerName =~ /^gold[cs]$/ && CamAttributes->GetJobAttrByName( $inCAM, $jobId, "technology_cut" ) !~ /no/i ) ? 1 : 0;
 
-	# take position and sort them: lefttop; right-top; right-bot; left-bot
+	# Exception for layers goldc/golds. Thera are 4 top camera marks and wee need lower one, which remain after pnl cut
+	unless ($useCut) {
+		@features = grep { $_->{"att"}->{".pnl_place"} !~ /cut/i } @features;
+	}
+
+	# Therea are 4-6 (2 extra top marks when cut panel) marks
+	die "All fiducial marks (four marks, attribut: OLEC_otvor_<IN/2V>) were not found in layer: $drillLayer" if ( scalar(@features) < 4 );
+
+	# Take position and sort them: lefttop; right-top; right-bot; left-bot
 	my @fiducials = ();
 
-	# Left top mark can have suffix
 	my $fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top/i } @features )[0];     # left top mark can contain suffix
 	my $fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top/i } @features )[0];    # right top mark can contain suffix
+
+	if ($useCut) {
+		$fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top.*cut/i } @features )[0];     # left top mark can contain suffix
+		$fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top.*cut/i } @features )[0];    # right top mark can contain suffix
+	}
+
 	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/i } @features )[0];
 	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/i } @features )[0];
 
+	if ( !defined $fLT ){
 	die "OLEC fiducial mark left-top was not found"  if ( !defined $fLT );
+	}
 	die "OLEC fiducial mark right-top was not found" if ( !defined $fRT );
 	die "OLEC fiducial mark right-top was not found" if ( !defined $fRB );
 	die "OLEC fiducial mark left-bot was not found"  if ( !defined $fLB );
 
-	push( @fiducials, { "x" => $fLT->{"x1"}, "y" => $fLT->{"y1"} } );                   # left-top
-	push( @fiducials, { "x" => $fRT->{"x1"}, "y" => $fRT->{"y1"} } );                   # right-top
-	push( @fiducials, { "x" => $fRB->{"x1"}, "y" => $fRB->{"y1"} } );                   # right-bot
-	push( @fiducials, { "x" => $fLB->{"x1"}, "y" => $fLB->{"y1"} } );                   # left-bot
+	push( @fiducials, { "x" => $fLT->{"x1"}, "y" => $fLT->{"y1"} } );                         # left-top
+	push( @fiducials, { "x" => $fRT->{"x1"}, "y" => $fRT->{"y1"} } );                         # right-top
+	push( @fiducials, { "x" => $fRB->{"x1"}, "y" => $fRB->{"y1"} } );                         # right-bot
+	push( @fiducials, { "x" => $fLB->{"x1"}, "y" => $fLB->{"y1"} } );                         # left-bot
 
 	# Adjust fiducial position by real PCB dimension (move to InCAM job zero)
 	foreach my $f (@fiducials) {
@@ -623,7 +628,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d282545";
+	my $jobId    = "d285782";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -633,9 +638,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my %type = (
 				 Enums->Type_SIGNAL => "1",
-				 Enums->Type_MASK   => "0",
+				 Enums->Type_MASK   => "1",
 				 Enums->Type_PLUG   => "0",
-				 Enums->Type_GOLD   => "0"
+				 Enums->Type_GOLD   => "1"
 	);
 
 	$export->Run( \%type );

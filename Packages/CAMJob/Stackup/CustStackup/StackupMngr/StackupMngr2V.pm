@@ -75,7 +75,17 @@ sub GetBaseMatInfo {
 	# Parse material name
 	my @parsedMat = split( /\s/, $matName );
 	shift @parsedMat if ( $parsedMat[0] =~ /lam/i );
-	$inf{"matText"} = $parsedMat[0];
+
+	for ( my $i = 0 ; $i < scalar(@parsedMat) ; $i++ ) {
+
+		# if item is not CU text, add it to name
+		last if ( $parsedMat[$i] =~ m/(\d+\/\d+)/ );
+
+		$inf{"matText"} .= $parsedMat[$i] . " ";
+	}
+	
+	$inf{"matKind"} = $matInf->{"dps_druh"};
+	
 
 	# Parse mat thick  + remove Cu thickness if material is type of Laminate (core material thickness not include Cu thickness)
 	$inf{"baseMatThick"} = $matInf->{"vyska"} * 1000000;
@@ -104,7 +114,8 @@ sub GetBaseMatInfo {
 	die "Material text was not found at material: $matName"         unless ( defined $inf{"matText"} );
 	die "Base mat thick was not found at material: $matName"        unless ( defined $inf{"baseMatThick"} );
 	die "Material cu thickness was not found at material: $matName" unless ( defined $inf{"cuThick"} );
-
+	die "Material druh was not found at material: $matName" unless ( defined $inf{"matKind"} );
+		
 	return %inf;
 
 }

@@ -1617,7 +1617,7 @@ sub _CheckTableDrill {
 			$minVrtak = sprintf "%0.0f",($minVrtak);
 			
 			$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$pcbId/$StepName/$lName",data_type => 'TOOL');
-			@hodnotyDrill = @{$inCAM->{doinfo}{gTOOLbit}};
+			@hodnotyDrill = @{$inCAM->{doinfo}{gTOOLdrill_size}};
 			
 			foreach my $oneDrill (@hodnotyDrill) {
 				if ($oneDrill == 0) {

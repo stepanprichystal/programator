@@ -154,8 +154,8 @@ sub GetExistStiff {
 			my @nAdh = split( /\s/, $mAdhInf->{"nazev_subjektu"} );
 
 			$stifInfo->{"adhesiveText"}  = $mAdhInf->{"nazev_subjektu"}; 
-			# make name shorter
-			if( $stifInfo->{"adhesiveText"} =~ /^(3m)\s+(.*)\s+/i){
+			# make name shorter if 3M tape
+			if( $stifInfo->{"adhesiveText"} =~ /^(3m)\s+(\w+)\s+/i){
 				$stifInfo->{"adhesiveText"} = $1." ".$2;
 			}
 			

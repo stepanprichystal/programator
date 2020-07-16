@@ -354,7 +354,7 @@ sub __BuildStackupLayers {
 		my $row = $tblMain->InsertRowDef( "core_1", $rowPos, EnumsStyle->RowHeight_STANDARD );
 
 		$self->__DrawMatCore(
-			$row, $matInf{"matText"}, $matInf{"baseMatThick"}, $stckpMngr->GetIsFlex(), 0,
+			$row, $matInf{"matText"}, $matInf{"matKind"}, $matInf{"baseMatThick"}, $stckpMngr->GetIsFlex(), 0,
 
 			dclone($txtTitleStyle), dclone($txtStandardStyle)
 		);
@@ -492,7 +492,7 @@ sub __BuildStackupLayers {
 				my $row = $tblMain->AddRowDef( "core_" . $l->GetCoreNumber(), $rowHeight );
 
 				$self->__DrawMatCore(
-					$row, $l->GetTextType(), $l->GetThick(), ( $l->GetCoreRigidType() eq StackEnums->CoreType_FLEX ? 1 : 0 ), 1,
+					$row, $l->GetTextType(), $l->GetText(), $l->GetThick(), ( $l->GetCoreRigidType() eq StackEnums->CoreType_FLEX ? 1 : 0 ), 1,
 
 					dclone($txtTitleStyle), dclone($txtStandardStyle)
 				);
@@ -1236,6 +1236,7 @@ sub __DrawMatCore {
 	my $self             = shift;
 	my $row              = shift;
 	my $matText          = shift;
+	my $matKind          = shift;
 	my $matThick         = shift;
 	my $isFlex           = shift;
 	my $core             = shift;
@@ -1267,8 +1268,24 @@ sub __DrawMatCore {
 
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_A_MAIN, 0, 0 );
 
-		my $text = ( $isFlex ? "Flex" : "Rigid" );
-		$text .= ( $core ? " core" : " laminate" );
+		my $text = undef;
+
+		if ($isFlex) {
+			$text = "Flex laminate";
+		}
+		else {
+
+			if ( $matKind =~ /AL_CORE/ ) {
+				$text = "ALU core";
+			}
+			elsif ( $matKind =~ /CU_CORE/ ) {
+				$text = "CU core";
+			}
+			else {
+				$text = "Rigid laminate";
+			}
+
+		}
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),
 						   $tblMain->GetRowDefPos($row),
@@ -1314,7 +1331,7 @@ sub __DrawMatCore {
 			$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_E_STIFFENER, 0, 0 );
 		}
 	}
-	
+
 	# Sec_F_STIFFENER ---------------------------------------------
 	my $sec_F_STIFFENER = $secMngr->GetSection( Enums->Sec_F_STIFFENER );
 

@@ -17,7 +17,6 @@ use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
- 
 
 # Function replace pcb order number in all NC files placed in archive, which contains this number
 # Example if dps is second ordered: M97,F12345 => M97,F12345-2
@@ -74,15 +73,25 @@ sub ChangePcbOrderNumber {
 		my $file = path($filename);
 
 		my $data = $file->slurp_utf8;
-		$data =~ s/(m97,[a-f][\d]+[\/\-\:\+]{0,2})\d*/$1$orderNum/i;
-		$file->spew_utf8($data);
+
+		if ( $data =~ m/(m97,[a-f][\d]+)([\/\-\:\+\s]{0,2})\d*/i ) {
+
+			my $jobIdTxt = $1;
+			my $cuTxt    = $2;
+
+			if ( !defined $cuTxt || $cuTxt eq "" ) {
+				$cuTxt = " ";
+			}
+
+			$data =~ s/(m97,[a-f][\d]+[\/\-\:\+\s]{0,2})\d*/$jobIdTxt$cuTxt$orderNum/i;
+			$file->spew_utf8($data);
+
+		}
 
 	}
 
 	return 1;
 }
-
-
 
 # Put rout feed speed to all rout tool calling in all NC programs
 sub CompleteRoutFeed {
