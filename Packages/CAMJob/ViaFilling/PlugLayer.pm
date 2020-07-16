@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 
@@ -33,8 +34,10 @@ sub CreateCopperPlugLayersAllSteps {
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $annularRing = shift // 75;    # annular ring for via plug is 75um
+	
+	my $stepPnl = "panel"; 
 
-	die "Step panel doesn't exist" unless ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) );
+	die "Step panel doesn't exist" unless ( CamHelper->StepExists( $inCAM, $jobId, $stepPnl ) );
 
 	die "Unable to create plug layers. There are no NC via fill layers." unless ( CamDrilling->GetViaFillExists( $inCAM, $jobId ) );
 
@@ -48,7 +51,7 @@ sub CreateCopperPlugLayersAllSteps {
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $plg->{"gROWname"} );
 	}
 
-	my @childs = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+	my @childs = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepPnl);
 	foreach my $step (@childs) {
 
 		my @l = $self->CreateCopperPlugLayers( $inCAM, $jobId, $step->{"stepName"}, $annularRing );
