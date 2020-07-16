@@ -37,8 +37,8 @@ my $taskType = shift;    # type of task to process
 my $loginId  = shift;    # user which do request
 my $extraId  = shift;    # extra order id (number of extra product - dodelavka)
 
-$orderId = "d284968-02";
-$taskType = TaskEnums->PCB_TOPRODUCE;
+#$orderId = "d284968-02";
+#$taskType = TaskEnums->PCB_TOPRODUCE;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
 Log::Log4perl->init($logConfig);
