@@ -192,7 +192,7 @@ unless ($panelSizeCheck == 0) {
  		#}
  			
  		# Move drills  < 1 to m
- 		$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/_from_z/npth2m.pl",dirmode=>'global');
+ 		#$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/_from_z/npth2m.pl",dirmode=>'global');
  			
  			
 		# check CompareLayers
