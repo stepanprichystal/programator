@@ -183,7 +183,7 @@ sub GetReduceDist {
 	my $stdReduceScore = 4000;   # Reduction of score line 4mm from PCB profile
 	my $minPcbDist     = 6000;   # Minimal possible distance bewteen PCB in panel, for save scoring
 	                             # If distance is smaller, PCB has not be scored in whole dimension
-	my $overScoring    = 10000;  # distance, which score machine pass end of line 10 mm
+	my $overScoring    = 11000;  # distance, which score machine pass end of line 11 mm
 
 	my $gap = $self->{"pcbPlace"}->GetMinPcbGap();
 

@@ -67,15 +67,7 @@ sub OnCheckGroupData {
 
 	my @sig      = $defaultInfo->GetSignalLayers();
 	my $layerCnt = $defaultInfo->GetLayerCnt();
-
-	my %profLimTMP = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
-
-	if ( abs( $profLimTMP{"yMax"} - $profLimTMP{"yMin"} ) < 500 ) {
-
-		$dataMngr->_AddErrorResult( "Pozor - stěhování galvaniky", " Dej vše ideálně na nový velký přířez" );
-
-	}
-
+ 
 	# 1) Check if pcb class is at lest 3
 	my $pcbClass = $defaultInfo->GetPcbClass();
 	if ( !defined $pcbClass || $pcbClass < 3 ) {
