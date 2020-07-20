@@ -49,7 +49,7 @@ sub _ProcessStckpProduct {
 	if ( $IProduct->GetProductType() eq StackEnums->Product_INPUT ) {
 
 		$itemType = Enums->ItemType_MATPRODUCTCORE;
-		$itemId   = "J" . $IProduct->GetId();
+		$itemId   = "P" . $IProduct->GetId();
 
 	}
 	elsif ( $IProduct->GetProductType() eq StackEnums->Product_PRESS ) {

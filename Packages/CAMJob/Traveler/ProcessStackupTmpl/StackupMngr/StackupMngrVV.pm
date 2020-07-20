@@ -80,7 +80,7 @@ sub GetAllLamination {
 				$lamType = Enums->LamType_FLEXBASE;
 			}
 
-			my $lam = StackupLam->new( $lamOrder, $lamType, "J" . $inputP->GetId(), $inputP );
+			my $lam = StackupLam->new( $lamOrder, $lamType, "P" . $inputP->GetId(), $inputP );
 			push( @lamintaions, $lam );
 
 			$lamOrder++;
