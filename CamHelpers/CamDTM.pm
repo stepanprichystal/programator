@@ -448,11 +448,7 @@ sub RecalcDTMTools {
 
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
-
-	unless ( defined $DTMType ) {
-		$DTMType = $self->GetDTMType( $inCAM, $jobId, $step, $layer );
-	}
-
+ 
 	$inCAM->COM('tools_tab_reset');
 
 	foreach my $t (@tools) {
@@ -534,6 +530,9 @@ sub RecalcDTMTools {
 
 # Set DTM type
 # Do not do recalculate
+# Warning, if this function run on some layer, which is then deleted
+# InCAM display window "Drill size will be recalcualted" during layer delete
+# It is caused by not close DTM manager (tools close doesn't work)
 sub SetDTMTable {
 	my $self    = shift;
 	my $inCAM   = shift;

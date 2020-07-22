@@ -9,6 +9,7 @@ package Programs::Stencil::StencilCreator::Helpers::Helper;
 use utf8;
 use strict;
 use warnings;
+use List::Util qw[max min];
 
 #local library
 
@@ -25,15 +26,15 @@ use aliased 'CamHelpers::CamStep';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
- 
+
 # Return info from HEG
 sub GetStencilInfo {
 	my $self  = shift;
 	my $jobId = shift;
 
-	my $pcbInfo = ( HegMethods->GetAllByPcbId($jobId) )[0];
+	my $pcbInfo = ( HegMethods->GetBaseStencilInfo($jobId) )[0];
 
-	my $name = $pcbInfo->{"board_name"};
+	my $name = $pcbInfo->{"nazev_subjektu"};
 	my $note = $pcbInfo->{"poznamka"};
 	my $inf  = $name . $note;
 
@@ -59,14 +60,13 @@ sub GetStencilInfo {
 	}
 
 	# parse type
-	if ( $inf =~ /top/i ) {
+	if ( $pcbInfo->{"sablona_strana"} =~ /^c$/i ) {
 		$stencilInf{"type"} = Enums->StencilType_TOP;
 	}
-	elsif ( $inf =~ /bot/i ) {
+	elsif ( $pcbInfo->{"sablona_strana"} =~ /^s$/i ) {
 		$stencilInf{"type"} = Enums->StencilType_BOT;
 	}
-
-	if ( ( $inf =~ /top/i && $inf =~ /bot/i ) || $inf =~ /slou/i ) {
+	elsif ( $pcbInfo->{"sablona_strana"} =~ /^2$/i ) {
 		$stencilInf{"type"} = Enums->StencilType_TOPBOT;
 	}
 
@@ -77,34 +77,27 @@ sub GetStencilInfo {
 	}
 
 	# parse dim
-	if ( $inf =~ /(\d+)x(\d+)/i ) {
 
-		if ( $1 > $2 ) {
+	my $dim1 = max( $pcbInfo->{"kus_x"}, $pcbInfo->{"rozmer_x"} );
+	my $dim2 = max( $pcbInfo->{"kus_y"}, $pcbInfo->{"rozmer_y"} );
 
-			$stencilInf{"height"} = $1;
-			$stencilInf{"width"}  = $2;
+	if ( $dim1 > $dim2 ) {
 
-		}
-		else {
-			$stencilInf{"height"} = $2;
-			$stencilInf{"width"}  = $1;
-		}
+		$stencilInf{"height"} = $dim1;
+		$stencilInf{"width"}  = $dim2;
 
+	}
+	else {
+		$stencilInf{"height"} = $dim2;
+		$stencilInf{"width"}  = $dim1;
 	}
 
 	# parse thick
-	if ( $inf =~ /\d+x\d+x(\d+[\.,]?\d*)/i ) {
-		$stencilInf{"thick"} = $1;
-	}
-	elsif ( $inf =~ /tl.*(\d+[\.,]\d+)/i ) {
-		$stencilInf{"thick"} = $1;
-	}
-	elsif ( $inf =~ /(\d+)[µu]m/i ) {
-
-		$stencilInf{"thick"} = sprintf( "%.3f", $1 / 100 );
-	}
-	
+	$stencilInf{"thick"} = $pcbInfo->{"material_tloustka"};
 	$stencilInf{"thick"} =~ s/,/\./;
+
+	# if mat less than 1, format is: .xx (where xx is number behind point)
+	$stencilInf{"thick"} = "0" . $stencilInf{"thick"} if ( $stencilInf{"thick"} =~ /^\./ );
 
 	return %stencilInf;
 
@@ -127,7 +120,7 @@ sub GetStencilOriLayer {
 	unless ($layer) {
 		$layer = ( grep { $_->{"gROWname"} =~ /^$name-made/ } @pasteL )[0];
 	}
-	
+
 	return $layer;
 }
 
@@ -136,9 +129,10 @@ sub GetStencilSourceSteps {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	
+
 	my @steps = grep { $_ =~ /^ori_/i } CamStep->GetAllStepNames( $inCAM, $jobId );
- 
+	@steps = grep { $_ !~ /coupon/ } @steps;
+
 	return @steps;
 }
 
@@ -154,10 +148,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 	my $jobId = "f13610";
 
-	my %inf = Helper->GetStencilInfo( $jobId );
-	
+	my %inf = Helper->GetStencilInfo($jobId);
+
 	print "test";
-	 
 
 }
 

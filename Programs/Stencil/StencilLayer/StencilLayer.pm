@@ -41,23 +41,66 @@ sub new {
 	$self->{"inCAM"}         = shift;
 	$self->{"jobId"}         = shift;
 	$self->{"stencilParams"} = shift;    # stencil params
+	$self->{"finalLayer"}    = shift;
 
 	my %inf = Helper->GetStencilInfo( $self->{"jobId"} );
 	$self->{"stencilInfo"} = \%inf;
 
 	# PROPERTIES
 	$self->{"stencilStep"} = "o+1";
-	$self->{"finalLayer"} = $self->{"stencilInfo"}->{"tech"} eq Enums->Technology_DRILL ? "flc" : "ds";
+	$self->{"finalLayer"} = $self->{"stencilInfo"}->{"tech"} eq Enums->Technology_DRILL ? "flc" : "ds"
+	  unless ( defined $self->{"finalLayer"} );
 
 	return $self;
 }
+
+# Create o+1 and panel step
+sub PrepareSteps {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $par   = $self->{"stencilParams"};
+
+	# 1) Create steps  o+1
+
+	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"stencilStep"} ) ) {
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"stencilStep"}, "type" => "step" );
+	}
+
+	$inCAM->COM(
+				 'create_entity',
+				 "job"     => $jobId,
+				 "name"    => $self->{"stencilStep"},
+				 "db"      => "",
+				 "is_fw"   => 'no',
+				 "type"    => 'step',
+				 "fw_type" => 'form'
+	);
+
+	CamHelper->SetStep( $inCAM, $self->{"stencilStep"} );
+
+	$inCAM->COM( "profile_rect", "x1" => "0", "y1" => "0", "x2" => $par->GetStencilSizeX(), "y2" => $par->GetStencilSizeY() );
+
+	# 2) crate panel
+	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => "panel", "type" => "step" );
+	}
+
+	my $panel = SRStep->new( $inCAM, $jobId, "panel" );
+	$panel->Create( $par->GetStencilSizeX(), $par->GetStencilSizeY(), 0, 0, 0, 0 );
+	$panel->AddSRStep( $self->{"stencilStep"}, 0, 0, 0, 1, 1, 0, 0 );
+
+	
+
+}
+
 
 sub PrepareLayer {
 	my $self = shift;
 
 	my %layers = $self->__PrepareOriLayers();
-
-	$self->__PrepareFinalSteps();
+ 
 	$self->__PrepareFinalLayer( \%layers );
 	$self->__PrepareSchema();
 	$self->__PreparePcbNumber();
@@ -119,8 +162,7 @@ sub __PrepareOriLayers {
 
 		# 2) Move to zero, test if left down corner is in zero
 		CamLayer->WorkLayer( $inCAM, $prepared );
-		
-		
+
 		# 3) mirror layer by y axis profile
 		if ( $par->GetStencilType() eq Enums->StencilType_TOPBOT && $lType eq "bot" ) {
 
@@ -150,7 +192,6 @@ sub __PrepareOriLayers {
 
 		}
 
-
 		# 4) Rotate data 90° CW
 		if ( $pcbProf->{"isRotated"} ) {
 
@@ -167,46 +208,6 @@ sub __PrepareOriLayers {
 
 }
 
-# Create o+1 and panel step
-sub __PrepareFinalSteps {
-	my $self = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $par   = $self->{"stencilParams"};
-
-	# 1) Create steps  o+1
-
-	if ( CamHelper->StepExists( $inCAM, $jobId, $self->{"stencilStep"} ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => $self->{"stencilStep"}, "type" => "step" );
-	}
-
-	$inCAM->COM(
-				 'create_entity',
-				 "job"     => $jobId,
-				 "name"    => $self->{"stencilStep"},
-				 "db"      => "",
-				 "is_fw"   => 'no',
-				 "type"    => 'step',
-				 "fw_type" => 'form'
-	);
-
-	CamHelper->SetStep( $inCAM, $self->{"stencilStep"} );
-
-	$inCAM->COM( "profile_rect", "x1" => "0", "y1" => "0", "x2" => $par->GetStencilSizeX(), "y2" => $par->GetStencilSizeY() );
-
-	# 2) crate panel
-	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
-		$inCAM->COM( "delete_entity", "job" => $jobId, "name" => "panel", "type" => "step" );
-	}
-
-	my $panel = SRStep->new( $inCAM, $jobId, "panel" );
-	$panel->Create( $par->GetStencilSizeX(), $par->GetStencilSizeY(), 0, 0, 0, 0 );
-	$panel->AddSRStep( $self->{"stencilStep"}, 0, 0, 0, 1, 1, 0, 0 );
-
-	CamHelper->SetStep( $inCAM, $self->{"stencilStep"} );
-
-}
 
 # Create final stencil layer intended for export ("ds" or "f")
 sub __PrepareFinalLayer {
@@ -217,6 +218,8 @@ sub __PrepareFinalLayer {
 	my $jobId = $self->{"jobId"};
 	my $par   = $self->{"stencilParams"};
 	my $step  = $par->GetStencilStep();
+	
+	
 
 	# 1) Create final layer
 	my $type = 'document';
@@ -232,6 +235,8 @@ sub __PrepareFinalLayer {
 	$inCAM->COM( 'create_layer', layer => $self->{"finalLayer"}, context => 'board', type => $type, polarity => 'positive', ins_layer => '' );
 
 	# 2) copy prepared data to layer
+	CamHelper->SetStep( $inCAM, $self->{"stencilStep"} );
+	
 	foreach my $lType ( keys %layers ) {
 
 		my $oriLayer = $layers{$lType}->{"ori"};
@@ -267,7 +272,7 @@ sub __PrepareFinalLayer {
 		);
 
 		$inCAM->COM( 'delete_layer', layer => $prepared );
- 
+
 	}
 
 	$self->__CreatePads( $self->{"finalLayer"} );
@@ -302,7 +307,6 @@ sub __PrepareSchema {
 
 	}
 
- 
 	# vlepeni do ramu
 	elsif ( $schType eq Enums->Schema_FRAME ) {
 
@@ -372,14 +376,14 @@ sub __CreatePads {
 
 	CamLayer->WorkLayer( $inCAM, $lName );
 	$inCAM->COM('sel_break');
-	$inCAM->COM( 'sel_contourize', "accuracy"  => '6.35', "break_to_islands" => 'yes', "clean_hole_size" => '60',  "clean_hole_mode" => 'x_and_y' );
-	
+	$inCAM->COM( 'sel_contourize', "accuracy" => '6.35', "break_to_islands" => 'yes', "clean_hole_size" => '60', "clean_hole_mode" => 'x_and_y' );
+
 	# due to InCAM Bug do break and counturization again - workaround from Orbotech
 	# (sometimes InCAM create one big surface - no island)
-	$inCAM->COM( 'sel_contourize', "accuracy"  => '6.35', "break_to_islands" => 'yes', "clean_hole_size" => '60',  "clean_hole_mode" => 'x_and_y' );
-	$inCAM->COM('sel_decompose',"overlap"=> "no");
-	
-	$inCAM->COM( 'sel_cont2pad',   "match_tol" => '25.4', "restriction"      => '',    "min_size"        => '127', "max_size"        => '12000' );
+	$inCAM->COM( 'sel_contourize', "accuracy" => '6.35', "break_to_islands" => 'yes', "clean_hole_size" => '60', "clean_hole_mode" => 'x_and_y' );
+	$inCAM->COM( 'sel_decompose', "overlap" => "no" );
+
+	$inCAM->COM( 'sel_cont2pad', "match_tol" => '25.4', "restriction" => '', "min_size" => '127', "max_size" => '12000' );
 
 	# test on  lines presence
 	my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $lName );
@@ -409,14 +413,18 @@ sub __RecomputeTools {
 
 	my $DTMType = CamDTM->GetDTMType( $inCAM, $jobId, $step, $lName );
 
+	# Set finish size same as drill size
 	foreach my $t (@tools) {
- 
+
 		$t->{"gTOOLfinish_size"} = $t->{"gTOOLdrill_size"};
 	}
 
 	# 3) Set new values to DTM
 	CamDTM->SetDTMTools( $inCAM, $jobId, $step, $lName, \@tools );
-	CamDTM->SetDTMTable( $inCAM, $jobId, $step, $lName, EnumsDrill->DTM_VRTANE );
+
+	CamDTM->RecalcDTMTools( $inCAM, $jobId, $self->{"stencilStep"}, $self->{"finalLayer"}, EnumsDrill->DTM_VRTANE );
+
+	 
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -338,6 +338,52 @@ sub GetBasePcbInfo {
 	}
 }
 
+
+# Return info about stencil
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
+sub GetBaseStencilInfo {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
+
+	my $cmd = "select top 1
+				 d.nazev_subjektu,
+				 d.sablona_strana,
+				 d.sablona_typ,
+				 d.kus_x,
+				 d.kus_y,
+				 d.rozmer_x,
+				 d.rozmer_y,
+				 d.material_tloustka,
+				 d.material_typ_materialu,
+				 d.material_vlastni,
+				 d.stav,
+				 d.poznamka
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 left outer join lcs.vztahysubjektu vs with (nolock) on vs.cislo_subjektu=z.cislo_subjektu and vs.cislo_vztahu=22175
+				 left outer join lcs.zakazky_dps_22_hlavicka n with (nolock) on vs.cislo_vztaz_subjektu=n.cislo_subjektu
+				 left outer join lcs.subjekty prijal with (nolock) on prijal.cislo_subjektu=n.prijal
+				 left outer join lcs.desky_22 dn with (nolock) on n.deska=dn.cislo_subjektu
+				 left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId
+				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@result) == 1 ) {
+		return $result[0];
+	}
+	else {
+		return undef;
+	}
+}
+
+
 # Return material kind like FR4, S400, etc..
 # Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetMaterialKind {

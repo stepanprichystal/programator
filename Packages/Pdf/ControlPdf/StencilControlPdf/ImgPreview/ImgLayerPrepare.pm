@@ -50,6 +50,7 @@ sub new {
 	$self->{"viewType"} = shift;
 	$self->{"pdfStep"}  = shift;
 	$self->{"params"}   = shift;    # Stencil parameters
+	$self->{"drawDim"}  = shift;    # Draw dimension to PDF
 
 	$self->{"profileLim"} = undef;  # limts of pdf step
 
@@ -75,7 +76,6 @@ sub PrepareLayers {
 
 	# prepare layers
 	$self->__PrepareLayers($layerList);
- 
 
 }
 
@@ -102,9 +102,11 @@ sub __PrepareLayers {
 		$self->__PrepareSTNCLMAT($l) if ( $l->GetType() eq Enums->Type_COVER );
 		$self->__PrepareHOLES($l)    if ( $l->GetType() eq Enums->Type_HOLES );
 
-		$self->__PrepareCODES($l)       if ( $l->GetType() eq Enums->Type_CODES );
-		$self->__PreparePROFILE($l)     if ( $l->GetType() eq Enums->Type_PROFILE );
-		$self->__PrepareDATAPROFILE($l) if ( $l->GetType() eq Enums->Type_DATAPROFILE );
+		if ( $self->{"drawDim"} ) {
+			$self->__PrepareCODES($l)       if ( $l->GetType() eq Enums->Type_CODES );
+			$self->__PreparePROFILE($l)     if ( $l->GetType() eq Enums->Type_PROFILE );
+			$self->__PrepareDATAPROFILE($l) if ( $l->GetType() eq Enums->Type_DATAPROFILE );
+		}
 
 		$self->__PrepareHALFFIDUC($l) if ( $l->GetType() eq Enums->Type_HALFFIDUC );
 		$self->__PrepareFIDUCPOS($l)  if ( $l->GetType() eq Enums->Type_FIDUCPOS );
@@ -706,8 +708,6 @@ sub __PrepareFIDUCPOS {
 	$layer->SetOutputLayer($lName);
 }
 
-
-
 sub __DrawDashedRect {
 	my $self       = shift;
 	my $outline    = shift;            #outline width
@@ -741,7 +741,7 @@ sub __DrawDashedRect {
 	}
 
 	CamSymbolSurf->AddSurfaceLinePattern( $inCAM, undef, undef, 45, 0, $segmentLen * 0.75, $segmentLen );
-	push(@coord, $coord[0]); # last point == first point
+	push( @coord, $coord[0] );    # last point == first point
 	CamSymbolSurf->AddSurfacePolyline( $inCAM, \@coord, 1, "negative" );
 
 }
@@ -750,7 +750,7 @@ sub __DrawDashedRect {
 
 sub __DrawDashedLine {
 	my $self       = shift;
-	my $lineWidth  = shift;    #outline width
+	my $lineWidth  = shift;       #outline width
 	my $segmentLen = shift;
 	my $gapLen     = shift;
 	my $p1         = shift;

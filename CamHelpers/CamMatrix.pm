@@ -78,6 +78,17 @@ sub CreateLayer {
 
 }
 
+# Rename matric layer
+sub RenameLayer {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $layerOld = shift;    # old layter name
+	my $layerNew = shift;    # new layer name
+
+	$inCAM->COM( 'matrix_rename_layer', "job" => $jobId, "matrix" => "matrix", "layer" => $layerOld, "new_name" => $layerNew );
+}
+
 # Delete Layer if exist
 sub DeleteLayer {
 	my $self  = shift;
@@ -187,8 +198,8 @@ sub GetNonSignalLayerSide {
 	my $jobId     = shift;
 	my $layerName = shift;
 	my $stackup   = shift;
-	my $sigRef = shift;
-	
+	my $sigRef    = shift;
+
 	my $sigL = ( $layerName =~ /^\w+([csv]\d*)$/ )[0];
 
 	die "reference signal layer was not recognized from non signal layer: $layerName" if ( !defined $sigL );
@@ -205,11 +216,11 @@ sub GetNonSignalLayerSide {
 	else {
 
 		$side = StackupOperation->GetSideByLayer( $inCAM, $jobId, $sigL, $stackup );
-	
+
 	}
-	
-	$$sigRef = $sigL if(defined $sigRef);
-	
+
+	$$sigRef = $sigL if ( defined $sigRef );
+
 	return $side;
 }
 
@@ -219,16 +230,16 @@ sub GetNonSignalLayerSide {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	  use aliased 'CamHelpers::CamMatrix';
-	  use aliased 'Packages::InCAM::InCAM';
+	use aliased 'CamHelpers::CamMatrix';
+	use aliased 'Packages::InCAM::InCAM';
 
-	  my $inCAM = InCAM->new();
+	my $inCAM = InCAM->new();
 
-	  my $jobId    = "f13608";
-	  my $stepName = "panel";
+	my $jobId    = "f13608";
+	my $stepName = "panel";
 
-	  my $workLayer = CamMatrix->GetWorkLayer($inCAM);
-	  die;
+	my $workLayer = CamMatrix->GetWorkLayer($inCAM);
+	die;
 
 }
 

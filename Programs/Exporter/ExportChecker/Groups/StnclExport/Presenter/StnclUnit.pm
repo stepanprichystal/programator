@@ -20,7 +20,7 @@ use warnings;
 
 #local library
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
- 
+
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::StnclExport::Model::StnclCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::StnclExport::Model::StnclPrepareData';
@@ -28,15 +28,13 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::StnclExport::Model::Stnc
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::Groups::StnclExport::View::StnclUnitForm';
 
-
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 	my $class = shift;
-	my $self = {};
+	my $self  = {};
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
@@ -44,12 +42,11 @@ sub new {
 	#uique key within all units
 	$self->{"unitId"} = UnitEnums->UnitId_STNCL;
 
-	my $checkData = StnclCheckData->new();
+	my $checkData   = StnclCheckData->new();
 	my $prepareData = StnclPrepareData->new();
-	my $exportData = StnclExportData->new();
-		
-	
-	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData);
+	my $exportData  = StnclExportData->new();
+
+	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
 
 	return $self;    # Return the reference to the hash.
 }
@@ -75,7 +72,6 @@ sub InitForm {
 	$self->{"form"} = StnclUnitForm->new( $parent, $inCAM, $self->{"jobId"} );
 
 	# init base class with event class
-	 
 
 	$self->_SetHandlers();
 
@@ -87,15 +83,14 @@ sub RefreshGUI {
 	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
- 
+
 	$self->{"form"}->SetThickness( $groupData->GetThickness() );
 	$self->{"form"}->SetExportNif( $groupData->GetExportNif() );
 	$self->{"form"}->SetExportData( $groupData->GetExportData() );
-    $self->{"form"}->SetExportPdf( $groupData->GetExportPdf() );
-    $self->{"form"}->SetExportMeasureData( $groupData->GetExportMeasureData() );
-    $self->{"form"}->SetFiducialInfo( $groupData->GetFiducialInfo() );
-
-
+	$self->{"form"}->SetExportPdf( $groupData->GetExportPdf() );
+	$self->{"form"}->SetDim2ControlPdf( $groupData->GetDim2ControlPdf() );
+	$self->{"form"}->SetExportMeasureData( $groupData->GetExportMeasureData() );
+	$self->{"form"}->SetFiducialInfo( $groupData->GetFiducialInfo() );
 }
 
 sub GetGroupData {
@@ -113,9 +108,10 @@ sub GetGroupData {
 		$groupData = $self->{"dataMngr"}->GetGroupData();
 
 		$groupData->SetThickness( $frm->GetThickness() );
-		$groupData->SetExportNif( $frm->GetExportNif() );	
+		$groupData->SetExportNif( $frm->GetExportNif() );
 		$groupData->SetExportData( $frm->GetExportData() );
 		$groupData->SetExportPdf( $frm->GetExportPdf() );
+		$groupData->SetDim2ControlPdf( $frm->GetDim2ControlPdf() );
 		$groupData->SetExportMeasureData( $frm->GetExportMeasureData() );
 		$groupData->SetFiducialInfo( $frm->GetFiducialInfo() );
 
@@ -127,6 +123,7 @@ sub GetGroupData {
 
 	return $groupData;
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

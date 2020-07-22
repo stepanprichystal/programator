@@ -36,7 +36,6 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 	my $inCAM  = shift;
-	my $jobId  = shift;
 
 	my @dimension = ( 400, 300 );
 	my $self = $class->SUPER::new( $parent, "Stencil input", \@dimension );
@@ -45,7 +44,6 @@ sub new {
 
 	# Properties
 	$self->{"inCAM"} = $inCAM;
-	$self->{"jobId"} = $jobId;
 
 	# Events
 
@@ -278,48 +276,59 @@ sub __InputCustomerData {
 	$inCAM->COM( "input_identify", "job"  => $jobId );
 
 	my @mess = (
-				 "Načti správně data do výchozího stepu \"$oriStep\".",
-				 " - šablona pro TOP => sa-ori",
-				 " - šablona pro BOT => sb-ori",
-				 " - profil šablony => o"
+				 "Načti správně data do výchozího stepu \"$oriStep\".\nTzn. vytvoř v matrixu následující vrstvy:\n",
+				 " - <b>sa-ori</b> => pokud je šablona pro TOP",
+				 " - <b>sb-ori</b> => pokud je šablona pro BOT",
+				 " - <b>o</b> => obrys šablony (rozměry materiálu)"
 	);
 
 	$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
 
-	$inCAM->PAUSE("Nacti spravne data, a pokracuj..");
+	$inCAM->PAUSE("Nacti spravne data (vytvor vrstvy sa-ori; sb-ori; o), a pokracuj..");
 
 	# test if sa-ori or sb-ori exist
 	#my @layers = grep {$_->{"gROWname"} =~ /s[ab]-ori/ } CamJob->GetAllLayers($inCAM, $jobId);
 
 	while ( !scalar( grep { $_->{"gROWname"} =~ /s[ab]-ori/ } CamJob->GetAllLayers( $inCAM, $jobId ) ) ) {
 
-		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nebyly nalezeny vrstvy sa-ori nebo sb-ori"] );
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nebyly nalezeny vrstvy \"sa-ori\" nebo \"sb-ori\""] );
 
 		$inCAM->PAUSE("Vytvor vrstvy sa-ori nebo sb-ori...");
 	}
 
+	while ( !scalar( grep { $_->{"gROWname"} =~ /^o$/ } CamJob->GetAllLayers( $inCAM, $jobId ) ) ) {
+
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nebyla nalezena vrstva obrysu šablony \"o\""] );
+
+		$inCAM->PAUSE("Vytvor vrstvu obrysu sablony o");
+	}
+
+	# Move data to zero
+	my %lLim = CamJob->GetLayerLimits( $inCAM, $jobId, $oriStep, "o" );
+	my %source = ( "x" => $lLim{"xmin"}, "y" => $lLim{"ymin"} );
+	my %target = ( "x" => 0, "y" => 0 );
+
+	# move layer
+	foreach my $l ( map { $_->{"gROWname"} } CamJob->GetAllLayers( $inCAM, $jobId ) ) {
+		CamLayer->WorkLayer( $inCAM, $l );
+		CamLayer->MoveSelSameLayer( $inCAM, $l, \%source, \%target );
+	}
 
 	# Create profile
 
 	my $profExist = sub {
-
-		# test if profile already exist
-		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $oriStep );
-		if ( $lim{"xMax"} != 0 && $lim{"yMax"} != 0 ) {
-			return 1;
-		}
-
+ 
 		my $profL = "o";
 
 		return 0 unless ( CamHelper->LayerExists( $inCAM, $jobId, $profL ) );
-		
-		 my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $oriStep, $profL);
-		 return 0 if($fHist{"line"} != 4);
+
+		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $oriStep, $profL );
+		return 0 if ( $fHist{"line"} != 4 );
 
 		# try to create profile
 		$inCAM->SupressToolkitException(1);
 		$inCAM->HandleException(1);
-		
+
 		CamStep->CreateProfileByLayer( $inCAM, $oriStep, $profL );
 
 		my $err = $inCAM->GetExceptionError();
@@ -330,31 +339,32 @@ sub __InputCustomerData {
 
 		$inCAM->HandleException(0);
 		$inCAM->SupressToolkitException(0);
- 
+
 		return 1;
 	};
 
 	while ( !$profExist->() ) {
 
-		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, ["Nepodařilo se vytvořit profil.", "Vytvoř vrstvu \"o\" s obrysem šablony nebo udělej profil ručně"] );
+		$self->{"messMngr"}->ShowModal( -1,
+									  EnumsGeneral->MessageType_INFORMATION,
+									  [ "Nepodařilo se vytvořit profil.", "Vytvoř vrstvu \"o\" s obrysem šablony nebo udělej profil ručně" ] );
 
 		$inCAM->PAUSE("Vytvor profil...");
 
 	}
-	
+
 	# set sa-ori and sb-ori as type document
-	foreach my $l (  grep { $_->{"gROWname"} =~ /s[ab]-ori/ }  CamJob->GetAllLayers( $inCAM, $jobId ) ){
+	foreach my $l ( grep { $_->{"gROWname"} =~ /^(s[ab]-ori)|(o)$/ } CamJob->GetAllLayers( $inCAM, $jobId ) ) {
 		CamLayer->SetLayerTypeLayer( $inCAM, $jobId, $l->{"gROWname"}, "document" );
 	}
-	
+
 	# move customer data to archive
-	my $p = JobHelper->GetJobArchive($jobId)."\\Zdroje\\data";
+	my $p = JobHelper->GetJobArchive($jobId) . "\\Zdroje\\data";
 	unless ( -e $p ) {
-		mkdir( $p) or die "Can't create dir: " . $p . $_;
+		mkdir($p) or die "Can't create dir: " . $p . $_;
 	}
-	
+
 	my $copyCnt = dirmove( $root, $p );
-	
 
 	$self->__RunStencilCreator($jobId);
 }
