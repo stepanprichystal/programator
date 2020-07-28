@@ -82,6 +82,8 @@ sub Build {
 	push(@req, "panel_y");
 	push(@req, "nasobnost_panelu");
 	push(@req, "nasobnost");
+	push(@req, "fr_rozmer_x"); # need fr, because of traveler
+	push(@req, "fr_rozmer_y"); # need fr, because of traveler
 	push(@req, "rozmer_x");
 	push(@req, "rozmer_y");
 
