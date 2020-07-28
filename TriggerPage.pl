@@ -14,9 +14,9 @@ use Try::Tiny;
 use Log::Log4perl qw(get_logger :levels);
 
 #local library
-use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
+#use lib qw( \\\\incam\\InCAM\\server\\site_data\\scripts);
 
-#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 #necessary for load pall packages
 #use FindBin;
@@ -37,8 +37,9 @@ my $taskType = shift;    # type of task to process
 my $loginId  = shift;    # user which do request
 my $extraId  = shift;    # extra order id (number of extra product - dodelavka)
 
-#$orderId = "d284968-02";
-#$taskType = TaskEnums->PCB_TOPRODUCE;
+$orderId = "d287452-01";
+$taskType = TaskEnums->PCB_TOPRODUCE;
+$extraId = 1;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
 Log::Log4perl->init($logConfig);

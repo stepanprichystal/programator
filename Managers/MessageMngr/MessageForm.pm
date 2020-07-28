@@ -233,13 +233,13 @@ sub __SetLayoutParameters {
 
 	foreach my $messPar ( @{ $self->{"parameters"} } ) {
 
-		my $parTitleTxt = Wx::StaticText->new( $parent, -1, $messPar->GetTitle() . ":", &Wx::wxDefaultPosition );
-		my $btnReset = Wx::Button->new( $parent, -1, "Default", &Wx::wxDefaultPosition );
+		my $parTitleTxt = Wx::StaticText->new( $parent, -1, $messPar->GetTitle() . ":", &Wx::wxDefaultPosition, [-1,25] );
+		my $btnReset = Wx::Button->new( $parent, -1, "Default", &Wx::wxDefaultPosition, [-1,25] );
 		my $parVal;
 
 		if ( $messPar->GetParameterType() eq Enums->ParameterType_TEXT ) {
 
-			$parVal = Wx::TextCtrl->new( $parent, -1, "", &Wx::wxDefaultPosition );
+			$parVal = Wx::TextCtrl->new( $parent, -1, "", &Wx::wxDefaultPosition, [-1,25] );
 			$parVal->SetValue( $messPar->GetOrigValue() );
 
 			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
@@ -248,7 +248,7 @@ sub __SetLayoutParameters {
 		}
 		elsif ( $messPar->GetParameterType() eq Enums->ParameterType_NUMBER ) {
 
-			$parVal = Wx::SpinCtrl->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxSP_ARROW_KEYS, -99999, 99999 );
+			$parVal = Wx::SpinCtrl->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition,  [-1,25], &Wx::wxSP_ARROW_KEYS, -99999, 99999 );
 			$parVal->SetValue( $messPar->GetOrigValue() );
 
 			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
@@ -258,7 +258,7 @@ sub __SetLayoutParameters {
 		elsif ( $messPar->GetParameterType() eq Enums->ParameterType_OPTION ) {
 
 			my @opt = $messPar->GetOptions();
-			$parVal = Wx::ComboBox->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition,   &Wx::wxDefaultSize, \@opt, &Wx::wxCB_READONLY );
+			$parVal = Wx::ComboBox->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition, [-1,25], \@opt, &Wx::wxCB_READONLY );
 			$parVal->SetValue( $messPar->GetOrigValue() );
 
 			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
@@ -266,15 +266,15 @@ sub __SetLayoutParameters {
 		
 		}elsif ( $messPar->GetParameterType() eq Enums->ParameterType_CHECK ) {
  
-			$parVal = Wx::CheckBox->new( $parent, -1, "",  &Wx::wxDefaultPosition, &Wx::wxDefaultSize  );
+			$parVal = Wx::CheckBox->new( $parent, -1, "",  &Wx::wxDefaultPosition, [-1,25] );
 			$parVal->SetValue( $messPar->GetOrigValue() );
 			Wx::Event::EVT_CHECKBOX( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
 			Wx::Event::EVT_BUTTON( $btnReset, -1, sub { $parVal->SetValue( $messPar->GetOrigValue() ) } );
 		}
 
-		$szClTitle->Add( $parTitleTxt, 0, &Wx::wxALL, 3 );
-		$szClVal->Add( $parVal,   0, &Wx::wxALL | &Wx::wxEXPAND , 0 );
-		$szClDef->Add( $btnReset, 0, &Wx::wxALL, 0 );
+		$szClTitle->Add( $parTitleTxt, 0, &Wx::wxALL, 1 );
+		$szClVal->Add( $parVal,   0, &Wx::wxALL | &Wx::wxEXPAND , 1 );
+		$szClDef->Add( $btnReset, 0, &Wx::wxALL, 1 );
 
 		#$szRow->Add( 10, 10, 75, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 

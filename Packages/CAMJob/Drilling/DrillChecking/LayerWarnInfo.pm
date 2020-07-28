@@ -293,6 +293,17 @@ sub CheckToolDiameter {
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
 	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_lsMill );
+	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
+	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
+	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_prepregMill );
+	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
+	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
+	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_soldcMill );
+	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_soldsMill );
+	
+	
+	 
+	
 
 	my @layersRout = $self->__GetLayersByType( \@layers, \@t2 );
 
