@@ -226,11 +226,12 @@ sub __ExportAOI {
 
 		my %lPars = JobHelper->ParseSignalLayerName($layerName);
 		my $IProduct = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
-		
-		$cuThick =
-		  $self->{"stackup"}->GetCuLayer( $lPars{"sourceName"} )->GetThick() + ($IProduct->GetIsPlated()
-		  ? StackEnums->Plating_STD
-		  : 0);
+
+		$cuThick = $self->{"stackup"}->GetCuLayer( $lPars{"sourceName"} )->GetThick() + (
+																						  $IProduct->GetIsPlated()
+																						  ? StackEnums->Plating_STD
+																						  : 0
+		);
 		$pcbThick = sprintf( "%.3f", $self->{"stackup"}->GetThickByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} ) );
 	}
 
@@ -286,8 +287,10 @@ sub __ExportAOI {
 
 	@steps = map { $_->{"stepName"} } @steps;
 
-	my $stepsStr = join( "\;", @steps );
-	$inCAM->COM( "cdr_set_area_auto", "steps" => $stepsStr, "margin_x" => "0", "margin_y" => "0", "inspected_steps" => "" );
+	if (@steps) {
+		my $stepsStr = join( "\;", @steps );
+		$inCAM->COM( "cdr_set_area_auto", "steps" => $stepsStr, "margin_x" => "0", "margin_y" => "0", "inspected_steps" => "" );
+	}
 
 	# Exclude texts from test
 	$inCAM->COM( "cdr_auto_zone_text", "margin" => "100", "pcb" => "yes", "panel" => "no" );

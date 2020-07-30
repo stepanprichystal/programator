@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<!-- Desc -->
+
+<!----------------------------------------------------------------------------------------- 
+ Description: Web interface for AOI operators
+ In Case of locked job on AOI server, operator can reexport job, which is cleaned
+ and send again to aoi server with suffix Dxxxxxx_ot<\d>
+ Author:SPR
+------------------------------------------------------------------------------------------->
+
+<script>
+   function required(inputtx) 
+   {
+     if (inputtx.value.length == 0)
+      { 
+         alert("Chybi nazev jobu");  	
+         return false; 
+      }else{  	
+      
+     	 window.open('http://tpvsrv.gatema.cz/tpv/?jobid='+ inputtx.value + '&userid=TEMP_USER&request=AOI_data');
+     	return false;
+       
+      }
+      
+    } 
+</script>
+
+
+
+
+
+<body>
+
+<h1>Oprava OPFX dat pøi zamknutém jobu</h1>
+
+Script exportuje všechny vrstvy na AOI server</br>
+Pokusí se upravit parametry (zvìtšení motivu, konturizace, atd..)</br></br>
+Export na AOI server mùže trvat 1-5minut, podle vytíženosti</br></br>
+
+
+<form onsubmit="required(search);">
+
+
+<input id="search" placeholder="Id desky: Dxxxxxx" type="search" name="search" pattern="[Dd]\d{6}" title="Formát: D123456"></input>
+<input type="submit" value="Exportovat">
+</form>
+
+ 
+
+</body>
+</html>

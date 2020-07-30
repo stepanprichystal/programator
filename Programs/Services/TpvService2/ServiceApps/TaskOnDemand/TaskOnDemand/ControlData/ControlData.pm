@@ -3,7 +3,7 @@
 #
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData;
+package Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData::ControlData;
 
 #3th party library
 use strict;
@@ -326,7 +326,7 @@ sub SendMail {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData';
+	use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData::ControlData';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();

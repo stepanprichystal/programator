@@ -12,25 +12,23 @@ use FindBin;
 use lib "$FindBin::Bin/../";
 use PackagesLib;
 use utf8;
-use List::Util qw[max min];
 
-use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Widgets::Forms::SimpleInput::SimpleInputFrm';
-use aliased 'Packages::InCAM::InCAM';
-use aliased 'CamHelpers::CamJob';
-use aliased 'CamHelpers::CamAttributes';
-use aliased 'CamHelpers::CamMatrix';
-use aliased 'CamHelpers::CamStepRepeatPnl';
-use aliased 'Helpers::JobHelper';
-use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::GeneralHelper';
+
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Managers::MessageMngr::MessageMngr';
-use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
-use aliased 'Packages::CAMJob::Panelization::SRStep';
+use aliased 'Packages::CAMJob::AOI::AOIRepair::AOIRepair';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Helpers::JobHelper';
 
 my $inCAM = InCAM->new();
+
 my $jobId = "$ENV{JOB}";
+
+#$jobId = "d282449";
 
 my $messMngr = MessageMngr->new("AOI Helper");
 
@@ -38,6 +36,7 @@ my $messMngr = MessageMngr->new("AOI Helper");
 # 1) Get source job id
 # -------------------------------------------
 my $jobIdSrc = undef;
+my $sourceJobOpened = 1;
 if ( !defined $jobId || $jobId eq "" ) {
 
 	my $sourceJobPar = $messMngr->GetTextParameter( "Source job", "" );
@@ -51,12 +50,20 @@ if ( !defined $jobId || $jobId eq "" ) {
 							  ["Script redukuje data jobu a odešle je na AOI server"],
 							  [ "Cancel", "Next" ],
 							  undef, \@params );
+							  
+		exit() if ( $messMngr->Result() == 0 );
 	}
 
 	$jobIdSrc = lc( $sourceJobPar->GetResultValue() );
+
+	CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );
+	CamJob->CheckOutJob( $inCAM, $jobIdSrc );
+	$sourceJobOpened = 0;
+
 }
 else {
 	$jobIdSrc = $jobId;
+	$sourceJobOpened = 1;
 }
 
 #d177693_ot
@@ -64,25 +71,37 @@ else {
 # 2) Get parameters for create AOI job
 # -------------------------------------------
 
+my $AOIRepair = AOIRepair->new( $inCAM, $jobIdSrc );
+
+$AOIRepair->{"onItemResult"}->Add( sub { __OnOPFXResult(@_) } );
+
 my @mess = ("Set parameters for job  for output OPFX");
 
 # App parameters
 # Generate new job name in format D<xxxxxx>_ot<\d>
 # Trz to find job with last _ot number
 
-my @dirs = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_AOITESTSFUSIONDB, $jobIdSrc );
-my $IDx = max( grep { defined $_ } map { ( $_ =~ m/\w\d+_ot(\d+)/i )[0] } @dirs );
-$IDx = 1 if ( !defined $IDx );
-my $newJobName = $jobIdSrc . "_ot$IDx";
+my $jobIdOut = $AOIRepair->GenerateJobName();
 
-my $outputJobPar = $messMngr->GetTextParameter( "Output job (must be in format d123456_ot123 )", "$newJobName" );
+my $lTxt = join( "; ", CamJob->GetSignalLayerNames( $inCAM, $jobIdSrc ) );
+
+my $outputJobPar = $messMngr->GetTextParameter( "Output job (must be in format d123456_ot123 )", "$jobIdOut" );
+my $layersPar = $messMngr->GetTextParameter( "Layers (separated by comma ; )", $lTxt );
 my $reduceStepsPar = $messMngr->GetCheckParameter( "Reduce steps (only panel step left)", 0 );
 my $resizePar = $messMngr->GetTextParameter( "Resize data [µm]", 0 );
-my $contourPar = $messMngr->GetCheckParameter( "Contourize",              0 );
-my $levelPar   = $messMngr->GetCheckParameter( "Reduce layer data level", 0 );
-my $attrPar    = $messMngr->GetCheckParameter( "Remove layer attributes", 1 );
+my $contourPar = $messMngr->GetCheckParameter( "Contourize", 0 );
 
-my @params = ( $outputJobPar, $reduceStepsPar, $resizePar, $contourPar, $levelPar, $attrPar );
+my $opfxP          = JobHelper->GetJobArchive($jobIdSrc) . "zdroje\\ot\\";
+my $opfxPathPar    = $messMngr->GetTextParameter( "OPFX path", "$opfxP" );
+my $sent2serverPar = $messMngr->GetCheckParameter( "Sent to AOI server", 1 );
+my $closeOtJobPar  = $messMngr->GetCheckParameter( "Close OT job", 0 );
+my $removeOtJobPar = $messMngr->GetCheckParameter( "Remove OT job ", 0 );
+
+#my $levelPar   = $messMngr->GetCheckParameter( "Reduce layer data level", 0 );
+my $attrPar = $messMngr->GetCheckParameter( "Remove layer attributes", 1 );
+
+my @params =
+  ( $outputJobPar, $layersPar, $reduceStepsPar, $resizePar, $contourPar, $attrPar, $opfxPathPar, $sent2serverPar, $closeOtJobPar, $removeOtJobPar );
 
 while (1) {
 
@@ -91,21 +110,25 @@ while (1) {
 	exit() if ( $messMngr->Result() == 0 );
 
 	# Check if output job is well defined
-	my $jobIdOut = $outputJobPar->GetResultValue();
+	$jobIdOut = $outputJobPar->GetResultValue(1);
 
 	if ( !defined $jobIdOut || $jobIdOut eq "" || $jobIdOut !~ m/\w\d+_ot(\d+)/i ) {
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Output job name is not defined or has wrong format. Repait it"] );
+		next;
 
 	}
-	elsif ( $jobIdOut =~ m/\w\d+_ot(\d+)/i && $jobIdOut !~ m/$jobIdSrc/i ) {
+
+	if ( $jobIdOut =~ m/\w\d+_ot(\d+)/i && $jobIdOut !~ m/$jobIdSrc/i ) {
 
 		$messMngr->ShowModal( -1,
 							  EnumsGeneral->MessageType_WARNING,
 							  ["Output job name ($jobIdOut) has to contain source job name ($jobIdSrc). Repait it"] );
+		next;
 
 	}
-	elsif ( -d EnumsPaths->Jobs_AOITESTSFUSIONDB . $jobIdOut ) {
+
+	if ( -d EnumsPaths->Jobs_AOITESTSFUSIONDB . $jobIdOut ) {
 
 		$messMngr->ShowModal(
 							  -1,
@@ -121,69 +144,70 @@ while (1) {
 		if ( $messMngr->Result() == 0 ) {
 			last;
 		}
+		else {
+			next;
+		}
 	}
-}
 
-# -------------------------------------------
-# 3) Create job and output OPFX
-# -------------------------------------------
-$inCAM->COM( "new_job", "name" => $jobIdOut, "db" => "incam", "customer" => "", "disp_name" => "", "notes" => "", "attributes" => "" );
-$inCAM->COM( "check_inout", "mode" => "out", "type" => "job", "job" => $jobIdOut );
-$inCAM->COM( "open_job", "job" => $jobIdOut, "open_win" => "yes" );
+	my $lRes = $layersPar->GetResultValue(1);
+	$lRes =~ s/\s//ig;
+	my @layersUsr = split( ";", $lRes );
+	chomp(@layersUsr);
+	@layersUsr = grep { $_ ne "" } @layersUsr;
 
-# Set job attributes
+	if ( !scalar(@layersUsr) ) {
 
-my %srcJobAttr = CamAttributes->GetJobAttr( $inCAM, $jobIdSrc );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Layers are not set in correct format. Repait it"] );
+		next;
 
-CamAttributes->SetJobAttribute( $inCAM, $jobIdOut, "USER_NAME",       $srcJobAttr{"USER_NAME"} );
-CamAttributes->SetJobAttribute( $inCAM, $jobIdOut, "PCB_CLASS",       $srcJobAttr{"PCB_CLASS"} );
-CamAttributes->SetJobAttribute( $inCAM, $jobIdOut, "PCB_CLASS_INNER", $srcJobAttr{"PCB_CLASS_INNER"} );
-
-# Create step structure
-
-# Nested steps
-if ( !$reduceStepsPar->GetResultValue() ) {
-
-	my @srcSteps = CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobIdSrc );
-
-	foreach my $srcS (@srcSteps) {
-
-		my %datSrc = CamStep->GetDatumPoint( $inCAM, $jobIdOut, $srcS->{"stepName"}, 1 );
-
-		CamStep->CreateStep( $inCAM, $jobIdOut, $srcS->{"stepName"} );    # create step
-		CamStep->SetDatumPoint( $inCAM, $srcS->{"stepName"}, $datSrc{"x"}, $datSrc{"y"} );    # Set Datum point
-
-		CamMatrix->CreateLayer( $inCAM, $jobId, "o", "document", "positive", 0 );
-
-		CamStep->CreateStep( $inCAM, $jobIdOut, $srcS->{"stepName"} );                        # create step
-
-		my $profL = GeneralHelper->GetGUID();
-		CamStep->ProfileToLayer( $inCAM, $jobIdSrc, $profL, 200 );
-		CamLayer->WorkLayer( $inCAM, $profL );
-
-		$inCAM->COM( "sel_buffer_copy", "x_datum" => 0, "y_datum" => 0 );
-		CamLayer->WorkLayer( $inCAM, "o" );
-		CamMatrix->DeleteLayer( $inCAM, $jobIdSrc, $profL );
-
-		$inCAM->COM( "sel_buffer_paste", "x" => 0, "y" => 0 );
 	}
+
+	last;
+
 }
 
-# Panel step
-my $scrPnl = StandardBase->new( $inCAM, $jobIdSrc );
+# Create layers
+my $lRes = $layersPar->GetResultValue(1);
+$lRes =~ s/\s//ig;
+my @layersUsr = split( ";", $lRes );
+@layersUsr = grep { $_ ne "" } @layersUsr;
 
-my $SRStep = SRStep->new( $inCAM, $jobIdOut, "panel" );
+$AOIRepair->CreateAOIRepairJob( $jobIdOut, \@layersUsr,
+								$opfxPathPar->GetResultValue(1),
+								$sent2serverPar->GetResultValue(1),
+								$reduceStepsPar->GetResultValue(1),
+								$contourPar->GetResultValue(1),
+								$resizePar->GetResultValue(1),
+								$attrPar->GetResultValue(1) );
 
-$SRStep->Create( $scrPnl->W(), $scrPnl->H(),
-				 ( $scrPnl->H() - $scrPnl->HArea() ) / 2,
-				 ( $scrPnl->H() - $scrPnl->HArea() ) / 2,
-				 ( $scrPnl->W() - $scrPnl->WArea() ) / 2,
-				 ( $scrPnl->W() - $scrPnl->WArea() ) / 2 );
+if ( !$closeOtJobPar->GetResultValue(1) ) {
 
-# Set step structure
-if ( !$reduceStepsPar->GetResultValue() ) {
-	
-	# Get repeat step	
-	
+	CamHelper->OpenJob( $inCAM, $jobIdOut, 1 );    # Set source
+	CamHelper->OpenStep( $inCAM, $jobIdOut, "panel" );     
 }
 
+if ( $closeOtJobPar->GetResultValue(1) ) {
+
+	CamJob->DeleteJob( $inCAM, $jobIdOut );
+}
+
+
+if(!$sourceJobOpened){
+	CamJob->CheckInJob( $inCAM, $jobIdSrc );
+	CamJob->CloseJob( $inCAM, $jobIdSrc );    
+}
+
+
+sub __OnOPFXResult {
+	my $result = shift;
+
+	print STDERR $result->ItemId() . " Result: " . $result->Result() . "\n";
+
+	unless ( $result->Result() ) {
+		print STDERR $result->GetErrorStr() . "\n";
+		print STDERR $result->GetWarningStr() . "\n";
+	}
+
+}
+
+1;
