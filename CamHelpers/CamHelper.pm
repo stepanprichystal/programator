@@ -5,7 +5,7 @@
 #-------------------------------------------------------------------------------------------#
 
 package CamHelpers::CamHelper;
- 
+
 #3th party library
 use strict;
 use warnings;
@@ -44,73 +44,84 @@ sub Pause {
 
 }
 
-# Open given job
+# Open job / set job for scripts
 sub OpenJob {
 
-	my $self    = shift;
-	my $inCam   = shift;
-	my $jobName = shift;
+	my $self       = shift;
+	my $inCam      = shift;
+	my $jobName    = shift;
+	my $openEditor = shift // 1;
 
 	#	$inCam->COM(
 	#				 "clipb_open_job",
 	#				 job              => "$jobName",
 	#				 update_clipboard => "view_job"
 	#	);
-	$inCam->COM( "open_job", job => "$jobName", "open_win" => "yes" );
- 
-	$inCam->AUX( 'set_group', group => $inCam->{COMANS} );
-	 
+
+	$inCam->COM( "open_job", job => "$jobName", "open_win" => ( $openEditor ? "yes" : "no" ) );
+
+	#$inCam->AUX( 'set_group', group => $inCam->{COMANS} );
 
 }
 
-#Open job and step in genesis
-sub OpenJobAndStep {
-
-	my $self     = shift;
-	my $inCam    = shift;
-	my $jobName  = shift;
-	my $stepName = shift;
-
-	$inCam->COM(
-				 "clipb_open_job",
-				 job              => "$jobName",
-				 update_clipboard => "view_job"
-	);
-	$inCam->COM( "open_job", job => "$jobName", "open_win" => "yes" );
-	$inCam->COM(
-				 "open_entity",
-				 job  => "$jobName",
-				 type => "step",
-				 name => $stepName
-	);
-
-	$inCam->AUX( 'set_group', group => $inCam->{COMANS} );
-
-}
-
-#Open job and step in genesis
+# Set step + return group id of step
+# Use when work with more than one jobs at one script
 sub OpenStep {
 
 	my $self     = shift;
-	my $inCam    = shift;
+	my $inCAM    = shift;
 	my $jobName  = shift;
 	my $stepName = shift;
 
-	$inCam->COM(
+	$inCAM->COM(
 				 "open_entity",
 				 job  => "$jobName",
 				 type => "step",
 				 name => $stepName
 	);
-}
 
-# Set step in InCAM
+	my $groupId = $inCAM->GetReply();
+
+	$inCAM->AUX( 'set_group', "group" => $groupId );
+
+	return $groupId;
+}
+ 
+
+# Set step
+# Use when work with one job  at script
 sub SetStep {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $stepName = shift;
 
 	$inCAM->COM( "set_step", "name" => $stepName );
+
+}
+
+sub SetGroupId {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $groupId = shift;
+
+	$inCAM->AUX( 'set_group', group => $groupId );
+}
+
+sub GetGroupId {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+
+	$inCAM->COM(
+				 'open_group',
+				 'job'    => "$jobId",
+				 'step'   => $step,
+				 'is_sym' => 'no'
+	);
+
+	return $inCAM->GetReply();
+
 }
 
 # Open given job
@@ -239,13 +250,14 @@ sub GetPcbType {
 	if ( HegMethods->GetTypeOfPcb($jobId) eq 'Neplatovany' ) {
 
 		$type = EnumsGeneral->PcbType_NOCOPPER;
-	
-	}elsif(HegMethods->GetTypeOfPcb($jobId) eq 'Sablona'){
-		
-		$type = EnumsGeneral->PcbType_STENCIL
+
+	}
+	elsif ( HegMethods->GetTypeOfPcb($jobId) eq 'Sablona' ) {
+
+		$type = EnumsGeneral->PcbType_STENCIL;
 	}
 	else {
-		
+
 		if ( $layerCnt == 1 ) {
 
 			$type = EnumsGeneral->PcbType_1V;
@@ -265,14 +277,12 @@ sub GetPcbType {
 	return $type;
 }
 
-
-
 sub EntityChanged {
 	my $self   = shift;
 	my $inCAM  = shift;
 	my $jobId  = shift;
-	my $type   = shift;    # created/modified
-	my @entity = @{shift(@_)};
+	my $type   = shift;            # created/modified
+	my @entity = @{ shift(@_) };
 
 	# 1) load file with changes
 	my $infoFile = $inCAM->INFO(
@@ -300,8 +310,8 @@ sub EntityChanged {
 	my @modified = ();
 	$hash{"created"}  = \@created;
 	$hash{"modified"} = \@modified;
-	$hash{"deleted"} = \@modified;
-	
+	$hash{"deleted"}  = \@modified;
+
 	if ($linesRef) {
 
 		my @lines = @{$linesRef};
@@ -320,8 +330,9 @@ sub EntityChanged {
 			}
 			elsif ( $l =~ "modified entities" ) {
 				$entities = "modified";
-			
-			}elsif ( $l =~ "deleted entities" ) {
+
+			}
+			elsif ( $l =~ "deleted entities" ) {
 				$entities = "deleted";
 			}
 			else {
@@ -338,8 +349,8 @@ sub EntityChanged {
 
 				# get entity values
 				foreach my $e (@ent) {
-					my $val = (split("=", $e))[1];
-					 $val =~ s/\s//g;
+					my $val = ( split( "=", $e ) )[1];
+					$val =~ s/\s//g;
 					push( @entRes, $val ) if ( defined $val );
 				}
 
@@ -353,7 +364,7 @@ sub EntityChanged {
 	my $entitStr = join( "/", @entity );
 	$entitStr = lc($entitStr);
 	$entitStr = quotemeta $entitStr;
- 
+
 	my $exist = grep { $_ =~ /^$entitStr$/i } @{ $hash{$type} };
 
 	if ($exist) {
@@ -363,7 +374,6 @@ sub EntityChanged {
 		return 0;
 	}
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -371,21 +381,20 @@ sub EntityChanged {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'CamHelpers::CamHelper';
-#	use aliased 'Packages::InCAM::InCAM';
-#
-#	my $inCAM = InCAM->new();
-#
-#	my $jobId     = "f69854";
-#	my $stepName  = "panel";
-#	 
-#	my @arr =  ("mpanel", "m");
-#
-#	my $res = CamHelper->StepExists(  $inCAM, $jobId, "o+1");
-#	
-#	print STDERR "test";
- 
-}
+	#	use aliased 'CamHelpers::CamHelper';
+	#	use aliased 'Packages::InCAM::InCAM';
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $jobId     = "f69854";
+	#	my $stepName  = "panel";
+	#
+	#	my @arr =  ("mpanel", "m");
+	#
+	#	my $res = CamHelper->StepExists(  $inCAM, $jobId, "o+1");
+	#
+	#	print STDERR "test";
 
+}
 
 1;

@@ -16,7 +16,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamDrilling';
-use aliased 'Connectors::HeliosConnector::HegMethods';
+
 use aliased 'Packages::Stackup::Enums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -33,37 +33,36 @@ sub SetStage {
 	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layerName = shift;
-	my $stackup   = shift;
+	my $cuThick   = shift;
+	my $pcbThick  = shift;
 
 	# variables to fill
 	my @drillLayer = ();
 	my @routLayer  = ();
-	my $cuThick    = 0;
-	my $pcbThick   = 0;
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	my @pltLayer = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-	push(@pltLayer,  CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_rsMill ) );  # add rs layer, because it is done before AOI testing too
+	push( @pltLayer, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_rsMill ) )
+	  ;    # add rs layer, because it is done before AOI testing too
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@pltLayer );
 
 	# get plated drill layers, which goes from <$layerName>
 	@drillLayer = grep { $_->{"gROWlayer_type"} eq "drill" } @pltLayer;
-	
+
 	# Remove blind drill
-	@drillLayer = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nFillDrill
-		&&  $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
-		&&  $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
-		&&  $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill
+	@drillLayer = grep {
+		     $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nFillDrill
+		  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bFillDrillTop
+		  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bFillDrillBot
+		  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill
 	} @drillLayer;
- 
+
 	@drillLayer = grep {
 		$_->{"NCSigStart"} eq $layerName
-		  || (
-			   $_->{"NCSigEnd"} eq $layerName
-			&& $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillTop
-			&& $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillBot
-		  )
+		  || (    $_->{"NCSigEnd"} eq $layerName
+			   && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillTop
+			   && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_bDrillBot )
 	} @drillLayer;
 
 	@drillLayer = map { $_->{"gROWname"} } @drillLayer;
@@ -88,19 +87,24 @@ sub SetStage {
 		my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
 
 		foreach my $nestStep (@steps) {
- 
+
 			$inCAM->COM( "set_step", "name" => $nestStep->{"stepName"} );
- 
+
 			foreach my $l (@routLayer) {
 
 				my $lName = GeneralHelper->GetGUID();
 
 				$inCAM->COM( "compensate_layer", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName, "dest_layer_type" => "document" );
-				
-				CamLayer->WorkLayer($inCAM, $lName);
-				$inCAM->COM( "sel_contourize", "accuracy" => "6.35", "break_to_islands" => "yes", "clean_hole_size" => "76.2", "clean_hole_mode" => "x_or_y" );
 
-				 
+				CamLayer->WorkLayer( $inCAM, $lName );
+				$inCAM->COM(
+							 "sel_contourize",
+							 "accuracy"         => "6.35",
+							 "break_to_islands" => "yes",
+							 "clean_hole_size"  => "76.2",
+							 "clean_hole_mode"  => "x_or_y"
+				);
+
 				$inCAM->COM(
 					"copy_layer",
 					"dest"         => "layer_name",
@@ -113,51 +117,33 @@ sub SetStage {
 					"mode"       => "append",
 					"invert"     => "no"
 				);
- 
 
 				$inCAM->COM( "delete_layer", "layer" => $lName );
 
 			}
 
 		}
-		
+
 		# copy frame from "m" to aoiTempLayer
 		# in order, we could add aoiTempLayer to AOI set. Layer can not be empty
 		$inCAM->COM(
-					"copy_layer",
-					"dest"         => "layer_name",
-					"source_job"   => $jobId,
-					"source_step"  => "panel",
-					"source_layer" => "m",
+			"copy_layer",
+			"dest"         => "layer_name",
+			"source_job"   => $jobId,
+			"source_step"  => "panel",
+			"source_layer" => "m",
 
-					"dest_step"  => "panel",
-					"dest_layer" => $lTmpName,
-					"mode"       => "append",
-					"invert"     => "no"
-				);
-		
+			"dest_step"  => "panel",
+			"dest_layer" => $lTmpName,
+			"mode"       => "append",
+			"invert"     => "no"
+		);
 
 		push( @drillLayer, $lTmpName );
 	}
 
-	if ( $layerCnt <= 2 ) {
-
-		$cuThick = HegMethods->GetOuterCuThick( $jobId, $layerName );
-		$pcbThick = HegMethods->GetPcbMaterialThick($jobId)*1000;
-		 
-
-	}
-	else {
-
-		my %lPars = JobHelper->ParseSignalLayerName($layerName);
-		my $thick = $stackup->GetThickByCuLayer($lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"});
-		$pcbThick = sprintf( "%.3f", $thick);
-	
-	}
-
-	
 	$inCAM->COM( "set_step", "name" => $stepName );
- 
+
 	my $drill = join( "\;", @drillLayer );
 	$inCAM->COM(
 		"cdr_set_stage",
@@ -165,7 +151,7 @@ sub SetStage {
 		"drill"         => $drill,
 		"layer"         => $layerName,
 		"copper_weight" => $cuThick,
-		"panel_thick"   => $pcbThick    #in mm
+		"panel_thick"   => $pcbThick        #in mm
 	);
 
 }
@@ -174,16 +160,18 @@ sub OutputOpfx {
 	my $self         = shift;
 	my $inCAM        = shift;
 	my $jobId        = shift;
+	my $exportPath   = shift;
 	my $layerName    = shift;
-	my $machineName = shift;
+	my $machineName  = shift;
 	my $incamResult  = shift;
 	my $reportResult = shift;
 
-	my $exportPath = JobHelper->GetJobArchive($jobId) . "zdroje\\ot";
-
 	unless ( -e $exportPath ) {
-		mkdir($exportPath) or die "Can't create dir: " .  $exportPath;
+		mkdir($exportPath) or die "Can't create dir: " . $exportPath;
 	}
+	
+	# remove slash
+	$exportPath =~ s/\\$//i;
 
 	my $report = EnumsPaths->Client_INCAMTMPAOI . $jobId;
 
@@ -218,8 +206,7 @@ sub OutputOpfx {
 	# delete rout temporary layer
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "aoi_rout_tmp" ) ) {
 
-		 
-	 	$inCAM->COM( 'delete_layer', "layer" => "aoi_rout_tmp" );
+		$inCAM->COM( 'delete_layer', "layer" => "aoi_rout_tmp" );
 	}
 
 	if ( -e $report ) {
@@ -252,31 +239,31 @@ sub OutputOpfx {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::InCAM::InCAM';
-#	use aliased 'Packages::ETesting::BasicHelper::OptSet';
-#	use aliased 'Packages::ETesting::BasicHelper::ETSet';
-#	my $inCAM = InCAM->new();
-#
-#	my $jobName      = "f13610";
-#	my $stepName     = "panel";
-#	my $setupOptName = "atg_flying";
-#	my @steps        = ( "o+1", "mpanel" );
-#
-#	my $optName = OptSet->OptSetCreate( $inCAM, $jobName, $stepName, $setupOptName, \@steps );
-#
-#	my $etsetName = ETSet->ETSetCreate( $inCAM, $jobName, $stepName, $optName );
-#
-#	ETSet->ETSetOutput( $inCAM, $jobName, $stepName, $optName, $etsetName );
-#
-#	if ( ETSet->ETSetExist( $inCAM, $jobName, $stepName, $optName, $etsetName ) ) {
-#
-#		ETSet->ETSetDelete( $inCAM, $jobName, $stepName, $optName, $etsetName );
-#	}
-#
-#	if ( OptSet->OptSetExist( $inCAM, $jobName, $stepName, $optName ) ) {
-#
-#		OptSet->OptSetDelete( $inCAM, $jobName, $stepName, $optName );
-#	}
+	#	use aliased 'Packages::InCAM::InCAM';
+	#	use aliased 'Packages::ETesting::BasicHelper::OptSet';
+	#	use aliased 'Packages::ETesting::BasicHelper::ETSet';
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $jobName      = "f13610";
+	#	my $stepName     = "panel";
+	#	my $setupOptName = "atg_flying";
+	#	my @steps        = ( "o+1", "mpanel" );
+	#
+	#	my $optName = OptSet->OptSetCreate( $inCAM, $jobName, $stepName, $setupOptName, \@steps );
+	#
+	#	my $etsetName = ETSet->ETSetCreate( $inCAM, $jobName, $stepName, $optName );
+	#
+	#	ETSet->ETSetOutput( $inCAM, $jobName, $stepName, $optName, $etsetName );
+	#
+	#	if ( ETSet->ETSetExist( $inCAM, $jobName, $stepName, $optName, $etsetName ) ) {
+	#
+	#		ETSet->ETSetDelete( $inCAM, $jobName, $stepName, $optName, $etsetName );
+	#	}
+	#
+	#	if ( OptSet->OptSetExist( $inCAM, $jobName, $stepName, $optName ) ) {
+	#
+	#		OptSet->OptSetDelete( $inCAM, $jobName, $stepName, $optName );
+	#	}
 
 }
 

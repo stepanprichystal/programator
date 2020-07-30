@@ -398,6 +398,7 @@ sub CreateStep {
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $stepName = shift;
+	
 
 	if ( !CamHelper->StepExists( $inCAM, $jobId, $stepName ) ) {
 		$inCAM->COM(
@@ -407,6 +408,8 @@ sub CreateStep {
 					 "is_fw" => 'no',
 					 "type"  => 'step'
 		);
+
+		
 
 		return 1;
 	}
