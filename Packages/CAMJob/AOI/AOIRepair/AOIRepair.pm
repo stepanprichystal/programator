@@ -65,7 +65,7 @@ sub GenerateJobName {
 
 	my @dirs = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_AOITESTSFUSIONDB, $jobIdSrc );
 	my $IDx = max( grep { defined $_ } map { ( $_ =~ m/\w\d+_ot(\d+)/i )[0] } @dirs );
-	$IDx = 1 if ( !defined $IDx );
+	$IDx = 0 if ( !defined $IDx );
 	my $jobIdOut = $jobIdSrc . "_ot" . ( $IDx + 1 );
 
 	return $jobIdOut;
