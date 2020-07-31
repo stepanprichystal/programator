@@ -110,7 +110,7 @@ sub __Run {
 
 		# Open job
 		$self->{"taskDataApp"}->_OpenJob($jobId);
- 
+
 		# if check are ok, prepare data
 		if ($$result) {
 
@@ -122,7 +122,7 @@ sub __Run {
 			my @lNames   = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 			my $OPFXPath = JobHelper->GetJobArchive($jobId) . "zdroje\\ot\\";
 
-			$AOIRepair->CreateAOIRepairJob( $jobIdOut, \@lNames, $OPFXPath, 1, 0, 0, 0, 1 );
+			$AOIRepair->CreateAOIRepairJob( $jobIdOut, \@lNames, $OPFXPath, 1, 1, 1, 0, 0, 1 );
 
 		}
 

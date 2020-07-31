@@ -124,14 +124,14 @@ sub SetStage {
 
 		}
 
-		# copy frame from "m" to aoiTempLayer
+		# copy frame from "v" to aoiTempLayer
 		# in order, we could add aoiTempLayer to AOI set. Layer can not be empty
 		$inCAM->COM(
 			"copy_layer",
 			"dest"         => "layer_name",
 			"source_job"   => $jobId,
 			"source_step"  => "panel",
-			"source_layer" => "m",
+			"source_layer" => "v",
 
 			"dest_step"  => "panel",
 			"dest_layer" => $lTmpName,

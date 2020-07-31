@@ -85,7 +85,8 @@ my $jobIdOut = $AOIRepair->GenerateJobName();
 
 my $lTxt = join( "; ", CamJob->GetSignalLayerNames( $inCAM, $jobIdSrc ) );
 
-my $outputJobPar = $messMngr->GetTextParameter( "Output job (must be in format d123456_ot123 )", "$jobIdOut" );
+my $outputJobPar = $messMngr->GetTextParameter( "Output job (format: d123456_ot123)", "$jobIdOut" );
+my $keepJobNamePar = $messMngr->GetCheckParameter( "Keep original job name in OPFX files", 1 );
 my $layersPar = $messMngr->GetTextParameter( "Layers (separated by comma ; )", $lTxt );
 my $reduceStepsPar = $messMngr->GetCheckParameter( "Reduce steps (only panel step left)", 0 );
 my $resizePar = $messMngr->GetTextParameter( "Resize data [µm]", 0 );
@@ -94,14 +95,14 @@ my $contourPar = $messMngr->GetCheckParameter( "Contourize", 0 );
 my $opfxP          = JobHelper->GetJobArchive($jobIdSrc) . "zdroje\\ot\\";
 my $opfxPathPar    = $messMngr->GetTextParameter( "OPFX path", "$opfxP" );
 my $sent2serverPar = $messMngr->GetCheckParameter( "Sent to AOI server", 1 );
-my $closeOtJobPar  = $messMngr->GetCheckParameter( "Close OT job", 0 );
-my $removeOtJobPar = $messMngr->GetCheckParameter( "Remove OT job ", 0 );
+my $closeOtJobPar  = $messMngr->GetCheckParameter( "Close OT job", 1 );
+my $removeOtJobPar = $messMngr->GetCheckParameter( "Remove OT job ", 1 );
 
 #my $levelPar   = $messMngr->GetCheckParameter( "Reduce layer data level", 0 );
 my $attrPar = $messMngr->GetCheckParameter( "Remove layer attributes", 1 );
 
 my @params =
-  ( $outputJobPar, $layersPar, $reduceStepsPar, $resizePar, $contourPar, $attrPar, $opfxPathPar, $sent2serverPar, $closeOtJobPar, $removeOtJobPar );
+  ( $outputJobPar, $keepJobNamePar,  $layersPar, $reduceStepsPar, $resizePar, $contourPar, $attrPar, $opfxPathPar, $sent2serverPar, $closeOtJobPar, $removeOtJobPar );
 
 while (1) {
 
@@ -112,7 +113,7 @@ while (1) {
 	# Check if output job is well defined
 	$jobIdOut = $outputJobPar->GetResultValue(1);
 
-	if ( !defined $jobIdOut || $jobIdOut eq "" || $jobIdOut !~ m/\w\d+_ot(\d+)/i ) {
+	if ( !defined $jobIdOut || $jobIdOut eq "" || $jobIdOut !~ m/\w\d+_ot\d*/i ) {
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ["Output job name is not defined or has wrong format. Repait it"] );
 		next;
@@ -175,6 +176,7 @@ my @layersUsr = split( ";", $lRes );
 $AOIRepair->CreateAOIRepairJob( $jobIdOut, \@layersUsr,
 								$opfxPathPar->GetResultValue(1),
 								$sent2serverPar->GetResultValue(1),
+								$keepJobNamePar->GetResultValue(1),
 								$reduceStepsPar->GetResultValue(1),
 								$contourPar->GetResultValue(1),
 								$resizePar->GetResultValue(1),

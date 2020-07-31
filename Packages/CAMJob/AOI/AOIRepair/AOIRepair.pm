@@ -16,6 +16,7 @@ use List::Util qw[max min];
 use List::Util qw(first);
 use File::Basename;
 use File::Copy;
+use Path::Tiny qw(path);
 
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -78,11 +79,12 @@ sub CreateAOIRepairJob {
 	my @layersUsr   = @{ shift(@_) };
 	my $OPFXPath    = shift;
 	my $send2server = shift // 0;
+	my $keepJobId   = shift // 0;       # renema job name in opfx with source job name
 
-	my $reduceSteps = shift // 0;
-	my $countoruL   = shift // 0;
-	my $resizeL     = shift // 0;
-	my $delAttrL    = shift // 0;
+	my $reduceSteps = shift // 0;       # reduce step to one panel step
+	my $countoruL   = shift // 0;       # counturiye layer ba vzlue
+	my $resizeL     = shift // 0;       # resize layer by value
+	my $delAttrL    = shift // 0;       # remove all atributes from layer
 
 	die "No layers defined " unless ( scalar(@layersUsr) );
 	die "OPFX path not defined " unless ( defined $OPFXPath );
@@ -150,7 +152,7 @@ sub CreateAOIRepairJob {
 			$inCAM->COM('sel_all_feat');
 			$inCAM->COM( 'sel_create_profile', 'create_profile_with_holes' => 'yes' );
 
-			CamHelper->OpenJob( $inCAM, $jobIdSrc,1 );  # Open in editor, unless delete not work
+			CamHelper->OpenJob( $inCAM, $jobIdSrc, 1 );                                               # Open in editor, unless delete not work
 			CamHelper->OpenStep( $inCAM, $jobIdSrc, $srcS->{"stepName"} );
 			CamMatrix->DeleteLayer( $inCAM, $jobIdSrc, $profL );
 
@@ -158,12 +160,12 @@ sub CreateAOIRepairJob {
 	}
 
 	# Panel step
-	CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );    # Set source job contextOut
-	CamHelper->OpenStep( $inCAM, $jobIdSrc, "panel" );    # Set source job contextOut
+	CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );                                                       # Set source job contextOut
+	CamHelper->OpenStep( $inCAM, $jobIdSrc, "panel" );                                                # Set source job contextOut
 
 	my $scrPnl = StandardBase->new( $inCAM, $jobIdSrc );
 
-	CamHelper->OpenJob( $inCAM, $jobIdOut, 0 );           # Set output job contextOut
+	CamHelper->OpenJob( $inCAM, $jobIdOut, 0 );                                                       # Set output job contextOut
 
 	my $SRStep = SRStep->new( $inCAM, $jobIdOut, "panel" );
 	$SRStep->Create( $scrPnl->W(), $scrPnl->H(),
@@ -288,7 +290,7 @@ sub CreateAOIRepairJob {
 			}
 
 			if ($reduceSteps) {
-				CamHelper->OpenJob( $inCAM, $jobIdSrc, 1 ); # Open in editor uinless delete  layer not work
+				CamHelper->OpenJob( $inCAM, $jobIdSrc, 1 );         # Open in editor uinless delete  layer not work
 				CamHelper->OpenStep( $inCAM, $jobIdSrc, $step );    # Set source job contextOut
 				CamMatrix->DeleteLayer( $inCAM, $jobIdSrc, $srcL )  # remove flaten layer
 			}
@@ -329,6 +331,26 @@ sub CreateAOIRepairJob {
 	$inCAM->SupressToolkitException(1);
 	$export->Export( $OPFXPath, \@layersUsr, 0 );
 	$inCAM->SupressToolkitException(0);
+
+	# Renema job naem in OPFX to original job
+	if ($keepJobId) {
+		foreach my $layer (@layersUsr) {
+
+			my @aoiFile = FileHelper->GetFilesNameByPattern( $OPFXPath, "$jobIdOut@" . "$layer" );
+
+			if ( scalar(@aoiFile) ) {
+
+				my $file     = path( $aoiFile[0] );
+				my $fileData = $file->slurp_utf8;
+
+				if ( $fileData =~ m/JOBNAME\s*=\s*($jobIdOut)/i ) {
+
+					$fileData =~ s/JOBNAME\s*=\s*($jobIdOut)/JOBNAME = $jobIdSrc/i;
+					$file->spew_utf8($fileData);
+				}
+			}
+		}
+	}
 
 	CamJob->SaveJob( $inCAM, $jobIdOut );
 	CamJob->CheckInJob( $inCAM, $jobIdOut );
