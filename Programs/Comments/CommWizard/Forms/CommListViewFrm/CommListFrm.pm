@@ -75,10 +75,10 @@ sub __SetLayout {
 
 	$self->SetItemGap(5);
 
-	$self->SetItemUnselectColor( Wx::Colour->new( 0, 255, 0 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 255, 197, 129 ) );
+	$self->SetItemUnselectColor( Wx::Colour->new( 226, 238, 249 ) );
+	$self->SetItemSelectColor( Wx::Colour->new( 191, 209, 238 ) );
 
-	#$self->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	
 
 }
 

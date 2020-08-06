@@ -59,13 +59,14 @@ sub __SetLayout {
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szHead = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	# Add empty item
+ 
+	#$self->SetBackgroundColour( Wx::Colour->new( 191, 209, 238 ) );
 
 	# DEFINE CONTROLS
-	my $commNameTxt    = Wx::StaticText->new( $self, -1, "Number:", &Wx::wxDefaultPosition );
-	my $commNameValTxt = Wx::StaticText->new( $self, -1, "",        &Wx::wxDefaultPosition );
+	#my $commNameTxt    = Wx::StaticText->new( $self, -1, "Number:", &Wx::wxDefaultPosition );
+	#my $commNameValTxt = Wx::StaticText->new( $self, -1, "",        &Wx::wxDefaultPosition );
 
-	my $commTypeTxt = Wx::StaticText->new( $self, -1, "Type:", &Wx::wxDefaultPosition );
+	#my $commTypeTxt = Wx::StaticText->new( $self, -1, "Type:", &Wx::wxDefaultPosition );
 	my @cbVals = ( Enums->GetTypeTitle( Enums->CommentType_NOTE ), Enums->GetTypeTitle( Enums->CommentType_QUESTION ) );
 	my $commTypeValTxt = Wx::ComboBox->new( $self, -1, $cbVals[0], [ -1, -1 ], [ 100, 22 ], \@cbVals, &Wx::wxCB_READONLY );
 
@@ -81,16 +82,16 @@ sub __SetLayout {
 	$szMain->Add( $commTextBox,  20, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $commSuggBox,  20, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szHead->Add( $commNameTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$szHead->Add( $commNameValTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 4 );
-	$szHead->Add( $commTypeTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
+	#$szHead->Add( $commNameTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	#$szHead->Add( $commNameValTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 4 );
+	#$szHead->Add( $commTypeTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
 	$szHead->Add( $commTypeValTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 4 );
 
 	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
 	$self->{"commFilesBox"}   = $commFilesBox;
-	$self->{"commNameValTxt"} = $commNameValTxt;
+#	$self->{"commNameValTxt"} = $commNameValTxt;
 	$self->{"commTypeValTxt"} = $commTypeValTxt;
 
 	$self->{"t"} = $szMain;
@@ -168,7 +169,7 @@ sub SetCommLayout {
 
 	$self->{"commentId"} = $comentId;
 
-	$self->{"commNameValTxt"}->SetLabel( $comentId + 1 );
+	#$self->{"commNameValTxt"}->SetLabel( $comentId + 1 );
 
 	$self->{"commTypeValTxt"}->SetValue( Enums->GetTypeTitle( $layout->GetType() ) );
 

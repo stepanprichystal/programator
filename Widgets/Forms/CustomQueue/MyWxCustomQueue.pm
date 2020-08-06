@@ -204,7 +204,7 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
+	#$self->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
 
 	# DEFINE SIZERS
 
@@ -218,7 +218,7 @@ sub __SetLayout {
 
 	my $containerPnl = Wx::Panel->new( $scrollPnl, -1, );
 
-	$containerPnl->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	#$containerPnl->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 
 	#$scrollSizer->Layout();
 

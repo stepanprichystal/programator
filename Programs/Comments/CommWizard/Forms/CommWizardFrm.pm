@@ -18,6 +18,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Programs::Comments::CommWizard::Forms::CommListViewFrm::CommListViewFrm';
 use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::CommViewFrm';
 use Widgets::Style;
+use aliased 'Widgets::Forms::MyWxStaticBoxSizer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -119,13 +120,15 @@ sub __SetLayoutCommView {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Comment edit' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szStatBox = MyWxStaticBoxSizer->new( $parent, &Wx::wxVERTICAL, 'Comment detail', 5, $Widgets::Style::fontLblBold,
+											 Wx::Colour->new( 255, 255, 255 ),
+											 Wx::Colour->new( 112, 146, 190 ),
+											  Wx::Colour->new( 240, 240, 240 ), 3 );
 
-	my $viewFrm = CommViewFrm->new($statBox);
+	my $viewFrm = CommViewFrm->new($szStatBox);
 
 	# EVENTS
- 
+
 	$viewFrm->{'onRemoveFileEvt'}->Add( sub { $self->{"onRemoveFileEvt"}->Do(@_) } );
 	$viewFrm->{'onEditFileEvt'}->Add( sub   { $self->{"onEditFileEvt"}->Do(@_) } );
 	$viewFrm->{'onAddFileEvt'}->Add( sub    { $self->{"onAddFileEvt"}->Do(@_) } );
@@ -143,10 +146,12 @@ sub __SetLayoutCommListView {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Comment list' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szStatBox = MyWxStaticBoxSizer->new( $parent, &Wx::wxVERTICAL, 'Comment list', 5, $Widgets::Style::fontLblBold,
+											 Wx::Colour->new( 255, 255, 255 ),
+											 Wx::Colour->new( 112, 146, 190 ),
+											  Wx::Colour->new( 230, 230, 230 ), 3 );
 
-	my $viewFrm = CommListViewFrm->new($statBox);
+	my $viewFrm = CommListViewFrm->new($szStatBox);
 
 	$szStatBox->Add( $viewFrm, 1, &Wx::wxEXPAND );
 

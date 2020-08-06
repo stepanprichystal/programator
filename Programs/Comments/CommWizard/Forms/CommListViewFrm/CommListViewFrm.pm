@@ -69,8 +69,8 @@ sub __SetLayout {
 	$commList->{"onSelectItemChange"}->Add( sub { $self->{"onSelCommChangedEvt"}->Do( $_[0]->GetItemId() ) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $commList, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( 5, 5, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $commList, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $szBtns, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szBtns->Add( $btnRemove,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -82,6 +82,10 @@ sub __SetLayout {
 	$szBtnsMove->Add( $btnMoveDown, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
+	
+	my $listCrl = Wx::Colour->new( 230, 230, 230 );
+	$self->SetBackgroundColour( $listCrl );
+	$commList->SetBackgroundColour($listCrl );
 
 	# SAVE REFERENCES
 	$self->{"commList"} = $commList;

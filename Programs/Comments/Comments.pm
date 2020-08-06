@@ -18,6 +18,7 @@ use aliased 'Programs::Comments::CommLayout::CommSnglLayout';
 use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Comments::Enums';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorableMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,7 +37,8 @@ sub new {
 		mkdir( $self->{"commDir"} ) or die "$_";
 	}
 
-	$self->{"commLayout"} = CommLayout->new();
+	$self->{"commLayout"}  = CommLayout->new();
+	$self->{"jsonStrMngr"} = JsonStorableMngr->new( $self->{"commDir"} . "comments.json" );
 
 	$self->__LoadFromJob();
 
@@ -47,6 +49,13 @@ sub new {
 
 sub Save {
 	my $self = shift;
+
+	$self->{"jsonStrMngr"}->StoreData( $self->{"commLayout"} );
+
+	foreach my $comm ( $self->{"commLayout"}->GetAllComments() ) {
+
+		$comm->SetStoredOnDisc(1);
+	}
 
 }
 
@@ -62,7 +71,6 @@ sub SnapshotCAM {
 		my $mess = "Prepare what you want to snapshot...";
 		$inCAM->PAUSE($mess);
 	}
- 
 
 	my $fileName = "CAM_" . GeneralHelper->GetNumUID();
 	my $p        = $self->{"commDir"} . $fileName;
@@ -208,13 +216,19 @@ sub GetFileName {
 sub __LoadFromJob {
 	my $self = shift;
 
-	# Add default comment
+	if ( $self->{"jsonStrMngr"}->SerializedDataExist() ) {
 
+		$self->{"commLayout"} = $self->{"jsonStrMngr"}->LoadData();
+	}
+
+	# Add default comment
 	$self->AddComment( Enums->CommentType_QUESTION );
 	$self->SetText( 0, "" );
 
 	$self->AddFile( 0, "stakcup", $self->SnapshotCAM() );
 	$self->AddFile( 0, "stakcup", 'c:/Export/test/noImage_.png' );
+
+	$self->Save();
 
 	$self->AddComment( Enums->CommentType_NOTE );
 	$self->SetText( 1, "test jfdif djfosdifj fjdi" );
@@ -240,7 +254,7 @@ sub __ClearOldFiles {
 		my ( $name, $path, $suffix ) = fileparse($file);
 
 		unless ( scalar( grep { $_ eq $name } @filesN ) ) {
-			unlink($self->{"commDir"}."$file");
+			unlink( $self->{"commDir"} . "$file" );
 		}
 	}
 
