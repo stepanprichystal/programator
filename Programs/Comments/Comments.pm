@@ -112,18 +112,44 @@ sub RemoveComment {
 
 	die "Comment id: $commentId doesn't exist" if ( $commentId < 0 || $commentId >= scalar( $self->{"commLayout"}->GetAllComments() ) );
 
-	splice @{ $self->{"comments"} }, $commentId, 1;
+	$self->{"commLayout"}->RemoveComment($commentId);
 }
 
-sub MoveUp {
+sub MoveComment {
 	my $self      = shift;
 	my $commentId = shift;
+	my $type      = shift;
+
+	my $moved = 1;
+
+	if ( $type eq "up" ) {
+		if ( $commentId - 1 < 0 ) {
+			$moved = 0;
+		}
+		else {
+			$self->{"commLayout"}->MoveUp($commentId);
+		}
+
+	}
+	else {
+		if ( $commentId + 1 >= scalar( $self->{"commLayout"}->GetAllComments() ) ) {
+			$moved = 0;
+		}
+		else {
+			$self->{"commLayout"}->MoveDown($commentId);
+		}
+	}
+
+	return $moved
 
 }
 
-sub MoveDown {
+sub ChangeType {
 	my $self      = shift;
 	my $commentId = shift;
+	my $type      = shift;
+
+	$self->{"commLayout"}->GetCommentById($commentId)->SetType($type);
 
 }
 
@@ -233,6 +259,9 @@ sub __LoadFromJob {
 	$self->AddComment( Enums->CommentType_NOTE );
 	$self->SetText( 1, "test jfdif djfosdifj fjdi" );
 	$self->AddFile( 1, "stakcup", 'c:/Export/test/noImage.png' );
+
+	$self->AddComment( Enums->CommentType_NOTE );
+	$self->SetText( 1, "test jfdif djfosdifj fjdi" );
 
 	#	$self->AddComment( Enums->CommentType_QUESTION );
 	#	$self->SetText( 2, "test jfdif djfosdifj fjdi" );

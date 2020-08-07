@@ -24,7 +24,6 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 	my $jobId  = shift;
-	  
 
 	my $self = $class->SUPER::new($parent);
 
@@ -51,8 +50,6 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	 
-
 	my $btnRemove = Wx::Button->new( $self, -1, "Remove",           &Wx::wxDefaultPosition, [ 60, -1 ] );
 	my $btnEditGS = Wx::Button->new( $self, -1, "Edit in GShot",    &Wx::wxDefaultPosition, [ 60, -1 ] );
 	my $btnAddCAM = Wx::Button->new( $self, -1, "Add Snapshot CAM", &Wx::wxDefaultPosition, [ 60, -1 ] );
@@ -61,26 +58,25 @@ sub __SetLayout {
 	# DEFINE LAYOUT STRUCTURE
 
 	# BUILD STRUCTURE OF LAYOUT
-	 
-	$szMain->Add( $szBtns, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szMain->Add( $szBtns,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnAddCAM, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnAddGS,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szBtns->Add( $btnRemove, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szBtns->Add( $btnEditGS, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnAddCAM, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnAddGS,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
 
 	# SET REFERENCES
- 
 
 }
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
- 
 
 sub RemoveFile {
 	my $self       = shift;
@@ -108,17 +104,12 @@ sub SetFilesLayout {
 
 		$self->AddFile($fileLayout);
 	}
-	 
- 
+
 }
 
 # =====================================================================
 # PRIVATE METHODS
 # =====================================================================
-
-
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

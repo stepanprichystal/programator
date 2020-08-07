@@ -59,7 +59,6 @@ sub __SetLayout {
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szHead = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
- 
 	#$self->SetBackgroundColour( Wx::Colour->new( 191, 209, 238 ) );
 
 	# DEFINE CONTROLS
@@ -75,6 +74,8 @@ sub __SetLayout {
 	my $commSuggBox  = $self->__SetLayoutSuggestion($self);
 
 	# DEFINE EVENTS
+	Wx::Event::EVT_TEXT( $commTypeValTxt, -1,
+						 sub { $self->{"onChangeTypeEvt"}->Do( $self->{"commentId"}, Enums->GetTypeKey( $self->{"commTypeValTxt"}->GetValue() ) ) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szMain->Add( $szHead,       0,  &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -90,8 +91,9 @@ sub __SetLayout {
 	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
-	$self->{"commFilesBox"}   = $commFilesBox;
-#	$self->{"commNameValTxt"} = $commNameValTxt;
+	$self->{"commFilesBox"} = $commFilesBox;
+
+	#	$self->{"commNameValTxt"} = $commNameValTxt;
 	$self->{"commTypeValTxt"} = $commTypeValTxt;
 
 	$self->{"t"} = $szMain;
@@ -166,6 +168,12 @@ sub SetCommLayout {
 	my $self     = shift;
 	my $comentId = shift;
 	my $layout   = shift;
+
+	if ( $comentId < 0 ) {
+
+		$self->Hide();
+		return 0;
+	}
 
 	$self->{"commentId"} = $comentId;
 

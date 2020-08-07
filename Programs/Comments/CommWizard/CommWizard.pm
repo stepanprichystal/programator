@@ -20,6 +20,7 @@ use threads::shared;
 #local library
 use aliased 'Programs::Comments::CommWizard::Forms::CommWizardFrm';
 use aliased 'Programs::Comments::Comments';
+use aliased 'Programs::Comments::Enums' => 'CommEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -94,9 +95,9 @@ sub __OnSelCommChangedHndl {
 	my $self   = shift;
 	my $commId = shift;
 
-	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+	my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
 
-	$self->{"form"}->RefreshCommViewForm( $commId, $commLayout );
+	$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
 
 }
 
@@ -104,13 +105,85 @@ sub __OnRemoveCommdHndl {
 	my $self   = shift;
 	my $commId = shift;
 
-	my $commLayout = $self->{"comments"}->RemoveComment($commId);
+	$self->{"comments"}->RemoveComment($commId);
 
-	my $commCnt = scalar( $self->{"comments"}->GetLayout()->GetAllComments() );
+	my $commLayout = $self->{"comments"}->GetLayout();
 
-	$commCnt = undef unless ($commCnt);
+	# Refresh list
+	$self->{"form"}->RefreshCommListViewForm($commLayout);
 
-	$self->{"form"}->RefreshCommViewForm( $commCnt, $commLayout );
+	my $commCnt = scalar( $commLayout->GetAllComments() );
+
+	# Refresh view
+	my $commSnglLayout = undef;
+	if ( $commCnt > 0 ) {
+
+		$commSnglLayout = $commLayout->GetCommentById( $commCnt - 1 );
+	}
+
+	$self->{"form"}->RefreshCommViewForm( $commCnt - 1, $commSnglLayout );
+
+}
+
+sub __OnAddCommdHndl {
+	my $self   = shift;
+	my $commId = shift;
+
+	$self->{"comments"}->AddComment( CommEnums->CommentType_QUESTION );
+
+	my $commLayout = $self->{"comments"}->GetLayout();
+
+	# Refresh list
+	$self->{"form"}->RefreshCommListViewForm($commLayout);
+
+	my $commCnt = scalar( $commLayout->GetAllComments() );
+
+	# Refresh view
+	my $commSnglLayout = undef;
+	if ( $commCnt > 0 ) {
+
+		$commSnglLayout = $commLayout->GetCommentById( $commCnt - 1 );
+	}
+
+	$self->{"form"}->RefreshCommViewForm( $commCnt - 1, $commSnglLayout );
+
+}
+
+sub __OnMoveCommdHndl {
+	my $self   = shift;
+	my $commId = shift;
+	my $type   = shift;
+
+	if ( $self->{"comments"}->MoveComment( $commId, $type ) ) {
+
+		my $commLayout = $self->{"comments"}->GetLayout();
+
+		# Refresh list
+		$self->{"form"}->RefreshCommListViewForm($commLayout);
+
+		my $newPos = $type eq "up" ? $commId - 1 : $commId + 1;
+		my $commSnglLayout = $commLayout->GetCommentById($newPos);
+
+		$self->{"form"}->RefreshSelected($newPos);
+		$self->{"form"}->RefreshCommViewForm( $newPos, $commSnglLayout );
+	}
+
+}
+
+sub __OnChangeTypeHndl {
+	my $self   = shift;
+	my $commId = shift;
+	my $type   = shift;
+
+	$self->{"comments"}->ChangeType( $commId, $type );
+
+	my $commLayout = $self->{"comments"}->GetLayout();
+	$self->{"form"}->RefreshCommListViewForm($commLayout);
+
+	my $commSnglLayout = $commLayout->GetCommentById($commId);
+
+	$self->{"form"}->RefreshSelected($commId);
+	$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
 
 }
 
@@ -170,6 +243,7 @@ sub __RefreshForm {
 	my $comments   = $self->{"comments"}->GetLayout();
 	my $commId     = scalar( $comments->GetAllComments() ) - 1;
 	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+
 	$self->{"form"}->RefreshCommViewForm( $commId, $commLayout );
 
 }
@@ -177,9 +251,14 @@ sub __RefreshForm {
 sub __SetHandlers {
 	my $self = shift;
 
-	$self->{"form"}->{"saveExitEvt"}->Add( sub         { $self->__SaveExitHndl(@_) } );
+	$self->{"form"}->{"saveExitEvt"}->Add( sub { $self->__SaveExitHndl(@_) } );
+
 	$self->{"form"}->{"onSelCommChangedEvt"}->Add( sub { $self->__OnSelCommChangedHndl(@_) } );
 	$self->{"form"}->{"onRemoveCommEvt"}->Add( sub     { $self->__OnRemoveCommdHndl(@_) } );
+	$self->{"form"}->{"onAddCommEvt"}->Add( sub        { $self->__OnAddCommdHndl(@_) } );
+	$self->{"form"}->{"onMoveCommEvt"}->Add( sub       { $self->__OnMoveCommdHndl(@_) } );
+
+	$self->{"form"}->{"onChangeTypeEvt"}->Add( sub { $self->__OnChangeTypeHndl(@_) } );
 
 	$self->{"form"}->{'onRemoveFileEvt'}->Add( sub { $self->__OnRemoveFileHndl(@_) } );
 	$self->{"form"}->{'onEditFileEvt'}->Add( sub   { $self->__OnEditFileHndl(@_) } );

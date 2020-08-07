@@ -45,10 +45,14 @@ sub new {
 	$self->__SetLayout();
 
 	# EVENTS
-	$self->{'onRemoveFileEvt'} = Event->new();
-	$self->{'onEditFileEvt'}   = Event->new();
-	$self->{'onAddFileEvt'}    = Event->new();
-	$self->{"saveExitEvt"}     = Event->new();
+
+	# Comment detail events
+
+	$self->{'onChangeTypeEvt'} = Event->new();
+	$self->{'onRemoveFileEvt'}     = Event->new();
+	$self->{'onEditFileEvt'}       = Event->new();
+	$self->{'onAddFileEvt'}        = Event->new();
+	$self->{"saveExitEvt"}         = Event->new();
 
 	# Comment list events
 	$self->{"onSelCommChangedEvt"} = Event->new();
@@ -85,6 +89,16 @@ sub RefreshCommViewForm {
 	$self->{"commViewFrm"}->SetCommLayout( $commId, $layout );
 
 	$self->{"mainFrm"}->Thaw();
+}
+
+sub RefreshSelected {
+	my $self   = shift;
+	my $commId = shift;
+
+	if ( defined $commId ) {
+
+		$self->{"commListViewFrm"}->SetCommSelected($commId);
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -133,6 +147,8 @@ sub __SetLayoutCommView {
 
 	# EVENTS
 
+	$viewFrm->{"onChangeTypeEvt"}->Add( sub { $self->__OnChangeTypedHndl(@_) } );
+
 	$viewFrm->{'onRemoveFileEvt'}->Add( sub { $self->{"onRemoveFileEvt"}->Do(@_) } );
 	$viewFrm->{'onEditFileEvt'}->Add( sub   { $self->{"onEditFileEvt"}->Do(@_) } );
 	$viewFrm->{'onAddFileEvt'}->Add( sub    { $self->{"onAddFileEvt"}->Do(@_) } );
@@ -162,10 +178,11 @@ sub __SetLayoutCommListView {
 	# SET EVENTS
 	$viewFrm->{"onSelCommChangedEvt"}->Add( sub { $self->__OnCommSelChangedHndl(@_) } );
 	$viewFrm->{"onRemoveCommEvt"}->Add( sub     { $self->__OnRemoveCommdHndl(@_) } );
+	$viewFrm->{"onAddCommEvt"}->Add( sub        { $self->__OnAddCommdHndl(@_) } );
+	$viewFrm->{"onMoveCommEvt"}->Add( sub       { $self->__OnMoveCommdHndl(@_) } );
 
- 
-	  # SAVE REFERENCES
-	  $self->{"commListViewFrm"} = $viewFrm;
+	# SAVE REFERENCES
+	$self->{"commListViewFrm"} = $viewFrm;
 
 	return $szStatBox;
 }
@@ -188,10 +205,35 @@ sub __OnCommSelChangedHndl {
 	$self->{"mainFrm"}->Refresh();    # some background colors not work correctly without refersh
 
 }
+
 sub __OnRemoveCommdHndl {
 	my $self = shift;
 
 	$self->{"onRemoveCommEvt"}->Do(@_);
+
+	$self->{"mainFrm"}->Refresh();
+}
+
+sub __OnAddCommdHndl {
+	my $self = shift;
+
+	$self->{"onAddCommEvt"}->Do(@_);
+
+	$self->{"mainFrm"}->Refresh();
+}
+
+sub __OnMoveCommdHndl {
+	my $self = shift;
+
+	$self->{"onMoveCommEvt"}->Do(@_);
+
+	$self->{"mainFrm"}->Refresh();
+}
+
+sub __OnChangeTypedHndl {
+	my $self = shift;
+
+	$self->{"onChangeTypeEvt"}->Do(@_);
 
 	$self->{"mainFrm"}->Refresh();
 }

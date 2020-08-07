@@ -55,12 +55,22 @@ sub MoveUp {
 	my $self      = shift;
 	my $commentId = shift;
 
+	die "Unable to move up comment id: $commentId" if ( $commentId - 1 < 0 );
+
+	my $tmp = splice @{ $self->{"comments"} }, $commentId, 1;
+	splice @{ $self->{"comments"} }, $commentId - 1, 0, $tmp;
+
 }
 
 sub MoveDown {
 	my $self      = shift;
 	my $commentId = shift;
 
+	die "Unable to move down comment id: $commentId"
+	  if ( $commentId + 1 >= scalar( @{ $self->{"comments"} } ) );
+
+	my $tmp = splice @{ $self->{"comments"} }, $commentId, 1;
+	splice @{ $self->{"comments"} }, $commentId + 1, 0, $tmp;
 }
 
 sub GetCommentById {
@@ -68,7 +78,7 @@ sub GetCommentById {
 	my $commId = shift;
 
 	die "Comment id: $commId doesn't exist" if ( $commId < 0 || $commId >= scalar( @{ $self->{"comments"} } ) );
-	
+
 	return $self->{"comments"}->[$commId];
 
 }

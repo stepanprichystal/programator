@@ -69,11 +69,13 @@ sub __SetLayout {
 	$szMain->Add( $nb,     1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $szBtns, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
+		$szBtns->Add( $btnAddCAM, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnAddGS,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
+	$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szBtns->Add( $btnRemove, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szBtns->Add( $btnEditGS, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnAddCAM, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnAddGS,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
 
 	$self->SetSizer($szMain);
 
