@@ -84,11 +84,11 @@ sub SetStage {
 		$inCAM->COM( 'create_layer', "layer" => $lTmpName, "context" => 'board', "type" => 'drill', "polarity" => 'positive', "ins_layer" => '' );
 
 		# get all nested steps
-		my @steps = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
+		my @steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
 
-		foreach my $nestStep (@steps) {
+		foreach my $nestStep ( @steps, "panel" ) {
 
-			$inCAM->COM( "set_step", "name" => $nestStep->{"stepName"} );
+			$inCAM->COM( "set_step", "name" => $nestStep );
 
 			foreach my $l (@routLayer) {
 
@@ -109,13 +109,12 @@ sub SetStage {
 					"copy_layer",
 					"dest"         => "layer_name",
 					"source_job"   => $jobId,
-					"source_step"  => $nestStep->{"stepName"},
+					"source_step"  => $nestStep,
 					"source_layer" => $lName,
-
-					"dest_step"  => $nestStep->{"stepName"},
-					"dest_layer" => $lTmpName,
-					"mode"       => "append",
-					"invert"     => "no"
+					"dest_step"    => $nestStep,
+					"dest_layer"   => $lTmpName,
+					"mode"         => "append",
+					"invert"       => "no"
 				);
 
 				$inCAM->COM( "delete_layer", "layer" => $lName );
@@ -124,20 +123,20 @@ sub SetStage {
 
 		}
 
-		# copy frame from "v" to aoiTempLayer
-		# in order, we could add aoiTempLayer to AOI set. Layer can not be empty
-		$inCAM->COM(
-			"copy_layer",
-			"dest"         => "layer_name",
-			"source_job"   => $jobId,
-			"source_step"  => "panel",
-			"source_layer" => "v",
-
-			"dest_step"  => "panel",
-			"dest_layer" => $lTmpName,
-			"mode"       => "append",
-			"invert"     => "no"
-		);
+#		# copy frame from "v" to aoiTempLayer
+#		# in order, we could add aoiTempLayer to AOI set. Layer can not be empty
+#		$inCAM->COM(
+#			"copy_layer",
+#			"dest"         => "layer_name",
+#			"source_job"   => $jobId,
+#			"source_step"  => "panel",
+#			"source_layer" => "v",
+#
+#			"dest_step"  => "panel",
+#			"dest_layer" => $lTmpName,
+#			"mode"       => "append",
+#			"invert"     => "no"
+#		);
 
 		push( @drillLayer, $lTmpName );
 	}
@@ -169,7 +168,7 @@ sub OutputOpfx {
 	unless ( -e $exportPath ) {
 		mkdir($exportPath) or die "Can't create dir: " . $exportPath;
 	}
-	
+
 	# remove slash
 	$exportPath =~ s/\\$//i;
 

@@ -28,7 +28,7 @@ my $inCAM = InCAM->new();
 
 my $jobId = "$ENV{JOB}";
 
-#$jobId = "d282449";
+#$jobId = "d288860";
 
 my $messMngr = MessageMngr->new("AOI Helper");
 

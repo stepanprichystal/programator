@@ -316,14 +316,23 @@ sub __InputCustomerData {
 
 	# Create profile
 
-	my $profExist = sub {
- 
+	my $profCreated = sub {
+		my $errMess = shift;
+
 		my $profL = "o";
 
-		return 0 unless ( CamHelper->LayerExists( $inCAM, $jobId, $profL ) );
+		unless ( CamHelper->LayerExists( $inCAM, $jobId, $profL ) ) {
+
+			$$errMess = "Missing layer o";
+			return 0;
+		}
 
 		my %fHist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $oriStep, $profL );
-		return 0 if ( $fHist{"line"} != 4 );
+		if ( $fHist{"line"} < 4 ) {
+
+			$$errMess = "Layer o must contain at least 4 lines";
+			return 0;
+		}
 
 		# try to create profile
 		$inCAM->SupressToolkitException(1);
@@ -334,6 +343,7 @@ sub __InputCustomerData {
 		my $err = $inCAM->GetExceptionError();
 
 		if ($err) {
+			$$errMess = $err->Error();
 			return 0;
 		}
 
@@ -343,13 +353,13 @@ sub __InputCustomerData {
 		return 1;
 	};
 
-	while ( !$profExist->() ) {
+	my $err = "";
+	while ( !$profCreated->( \$err ) ) {
 
-		$self->{"messMngr"}->ShowModal( -1,
-									  EnumsGeneral->MessageType_INFORMATION,
-									  [ "Nepodařilo se vytvořit profil.", "Vytvoř vrstvu \"o\" s obrysem šablony nebo udělej profil ručně" ] );
+		$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION,
+										[ "Nepodařilo se vytvořit profil.", "Vytvoř vrstvu \"o\" s obrysem šablony.", "\nDetail chyby:".$err ] );
 
-		$inCAM->PAUSE("Vytvor profil...");
+		$inCAM->PAUSE("Uprav data ve vrstve o, tak aby sel vytvorit profil...");
 
 	}
 

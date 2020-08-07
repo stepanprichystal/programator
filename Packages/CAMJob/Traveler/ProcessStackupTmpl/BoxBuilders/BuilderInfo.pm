@@ -270,10 +270,12 @@ sub __BuildPaketInfo {
 	my $lamData = $lam->GetLamData();
 	my $pinStr  = "Ne";
 
-	
-
 	if (
-		   $lamType eq Enums->LamType_FLEXBASE
+		$lamType eq Enums->LamType_FLEXBASE
+		|| (
+			$lamType eq Enums->LamType_RIGIDBASE
+			&& scalar( $lamData->GetLayers( StackEnums->ProductL_PRODUCT ) ) > 1
+		)
 		|| $lamType eq Enums->LamType_ORIGIDFLEXFINAL
 		|| $lamType eq Enums->LamType_IRIGIDFLEXFINAL
 		|| ( $lamType eq Enums->LamType_RIGIDFINAL
@@ -388,7 +390,7 @@ sub __BuildOperInfo {
 
 	my $rowProduc = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Vznikne polotovar:",         $txtLCollStyle );
+	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Vznikne polotovar:", $txtLCollStyle );
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $lam->GetProductId(), $txtRCollStyle );
 
 }
