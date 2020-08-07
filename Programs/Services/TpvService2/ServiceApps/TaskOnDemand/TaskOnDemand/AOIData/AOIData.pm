@@ -219,20 +219,11 @@ sub SendMail {
 
 		my $sender = new Mail::Sender { smtp => $self->{"smtp"}, port => 25, from => $self->{"from"} };
 
-		my @addres = ();
-
-		if ( defined $userInfo && defined $userInfo->{"e_mail"} =~ /^[a-z0-9.]+\@[a-z0-9.-]+$/i ) {
-
-			push( @addres, $userInfo->{"e_mail"} );
-		}
-		else {
-
-			push( @addres, 'pcb@gatema.cz' );
-		}
+ 
 
 		$sender->Open(
 			{
-			   to      => \@addres,
+			   to      => ['stepan.prichystal@gatema.cz'],
 			   subject => "Task on demand - " . $t . " ($jobId)",
 
 			   #msg     => "I'm sending you the list you wanted.",
@@ -241,7 +232,7 @@ sub SendMail {
 			   encoding => "7bit",
 
 			   # bcc => ( !$result ? 'stepan.prichystal@gatema.cz' : undef )    #TODO temporary
-			   bcc => ['stepan.prichystal@gatema.cz']    #TODO temporary
+			    
 			}
 		);
 
