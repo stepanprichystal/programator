@@ -39,6 +39,7 @@ use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -294,6 +295,7 @@ sub __GetLayerLimit {
 	my $layerName = shift;
 
 	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	my %lim = ();
 
@@ -320,15 +322,12 @@ sub __GetLayerLimit {
 		%lim = %{ $self->{"profLim"} };
 	}
 
-	#	# Exceptions for Outer Rigid-Flex with top coverlay
-	#	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
-	#
-	#		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbType_RIGIDFLEXO
-	#			 && CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "coverlayc" ) )
-	#		{
-	#			%lim = %{ $self->{"profLim"} };
-	#		}
-	#	}
+	#	# Exceptions for goldc/s when panel is cut
+	my $cutHeight;
+	if ( $layerName =~ /^gold[cs]$/ && JobDim->GetCutPanel( $inCAM, $jobId, undef, \$cutHeight, undef, \%lim ) ) {
+
+		$lim{"yMax"} = $lim{"yMin"} + $cutHeight;
+	}
 
 	return %lim;
 }
@@ -422,7 +421,6 @@ sub __GetFiducials {
 
 	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/i } @features )[0];
 	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/i } @features )[0];
-
 
 	die "OLEC fiducial mark left-top was not found"  if ( !defined $fLT );
 	die "OLEC fiducial mark right-top was not found" if ( !defined $fRT );
@@ -627,7 +625,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d285782";
+	my $jobId    = "d288631";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -636,7 +634,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
-				 Enums->Type_SIGNAL => "1",
+				 Enums->Type_SIGNAL => "0",
 				 Enums->Type_MASK   => "1",
 				 Enums->Type_PLUG   => "0",
 				 Enums->Type_GOLD   => "1"

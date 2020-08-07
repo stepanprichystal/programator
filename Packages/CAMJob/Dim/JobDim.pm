@@ -249,31 +249,36 @@ sub GetCutPanel {
 	# Into this reference is stored:
 	# pb_hal - panel has to by cut because of hal
 	# gold - panel has to by cut because of hal
-	my $cuteType = shift;
-	my $surface  = shift // HegMethods->GetPcbSurface($jobId);
-	my $lim      = shift // { CamJob->GetProfileLimits2( $inCAM, $jobId, 'panel' ) };
+	my $cutType = shift;
+
+	# Into this reference is stored final height of panel after cut
+	my $cutHeight = shift;
+	my $surface   = shift // HegMethods->GetPcbSurface($jobId);
+	my $lim       = shift // { CamJob->GetProfileLimits2( $inCAM, $jobId, 'panel' ) };
 
 	my $res = 0;
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	# 1) Se atribut "cut panel" according surface and size of panel
-	my $HALMax      = 460;                                      # max diemsnion for HAL PCB
-	my $HARDGoldMax = 400;                                      # max diemsnion for hard gold  PCB
+	my $HALMax      = 460;                                                               # max diemsnion for HAL PCB
+	my $HARDGoldMax = 400;                                                               # max diemsnion for hard gold  PCB
 	my $pnlH        = abs( $lim->{"yMax"} - $lim->{"yMin"} );
-	$pnlH -= 2 * 15 if ( $layerCnt > 2 );                       # 15mm is border before cutting FR frame
+	$pnlH -= 2 * 15 if ( $layerCnt > 2 );                                                # 15mm is border before cutting FR frame
 
 	if ( $surface =~ /^a$/i && $pnlH > $HALMax ) {
 
-		$$cuteType = 'pb_hal';
-		$res       = 1;
+		$$cutType = 'pb_hal';
+		$$cutHeight = $HALMax;
+		$res      = 1;
 	}
 
 	if ( ( $surface =~ /^g$/i || CamAttributes->GetJobAttrByName( $inCAM, $jobId, 'goldholder' ) eq 'yes' ) && $pnlH > $HARDGoldMax ) {
 
 		# PCB can contain Pb HAL + hard gold (higher priority)
-		$$cuteType = 'gold';
-		$res       = 1;
+		$$cutType = 'gold';
+		$$cutHeight = $HARDGoldMax;
+		$res      = 1;
 	}
 
 	return $res;
@@ -293,7 +298,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "d283204";
 
 	my $cutType = undef;
-	 JobDim->GetCutPanel( $inCAM, $jobId, \$cutType );
+	JobDim->GetCutPanel( $inCAM, $jobId, \$cutType );
 
 	print "eee";
 }
