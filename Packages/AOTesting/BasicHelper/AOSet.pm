@@ -86,7 +86,7 @@ sub SetStage {
 		# get all nested steps
 		my @steps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
 
-		foreach my $nestStep ( @steps, "panel" ) {
+		foreach my $nestStep ( @steps, $stepName ) {
 
 			$inCAM->COM( "set_step", "name" => $nestStep );
 

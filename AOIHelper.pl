@@ -96,10 +96,10 @@ my $opfxP          = JobHelper->GetJobArchive($jobIdSrc) . "zdroje\\ot\\";
 my $opfxPathPar    = $messMngr->GetTextParameter( "OPFX path", "$opfxP" );
 my $sent2serverPar = $messMngr->GetCheckParameter( "Sent to AOI server", 1 );
 my $closeOtJobPar  = $messMngr->GetCheckParameter( "Close OT job", 1 );
-my $removeOtJobPar = $messMngr->GetCheckParameter( "Remove OT job ", 1 );
+my $removeOtJobPar = $messMngr->GetCheckParameter( "Remove OT job", 1 );
 
 #my $levelPar   = $messMngr->GetCheckParameter( "Reduce layer data level", 0 );
-my $attrPar = $messMngr->GetCheckParameter( "Remove layer attributes", 1 );
+my $attrPar = $messMngr->GetCheckParameter( "Del feats attr (not: .nomencl; .smd)", 0 );
 
 my @params =
   ( $outputJobPar, $keepJobNamePar,  $layersPar, $reduceStepsPar, $resizePar, $contourPar, $attrPar, $opfxPathPar, $sent2serverPar, $closeOtJobPar, $removeOtJobPar );

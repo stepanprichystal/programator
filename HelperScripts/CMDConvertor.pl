@@ -7,7 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="COM et_optimization_text_report,output=file,out_file=/test_report";
+my $inputLine ="sel_delete_atr,mode=list,attributes=attlistStr";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );
