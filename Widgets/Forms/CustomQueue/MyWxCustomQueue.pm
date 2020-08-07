@@ -11,6 +11,7 @@ use Wx;
 use Wx qw( :brush :font :pen :colour );
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 use aliased 'Widgets::Forms::MyWxScrollPanel';
@@ -121,7 +122,6 @@ sub RemoveItemFromQueue {
 #  Methods for set queue
 #-------------------------------------------------------------------------------------------#
 
-
 # Set height of item gap
 sub SetItemGap {
 	my $self  = shift;
@@ -146,12 +146,12 @@ sub SetItemSelectColor {
 	$self->{"itemSelectColor"} = $color;
 }
 
-
 sub GetSelectedItem {
 	my $self  = shift;
 	my $value = shift;
 
-	$self->{"itemGap"} = $value;
+	return first { $_->GetSelected() } @{ $self->{"jobItems"} };
+
 }
 
 sub SetSelectedItem {
@@ -260,7 +260,7 @@ sub __OnItemClick {
 	my $item = shift;
 
 	$self->__UnselectAll();
-	$item->{"selected"} = 1;
+	$item->SetSelected(1);
 
 	$item->SetBackgroundColour( $self->{"itemSelectColor"} );
 	$item->Refresh();
@@ -283,14 +283,13 @@ sub __UnselectAll {
 
 	foreach my $item ( @{ $self->{"jobItems"} } ) {
 
-		$item->{"selected"} = 0;
+		$item->SetSelected(0);
 		$item->SetBackgroundColour( $self->{"itemUnselectColor"} );
 		$item->Refresh();
 
 	}
 
 }
-
 
 sub __GetItemsHeight {
 	my $self = shift;

@@ -100,6 +100,20 @@ sub __OnSelCommChangedHndl {
 
 }
 
+sub __OnRemoveCommdHndl {
+	my $self   = shift;
+	my $commId = shift;
+
+	my $commLayout = $self->{"comments"}->RemoveComment($commId);
+
+	my $commCnt = scalar( $self->{"comments"}->GetLayout()->GetAllComments() );
+
+	$commCnt = undef unless ($commCnt);
+
+	$self->{"form"}->RefreshCommViewForm( $commCnt, $commLayout );
+
+}
+
 sub __OnRemoveFileHndl {
 	my $self   = shift;
 	my $commId = shift;
@@ -136,13 +150,11 @@ sub __OnAddFileHndl {
 
 	$self->{"comments"}->AddFile( $commId, undef, $p );
 
- 
- 	# Refresh Comm view
+	# Refresh Comm view
 	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
 	$self->{"form"}->RefreshCommViewForm( $commId, $commLayout );
-	
+
 	# Refresh Comm list
-	 
 
 }
 
@@ -167,6 +179,7 @@ sub __SetHandlers {
 
 	$self->{"form"}->{"saveExitEvt"}->Add( sub         { $self->__SaveExitHndl(@_) } );
 	$self->{"form"}->{"onSelCommChangedEvt"}->Add( sub { $self->__OnSelCommChangedHndl(@_) } );
+	$self->{"form"}->{"onRemoveCommEvt"}->Add( sub     { $self->__OnRemoveCommdHndl(@_) } );
 
 	$self->{"form"}->{'onRemoveFileEvt'}->Add( sub { $self->__OnRemoveFileHndl(@_) } );
 	$self->{"form"}->{'onEditFileEvt'}->Add( sub   { $self->__OnEditFileHndl(@_) } );

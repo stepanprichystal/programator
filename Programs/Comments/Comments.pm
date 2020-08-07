@@ -110,7 +110,7 @@ sub RemoveComment {
 	my $self      = shift;
 	my $commentId = shift;
 
-	die "Comment id: $commentId doesn't exist" if ( $commentId < 0 || $commentId >= scalar( @{ $self->{"comments"} } ) );
+	die "Comment id: $commentId doesn't exist" if ( $commentId < 0 || $commentId >= scalar( $self->{"commLayout"}->GetAllComments() ) );
 
 	splice @{ $self->{"comments"} }, $commentId, 1;
 }

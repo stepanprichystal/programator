@@ -35,9 +35,9 @@ sub new {
 	$self->__SetLayout();
 
 	# DEFINE EVENTS
-	$self->{'onRemoveCommentEvt'}  = Event->new();
-	$self->{'onMoveCommentEvt'}    = Event->new();
-	$self->{'onAddCommentEvt'}     = Event->new();
+	$self->{'onRemoveCommEvt'}     = Event->new();
+	$self->{'onMoveCommEvt'}       = Event->new();
+	$self->{'onAddCommEvt'}        = Event->new();
 	$self->{"onSelCommChangedEvt"} = Event->new();
 
 	return $self;
@@ -61,64 +61,70 @@ sub __SetLayout {
 	my $btnAdd      = Wx::Button->new( $self, -1, "+ Add",     &Wx::wxDefaultPosition, [ 70, -1 ] );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_BUTTON( $btnRemove,   -1, sub { $self->{"onRemoveCommentEvt"}->Do(@_) } );
-	Wx::Event::EVT_BUTTON( $btnMoveUp,   -1, sub { $self->{"onMoveCommentEvt"}->Do("up") } );
-	Wx::Event::EVT_BUTTON( $btnMoveDown, -1, sub { $self->{"onMoveCommentEvt"}->Do("down") } );
-	Wx::Event::EVT_BUTTON( $btnAdd,      -1, sub { $self->{"onAddCommentEvt"}->Do(@_) } );
+ 		Wx::Event::EVT_BUTTON( $btnRemove,   -1, sub { $self->{"onRemoveCommEvt"}->Do( $commList->GetSelectedItem()->GetItemId() ) } );
+		Wx::Event::EVT_BUTTON( $btnMoveUp,   -1, sub { $self->{"onMoveCommEvt"}->Do( $commList->GetSelectedItem()->GetItemId(), "up" ) } );
+		Wx::Event::EVT_BUTTON( $btnMoveDown, -1, sub { $self->{"onMoveCommEvt"}->Do( $commList->GetSelectedItem()->GetItemId(), "down" ) } );
+		Wx::Event::EVT_BUTTON( $btnAdd,      -1, sub { $self->{"onAddCommEvt"}->Do(@_) } );
 
-	$commList->{"onSelectItemChange"}->Add( sub { $self->{"onSelCommChangedEvt"}->Do( $_[0]->GetItemId() ) } );
+#		sub __Test {
+#			my $self = shift;
+#			my $id   = $self->{"commList"}->GetSelectedItem()->GetItemId();
+#			$self->{"onRemoveCommEvt"}->Do($id);
+#		}
 
-	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $commList, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $szBtns, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		$commList->{"onSelectItemChange"}->Add( sub { $self->{"onSelCommChangedEvt"}->Do( $_[0]->GetItemId() ) } );
 
-	$szBtns->Add( $btnRemove,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $szBtnsMove, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnAdd, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		# BUILD STRUCTURE OF LAYOUT
+		$szMain->Add( $commList, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		$szMain->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		$szMain->Add( $szBtns, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szBtnsMove->Add( $btnMoveUp,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtnsMove->Add( $btnMoveDown, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		$szBtns->Add( $btnRemove,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		$szBtns->Add( $szBtnsMove, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		$szBtns->Add( $btnAdd, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$self->SetSizer($szMain);
-	
-	my $listCrl = Wx::Colour->new( 230, 230, 230 );
-	$self->SetBackgroundColour( $listCrl );
-	$commList->SetBackgroundColour($listCrl );
+		$szBtnsMove->Add( $btnMoveUp,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+		$szBtnsMove->Add( $btnMoveDown, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	# SAVE REFERENCES
-	$self->{"commList"} = $commList;
+		$self->SetSizer($szMain);
 
-}
+		my $listCrl = Wx::Colour->new( 230, 230, 230 );
+		$self->SetBackgroundColour($listCrl);
+		$commList->SetBackgroundColour($listCrl);
 
-# =====================================================================
-# SET/GET CONTROLS VALUES
-# =====================================================================
+		# SAVE REFERENCES
+		$self->{"commList"} = $commList;
 
-sub SetCommList {
-	my $self   = shift;
-	my $layout = shift;
+	  }
 
-	$self->{"commList"}->SetCommentsLayout($layout);
+	  # =====================================================================
+	  # SET/GET CONTROLS VALUES
+	  # =====================================================================
 
-}
+	  sub SetCommList {
+		my $self   = shift;
+		my $layout = shift;
 
-sub SetCommSelected {
-	my $self   = shift;
-	my $commId = shift;
+		$self->{"commList"}->SetCommentsLayout($layout);
 
-	$self->{"commList"}->SetSelectedItem($commId);
+	}
 
-}
+	sub SetCommSelected {
+		my $self   = shift;
+		my $commId = shift;
 
-#-------------------------------------------------------------------------------------------#
-#  Place for testing..
-#-------------------------------------------------------------------------------------------#
+		$self->{"commList"}->SetSelectedItem($commId);
 
-#	my $test = PureWindow->new(-1, "f13610" );
-#
-#	$test->MainLoop();
+	}
 
-1;
+	#-------------------------------------------------------------------------------------------#
+	#  Place for testing..
+	#-------------------------------------------------------------------------------------------#
+
+	#	my $test = PureWindow->new(-1, "f13610" );
+	#
+	#	$test->MainLoop();
+
+	1;
 

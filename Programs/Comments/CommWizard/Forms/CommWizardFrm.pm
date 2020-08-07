@@ -52,6 +52,9 @@ sub new {
 
 	# Comment list events
 	$self->{"onSelCommChangedEvt"} = Event->new();
+	$self->{'onRemoveCommEvt'}     = Event->new();
+	$self->{'onMoveCommEvt'}       = Event->new();
+	$self->{'onAddCommEvt'}        = Event->new();
 
 	return $self;
 }
@@ -120,10 +123,11 @@ sub __SetLayoutCommView {
 	my $parent = shift;
 
 	#define staticboxes
-	my $szStatBox = MyWxStaticBoxSizer->new( $parent, &Wx::wxVERTICAL, 'Comment detail', 5, $Widgets::Style::fontLblBold,
+	my $szStatBox = MyWxStaticBoxSizer->new( $parent, &Wx::wxVERTICAL, 'Comment detail',
+											 5, $Widgets::Style::fontLblBold,
 											 Wx::Colour->new( 255, 255, 255 ),
 											 Wx::Colour->new( 112, 146, 190 ),
-											  Wx::Colour->new( 240, 240, 240 ), 3 );
+											 Wx::Colour->new( 240, 240, 240 ), 3 );
 
 	my $viewFrm = CommViewFrm->new($szStatBox);
 
@@ -149,7 +153,7 @@ sub __SetLayoutCommListView {
 	my $szStatBox = MyWxStaticBoxSizer->new( $parent, &Wx::wxVERTICAL, 'Comment list', 5, $Widgets::Style::fontLblBold,
 											 Wx::Colour->new( 255, 255, 255 ),
 											 Wx::Colour->new( 112, 146, 190 ),
-											  Wx::Colour->new( 230, 230, 230 ), 3 );
+											 Wx::Colour->new( 230, 230, 230 ), 3 );
 
 	my $viewFrm = CommListViewFrm->new($szStatBox);
 
@@ -157,9 +161,11 @@ sub __SetLayoutCommListView {
 
 	# SET EVENTS
 	$viewFrm->{"onSelCommChangedEvt"}->Add( sub { $self->__OnCommSelChangedHndl(@_) } );
+	$viewFrm->{"onRemoveCommEvt"}->Add( sub     { $self->__OnRemoveCommdHndl(@_) } );
 
-	# SAVE REFERENCES
-	$self->{"commListViewFrm"} = $viewFrm;
+ 
+	  # SAVE REFERENCES
+	  $self->{"commListViewFrm"} = $viewFrm;
 
 	return $szStatBox;
 }
@@ -181,6 +187,13 @@ sub __OnCommSelChangedHndl {
 
 	$self->{"mainFrm"}->Refresh();    # some background colors not work correctly without refersh
 
+}
+sub __OnRemoveCommdHndl {
+	my $self = shift;
+
+	$self->{"onRemoveCommEvt"}->Do(@_);
+
+	$self->{"mainFrm"}->Refresh();
 }
 
 #-------------------------------------------------------------------------------------------#
