@@ -114,11 +114,6 @@ sub CreateAOIRepairJob {
 	CamMatrix->CreateLayer( $inCAM, $jobIdOut, "o", "document", "positive", 0 );
 
 	# Create step structure
-	#my %contextSrc = ();
-	#my %contextOut = ();
-
-	# Nested steps
-	#	if ( !$reduceSteps ) {
 
 	CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );    # Set source job contextOut
 	my @srcSteps = CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobIdSrc );
@@ -160,15 +155,13 @@ sub CreateAOIRepairJob {
 
 	}
 
-	#}
-
 	# Panel step
-	CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );    # Set source job contextOut
-	CamHelper->OpenStep( $inCAM, $jobIdSrc, "panel" );    # Set source job contextOut
+	CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );                                                   # Set source job contextOut
+	CamHelper->OpenStep( $inCAM, $jobIdSrc, "panel" );                                            # Set source job contextOut
 
 	my $scrPnl = StandardBase->new( $inCAM, $jobIdSrc );
 
-	CamHelper->OpenJob( $inCAM, $jobIdOut, 0 );           # Set output job contextOut
+	CamHelper->OpenJob( $inCAM, $jobIdOut, 0 );                                                   # Set output job contextOut
 
 	my $SRStep = SRStep->new( $inCAM, $jobIdOut, "panel" );
 	$SRStep->Create( $scrPnl->W(), $scrPnl->H(),
@@ -178,20 +171,17 @@ sub CreateAOIRepairJob {
 					 ( $scrPnl->W() - $scrPnl->WArea() ) / 2 );
 	CamHelper->OpenStep( $inCAM, $jobIdOut, "panel" );
 
-	# Set step structure
-	#if ( !$reduceSteps ) {
-
-	CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );    # Set source job contextOut
+	CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );                                                   # Set source job contextOut
 	my @nestSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobIdSrc );
 
 	foreach my $step ( @nestSteps, "panel" ) {
-		CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );    # Set source job contextOut
+		CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );                                               # Set source job contextOut
 		my @repeats = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobIdSrc, $step );
 		@repeats = grep { $_->{"stepName"} !~ /coupon/i } @repeats;
 
 		next if ( !scalar(@repeats) );
 
-		CamHelper->OpenJob( $inCAM, $jobIdOut, 0 );    # Set source job contextOut
+		CamHelper->OpenJob( $inCAM, $jobIdOut, 0 );                                               # Set source job contextOut
 		CamHelper->OpenStep( $inCAM, $jobIdOut, $step );    # Set source job contextOut
 		                                                    #CamHelper->SetGroupId( $inCAM, $contextOut{ $step->{"stepName"} } );
 
@@ -203,16 +193,7 @@ sub CreateAOIRepairJob {
 		}
 	}
 
-	#}
-
 	# Copy layers
-
-	#if ( !$reduceSteps ) {
-
-	# ommit mpanels, keep only deepest step + panel
-	#	my @nestSteps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobIdSrc );
-	#	push( @steps, @nestSteps );
-	#}
 
 	# Add necessary NC layers
 	my @sigL =
@@ -261,6 +242,7 @@ sub CreateAOIRepairJob {
 	my @lToFill = ( @lUsr, @NCL );
 
 	my @steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobIdSrc );
+	push(@steps, "panel");
 
 	foreach my $step (@steps) {
 
@@ -274,19 +256,6 @@ sub CreateAOIRepairJob {
 
 			# Flatten layer
 			my $srcL = $l->{"gROWname"};
-
-			#			if ($reduceSteps) {
-			#				$srcL = GeneralHelper->GetGUID();
-			#
-			#				# avoid test panel frame by copy lazer and delete frame
-			#				my $remFrame = GeneralHelper->GetGUID();
-			#				CamMatrix->CopyLayer( $inCAM, $jobIdSrc, $l->{"gROWname"}, $step, $remFrame, $step, undef, "duplicate" );
-			#				CamLayer->WorkLayer( $inCAM, $remFrame );
-			#				CamLayer->DeleteFeatures($inCAM);
-			#				$inCAM->COM( 'flatten_layer', "source_layer" => $remFrame, "target_layer" => $srcL );
-			#				CamMatrix->DeleteLayer( $inCAM, $jobIdSrc, $remFrame )
-			#
-			#			}
 
 			# Copz over buffer to avoid copyng mess with matrix layer
 			CamHelper->OpenJob( $inCAM, $jobIdSrc, 0 );
@@ -303,17 +272,11 @@ sub CreateAOIRepairJob {
 				$inCAM->COM( "sel_buffer_paste", "x" => 0, "y" => 0 );
 			}
 
-			#			if ($reduceSteps) {
-			#				CamHelper->OpenJob( $inCAM, $jobIdSrc, 1 );         # Open in editor uinless delete  layer not work
-			#				CamHelper->OpenStep( $inCAM, $jobIdSrc, $step );    # Set source job contextOut
-			#				CamMatrix->DeleteLayer( $inCAM, $jobIdSrc, $srcL )  # remove flaten layer
-			#			}
-
 		}
 
 		# Do operation according user settings
 		CamHelper->OpenJob( $inCAM, $jobIdOut, 1 );
-		CamHelper->OpenStep( $inCAM, $jobIdOut, $step );    # Set source job contextOut
+		CamHelper->OpenStep( $inCAM, $jobIdOut, $step );            # Set source job contextOut
 		CamLayer->AffectLayers( $inCAM, \@layersUsr );
 
 		if ($resizeL) {
@@ -328,7 +291,7 @@ sub CreateAOIRepairJob {
 				my %attr = CamHistogram->GetAttHistogram( $inCAM, $jobIdOut, $step, $l, 0 );
 				push( @attList, keys %attr );
 			}
-			
+
 			@attList = grep { $_ !~ /nomenclature/i && $_ !~ /smd/i } @attList;
 			foreach my $a (@attList) {
 				$inCAM->COM( "sel_delete_atr", "mode" => "list", "attributes" => $a );
@@ -344,6 +307,10 @@ sub CreateAOIRepairJob {
 			);
 		}
 
+		# If only panel step, set to all feateures .nomenclature in order not test theses features
+		if ( $reduceSteps && $step eq "panel" ) {
+			CamAttributes->SetFeaturesAttribute( $inCAM, $jobIdOut, ".nomenclature" );
+		}
 	}
 
 	if ($reduceSteps) {
