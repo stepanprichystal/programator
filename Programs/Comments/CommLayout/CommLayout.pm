@@ -90,6 +90,21 @@ sub GetAllComments {
 
 }
 
+sub GetFullFileNameById {
+	my $self   = shift;
+	my $commId = shift;
+	my $fileId = shift;
+
+	my $comm = $self->GetCommentById($commId);
+	my $f = $comm->GetFileById($fileId);
+
+	my $custName = $f->GetFileCustName();
+	$custName.= "_" if(defined $custName && $custName ne "");
+
+	return $f->GetFilePrefix() . ( $commId + 1 ) . $custName .  $f->GetFileSufix();
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

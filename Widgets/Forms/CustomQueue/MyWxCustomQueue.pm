@@ -43,6 +43,8 @@ sub new {
 	$self->__SetLayout();
 
 	#EVENTS
+	$self->{"itemUnselectColor"}  = undef;
+	$self->{"itemSelectColor"}    = undef;
 	$self->{"onSelectItemChange"} = Event->new();
 
 	return $self;
@@ -262,8 +264,10 @@ sub __OnItemClick {
 	$self->__UnselectAll();
 	$item->SetSelected(1);
 
-	$item->SetBackgroundColour( $self->{"itemSelectColor"} );
-	$item->Refresh();
+	if ( defined $self->{"itemSelectColor"} ) {
+		$item->SetBackgroundColour( $self->{"itemSelectColor"} );
+		$item->Refresh();
+	}
 	$self->{"onSelectItemChange"}->Do($item);
 
 }
@@ -284,8 +288,10 @@ sub __UnselectAll {
 	foreach my $item ( @{ $self->{"jobItems"} } ) {
 
 		$item->SetSelected(0);
-		$item->SetBackgroundColour( $self->{"itemUnselectColor"} );
-		$item->Refresh();
+		if ( defined $self->{"itemUnselectColor"} ) {
+			$item->SetBackgroundColour( $self->{"itemUnselectColor"} );
+			$item->Refresh();
+		}
 
 	}
 

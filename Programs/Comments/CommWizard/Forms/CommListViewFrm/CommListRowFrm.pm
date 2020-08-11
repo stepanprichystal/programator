@@ -88,11 +88,11 @@ sub __SetLayout {
 	$szMain->Add( $szInfoBox1,    60, &Wx::wxALL, 1 );
 	$szMain->Add( $szInfoBox2,    30, &Wx::wxALL, 1 );
 
-	$szInfoBox1->Add( $szInfoBox1Top, 50, &Wx::wxALL, 1 );
-	$szInfoBox1->Add( $szInfoBox1Bot, 50, &Wx::wxALL, 1 );
+	$szInfoBox1->Add( $szInfoBox1Top, 50, &Wx::wxALL, 2 );
+	$szInfoBox1->Add( $szInfoBox1Bot, 50, &Wx::wxALL, 2 );
 
-	$szInfoBox2->Add( $szInfoBox2Top, 50, &Wx::wxALL, 1 );
-	$szInfoBox2->Add( $szInfoBox2Bot, 50, &Wx::wxALL, 1 );
+	$szInfoBox2->Add( $szInfoBox2Top, 50, &Wx::wxALL, 2 );
+	$szInfoBox2->Add( $szInfoBox2Bot, 50, &Wx::wxALL, 2 );
 
 	#$szInfoBox1Top->Add( $commTypeTxt,    30, &Wx::wxALL, 1 );
 	$szInfoBox1Top->Add( $commTypeValTxt, 100, &Wx::wxALL, 1 );
@@ -133,11 +133,22 @@ sub SetCommentLayout {
 	my $commLayout = shift;
 
 	$self->{"commStoredTxt"}->SetLabel( !$commLayout->GetStoredOnDisc()?"*": "" );
-	$self->{"commIdValTxt"}->SetLabel( $self->GetPosition() );
+	$self->{"commIdValTxt"}->SetLabel( $self->GetPosition() +1 );
 
 	$self->{"commTypeValTxt"}->SetLabel( Enums->GetTypeTitle( $commLayout->GetType() ) );
 
-	$self->{"commTextValTxt"}->SetLabel( $commLayout->GetText() );
+	# first 15 char without new lines
+	my $note = $commLayout->GetText();
+	
+	if($note eq ""){
+		
+		$note = "-"
+	}else{
+		$note =~ s/\n/ /ig;
+		$note =  substr($note, 0, 20)." ...";
+	}
+	
+	$self->{"commTextValTxt"}->SetLabel($note);
 	$self->{"commFilesValTxt"}->SetLabel( scalar( $commLayout->GetAllFiles() ) );
 	$self->{"commSuggValTxt"}->SetLabel( scalar( $commLayout->GetAllSuggestions() ) );
 

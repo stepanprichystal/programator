@@ -10,12 +10,15 @@ use strict;
 use warnings;
 use Wx;
 use List::Util qw[max min];
+use Win32::Exe;
 
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Programs::Comments::Enums';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,9 +38,9 @@ sub new {
 	$self->__SetLayout();
 
 	# DEFINE EVENTS
+	$self->{'onAddFileEvt'}        = Event->new();
 	$self->{'onRemoveFileEvt'}     = Event->new();
 	$self->{'onEditFileEvt'}       = Event->new();
-	$self->{'onAddFileEvt'}        = Event->new();
 	$self->{'onChangeFileNameEvt'} = Event->new();
 
 	return $self;
@@ -54,14 +57,22 @@ sub __SetLayout {
 
 	my $nb = Wx::Notebook->new( $self, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
-	my $btnRemove = Wx::Button->new( $self, -1, "- Remove",   &Wx::wxDefaultPosition, [ 80, -1 ] );
-	my $btnEditGS = Wx::Button->new( $self, -1, "Edit in GS", &Wx::wxDefaultPosition, [ 80, -1 ] );
-	my $btnAddCAM = Wx::Button->new( $self, -1, "+ Add CAM",  &Wx::wxDefaultPosition, [ 80, -1 ] );
-	my $btnAddGS  = Wx::Button->new( $self, -1, "+ Add GS",   &Wx::wxDefaultPosition, [ 80, -1 ] );
+	my $btnRemove = Wx::Button->new( $self, -1, "- Remove",   &Wx::wxDefaultPosition, [ 80, 28 ] );
+	my $btnEditGS = Wx::Button->new( $self, -1, "Edit in GS", &Wx::wxDefaultPosition, [ 80, 28 ] );
+	my $btnAddCAM = Wx::Button->new( $self, -1, "+ Add CAM",  &Wx::wxDefaultPosition, [ 100, 28 ] );
+	my $btnAddGS  = Wx::Button->new( $self, -1, "+ Add GS",   &Wx::wxDefaultPosition, [ 100, 28 ] );
+
+	# Set icons
+	$self->__SetIconByApp( $btnAddGS, Enums->Path_GREENSHOT);
+	$self->__SetIconByApp( $btnAddCAM, GeneralHelper->GetLastInCAMVersion()."bin\\InCAM.exe");
+	
+ 
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_BUTTON( $btnAddCAM, -1, sub { $self->{"onAddFileEvt"}->Do( 1, 0 ) } );
 	Wx::Event::EVT_BUTTON( $btnAddGS,  -1, sub { $self->{"onAddFileEvt"}->Do( 0, 1 ) } );
+	Wx::Event::EVT_BUTTON( $btnEditGS, -1, sub { $self->{"onEditFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
+	Wx::Event::EVT_BUTTON( $btnRemove, -1, sub { $self->{"onRemoveFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -69,18 +80,19 @@ sub __SetLayout {
 	$szMain->Add( $nb,     1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $szBtns, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-		$szBtns->Add( $btnAddCAM, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnAddCAM, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szBtns->Add( $btnAddGS,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	
-	$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnRemove, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnEditGS, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
+	$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnEditGS, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnRemove, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
 
 	# SET REFERENCES
-	$self->{"nb"} = $nb;
+	$self->{"nb"}        = $nb;
+	$self->{"btnRemove"} = $btnRemove;
+	$self->{"btnEditGS"} = $btnEditGS;
 
 }
 
@@ -88,9 +100,10 @@ sub __SetLayout {
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
-sub AddFile {
+sub __AddFile {
 	my $self       = shift;
 	my $fileLayout = shift;
+	my $commId = shift;
 
 	my $count = $self->{"nb"}->GetPageCount();
 	my $page = MyWxBookCtrlPage->new( $self->{"nb"}, $count );
@@ -101,10 +114,10 @@ sub AddFile {
 	# Add empty item
 
 	# DEFINE CONTROLS
-	my $fileNameTxt = Wx::StaticText->new( $page, -1, "File name:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $fileNamePrefValTxt = Wx::StaticText->new( $page, -1, $fileLayout->GetFilePrefix() . ( $count + 1 ), &Wx::wxDefaultPosition, [ 20, 25 ] );
-	my $fileNameExtraValTxt = Wx::TextCtrl->new( $page, -1, $fileLayout->GetFileCustName(), &Wx::wxDefaultPosition, [ 100, 25 ] );
-	my $fileNameSuffValTxt = Wx::StaticText->new( $page, -1, $fileLayout->GetFileSufix(), &Wx::wxDefaultPosition, [ 30, 25 ] );
+	my $fileNameTxt = Wx::StaticText->new( $page, -1, "Output name:", &Wx::wxDefaultPosition, [ 90, 30 ] );
+	my $fileNamePrefValTxt = Wx::StaticText->new( $page, -1, $fileLayout->GetFilePrefix() . ( $commId + 1 ), &Wx::wxDefaultPosition, [ 20, 30 ] );
+	my $fileNameExtraValTxt = Wx::TextCtrl->new( $page, -1, $fileLayout->GetFileCustName(), &Wx::wxDefaultPosition, [ 100, 20 ] );
+	my $fileNameSuffValTxt = Wx::StaticText->new( $page, -1, $fileLayout->GetFileSufix(), &Wx::wxDefaultPosition, [ 30, 30 ] );
 
 	Wx::InitAllImageHandlers();
 
@@ -116,8 +129,8 @@ sub AddFile {
 
 	my $im = Wx::Image->new( $p, &Wx::wxBITMAP_TYPE_PNG );
 
-	use constant MAXIMGW => 50;    # 500px
-	use constant MAXIMGH => 35;    # 500px
+	use constant MAXIMGW => 690;    # 500px
+	use constant MAXIMGH => 270;    # 500px
 
 	my $w = $im->GetWidth();
 	my $h = $im->GetHeight();
@@ -127,9 +140,13 @@ sub AddFile {
 	my $scaleW = MAXIMGW / $w;
 	my $scaleH = MAXIMGH / $h;
 
-	if ( max( $scaleW, $scaleH ) < 1 ) {
-		$scale = min( $scaleW, $scaleH );
+	if( $scaleW < 1 || $scaleH  < 1  ){
+		
+		$scale = min( $scaleW*10, $scaleH*10 )/10;
 	}
+ 
+	
+	 
 
 	my $btmIco = Wx::Bitmap->new( $im->Scale( $w * $scale, $h * $scale ) );    #wxBITMAP_TYPE_PNG;
 
@@ -139,11 +156,14 @@ sub AddFile {
 
 	#	$statBtmIco->SetScaleMode();
 	# EVENTS
+	Wx::Event::EVT_TEXT( $fileNameExtraValTxt, -1,
+						 sub { $self->{"onChangeFileNameEvt"}->Do( $page->GetPageId(), $fileNameExtraValTxt->GetValue() ) } );
 
-	#Wx::Event::EVT_LEFT_DOWN( $statBtmIco, sub { print STDERR "obr click" } );
+	Wx::Event::EVT_LEFT_DOWN( $statBtmIco, sub { $self->__OnShowFilePreview( $fileLayout->GetFilePath() ) } );
 
+	#$self->{"onChangeFileNameEvt"}->Do($page->GetPageId(), $fileNameExtraValTxt->GetLabel() )
 	# DEFINE LAYOUT
-	$szTab->Add( $szHead, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szTab->Add( $szHead, 0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
 	$szTab->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szTab->Add( $statBtmIco, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
@@ -158,38 +178,16 @@ sub AddFile {
 
 	# SET REFERENCES
 
-	$page->{"fileNamePrefValTxt"} = $fileNamePrefValTxt;
+	#$self->{"fileNamePrefValTxt"} = $fileNamePrefValTxt;
 
-	$page->SetBackgroundColour( Wx::Colour->new( 193, 240, 193 ) );    #gray
-
-	#	$page->Refresh();
-	#	$szTab->Layout();
-	#	$page->Refresh();
-	#	$szTab->Layout();
-	#	 $page->Show(0);
-	#	  $page->Show(1);
-	# $self->{"nb"}->Layout();
-	#	$self->{"nb"}->FitInside();
-
-}
-
-sub RemoveFile {
-	my $self       = shift;
-	my $fileId     = shift;
-	my $fileLayout = shift;
-
-}
-
-sub UpdateFile {
-	my $self       = shift;
-	my $fileId     = shift;
-	my $fileLayout = shift;
+	$page->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );    #gray
 
 }
 
 sub SetFilesLayout {
 	my $self        = shift;
 	my @filesLayout = @{ shift(@_) };
+	my $commId = shift;
 
 	$self->Freeze();
 
@@ -199,7 +197,18 @@ sub SetFilesLayout {
 
 		my $fileLayout = $filesLayout[$i];
 
-		$self->AddFile($fileLayout);
+		$self->__AddFile($fileLayout, $commId);
+	}
+
+	if ( scalar(@filesLayout) ) {
+
+		$self->{"nb"}->SetSelection( $self->{"nb"}->GetPageCount() - 1 );
+		$self->{"btnRemove"}->Enable();
+		$self->{"btnEditGS"}->Enable();
+	}
+	else {
+		$self->{"btnRemove"}->Disable();
+		$self->{"btnEditGS"}->Disable();
 	}
 
 	$self->Thaw();
@@ -208,6 +217,37 @@ sub SetFilesLayout {
 # =====================================================================
 # PRIVATE METHODS
 # =====================================================================
+
+sub __OnShowFilePreview {
+	my $self     = shift;
+	my $filePath = shift;
+
+	# show file preview
+
+	system( "start " . $filePath );
+
+}
+
+sub __SetIconByApp {
+	my $self    = shift;
+	my $button  = shift;
+	my $appPath = shift;
+
+	Wx::InitAllImageHandlers();
+	my $exeCAM = Win32::Exe->new( $appPath );
+	$exeCAM = $exeCAM->create_resource_section if $exeCAM->can_create_resource_section;
+	my $iconName = ( $exeCAM->get_group_icon_names )[0];
+	if ( defined $iconName ) {
+		my $p = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".ico";
+		$exeCAM->export_group_icon( $iconName, $p );
+		my $btnEditGSIco = Wx::Bitmap->new( $p, &Wx::wxBITMAP_TYPE_ICO );    #wxBITMAP_TYPE_PNG
+		my $im = Wx::Image->new( $p, &Wx::wxBITMAP_TYPE_ICO );
+		my $btmIco = Wx::Bitmap->new( $im->Scale( 20, 20 ) );
+		$button->SetBitmap($btmIco);
+		 
+	}
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -3,7 +3,7 @@
 # Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Comments::CommWizard::Forms::CommListViewFrm::CommListFrm;
+package Programs::Comments::CommWizard::Forms::CommViewFrm::SuggesListFrm;
 use base qw(Widgets::Forms::CustomQueue::MyWxCustomQueue);
 
 #3th party library
@@ -14,7 +14,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Comments::CommWizard::Forms::CommListViewFrm::CommListRowFrm';
+use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::SuggesListRowFrm';
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::Other::AppConf';
 
@@ -37,26 +37,26 @@ sub new {
 	$self->__SetLayout();
 
 	#EVENTS
+	$self->{'onRemoveSuggesEvt'} = Event->new();
+	$self->{'onChangeSuggesEvt'} = Event->new();
 
 	return $self;
 }
 
-sub SetCommentLayout {
+sub SetSuggestionLayout {
 	my $self       = shift;
-	my $commId     = shift;
-	my $commLayout = shift;
+	my $suggId     = shift;
+	my $suggLayout = shift;
 
-	my $commItem = $self->GetItem($commId);
+	my $suggItem = $self->GetItem($suggId);
 
-	$commItem->SetCommentLayout($commLayout);
+	$suggItem->SetSuggestionLayout($suggLayout);
 
 }
 
-sub SetCommentsLayout {
+sub SetSuggestionsLayout {
 	my $self           = shift;
-	my $commListLayout = shift;
-
-	my @commSngl = @{$commListLayout};
+	my $suggListLayout = shift;
 
 	# remove old groups
 	for ( my $i = $self->GetItemsCnt() - 1 ; $i >= 0 ; $i-- ) {
@@ -64,28 +64,26 @@ sub SetCommentsLayout {
 	}
 
 	#create rows for each constraint
-	for ( my $i = 0 ; $i < scalar(@commSngl) ; $i++ ) {
+	for ( my $i = 0 ; $i < scalar(@{$suggListLayout}) ; $i++ ) {
 
-		my $item = CommListRowFrm->new( $self->GetParentForItem(), $i, $commSngl[$i] );
+		my $item = SuggesListRowFrm->new( $self->GetParentForItem(), $i );
 		$self->AddItemToQueue($item);
 
-		$item->SetCommentLayout( $commSngl[$i] );
+		$item->SetSuggestionLayout( $suggListLayout->[$i] );
 
-		# Add handler to item
-		#$item->{"onGroupSett"}->Add( sub { $self->{"onGroupSett"}->Do(@_) } );
+		$item->{'onRemoveSuggesEvt'}->Add( sub { $self->{"onRemoveSuggesEvt"}->Do(@_) } );
+		$item->{'onChangeSuggesEvt'}->Add( sub { $self->{"onChangeSuggesEvt"}->Do(@_) } );
+
 	}
-
-	
-
 }
 
 sub __SetLayout {
 	my $self = shift;
 
-	$self->SetItemGap(5);
-
-	$self->SetItemUnselectColor( Wx::Colour->new( 226, 238, 249 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 191, 209, 238 ) );
+	$self->SetItemGap(2);
+	#
+	#	$self->SetItemUnselectColor( Wx::Colour->new( 226, 238, 249 ) );
+	#	$self->SetItemSelectColor( Wx::Colour->new( 191, 209, 238 ) );
 
 }
 

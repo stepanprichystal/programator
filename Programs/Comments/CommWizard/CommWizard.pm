@@ -10,6 +10,7 @@ use Class::Interface;
 &implements('Packages::InCAMHelpers::AppLauncher::IAppLauncher');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use threads;
@@ -21,6 +22,7 @@ use threads::shared;
 use aliased 'Programs::Comments::CommWizard::Forms::CommWizardFrm';
 use aliased 'Programs::Comments::Comments';
 use aliased 'Programs::Comments::Enums' => 'CommEnums';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -64,10 +66,11 @@ sub Init {
 
 	$self->{"comments"} = Comments->new( $self->{"inCAM"}, $self->{"jobId"} );
 
+	# Refresh before set handlers in order do not raise events
+	$self->__RefreshForm();
+
 	#set handlers for main app form
 	$self->__SetHandlers();
-
-	$self->__RefreshForm();
 
 }
 
@@ -85,9 +88,66 @@ sub Run {
 # ================================================================================
 
 sub __SaveExitHndl {
-	my $self = shift;
-	my $save = shift;
-	my $exit = shift;
+	my $self   = shift;
+	my $save   = shift;
+	my $exit   = shift;
+	my $export = shift;
+
+	if ($save) {
+
+		my $messMngr   = $self->{"form"}->GetMessMngr();
+		my $commLayout = $self->{"comments"}->GetLayout();
+
+		# Do error check
+
+		my @errMess = ();
+
+		if ( $self->{"comments"}->CheckBeforeSave( \@errMess ) ) {
+			$self->{"form"}->RefreshCommListViewForm($commLayout);
+
+		}
+		else {
+
+			$messMngr->ShowModal( -1,
+								  EnumsGeneral->MessageType_ERROR,
+								  [ "Chyba při ukládání komentářů.", "Detail chyby:\n" . join( "\n", map { "- " . $_ } @errMess ) ],
+								  ["Repair"] );
+
+			return 0;
+		}
+
+		# Do warning check
+		my @warnMess = ();
+
+		# If comment is typ of question
+		my @commSngls = $commLayout->GetAllComments();
+
+		for ( my $i = 0 ; $i < scalar(@commSngls) ; $i++ ) {
+
+			my $commSngl = $commSngls[$i];
+
+			if ( $commSngl->GetType() eq CommEnums->CommentType_QUESTION && scalar( $commSngl->GetAllSuggestions() ) < 1 ) {
+
+				push( @warnMess, "Komentář číslo: " . ( $i + 1 ) . " i" . " je otázka, ale nejsou navrženy žádné odpovědi. Je to ok?");
+			}
+		}
+
+		if ( scalar(@warnMess) )
+		{
+
+			$messMngr->ShowModal( -1,
+								  EnumsGeneral->MessageType_WARNING,
+								  [ "Varování při ukládání komentářů.", "Detail varování:\n" . join( "\n", map { "- " . $_ } @warnMess ) ],
+								  ["Repair", "Continue"] );
+
+			if ( $messMngr->Result() == 0 ) {
+
+				return 0;
+			}
+		}
+
+		$self->{"comments"}->Save();
+	}
 
 }
 
@@ -165,7 +225,8 @@ sub __OnMoveCommdHndl {
 		my $commSnglLayout = $commLayout->GetCommentById($newPos);
 
 		$self->{"form"}->RefreshSelected($newPos);
-		$self->{"form"}->RefreshCommViewForm( $newPos, $commSnglLayout );
+
+		#$self->{"form"}->RefreshCommViewForm( $newPos, $commSnglLayout );
 	}
 
 }
@@ -178,12 +239,26 @@ sub __OnChangeTypeHndl {
 	$self->{"comments"}->ChangeType( $commId, $type );
 
 	my $commLayout = $self->{"comments"}->GetLayout();
-	$self->{"form"}->RefreshCommListViewForm($commLayout);
 
 	my $commSnglLayout = $commLayout->GetCommentById($commId);
 
-	$self->{"form"}->RefreshSelected($commId);
+	$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
 	$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
+
+}
+
+sub __OnChangeNoteHndl {
+	my $self   = shift;
+	my $commId = shift;
+	my $note   = shift;
+
+	$self->{"comments"}->SetText( $commId, $note );
+
+	my $commLayout = $self->{"comments"}->GetLayout();
+
+	my $commSnglLayout = $commLayout->GetCommentById($commId);
+
+	$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
 
 }
 
@@ -193,16 +268,30 @@ sub __OnRemoveFileHndl {
 	my $fileId = shift;
 
 	$self->{"comments"}->RemoveFile( $commId, $fileId );
-	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+	my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
 
-	$self->{"form"}->RefreshCommViewForm( $commId, $commLayout );
+	$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
+	$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
 }
 
 sub __OnEditFileHndl {
 	my $self   = shift;
 	my $commId = shift;
+	my $fileId = shift;
 
-	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+	if ( $self->{"comments"}->EditFile( $commId, $fileId ) ) {
+
+		my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+
+		$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
+
+		$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
+	}
+	else {
+
+		my $messMngr = $self->{"form"}->GetMessMngr();
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during edit image in GreenShot"] );    #  Script is stopped
+	}
 
 }
 
@@ -212,23 +301,85 @@ sub __OnAddFileHndl {
 	my $addCAM = shift;
 	my $addGS  = shift;
 
-	my $p = undef;
+	$self->{"form"}->HideFrm();
 
+	my $p = "";
+	my $res;
 	if ($addCAM) {
-		$p = $self->{"comments"}->SnapshotCAM(0);
+
+		$res = $self->{"comments"}->SnapshotCAM( 0, \$p );
 	}
 	elsif ($addGS) {
-		$p = $self->{"comments"}->SnapshotGS(0);
+		$res = $self->{"comments"}->SnapshotGS( \$p );
 	}
 
-	$self->{"comments"}->AddFile( $commId, undef, $p );
+	$self->{"form"}->ShowFrm();
 
-	# Refresh Comm view
-	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
-	$self->{"form"}->RefreshCommViewForm( $commId, $commLayout );
+	if ($res) {
 
-	# Refresh Comm list
+		$self->{"comments"}->AddFile( $commId, undef, $p );
 
+		# Refresh Comm view
+		my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+		$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
+
+		# Refresh Comm list
+		$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
+	}
+	else {
+
+		my $messMngr = $self->{"form"}->GetMessMngr();
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during create snapshot"] );    #  Script is stopped
+	}
+
+}
+
+sub __OnChangeFileNameHndl {
+	my $self     = shift;
+	my $commId   = shift;
+	my $fileId   = shift;
+	my $fileName = shift;
+
+	$self->{"comments"}->SetFileName( $commId, $fileId, $fileName );
+
+	my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+	$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
+
+}
+
+sub __OnAddSuggesHndl {
+	my $self   = shift;
+	my $commId = shift;
+
+	$self->{"comments"}->AddSuggestion( $commId, "" );
+	my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+
+	$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
+	$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
+}
+
+sub __OnChangeSuggesHndl {
+	my $self   = shift;
+	my $commId = shift;
+	my $suggId = shift;
+	my $text   = shift;
+
+	$self->{"comments"}->SetSuggestion( $commId, $suggId, $text );
+	my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+	$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
+
+}
+
+sub __OnRemoveSuggesHndl {
+	my $self   = shift;
+	my $commId = shift;
+	my $suggId = shift;
+
+	$self->{"comments"}->RemoveSuggestion( $commId, $suggId );
+	my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+
+	$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
+	$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
 }
 
 # ================================================================================
@@ -238,13 +389,36 @@ sub __OnAddFileHndl {
 sub __RefreshForm {
 	my $self = shift;
 
-	$self->{"form"}->RefreshCommListViewForm( $self->{"comments"}->GetLayout() );
+	my $comments = $self->{"comments"}->GetLayout();
 
-	my $comments   = $self->{"comments"}->GetLayout();
-	my $commId     = scalar( $comments->GetAllComments() ) - 1;
-	my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+	if ( scalar( $comments->GetAllComments() ) ) {
 
-	$self->{"form"}->RefreshCommViewForm( $commId, $commLayout );
+		$self->{"form"}->RefreshCommListViewForm( $self->{"comments"}->GetLayout() );
+
+		my $commId     = scalar( $comments->GetAllComments() ) - 1;
+		my $commLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+
+		$self->{"form"}->RefreshCommViewForm( $commId, $commLayout );
+
+		# Final refresh by select comm
+		#$self->{"form"}->RefreshSelected($commId);
+	}
+	else {
+
+		$self->{"form"}->RefreshCommViewForm(-1);
+	}
+
+	# Hack - refresh form after start in order show images in Notebook control
+	my $timerFiles = Wx::Timer->new( $self->{"form"}->{"mainFrm"}, -1, );
+	Wx::Event::EVT_TIMER( $self->{"form"}->{"mainFrm"}, $timerFiles, sub { $self->{"form"}->{"mainFrm"}->Refresh(); $timerFiles->Stop() } );
+	$timerFiles->Start(200);
+
+}
+
+sub __CheckFilesHandler {
+	my $self = shift;
+
+	$self->{"form"}->{"mainFrm"}->Refresh();
 
 }
 
@@ -259,10 +433,16 @@ sub __SetHandlers {
 	$self->{"form"}->{"onMoveCommEvt"}->Add( sub       { $self->__OnMoveCommdHndl(@_) } );
 
 	$self->{"form"}->{"onChangeTypeEvt"}->Add( sub { $self->__OnChangeTypeHndl(@_) } );
+	$self->{"form"}->{"onChangeNoteEvt"}->Add( sub { $self->__OnChangeNoteHndl(@_) } );
 
-	$self->{"form"}->{'onRemoveFileEvt'}->Add( sub { $self->__OnRemoveFileHndl(@_) } );
-	$self->{"form"}->{'onEditFileEvt'}->Add( sub   { $self->__OnEditFileHndl(@_) } );
-	$self->{"form"}->{'onAddFileEvt'}->Add( sub    { $self->__OnAddFileHndl(@_) } );
+	$self->{"form"}->{'onAddFileEvt'}->Add( sub        { $self->__OnAddFileHndl(@_) } );
+	$self->{"form"}->{'onChangeFileNameEvt'}->Add( sub { $self->__OnChangeFileNameHndl(@_) } );
+	$self->{"form"}->{'onRemoveFileEvt'}->Add( sub     { $self->__OnRemoveFileHndl(@_) } );
+	$self->{"form"}->{'onEditFileEvt'}->Add( sub       { $self->__OnEditFileHndl(@_) } );
+
+	$self->{"form"}->{'onAddSuggesEvt'}->Add( sub    { $self->__OnAddSuggesHndl(@_) } );
+	$self->{"form"}->{'onRemoveSuggesEvt'}->Add( sub { $self->__OnRemoveSuggesHndl(@_) } );
+	$self->{"form"}->{'onChangeSuggesEvt'}->Add( sub { $self->__OnChangeSuggesHndl(@_) } );
 
 }
 

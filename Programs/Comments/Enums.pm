@@ -7,6 +7,14 @@ use constant {
 			   CommentType_QUESTION => "CommentType_QUESTION"
 };
 
+
+# paths
+use constant {
+			   Path_GREENSHOT     => "C:\\Program Files\\Greenshot\\Greenshot.exe",
+			  
+};
+
+
 sub GetTypeTitle {
 	my $self = shift;
 	my $t    = shift;

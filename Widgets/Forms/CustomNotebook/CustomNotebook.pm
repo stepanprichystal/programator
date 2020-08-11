@@ -143,7 +143,7 @@ sub __HideAllPage {
 	}
 }
 
-sub __GetPageCount {
+sub GetPageCount {
 	my $self = shift;
 
 	my $total = 0;

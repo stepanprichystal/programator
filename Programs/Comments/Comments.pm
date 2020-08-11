@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use Switch;
 use File::Basename;
+use File::Copy;
 
 #local library
 
@@ -19,6 +20,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Comments::Enums';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorableMngr';
+use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,9 +38,10 @@ sub new {
 	unless ( -e $self->{"commDir"} ) {
 		mkdir( $self->{"commDir"} ) or die "$_";
 	}
+	$self->{"mainFile"} = $self->{"commDir"} . "comments.json";
 
 	$self->{"commLayout"}  = CommLayout->new();
-	$self->{"jsonStrMngr"} = JsonStorableMngr->new( $self->{"commDir"} . "comments.json" );
+	$self->{"jsonStrMngr"} = JsonStorableMngr->new( $self->{"mainFile"} );
 
 	$self->__LoadFromJob();
 
@@ -47,21 +50,88 @@ sub new {
 	return $self;
 }
 
+sub CheckBeforeSave {
+	my $self    = shift;
+	my $errMess = shift;
+
+	my $result = 1;
+
+	# Do some checks
+
+	# 1) Check if files has unique name
+	my @comm = $self->{"commLayout"}->GetAllComments();
+	for ( my $i = 0 ; $i < scalar(@comm) ; $i++ ) {
+
+		my $commLayout = $comm[$i];
+
+		my @n = ();
+		for ( my $j = 0 ; $j < scalar( $commLayout->GetAllFiles() ) ; $j++ ) {
+
+			push( @n, $self->{"commLayout"}->GetFullFileNameById( $i, $j ) );
+		}
+
+		my %hash;
+		$hash{$_}++ foreach (@n);
+
+		foreach my $duplname ( grep { $hash{$_} > 1 } keys %hash ) {
+
+			push( @{$errMess}, "Duplicate (" . $hash{$duplname} . "x) output file name: $duplname in comment number: " . ( $i + 1 ) );
+			$result = 0;
+		}
+	}
+
+	# 2) Check if text is not empty
+	for ( my $i = 0 ; $i < scalar(@comm) ; $i++ ) {
+
+		my $commLayout = $comm[$i];
+
+		my $text = $commLayout->GetText();
+		$text =~ s/\s//g;
+		if ( !defined $text || $text eq "" ) {
+
+			push( @{$errMess}, "No text in comment number: " . ( $i + 1 ) );
+			$result = 0;
+		}
+	}
+
+	return $result;
+
+}
+
 sub Save {
 	my $self = shift;
 
-	$self->{"jsonStrMngr"}->StoreData( $self->{"commLayout"} );
+	my @err = ();
 
-	foreach my $comm ( $self->{"commLayout"}->GetAllComments() ) {
+	my $result = $self->CheckBeforeSave( \@err );
 
-		$comm->SetStoredOnDisc(1);
+	# Do  checks
+
+	# Save on disc
+	if ($result) {
+
+		foreach my $comm ( $self->{"commLayout"}->GetAllComments() ) {
+
+			$comm->SetStoredOnDisc(1);
+		}
+
+		$result = $self->{"jsonStrMngr"}->StoreData( $self->{"commLayout"} );
 	}
+	else {
+
+		die "Error during save:" . join( "; ", @err );
+	}
+
+	return $result;
 
 }
 
 sub SnapshotCAM {
-	my $self = shift;
+	my $self     = shift;
 	my $directly = shift // 1;
+	my $p        = shift;
+
+	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -73,19 +143,52 @@ sub SnapshotCAM {
 	}
 
 	my $fileName = "CAM_" . GeneralHelper->GetNumUID();
-	my $p        = $self->{"commDir"} . $fileName;
-	$inCAM->COM( "save_snapshot", "path" => $p . ".png" );
+	my $pTmp     = $self->{"commDir"} . $fileName;
+	$inCAM->COM( "save_snapshot", "path" => $pTmp . ".png" );
 
-	# Unlink extra files: .nte;  .txt;
-	unlink( $p . ".nte" );
-	unlink( $p . ".txt" );
+	if ( -e $pTmp . ".png" ) {
 
-	return $p . ".png";
+		# Unlink extra files: .nte;  .txt;
+		unlink( $pTmp . ".nte" );
+		unlink( $pTmp . ".txt" );
+
+		$$p = $pTmp . ".png";
+	}
+	else {
+		$result = 0;
+	}
+
+	return $result;
 }
 
 sub SnapshotGS {
 	my $self = shift;
+	my $p    = shift;
 
+	my $result = 1;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $mess = "1) Prepare what you want to snapshot by GreenShot.  2) Press \"Print Screen\ and store photo via special icon..  3) Press Resume";
+	$inCAM->PAUSE($mess);
+
+	my $fileName = "CAM_" . GeneralHelper->GetNumUID();
+	$$p = $self->{"commDir"} . $fileName . ".png";
+
+	my $pSrc = EnumsPaths->Client_INCAMTMPOTHER . "snapshot" . ".png";
+
+	if ( -e $pSrc ) {
+		move( $pSrc, $$p );
+
+	}
+	else {
+
+		$result = 0;
+
+	}
+
+	return $result;
 }
 
 sub GetLayout {
@@ -191,40 +294,56 @@ sub RemoveFile {
 	my $commentId = shift;
 	my $fileId    = shift;
 
-	die "File id: $fileId doesn't exist" if ( $fileId < 0 || $fileId >= scalar( @{ $self->{"files"} } ) );
+	my $commSnglLayout = $self->{"commLayout"}->GetCommentById($commentId);
 
-	splice @{ $self->{"files"} }, $fileId, 1;
+	$commSnglLayout->RemoveFile($fileId);
 }
 
-sub AddSuggestion {
+sub EditFile {
 	my $self      = shift;
 	my $commentId = shift;
-	my $text      = shift;
+	my $fileId    = shift;
 
-	push( @{ $self->{"suggestions"} }, $text );
+	my $commSnglLayout = $self->{"commLayout"}->GetCommentById($commentId);
+	my $file           = $commSnglLayout->GetFileById($fileId);
 
+	my $result = 1;
+
+	if ( -e Enums->Path_GREENSHOT ) {
+
+		my $pGS = Enums->Path_GREENSHOT;
+
+		#system( 1, qq{"$pGS"} . " " . $file->GetFilePath() );
+		use Win32::Process;
+		my $processObj;
+		my @cmd = ("Greenshot.exe");
+		push( @cmd, $file->GetFilePath() );
+
+		my $cmdStr = join( " ", @cmd );
+
+		Win32::Process::Create( $processObj, $pGS, $cmdStr, 0, (THREAD_PRIORITY_NORMAL), "." )
+		  || die "$!\n";
+
+		$processObj->Wait(INFINITE);
+
+	}
+	else {
+
+		$result = 0;
+	}
+
+	return $result;
 }
-
-sub RemoveSuggestion {
-	my $self      = shift;
-	my $commentId = shift;
-	my $suggId    = shift;
-
-	die "Suggestion id: $suggId doesn't exist" if ( $suggId < 0 || $suggId >= scalar( @{ $self->{"suggestions"} } ) );
-
-	splice @{ $self->{"suggestions"} }, $suggId, 1;
-}
-
-# --------------------------------------
-# METHODS FOR BUILDING COMMENT file
-# --------------------------------------
 
 sub SetFileName {
 	my $self      = shift;
 	my $commentId = shift;
 	my $fileId    = shift;
+	my $fileName  = shift;
 
-	$self->{"fileName"} = shift;
+	my $commSnglLayout = $self->{"commLayout"}->GetCommentById($commentId);
+	$commSnglLayout->SetFileCustName( $fileId, $fileName );
+
 }
 
 sub GetFileName {
@@ -233,6 +352,35 @@ sub GetFileName {
 	my $fileId    = shift;
 
 	return $self->{"fileName"};
+}
+
+sub AddSuggestion {
+	my $self      = shift;
+	my $commentId = shift;
+	my $text      = shift;
+
+	my $commSnglLayout = $self->{"commLayout"}->GetCommentById($commentId);
+
+	$commSnglLayout->AddSuggestion($text);
+}
+
+sub SetSuggestion {
+	my $self      = shift;
+	my $commentId = shift;
+	my $suggId    = shift;
+	my $text      = shift;
+
+	my $commSnglLayout = $self->{"commLayout"}->GetCommentById($commentId);
+	$commSnglLayout->SetSuggestion( $suggId, $text );
+}
+
+sub RemoveSuggestion {
+	my $self      = shift;
+	my $commentId = shift;
+	my $suggId    = shift;
+
+	my $commSnglLayout = $self->{"commLayout"}->GetCommentById($commentId);
+	$commSnglLayout->RemoveSuggestion($suggId);
 }
 
 # --------------------------------------
@@ -247,21 +395,21 @@ sub __LoadFromJob {
 		$self->{"commLayout"} = $self->{"jsonStrMngr"}->LoadData();
 	}
 
-	# Add default comment
-	$self->AddComment( Enums->CommentType_QUESTION );
-	$self->SetText( 0, "" );
-
-	$self->AddFile( 0, "stakcup", $self->SnapshotCAM() );
-	$self->AddFile( 0, "stakcup", 'c:/Export/test/noImage_.png' );
-
-	$self->Save();
-
-	$self->AddComment( Enums->CommentType_NOTE );
-	$self->SetText( 1, "test jfdif djfosdifj fjdi" );
-	$self->AddFile( 1, "stakcup", 'c:/Export/test/noImage.png' );
-
-	$self->AddComment( Enums->CommentType_NOTE );
-	$self->SetText( 1, "test jfdif djfosdifj fjdi" );
+	#	# Add default comment
+	#	$self->AddComment( Enums->CommentType_QUESTION );
+	#	$self->SetText( 0, "" );
+	#
+	#	$self->AddFile( 0, "stakcup", $self->SnapshotCAM() );
+	#	$self->AddFile( 0, "stakcup", 'c:/Export/test/noImage_.png' );
+	#
+	#	$self->Save();
+	#
+	#	$self->AddComment( Enums->CommentType_NOTE );
+	#	$self->SetText( 1, "test jfdif djfosdifj fjdi" );
+	#	$self->AddFile( 1, "stakcup", 'c:/Export/test/noImage.png' );
+	#
+	#	$self->AddComment( Enums->CommentType_NOTE );
+	#	$self->SetText( 1, "test jfdif djfosdifj fjdi" );
 
 	#	$self->AddComment( Enums->CommentType_QUESTION );
 	#	$self->SetText( 2, "test jfdif djfosdifj fjdi" );
@@ -275,6 +423,7 @@ sub __ClearOldFiles {
 	my @filesP = map { $_->GetFilePath() } map { $_->GetAllFiles() } $self->{"commLayout"}->GetAllComments();
 
 	my @filesN = map { ( fileparse($_) )[0] } @filesP;
+	push( @filesN, ( fileparse( $self->{"mainFile"} ) )[0] );    # not delete main json file
 
 	opendir( DIR, $self->{"commDir"} ) or die $!;
 

@@ -22,7 +22,7 @@ use warnings;
 sub new {
 	my $class = shift;
 
-	my $fileName   = shift;
+	my $fileName   = shift // "";
 	my $filePrefix = shift;
 	my $fileSufix  = shift;
 	my $filePath   = shift;

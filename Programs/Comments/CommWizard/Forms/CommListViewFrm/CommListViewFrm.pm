@@ -79,10 +79,10 @@ sub __SetLayout {
 	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $szBtns, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szBtns->Add( $btnAdd,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $szBtnsMove, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnRemove, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnAdd,     1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $szBtnsMove, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	 
+	$szBtns->Add( $btnRemove, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szBtnsMove->Add( $btnMoveUp,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szBtnsMove->Add( $btnMoveDown, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -94,7 +94,10 @@ sub __SetLayout {
 	$commList->SetBackgroundColour($listCrl);
 
 	# SAVE REFERENCES
-	$self->{"commList"} = $commList;
+	$self->{"commList"}    = $commList;
+	$self->{"btnRemove"}   = $btnRemove;
+	$self->{"btnMoveUp"}   = $btnMoveUp;
+	$self->{"btnMoveDown"} = $btnMoveDown;
 
 }
 
@@ -102,11 +105,39 @@ sub __SetLayout {
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
-sub SetCommList {
-	my $self   = shift;
-	my $layout = shift;
+sub SetComm {
+	my $self       = shift;
+	my $commId     = shift;
+	my $commLayout = shift;
 
-	$self->{"commList"}->SetCommentsLayout($layout);
+	$self->{"commList"}->SetCommentLayout( $commId, $commLayout );
+
+}
+
+sub SetCommList {
+	my $self           = shift;
+	my $commListLayout = shift;
+
+	$self->{"commList"}->SetCommentsLayout($commListLayout);
+
+	if ( scalar( @{$commListLayout} ) ) {
+
+		$self->{"btnRemove"}->Enable();
+
+	}
+	else {
+		$self->{"btnRemove"}->Disable();
+
+	}
+
+	if ( scalar( @{$commListLayout} ) > 1 ) {
+		$self->{"btnMoveUp"}->Enable();
+		$self->{"btnMoveDown"}->Enable();
+	}
+	else {
+		$self->{"btnMoveUp"}->Disable();
+		$self->{"btnMoveDown"}->Disable();
+	}
 
 }
 

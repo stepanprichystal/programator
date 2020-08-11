@@ -58,6 +58,23 @@ sub SetType {
 	my $self = shift;
 
 	$self->{"type"} = shift;
+
+	# set new type to filename prefix
+
+	foreach my $f ( $self->GetAllFiles() ) {
+
+		my $prefix;
+
+		if ( $self->{"type"} eq Enums->CommentType_NOTE ) {
+			$prefix = "N";
+		}
+		elsif ( $self->{"type"} eq Enums->CommentType_QUESTION ) {
+			$prefix = "Q";
+		}
+		$f->SetFilePrefix($prefix);
+	}
+	
+	$self->SetStoredOnDisc(0);
 }
 
 sub GetType {
@@ -70,6 +87,8 @@ sub SetText {
 	my $self = shift;
 
 	$self->{"text"} = shift;
+	
+	$self->SetStoredOnDisc(0);
 }
 
 sub GetText {
@@ -86,10 +105,10 @@ sub AddFile {
 	my $prefix = "";
 
 	if ( $self->GetType() eq Enums->CommentType_NOTE ) {
-		$prefix = "n";
+		$prefix = "N";
 	}
 	elsif ( $self->GetType() eq Enums->CommentType_QUESTION ) {
-		$prefix = "q";
+		$prefix = "Q";
 	}
 
 	my $suffix = "";
@@ -99,8 +118,10 @@ sub AddFile {
 	}
 
 	my $f = CommFileLayout->new( $name, $prefix, $suffix, $path );
-	
+
 	push( @{ $self->{"files"} }, $f );
+	
+	$self->SetStoredOnDisc(0);
 
 	return $f;
 }
@@ -112,6 +133,8 @@ sub RemoveFile {
 	die "File id: $fileId doesn't exist" if ( $fileId < 0 || $fileId >= scalar( @{ $self->{"files"} } ) );
 
 	splice @{ $self->{"files"} }, $fileId, 1;
+	
+	$self->SetStoredOnDisc(0);
 }
 
 sub GetAllFiles {
@@ -121,11 +144,38 @@ sub GetAllFiles {
 
 }
 
+sub GetFileById {
+	my $self   = shift;
+	my $fileId = shift;
+
+	die "File id: $fileId doesn't exist" if ( $fileId < 0 || $fileId >= scalar( @{ $self->{"files"} } ) );
+
+	return $self->{"files"}->[$fileId];
+
+}
+
+
+
+sub SetFileCustName {
+	my $self   = shift;
+	my $fileId = shift;
+	my $name = shift;
+
+	die "File id: $fileId doesn't exist" if ( $fileId < 0 || $fileId >= scalar( @{ $self->{"files"} } ) );
+
+	$self->{"files"}->[$fileId]->SetFileCustName($name);
+	
+	$self->SetStoredOnDisc(0);
+
+}
+
 sub AddSuggestion {
 	my $self = shift;
 	my $text = shift;
 
 	push( @{ $self->{"suggestions"} }, $text );
+	
+	$self->SetStoredOnDisc(0);
 
 }
 
@@ -136,6 +186,8 @@ sub RemoveSuggestion {
 	die "Suggestion id: $suggId doesn't exist" if ( $suggId < 0 || $suggId >= scalar( @{ $self->{"suggestions"} } ) );
 
 	splice @{ $self->{"suggestions"} }, $suggId, 1;
+	
+	$self->SetStoredOnDisc(0);
 }
 
 sub GetAllSuggestions {
@@ -144,6 +196,30 @@ sub GetAllSuggestions {
 	return @{ $self->{"suggestions"} };
 
 }
+
+sub GetSuggestionById {
+	my $self   = shift;
+	my $suggId = shift;
+
+	die "Suggestion id: $suggId doesn't exist" if ( $suggId < 0 || $suggId >= scalar( @{ $self->{"suggestions"} } ) );
+
+	return $self->{"suggestions"}->[$suggId];
+
+}
+
+sub SetSuggestion {
+	my $self   = shift;
+	my $suggId = shift;
+	my $text = shift;
+
+	die "Suggestion id: $suggId doesn't exist" if ( $suggId < 0 || $suggId >= scalar( @{ $self->{"suggestions"} } ) );
+
+	$self->{"suggestions"}->[$suggId] = $text;
+	
+	$self->SetStoredOnDisc(0);
+
+}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

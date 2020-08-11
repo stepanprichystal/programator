@@ -117,6 +117,22 @@ sub AddButton {
 
 }
 
+# Show after hiding form
+sub ShowFrm{
+	my $self = shift;
+	
+	$self->{"mainFrm"}->Show();
+	
+}
+
+# temporarily hides form
+sub HideFrm{
+	my $self = shift;
+	
+	$self->{"mainFrm"}->Hide();
+	
+}
+
 
 sub _GetMessageMngr{
 	my $self      = shift;

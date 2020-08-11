@@ -16,7 +16,7 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::CommFilesFrm';
-use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::CommSugessFrm';
+use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::CommSuggesFrm';
 use aliased 'Programs::Comments::Enums';
 
 #-------------------------------------------------------------------------------------------#
@@ -40,15 +40,17 @@ sub new {
 	$self->__SetLayout();
 
 	# DEFINE EVENTS
-	$self->{'onChangeTypeEvt'}     = Event->new();
+	$self->{'onChangeTypeEvt'} = Event->new();
+	$self->{'onChangeNoteEvt'} = Event->new();
+
 	$self->{'onEditFileEvt'}       = Event->new();
 	$self->{'onRemoveFileEvt'}     = Event->new();
 	$self->{'onAddFileEvt'}        = Event->new();
 	$self->{'onChangeFileNameEvt'} = Event->new();
-	$self->{'onChangeNoteEvt'}     = Event->new();
-	$self->{'onAddSuggesEvt'}      = Event->new();
-	$self->{'onRemoveSuggesEvt'}   = Event->new();
-	$self->{'onChangeSuggesEvt'}   = Event->new();
+
+	$self->{'onAddSuggesEvt'}    = Event->new();
+	$self->{'onRemoveSuggesEvt'} = Event->new();
+	$self->{'onChangeSuggesEvt'} = Event->new();
 
 	return $self;
 }
@@ -67,7 +69,7 @@ sub __SetLayout {
 
 	#my $commTypeTxt = Wx::StaticText->new( $self, -1, "Type:", &Wx::wxDefaultPosition );
 	my @cbVals = ( Enums->GetTypeTitle( Enums->CommentType_NOTE ), Enums->GetTypeTitle( Enums->CommentType_QUESTION ) );
-	my $commTypeValTxt = Wx::ComboBox->new( $self, -1, $cbVals[0], [ -1, -1 ], [ 100, 22 ], \@cbVals, &Wx::wxCB_READONLY );
+	my $commTypeValTxt = Wx::ComboBox->new( $self, -1, $cbVals[0], [ -1, -1 ], [ 100, 25 ], \@cbVals, &Wx::wxCB_READONLY );
 
 	my $commFilesBox = $self->__SetLayoutFiles($self);
 	my $commTextBox  = $self->__SetLayoutText($self);
@@ -78,15 +80,15 @@ sub __SetLayout {
 						 sub { $self->{"onChangeTypeEvt"}->Do( $self->{"commentId"}, Enums->GetTypeKey( $self->{"commTypeValTxt"}->GetValue() ) ) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $szHead,       0,  &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $commFilesBox, 60, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $commTextBox,  20, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $commSuggBox,  20, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $szHead,       0,  &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $commFilesBox, 60, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $commTextBox,  20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $commSuggBox,  20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	#$szHead->Add( $commNameTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	#$szHead->Add( $commNameValTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 4 );
 	#$szHead->Add( $commTypeTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
-	$szHead->Add( $commTypeValTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 4 );
+	$szHead->Add( $commTypeValTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
 
 	$self->SetSizer($szMain);
 
@@ -115,10 +117,10 @@ sub __SetLayoutFiles {
 	$commFilesFrm->{'onRemoveFileEvt'}->Add( sub { $self->{"onRemoveFileEvt"}->Do( $self->{"commentId"}, @_ ) } );
 	$commFilesFrm->{'onEditFileEvt'}->Add( sub { $self->{"onEditFileEvt"}->Do( $self->{"commentId"}, @_ ) } );
 	$commFilesFrm->{'onAddFileEvt'}->Add( sub { $self->{"onAddFileEvt"}->Do( $self->{"commentId"}, @_ ) } );
+	$commFilesFrm->{"onChangeFileNameEvt"}->Add( sub { $self->{"onChangeFileNameEvt"}->Do( $self->{"commentId"}, @_ ) } );
 
 	# SAVE REFERENCES
 	$self->{"commFilesFrm"} = $commFilesFrm;
-
 	return $szStatBox;
 }
 
@@ -135,6 +137,9 @@ sub __SetLayoutText {
 	$richTxt->SetBackgroundColour($Widgets::Style::clrWhite);
 	$szStatBox->Add( $richTxt, 1, &Wx::wxEXPAND );
 
+	# Set Events
+	Wx::Event::EVT_TEXT( $richTxt, -1, sub { $self->{"onChangeNoteEvt"}->Do( $self->{"commentId"}, $richTxt->GetValue() ) } );
+
 	# SAVE REFERENCES
 	$self->{"richTxt"} = $richTxt;
 
@@ -149,14 +154,19 @@ sub __SetLayoutSuggestion {
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Suggestions' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my $commSugessFrm = CommSugessFrm->new($statBox);
+	my $commSugessFrm = CommSuggesFrm->new($statBox);
 
-	#	$szMain->Add( $commSugessFrm, 0, &Wx::wxEXPAND );
+	# SET EVENTS
+	$commSugessFrm->{"onAddSuggesEvt"}->Add( sub { $self->{"onAddSuggesEvt"}->Do( $self->{"commentId"}, @_ ) } );
+	$commSugessFrm->{"onRemoveSuggesEvt"}->Add( sub { $self->{"onRemoveSuggesEvt"}->Do( $self->{"commentId"}, @_ ) } );
+	$commSugessFrm->{"onChangeSuggesEvt"}->Add( sub { $self->{"onChangeSuggesEvt"}->Do( $self->{"commentId"}, @_ ) } );
+
+	# SET LAYOUT STRUCTURE
+
 	$szStatBox->Add( $commSugessFrm, 1, &Wx::wxEXPAND );
 
 	# SAVE REFERENCES
 	$self->{"commSugessFrm"} = $commSugessFrm;
-
 	return $szStatBox;
 }
 
@@ -171,22 +181,23 @@ sub SetCommLayout {
 
 	if ( $comentId < 0 ) {
 
-		$self->Hide();
 		return 0;
 	}
 
 	$self->{"commentId"} = $comentId;
-
-	#$self->{"commNameValTxt"}->SetLabel( $comentId + 1 );
-
 	$self->{"commTypeValTxt"}->SetValue( Enums->GetTypeTitle( $layout->GetType() ) );
 
 	# Set Text
-
-	$self->{"richTxt"}->Clear();
-	$self->{"richTxt"}->WriteText( $layout->GetText() );
-
-	$self->{"commFilesFrm"}->SetFilesLayout( [ $layout->GetAllFiles() ] );
+	my $note = defined $layout->GetText() ? $layout->GetText() : "";
+	$self->{"richTxt"}->SetValue($note);
+	$self->{"commFilesFrm"}->SetFilesLayout( [ $layout->GetAllFiles() ], $comentId );
+	$self->{"commSugessFrm"}->SetSuggestionsLayout( [ $layout->GetAllSuggestions() ] );
+	
+	if($layout->GetType() eq Enums->CommentType_QUESTION){
+		$self->{"commSugessFrm"}->Enable();
+	}else{
+		$self->{"commSugessFrm"}->Disable();
+	}
 
 }
 
