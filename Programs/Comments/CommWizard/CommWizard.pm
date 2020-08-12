@@ -128,17 +128,16 @@ sub __SaveExitHndl {
 
 			if ( $commSngl->GetType() eq CommEnums->CommentType_QUESTION && scalar( $commSngl->GetAllSuggestions() ) < 1 ) {
 
-				push( @warnMess, "Komentář číslo: " . ( $i + 1 ) . " i" . " je otázka, ale nejsou navrženy žádné odpovědi. Je to ok?");
+				push( @warnMess, "Komentář číslo: " . ( $i + 1 ) . " i" . " je otázka, ale nejsou navrženy žádné odpovědi. Je to ok?" );
 			}
 		}
 
-		if ( scalar(@warnMess) )
-		{
+		if ( scalar(@warnMess) ) {
 
 			$messMngr->ShowModal( -1,
 								  EnumsGeneral->MessageType_WARNING,
 								  [ "Varování při ukládání komentářů.", "Detail varování:\n" . join( "\n", map { "- " . $_ } @warnMess ) ],
-								  ["Repair", "Continue"] );
+								  [ "Repair",                                    "Continue" ] );
 
 			if ( $messMngr->Result() == 0 ) {
 
@@ -147,6 +146,12 @@ sub __SaveExitHndl {
 		}
 
 		$self->{"comments"}->Save();
+		$self->{"form"}->RefreshCommListViewForm( $self->{"comments"}->GetLayout() );
+	}
+
+	if ($exit) {
+
+		$self->{"form"}->{"mainFrm"}->Close();
 	}
 
 }
