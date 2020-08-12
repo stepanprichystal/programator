@@ -11,6 +11,7 @@ use warnings;
 use Log::Log4perl qw(get_logger);
 use Mail::Sender;
 use List::Util qw(first);
+use File::Basename;
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -122,8 +123,32 @@ sub __Run {
 			my @lNames   = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 			my $OPFXPath = JobHelper->GetJobArchive($jobId) . "zdroje\\ot\\";
 
-			$AOIRepair->CreateAOIRepairJob( $jobIdOut, \@lNames, $OPFXPath, 1, 1, 0, 0, 2, 0 );
+			my $send2server   = 1;
+			my $keepFormerJob = 1;
+			my $reduceSteps   = 0;
+			my $contour       = 0;
+			my $resize        = 2;
+			my $delAttr       = 0;
 
+			# Export onlz layer which not in aoi dir
+			if ($keepFormerJob) {
+
+				if ( -e EnumsPaths->Jobs_AOITESTSFUSIONDB . $self->{"jobId"} ) {
+					my @dirs = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_AOITESTSFUSIONDB . $self->{"jobId"} );
+
+					foreach my $dirPath (@dirs) {
+
+						my ( $name, $path, $suffix ) = fileparse($dirPath);
+						@lNames = grep { $_ ne $name } @lNames;
+					}
+
+					# If all are processed, offer all layers
+					@lNames = CamJob->GetSignalLayerNames( $inCAM, $jobId ) unless ( scalar(@lNames) );
+				}
+
+			}
+
+			$AOIRepair->CreateAOIRepairJob( $jobIdOut, \@lNames, $OPFXPath, $send2server, $keepFormerJob, $reduceSteps, $contour, $resize, $delAttr );
 		}
 
 	}
@@ -219,8 +244,6 @@ sub SendMail {
 
 		my $sender = new Mail::Sender { smtp => $self->{"smtp"}, port => 25, from => $self->{"from"} };
 
- 
-
 		$sender->Open(
 			{
 			   to      => ['stepan.prichystal@gatema.cz'],
@@ -232,7 +255,7 @@ sub SendMail {
 			   encoding => "7bit",
 
 			   # bcc => ( !$result ? 'stepan.prichystal@gatema.cz' : undef )    #TODO temporary
-			    
+
 			}
 		);
 

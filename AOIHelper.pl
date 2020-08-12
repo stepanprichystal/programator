@@ -12,6 +12,7 @@ use FindBin;
 use lib "$FindBin::Bin/../";
 use PackagesLib;
 use utf8;
+use File::Basename;
 
 use aliased 'Helpers::GeneralHelper';
 
@@ -23,7 +24,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Helpers::JobHelper';
-
+use aliased 'Helpers::FileHelper';
 my $inCAM = InCAM->new();
 
 my $jobId = "$ENV{JOB}";
@@ -35,7 +36,7 @@ my $messMngr = MessageMngr->new("AOI Helper");
 # -------------------------------------------
 # 1) Get source job id
 # -------------------------------------------
-my $jobIdSrc = undef;
+my $jobIdSrc        = undef;
 my $sourceJobOpened = 1;
 if ( !defined $jobId || $jobId eq "" ) {
 
@@ -50,7 +51,7 @@ if ( !defined $jobId || $jobId eq "" ) {
 							  ["Script redukuje data jobu a odešle je na AOI server"],
 							  [ "Cancel", "Next" ],
 							  undef, \@params );
-							  
+
 		exit() if ( $messMngr->Result() == 0 );
 	}
 
@@ -62,7 +63,7 @@ if ( !defined $jobId || $jobId eq "" ) {
 
 }
 else {
-	$jobIdSrc = $jobId;
+	$jobIdSrc        = $jobId;
 	$sourceJobOpened = 1;
 }
 
@@ -83,7 +84,22 @@ my @mess = ("Set parameters for job  for output OPFX");
 
 my $jobIdOut = $AOIRepair->GenerateJobName();
 
-my $lTxt = join( "; ", CamJob->GetSignalLayerNames( $inCAM, $jobIdSrc ) );
+my @lNames = CamJob->GetSignalLayerNames( $inCAM, $jobIdSrc );
+
+# Export onlz layers which not processed o nAOI
+if ( -e EnumsPaths->Jobs_AOITESTSFUSIONDB . $jobIdSrc ) {
+	my @dirs = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_AOITESTSFUSIONDB . $jobIdSrc );
+
+	foreach my $dirPath (@dirs) {
+
+		my ( $name, $path, $suffix ) = fileparse($dirPath);
+		@lNames = grep { $_ ne $name } @lNames;
+	}
+}
+# If all are processed, offer all layers
+@lNames = CamJob->GetSignalLayerNames( $inCAM, $jobIdSrc ) unless(scalar(@lNames));
+
+my $lTxt = join( "; ", @lNames );
 
 my $outputJobPar = $messMngr->GetTextParameter( "Output job (format: d123456_ot123)", "$jobIdOut" );
 my $keepJobNamePar = $messMngr->GetCheckParameter( "Keep original job name in OPFX files", 1 );
@@ -101,8 +117,10 @@ my $removeOtJobPar = $messMngr->GetCheckParameter( "Remove OT job", 1 );
 #my $levelPar   = $messMngr->GetCheckParameter( "Reduce layer data level", 0 );
 my $attrPar = $messMngr->GetCheckParameter( "Del feats attr (not: .nomencl; .smd)", 0 );
 
-my @params =
-  ( $outputJobPar, $keepJobNamePar,  $layersPar,  $resizePar, $contourPar, $attrPar,$reduceStepsPar, $opfxPathPar, $sent2serverPar, $closeOtJobPar, $removeOtJobPar );
+my @params = (
+			   $outputJobPar,   $keepJobNamePar, $layersPar,      $resizePar,     $contourPar, $attrPar,
+			   $reduceStepsPar, $opfxPathPar,    $sent2serverPar, $closeOtJobPar, $removeOtJobPar
+);
 
 while (1) {
 
@@ -173,19 +191,18 @@ $lRes =~ s/\s//ig;
 my @layersUsr = split( ";", $lRes );
 @layersUsr = grep { $_ ne "" } @layersUsr;
 
-$AOIRepair->CreateAOIRepairJob( $jobIdOut, \@layersUsr,
-								$opfxPathPar->GetResultValue(1),
-								$sent2serverPar->GetResultValue(1),
-								$keepJobNamePar->GetResultValue(1),
-								$reduceStepsPar->GetResultValue(1),
-								$contourPar->GetResultValue(1),
-								$resizePar->GetResultValue(1),
-								$attrPar->GetResultValue(1) );
+$AOIRepair->CreateAOIRepairJob(
+								$jobIdOut,                          \@layersUsr,
+								$opfxPathPar->GetResultValue(1),    $sent2serverPar->GetResultValue(1),
+								$keepJobNamePar->GetResultValue(1), $reduceStepsPar->GetResultValue(1),
+								$contourPar->GetResultValue(1),     $resizePar->GetResultValue(1),
+								$attrPar->GetResultValue(1)
+);
 
 if ( !$closeOtJobPar->GetResultValue(1) ) {
 
 	CamHelper->OpenJob( $inCAM, $jobIdOut, 1 );    # Set source
-	CamHelper->OpenStep( $inCAM, $jobIdOut, "panel" );     
+	CamHelper->OpenStep( $inCAM, $jobIdOut, "panel" );
 }
 
 if ( $closeOtJobPar->GetResultValue(1) ) {
@@ -193,12 +210,10 @@ if ( $closeOtJobPar->GetResultValue(1) ) {
 	CamJob->DeleteJob( $inCAM, $jobIdOut );
 }
 
-
-if(!$sourceJobOpened){
+if ( !$sourceJobOpened ) {
 	CamJob->CheckInJob( $inCAM, $jobIdSrc );
-	CamJob->CloseJob( $inCAM, $jobIdSrc );    
+	CamJob->CloseJob( $inCAM, $jobIdSrc );
 }
-
 
 sub __OnOPFXResult {
 	my $result = shift;
