@@ -88,7 +88,7 @@ my $lTxt = join( "; ", CamJob->GetSignalLayerNames( $inCAM, $jobIdSrc ) );
 my $outputJobPar = $messMngr->GetTextParameter( "Output job (format: d123456_ot123)", "$jobIdOut" );
 my $keepJobNamePar = $messMngr->GetCheckParameter( "Keep original job name in OPFX files", 1 );
 my $layersPar = $messMngr->GetTextParameter( "Layers (separated by comma ; )", $lTxt );
-my $reduceStepsPar = $messMngr->GetCheckParameter( "Reduce steps (only panel step left)", 0 );
+my $reduceStepsPar = $messMngr->GetCheckParameter( "Remove nested steps (zatim nepouzivat!)", 0 );
 my $resizePar = $messMngr->GetTextParameter( "Resize data [µm]", 0 );
 my $contourPar = $messMngr->GetCheckParameter( "Contourize", 0 );
 
@@ -102,7 +102,7 @@ my $removeOtJobPar = $messMngr->GetCheckParameter( "Remove OT job", 1 );
 my $attrPar = $messMngr->GetCheckParameter( "Del feats attr (not: .nomencl; .smd)", 0 );
 
 my @params =
-  ( $outputJobPar, $keepJobNamePar,  $layersPar, $reduceStepsPar, $resizePar, $contourPar, $attrPar, $opfxPathPar, $sent2serverPar, $closeOtJobPar, $removeOtJobPar );
+  ( $outputJobPar, $keepJobNamePar,  $layersPar,  $resizePar, $contourPar, $attrPar,$reduceStepsPar, $opfxPathPar, $sent2serverPar, $closeOtJobPar, $removeOtJobPar );
 
 while (1) {
 

@@ -122,7 +122,7 @@ sub __Run {
 			my @lNames   = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 			my $OPFXPath = JobHelper->GetJobArchive($jobId) . "zdroje\\ot\\";
 
-			$AOIRepair->CreateAOIRepairJob( $jobIdOut, \@lNames, $OPFXPath, 1, 1, 1, 0, 2, 0 );
+			$AOIRepair->CreateAOIRepairJob( $jobIdOut, \@lNames, $OPFXPath, 1, 1, 0, 0, 2, 0 );
 
 		}
 
