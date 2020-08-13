@@ -35,6 +35,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Technology::DataComp::SigLayerComp';
 use aliased 'Packages::Technology::DataComp::NCLayerComp';
 use aliased 'Packages::CAMJob::Technology::LayerSettings';
+use aliased 'Programs::Comments::Comments';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -86,6 +87,7 @@ sub new {
 	$self->{"NCLayerComp"}     = undef;    # calculating signal layer compensation
 	$self->{"profLim"}         = undef;    # panel profile limits
 	$self->{"layerSettings"}   = undef;    # Heklper class with default signal, nc and nonstignal settings
+	$self->{"comments"}        = undef;    # Approval comments
 
 	return $self;
 }
@@ -258,7 +260,7 @@ sub GetSignalLSett {
 	my $plt  = shift;    # Is layer plated
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
-	
+
 	# EnumsGeneral->Etching_PATTERN
 	# EnumsGeneral->Etching_TENTING
 	my $etchType = shift;
@@ -266,7 +268,6 @@ sub GetSignalLSett {
 	# EnumsGeneral->Technology_GALVANICS
 	# EnumsGeneral->Technology_RESIST
 	my $technology = shift;
-	
 
 	return $self->{"layerSettings"}->GetSignalLSett( $l, $plt, $etchType, $technology );
 }
@@ -459,7 +460,6 @@ sub GetIsReorder {
 	}
 }
 
-
 # Return pcb surface from IS
 sub GetPcbSurface {
 	my $self = shift;
@@ -519,6 +519,15 @@ sub GetDefaultEtchType {
 
 	return $self->{"layerSettings"}->GetDefaultEtchType($layerName);
 
+}
+
+# Get comments
+sub GetComments {
+	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
+	return $self->{"comments"};
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -591,7 +600,6 @@ sub __Init {
 
 	$self->{"reorder"} = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
 
-
 	$self->{"pcbSurface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
 
 	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $inCAM, $self->{"jobId"} );
@@ -607,10 +615,12 @@ sub __Init {
 
 	$self->{"layerSettings"} = LayerSettings->new( $self->{"jobId"}, $self->{"step"} );
 	$self->{"layerSettings"}->Init(
-		$inCAM, $self->{"pcbType"}, $self->{"pcbIsFlex"}, $self->{"pcbClass"},
-		$self->{"pcbClassInner"},    $self->{"layerCnt"}, $self->{"sigLayerComp"}, $self->{"NCLayerComp"}, $self->{"NCLayers"},
-		$self->{"platedRoutExceed"}, $self->{"surface"},  $self->{"stackupNC"}
+									$inCAM,                   $self->{"pcbType"},          $self->{"pcbIsFlex"},    $self->{"pcbClass"},
+									$self->{"pcbClassInner"}, $self->{"layerCnt"},         $self->{"sigLayerComp"}, $self->{"NCLayerComp"},
+									$self->{"NCLayers"},      $self->{"platedRoutExceed"}, $self->{"surface"},      $self->{"stackupNC"}
 	);
+
+	$self->{"comments"} = Comments->new( $inCAM, $self->{"jobId"} );
 
 	$self->{"init"} = 1;
 

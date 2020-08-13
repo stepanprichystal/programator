@@ -106,6 +106,7 @@ sub AddButton {
 
 	my $btn = Wx::Button->new( $self->{"pnlBtns"}, -1, $title, &Wx::wxDefaultPosition, [ $w, $self->{"btnHeight"} ] );
 	$btn->SetFont($Widgets::Style::fontBtn);
+	$btn->SetFocus() ;    # focus on last button
 
 	Wx::Event::EVT_BUTTON( $btn, -1, sub { $handler->(@_) } );
 

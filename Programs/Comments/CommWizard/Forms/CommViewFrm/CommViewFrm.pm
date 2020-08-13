@@ -70,6 +70,7 @@ sub __SetLayout {
 	#my $commTypeTxt = Wx::StaticText->new( $self, -1, "Type:", &Wx::wxDefaultPosition );
 	my @cbVals = ( Enums->GetTypeTitle( Enums->CommentType_NOTE ), Enums->GetTypeTitle( Enums->CommentType_QUESTION ) );
 	my $commTypeValTxt = Wx::ComboBox->new( $self, -1, $cbVals[0], [ -1, -1 ], [ 100, 25 ], \@cbVals, &Wx::wxCB_READONLY );
+	my $tipTxt = Wx::StaticText->new( $self, -1, "Tip: Use tags \@f<file number> for display file name.",        &Wx::wxDefaultPosition );
 
 	my $commFilesBox = $self->__SetLayoutFiles($self);
 	my $commTextBox  = $self->__SetLayoutText($self);
@@ -89,6 +90,9 @@ sub __SetLayout {
 	#$szHead->Add( $commNameValTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 4 );
 	#$szHead->Add( $commTypeTxt,    0, &Wx::wxEXPAND | &Wx::wxLEFT, 8 );
 	$szHead->Add( $commTypeValTxt, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
+	$szHead->Add( 1,1, 1, &Wx::wxEXPAND  , 5 );
+	$szHead->Add( $tipTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 5 );
+	
 
 	$self->SetSizer($szMain);
 

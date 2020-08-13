@@ -96,12 +96,28 @@ sub GetFullFileNameById {
 	my $fileId = shift;
 
 	my $comm = $self->GetCommentById($commId);
-	my $f = $comm->GetFileById($fileId);
+	my $f    = $comm->GetFileById($fileId);
 
 	my $custName = $f->GetFileCustName();
-	$custName.= "_" if(defined $custName && $custName ne "");
+	$custName = "-" . $custName if ( defined $custName && $custName ne "" );
 
-	return $f->GetFilePrefix() . ( $commId + 1 ) . $custName .  $f->GetFileSufix();
+	return $f->GetFilePrefix() . ( $commId + 1 ) . $custName . $f->GetFileSufix();
+
+}
+
+sub GetFileNameByTag {
+	my $self   = shift;
+	my $commId = shift;
+	my $tag    = shift;
+
+	my $comm    = $self->GetCommentById($commId);
+	my $fileNum = ( $tag =~ /^\@f(\d+)$/ )[0];
+
+	#my $file = $comm->GetFileById( $fileNum - 1 );
+
+	my $fullName = $self->GetFullFileNameById( $commId, $fileNum - 1 );
+
+	return $fullName;
 
 }
 

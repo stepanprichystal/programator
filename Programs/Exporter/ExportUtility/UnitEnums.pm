@@ -14,7 +14,8 @@ use constant {
 			   UnitId_SCO => "score", 
 			   UnitId_OUT => "out", 
 			   UnitId_STNCL => "stencil",
-			   UnitId_IMP => "imp", 
+			   UnitId_IMP => "imp",,
+			   UnitId_COMM => "comments", 
 };
 
 sub GetTitle{
@@ -70,6 +71,10 @@ sub GetTitle{
 	}elsif($code eq UnitId_IMP){
 		
 		$title = "Impedance data";
+		
+	}elsif($code eq UnitId_COMM){
+		
+		$title = "Approval comments";
 		
 	}
 	

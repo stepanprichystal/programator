@@ -84,9 +84,10 @@ sub __SetLayout {
 	$self->SetButtonHeight(30);
 
 	# Button definition
-	my $btnTest  = $self->AddButton( "notify 1", sub { $self->test1(@_) } );
-	my $btnTest2 = $self->AddButton( "notify 2", sub { $self->test2(@_) } );
-	my $btnTest3 = $self->AddButton( "test 3",   sub { $self->test3(@_) } );
+	my $btnTest = $self->AddButton( "notify 1", sub { $self->test1(@_) } );
+
+	#	my $btnTest2 = $self->AddButton( "notify 2", sub { $self->test2(@_) } );
+	#	my $btnTest3 = $self->AddButton( "test 3",   sub { $self->test3(@_) } );
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -107,14 +108,11 @@ sub __SetContentLayout {
 
 	# DEFINE CONTROLS
 
-	use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::ProcViewer::ProcViewer';
-	
-	my $stackup = Stackup->new($inCAM, $jobId);
-	
-	my $procViewer = ProcViewer->new( $inCAM, $jobId, [1,2,3], 1, $stackup );
-	my $procViewerFrm = $procViewer->BuildForm($statBox);
+	my $ordersTxtXtrl = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition );
 
-	$szStatBox->Add( $procViewerFrm, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$self->{"textCtrl"} = $ordersTxtXtrl;
+
+	$szStatBox->Add( $ordersTxtXtrl, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	return $szStatBox;
 }
@@ -126,7 +124,18 @@ sub __SetContentLayout {
 sub test1 {
 	my $self = shift;
 
-	print STDERR "notify 1\n";
+	my $text = $self->{"textCtrl"}->GetValue();
+
+	my $f;
+	my $path = "c:\\Export\\test\\test.txt";
+	unlink($path);
+	open( $f, "+>", $path );
+
+	print $f $text;
+	
+	close($f);
+	
+	#.decode('utf-8');
 
 }
 
@@ -154,25 +163,20 @@ sub __OnCheckboxChecked {
 #  Private methods
 #-------------------------------------------------------------------------------------------#
 
-my ( $package, $filename, $line ) = caller;
-if ( $filename =~ /DEBUG_FILE.pl/ ) {
+use aliased 'Packages::InCAM::InCAM';
 
-	use aliased 'Packages::InCAM::InCAM';
+my $inCAM = InCAM->new();
 
-	my $inCAM = InCAM->new();
+my $jobId    = "d288054";
+my $stepName = "o+1";
 
-	my $jobId    = "d152456";
-	my $stepName = "o+1";
+#my $layerName = "fstiffs";
 
-	#my $layerName = "fstiffs";
+my $frm = PureWindow->new( $inCAM, $jobId );
+$frm->{"mainFrm"}->Show();
+$frm->MainLoop();
 
-	my $frm = PureWindow->new( $inCAM, $jobId );
-	$frm->{"mainFrm"}->Show();
-	$frm->MainLoop();
-
-	die;
-
-}
+die;
 
 1;
 

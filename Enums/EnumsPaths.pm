@@ -163,4 +163,13 @@ use constant {
 
 };
 
+# Web adress
+use constant {
+	
+	URL_GATEMASMTP => 'gatema-cz.mail.protection.outlook.com', # new servr from 29.1.2019
+	
+
+};
+
+
 1;

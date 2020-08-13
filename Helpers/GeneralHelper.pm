@@ -91,6 +91,7 @@ sub RootHooks {
 #Get absolute path of "root" directory, where are all scripts are putted
 # ussually it means something like z:\sys\scripts\
 sub RootScripts {
+	my $self = shift;
 
 	my $path;
 
@@ -110,7 +111,7 @@ sub RootScripts {
 	}
 	else {
 
-		$path = GeneralHelper->Root() . "\\";
+		$path = $self->Root() . "\\";
 	}
 
 	return $path;

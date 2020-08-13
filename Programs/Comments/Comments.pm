@@ -50,6 +50,19 @@ sub new {
 	return $self;
 }
 
+# Return 1 if exists at least one comment
+sub Exists {
+	my $self = shift;
+
+	if ( scalar( $self->{"commLayout"}->GetAllComments() ) ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+
+}
+
 sub CheckBeforeSave {
 	my $self    = shift;
 	my $errMess = shift;
@@ -279,12 +292,29 @@ sub SetText {
 sub AddFile {
 	my $self      = shift;
 	my $commentId = shift;
-	my $name      = shift;
+	my $name      = shift // "";
 	my $path      = shift;
 
 	my $comm = $self->{"commLayout"}->GetCommentById($commentId);
 
-	my $f = $comm->AddFile( $name, $path );
+	my $defName = $name;
+
+	my $f = $comm->AddFile( $defName, $path );
+
+	# Update file customer name if empty
+
+	my $fileCnt = scalar( $comm->GetAllFiles() );
+	if ( $fileCnt > 1 ) {
+
+		my @files = $comm->GetAllFiles();
+		for ( my $j = 0 ; $j < scalar(@files) ; $j++ ) {
+
+			if ( $files[$j]->GetFileCustName() eq "" ) {
+
+				$files[$j]->SetFileCustName( ( $j + 1 ) );
+			}
+		}
+	}
 
 	return $f;
 }

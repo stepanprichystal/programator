@@ -21,6 +21,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitFo
 use aliased 'CamHelpers::CamStep';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::View::CommUnitForm';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 
@@ -123,7 +124,7 @@ sub _TestedForm {
 	my $d = DefaultInfo->new( $self->{"jobId"}, $self->{"step"} );
 	$d->Init( $self->{"inCAM"} );
 
-	use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit';
+	use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Presenter::CommUnit';
 
 	my $preUnit = NCUnit->new( $self->{"jobId"} );
 

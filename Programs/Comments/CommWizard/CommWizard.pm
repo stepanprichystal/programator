@@ -23,6 +23,8 @@ use aliased 'Programs::Comments::CommWizard::Forms::CommWizardFrm';
 use aliased 'Programs::Comments::Comments';
 use aliased 'Programs::Comments::Enums' => 'CommEnums';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Programs::Comments::CommMail::CommMail';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -72,6 +74,9 @@ sub Init {
 	#set handlers for main app form
 	$self->__SetHandlers();
 
+	# Set timers which works on background
+	$self->__SetTimers();
+
 }
 
 sub Run {
@@ -95,63 +100,35 @@ sub __SaveExitHndl {
 
 	if ($save) {
 
-		my $messMngr   = $self->{"form"}->GetMessMngr();
-		my $commLayout = $self->{"comments"}->GetLayout();
+		if ( $self->__FormChecks() ) {
 
-		# Do error check
-
-		my @errMess = ();
-
-		if ( $self->{"comments"}->CheckBeforeSave( \@errMess ) ) {
-			$self->{"form"}->RefreshCommListViewForm($commLayout);
-
+			$self->{"comments"}->Save();
+			$self->{"form"}->RefreshCommListViewForm( $self->{"comments"}->GetLayout() );
 		}
-		else {
-
-			$messMngr->ShowModal( -1,
-								  EnumsGeneral->MessageType_ERROR,
-								  [ "Chyba při ukládání komentářů.", "Detail chyby:\n" . join( "\n", map { "- " . $_ } @errMess ) ],
-								  ["Repair"] );
-
-			return 0;
-		}
-
-		# Do warning check
-		my @warnMess = ();
-
-		# If comment is typ of question
-		my @commSngls = $commLayout->GetAllComments();
-
-		for ( my $i = 0 ; $i < scalar(@commSngls) ; $i++ ) {
-
-			my $commSngl = $commSngls[$i];
-
-			if ( $commSngl->GetType() eq CommEnums->CommentType_QUESTION && scalar( $commSngl->GetAllSuggestions() ) < 1 ) {
-
-				push( @warnMess, "Komentář číslo: " . ( $i + 1 ) . " i" . " je otázka, ale nejsou navrženy žádné odpovědi. Je to ok?" );
-			}
-		}
-
-		if ( scalar(@warnMess) ) {
-
-			$messMngr->ShowModal( -1,
-								  EnumsGeneral->MessageType_WARNING,
-								  [ "Varování při ukládání komentářů.", "Detail varování:\n" . join( "\n", map { "- " . $_ } @warnMess ) ],
-								  [ "Repair",                                    "Continue" ] );
-
-			if ( $messMngr->Result() == 0 ) {
-
-				return 0;
-			}
-		}
-
-		$self->{"comments"}->Save();
-		$self->{"form"}->RefreshCommListViewForm( $self->{"comments"}->GetLayout() );
 	}
 
 	if ($exit) {
 
 		$self->{"form"}->{"mainFrm"}->Close();
+	}
+
+}
+
+sub __OnEmailPreview {
+	my $self = shift;
+
+	if ( $self->__FormChecks() ) {
+		my %inf = %{ HegMethods->GetCustomerInfo($self->{"jobId"}) };
+		my $lang = "en";
+		# if country CZ
+		$lang = "cz" if ( $inf{"zeme"} eq 25 );
+		 
+
+		my $mail = CommMail->new(  $self->{"inCAM"}, $self->{"jobId"} ,$self->{"comments"}->GetLayout(), $lang);
+		$mail->Open( ["\@"], [], "Comment preview..." );
+		
+		#$mail->Sent(['stepan.prichystal@gatema.cz'], [], "Comment preview...");
+
 	}
 
 }
@@ -284,15 +261,7 @@ sub __OnEditFileHndl {
 	my $commId = shift;
 	my $fileId = shift;
 
-	if ( $self->{"comments"}->EditFile( $commId, $fileId ) ) {
-
-		my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
-
-		$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
-
-		$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
-	}
-	else {
+	unless ( $self->{"comments"}->EditFile( $commId, $fileId ) ) {
 
 		my $messMngr = $self->{"form"}->GetMessMngr();
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during edit image in GreenShot"] );    #  Script is stopped
@@ -430,7 +399,8 @@ sub __CheckFilesHandler {
 sub __SetHandlers {
 	my $self = shift;
 
-	$self->{"form"}->{"saveExitEvt"}->Add( sub { $self->__SaveExitHndl(@_) } );
+	$self->{"form"}->{"saveExitEvt"}->Add( sub     { $self->__SaveExitHndl(@_) } );
+	$self->{"form"}->{"emailPreviewEvt"}->Add( sub { $self->__OnEmailPreview(@_) } );
 
 	$self->{"form"}->{"onSelCommChangedEvt"}->Add( sub { $self->__OnSelCommChangedHndl(@_) } );
 	$self->{"form"}->{"onRemoveCommEvt"}->Add( sub     { $self->__OnRemoveCommdHndl(@_) } );
@@ -449,6 +419,124 @@ sub __SetHandlers {
 	$self->{"form"}->{'onRemoveSuggesEvt'}->Add( sub { $self->__OnRemoveSuggesHndl(@_) } );
 	$self->{"form"}->{'onChangeSuggesEvt'}->Add( sub { $self->__OnChangeSuggesHndl(@_) } );
 
+}
+
+sub __SetTimers {
+	my $self = shift;
+
+	# Hack - refresh form after start in order show images in Notebook control
+	my $tmtImgUpdate = Wx::Timer->new( $self->{"form"}->{"mainFrm"}, -1, );
+	Wx::Event::EVT_TIMER(
+		$self->{"form"}->{"mainFrm"}, $tmtImgUpdate,
+
+		sub {
+			my $commId = $self->{"form"}->GetSelectedComment();
+
+			return 0 unless ( defined $commId );
+			my $commSngl = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+
+			my @files = grep { $_->IsImage() } $commSngl->GetAllFiles();
+
+			my $refresh = 0;
+			foreach my $f (@files) {
+
+				my $currUpdate = ( stat( $f->GetFilePath() ) )[9];
+				if ( $f->GetLastUpdate() != $currUpdate ) {
+					$f->SetLastUpdate($currUpdate);
+					$refresh = 1;
+
+				}
+
+			}
+
+			# Refresh if curr comment is still selected
+			if ( $refresh && $commId == $self->{"form"}->GetSelectedComment() ) {
+				$self->{"form"}->RefreshCommViewForm( $commId, $commSngl );
+			}
+		}
+	);
+
+	$tmtImgUpdate->Start(1000);
+}
+
+sub __FormChecks {
+	my $self = shift;
+
+	my $result   = 1;
+	my $messMngr = $self->{"form"}->GetMessMngr();
+
+	# Do error check
+
+	my @errMess = ();
+
+	# Check critical errors
+	$self->{"comments"}->CheckBeforeSave( \@errMess );
+
+	# Check less ritical errors
+	my $commLayout = $self->{"comments"}->GetLayout();
+
+	# Cehck if all atgs was found
+	my @allComm = $commLayout->GetAllComments();
+
+	for ( my $i = 0 ; $i < scalar(@allComm) ; $i++ ) {
+
+		my @files = $allComm[$i]->GetAllFiles();
+		my $text  = $allComm[$i]->GetText();
+
+		my @tags = ( $text =~ /(\@f\d+)/g );
+
+		foreach my $tag (@tags) {
+
+			my $fileNum = ( $tag =~ /^\@f(\d+)$/ )[0] - 1;
+
+			if ( $fileNum < 0 || $fileNum >= scalar(@files) ) {
+
+				push( @errMess, "No file exists in comment number:" . ( $i + 1 ) . " for tag: $tag" );
+			}
+		}
+	}
+
+	if ( scalar(@errMess) ) {
+		$messMngr->ShowModal( -1,
+							  EnumsGeneral->MessageType_ERROR,
+							  [ "Chyba při kontrole formuláře.", "Detail chyby:\n" . join( "\n", map { "- " . $_ } @errMess ) ],
+							  ["Repair"] );
+		$result = 0;
+	}
+	else {
+
+		# Do warning check
+		my @warnMess = ();
+
+		# If comment is typ of question
+		my @commSngls = $commLayout->GetAllComments();
+
+		for ( my $i = 0 ; $i < scalar(@commSngls) ; $i++ ) {
+
+			my $commSngl = $commSngls[$i];
+
+			if ( $commSngl->GetType() eq CommEnums->CommentType_QUESTION && scalar( $commSngl->GetAllSuggestions() ) < 1 ) {
+
+				push( @warnMess, "Komentář číslo: " . ( $i + 1 ) . " i" . " je otázka, ale nejsou navrženy žádné odpovědi. Je to ok?" );
+			}
+		}
+
+		if ( scalar(@warnMess) ) {
+
+			$messMngr->ShowModal( -1,
+								  EnumsGeneral->MessageType_WARNING,
+								  [ "Varování při kontrole formuláře.", "Detail varování:\n" . join( "\n", map { "- " . $_ } @warnMess ) ],
+								  [ "Repair",                                    "Continue" ] );
+
+			if ( $messMngr->Result() == 0 ) {
+
+				$result = 0;
+			}
+		}
+
+	}
+
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#

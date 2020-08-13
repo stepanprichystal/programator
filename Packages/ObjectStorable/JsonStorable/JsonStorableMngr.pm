@@ -15,6 +15,7 @@ use JSON;
 
 use aliased "Helpers::FileHelper";
 use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -32,12 +33,11 @@ sub new {
 }
 
 # Return 1 if serialized file exist
-sub SerializedDataExist{
+sub SerializedDataExist {
 	my $self = shift;
-	
-	return (-e $self->{"filePath"}) ? 1 : 0;
-}
 
+	return ( -e $self->{"filePath"} ) ? 1 : 0;
+}
 
 # Load serialized data
 sub LoadData {
@@ -47,8 +47,8 @@ sub LoadData {
 		die "Serialized data file doesn't exist: " . $self->{"filePath"};
 	}
 
-	my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
-	my $data          = $self->{"jsonStorable"}->Decode($serializeData);
+	my $serializeData = FileHelper->ReadAsString( $self->{"filePath"}, "ascii" );
+	my $data = $self->{"jsonStorable"}->Decode($serializeData);
 
 	return $data;
 }
@@ -61,13 +61,11 @@ sub StoreData {
 
 	my $serialized = $self->{"jsonStorable"}->Encode($data);
 
-	#delete old file
-
 	unlink $self->{"filePath"};
-	open( my $f, '>', $self->{"filePath"} ) or die "Unable create serialized data file: " . $self->{"filePath"};
+	open( my $f, '>:encoding(UTF-8)', $self->{"filePath"} ) or die "Unable create serialized data file: " . $self->{"filePath"};
 	print $f $serialized;
 	close $f;
-	
+
 	return 1;
 }
 

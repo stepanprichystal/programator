@@ -43,7 +43,7 @@ unless ( __CheckBeforeRun( \$mess ) ) {
 
 # 2) Launch app
 
-my $appName = 'Programs::Comments::CommWizard';    # has to implement IAppLauncher
+my $appName = 'Programs::Comments::CommWizard::CommWizard';    # has to implement IAppLauncher
 
  
 my $launcher = AppLauncher->new( $appName, $jobId);
@@ -53,8 +53,7 @@ $launcher->SetWaitingFrm( "Comments builder - $jobId", "Loading application ..."
 
 $launcher->Run();
 
-print STDERR "Stencil creator finish\n";
-
+ 
 exit(1);
 
 # Check before run app

@@ -69,6 +69,8 @@ sub new {
 	$self->{'onAddCommEvt'}        = Event->new();
 
 	$self->{"saveExitEvt"} = Event->new();
+	$self->{"emailPreviewEvt"} = Event->new();
+	
 
 	return $self;
 }
@@ -139,6 +141,12 @@ sub RefreshSelected {
 	}
 }
 
+sub GetSelectedComment{
+		my $self   = shift;
+	
+	return $self->{"commListViewFrm"}->GetSelectedComm();
+}
+
 sub GetMessMngr {
 	my $self = shift;
 
@@ -163,12 +171,13 @@ sub __SetLayout {
 
 	$self->AddContent($szMain);
 	$self->SetButtonHeight(30);
-	my $btnCancel = $self->AddButton( "Cancel", sub { $self->{"saveExitEvt"}->Do( 0, 1, 0 ) } );
+	my $btnPreview = $self->AddButton( "Mail preview", sub { $self->{"emailPreviewEvt"}->Do() } );
+	#my $btnCancel = $self->AddButton( "Cancel", sub { $self->{"saveExitEvt"}->Do( 0, 1, 0 ) } );
 	my $btnSave   = $self->AddButton( "Save",   sub { $self->{"saveExitEvt"}->Do( 1, 0, 0 ) } );
 	my $btnSaveExport = $self->AddButton( 'Save + Export', sub { $self->{"saveExportEvt"}->Do( 1, 0, 1 ) } );
 	my $btnSaveExit = $self->AddButton( "Save + Exit", sub { $self->{"saveExitEvt"}->Do( 1, 1, 0 ) } );
-
-	$btnSaveExit
+	
+	 
 
 	  # DEFINE LAYOUT STRUCTURE
 

@@ -73,7 +73,13 @@ sub SetType {
 		}
 		$f->SetFilePrefix($prefix);
 	}
-	
+
+	# Remove suggstions if exist
+	if ( $self->{"type"} eq Enums->CommentType_NOTE ) {
+
+		$self->{"suggestions"} = [];
+	}
+
 	$self->SetStoredOnDisc(0);
 }
 
@@ -87,7 +93,7 @@ sub SetText {
 	my $self = shift;
 
 	$self->{"text"} = shift;
-	
+
 	$self->SetStoredOnDisc(0);
 }
 
@@ -120,7 +126,7 @@ sub AddFile {
 	my $f = CommFileLayout->new( $name, $prefix, $suffix, $path );
 
 	push( @{ $self->{"files"} }, $f );
-	
+
 	$self->SetStoredOnDisc(0);
 
 	return $f;
@@ -133,7 +139,7 @@ sub RemoveFile {
 	die "File id: $fileId doesn't exist" if ( $fileId < 0 || $fileId >= scalar( @{ $self->{"files"} } ) );
 
 	splice @{ $self->{"files"} }, $fileId, 1;
-	
+
 	$self->SetStoredOnDisc(0);
 }
 
@@ -154,17 +160,15 @@ sub GetFileById {
 
 }
 
-
-
 sub SetFileCustName {
 	my $self   = shift;
 	my $fileId = shift;
-	my $name = shift;
+	my $name   = shift;
 
 	die "File id: $fileId doesn't exist" if ( $fileId < 0 || $fileId >= scalar( @{ $self->{"files"} } ) );
 
 	$self->{"files"}->[$fileId]->SetFileCustName($name);
-	
+
 	$self->SetStoredOnDisc(0);
 
 }
@@ -174,7 +178,7 @@ sub AddSuggestion {
 	my $text = shift;
 
 	push( @{ $self->{"suggestions"} }, $text );
-	
+
 	$self->SetStoredOnDisc(0);
 
 }
@@ -186,7 +190,7 @@ sub RemoveSuggestion {
 	die "Suggestion id: $suggId doesn't exist" if ( $suggId < 0 || $suggId >= scalar( @{ $self->{"suggestions"} } ) );
 
 	splice @{ $self->{"suggestions"} }, $suggId, 1;
-	
+
 	$self->SetStoredOnDisc(0);
 }
 
@@ -210,16 +214,17 @@ sub GetSuggestionById {
 sub SetSuggestion {
 	my $self   = shift;
 	my $suggId = shift;
-	my $text = shift;
+	my $text   = shift;
 
 	die "Suggestion id: $suggId doesn't exist" if ( $suggId < 0 || $suggId >= scalar( @{ $self->{"suggestions"} } ) );
 
 	$self->{"suggestions"}->[$suggId] = $text;
-	
+
 	$self->SetStoredOnDisc(0);
 
 }
- 
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
