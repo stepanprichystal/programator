@@ -17,6 +17,8 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Commesting::BasicHelper::Helper' => 'CommHelper';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsIS';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -44,23 +46,14 @@ sub OnGetGroupState {
 
 	my $state = Enums->GroupState_DISABLE;
 
- 
-	if ( HegMethods->GetElTest($jobId) ) {
+	if ( $defaultInfo->GetComments()->Exists() ) {
 
 		$state = Enums->GroupState_ACTIVEON;
 
 	}
 	else {
 
-		if ( $defaultInfo->GetPcbClass() <= 3 && $defaultInfo->GetLayerCnt() == 1 ) {
-
-			$state = Enums->GroupState_DISABLE;
-
-		}
-		else {
-
-			$state = Enums->GroupState_ACTIVEON;
-		}
+		$state = Enums->GroupState_DISABLE;
 	}
 
 	#we want nif group allow always, so return ACTIVE ON
@@ -79,42 +72,20 @@ sub OnPrepareGroupData {
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
-	$groupData->SetStepToTest("panel");
-
-	$groupData->SetCreateEtStep(1);
-
-	# 5) if customer panel, do not check panel
-	my $custPnl = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_panel" );
-	my $custSet = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "customer_set" );
+	my $comments = $defaultInfo->GetComments();
 	
-	my $keepProfiles = CommHelper->KeepProfilesAllowed( $inCAM, $jobId, "panel" );
-
-	if ( $keepProfiles 
-		&& ( !defined $custPnl || ( defined $custPnl && $custPnl eq "no" ) ) 
-		&& ( !defined $custSet || ( defined $custSet && $custSet eq "no" ) ) ) {
-		$groupData->SetKeepProfiles(1);
-	}
-	else {
-
-		$groupData->SetKeepProfiles(0);
-
-	}
- 
-
-	# Set server and local copy of IPC
-	if ($groupData->GetKeepProfiles()) {
-
-		$groupData->SetLocalCopy(0); # Set local copy IPC (only if keep profiles is set)
+	 
+	# Prder status 
+	$groupData->SetChangeOrderStatus(0);
+	$groupData->SetOrderStatus(EnumsIS->CurStep_HOTOVOODSOUHLASIT);
 	
-	}else{
-		
-		$groupData->SetLocalCopy(1);
-	}
- 
- 	# Set server copy always (in order TPV office is closed and production need ipc)
- 	$groupData->SetServerCopy(1);
- 	
- 
+	# sent mail
+	$groupData->SetExportEmail(0);
+	$groupData->SetEmailAction("send");
+	$groupData->SetEmailToAddress([EnumsPaths->MAIL_GATSALES]);
+	$groupData->SetEmailCCAddress([EnumsPaths->MAIL_GATCAM]);
+	$groupData->SetEmailSubject("Approval - ".uc($jobId));
+	$groupData->SetClearComments(0);
  
 	return $groupData;
 }

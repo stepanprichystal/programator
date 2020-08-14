@@ -133,6 +133,23 @@ sub GetEmailSubject {
 	return $self->{"data"}->{"emailSubject"};
 }
 
+
+# Clear comments
+sub SetClearComments {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"clearComments"} = $value;
+}
+
+sub GetClearComments {
+	my $self  = shift;
+	my $value = shift;
+
+	return $self->{"data"}->{"clearComments"};
+}
+
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

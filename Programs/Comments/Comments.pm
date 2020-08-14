@@ -11,6 +11,8 @@ use warnings;
 use Switch;
 use File::Basename;
 use File::Copy;
+use POSIX qw(strftime);
+use File::Path 'rmtree';
 
 #local library
 
@@ -229,6 +231,62 @@ sub RemoveComment {
 	die "Comment id: $commentId doesn't exist" if ( $commentId < 0 || $commentId >= scalar( $self->{"commLayout"}->GetAllComments() ) );
 
 	$self->{"commLayout"}->RemoveComment($commentId);
+}
+
+# Delete all coments
+# Move them to archive backup
+# Delete old backups from archive
+# Save
+sub ClearCoomments {
+	my $self = shift;
+
+	# 1) Move comment to archive
+	my $archRoot = $self->{"commDir"} . "archive\\";
+	mkdir($archRoot) or die "File  cannot be created: $!" unless ( -e $archRoot );
+
+	my $now_string = strftime "%Y_%m_%d_%H_%M", localtime;
+	my $arch = $self->{"commDir"} . "archive\\$now_string";
+
+	mkdir($arch) or die "File $arch cannot be created: $!" unless ( -e $arch );
+
+	opendir( DIR, $self->{"commDir"} ) or die $!;
+
+	while ( my $file = readdir(DIR) ) {
+
+		next if ( $file !~ /^cam/i && $file !~ /^comments/i );
+		copy( $self->{"commDir"} . $file, $arch . "\\$file" );
+	}
+	close(DIR);
+
+	# 2) Delete old backups from archive (older than one month)
+	my $deleteArchive = 1;
+	opendir( DIR, $archRoot ) or die $!;
+
+	while ( my $f = readdir(DIR) ) {
+
+		next if ( $f =~ /^\.$/ );
+		next if ( $f =~ /^\.\.$/ );
+
+		my $path = $archRoot . $f;
+
+		my @stats = stat($path);
+
+		# remove older than $olderThan months
+		if ( ( time() - $stats[10] ) > $deleteArchive * 60 * 60 * 24 * 30 ) {
+			rmtree($path);
+		}
+	}
+	close(DIR);
+
+	# 3) Remove all coments
+	my @comm = $self->{"commLayout"}->GetAllComments();
+
+	for ( my $i = 0 ; $i < scalar(@comm) ; $i++ ) {
+		$self->{"commLayout"}->RemoveComment($i);
+	}
+
+	# 4) Save
+	$self->Save();
 }
 
 sub MoveComment {
@@ -474,6 +532,15 @@ sub __ClearOldFiles {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Programs::Comments::Comments';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $jobId = "d288054";
+	my $inCAM = InCAM->new();
+
+	my $c = Comments->new( $inCAM, $jobId );
+	$c->ClearCoomments();
 
 }
 

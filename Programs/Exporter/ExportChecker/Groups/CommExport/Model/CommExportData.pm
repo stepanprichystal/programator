@@ -5,7 +5,6 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::CommExport::Model::CommExportData;
- 
 
 #3th party library
 use strict;
@@ -36,15 +35,14 @@ use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-
 sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
 
-	return $self;    
+	return $self;
 }
- 
+
 # Export data, (from prepared group data), which will consume exporter utility
 # are prepared in this method
 sub OnExportGroupData {
@@ -59,17 +57,19 @@ sub OnExportGroupData {
 	my $stepName = "panel";
 
 	my $exportData = CommData->new();
- 
-#	$exportData->SetStepToTest( $groupData->GetStepToTest() );
-#	$exportData->SetCreateEtStep( $groupData->GetCreateEtStep() );
-#	$exportData->SetKeepProfiles( $groupData->GetKeepProfiles() );
-#	$exportData->SetLocalCopy( $groupData->GetLocalCopy() );
-#	$exportData->SetServerCopy( $groupData->GetServerCopy() );	
-  
+
+	$exportData->SetChangeOrderStatus( $groupData->GetChangeOrderStatus() );
+	$exportData->SetOrderStatus( $groupData->GetOrderStatus() );
+	$exportData->SetExportEmail( $groupData->GetExportEmail() );
+	$exportData->SetEmailAction( $groupData->GetEmailAction() );
+	$exportData->SetEmailToAddress( $groupData->GetEmailToAddress() );
+	$exportData->SetEmailCCAddress( $groupData->GetEmailCCAddress() );
+	$exportData->SetEmailSubject( $groupData->GetEmailSubject() );
+	$exportData->SetClearComments( $groupData->GetClearComments() );
+
 	return $exportData;
 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -93,6 +93,4 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-
-
 

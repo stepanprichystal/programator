@@ -375,8 +375,9 @@ sub __OnResultPopupHandler {
 
 		my $inCAM = $self->{"inCAM"};
 
+		# Get orders on CAM department
 		my @orders = HegMethods->GetPcbOrderNumbers( $self->{"jobId"} );
-		@orders = map { $_->{"reference_subjektu"} } @orders;
+		@orders = map { $_->{"reference_subjektu"} } grep{ $_->{"aktualni_krok"} == 2  } @orders;
 
 		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC ) {
 

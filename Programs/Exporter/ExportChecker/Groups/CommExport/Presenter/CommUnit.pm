@@ -20,7 +20,7 @@ use warnings;
 
 #local library
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
- 
+
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Model::CommCheckData';
 use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Model::CommPrepareData';
@@ -28,27 +28,25 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Model::CommE
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::View::CommUnitForm';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
 	my $class = shift;
-	my $self = {};
+	my $self  = {};
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
 	#uique key within all units
-	$self->{"unitId"} = UnitEnums->UnitId_Comm;
+	$self->{"unitId"} = UnitEnums->UnitId_COMM;
 
-	my $checkData = CommCheckData->new();
+	my $checkData   = CommCheckData->new();
 	my $prepareData = CommPrepareData->new();
-	my $exportData = CommExportData->new();
-		
-	
-	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData);
+	my $exportData  = CommExportData->new();
+
+	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
 
 	return $self;    # Return the reference to the hash.
 }
@@ -83,12 +81,14 @@ sub RefreshGUI {
 	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
-	$self->{"form"}->SetStepToTest( $groupData->GetStepToTest(), $groupData->GetCreateEtStep() );
-	$self->{"form"}->SetCreateEtStep( $groupData->GetCreateEtStep() );
-	$self->{"form"}->SetKeepProfiles( $groupData->GetKeepProfiles() );
-	$self->{"form"}->SetLocalCopy( $groupData->GetLocalCopy() );
-	$self->{"form"}->SetServerCopy( $groupData->GetServerCopy() );	
- 
+	$self->{"form"}->SetChangeOrderStatus( $groupData->GetChangeOrderStatus() );
+	$self->{"form"}->SetOrderStatus( $groupData->GetOrderStatus() );
+	$self->{"form"}->SetExportEmail( $groupData->GetExportEmail() );
+	$self->{"form"}->SetEmailAction( $groupData->GetEmailAction() );
+	$self->{"form"}->SetEmailToAddress( $groupData->GetEmailToAddress() );
+	$self->{"form"}->SetEmailCCAddress( $groupData->GetEmailCCAddress() );
+	$self->{"form"}->SetEmailSubject( $groupData->GetEmailSubject() );
+	$self->{"form"}->SetClearComments( $groupData->GetClearComments() );
 
 }
 
@@ -105,14 +105,16 @@ sub GetGroupData {
 
 	if ($frm) {
 		$groupData = $self->{"dataMngr"}->GetGroupData();
-		
-		$groupData->SetStepToTest( $frm->GetStepToTest() );
-		$groupData->SetCreateEtStep( $frm->GetCreateEtStep() );
-		$groupData->SetKeepProfiles( $frm->GetKeepProfiles() );
-		$groupData->SetLocalCopy( $frm->GetLocalCopy() );
-		$groupData->SetServerCopy( $frm->GetServerCopy() );	
-	 
-			
+
+		$groupData->SetChangeOrderStatus( $frm->GetChangeOrderStatus() );
+		$groupData->SetOrderStatus( $frm->GetOrderStatus() );
+		$groupData->SetExportEmail( $frm->GetExportEmail() );
+		$groupData->SetEmailAction( $frm->GetEmailAction() );
+		$groupData->SetEmailToAddress( $frm->GetEmailToAddress() );
+		$groupData->SetEmailCCAddress( $frm->GetEmailCCAddress() );
+		$groupData->SetEmailSubject( $frm->GetEmailSubject() );
+		$groupData->SetClearComments( $frm->GetClearComments() );
+
 	}
 	else {
 
@@ -121,6 +123,7 @@ sub GetGroupData {
 
 	return $groupData;
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
