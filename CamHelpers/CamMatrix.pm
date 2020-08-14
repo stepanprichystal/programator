@@ -119,6 +119,37 @@ sub SetLayerDirection {
 
 }
 
+# Return layer direction
+# return top2bot, bot2top
+sub GetLayerDirection {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $layer = shift;
+
+	$inCAM->INFO(
+				  units           => 'mm',
+				  angle_direction => 'ccw',
+				  entity_type     => 'matrix',
+				  entity_path     => "$jobId/matrix",
+				  data_type       => 'ROW',
+				  parameters      => "drl_dir+name"
+	);
+
+	my $dir = undef;
+
+	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gROWname} } ) ; $i++ ) {
+		my %info = ();
+		if ( ${ $inCAM->{doinfo}{gROWname} }[$i] eq $layer ) {
+
+			$dir = ${ $inCAM->{doinfo}{gROWdrl_dir} }[$i];
+			last;
+		}
+	}
+
+	return $dir;
+}
+
 # Return layer polarity
 sub GetLayerPolarity {
 	my $self  = shift;

@@ -769,12 +769,7 @@ sub SetNotes {
 	my $value = shift;
 	$self->{"richTxt"}->Clear();
 
-	# Temporary set ypracovano v Incamu
-
-	unless ( $value =~ /Zpracovano v InCAMu/i ) {
-		$value = "Zpracovano v InCAMu. " . $value;
-	}
-
+ 
 	if ( $value && $value ne "" ) {
 
 		# Remove duplicate notes (quick note could be already in IS)

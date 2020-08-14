@@ -24,9 +24,11 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Reorder::Enums';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -45,13 +47,30 @@ sub Run {
 	my $self = shift;
 	my $mess = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $inCAM       = $self->{"inCAM"};
+	my $jobId       = $self->{"jobId"};
 	my $reorderType = $self->{"reorderType"};
 
 	# Check only standard orders
 
 	my $result = 1;
+
+	# Check wrong direction for drill layers exported as Genesis
+	my @NCFromBot = CamDrilling->GetNCLayersByTypes(
+													 $inCAM, $jobId,
+													 [
+														EnumsGeneral->LAYERTYPE_plt_bDrillBot,  EnumsGeneral->LAYERTYPE_plt_bFillDrillBot,
+														EnumsGeneral->LAYERTYPE_plt_bMillBot,   EnumsGeneral->LAYERTYPE_nplt_bMillBot,
+														EnumsGeneral->LAYERTYPE_nplt_cbMillBot, EnumsGeneral->LAYERTYPE_nplt_lsMill
+													 ]
+	);
+
+	foreach my $NC (@NCFromBot) {
+ 
+		if ( CamMatrix->GetLayerDirection( $inCAM, $jobId, $NC->{"gROWname"} ) ne "bot2top" ) {
+			CamMatrix->SetLayerDirection( $inCAM, $jobId, $NC->{"gROWname"}, "bottom_to_top" );
+		}
+	}
 
 	# 1) check if layer "c" is not missing. (layer has to exist even at noncopper pcb)
 	unless ( CamHelper->LayerExists( $inCAM, $jobId, "c" ) ) {
