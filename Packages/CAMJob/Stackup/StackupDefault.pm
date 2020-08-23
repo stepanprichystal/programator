@@ -25,6 +25,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::CAMJob::Stackup::StackupCode';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods

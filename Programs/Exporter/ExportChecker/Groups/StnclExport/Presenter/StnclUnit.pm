@@ -93,19 +93,17 @@ sub RefreshGUI {
 	$self->{"form"}->SetFiducialInfo( $groupData->GetFiducialInfo() );
 }
 
-sub GetGroupData {
-
+# Update groupd data with values from GUI
+sub UpdateGroupData {
 	my $self = shift;
 
 	my $frm = $self->{"form"};
-
-	my $groupData;
 
 	#if form is init/showed to user, return group data edited by form
 	#else return default group data, not processed by form
 
 	if ($frm) {
-		$groupData = $self->{"dataMngr"}->GetGroupData();
+		my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 		$groupData->SetThickness( $frm->GetThickness() );
 		$groupData->SetExportNif( $frm->GetExportNif() );
@@ -116,12 +114,6 @@ sub GetGroupData {
 		$groupData->SetFiducialInfo( $frm->GetFiducialInfo() );
 
 	}
-	else {
-
-		$groupData = $self->{"dataMngr"}->GetGroupData();
-	}
-
-	return $groupData;
 }
 
 #-------------------------------------------------------------------------------------------#

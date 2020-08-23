@@ -2,8 +2,11 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Launch form applications in separate perl instance and conenct to InCAM editor
 # This allow has interacting GUI (when we use threads) indepandatn what if InCAM editor is working or not
-# Allow log process of launching (log4perl)
-# Allow show waiting form during launching and processing Init() function of Application
+# There are two ways hot to run app:
+# a) Run this package directly in InCAM and use Run method
+# b) Run this app outside InCAM and connect to existing InCAM server with RunFromApp method
+# - Allow log process of launching (log4perl)
+# - Allow show waiting form during launching and processing Init() function of Application
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::InCAMHelpers::AppLauncher::AppLauncher;
@@ -42,9 +45,9 @@ sub new {
 	$self->{"appParams"}  = \@_;      # scalar params, which will be passed to app constructor
 
 	$self->{"params"} = undef;        # helper array property, tmp file names, which contain papp parametr value in json
-	$self->{"runScrpit"}  = GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\AppLauncher\\Run.pl";
-	$self->{"serverPort"} = $self->__GetFreePort();
-	$self->{"jobId"}      = $ENV{"JOB"} || 0;
+	$self->{"runScrpit"}   = GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\AppLauncher\\Run.pl";
+	$self->{"serverPort"}  = undef;
+	$self->{"jobId"}       = undef;
 
 	$self->{"waitFrmShow"}  = 0;
 	$self->{"waitFrmTitle"} = undef;
@@ -52,20 +55,42 @@ sub new {
 	$self->{"waitFrmClose"} = "-";
 	$self->{"waitFrmPID"}   = 0;
 
-	$self->{"logConfig"} = 0;         # path of loging config file (log4perl)
+	$self->{"logConfig"} = 0;                                                                           # path of loging config file (log4perl)
 
 	return $self;
 }
 
-# Start launching specific app
-sub Run {
+# Use this method when AppLauncher run directly in InCAM editor
+# "appPackage" is launched in new perl process
+# Current script turn into InCAM server, which "appPackage" is connected to
+sub RunFromInCAM {
 	my $self = shift;
+	$self->{"jobId"} = $ENV{"JOB"} || 0;
+	$self->{"serverPort"} = $self->__GetFreePort();
+
+	die "Server port is not defined" if ( !defined $self->{"serverPort"} );
 
 	$self->__RunWaitFrm();
 
 	$self->__RunApp();
 
 	$self->__RunServer();
+
+}
+
+# Use this method when AppLauncher run outside of InCAM editor and InCAM serveris already running
+# "appPackage" is launched in new perl process and try to connect to existing InCAM server
+# After launch "appPackage" this script ends
+sub RunFromApp {
+	my $self = shift;
+	$self->{"jobId"}       = shift;
+	$self->{"serverPort"}  = shift;    # port of existing InCAM server
+
+	die "Server port is not defined" if ( !defined $self->{"serverPort"} );
+
+	$self->__RunWaitFrm();
+
+	$self->__RunApp();
 
 }
 
@@ -145,6 +170,8 @@ sub __RunApp {
 	  || die "Failed to run $cmdStr.\n";
 
 	my $pidInCAM = $processObj->GetProcessID();
+	
+	#$processObj->Wait(INFINITE)  if($self->{"waitOnExist"});
 }
 
 sub __RunWaitFrm {
@@ -203,7 +230,7 @@ sub __GetFreePort {
 
 	my $curPort = AppConf->GetValue("serverPort");
 	for ( my $i = 0 ; $i < AppConf->GetValue("serverPortInc") ; $i++ ) {
-	
+
 		my %porthash = (
 						 "tcp" => {
 									2010 => {

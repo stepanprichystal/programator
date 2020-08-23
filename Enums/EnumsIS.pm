@@ -18,7 +18,11 @@ use constant {
 
 	# statuses of processReorder app
 	CurStep_PROCESSREORDERERR => "processReorder-error",
-	CurStep_PROCESSREORDEROK  => "processReorder-ok"
+	CurStep_PROCESSREORDEROK  => "processReorder-ok",
+	
+	# statuses of job approval
+	CurStep_HOTOVOODSOUHLASIT => "HOTOVO-odsouhlasit",
+	CurStep_POSLANDOTAZ => "poslan dotaz <user>"
 
 };
 

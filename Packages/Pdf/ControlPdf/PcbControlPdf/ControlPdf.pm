@@ -502,10 +502,11 @@ sub __Checks {
 	my $self = shift;
 
 	# check when step is panel, nif file already exist too
+	# Some values like solder mask color are loaded from nif
 	my $panelExist = CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
 	my $nifFile = NifFile->new( $self->{"jobId"} );
-
-	if ( $panelExist && !$nifFile->Exist() ) {
+	
+	if ( 	  !JobHelper->GetJobIsOffer( $self->{"jobId"} ) && $panelExist && !$nifFile->Exist() ) {
 
 		die "If panel exist, nif file has to exist too.";
 	}
@@ -530,7 +531,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d277289";
+	my $jobId = "d278828";
  
 
 	my $mess = "";
@@ -554,10 +555,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#$control->AddInfoPreview( \$mess );
 
-	#$control->AddStackupPreview( \$mess );
+	$control->AddStackupPreview( \$mess );
 	#$control->AddImagePreview( \$mess, 0, 1 );
 
-	$control->AddLayersPreview( \$mess );
+	#$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 
 	unless ($reuslt) {

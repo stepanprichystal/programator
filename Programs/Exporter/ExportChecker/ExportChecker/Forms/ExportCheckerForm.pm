@@ -10,7 +10,6 @@ use strict;
 use warnings;
 use Wx;
 use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
- 
 
 BEGIN {
 	eval { require Wx::RichText; };
@@ -26,6 +25,7 @@ use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupTableForm';
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsIS';
+use aliased 'Helpers::JobHelper';
 
 use Widgets::Style;
 
@@ -49,12 +49,14 @@ sub new {
 	# PROPERTIES
 
 	$self->{"jobId"} = shift;
+	$self->{"isOffer"}     = JobHelper->GetJobIsOffer( $self->{"jobId"} );
 
 	#$self->{"groupBuilder"} = GroupBuilder->new($self);
 
 	my $mainFrm = $self->__SetLayout($parent);
 
 	$self->{"messageMngr"} = MessageMngr->new("Exporter checker");
+	
 
 	#EVENTS
 
@@ -135,7 +137,6 @@ sub OnInit {
 	return 1;
 }
 
-
 # Return group builder, which is responsible for building
 # groups gui and adding groups to form
 sub GetGroupBuilder {
@@ -172,15 +173,13 @@ sub AddPage {
 	return $page;
 }
 
-
-
 sub BuildGroupTableForm {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = shift;
 
 	# class keep rows structure and group instances
 	my $groupTables = shift;
- 
+
 	$self->{"mainFrm"}->Freeze();
 
 	my $defSelPageTab = undef;    # Default selected notebook page
@@ -233,10 +232,11 @@ sub BuildGroupTableForm {
 # provided by groups
 sub BuildGroupEventConn {
 	my $self = shift;
+
 	# class keep rows structure and group instances
 	my $groupTables = shift;
 
-	# Do conenction between units events/handlers
+	# 1) Do conenction between units events/handlers
 	my @units = $groupTables->GetAllUnits();
 
 	foreach my $unitA (@units) {
@@ -261,8 +261,8 @@ sub BuildGroupEventConn {
 		}
 	}
 
-}
 
+}
 
 sub __OnExportSync {
 	my $self = shift;
@@ -365,12 +365,18 @@ sub __SetLayout {
 	my $imagelist = Wx::ImageList->new( 10, 25 );
 	$nb->AssignImageList($imagelist);
 
-	my $btnSync = Wx::Button->new( $pnlBtns, -1, "Export", &Wx::wxDefaultPosition, [ 130, 33 ] );
+	my $btnSync = Wx::Button->new( $pnlBtns, -1,"Export".($self->{"isOffer"}? " offer" : ""), &Wx::wxDefaultPosition, [ 130, 33 ] );
 	$btnSync->SetFont($Widgets::Style::fontBtn);
 	my $btnASyncServer = Wx::Button->new( $pnlBtns, -1, "Export on server (beta)", &Wx::wxDefaultPosition, [ 160, 33 ] );
 	$btnASyncServer->SetFont($Widgets::Style::fontBtn);
 	my $btnASync = Wx::Button->new( $pnlBtns, -1, "Export on background", &Wx::wxDefaultPosition, [ 160, 33 ] );
 	$btnASync->SetFont($Widgets::Style::fontBtn);
+
+	# If offer alwazs disable
+	if ( $self->{"isOffer"} ) {
+		$btnASyncServer->Hide();
+		$btnASync->Hide();
+	}
 
 	# REGISTER EVENTS
 
@@ -591,12 +597,13 @@ sub __SetLayoutOther {
 
 	my $chbProduce = Wx::CheckBox->new( $statBox, -1, "Sent to produce", &Wx::wxDefaultPosition, [ 110, 22 ] );
 	$chbProduce->SetValue($sentToProduce);
+	$chbProduce->Disable() if ( $self->{"isOffer"} );
 
 	#$chbProduce->SetTransparent(0);
 	#$chbProduce->Refresh();
 	#$chbProduce->SetBackgroundStyle(&Wx::wxBG_STYLE_TRANSPARENT);
 	$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
-  
+
 	$chbProduce->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 	$chbProduce->Refresh();
 
@@ -612,7 +619,6 @@ sub __SetLayoutOther {
 	return $szStatBox;
 
 }
- 
 
 sub __OnScrollPaint {
 	my $self      = shift;
@@ -632,8 +638,6 @@ sub __OnResize {
 	$self->{"mainFrm"}->Refresh();
 
 }
-
-
 
 sub _AddEvent {
 	my $self      = shift;

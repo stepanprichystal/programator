@@ -18,6 +18,7 @@ use Wx;
 use Wx qw(:sizer wxDefaultPosition wxDefaultSize wxDEFAULT_DIALOG_STYLE wxRESIZE_BORDER);
 use Wx qw(:richtextctrl :textctrl :font);
 use Wx qw(:icon wxTheApp wxNullBitmap);
+use Encode qw{encode decode};
 
 BEGIN {
 	eval { require Wx::RichText; };
@@ -233,13 +234,13 @@ sub __SetLayoutParameters {
 
 	foreach my $messPar ( @{ $self->{"parameters"} } ) {
 
-		my $parTitleTxt = Wx::StaticText->new( $parent, -1, $messPar->GetTitle() . ":", &Wx::wxDefaultPosition, [-1,25] );
-		my $btnReset = Wx::Button->new( $parent, -1, "Default", &Wx::wxDefaultPosition, [-1,25] );
+		my $parTitleTxt = Wx::StaticText->new( $parent, -1, $messPar->GetTitle() . ":", &Wx::wxDefaultPosition, [ -1, 25 ] );
+		my $btnReset = Wx::Button->new( $parent, -1, "Default", &Wx::wxDefaultPosition, [ -1, 25 ] );
 		my $parVal;
 
 		if ( $messPar->GetParameterType() eq Enums->ParameterType_TEXT ) {
 
-			$parVal = Wx::TextCtrl->new( $parent, -1, "", &Wx::wxDefaultPosition, [-1,25] );
+			$parVal = Wx::TextCtrl->new( $parent, -1, "", &Wx::wxDefaultPosition, [ -1, 25 ] );
 			$parVal->SetValue( $messPar->GetOrigValue() );
 
 			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
@@ -248,7 +249,8 @@ sub __SetLayoutParameters {
 		}
 		elsif ( $messPar->GetParameterType() eq Enums->ParameterType_NUMBER ) {
 
-			$parVal = Wx::SpinCtrl->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition,  [-1,25], &Wx::wxSP_ARROW_KEYS, -99999, 99999 );
+			$parVal =
+			  Wx::SpinCtrl->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition, [ -1, 25 ], &Wx::wxSP_ARROW_KEYS, -99999, 99999 );
 			$parVal->SetValue( $messPar->GetOrigValue() );
 
 			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
@@ -258,22 +260,23 @@ sub __SetLayoutParameters {
 		elsif ( $messPar->GetParameterType() eq Enums->ParameterType_OPTION ) {
 
 			my @opt = $messPar->GetOptions();
-			$parVal = Wx::ComboBox->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition, [-1,25], \@opt, &Wx::wxCB_READONLY );
+			$parVal = Wx::ComboBox->new( $parent, -1, $messPar->GetOrigValue(), &Wx::wxDefaultPosition, [ -1, 25 ], \@opt, &Wx::wxCB_READONLY );
 			$parVal->SetValue( $messPar->GetOrigValue() );
 
 			Wx::Event::EVT_TEXT( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
 			Wx::Event::EVT_BUTTON( $btnReset, -1, sub { $parVal->SetValue( $messPar->GetOrigValue() ) } );
-		
-		}elsif ( $messPar->GetParameterType() eq Enums->ParameterType_CHECK ) {
- 
-			$parVal = Wx::CheckBox->new( $parent, -1, "",  &Wx::wxDefaultPosition, [-1,25] );
+
+		}
+		elsif ( $messPar->GetParameterType() eq Enums->ParameterType_CHECK ) {
+
+			$parVal = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ -1, 25 ] );
 			$parVal->SetValue( $messPar->GetOrigValue() );
 			Wx::Event::EVT_CHECKBOX( $parVal, -1, sub { $self->__OnParameterChanged( $parVal->GetValue(), $messPar ) } );
 			Wx::Event::EVT_BUTTON( $btnReset, -1, sub { $parVal->SetValue( $messPar->GetOrigValue() ) } );
 		}
 
 		$szClTitle->Add( $parTitleTxt, 0, &Wx::wxALL, 1 );
-		$szClVal->Add( $parVal,   0, &Wx::wxALL | &Wx::wxEXPAND , 1 );
+		$szClVal->Add( $parVal, 0, &Wx::wxALL | &Wx::wxEXPAND, 1 );
 		$szClDef->Add( $btnReset, 0, &Wx::wxALL, 1 );
 
 		#$szRow->Add( 10, 10, 75, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -288,6 +291,7 @@ sub __SetLayoutParameters {
 
 	return $szPar;
 }
+
 sub __OnClose {
 	my $self  = shift;
 	my $event = shift;
@@ -334,17 +338,19 @@ sub __WriteMessages() {
 		$richTxt->BeginItalic;
 		$richTxt->EndBold;
 
-		$mess = $messages[$i];
-
-		#$mess =~ s/@/###/;
-
+		$mess = encode( 'UTF-8',$messages[$i]); # use encode, in order proper working substr function
+ 
 		#my @messSplit = split /@/, $mess;
 
 		my $bold = 0;
 
 		#foreach my $l (split //,$mess) {
 
-		my $messPom = "";    # here is stored char bz char message and tested on <r> atd
+		my $messPom  = "";    # here is stored char bz char message and tested on <r> atd
+		                      # write text to richCtrl in max possible large string (start-end message; style mark -style mark, etc..)
+		                      # Because this operation is time consuming.
+		                      # Variable say, where to was $messPom written to RichCtrl
+		my $writePos = -1;
 
 		my $openTag  = "";
 		my $closeTag = "";
@@ -354,7 +360,7 @@ sub __WriteMessages() {
 
 			$messPom .= $ch;
 
-			$richTxt->WriteText($ch);
+			#$richTxt->WriteText($ch);
 			$index++;
 
 			$openTag  = substr $messPom, -3;
@@ -362,6 +368,12 @@ sub __WriteMessages() {
 			$imgTag   = substr $messPom, -10;
 
 			if ( $openTag =~ /<(\w)>/ ) {
+
+				$messPom = substr $messPom, 0, length($messPom) - 3;
+				my $buffer = substr( $messPom, $writePos + 1, length($messPom) );
+
+				$richTxt->WriteText( decode( 'UTF-8', $buffer ) );
+				$writePos = length($messPom) - 1;
 
 				if ( $1 eq "r" ) {
 					$richTxt->BeginTextColour( Wx::Colour->new( 230, 0, 0 ) );
@@ -375,13 +387,18 @@ sub __WriteMessages() {
 				elsif ( $1 eq "i" ) {
 					$richTxt->BeginBold();
 				}
-				$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
-				  ;    # tohle tady musi byt jinak nejde odmazat posleddni znak
-				$richTxt->Remove( $richTxt->GetLastPosition() - 3, $richTxt->GetLastPosition() );
-				$messPom = substr $messPom, 0, length($messPom) - 4;
+
+				#$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
+				;    # tohle tady musi byt jinak nejde odmazat posleddni znak
+				     #$richTxt->Remove( $richTxt->GetLastPosition() - 3, $richTxt->GetLastPosition() );
 
 			}
 			elsif ( $closeTag =~ /<\/(\w)>/ ) {
+
+				$messPom = substr $messPom, 0, length($messPom) - 4;
+				my $buffer = substr( $messPom, $writePos + 1, length($messPom) );
+				$richTxt->WriteText( decode( 'UTF-8', $buffer ) );
+				$writePos = length($messPom) - 1;
 
 				if ( $1 eq "b" ) {
 					$richTxt->EndBold();
@@ -389,24 +406,27 @@ sub __WriteMessages() {
 				else {
 					$richTxt->EndTextColour();
 				}
-				$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
-				  ;    # tohle tady musi byt jinak nejde odmazat posleddni znak
-				$richTxt->Remove( $richTxt->GetLastPosition() - 4, $richTxt->GetLastPosition() );
+
+				#$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
+				;    # tohle tady musi byt jinak nejde odmazat posleddni znak
+				     #$richTxt->Remove( $richTxt->GetLastPosition() - 4, $richTxt->GetLastPosition() );
 				$index -= 4;
-				$messPom = substr $messPom, 0, length($messPom) - 4;
 
 			}
 			elsif ( $imgTag =~ m/<img(\d+)>/ ) {
 
-				my $imgNumber = $1;
+				my $imgNumber = $1;    # Store img number
 
 				my $tagLen = length( ( $imgTag =~ m/(<img\d+>)/ )[0] );
-
-				$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
-				  ;    # tohle tady musi byt jinak nejde odmazat posleddni znak
-				$richTxt->Remove( $richTxt->GetLastPosition() - $tagLen, $richTxt->GetLastPosition() );
-				$index -= $tagLen;
 				$messPom = substr $messPom, 0, length($messPom) - $tagLen;
+				my $buffer = substr( $messPom, $writePos + 1, length($messPom) );
+				$richTxt->WriteText( decode( 'UTF-8', $buffer ) );
+				$writePos = length($messPom) - 1;
+
+				#$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )
+				;                      # tohle tady musi byt jinak nejde odmazat posleddni znak
+				                       #$richTxt->Remove( $richTxt->GetLastPosition() - $tagLen, $richTxt->GetLastPosition() );
+				$index -= $tagLen;
 
 				my $img = ( grep { $_->[0] eq $imgNumber } @{ $self->{"images"} } )[0];
 				die "Image number: $imgNumber was not found in imamge collection" unless ( defined $img );
@@ -414,6 +434,12 @@ sub __WriteMessages() {
 				$richTxt->WriteImage( $img->[1], $img->[2] );
 			}
 
+		}
+
+		# Write end of message
+		if ( length($messPom) - 1 > $writePos ) {
+			$richTxt->WriteText( decode( 'UTF-8', substr( $messPom, $writePos + 1, length($messPom) - 1 ) ) );
+			$writePos = length($messPom) - 1;
 		}
 
 		#$richTxt->WriteText( $messages[$i] );

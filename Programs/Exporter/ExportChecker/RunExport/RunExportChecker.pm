@@ -59,7 +59,7 @@ sub new {
 
 	$launcher->SetLogConfig($logPath);
 
-	$launcher->Run();
+	$launcher->RunFromInCAM();
 
 }
 

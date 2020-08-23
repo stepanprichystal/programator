@@ -29,6 +29,7 @@ use aliased 'Programs::Services::LogService::Logger::DBLogger';
 use aliased 'Enums::EnumsApp';
 use aliased 'Managers::AsyncJobMngr::Helper' => "AsyncJobHelber";
 use aliased 'Programs::Services::Helpers::AutoProcLog';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -187,6 +188,11 @@ sub SentToProduce {
 	my $result = 1;
 
 	# set state HOTOVO-zadat
+
+	# Check if Unit_COMM set new IS state too, because state bz units has higher priority
+	my $commUnit = $self->GetUnitData(UnitEnums->UnitEnums);
+	return 0 if(defined $commUnit && $commUnit->GetChangeOrderStatus());
+ 
 
 	eval {
 

@@ -55,12 +55,22 @@ sub MoveUp {
 	my $self      = shift;
 	my $commentId = shift;
 
+	die "Unable to move up comment id: $commentId" if ( $commentId - 1 < 0 );
+
+	my $tmp = splice @{ $self->{"comments"} }, $commentId, 1;
+	splice @{ $self->{"comments"} }, $commentId - 1, 0, $tmp;
+
 }
 
 sub MoveDown {
 	my $self      = shift;
 	my $commentId = shift;
 
+	die "Unable to move down comment id: $commentId"
+	  if ( $commentId + 1 >= scalar( @{ $self->{"comments"} } ) );
+
+	my $tmp = splice @{ $self->{"comments"} }, $commentId, 1;
+	splice @{ $self->{"comments"} }, $commentId + 1, 0, $tmp;
 }
 
 sub GetCommentById {
@@ -68,7 +78,7 @@ sub GetCommentById {
 	my $commId = shift;
 
 	die "Comment id: $commId doesn't exist" if ( $commId < 0 || $commId >= scalar( @{ $self->{"comments"} } ) );
-	
+
 	return $self->{"comments"}->[$commId];
 
 }
@@ -77,6 +87,37 @@ sub GetAllComments {
 	my $self = shift;
 
 	return @{ $self->{"comments"} };
+
+}
+
+sub GetFullFileNameById {
+	my $self   = shift;
+	my $commId = shift;
+	my $fileId = shift;
+
+	my $comm = $self->GetCommentById($commId);
+	my $f    = $comm->GetFileById($fileId);
+
+	my $custName = $f->GetFileCustName();
+	$custName = "-" . $custName if ( defined $custName && $custName ne "" );
+
+	return $f->GetFilePrefix() . ( $commId + 1 ) . $custName . $f->GetFileSufix();
+
+}
+
+sub GetFileNameByTag {
+	my $self   = shift;
+	my $commId = shift;
+	my $tag    = shift;
+
+	my $comm    = $self->GetCommentById($commId);
+	my $fileNum = ( $tag =~ /^\@f(\d+)$/ )[0];
+
+	#my $file = $comm->GetFileById( $fileNum - 1 );
+
+	my $fullName = $self->GetFullFileNameById( $commId, $fileNum - 1 );
+
+	return $fullName;
 
 }
 

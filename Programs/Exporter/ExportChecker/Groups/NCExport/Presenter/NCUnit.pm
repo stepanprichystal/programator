@@ -95,31 +95,24 @@ sub RefreshGUI {
 
 }
 
-sub GetGroupData {
-
+# Update groupd data with values from GUI
+sub UpdateGroupData {
 	my $self = shift;
 
 	my $frm = $self->{"form"};
-
-	my $groupData;
 
 	#if form is init/showed to user, return group data edited by form
 	#else return default group data, not processed by form
 
 	if ($frm) {
-		$groupData = $self->{"dataMngr"}->GetGroupData();
+		my $groupData = $self->{"dataMngr"}->GetGroupData();
 		$groupData->SetExportSingle( $frm->GetExportSingle() );
 		$groupData->SetAllModeLayers( $frm->GetAllModeLayers() );
 		$groupData->SetSingleModePltLayers( $frm->GetSingleModePltLayers() );
 		$groupData->SetSingleModeNPltLayers( $frm->GetSingleModeNPltLayers() );
 		
 	}
-	else {
-
-		$groupData = $self->{"dataMngr"}->GetGroupData();
-	}
-
-	return $groupData;
+ 
 }
 
 #-------------------------------------------------------------------------------------------#

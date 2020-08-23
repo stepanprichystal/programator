@@ -45,7 +45,7 @@ my @btn = ( "tl1", "tl2", "tl2" );
 # - 1 index = cesta
 # - 2 index = typ obrazku
 my @imgs = ();
-my $p    = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnWizard\\Resources\\small_coplanar_diff_coated_embedded_without_gnd.bmp";
+my $p    = GeneralHelper->Root() . "\\Programs\\Coupon\\CpnWizard\\Resources\\settings15x15.bmp";
 push( @imgs, [ 1, $p, &Wx::wxBITMAP_TYPE_BMP ] );
 
 # Parameter difinitions

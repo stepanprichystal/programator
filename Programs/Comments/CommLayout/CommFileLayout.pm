@@ -22,7 +22,7 @@ use warnings;
 sub new {
 	my $class = shift;
 
-	my $fileName   = shift;
+	my $fileName   = shift // "";
 	my $filePrefix = shift;
 	my $fileSufix  = shift;
 	my $filePath   = shift;
@@ -35,6 +35,7 @@ sub new {
 	$self->{"filePrefix"} = $filePrefix;
 	$self->{"fileSufix"}  = $fileSufix;
 	$self->{"filePath"}   = $filePath;
+	$self->{"lastUpdate"} = ( stat($filePath) )[9];
 
 	return $self;
 }
@@ -74,6 +75,32 @@ sub GetFilePath {
 
 	return $self->{"filePath"};
 
+}
+
+sub GetLastUpdate {
+	my $self = shift;
+
+	return $self->{"lastUpdate"};
+}
+
+sub SetLastUpdate {
+	my $self = shift;
+	$self->{"lastUpdate"} = shift;
+}
+
+
+
+sub IsImage {
+	my $self = shift;
+
+	my $s = $self->GetFileSufix();
+
+	if ( $s =~ /(png)|(jpg)|(jpeg)|(bmp)/i ) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

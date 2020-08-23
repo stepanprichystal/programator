@@ -17,6 +17,8 @@ use warnings;
 use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Comments::Enums';
+use Widgets::Style;
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -28,7 +30,7 @@ sub new {
 	my $order      = shift;
 	my $commLayout = shift;
 
-	my $self = $class->SUPER::new( $parent, $order, &Wx::wxBORDER_SIMPLE );
+	my $self = $class->SUPER::new( $parent, $order, undef );
 
 	bless($self);
 
@@ -60,50 +62,56 @@ sub __SetLayout {
 	my $szInfoBox2Bot = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
-	my $commIdValTxt = Wx::StaticText->new( $self, -1, "", &Wx::wxDefaultPosition );
+	my $commStoredTxt = Wx::StaticText->new( $self, -1, "", &Wx::wxDefaultPosition, [5,-1]   );
+	$commStoredTxt->SetFont($Widgets::Style::fontLblBold);
+	my $commIdValTxt  = Wx::StaticText->new( $self, -1, "", &Wx::wxDefaultPosition );
+	$commIdValTxt->SetFont($Widgets::Style::fontLblBold);
 
-	my $commTypeTxt    = Wx::StaticText->new( $self, -1, "Type", &Wx::wxDefaultPosition );
-	my $commTypeValTxt = Wx::StaticText->new( $self, -1, "",     &Wx::wxDefaultPosition );
+	#my $commTypeTxt    = Wx::StaticText->new( $self, -1, "Type", &Wx::wxDefaultPosition );
+	my $commTypeValTxt = Wx::StaticText->new( $self, -1, "", &Wx::wxDefaultPosition );
 
-	my $commTextTxt    = Wx::StaticText->new( $self, -1, "Text", &Wx::wxDefaultPosition );
-	my $commTextValTxt = Wx::StaticText->new( $self, -1, "",     &Wx::wxDefaultPosition );
+	#my $commTextTxt    = Wx::StaticText->new( $self, -1, "Text", &Wx::wxDefaultPosition );
+	my $commTextValTxt = Wx::StaticText->new( $self, -1, "", &Wx::wxDefaultPosition );
 
-	my $commFilesTxt    = Wx::StaticText->new( $self, -1, "Files", &Wx::wxDefaultPosition );
+	my $commFilesTxt    = Wx::StaticText->new( $self, -1, "Files:", &Wx::wxDefaultPosition, [45,-1] );
 	my $commFilesValTxt = Wx::StaticText->new( $self, -1, "",      &Wx::wxDefaultPosition );
 
-	my $commSuggTxt    = Wx::StaticText->new( $self, -1, "Sugges", &Wx::wxDefaultPosition );
+	my $commSuggTxt    = Wx::StaticText->new( $self, -1, "Sugges: ", &Wx::wxDefaultPosition, [45,-1] );
 	my $commSuggValTxt = Wx::StaticText->new( $self, -1, "",       &Wx::wxDefaultPosition );
 
 	#$self->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 
 	# DEFINE LAYOUT
-	$szMain->Add( $commIdValTxt, 10, &Wx::wxALL, 1 );
-	$szMain->Add( $szInfoBox1,   60, &Wx::wxALL, 1 );
-	$szMain->Add( $szInfoBox2,   30, &Wx::wxALL, 1 );
 
-	$szInfoBox1->Add( $szInfoBox1Top, 50, &Wx::wxALL, 1 );
-	$szInfoBox1->Add( $szInfoBox1Bot, 50, &Wx::wxALL, 1 );
+	$szMain->Add( $commStoredTxt, 4, &Wx::wxALL | &Wx::wxALIGN_CENTER_VERTICAL, 2);
+	$szMain->Add( $commIdValTxt,  10, &Wx::wxALL| &Wx::wxALIGN_CENTER_VERTICAL, 1 );
+	$szMain->Add( $szInfoBox1,    60, &Wx::wxALL, 1 );
+	$szMain->Add( $szInfoBox2,    30, &Wx::wxALL, 1 );
 
-	$szInfoBox2->Add( $szInfoBox2Top, 50, &Wx::wxALL, 1 );
-	$szInfoBox2->Add( $szInfoBox2Bot, 50, &Wx::wxALL, 1 );
+	$szInfoBox1->Add( $szInfoBox1Top, 50, &Wx::wxALL, 2 );
+	$szInfoBox1->Add( $szInfoBox1Bot, 50, &Wx::wxALL, 2 );
 
-	$szInfoBox1Top->Add( $commTypeTxt,    30, &Wx::wxALL, 1 );
-	$szInfoBox1Top->Add( $commTypeValTxt, 70, &Wx::wxALL, 1 );
+	$szInfoBox2->Add( $szInfoBox2Top, 50, &Wx::wxALL, 2 );
+	$szInfoBox2->Add( $szInfoBox2Bot, 50, &Wx::wxALL, 2 );
 
-	$szInfoBox1Bot->Add( $commTextTxt,    30, &Wx::wxALL, 1 );
-	$szInfoBox1Bot->Add( $commTextValTxt, 70, &Wx::wxALL, 1 );
+	#$szInfoBox1Top->Add( $commTypeTxt,    30, &Wx::wxALL, 1 );
+	$szInfoBox1Top->Add( $commTypeValTxt, 100, &Wx::wxALL, 1 );
 
-	$szInfoBox2Top->Add( $commFilesTxt,    50, &Wx::wxALL, 1 );
-	$szInfoBox2Top->Add( $commFilesValTxt, 50, &Wx::wxALL, 1 );
+	#$szInfoBox1Bot->Add( $commTextTxt,    30, &Wx::wxALL, 1 );
+	$szInfoBox1Bot->Add( $commTextValTxt, 100, &Wx::wxALL, 1 );
 
-	$szInfoBox2Bot->Add( $commSuggTxt,    50, &Wx::wxALL, 1 );
-	$szInfoBox2Bot->Add( $commSuggValTxt, 50, &Wx::wxALL, 1 );
+	$szInfoBox2Top->Add( $commFilesTxt,    0, &Wx::wxALL, 1 );
+	$szInfoBox2Top->Add( $commFilesValTxt, 0, &Wx::wxALL, 1 );
+
+	$szInfoBox2Bot->Add( $commSuggTxt,    0, &Wx::wxALL, 1 );
+	$szInfoBox2Bot->Add( $commSuggValTxt, 0, &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
 
 	# SET EVENTS
 
 	# SET REFERENCES
+	$self->{"commStoredTxt"}   = $commStoredTxt;
 	$self->{"commIdValTxt"}    = $commIdValTxt;
 	$self->{"commTypeValTxt"}  = $commTypeValTxt;
 	$self->{"commTextValTxt"}  = $commTextValTxt;
@@ -124,11 +132,23 @@ sub SetCommentLayout {
 	my $self       = shift;
 	my $commLayout = shift;
 
-	$self->{"commIdValTxt"}->SetLabel( $self->GetPosition() );
+	$self->{"commStoredTxt"}->SetLabel( !$commLayout->GetStoredOnDisc()?"*": "" );
+	$self->{"commIdValTxt"}->SetLabel( $self->GetPosition() +1 );
 
 	$self->{"commTypeValTxt"}->SetLabel( Enums->GetTypeTitle( $commLayout->GetType() ) );
 
-	$self->{"commTextValTxt"}->SetLabel( $commLayout->GetText() );
+	# first 15 char without new lines
+	my $note = $commLayout->GetText();
+	
+	if($note eq ""){
+		
+		$note = "-"
+	}else{
+		$note =~ s/\n/ /ig;
+		$note =  substr($note, 0, 20)." ...";
+	}
+	
+	$self->{"commTextValTxt"}->SetLabel($note);
 	$self->{"commFilesValTxt"}->SetLabel( scalar( $commLayout->GetAllFiles() ) );
 	$self->{"commSuggValTxt"}->SetLabel( scalar( $commLayout->GetAllSuggestions() ) );
 

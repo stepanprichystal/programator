@@ -97,6 +97,18 @@ sub GetItemHeight {
 
 }
 
+
+sub SetSelected{
+	my $self = shift;
+
+	$self->{"selected"} = shift;
+}
+
+sub GetSelected{
+	my $self = shift;
+
+	return $self->{"selected"};
+}
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#

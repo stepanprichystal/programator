@@ -37,9 +37,19 @@ sub new {
 	$self->__SetLayout();
 
 	#EVENTS
- 
 
 	return $self;
+}
+
+sub SetCommentLayout {
+	my $self       = shift;
+	my $commId     = shift;
+	my $commLayout = shift;
+
+	my $commItem = $self->GetItem($commId);
+
+	$commItem->SetCommentLayout($commLayout);
+
 }
 
 sub SetCommentsLayout {
@@ -58,27 +68,24 @@ sub SetCommentsLayout {
 
 		my $item = CommListRowFrm->new( $self->GetParentForItem(), $i, $commSngl[$i] );
 		$self->AddItemToQueue($item);
-		
-		$item->SetCommentLayout($commSngl[$i]);
+
+		$item->SetCommentLayout( $commSngl[$i] );
 
 		# Add handler to item
 		#$item->{"onGroupSett"}->Add( sub { $self->{"onGroupSett"}->Do(@_) } );
 	}
 
+	
+
 }
-
- 
-
 
 sub __SetLayout {
 	my $self = shift;
 
 	$self->SetItemGap(5);
 
-	$self->SetItemUnselectColor( Wx::Colour->new( 0, 255, 0 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 255, 197, 129 ) );
-
-	#$self->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	$self->SetItemUnselectColor( Wx::Colour->new( 226, 238, 249 ) );
+	$self->SetItemSelectColor( Wx::Colour->new( 191, 209, 238 ) );
 
 }
 

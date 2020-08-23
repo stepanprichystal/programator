@@ -18,6 +18,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Programs::Comments::CommWizard::Forms::CommListViewFrm::CommListViewFrm';
 use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::CommViewFrm';
 use Widgets::Style;
+use aliased 'Widgets::Forms::MyWxStaticBoxSizer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,8 +33,7 @@ sub new {
 	my $orders = shift;
 
 	my @dimension = ( 1000, 800 );
-	my $flags =
-	  &Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
+	my $flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
 
 	my $self = $class->SUPER::new( $parent, "TPV comments builder - $jobId", \@dimension, $flags );
 
@@ -44,13 +44,33 @@ sub new {
 	$self->__SetLayout();
 
 	# EVENTS
-	$self->{'onRemoveFileEvt'} = Event->new();
-	$self->{'onEditFileEvt'}   = Event->new();
-	$self->{'onAddFileEvt'}    = Event->new();
-	$self->{"saveExitEvt"}     = Event->new();
+
+	# Comment detail events
+
+	$self->{'onChangeTypeEvt'} = Event->new();
+	$self->{'onChangeNoteEvt'} = Event->new();
+
+	# Comment detail files evt
+	$self->{'onAddFileEvt'}        = Event->new();
+	$self->{'onRemoveFileEvt'}     = Event->new();
+	$self->{'onEditFileEvt'}       = Event->new();
+	$self->{'onChangeFileNameEvt'} = Event->new();
+
+	# Comment detail suggestions evt
+	$self->{'onAddSuggesEvt'}    = Event->new();
+	$self->{'onRemoveSuggesEvt'} = Event->new();
+	$self->{'onChangeSuggesEvt'} = Event->new();
 
 	# Comment list events
 	$self->{"onSelCommChangedEvt"} = Event->new();
+	$self->{'onRemoveCommEvt'}     = Event->new();
+	$self->{'onMoveCommEvt'}       = Event->new();
+	$self->{'onAddCommEvt'}        = Event->new();
+
+	$self->{"saveExitEvt"}     = Event->new();
+	$self->{"emailPreviewEvt"} = Event->new();
+	$self->{"clearAllEvt"}     = Event->new();
+	$self->{"restoreEvt"}      = Event->new();
 
 	return $self;
 }
@@ -65,10 +85,48 @@ sub RefreshCommListViewForm {
 
 	$self->{"commListViewFrm"}->SetCommList( \@commLayoputs );
 
-	$self->{"commListViewFrm"}->SetCommSelected( scalar(@commLayoputs) - 1 );
+	if ( scalar(@commLayoputs) ) {
+		$self->{"commListViewFrm"}->SetCommSelected( scalar(@commLayoputs) - 1 );
+	}
+
+	# Set detail view
+	if ( scalar(@commLayoputs) ) {
+
+		$self->{"commViewFrm"}->Show();
+	}
+	else {
+
+		$self->{"commViewFrm"}->Hide();
+	}
+
+	# Set buttons
+	if ( scalar(@commLayoputs) ) {
+
+		$self->{"btnClear"}->Enable();
+		$self->{"btnPreview"}->Enable();
+		$self->{"btnRestore"}->Disable();
+	}
+	else {
+
+		$self->{"btnClear"}->Disable();
+		$self->{"btnPreview"}->Disable();
+		$self->{"btnRestore"}->Enable();
+	}
 
 	$self->{"mainFrm"}->Thaw();
 
+}
+
+sub RefreshCommListItem {
+	my $self   = shift;
+	my $commId = shift;
+	my $layout = shift;
+
+	#$self->{"mainFrm"}->Freeze();
+
+	$self->{"commListViewFrm"}->SetComm( $commId, $layout );
+
+	#$self->{"mainFrm"}->Thaw();
 }
 
 sub RefreshCommViewForm {
@@ -78,9 +136,39 @@ sub RefreshCommViewForm {
 
 	$self->{"mainFrm"}->Freeze();
 
-	$self->{"commViewFrm"}->SetCommLayout( $commId, $layout );
+	if ( $commId > -1 ) {
+
+		$self->{"commViewFrm"}->SetCommLayout( $commId, $layout );
+		$self->{"commViewFrm"}->Show();
+	}
+	else {
+
+		$self->{"commViewFrm"}->Hide();
+	}
 
 	$self->{"mainFrm"}->Thaw();
+}
+
+sub RefreshSelected {
+	my $self   = shift;
+	my $commId = shift;
+
+	if ( defined $commId ) {
+
+		$self->{"commListViewFrm"}->SetCommSelected($commId);
+	}
+}
+
+sub GetSelectedComment {
+	my $self = shift;
+
+	return $self->{"commListViewFrm"}->GetSelectedComm();
+}
+
+sub GetMessMngr {
+	my $self = shift;
+
+	return $self->_GetMessageMngr();
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -95,22 +183,28 @@ sub __SetLayout {
 	my $commView     = $self->__SetLayoutCommView( $self->{"mainFrm"} );
 	my $commListView = $self->__SetLayoutCommListView( $self->{"mainFrm"} );
 
-	$szMain->Add( $commView, 80, &Wx::wxEXPAND );
+	$szMain->Add( $commView, 75, &Wx::wxEXPAND );
 	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
-	$szMain->Add( $commListView, 20, &Wx::wxEXPAND );
+	$szMain->Add( $commListView, 25, &Wx::wxEXPAND );
 
 	$self->AddContent($szMain);
 	$self->SetButtonHeight(30);
-	my $btnCancel = $self->AddButton( "Cancel", sub { $self->{"saveExitEvt"}->Do( 0, 1 ) } );
-	my $btnSave   = $self->AddButton( "Save",   sub { $self->{"saveExitEvt"}->Do( 1, 0 ) } );
-	my $btnSaveExport = $self->AddButton( 'Save + Export', sub { $self->{"saveExportEvt"}->Do() } );
-	my $btnSaveExit = $self->AddButton( "Save + Exit", sub { $self->{"saveExitEvt"}->Do( 1, 1 ) } );
+	my $btnPreview    = $self->AddButton( "Mail preview",  sub { $self->{"emailPreviewEvt"}->Do() } );
+	my $btnClear      = $self->AddButton( "Clear all",     sub { $self->{"clearAllEvt"}->Do() } );
+	my $btnRestore    = $self->AddButton( "Restore last",  sub { $self->{"restoreEvt"}->Do() } );
+	my $btnSave       = $self->AddButton( "Save",          sub { $self->{"saveExitEvt"}->Do( 1, 0, 0 ) } );
+	my $btnSaveExport = $self->AddButton( 'Save + Export', sub { $self->{"saveExitEvt"}->Do(1, 0, 1) } );
+	my $btnSaveExit   = $self->AddButton( "Save + Exit",   sub { $self->{"saveExitEvt"}->Do( 1, 1, 0 ) } );
 
-	$btnSaveExit
+	$btnClear->Disable();
+	$btnPreview->Disable();
 
-	  # DEFINE LAYOUT STRUCTURE
+	# DEFINE LAYOUT STRUCTURE
 
-	  # KEEP REFERENCES
+	# KEEP REFERENCES
+	$self->{"btnClear"}   = $btnClear;
+	$self->{"btnRestore"} = $btnRestore;
+	$self->{"btnPreview"} = $btnPreview;
 
 }
 
@@ -119,16 +213,27 @@ sub __SetLayoutCommView {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Comment edit' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szStatBox = MyWxStaticBoxSizer->new( $parent, &Wx::wxVERTICAL, 'Comment detail',
+											 5, $Widgets::Style::fontLblBold,
+											 Wx::Colour->new( 255, 255, 255 ),
+											 Wx::Colour->new( 112, 146, 190 ),
+											 Wx::Colour->new( 240, 240, 240 ), 4 );
 
-	my $viewFrm = CommViewFrm->new($statBox);
+	my $viewFrm = CommViewFrm->new($szStatBox);
 
 	# EVENTS
- 
-	$viewFrm->{'onRemoveFileEvt'}->Add( sub { $self->{"onRemoveFileEvt"}->Do(@_) } );
-	$viewFrm->{'onEditFileEvt'}->Add( sub   { $self->{"onEditFileEvt"}->Do(@_) } );
-	$viewFrm->{'onAddFileEvt'}->Add( sub    { $self->{"onAddFileEvt"}->Do(@_) } );
+
+	$viewFrm->{"onChangeTypeEvt"}->Add( sub { $self->__OnChangeTypedHndl(@_) } );
+	$viewFrm->{"onChangeNoteEvt"}->Add( sub { $self->__OnChangeNotedHndl(@_) } );
+
+	$viewFrm->{'onAddFileEvt'}->Add( sub        { $self->{"onAddFileEvt"}->Do(@_) } );
+	$viewFrm->{'onChangeFileNameEvt'}->Add( sub { $self->{"onChangeFileNameEvt"}->Do(@_) } );
+	$viewFrm->{'onRemoveFileEvt'}->Add( sub     { $self->{"onRemoveFileEvt"}->Do(@_) } );
+	$viewFrm->{'onEditFileEvt'}->Add( sub       { $self->{"onEditFileEvt"}->Do(@_) } );
+
+	$viewFrm->{'onAddSuggesEvt'}->Add( sub    { $self->{"onAddSuggesEvt"}->Do(@_) } );
+	$viewFrm->{'onRemoveSuggesEvt'}->Add( sub { $self->{"onRemoveSuggesEvt"}->Do(@_) } );
+	$viewFrm->{'onChangeSuggesEvt'}->Add( sub { $self->{"onChangeSuggesEvt"}->Do(@_) } );
 
 	$szStatBox->Add( $viewFrm, 1, &Wx::wxEXPAND );
 
@@ -143,15 +248,20 @@ sub __SetLayoutCommListView {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Comment list' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szStatBox = MyWxStaticBoxSizer->new( $parent, &Wx::wxVERTICAL, 'Comment list', 5, $Widgets::Style::fontLblBold,
+											 Wx::Colour->new( 255, 255, 255 ),
+											 Wx::Colour->new( 112, 146, 190 ),
+											 Wx::Colour->new( 230, 230, 230 ), 4 );
 
-	my $viewFrm = CommListViewFrm->new($statBox);
+	my $viewFrm = CommListViewFrm->new($szStatBox);
 
 	$szStatBox->Add( $viewFrm, 1, &Wx::wxEXPAND );
 
 	# SET EVENTS
 	$viewFrm->{"onSelCommChangedEvt"}->Add( sub { $self->__OnCommSelChangedHndl(@_) } );
+	$viewFrm->{"onRemoveCommEvt"}->Add( sub     { $self->__OnRemoveCommdHndl(@_) } );
+	$viewFrm->{"onAddCommEvt"}->Add( sub        { $self->__OnAddCommdHndl(@_) } );
+	$viewFrm->{"onMoveCommEvt"}->Add( sub       { $self->__OnMoveCommdHndl(@_) } );
 
 	# SAVE REFERENCES
 	$self->{"commListViewFrm"} = $viewFrm;
@@ -165,6 +275,8 @@ sub __SetLayoutCommListView {
 sub __OnCommSelChangedHndl {
 	my $self = shift;
 
+	$self->{"selectionChanged"} = 1;
+
 	$self->{"onSelCommChangedEvt"}->Do(@_);
 
 	#$self->{"mainFrm"}->Layout();
@@ -176,6 +288,52 @@ sub __OnCommSelChangedHndl {
 
 	$self->{"mainFrm"}->Refresh();    # some background colors not work correctly without refersh
 
+	$self->{"selectionChanged"} = 0;
+
+}
+
+sub __OnRemoveCommdHndl {
+	my $self = shift;
+
+	$self->{"onRemoveCommEvt"}->Do(@_);
+
+	$self->{"mainFrm"}->Refresh();
+}
+
+sub __OnAddCommdHndl {
+	my $self = shift;
+
+	$self->{"onAddCommEvt"}->Do(@_);
+
+	$self->{"mainFrm"}->Refresh();
+}
+
+sub __OnMoveCommdHndl {
+	my $self = shift;
+
+	$self->{"onMoveCommEvt"}->Do(@_);
+
+	#$self->{"mainFrm"}->Refresh();
+}
+
+sub __OnChangeTypedHndl {
+	my $self = shift;
+
+	return 0 if ( $self->{"selectionChanged"} );    # Do not reise event if onlz selection changed
+
+	$self->{"onChangeTypeEvt"}->Do(@_);
+
+	#$self->{"mainFrm"}->Refresh();
+}
+
+sub __OnChangeNotedHndl {
+	my $self = shift;
+
+	return 0 if ( $self->{"selectionChanged"} );    # Do not reise event if onlz selection changed
+
+	$self->{"onChangeNoteEvt"}->Do(@_);
+
+	#$self->RefreshCommListItem
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -33,14 +33,14 @@ use aliased 'Packages::CAMJob::Stackup::StackupConvertor';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
+	my $class       = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
-	my $packageId = __PACKAGE__;
-	my $createFakeL = 1;
-	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
+	my $packageId   = __PACKAGE__;
+	my $createFakeL = JobHelper->GetJobIsOffer($jobId) ? 0 : 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL );
 	bless $self;
- 
+
 	$self->{"signalLayers"} = shift;
 	$self->{"otherLayers"}  = shift;
 
@@ -49,58 +49,62 @@ sub new {
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
+	$self->{"isOffer"} = JobHelper->GetJobIsOffer($jobId);
+
 	return $self;
 }
- 
 
 sub Run {
 	my $self  = shift;
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
-	my $isChanged = 0;    # tell if something was changed in pcb
 
-	CamHelper->SetStep( $inCAM, "panel" );
+	if ( !$self->{"isOffer"} ) {
 
-	my $resultItemFrames = $self->_GetNewItem("Add schemas");
+		my $isChanged = 0;    # tell if something was changed in pcb
 
-	# Insert pattern frame
-	$self->__PatternFrame( \$isChanged );
+		CamHelper->SetStep( $inCAM, "panel" );
 
-	$self->_OnItemResult($resultItemFrames);
+		my $resultItemFrames = $self->_GetNewItem("Add schemas");
 
-	# if job is changed, save it
-	if ($isChanged) {
+		# Insert pattern frame
+		$self->__PatternFrame( \$isChanged );
 
-		$self->_SaveJob();
+		$self->_OnItemResult($resultItemFrames);
+
+		# if job is changed, save it
+		if ($isChanged) {
+
+			$self->_SaveJob();
+		}
+
+		# 2) Save info to tif file
+		my $resultItemDif = $self->_GetNewItem("Dif file");
+
+		# Load old values
+		my $tif       = TifLayers->new( $self->{"jobId"} );
+		my %sigLayers = $tif->GetSignalLayers();
+
+		# add new layers or change old
+		foreach my $l ( @{ $self->{"signalLayers"} } ) {
+
+			$sigLayers{ $l->{"name"} } = $l;
+		}
+
+		$tif->SetSignalLayers( \%sigLayers );
+
+		# Load old values
+		my %otherLayers = $tif->GetOtherLayers();
+
+		# add new layers or change old
+		foreach my $l ( @{ $self->{"otherLayers"} } ) {
+
+			$otherLayers{ $l->{"name"} } = $l;
+		}
+
+		$tif->SetOtherLayers( \%otherLayers );
+		$self->_OnItemResult($resultItemDif);
 	}
-
-	# 2) Save info to tif file
-	my $resultItemDif = $self->_GetNewItem("Dif file");
-
-	# Load old values
-	my $tif       = TifLayers->new( $self->{"jobId"} );
-	my %sigLayers = $tif->GetSignalLayers();
-
-	# add new layers or change old
-	foreach my $l ( @{ $self->{"signalLayers"} } ) {
-
-		$sigLayers{ $l->{"name"} } = $l;
-	}
-
-	$tif->SetSignalLayers( \%sigLayers );
-
-	# Load old values
-	my %otherLayers = $tif->GetOtherLayers();
-
-	# add new layers or change old
-	foreach my $l ( @{ $self->{"otherLayers"} } ) {
-
-		$otherLayers{ $l->{"name"} } = $l;
-	}
-
-	$tif->SetOtherLayers( \%otherLayers );
-	$self->_OnItemResult($resultItemDif);
 
 	# 3) Edit stackup if RigidFlex
 
@@ -108,11 +112,7 @@ sub Run {
 
 	if ( $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO || $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
 
-		# remove all multicall stackup for curent job
-		# (there could be more than one stackup (slightly different name) for one job)
-		my @oldStackups = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" );
-		unlink($_) foreach (@oldStackups);
-
+ 
 		my $convertor = StackupConvertor->new( $inCAM, $jobId );
 		my $res = $convertor->DoConvert();
 
@@ -124,7 +124,7 @@ sub Run {
 
 		$self->_OnItemResult($resultStack);
 	}
- 
+
 }
 
 sub __PatternFrame {

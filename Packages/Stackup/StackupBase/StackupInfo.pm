@@ -54,9 +54,7 @@ sub __LoadInfoFiles {
  
 
 	$strfMultical =~ s/\xC2//g; # remove 	latin capital letter a with circumflex from string
-	
-	 
-
+ 
 	my $xml = XMLin( $strfMultical, KeyAttr => { quality => 'id' } );
 	$self->{"multicalInfo"} = $xml;
  

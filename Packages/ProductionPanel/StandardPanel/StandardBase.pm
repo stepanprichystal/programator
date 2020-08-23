@@ -20,7 +20,6 @@ use aliased 'Packages::ProductionPanel::StandardPanel::Standard::Standard';
 use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Polygon::Features::Features::Features';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -50,17 +49,17 @@ sub new {
 	$self->{"hArea"}   = abs( $areaLim{"yMax"} - $areaLim{"yMin"} );
 
 	if ( $self->{"layerCnt"} > 2 ) {
+		$self->{"wFr"} = undef;
+		$self->{"hFr"} = undef;
+		if ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "fr" ) ) {
+			my $route = Features->new();
+			$route->Parse( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "fr" );
+			my %frLim = PolygonFeatures->GetLimByRectangle( [ $route->GetFeatures() ] );
 
-		die "Fr layer doesn't exist" unless ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "fr" ) );
-		my $route = Features->new();
-		$route->Parse( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "fr" );
-		my %frLim = PolygonFeatures->GetLimByRectangle( [ $route->GetFeatures() ] );
-		$self->{"frLim"} = \%frLim;
-		$self->{"wFr"}   = abs( $frLim{"xMax"} - $frLim{"xMin"} );
-		$self->{"hFr"}   = abs( $frLim{"yMax"} - $frLim{"yMin"} );
+			$self->{"wFr"} = abs( $frLim{"xMax"} - $frLim{"xMin"} );
+			$self->{"hFr"} = abs( $frLim{"yMax"} - $frLim{"yMin"} );
+		}
 	}
-
-	
 
 	# Determine pcb type
 	$self->{"pcbType"} = undef;
@@ -75,7 +74,7 @@ sub new {
 	# Determine pcb material
 	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	$self->{"pcbMat"} = undef;
- 
+
 	if ( $mat =~ /AL|CU/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_ALU;

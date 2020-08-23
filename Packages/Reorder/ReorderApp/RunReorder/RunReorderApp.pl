@@ -40,7 +40,7 @@ my $logPath = GeneralHelper->Root() . "\\Packages\\Reorder\\ReorderApp\\Config\\
 
 $launcher->SetLogConfig($logPath);
 
-$launcher->Run();
+$launcher->RunFromInCAM();
 
 # Check before run app
 sub __CheckBeforeRun {

@@ -46,6 +46,7 @@ sub CreateFakeLayers {
 	my $step = "panel";
 
 	my @fake = ();
+	
 
 	$self->RemoveFakeLayers( $inCAM, $jobId, $step );
 
@@ -519,7 +520,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d285728";
+	my $jobId    = "d284944";
 	my $stepName = "panel";
 
 	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );

@@ -11,6 +11,7 @@ use Wx;
 use Wx qw( :brush :font :pen :colour );
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 use aliased 'Widgets::Forms::MyWxScrollPanel';
@@ -42,6 +43,8 @@ sub new {
 	$self->__SetLayout();
 
 	#EVENTS
+	$self->{"itemUnselectColor"}  = undef;
+	$self->{"itemSelectColor"}    = undef;
 	$self->{"onSelectItemChange"} = Event->new();
 
 	return $self;
@@ -121,7 +124,6 @@ sub RemoveItemFromQueue {
 #  Methods for set queue
 #-------------------------------------------------------------------------------------------#
 
-
 # Set height of item gap
 sub SetItemGap {
 	my $self  = shift;
@@ -146,12 +148,12 @@ sub SetItemSelectColor {
 	$self->{"itemSelectColor"} = $color;
 }
 
-
 sub GetSelectedItem {
 	my $self  = shift;
 	my $value = shift;
 
-	$self->{"itemGap"} = $value;
+	return first { $_->GetSelected() } @{ $self->{"jobItems"} };
+
 }
 
 sub SetSelectedItem {
@@ -204,7 +206,7 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	$self->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
+	#$self->SetBackgroundColour( Wx::Colour->new( 230, 230, 230 ) );
 
 	# DEFINE SIZERS
 
@@ -218,7 +220,7 @@ sub __SetLayout {
 
 	my $containerPnl = Wx::Panel->new( $scrollPnl, -1, );
 
-	$containerPnl->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	#$containerPnl->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 
 	#$scrollSizer->Layout();
 
@@ -260,10 +262,12 @@ sub __OnItemClick {
 	my $item = shift;
 
 	$self->__UnselectAll();
-	$item->{"selected"} = 1;
+	$item->SetSelected(1);
 
-	$item->SetBackgroundColour( $self->{"itemSelectColor"} );
-	$item->Refresh();
+	if ( defined $self->{"itemSelectColor"} ) {
+		$item->SetBackgroundColour( $self->{"itemSelectColor"} );
+		$item->Refresh();
+	}
 	$self->{"onSelectItemChange"}->Do($item);
 
 }
@@ -283,14 +287,15 @@ sub __UnselectAll {
 
 	foreach my $item ( @{ $self->{"jobItems"} } ) {
 
-		$item->{"selected"} = 0;
-		$item->SetBackgroundColour( $self->{"itemUnselectColor"} );
-		$item->Refresh();
+		$item->SetSelected(0);
+		if ( defined $self->{"itemUnselectColor"} ) {
+			$item->SetBackgroundColour( $self->{"itemUnselectColor"} );
+			$item->Refresh();
+		}
 
 	}
 
 }
-
 
 sub __GetItemsHeight {
 	my $self = shift;

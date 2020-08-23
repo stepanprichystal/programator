@@ -42,7 +42,10 @@ sub GetGroupState;
 sub SetGroupState;
 
 
-# Return group "state" data, either default data or changed by user
+# Update group data by values from GUI
+sub UpdateGroupData;
+
+# Return current group data
 sub GetGroupData;
 
 # Return data intended for final export
