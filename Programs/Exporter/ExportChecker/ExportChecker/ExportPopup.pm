@@ -91,7 +91,7 @@ sub CheckBeforeExport {
 	$self->{"popup"}->ShowPopup();
 
 	#start new process, where check job before export
-	my $worker = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"} ) } );
+	my $worker = threads->create( sub { $self->__CheckAsyncWorker( $self->{"jobId"}, $serverPort, $self->{"units"}, $self->{"mode"} ) } );
 	$worker->set_thread_exit_only(1);
 	$self->{"threadId"} = $worker->tid();
 
@@ -116,6 +116,7 @@ sub __CheckAsyncWorker {
 	my $jobId = shift;
 	my $port  = shift;
 	my $units = shift;
+	my $mode = shift;
 
 	$export_thread = 1;
 
@@ -136,7 +137,7 @@ sub __CheckAsyncWorker {
 
 	try {
 
-		$units->CheckBeforeExport($inCAM);
+		$units->CheckBeforeExport($inCAM, $mode);
 
 	}
 	catch {

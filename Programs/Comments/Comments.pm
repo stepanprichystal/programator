@@ -33,19 +33,25 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
+	$self->{"inCAM"}         = shift;
+	$self->{"jobId"}         = shift;
+	$self->{"addDefaulComm"} = shift // 0;
 
 	$self->{"commDir"} = JobHelper->GetJobOutput( $self->{"jobId"} ) . "comments\\";
 	unless ( -e $self->{"commDir"} ) {
 		mkdir( $self->{"commDir"} ) or die "$_";
 	}
+
+	$self->{"commArchiveDir"} = $self->{"commDir"} . "archive\\";
+
 	$self->{"mainFile"} = $self->{"commDir"} . "comments.json";
 
 	$self->{"commLayout"}  = CommLayout->new();
 	$self->{"jsonStrMngr"} = JsonStorableMngr->new( $self->{"mainFile"} );
 
 	$self->__LoadFromJob();
+
+	$self->__AddDefaultComm() if ( $self->{"addDefaulComm"} );
 
 	$self->__ClearOldFiles();
 
@@ -206,6 +212,28 @@ sub SnapshotGS {
 	return $result;
 }
 
+sub ChooseFile {
+	my $self = shift;
+	my $p    = shift;
+	my $frm  = shift;
+
+	my $result = 1;
+
+	my $dirDialog = Wx::FileDialog->new( $frm, "Select directory with data", "c:/pcb" );
+
+	if ( $dirDialog->ShowModal() != &Wx::wxID_CANCEL ) {
+
+		$$p = ( $dirDialog->GetPaths() )[0];
+
+	}
+	else {
+
+		$result = 0;
+	}
+	return $result;
+
+}
+
 sub GetLayout {
 	my $self = shift;
 
@@ -241,7 +269,7 @@ sub ClearCoomments {
 	my $self = shift;
 
 	# 1) Move comment to archive
-	my $archRoot = $self->{"commDir"} . "archive\\";
+	my $archRoot = $self->{"commArchiveDir"};
 	mkdir($archRoot) or die "File  cannot be created: $!" unless ( -e $archRoot );
 
 	my $now_string = strftime "%Y_%m_%d_%H_%M", localtime;
@@ -281,12 +309,68 @@ sub ClearCoomments {
 	# 3) Remove all coments
 	my @comm = $self->{"commLayout"}->GetAllComments();
 
-	for ( my $i = 0 ; $i < scalar(@comm) ; $i++ ) {
+	for ( my $i = scalar(@comm) - 1 ; $i >= 0 ; $i-- ) {
 		$self->{"commLayout"}->RemoveComment($i);
 	}
 
 	# 4) Save
 	$self->Save();
+	
+	$self->__ClearOldFiles();
+}
+
+# Move last comment from archive
+# Save
+sub RestoreCoomments {
+	my $self = shift;
+
+	my $result = 1;
+
+	my $archRoot = $self->{"commArchiveDir"};
+
+	# Get last backup dir
+	my $lastMod = undef;
+	my $path    = undef;
+	opendir( DIR, $archRoot ) or die $!;
+	while ( my $file = readdir(DIR) ) {
+
+		next if ( $file =~ /\./ );
+
+		my $lastModCurr = ( stat( $archRoot . $file ) )[9];
+		if ( !defined $lastMod || $lastMod < $lastModCurr ) {
+
+			$lastMod = $lastModCurr;
+			$path    = $archRoot . $file;
+		}
+
+	}
+	close(DIR);
+
+	if ( defined $path ) {
+
+		# copy all files to main folder
+		opendir( DIR, $path ) or die $!;
+		while ( my $file = readdir(DIR) ) {
+
+			next if ( $file =~ /^\.+$/ );
+
+			copy( $path . "\\" . $file, $self->{"commDir"} . $file );
+		}
+
+		close(DIR);
+
+		# Remove backup
+		rmtree($path);
+
+		$self->__LoadFromJob();
+	}
+	else {
+
+		$result = 0;
+	}
+
+	return $result;
+
 }
 
 sub MoveComment {
@@ -472,6 +556,23 @@ sub RemoveSuggestion {
 }
 
 # --------------------------------------
+# Other public method
+# --------------------------------------
+
+# Return path of main comments directory
+sub GetCommDir {
+	my $self = shift;
+
+	return $self->{"commDir"};
+}
+
+# Return path of comm archive
+sub GetCommArchiveDir {
+	my $self = shift;
+	return $self->{"commArchiveDir"};
+}
+
+# --------------------------------------
 # Private methods
 # --------------------------------------
 
@@ -502,6 +603,24 @@ sub __LoadFromJob {
 	#	$self->AddComment( Enums->CommentType_QUESTION );
 	#	$self->SetText( 2, "test jfdif djfosdifj fjdi" );
 	#		$self->AddFile( 2, "stakcup", 'c:/Export/test/noImage.png' );
+
+}
+
+sub __AddDefaultComm {
+	my $self = shift;
+
+	# Add default comment
+	$self->AddComment( Enums->CommentType_QUESTION );
+
+	my $commCnt = scalar( $self->{"commLayout"}->GetAllComments() );
+
+	$self->SetText( $commCnt - 1, "Default comment ..." );
+	my $p = "";
+	if($self->SnapshotCAM(1, \$p)){
+		
+		$self->AddFile( $commCnt - 1, "", $p );
+	}
+	
 
 }
 

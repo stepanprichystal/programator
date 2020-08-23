@@ -57,7 +57,9 @@ $message->Cc( join( ";", @{$cc} ) ) if ( defined $cc );
 $message->Subject($subject);
 
 # Set body
-$message->Body($body);
+ 
+ $message->Body($body);
+ 
 
 foreach my $attach ( @{$attachments} ) {
 

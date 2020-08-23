@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::View::CommUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::OfferExport::View::OfferUnitForm';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 
@@ -119,14 +120,15 @@ sub _TestedForm {
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
 
-	my %types = FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
+	#my %types = FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
 
 	my $d = DefaultInfo->new( $self->{"jobId"}, $self->{"step"} );
 	$d->Init( $self->{"inCAM"} );
 
-	use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Presenter::CommUnit';
+	#use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Presenter::CommUnit';
+	use aliased 'Programs::Exporter::ExportChecker::Groups::OfferExport::Presenter::OfferUnit';
 
-	my $preUnit = NCUnit->new( $self->{"jobId"} );
+	my $preUnit = OfferUnit->new( $self->{"jobId"} );
 
 	$preUnit->SetDefaultInfo($d);
 	$preUnit->InitDataMngr( $self->{"inCAM"} );
@@ -178,7 +180,7 @@ my ( $package, $filename, $line ) = caller;
 
 #if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "d288054" );
+my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "x66981" );
 
 $test->MainLoop();
 

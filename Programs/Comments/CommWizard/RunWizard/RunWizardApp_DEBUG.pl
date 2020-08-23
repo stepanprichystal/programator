@@ -16,9 +16,9 @@ use aliased 'Packages::InCAMHelpers::AppLauncher::Launcher';
  
  
  
-my $jobId = "d288054";
+my $jobId = "d284944";
 
-my $app = CommWizard->new($jobId);
+my $app = CommWizard->new($jobId, 1);
 
 my $launcher = Launcher->new(56753);
 

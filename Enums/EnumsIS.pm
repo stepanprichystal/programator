@@ -21,7 +21,8 @@ use constant {
 	CurStep_PROCESSREORDEROK  => "processReorder-ok",
 	
 	# statuses of job approval
-	CurStep_HOTOVOODSOUHLASIT => "HOTOVO-odsouhlasit"
+	CurStep_HOTOVOODSOUHLASIT => "HOTOVO-odsouhlasit",
+	CurStep_POSLANDOTAZ => "poslan dotaz <user>"
 
 };
 

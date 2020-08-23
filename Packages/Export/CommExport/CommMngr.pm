@@ -8,7 +8,6 @@ use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
-
 #3th party library
 use strict;
 use warnings;
@@ -18,6 +17,9 @@ use Log::Log4perl qw(get_logger :levels);
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Programs::Comments::Comments';
+use aliased 'Programs::Comments::CommMail::Enums' => 'MailEnums';
+use aliased 'Programs::Comments::CommMail::CommMail';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -39,6 +41,8 @@ sub new {
 	$self->{"emailTo"}           = shift;    #
 	$self->{"emailCC"}           = shift;    #
 	$self->{"emailSubject"}      = shift;    #
+	$self->{"includeOfferInf"}   = shift;    #
+	$self->{"includeOfferStckp"} = shift;    #
 	$self->{"clearComments"}     = shift;    # Clear commetns when mail is sent
 
 	return $self;
@@ -50,62 +54,79 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	#  Change status of orders
+	#  1) Change status of orders
 	if ( $self->{"changeOrderStatus"} ) {
 
 		my @orders = HegMethods->GetPcbOrderNumbers($jobId);
-		@orders = map { $_->{"reference_subjektu"} } grep { $_->{"aktualni_krok"} == 2 } @orders;
-		my $resultStack = $self->_GetNewItem("Change order status");
+
+		# 2 - predvzrovbni priprava
+		# 1 - na prijmu
+		@orders = map { $_->{"reference_subjektu"} } grep { $_->{"stav"} == 1 || $_->{"stav"} == 2 || $_->{"stav"} == 4 } @orders;
+		my $resultStatus = $self->_GetNewItem("Change IS status");
 
 		eval {
- 
-			foreach my $orderNum ( @orders ) {
+
+			foreach my $orderNum (@orders) {
 
 				my $curStep = HegMethods->GetCurStepOfOrder($orderNum);
 
-				#my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
-				#my $orderNum = $self->{"jobId"} . "-" . $orderRef;
+				if ( $curStep ne $self->{"orderStatus"} ) {
 
-				if ( $curStep ne EnumsIS->CurStep_HOTOVOZADAT ) {
-
-					my $succ = HegMethods->UpdatePcbOrderState( $orderNum, EnumsIS->CurStep_HOTOVOZADAT );
+					my $succ = HegMethods->UpdatePcbOrderState( $orderNum, $self->{"orderStatus"} );
 				}
 			}
 
-			# remove auto process log
-			if ( AsyncJobHelber->ServerVersion() ) {
-				AutoProcLog->Delete( $self->GetJobId() );
-			}
-
-			$self->{"taskStatus"}->DeleteStatusFile();
-			$self->{"sentToProduce"} = 1;
 		};
 
 		if ( my $e = $@ ) {
 
-			# set status hotovo-yadat fail
-			my $toProduceMngr = $self->{"produceResultMngr"};
-			my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
+			$resultStatus->AddError( "Set state " . $self->{"orderStatus"} . " failed, try it again. Detail: " . $@ . "\n" );
+		}
 
-			$item->AddError( "Set state HOTOVO-zadat failed, try it again. Detail: " . $@ . "\n" );
-			$toProduceMngr->AddItem($item);
+		$self->_OnItemResult($resultStatus);
 
-			$result = 0;
+	}
+
+	#  2) Export email
+	if ( $self->{"exportEmail"} ) {
+
+		my $resultEmail = $self->_GetNewItem("Generate email");
+
+		my $comm = Comments->new( $inCAM, $jobId );
+
+		my %inf = %{ HegMethods->GetCustomerInfo($jobId) };
+		my $lang = $inf{"zeme"} eq 25 ? "cz" : "en";
+
+		my $mail = CommMail->new( $inCAM, $jobId, $comm->GetLayout(), $lang,  $self->{"includeOfferInf"},  $self->{"includeOfferStckp"} );
+
+		my $emailExport = 1;
+		if ( $self->{"emailAction"} eq MailEnums->EmailAction_OPEN ) {
+
+			$emailExport = $mail->Open( $self->{"emailTo"}, $self->{"emailCC"}, $self->{"emailSubject"} );
+
+		}
+		elsif ( $self->{"emailAction"} eq MailEnums->EmailAction_SEND ) {
+
+			$emailExport = $mail->Sent( $self->{"emailTo"}, $self->{"emailCC"}, $self->{"emailSubject"} );
+		}
+
+		unless ($emailExport) {
+			$resultEmail->AddError("Error duriong generating email");
+		}
+		$self->_OnItemResult($resultEmail);
+
+		# Clear comments if mail was exported properly
+
+		if ( $self->{"clearComments"} && $emailExport ) {
+
+			my $resultClear = $self->_GetNewItem("Clear comments");
+			$comm->ClearCoomments();
+
+			$self->_OnItemResult($resultClear);
 
 		}
 
-		$self->_OnItemResult($resultStack);
-
 	}
-
-	#  Export email
-	if ( $self->{"exportEmail"} ) {
-
-		my $resultStack = $self->_GetNewItem("Email with commetns");
-
-		$self->_OnItemResult($resultStack);
-	}
-
 }
 
 sub TaskItemsCount {
@@ -116,6 +137,8 @@ sub TaskItemsCount {
 	$totalCnt += 1 if ( $self->{"changeOrderStatus"} );
 
 	$totalCnt += 1 if ( $self->{"exportEmail"} );
+
+	$totalCnt += 1 if ( $self->{"clearComments"} );
 
 	return $totalCnt;
 }

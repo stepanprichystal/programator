@@ -5,7 +5,6 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::PoolMerge::PoolMerge::UnitBuilder;
-use base("Managers::AbstractQueue::AbstractQueue::UnitBuilderBase");
 
 use Class::Interface;
 &implements('Managers::AbstractQueue::AbstractQueue::IUnitBuilder');
@@ -29,8 +28,12 @@ use aliased 'Programs::PoolMerge::UnitEnums';
 
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $self  = {};
 	bless $self;
+	
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"jobStrData"} = shift;
 
 	my $json     = JSON->new();
 	my $hashData = $json->decode( $self->{"jobStrData"} );

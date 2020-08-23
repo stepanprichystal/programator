@@ -28,6 +28,7 @@ use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Units';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::StandardBuilder';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::TemplateBuilder';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::V0Builder';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::OfferBuilder';
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTables';
 use aliased 'Packages::InCAM::InCAM';
@@ -44,6 +45,7 @@ use aliased 'Managers::AsyncJobMngr::Enums'                          => 'EnumsJo
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
 
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Widgets::Forms::LoadingForm';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
@@ -105,10 +107,11 @@ sub Init {
 	$self->{"launcher"} = $launcher;
 	$self->{"inCAM"}    = $launcher->GetInCAM();
 	$self->{"inCAM"}->SetDisplay(0);
-	
+
 	# 2) Create fake layers which will be exported, but are created automatically
 	#$self->{"inCAM"}->SetDisplay(0);
-	FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, undef, 1 );
+	FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, undef, 1 )
+	  if ( !JobHelper->GetJobIsOffer( $self->{"jobId"} ) );
 
 	# 3) Initialization of whole export app
 
@@ -226,6 +229,8 @@ sub __CheckBeforeExport {
 
 	my $inCAM = $self->{"inCAM"};
 
+	$self->{"units"}->UpdateGroupData();
+
 	#get all gorup data and save them to disc
 	$self->{"storageMngr"}->SaveGroupData();
 
@@ -267,7 +272,7 @@ sub __CleanUpAndExitForm {
 
 	#}
 
-	FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, $self->{"jobId"} );
+	FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, $self->{"jobId"} ) if ( !JobHelper->GetJobIsOffer( $self->{"jobId"} ) );
 
 	$self->{"form"}->{"mainFrm"}->Destroy();
 
@@ -325,6 +330,14 @@ sub __OnGroupChangeState {
 
 }
 
+sub __OnSwitchAppHandler {
+	my $self    = shift;
+	my $appName = shift;
+
+	die "Not implemented";
+
+}
+
 # ================================================================================
 # EXPORT POPUP HANDLERS
 # ================================================================================
@@ -377,7 +390,7 @@ sub __OnResultPopupHandler {
 
 		# Get orders on CAM department
 		my @orders = HegMethods->GetPcbOrderNumbers( $self->{"jobId"} );
-		@orders = map { $_->{"reference_subjektu"} } grep{ $_->{"aktualni_krok"} == 2  } @orders;
+		@orders = map { $_->{"reference_subjektu"} } grep { $_->{"stav"} == 2 } @orders;
 
 		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC ) {
 
@@ -504,6 +517,7 @@ sub __SetHandlers {
 	$self->{"exportPopup"}->{'onClose'}->Add( sub     { $self->__OnClosePopupHandler(@_) } );
 
 	$self->{"units"}->SetGroupChangeHandler( sub { $self->__OnGroupChangeState(@_) } );
+	$self->{"units"}->{"switchAppEvt"}->Add( sub { $self->__OnSwitchAppHandler(@_) } );
 
 }
 
@@ -515,9 +529,15 @@ sub __DefineTableGroups {
 
 	my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 
-	if ( $typeOfPcb eq 'Neplatovany' ) {
+	if ( JobHelper->GetJobIsOffer( $self->{"jobId"} ) ) {
+
+		$groupBuilder = OfferBuilder->new();
+
+	}
+	elsif ( $typeOfPcb eq 'Neplatovany' ) {
 
 		$groupBuilder = V0Builder->new();
+
 	}
 	elsif ( $typeOfPcb eq 'Sablona' ) {
 

@@ -127,62 +127,7 @@ sub __SetLayout {
 	$self->SetSizer($szMain);
 
 }
-
-sub __DefineTableGroups {
-	my $self = shift;
-
-	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTable';
-	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTables';
-	use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
-
-	#my $scrollPnl = $self->{"exporterForm"}->{"scrollPnl"};
-	#my $scrollSizer =  Wx::BoxSizer->new(&Wx::wxVERTICAL);
-
-	#my $tab1 = $self->{"form"}->GetTab(0);
-	#my $tab2 = $self->{"form"}->GetTab(1);
-
-	$self->{"groupTables"} = GroupTables->new();
-
-	my $tableTab1 = GroupTable->new();
-
-	# nif unit
-	my $nifUnit1 = NifUnit->new( $self->{"jobId"}, "Nif 1" );
-	my $nifUnit2 = NifUnit->new( $self->{"jobId"}, "Nif 2" );
-	my $nifUnit3 = NifUnit->new( $self->{"jobId"}, "Nif 3" );
-	my $nifUnit4 = NifUnit->new( $self->{"jobId"}, "Nif 4" );
-
-	my $row1Tab1 = $tableTab1->AddRow();
-	$row1Tab1->AddCell($nifUnit1);
-
-	$row1Tab1->AddCell($nifUnit2);
-
-	#$row1->AddCell($nifUnit3);
-
-	my $row2Tab1 = $tableTab1->AddRow();
-	$row2Tab1->AddCell($nifUnit3);
-	$row2Tab1->AddCell($nifUnit4);
-
-	#$row2Tab1->AddCell($nifUnit6);
-
-	#	my $tab2 = $self->{"form"}->GetTab(1);
-	#
-	#my $tableTab2 = GroupTable->new($tab2);
-	#
-	#	# nif unit
-	#	my $nifUnit21 = NifUnit->new($tab2);
-	#	my $nifUnit22 = NifUnit->new($tab2);
-	#
-	#	my $row21Tab2 = $tableTab2->AddRow();
-	#	$row21Tab2->AddCell($nifUnit21);
-	#	$row21Tab2->AddCell($nifUnit22);
-
-	#$self->{"groupTables"}->AddTable($tableTab1);
-
-	#return $self->{"groupTables"};
-
-	return $tableTab1;
-}
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

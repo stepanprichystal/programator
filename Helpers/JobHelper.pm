@@ -382,7 +382,6 @@ sub GetCoverlaySigLayers {
 	return @sigLayers;
 }
 
-
 # Material codes for hybrid materials
 # This code clearly describes which materials are combined together
 # Return values
@@ -430,7 +429,6 @@ sub GetHybridMatCode {
 
 	return $matCode;
 }
-
 
 sub GetIsolationByClass {
 	my $self  = shift;
@@ -497,6 +495,14 @@ sub ParseSignalLayerName {
 	$lInfo{"plugging"}   = $copperLName =~ /plg([csv]\d*)/ ? 1 : 0;
 
 	return %lInfo;
+}
+
+# If job name starts with X, job is price offer
+sub GetJobIsOffer {
+	my $self  = shift;
+	my $jobId = shift;
+
+	return $jobId =~ /^x/i ? 1 : 0;
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -83,9 +83,8 @@ sub GetBaseMatInfo {
 
 		$inf{"matText"} .= $parsedMat[$i] . " ";
 	}
-	
+
 	$inf{"matKind"} = $matInf->{"dps_druh"};
-	
 
 	# Parse mat thick  + remove Cu thickness if material is type of Laminate (core material thickness not include Cu thickness)
 	$inf{"baseMatThick"} = $matInf->{"vyska"} * 1000000;
@@ -114,8 +113,8 @@ sub GetBaseMatInfo {
 	die "Material text was not found at material: $matName"         unless ( defined $inf{"matText"} );
 	die "Base mat thick was not found at material: $matName"        unless ( defined $inf{"baseMatThick"} );
 	die "Material cu thickness was not found at material: $matName" unless ( defined $inf{"cuThick"} );
-	die "Material druh was not found at material: $matName" unless ( defined $inf{"matKind"} );
-		
+	die "Material druh was not found at material: $matName"         unless ( defined $inf{"matKind"} );
+
 	return %inf;
 
 }
@@ -301,18 +300,8 @@ sub GetNominalThickness {
 sub GetFlexPCBCode {
 	my $self = shift;
 
-	my $pcbType = $self->GetPcbType();
-	my $code    = undef;
-	if ( $pcbType eq EnumsGeneral->PcbType_1VFLEX ) {
-		$code = "1F";
-	}
-	elsif ( $pcbType eq EnumsGeneral->PcbType_2VFLEX ) {
-		$code = "2F";
-	}
-	elsif ( $pcbType eq EnumsGeneral->PcbType_MULTIFLEX ) {
-		$code = $self->GetLayerCnt() . "F";
-	}
-
+	my $code = $self->{"stackupCode"}->GetStackupCode();
+	
 	return $code;
 }
 

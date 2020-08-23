@@ -16,16 +16,9 @@ use warnings;
 #local library
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTable';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
-use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifUnit';
-use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit';
-
-use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit';
-use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Presenter::PdfUnit';
-use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::GerUnit';
-use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Presenter::ScoUnit';
-use aliased 'Programs::Exporter::ExportChecker::Groups::OutExport::Presenter::OutUnit';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::Enums';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Helper' => "UnitHelper";
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -49,7 +42,7 @@ sub Build {
 	my $tableTab1 = $groupTables->AddTable("Technology groups");
 
 	# Units
-	my $preUnit1 = PreUnit->new( $self->{"jobId"} );
+	my $preUnit1 = UnitHelper->GetUnitById( UnitEnums->UnitId_PRE, $self->{"jobId"} );
 
 	my $row1Tab1 = $tableTab1->AddRow();
 	$row1Tab1->AddCell( $preUnit1, Enums->Width_75 );
@@ -59,12 +52,12 @@ sub Build {
 	my $tableTab2 = $groupTables->AddTable("Main groups");
 
 	# Units
-	my $nifUnit1  = NifUnit->new( $self->{"jobId"} );
-	my $plotUnit1 = PlotUnit->new( $self->{"jobId"} );
-	my $ncUnit1   = NCUnit->new( $self->{"jobId"} );
-	my $gerUnit1  = GerUnit->new( $self->{"jobId"} );
-	my $scoUnit1  = ScoUnit->new( $self->{"jobId"} );
-	my $pdfUnit1  = PdfUnit->new( $self->{"jobId"} );
+	my $nifUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_NIF,  $self->{"jobId"} );
+	my $plotUnit1 = UnitHelper->GetUnitById( UnitEnums->UnitId_PLOT, $self->{"jobId"} );
+	my $ncUnit1   = UnitHelper->GetUnitById( UnitEnums->UnitId_NC,   $self->{"jobId"} );
+	my $gerUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_GER,  $self->{"jobId"} );
+	my $scoUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_SCO,  $self->{"jobId"} );
+	my $pdfUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_PDF,  $self->{"jobId"} );
 
 	my $row1Tab2 = $tableTab2->AddRow();
 	$row1Tab2->AddCell( $nifUnit1,  Enums->Width_50 );
@@ -82,10 +75,12 @@ sub Build {
 
 	# Units
 
-	my $outUnit1 = OutUnit->new( $self->{"jobId"} );
+	my $outUnit1 = UnitHelper->GetUnitById( UnitEnums->UnitId_OUT, $self->{"jobId"} );
+	my $commUnit1 = UnitHelper->GetUnitById( UnitEnums->UnitId_COMM, $self->{"jobId"} );
 
 	my $row1Tab3 = $tableTab3->AddRow();
 	$row1Tab3->AddCell( $outUnit1, Enums->Width_25 );
+	$row1Tab3->AddCell( $commUnit1, Enums->Width_50 );
 
 	# Set which group is selected by default
 	$groupTables->SetDefaultSelected($tableTab2);

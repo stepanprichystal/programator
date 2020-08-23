@@ -61,9 +61,9 @@ sub __SetLayout {
 	my $btnAdd      = Wx::Button->new( $self, -1, "+ Add",     &Wx::wxDefaultPosition, [ 70, -1 ] );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_BUTTON( $btnRemove,   -1, sub { $self->{"onRemoveCommEvt"}->Do( $commList->GetSelectedItem()->GetItemOrder() ) } );
-	Wx::Event::EVT_BUTTON( $btnMoveUp,   -1, sub { $self->{"onMoveCommEvt"}->Do( $commList->GetSelectedItem()->GetItemOrder(), "up" ) } );
-	Wx::Event::EVT_BUTTON( $btnMoveDown, -1, sub { $self->{"onMoveCommEvt"}->Do( $commList->GetSelectedItem()->GetItemOrder(), "down" ) } );
+	Wx::Event::EVT_BUTTON( $btnRemove,   -1, sub { $self->{"onRemoveCommEvt"}->Do( $commList->GetSelectedItem()->GetPosition() ) } );
+	Wx::Event::EVT_BUTTON( $btnMoveUp,   -1, sub { $self->{"onMoveCommEvt"}->Do( $commList->GetSelectedItem()->GetPosition(), "up" ) } );
+	Wx::Event::EVT_BUTTON( $btnMoveDown, -1, sub { $self->{"onMoveCommEvt"}->Do( $commList->GetSelectedItem()->GetPosition(), "down" ) } );
 	Wx::Event::EVT_BUTTON( $btnAdd,      -1, sub { $self->{"onAddCommEvt"}->Do() } );
 
 	#		sub __Test {
@@ -72,7 +72,7 @@ sub __SetLayout {
 	#			$self->{"onRemoveCommEvt"}->Do($id);
 	#		}
 
-	$commList->{"onSelectItemChange"}->Add( sub { $self->{"onSelCommChangedEvt"}->Do( $_[0]->GetItemOrder() ) } );
+	$commList->{"onSelectItemChange"}->Add( sub { $self->{"onSelCommChangedEvt"}->Do( $_[0]->GetPosition() ) if(!$self->{"setCommList"}) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szMain->Add( $commList, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -117,6 +117,8 @@ sub SetComm {
 sub SetCommList {
 	my $self           = shift;
 	my $commListLayout = shift;
+	
+	$self->{"setCommList"} = 1; # 
 
 	$self->{"commList"}->SetCommentsLayout($commListLayout);
 
@@ -138,6 +140,8 @@ sub SetCommList {
 		$self->{"btnMoveUp"}->Disable();
 		$self->{"btnMoveDown"}->Disable();
 	}
+	
+	$self->{"setCommList"} = 0; # 
 
 }
 

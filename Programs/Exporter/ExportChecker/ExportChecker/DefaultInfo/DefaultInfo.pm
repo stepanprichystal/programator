@@ -88,7 +88,7 @@ sub new {
 	$self->{"profLim"}         = undef;    # panel profile limits
 	$self->{"layerSettings"}   = undef;    # Heklper class with default signal, nc and nonstignal settings
 	$self->{"comments"}        = undef;    # Approval comments
-
+ 
 	return $self;
 }
 
@@ -323,10 +323,21 @@ sub StepExist {
 sub LayerExist {
 	my $self      = shift;
 	my $layerName = shift;
+	my $boardLayers = shift//0;
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
-	my @l = grep { $_->{"gROWname"} eq $layerName } @{ $self->{"allLayers"} };
+	my @layers = ();
+	
+	if($boardLayers){
+		@layers  = @{ $self->{"baseLayers"} };
+	}else{
+		@layers = @{ $self->{"allLayers"} };
+	}
+	
+	 
+
+	my @l = grep { $_->{"gROWname"} eq $layerName } @layers;
 
 	if ( scalar(@l) ) {
 		return 1;
@@ -621,6 +632,8 @@ sub __Init {
 	);
 
 	$self->{"comments"} = Comments->new( $inCAM, $self->{"jobId"} );
+
+	
 
 	$self->{"init"} = 1;
 

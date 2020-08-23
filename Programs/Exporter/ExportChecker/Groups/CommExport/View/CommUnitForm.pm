@@ -22,18 +22,26 @@ BEGIN {
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
-
-#use aliased 'CamHelpers::CamLayer';
-#use aliased 'CamHelpers::CamDrilling';
+use aliased 'Enums::EnumsIS';
+use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamStep';
-use aliased 'Packages::Commesting::BasicHelper::Helper' => 'CommHelper';
 use aliased 'CamHelpers::CamStepRepeat';
-
-#use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::JobHelper';
+use aliased 'Programs::Comments::CommMail::CommMail';
+use aliased 'Programs::Comments::Comments';
+use aliased 'Programs::Comments::CommMail::Enums' => 'MailEnums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
+
+# Types of aproval
+use constant APPROVAL_NO        => "No approval";
+use constant APPROVAL_OFFERDONE => "Offer DONE";
+use constant APPROVAL_OFFERPROC => "Offer PROCESSING";
+use constant APPROVAL_JOBDONE   => "Job DONE";
+use constant APPROVAL_JOBPROC   => "Job PROCESSING";
 
 sub new {
 	my $class  = shift;
@@ -51,11 +59,15 @@ sub new {
 	$self->{"jobId"}       = $jobId;
 	$self->{"defaultInfo"} = $defaultInfo;
 
+	$self->{"commMail"} = CommMail->new( $self->{"defaultInfo"}->GetComments(), $self->{"inCAM"}, $self->{"jobId"} );
+
 	# Load data
 
 	$self->__SetLayout();
 
 	# EVENTS
+	$self->{'exportEmailEvt'} = Event->new();
+	$self->{"switchAppEvt"} = Event->new();
 
 	return $self;
 }
@@ -66,204 +78,459 @@ sub __SetLayout {
 	#define panels
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-
-	# DEFINE CONTROLS
-	my $settings = $self->__SetLayoutSettings($self);
-	my $IPCfile  = $self->__SetLayoutIPCFile($self);
-
-	# SComm EVENTS
-
-	# BUILD STRUCTURE OF LAYOUT
-
-	$szMain->Add( $settings, 0, &Wx::wxEXPAND );
-	$szMain->Add( $IPCfile,  0, &Wx::wxEXPAND );
-
-	$self->SetSizer($szMain);
-
-	# save control references
-
-}
-
-# Set layout for Quick set box
-sub __SetLayoutSettings {
-	my $self   = shift;
-	my $parent = shift;
-
-	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Export settings' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
-
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
-	my $rbCreateStep = Wx::RadioButton->new( $statBox, -1, "Create Comm step", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
-	my $rbCustomStep = Wx::RadioButton->new( $statBox, -1, "Custom Comm step", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+	my $approvalTypeTxt = Wx::StaticText->new( $self, -1, "Approval type", &Wx::wxDefaultPosition, [ 100, -1 ] );
+	my @types = (APPROVAL_NO);
+	if ( JobHelper->GetJobIsOffer( $self->{"jobId"} ) ) {
+		push( @types, APPROVAL_OFFERDONE, APPROVAL_OFFERPROC );
 
-	my $fromStepTxt = Wx::StaticText->new( $parent, -1, "From step", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
-	@steps = grep { $_ !~ /et_/ } @steps;
-	my $last = $steps[ scalar(@steps) - 1 ];
-	my $fromStepCb = Wx::ComboBox->new( $parent, -1, $last, &Wx::wxDefaultPosition, [ 50, 22 ], \@steps, &Wx::wxCB_READONLY );
+	}
+	else {
+		push( @types, APPROVAL_JOBDONE, APPROVAL_JOBPROC );
+	}
 
-	my $keepProfilesTxt = Wx::StaticText->new( $parent, -1, "Keep profiles", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my $keepProfilesChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
+	my $approvalTypeCb = Wx::ComboBox->new( $self, -1, $types[0], &Wx::wxDefaultPosition, [ 140, -1 ], \@types, &Wx::wxCB_READONLY );
 
-	my $customStepTxt = Wx::StaticText->new( $parent, -1, "From step", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my @etSteps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
-	@etSteps = sort { $a cmp $b } grep { $_ =~ /et_/ } @etSteps;
-	my $customStepCb =
-	  Wx::ComboBox->new( $parent, -1, ( scalar(@etSteps) ? $etSteps[0] : 0 ),
-						 &Wx::wxDefaultPosition, [ 50, 22 ],
-						 \@etSteps, &Wx::wxCB_READONLY );
+	#my $commViewerHL = my $btnSync = Wx::HyperlinkCtrl->new( $self, -1, "Comments viewer", "", &Wx::wxDefaultPosition, [ 100, 25 ] );
 
-	# SComm EVENTS
-	Wx::Event::EVT_RADIOBUTTON( $rbCreateStep, -1, sub { $self->__OnModeChangeHandler(@_) } );
-	Wx::Event::EVT_RADIOBUTTON( $rbCustomStep, -1, sub { $self->__OnModeChangeHandler(@_) } );
-	Wx::Event::EVT_COMBOBOX( $fromStepCb, -1, sub { $self->__OnStepFromChange(@_) } );
+	my $statusLyt = $self->__SetLayoutStatus($self);
+	my $emailLyt  = $self->__SetLayoutEmail($self);
+
+	# SET EVENTS
+	Wx::Event::EVT_COMBOBOX( $approvalTypeCb, -1, sub { $self->__OnApprovalTypeChange(@_) } );
+
+	#Wx::Event::EVT_HYPERLINK( $commViewerHL, -1, sub { $self->__OnCommViewerHndl() } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $fromStepTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $fromStepCb,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $approvalTypeTxt, 0, &Wx::wxEXPAND );
+	$szRow1->Add( $approvalTypeCb,  0, &Wx::wxEXPAND );
 
-	$szRow2->Add( $keepProfilesTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $keepProfilesChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	#$szRow1->Add( $commViewerHL,  0, &Wx::wxEXPAND );
 
-	$szRow3->Add( $customStepTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow3->Add( $customStepCb,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow3->Add( $statusLyt, 40, &Wx::wxEXPAND );
+	$szRow3->Add( $emailLyt,  60, &Wx::wxEXPAND );
 
-	#$szRow2->Add( $createStepChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	#$szRow2->Add( 5,100, 1, &Wx::wxEXPAND );
+	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szMain->Add( 5,       5, 0,                          &Wx::wxEXPAND );
+	$szMain->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szMain->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
 
-	$szStatBox->Add( $rbCreateStep, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( 4, 4, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $rbCustomStep, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( 4, 4, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->SetSizer($szMain);
 
-	#$szStatBox->Add( $szRow3, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	# SAVE CONTROL REFERENCE
+	$self->{"approvalTypeCb"} = $approvalTypeCb;
 
-	# Set References
-	$self->{"fromStepCb"}      = $fromStepCb;
-	$self->{"customStepCb"}    = $customStepCb;
-	$self->{"keepProfilesChb"} = $keepProfilesChb;
-	$self->{"rbCreateStep"}    = $rbCreateStep;
-	$self->{"rbCustomStep"}    = $rbCustomStep;
-
-	return $szStatBox;
 }
 
-# Set layout for Quick set box
-sub __SetLayoutIPCFile {
+sub __SetLayoutStatus {
 	my $self   = shift;
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'IPC file' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+	my $title = "IS " . ( JobHelper->GetJobIsOffer( $self->{"jobId"} ) ? "offer" : "order" ) . ' status';
+	my $statBox = Wx::StaticBox->new( $parent, -1, $title );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my $szCol1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szCol2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	my $szAction = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $localCopyTxt = Wx::StaticText->new( $parent, -1, "Local copy", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my $localCopyChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
 
-	my $serverCopyTxt = Wx::StaticText->new( $parent, -1, "Sent to server", &Wx::wxDefaultPosition, [ 120, 22 ] );
-	my $serverCopyChb = Wx::CheckBox->new( $parent, -1, "", &Wx::wxDefaultPosition, [ 50, 22 ] );
-	$serverCopyChb->Disable();
+	my $changeOrderStatusChb = Wx::CheckBox->new( $statBox, -1, "Change", &Wx::wxDefaultPosition, [ -1, -1 ] );
+
+	my $orderStatusTxt = Wx::StaticText->new( $statBox, -1, "Status", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my @statuses = ( EnumsIS->CurStep_HOTOVOODSOUHLASIT, EnumsIS->CurStep_POSLANDOTAZ );
+	my $orderStatusCb =
+	  Wx::ComboBox->new( $statBox, -1, $statuses[0], &Wx::wxDefaultPosition, [ 70, -1 ], \@statuses, &Wx::wxCB_READONLY );
 
 	# SComm EVENTS
+	#Wx::Event::EVT_CHECKBOX( $changeOrderStatusChb, -1, sub { $self->__OnChangeOrderStatusHndl(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szCol1->Add( $localCopyTxt,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szCol1->Add( $serverCopyTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $changeOrderStatusChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szCol2->Add( $localCopyChb,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szCol2->Add( $serverCopyChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $orderStatusTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $orderStatusCb,  70, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szStatBox->Add( $szCol1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szCol2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-
-	#$szStatBox->Add( $szRow3, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( 6,       6, 0 );
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# Set References
-	$self->{"localCopyChb"}  = $localCopyChb;
-	$self->{"serverCopyChb"} = $serverCopyChb;
+	$self->{"changeOrderStatusChb"} = $changeOrderStatusChb;
+	$self->{"orderStatusCb"}        = $orderStatusCb;
+	$self->{"statBoxStatus"}        = $statBox;
+
 	return $szStatBox;
 }
 
-# Change export mode
-sub __OnModeChangeHandler {
-	my $self = shift;
+sub __SetLayoutEmail {
+	my $self   = shift;
+	my $parent = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Approval email' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my $createStep = $self->{"rbCreateStep"}->GetValue();
+	my $szRow1   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow3   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow4   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow5   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow6   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow7   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow8   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szAction = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
-	if ( defined $createStep && $createStep == 1 ) {
+	# DEFINE CONTROLS
 
-		$self->{"fromStepCb"}->Enable();
-		$self->{"customStepCb"}->Disable();
+	my $exportEmailChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my $mailPreviewHL = my $btnSync = Wx::HyperlinkCtrl->new( $statBox, -1, "Mail preview", "", &Wx::wxDefaultPosition, [ 70, 25 ] );
 
-		my $keepProfiles = CommHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() );
+	my $emailActionTxt = Wx::StaticText->new( $statBox, -1, "Email action", &Wx::wxDefaultPosition, [ -1, -1 ] );
 
-		# Set sent to server checkbox
-		if ( $keepProfiles || !CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() ) ) {
-			$self->{"serverCopyChb"}->SetValue(1);
-		}
-		else {
-			$self->{"serverCopyChb"}->SetValue(0);
-		}
+	my $emailActionSentRb = Wx::RadioButton->new( $statBox, -1, "Sent directly", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
+	my $emailActionOpenRb = Wx::RadioButton->new( $statBox, -1, "Open in MS Outlook", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
+	my $emailToAddressTxt = Wx::StaticText->new( $statBox, -1, "Adress To", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my $emailToAddressCtrl = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition );
+
+	my $emailCCAddressTxt = Wx::StaticText->new( $statBox, -1, "Adress CC", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my $emailCCAddressCtrl = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition );
+
+	my $emailSubjectTxt = Wx::StaticText->new( $statBox, -1, "Subject", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my @subject = ();
+
+	if ( JobHelper->GetJobIsOffer( $self->{"jobId"} ) ) {
+		push( @subject, MailEnums->Subject_OFFERFINIFHAPPROVAL, MailEnums->Subject_OFFERPROCESSAPPROVAL );
 	}
 	else {
-
-		$self->{"fromStepCb"}->Disable();
-		$self->{"customStepCb"}->Enable();
-
-		$self->{"localCopyChb"}->SetValue(1);
-		$self->{"serverCopyChb"}->SetValue(0);
+		push( @subject, MailEnums->Subject_JOBFINIFHAPPROVAL, MailEnums->Subject_JOBPROCESSAPPROVAL );
 	}
 
-	# Disable keep profile checkbox
-	$self->__UpdateKeepProfile();
+	my $emailSubjectCb =
+	  Wx::ComboBox->new( $statBox, -1, $subject[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@subject, &Wx::wxCB_READONLY );
+
+	my $includeOfferInfTxt = Wx::StaticText->new( $statBox, -1, "Incl. offer data", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my $includeOfferInfChb = Wx::CheckBox->new( $statBox, -1, "(basic specification ...)", &Wx::wxDefaultPosition, [ -1, -1 ] );
+
+	$includeOfferInfChb->Disable();
+
+	if ( !JobHelper->GetJobIsOffer( $self->{"jobId"} ) ) {
+		$includeOfferInfTxt->Hide();
+		$includeOfferInfChb->Hide();
+	}
+
+	my $includeOfferStckpTxt = Wx::StaticText->new( $statBox, -1, "Incl. offer stackup", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my $includeOfferStckpChb = Wx::CheckBox->new( $statBox, -1, "(PDF stackup ...)", &Wx::wxDefaultPosition, [ -1, -1 ] );
+
+	$includeOfferStckpChb->Disable();
+
+	if ( !JobHelper->GetJobIsOffer( $self->{"jobId"} ) ) {
+		$includeOfferStckpTxt->Hide();
+		$includeOfferStckpChb->Hide();
+	}
+
+	my $clearCommentsTxt = Wx::StaticText->new( $statBox, -1, "Clear comments", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my $clearCommentsChb = Wx::CheckBox->new( $statBox, -1, "(if mail is properly sent/open)", &Wx::wxDefaultPosition, [ -1, -1 ] );
+
+	# EVENTS
+
+	Wx::Event::EVT_HYPERLINK( $mailPreviewHL, -1, sub { $self->__OnMailPreviewHndl() } );
+	Wx::Event::EVT_CHECKBOX( $exportEmailChb, -1, sub { $self->{"exportEmailEvt"}->Do( $exportEmailChb->GetValue() ) } );
+	
+	# BUILD STRUCTURE OF LAYOUT
+	$szRow1->Add( $exportEmailChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow1->Add( 5, 5, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow1->Add( $mailPreviewHL, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szRow2->Add( $emailActionTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow2->Add( $szAction,       70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szAction->Add( $emailActionSentRb, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szAction->Add( $emailActionOpenRb, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szRow3->Add( $emailToAddressTxt,  30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow3->Add( $emailToAddressCtrl, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szRow4->Add( $emailCCAddressTxt,  30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow4->Add( $emailCCAddressCtrl, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szRow5->Add( $emailSubjectTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow5->Add( $emailSubjectCb,  70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szRow6->Add( $includeOfferInfTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow6->Add( $includeOfferInfChb, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szRow7->Add( $includeOfferStckpTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow7->Add( $includeOfferStckpChb, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szRow8->Add( $clearCommentsTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow8->Add( $clearCommentsChb, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( 6,       6, 0 );
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow4, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow5, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow6, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow7, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow8, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	# Set References
+	$self->{"exportEmailChb"}       = $exportEmailChb;
+	$self->{"emailActionSentRb"}    = $emailActionSentRb;
+	$self->{"emailActionOpenRb"}    = $emailActionOpenRb;
+	$self->{"emailToAddressCtrl"}   = $emailToAddressCtrl;
+	$self->{"emailCCAddressCtrl"}   = $emailCCAddressCtrl;
+	$self->{"emailSubjectCb"}       = $emailSubjectCb;
+	$self->{"includeOfferInfChb"}   = $includeOfferInfChb;
+	$self->{"includeOfferStckpChb"} = $includeOfferStckpChb;
+	$self->{"clearCommentsChb"}     = $clearCommentsChb;
+	$self->{"statBoxEmail"}         = $statBox;
+
+	return $szStatBox;
 }
 
-# Change export from step
-sub __OnStepFromChange {
+# =====================================================================
+# FORM HANDLERS
+# =====================================================================
+
+sub __OnApprovalTypeChange {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	$self->__UpdateKeepProfile();
+	$self->DisableControls();
+
+	if ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_NO ) {
+
+		$self->{"changeOrderStatusChb"}->SetValue(0);
+
+		# status
+		$self->{"orderStatusCb"}->SetValue("");
+
+		$self->{"exportEmailChb"}->SetValue(0);
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+
+		# adress To
+		$self->{"emailToAddressCtrl"}->SetValue("");
+
+		# adress CC
+		$self->{"emailCCAddressCtrl"}->SetValue("");
+
+		# subject
+		$self->{"emailSubjectCb"}->SetValue("");
+
+	}
+
+	# Set status by approval type
+	if ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBDONE ) {
+
+		# Set status
+		$self->{"changeOrderStatusChb"}->SetValue(1);
+
+		# status
+		$self->{"orderStatusCb"}->SetValue( EnumsIS->CurStep_HOTOVOODSOUHLASIT );
+
+	}
+	elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBPROC ) {
+
+		$self->{"changeOrderStatusChb"}->SetValue(1);
+
+		# status
+		$self->{"orderStatusCb"}->SetValue( EnumsIS->CurStep_POSLANDOTAZ );
+	}
+
+	# Set email by approval type
+	if ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBDONE ) {
+
+		# export email
+		$self->{"exportEmailChb"}->SetValue(1);
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+
+		# email action
+		$self->{"emailActionSentRb"}->SetValue(1);
+
+		# adress To
+		$self->{"emailToAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATSALES );
+
+		# adress CC
+		$self->{"emailCCAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATCAM );
+
+		# subject
+		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_JOBFINIFHAPPROVAL );
+
+		# include offer data
+		$self->{"includeOfferInfChb"}->SetValue(0);
+
+		# include offer steckup
+		$self->{"includeOfferStckpChb"}->SetValue(0);
+
+		# clear comments
+		$self->{"clearCommentsChb"}->SetValue(1);
+
+	}
+	elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBPROC ) {
+
+		# export email
+		$self->{"exportEmailChb"}->SetValue(1);
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+
+		# email action
+		$self->{"emailActionOpenRb"}->SetValue(1);
+
+		# adress To
+		my $emailTo = "";
+		my @orders  = $self->{"commMail"}->GetCurrOrderNumbers();
+		if (@orders) {
+
+			my %ordInf   = HegMethods->GetAllByOrderId( $orders[0] );
+			my $contInfo = HegMethods->GetContactPersonInfo( $ordInf{"predano_komu"} );
+			$emailTo = $contInfo->{"e_mail"};
+		}
+
+		$self->{"emailToAddressCtrl"}->SetValue($emailTo);
+
+		# adress CC
+		$self->{"emailCCAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATCAM . "; " . EnumsPaths->MAIL_GATSALES );
+
+		# subject
+		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_JOBPROCESSAPPROVAL );
+
+		# include offer data
+		$self->{"includeOfferInfChb"}->SetValue(0);
+
+		# include offer steckup
+		$self->{"includeOfferStckpChb"}->SetValue(0);
+
+		# clear comments
+		$self->{"clearCommentsChb"}->SetValue(1);
+	}
+	elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_OFFERDONE ) {
+
+		# export email
+		$self->{"exportEmailChb"}->SetValue(1);
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+
+		# email action
+		$self->{"emailActionSentRb"}->SetValue(1);
+
+		# adress To
+		$self->{"emailToAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATSALES );
+
+		# adress CC
+		$self->{"emailCCAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATCAM );
+
+		# subject
+		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_OFFERFINIFHAPPROVAL );
+
+		# include offer data
+		$self->{"includeOfferInfChb"}->SetValue(1);
+
+		# include offer steckup
+		$self->{"includeOfferStckpChb"}->SetValue(1);
+
+		# clear comments
+		$self->{"clearCommentsChb"}->SetValue(1);
+
+	}
+	elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_OFFERPROC ) {
+
+		# export email
+		$self->{"exportEmailChb"}->SetValue(1);
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+
+		# email action
+		$self->{"emailActionOpenRb"}->SetValue(1);
+
+		# adress To
+		my $emailTo = "";
+		my @orders  = $self->{"commMail"}->GetCurrOrderNumbers();
+		if (@orders) {
+
+			my %ordInf   = HegMethods->GetAllByOrderId( $orders[0] );
+			my $contInfo = HegMethods->GetContactPersonInfo( $ordInf{"predano_komu"} );
+			$emailTo = $contInfo->{"e_mail"};
+		}
+
+		$self->{"emailToAddressCtrl"}->SetValue($emailTo);
+
+		# adress CC
+		$self->{"emailCCAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATCAM . "; " . EnumsPaths->MAIL_GATSALES );
+
+		# subject
+		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_OFFERPROCESSAPPROVAL );
+
+		# include offer data
+		$self->{"includeOfferInfChb"}->SetValue(0);
+
+		# include offer steckup
+		$self->{"includeOfferStckpChb"}->SetValue(0);
+
+		# clear comments
+		$self->{"clearCommentsChb"}->SetValue(1);
+	}
+
+	#	use constant APPROVAL_NO        => "No approval";
+	#use constant APPROVAL_OFFERDONE => "Price offer done";
+	#use constant APPROVAL_OFFERPROC => "Price offer processing";
+	#use constant APPROVAL_JOBDONE   => "Job done";
+	#use constant APPROVAL_JOBPROC   => "Job processing";
+}
+
+sub __OnMailPreviewHndl {
+	my $self = shift;
+
+	# Init comments
+	my $c = $self->{"defaultInfo"}->GetComments();
+
+	my %inf = %{ HegMethods->GetCustomerInfo( $self->{"jobId"} ) };
+	my $lang = $inf{"zeme"} eq 25 ? "cz" : "en";
+
+	my $mail = CommMail->new( $self->{"inCAM"}, $self->{"jobId"}, $c->GetLayout(),$lang, $self->GetIncludeOfferInf(), $self->GetIncludeOfferStckp() );
+
+	unless ( $mail->Open( $self->GetEmailToAddress(), $self->GetEmailCCAddress(), $self->GetEmailSubject() ) ) {
+
+		my $messMngr = MessageMngr->new( $self->{"jobId"} );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during creating mail preview"] );
+	}
 
 }
 
-# Update checkbox keep profile
-sub __UpdateKeepProfile {
-	my $self = shift;
+#sub __OnCommViewerHndl {
+#	my $self = shift;
+#	
+#	my $appName = "Test";
+#	
+#	$self->{"switchAppEvt"}->Do($appName);
+#
+#}
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+# =====================================================================
+# HANDLERS FOR ANOTHER GROUP EVENTS
+# =====================================================================
 
-	my $createStep = $self->{"rbCreateStep"}->GetValue();
+sub OnOfferGrouAddSpecifToMail {
+	my $self      = shift;
+	my $addSpecif = shift;
 
-	if ( defined $createStep && $createStep == 1 && CommHelper->KeepProfilesAllowed( $inCAM, $jobId, $self->{"fromStepCb"}->GetValue() ) ) {
+	$self->{"includeOfferInfChb"}->SetValue($addSpecif);
 
-		$self->{"keepProfilesChb"}->Enable();
-		$self->{"keepProfilesChb"}->SetValue(1);
-	}
-	else {
-		$self->{"keepProfilesChb"}->Disable();
-		$self->{"keepProfilesChb"}->SetValue(0);
-	}
+}
+
+sub OnOfferGrouAddStackupToMail {
+	my $self       = shift;
+	my $addStackup = shift;
+
+	$self->{"includeOfferStckpChb"}->SetValue($addStackup);
 
 }
 
@@ -277,79 +544,45 @@ sub DisableControls {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	# Disable controls by Comm mode
+	# Enable/disable controls by approval type
+	if ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_NO ) {
 
-	my $createStep = $self->{"rbCreateStep"}->GetValue();
+		$self->{"statBoxStatus"}->Disable();
+		$self->{"statBoxEmail"}->Disable();
 
-	if ( defined $createStep && $createStep == 1 ) {
-		$self->{"fromStepCb"}->Enable();
-		$self->{"customStepCb"}->Disable();
 	}
 	else {
-
-		$self->{"fromStepCb"}->Disable();
-		$self->{"customStepCb"}->Enable();
+		$self->{"statBoxStatus"}->Enable();
+		$self->{"statBoxEmail"}->Enable();
 	}
 
-	# Disable keep profile checkbox
-	#$self->__UpdateKeepProfile();
+	# Enable/disable controls by offer type
+	if ( JobHelper->GetJobIsOffer( $self->{"jobId"} ) ) {
+
+		# Do not change status when offer
+		$self->{"statBoxStatus"}->Disable();
+
+	}
+
 }
 
 # =====================================================================
 # SComm/GComm CONTROLS VALUES
 # =====================================================================
 
-# Step to test ========================================================
+# Change status of order in CAM department
 
-sub SetStepToTest {
-	my $self       = shift;
-	my $stepToTest = shift;
-	my $createStep = shift;
-
-	if ($createStep) {
-		$self->{"fromStepCb"}->SetValue($stepToTest);
-	}
-	else {
-		$self->{"customStepCb"}->SetValue($stepToTest);
-	}
-
-	#$self->__OnStepChange();
-
-}
-
-sub GetStepToTest {
-	my $self = shift;
-
-	if ( $self->{"rbCreateStep"}->GetValue() ) {
-
-		return $self->{"fromStepCb"}->GetValue();
-	}
-	else {
-
-		return $self->{"customStepCb"}->GetValue();
-	}
-}
-
-# Create Comm step ========================================================
-
-sub SetCreateEtStep {
+sub SetChangeOrderStatus {
 	my $self  = shift;
 	my $value = shift;
 
-	if ($value) {
-
-		$self->{"rbCreateStep"}->SetValue(1);
-	}
-	else {
-
-		$self->{"rbCustomStep"}->SetValue(1);
-	}
+	$self->{"changeOrderStatusChb"}->SetValue($value);
 }
 
-sub GetCreateEtStep {
+sub GetChangeOrderStatus {
 	my $self = shift;
 
-	if ( $self->{"rbCreateStep"}->GetValue() ) {
+	if ( $self->{"changeOrderStatusChb"}->IsChecked() ) {
 
 		return 1;
 	}
@@ -359,19 +592,31 @@ sub GetCreateEtStep {
 	}
 }
 
-# Keep step profiles ========================================================
+# Value of new order status
 
-sub SetKeepProfiles {
+sub SetOrderStatus {
 	my $self  = shift;
 	my $value = shift;
-
-	$self->{"keepProfilesChb"}->SetValue($value);
+	$self->{"orderStatusCb"}->SetValue($value);
 }
 
-sub GetKeepProfiles {
+sub GetOrderStatus {
+	my $self = shift;
+	return $self->{"orderStatusCb"}->GetValue();
+}
+
+# Indicate if export email with comments
+
+sub SetExportEmail {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"exportEmailChb"}->SetValue($value);
+}
+
+sub GetExportEmail {
 	my $self = shift;
 
-	if ( $self->{"keepProfilesChb"}->IsChecked() ) {
+	if ( $self->{"exportEmailChb"}->IsChecked() ) {
 
 		return 1;
 	}
@@ -381,19 +626,112 @@ sub GetKeepProfiles {
 	}
 }
 
-# Server copy profiles ========================================================
+# Action after create email: Open/Sent
 
-sub SetLocalCopy {
+sub SetEmailAction {
 	my $self  = shift;
 	my $value = shift;
 
-	$self->{"localCopyChb"}->SetValue($value);
+	if ( $value eq MailEnums->EmailAction_SEND ) {
+
+		$self->{"emailActionSentRb"}->SetValue(1);
+	}
+	elsif ( $value eq MailEnums->EmailAction_OPEN ) {
+
+		$self->{"emailActionopenRb"}->SetValue(1);
+	}
+	else {
+		die "Unable to set action value: $value";
+	}
+
 }
 
-sub GetLocalCopy {
+sub GetEmailAction {
 	my $self = shift;
 
-	if ( $self->{"localCopyChb"}->IsChecked() ) {
+	my $value = "";
+
+	if ( $self->{"emailActionSentRb"}->GetValue() == 1 ) {
+
+		$value = MailEnums->EmailAction_SEND;
+
+	}
+	elsif ( $self->{"emailActionOpenRb"}->GetValue() == 1 ) {
+
+		$value = MailEnums->EmailAction_OPEN;
+	}
+	else {
+
+		die "Unable to get action value";
+	}
+
+	return $value;
+}
+
+# Email adresses
+sub SetEmailToAddress {
+	my $self  = shift;
+	my $value = shift;
+
+	my $adressTxt = join( ", ", @{$value} );
+
+	$self->{"emailToAddressCtrl"}->SetValue($adressTxt);
+}
+
+sub GetEmailToAddress {
+	my $self = shift;
+
+	my $adressTxt = $self->{"emailToAddressCtrl"}->GetValue();
+
+	$adressTxt =~ s/\s//g;
+
+	return [ split( /[,;]/, $adressTxt ) ];
+}
+
+# Email copy adresses
+sub SetEmailCCAddress {
+	my $self      = shift;
+	my $value     = shift;
+	my $adressTxt = join( ", ", @{$value} );
+
+	$self->{"emailCCAddressCtrl"}->SetValue($adressTxt);
+}
+
+sub GetEmailCCAddress {
+	my $self = shift;
+
+	my $adressTxt = $self->{"emailCCAddressCtrl"}->GetValue();
+
+	$adressTxt =~ s/\s//g;
+
+	return [ split( /[,;]/, $adressTxt ) ];
+}
+
+# Email subjects
+sub SetEmailSubject {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"emailSubjectCb"}->SetValue($value);
+}
+
+sub GetEmailSubject {
+	my $self = shift;
+
+	return $self->{"emailSubjectCb"}->GetValue();
+}
+
+# Include offer inf
+sub SetIncludeOfferInf {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"includeOfferInfChb"}->SetValue($value);
+}
+
+sub GetIncludeOfferInf {
+	my $self = shift;
+
+	if ( $self->{"includeOfferInfChb"}->IsChecked() ) {
 
 		return 1;
 	}
@@ -403,19 +741,39 @@ sub GetLocalCopy {
 	}
 }
 
-# Local copy profiles ========================================================
-
-sub SetServerCopy {
+# Include offer stackup
+sub SetIncludeOfferStckp {
 	my $self  = shift;
 	my $value = shift;
 
-	$self->{"serverCopyChb"}->SetValue($value);
+	$self->{"includeOfferStckpChb"}->SetValue($value);
 }
 
-sub GetServerCopy {
+sub GetIncludeOfferStckp {
 	my $self = shift;
 
-	if ( $self->{"serverCopyChb"}->IsChecked() ) {
+	if ( $self->{"includeOfferStckpChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
+# Clear comments
+sub SetClearComments {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"clearCommentsChb"}->SetValue($value);
+}
+
+sub GetClearComments {
+	my $self = shift;
+
+	if ( $self->{"clearCommentsChb"}->IsChecked() ) {
 
 		return 1;
 	}

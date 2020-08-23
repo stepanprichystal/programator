@@ -33,8 +33,7 @@ sub new {
 	my $orders = shift;
 
 	my @dimension = ( 1000, 800 );
-	my $flags =
-	  &Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
+	my $flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
 
 	my $self = $class->SUPER::new( $parent, "TPV comments builder - $jobId", \@dimension, $flags );
 
@@ -68,9 +67,10 @@ sub new {
 	$self->{'onMoveCommEvt'}       = Event->new();
 	$self->{'onAddCommEvt'}        = Event->new();
 
-	$self->{"saveExitEvt"} = Event->new();
+	$self->{"saveExitEvt"}     = Event->new();
 	$self->{"emailPreviewEvt"} = Event->new();
-	
+	$self->{"clearAllEvt"}     = Event->new();
+	$self->{"restoreEvt"}      = Event->new();
 
 	return $self;
 }
@@ -84,8 +84,12 @@ sub RefreshCommListViewForm {
 	my @commLayoputs = $layout->GetAllComments();
 
 	$self->{"commListViewFrm"}->SetCommList( \@commLayoputs );
-	$self->{"commListViewFrm"}->SetCommSelected( scalar(@commLayoputs) - 1 );
 
+	if ( scalar(@commLayoputs) ) {
+		$self->{"commListViewFrm"}->SetCommSelected( scalar(@commLayoputs) - 1 );
+	}
+
+	# Set detail view
 	if ( scalar(@commLayoputs) ) {
 
 		$self->{"commViewFrm"}->Show();
@@ -93,6 +97,20 @@ sub RefreshCommListViewForm {
 	else {
 
 		$self->{"commViewFrm"}->Hide();
+	}
+
+	# Set buttons
+	if ( scalar(@commLayoputs) ) {
+
+		$self->{"btnClear"}->Enable();
+		$self->{"btnPreview"}->Enable();
+		$self->{"btnRestore"}->Disable();
+	}
+	else {
+
+		$self->{"btnClear"}->Disable();
+		$self->{"btnPreview"}->Disable();
+		$self->{"btnRestore"}->Enable();
 	}
 
 	$self->{"mainFrm"}->Thaw();
@@ -117,7 +135,7 @@ sub RefreshCommViewForm {
 	my $layout = shift;
 
 	$self->{"mainFrm"}->Freeze();
-	
+
 	if ( $commId > -1 ) {
 
 		$self->{"commViewFrm"}->SetCommLayout( $commId, $layout );
@@ -141,9 +159,9 @@ sub RefreshSelected {
 	}
 }
 
-sub GetSelectedComment{
-		my $self   = shift;
-	
+sub GetSelectedComment {
+	my $self = shift;
+
 	return $self->{"commListViewFrm"}->GetSelectedComm();
 }
 
@@ -171,17 +189,22 @@ sub __SetLayout {
 
 	$self->AddContent($szMain);
 	$self->SetButtonHeight(30);
-	my $btnPreview = $self->AddButton( "Mail preview", sub { $self->{"emailPreviewEvt"}->Do() } );
-	#my $btnCancel = $self->AddButton( "Cancel", sub { $self->{"saveExitEvt"}->Do( 0, 1, 0 ) } );
-	my $btnSave   = $self->AddButton( "Save",   sub { $self->{"saveExitEvt"}->Do( 1, 0, 0 ) } );
-	my $btnSaveExport = $self->AddButton( 'Save + Export', sub { $self->{"saveExportEvt"}->Do( 1, 0, 1 ) } );
-	my $btnSaveExit = $self->AddButton( "Save + Exit", sub { $self->{"saveExitEvt"}->Do( 1, 1, 0 ) } );
-	
-	 
+	my $btnPreview    = $self->AddButton( "Mail preview",  sub { $self->{"emailPreviewEvt"}->Do() } );
+	my $btnClear      = $self->AddButton( "Clear all",     sub { $self->{"clearAllEvt"}->Do() } );
+	my $btnRestore    = $self->AddButton( "Restore last",  sub { $self->{"restoreEvt"}->Do() } );
+	my $btnSave       = $self->AddButton( "Save",          sub { $self->{"saveExitEvt"}->Do( 1, 0, 0 ) } );
+	my $btnSaveExport = $self->AddButton( 'Save + Export', sub { $self->{"saveExitEvt"}->Do(1, 0, 1) } );
+	my $btnSaveExit   = $self->AddButton( "Save + Exit",   sub { $self->{"saveExitEvt"}->Do( 1, 1, 0 ) } );
 
-	  # DEFINE LAYOUT STRUCTURE
+	$btnClear->Disable();
+	$btnPreview->Disable();
 
-	  # KEEP REFERENCES
+	# DEFINE LAYOUT STRUCTURE
+
+	# KEEP REFERENCES
+	$self->{"btnClear"}   = $btnClear;
+	$self->{"btnRestore"} = $btnRestore;
+	$self->{"btnPreview"} = $btnPreview;
 
 }
 

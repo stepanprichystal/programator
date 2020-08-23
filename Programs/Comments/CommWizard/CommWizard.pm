@@ -25,6 +25,8 @@ use aliased 'Programs::Comments::Enums' => 'CommEnums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Comments::CommMail::CommMail';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Programs::Exporter::ExportCheckerMini::RunExport::RunExporterCheckerMini';
+		use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,7 +43,7 @@ sub new {
 
 	$self->{"jobId"} = shift;
 
-	$self->{"serverPort"} = shift;
+	$self->{"addDefaultComm"} = shift;    # add default comments when app start
 
 	$self->{"inCAM"} = undef;
 
@@ -66,7 +68,7 @@ sub Init {
 	$self->{"launcher"} = $launcher;
 	$self->{"inCAM"}    = $launcher->GetInCAM();
 
-	$self->{"comments"} = Comments->new( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"comments"} = Comments->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"addDefaultComm"} );
 
 	# Refresh before set handlers in order do not raise events
 	$self->__RefreshForm();
@@ -107,6 +109,32 @@ sub __SaveExitHndl {
 		}
 	}
 
+	if ($export) {
+
+		$self->__StopTimers();
+
+		# Run next app and use current server
+
+		# 1) Disconect this app from server
+		if ( $self->{"inCAM"}->IsConnected() ) {
+			$self->{"inCAM"}->ClientFinish();
+		}
+		
+		# 2) Tell to launcher, do not close/exit server when this app ends
+		$self->{"launcher"}->SetLetServerRun();
+
+		# 3) Run new app via ExportCheckerMiniWrapper ( wrapper for AppLauncher package and RunFromApp method)
+		# Pass current port from launcher to AppLauncher
+		my $unitId  = UnitEnums->UnitId_COMM;
+		my $unitDim = [ 555, 285 ];
+
+		my $app = RunExporterCheckerMini->new( $self->{"jobId"}, $unitId, $unitDim, 1, $self->{"launcher"}->GetServerPort() );
+
+		# 4) End this app
+		$self->{"form"}->{"mainFrm"}->Close();
+ 
+	}
+
 	if ($exit) {
 
 		$self->{"form"}->{"mainFrm"}->Close();
@@ -118,17 +146,90 @@ sub __OnEmailPreview {
 	my $self = shift;
 
 	if ( $self->__FormChecks() ) {
-		my %inf = %{ HegMethods->GetCustomerInfo($self->{"jobId"}) };
+		my %inf  = %{ HegMethods->GetCustomerInfo( $self->{"jobId"} ) };
 		my $lang = "en";
+
 		# if country CZ
 		$lang = "cz" if ( $inf{"zeme"} eq 25 );
-		 
 
-		my $mail = CommMail->new(  $self->{"inCAM"}, $self->{"jobId"} ,$self->{"comments"}->GetLayout(), $lang);
+		my $mail = CommMail->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"comments"}->GetLayout(),  $lang );
 		$mail->Open( ["\@"], [], "Comment preview..." );
-		
+
 		#$mail->Sent(['stepan.prichystal@gatema.cz'], [], "Comment preview...");
 
+	}
+}
+
+sub __OnClearAllHndl {
+	my $self = shift;
+
+	my $layout = $self->{"comments"}->GetLayout();
+
+	if ( scalar( $layout->GetAllComments ) ) {
+
+		my $messMngr = $self->{"form"}->GetMessMngr();
+
+		my @mess = ();
+
+		push( @mess, "You are about to clear all comments:\n" );
+		push( @mess, " 1) First, all coments will be archived in: " . $self->{"comments"}->GetCommArchiveDir() );
+		push( @mess, " 2) All coments will be removed from viewer" );
+		push( @mess, " 3) You can restore last cleared comments by click on Restore button (activ3e only if Comemnt list is empty)");
+		push( @mess, "\n\nDo you want continue?" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "No", "Yes, archive and clear comments" ] );    #  Script is stopped
+
+		if ( $messMngr->Result() == 1 ) {
+
+			# Remove comments from list
+
+			$self->{"comments"}->ClearCoomments();
+
+			$self->{"form"}->RefreshCommListViewForm($layout);
+			$self->{"form"}->RefreshCommViewForm(-1);
+
+		}
+
+	}
+
+}
+
+sub __OnRestoreHndl {
+	my $self = shift;
+
+	my $layout   = $self->{"comments"}->GetLayout();
+	my $messMngr = $self->{"form"}->GetMessMngr();
+	if ( scalar( $layout->GetAllComments ) ) {
+
+		my @mess = ();
+		push( @mess, "Unable to restore comments, when still exist " . scalar( $layout->GetAllComments ) . " comments in list" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess );    #  Script is stopped
+
+		return 0;
+	}
+
+	if ( scalar( $layout->GetAllComments ) ) {
+
+		my @mess = ();
+		push( @mess, "Unable to restore comments, when still exist " . scalar( $layout->GetAllComments ) . " comments in list" );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess );    #  Script is stopped
+
+		return 0;
+	}
+
+	my $res = $self->{"comments"}->RestoreCoomments();
+
+	if ($res) {
+
+		$self->__RefreshForm();
+	}
+	else {
+		my @mess = ();
+		push( @mess, "Unable to restore comments, because there are no archived comments at: " . $self->{"comments"}->GetCommArchiveDir() );
+
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );    #  Script is stopped
 	}
 
 }
@@ -270,12 +371,13 @@ sub __OnEditFileHndl {
 }
 
 sub __OnAddFileHndl {
-	my $self   = shift;
-	my $commId = shift;
-	my $addCAM = shift;
-	my $addGS  = shift;
+	my $self    = shift;
+	my $commId  = shift;
+	my $addCAM  = shift;
+	my $addGS   = shift;
+	my $addFile = shift;
 
-	$self->{"form"}->HideFrm();
+	$self->{"form"}->HideFrm() if ($addCAM || $addGS);
 
 	my $p = "";
 	my $res;
@@ -285,9 +387,13 @@ sub __OnAddFileHndl {
 	}
 	elsif ($addGS) {
 		$res = $self->{"comments"}->SnapshotGS( \$p );
+
+	}
+	elsif ($addFile) {
+		$res = $self->{"comments"}->ChooseFile( \$p, $self->{"form"}->{"mainFrm"} );
 	}
 
-	$self->{"form"}->ShowFrm();
+	$self->{"form"}->ShowFrm() if ($addCAM || $addGS);
 
 	if ($res) {
 
@@ -401,6 +507,8 @@ sub __SetHandlers {
 
 	$self->{"form"}->{"saveExitEvt"}->Add( sub     { $self->__SaveExitHndl(@_) } );
 	$self->{"form"}->{"emailPreviewEvt"}->Add( sub { $self->__OnEmailPreview(@_) } );
+	$self->{"form"}->{"clearAllEvt"}->Add( sub     { $self->__OnClearAllHndl(@_) } );
+	$self->{"form"}->{"restoreEvt"}->Add( sub      { $self->__OnRestoreHndl(@_) } );
 
 	$self->{"form"}->{"onSelCommChangedEvt"}->Add( sub { $self->__OnSelCommChangedHndl(@_) } );
 	$self->{"form"}->{"onRemoveCommEvt"}->Add( sub     { $self->__OnRemoveCommdHndl(@_) } );
@@ -457,6 +565,13 @@ sub __SetTimers {
 	);
 
 	$tmtImgUpdate->Start(1000);
+
+	$self->{"tmtImgUpdate"} = $tmtImgUpdate;
+}
+
+sub __StopTimers {
+	my $self = shift;
+	$self->{"tmtImgUpdate"}->Stop();
 }
 
 sub __FormChecks {
@@ -482,6 +597,7 @@ sub __FormChecks {
 
 		my @files = $allComm[$i]->GetAllFiles();
 		my $text  = $allComm[$i]->GetText();
+		$text .= join( " ", $allComm[$i]->GetAllSuggestions() );
 
 		my @tags = ( $text =~ /(\@f\d+)/g );
 
@@ -526,7 +642,7 @@ sub __FormChecks {
 			$messMngr->ShowModal( -1,
 								  EnumsGeneral->MessageType_WARNING,
 								  [ "Varování při kontrole formuláře.", "Detail varování:\n" . join( "\n", map { "- " . $_ } @warnMess ) ],
-								  [ "Repair",                                    "Continue" ] );
+								  [ "Repair",                                "Continue" ] );
 
 			if ( $messMngr->Result() == 0 ) {
 

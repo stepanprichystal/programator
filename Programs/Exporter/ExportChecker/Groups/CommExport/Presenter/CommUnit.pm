@@ -27,6 +27,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Model::CommP
 use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Model::CommExportData';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::View::CommUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::View::CommUnitFormEvt';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -71,6 +72,9 @@ sub InitForm {
 	my $parent = $groupWrapper->GetParentForGroup();
 	$self->{"form"} = CommUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo() );
 
+	# init base class with event class
+	$self->{"eventClass"} = CommUnitFormEvt->new( $self->{"form"} );
+
 	$self->_SetHandlers();
 
 }
@@ -88,23 +92,23 @@ sub RefreshGUI {
 	$self->{"form"}->SetEmailToAddress( $groupData->GetEmailToAddress() );
 	$self->{"form"}->SetEmailCCAddress( $groupData->GetEmailCCAddress() );
 	$self->{"form"}->SetEmailSubject( $groupData->GetEmailSubject() );
+	$self->{"form"}->SetIncludeOfferInf( $groupData->GetIncludeOfferInf() );
+	$self->{"form"}->SetIncludeOfferStckp( $groupData->GetIncludeOfferStckp() );
 	$self->{"form"}->SetClearComments( $groupData->GetClearComments() );
 
 }
 
-sub GetGroupData {
-
+# Update groupd data with values from GUI
+sub UpdateGroupData {
 	my $self = shift;
 
 	my $frm = $self->{"form"};
-
-	my $groupData;
 
 	#if form is init/showed to user, return group data edited by form
 	#else return default group data, not processed by form
 
 	if ($frm) {
-		$groupData = $self->{"dataMngr"}->GetGroupData();
+		my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 		$groupData->SetChangeOrderStatus( $frm->GetChangeOrderStatus() );
 		$groupData->SetOrderStatus( $frm->GetOrderStatus() );
@@ -113,15 +117,12 @@ sub GetGroupData {
 		$groupData->SetEmailToAddress( $frm->GetEmailToAddress() );
 		$groupData->SetEmailCCAddress( $frm->GetEmailCCAddress() );
 		$groupData->SetEmailSubject( $frm->GetEmailSubject() );
+		$groupData->SetIncludeOfferInf( $frm->GetIncludeOfferInf() );
+		$groupData->SetIncludeOfferStckp( $frm->GetIncludeOfferStckp() );
 		$groupData->SetClearComments( $frm->GetClearComments() );
 
 	}
-	else {
-
-		$groupData = $self->{"dataMngr"}->GetGroupData();
-	}
-
-	return $groupData;
+	 
 }
 
 #-------------------------------------------------------------------------------------------#

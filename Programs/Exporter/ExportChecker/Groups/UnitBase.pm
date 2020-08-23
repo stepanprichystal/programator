@@ -29,15 +29,16 @@ sub new {
 
 	$self->{"groupWrapper"} = undef;    #wrapper, which form is placed in
 	$self->{"form"}         = undef;    #form which represent GUI of this group
-	$self->{"eventClass"} = undef;		# define connection between all groups by group and envents handler
-	                                 
-	$self->{"dataMngr"}     = undef;    # manager, which is responsible for create, update group data
-	$self->{"cellWidth"}    = 0;        #width of cell/unit form (%), placed in exporter table row
-	$self->{"exportOrder"}  = 0;        #Order, which unit will be ecported
-	
-	 # Events
+	$self->{"eventClass"}   = undef;    # define connection between all groups by group and envents handler
+
+	$self->{"dataMngr"}    = undef;     # manager, which is responsible for create, update group data
+	$self->{"cellWidth"}   = 0;         #width of cell/unit form (%), placed in exporter table row
+	$self->{"exportOrder"} = 0;         #Order, which unit will be ecported
+
+	# Events
 
 	$self->{"onChangeState"} = Event->new();
+	$self->{"switchAppEvt"}  = Event->new();
 
 	return $self;
 }
@@ -60,13 +61,13 @@ sub InitDataMngr {
 		$self->{"dataMngr"}->PrepareGroupData();
 		$self->{"dataMngr"}->PrepareGroupState();
 		$self->{"dataMngr"}->PrepareGroupMandatory();
-		
+
 	}
 }
 
 sub SetDefaultInfo {
-	my $self       = shift;
-	my $defaultInfo      = shift;
+	my $self        = shift;
+	my $defaultInfo = shift;
 
 	$self->{"dataMngr"}->SetDefaultInfo($defaultInfo);
 }
@@ -76,11 +77,12 @@ sub CheckBeforeExport {
 	my $self       = shift;
 	my $inCAM      = shift;
 	my $resultMngr = shift;
+	my $mode       = shift;    # EnumsJobMngr->TaskMode_SYNC /  EnumsJobMngr->TaskMode_ASYNC
 
 	# Necessery set new incam library
 	$self->{"dataMngr"}->{"inCAM"} = $inCAM;
 
-	my $succes = $self->{"dataMngr"}->CheckGroupData();
+	my $succes = $self->{"dataMngr"}->CheckGroupData($mode);
 
 	$$resultMngr = $self->{"dataMngr"}->{'resultMngr'};
 
@@ -98,8 +100,7 @@ sub CheckBeforeExport {
 #}
 
 sub GetGroupState {
-	my $self  = shift;
-
+	my $self = shift;
 
 	my $groupState = $self->{"dataMngr"}->GetGroupState();
 
@@ -107,15 +108,12 @@ sub GetGroupState {
 }
 
 sub GetGroupMandatory {
-	my $self  = shift;
-
+	my $self = shift;
 
 	my $groupState = $self->{"dataMngr"}->GetGroupMandatory();
 
 	return $groupState;
 }
-
-
 
 sub SetGroupState {
 	my $self       = shift;
@@ -130,9 +128,15 @@ sub SetGroupState {
 }
 
 sub GetExportData {
-	my $self  = shift;
-	
+	my $self = shift;
+
 	return $self->{"dataMngr"}->ExportGroupData();
+}
+
+sub GetGroupData {
+	my $self = shift;
+
+	return $self->{"dataMngr"}->GetGroupData();
 }
 
 sub GetUnitId {
@@ -155,8 +159,8 @@ sub GetCellWidth {
 }
 
 sub SetExportOrder {
-	my $self = shift;
-	my $order    = shift;
+	my $self  = shift;
+	my $order = shift;
 
 	$self->{"exportOrder"} = $order;
 }
@@ -175,22 +179,22 @@ sub GetEventClass {
 
 sub IsFormLess {
 	my $self = shift;
-	
-	if( defined $self->{"formLess"} && $self->{"formLess"} == 1){
+
+	if ( defined $self->{"formLess"} && $self->{"formLess"} == 1 ) {
 		return 1;
-	}else{
+	}
+	else {
 		return 0;
 	}
- 
+
 }
 
 # Return reference to unit form
-sub GetForm{
+sub GetForm {
 	my $self = shift;
-	
+
 	return $self->{"form"};
 }
-
 
 sub RefreshWrapper {
 	my $self  = shift;
@@ -204,7 +208,6 @@ sub RefreshWrapper {
 
 }
 
-
 sub _SetHandlers {
 	my $self = shift;
 
@@ -213,19 +216,24 @@ sub _SetHandlers {
 		$self->{"groupWrapper"}->{"onChangeState"}->Add( sub { $self->__OnChangeState(@_) } );
 	}
 
+	if ( defined $self->{"form"} ) {
+
+		if ( defined $self->{"form"}->{"switchAppEvt"} ) {
+			$self->{"form"}->{"switchAppEvt"}->Add( sub { $self->{"switchAppEvt"}->Do(@_) } );
+		}
+	}
+
 }
 
 sub __OnChangeState {
 	my $self     = shift;
-	my $newState = shift;    #new group state
+	my $newState = shift;                                                                           #new group state
 
 	$self->{"dataMngr"}->SetGroupState($newState);
 
 	$self->{"onChangeState"}->Do($self);
 
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

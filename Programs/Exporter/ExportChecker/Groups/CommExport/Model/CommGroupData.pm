@@ -134,6 +134,34 @@ sub GetEmailSubject {
 }
 
 
+# Include offer inf like stackup, class etc..
+sub SetIncludeOfferInf {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"includeOfferInf"} = $value;
+}
+
+sub GetIncludeOfferInf {
+	my $self  = shift;
+	my $value = shift;
+
+	return $self->{"data"}->{"includeOfferInf"};
+}
+
+# Include offer pdf stackup
+sub SetIncludeOfferStckp {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"includeOfferStckp"} = $value;
+}
+
+sub GetIncludeOfferStckp {
+	my $self  = shift;
+	my $value = shift;
+
+	return $self->{"data"}->{"includeOfferStckp"};
+}
+
 # Clear comments
 sub SetClearComments {
 	my $self  = shift;

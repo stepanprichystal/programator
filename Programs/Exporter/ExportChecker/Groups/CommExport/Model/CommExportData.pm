@@ -12,23 +12,9 @@ use warnings;
 use File::Copy;
 
 #local library
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'CamHelpers::CamLayer';
-#use aliased 'CamHelpers::CamAttributes';
-#
-#
-#use aliased 'CamHelpers::CamDrilling';
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Enums::EnumsGeneral';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Packages::InCAM::InCAM';
-#use aliased 'Enums::EnumsMachines';
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Packages::Events::Event';
-#use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'Managers::MessageMngr::MessageMngr';
 
+use aliased 'Enums::EnumsIS';
+ 
 use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::CommData';
 
 #-------------------------------------------------------------------------------------------#
@@ -59,12 +45,23 @@ sub OnExportGroupData {
 	my $exportData = CommData->new();
 
 	$exportData->SetChangeOrderStatus( $groupData->GetChangeOrderStatus() );
-	$exportData->SetOrderStatus( $groupData->GetOrderStatus() );
+	
+	my $status = $groupData->GetOrderStatus();
+	if($status eq EnumsIS->CurStep_POSLANDOTAZ){
+		
+		my $login = getlogin();
+		$status =~ s/<user>/$login/;
+	}
+ 
+	
+	$exportData->SetOrderStatus( $status );
 	$exportData->SetExportEmail( $groupData->GetExportEmail() );
 	$exportData->SetEmailAction( $groupData->GetEmailAction() );
 	$exportData->SetEmailToAddress( $groupData->GetEmailToAddress() );
 	$exportData->SetEmailCCAddress( $groupData->GetEmailCCAddress() );
 	$exportData->SetEmailSubject( $groupData->GetEmailSubject() );
+	$exportData->SetIncludeOfferInf( $groupData->GetIncludeOfferInf() );
+	$exportData->SetIncludeOfferStckp( $groupData->GetIncludeOfferStckp() );
 	$exportData->SetClearComments( $groupData->GetClearComments() );
 
 	return $exportData;

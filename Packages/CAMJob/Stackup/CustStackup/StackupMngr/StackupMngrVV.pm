@@ -31,8 +31,7 @@ sub new {
 	bless $self;
 
 	$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"inLayerEmpty"} = { $self->__SetIsInnerLayerEmpty() };
-
+ 
 	return $self;
 }
 
@@ -212,60 +211,11 @@ sub GetIsInnerLayerEmpty {
 	my $self  = shift;
 	my $lName = shift;
 
-	return $self->{"inLayerEmpty"}->{$lName};
+	my $isEmpty = $self->{"stackupCode"}->GetIsLayerEmpty($lName);
 
+	return $isEmpty;
 }
-
-sub __SetIsInnerLayerEmpty {
-	my $self = shift;
-
-	my @steps = ();
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	if ( CamStepRepeat->ExistStepAndRepeats( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} ) ) {
-
-		@steps = CamStepRepeat->GetUniqueDeepestSR( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
-		CamStepRepeat->RemoveCouponSteps( \@steps );
-		@steps = map { $_->{"stepName"} } @steps;
-	}
-	else {
-		@steps = ("o+1");
-	}
-
-	my %inLayers = ();
-	my @layers   = $self->GetStackupLayers();
-
-	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
-
-		my $l = $layers[$i];
-
-		if ( $l->GetType() eq StackEnums->MaterialType_COPPER ) {
-
-			my $isEmpty = 1;
-			my $f       = Features->new();
-			foreach my $step (@steps) {
-
-				$f->Parse( $inCAM, $jobId, $step, $l->GetCopperName(), 0, 0 );
-
-				my @pFeats =  grep { $_->{"polarity"} eq "P" } $f->GetFeatures();
-				my @stringFeats = grep { defined $_->{"attr"}->{".string"}} @pFeats;
-
-				if ( scalar(@pFeats) && scalar(@pFeats) > scalar(@stringFeats)   ) {
-					$isEmpty = 0;
-					last;
-				}
-			}
-
-			$inLayers{ $l->GetCopperName() } = $isEmpty;
-
-		}
-	}
-
-	return %inLayers;
-}
-
+ 
 # Real PCB thickness
 sub GetThickness {
 	my $self = shift;
@@ -360,46 +310,8 @@ sub GetThicknessFlex {
 
 sub GetFlexPCBCode {
 	my $self = shift;
-
-	my $pcbType = $self->GetPcbType();
-	my $code    = undef;
-	if (    $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO
-		 || $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI )
-	{
-
-		my @layers    = $self->GetStackupLayers();
-		my @codeParts = ();
-		my $curPart   = undef;
-		my $cuPartCnt = 0;
-		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
-
-			my $l = $layers[$i];
-
-			if ( $l->GetType() eq StackEnums->MaterialType_COPPER && !$self->GetIsInnerLayerEmpty( $l->GetCopperName ) ) {
-
-				my $c = !$l->GetIsFoil() ? $self->GetStackup()->GetCoreByCuLayer( $l->GetCopperName ) : undef;
-				my $isFlex = ( defined $c && $c->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) ? 1 : 0;
-				my $newPart = $isFlex ? "F" : "Ri";
-
-				if ( !defined $curPart ) {
-					$curPart = $newPart;
-				}
-				elsif ( defined $curPart && $curPart ne $newPart ) {
-
-					push( @codeParts, $cuPartCnt . $curPart );
-
-					$curPart   = $newPart;
-					$cuPartCnt = 0;
-				}
-
-				$cuPartCnt++;
-			}
-		}
-
-		push( @codeParts, $cuPartCnt . $curPart );
-
-		$code = join( "-", @codeParts );
-	}
+	
+	my $code = $self->{"stackupCode"}->GetStackupCode();
 
 	return $code;
 }

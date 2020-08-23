@@ -58,7 +58,7 @@ $launcher->SetWaitingFrm( "Impedance coupon generator - $jobId", "Loading applic
 #my $logPath = GeneralHelper->Root() . "\\Packages\\Reorder\\ReorderApp\\Config\\Logger.conf";
 #$launcher->SetLogConfig($logPath);
 
-$launcher->Run();
+$launcher->RunFromInCAM();
 
 
 exit(1);

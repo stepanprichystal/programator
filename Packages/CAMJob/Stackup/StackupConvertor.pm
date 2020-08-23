@@ -21,6 +21,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::CAMJob::Stackup::StackupDefault';
+
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -39,21 +40,27 @@ sub new {
 # Create stackup xml file and store to default stackup location
 sub DoConvert {
 	my $self       = shift;
-	my $outputPath = shift; # default is standard stackup location if not specified
+	my $outputPath = shift;    # default is standard stackup location if not specified
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# load stackup
-	my $stackup = Stackup->new($inCAM, $jobId);
+	my $stackup = Stackup->new( $inCAM, $jobId );
 
 	my $thick = sprintf( "%.3f", $stackup->GetFinalThick() / 1000 );
-	 
-	my $name = StackupDefault->GetStackupName($stackup,$jobId).".xml";
+
+	my $name = StackupDefault->GetStackupName( $stackup, $jobId ) . ".xml";
 
 	# store to standard stackup folder
 	unless ($outputPath) {
 		$outputPath = EnumsPaths->Jobs_STACKUPS . $name;
+
+		# remove all multicall stackup for curent job
+		# (there could be more than one stackup (slightly different name) for one job)
+		my @oldStackups = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" );
+		unlink($_) foreach (@oldStackups);
+
 	}
 
 	my $xmlGen = XML::Generator->new(':pretty');
@@ -103,13 +110,12 @@ sub DoConvert {
 				$attrEl{"pos"}  = $lPos;
 				$attrEl{"qId"}  = $lPrepreg->GetQId();
 				$attrEl{"type"} = "Prepreg";
-				
+
 				# Add info about prepregs type
-				if($l->GetIsNoFlow()){
-					
-					$attrEl{"group"}= $l->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 ? 1 : 2;
+				if ( $l->GetIsNoFlow() ) {
+
+					$attrEl{"group"} = $l->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 ? 1 : 2;
 				}
-				
 
 				$lPos++;
 
@@ -134,8 +140,10 @@ my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::CAMJob::Stackup::StackupConvertor';
+	use aliased 'Packages::InCAM::InCAM';
 
-	my $convertor = StackupConvertor->new("d113609");
+	my $inCAM = InCAM->new();
+	my $convertor = StackupConvertor->new( $inCAM, "x66981" );
 	$convertor->DoConvert();
 
 }

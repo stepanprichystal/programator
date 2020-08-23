@@ -20,6 +20,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::NifFile::NifFile';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'Packages::CAMJob::Technology::LayerSettings';
+use aliased 'Packages::CAMJob::Stackup::StackupCode';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,9 +49,10 @@ sub new {
 	CamDrilling->AddLayerStartStop( $self->{"inCAM"}, $self->{"jobId"}, \@NCLayers );
 	$self->{"NCLayers"} = \@NCLayers;
 
-	$self->{"pcbType"}    = JobHelper->GetPcbType( $self->{"jobId"} );
-	$self->{"isFlex"}     = JobHelper->GetIsFlex( $self->{"jobId"} );
-	$self->{"isMatKinds"} = { HegMethods->GetAllMatKinds() };
+	$self->{"pcbType"}     = JobHelper->GetPcbType( $self->{"jobId"} );
+	$self->{"isFlex"}      = JobHelper->GetIsFlex( $self->{"jobId"} );
+	$self->{"isMatKinds"}  = { HegMethods->GetAllMatKinds() };
+	$self->{"stackupCode"} = StackupCode->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
 	$self->{"adhReduction"} = 0.75;    # Adhesives are reduced by 25% after pressing (copper gaps are filled with adhesive)
 	$self->{"SMReduction"}  = 0.50;    # SM are reduced by 50% after processing (copper gaps are filled with SM)
@@ -153,12 +155,13 @@ sub GetExistStiff {
 			my $mAdhInf = HegMethods->GetPcbStiffenerAdhMat( $self->{"jobId"}, $side );
 			my @nAdh = split( /\s/, $mAdhInf->{"nazev_subjektu"} );
 
-			$stifInfo->{"adhesiveText"}  = $mAdhInf->{"nazev_subjektu"}; 
+			$stifInfo->{"adhesiveText"} = $mAdhInf->{"nazev_subjektu"};
+
 			# make name shorter if 3M tape
-			if( $stifInfo->{"adhesiveText"} =~ /^(3m)\s+(\w+)\s+/i){
-				$stifInfo->{"adhesiveText"} = $1." ".$2;
+			if ( $stifInfo->{"adhesiveText"} =~ /^(3m)\s+(\w+)\s+/i ) {
+				$stifInfo->{"adhesiveText"} = $1 . " " . $2;
 			}
-			
+
 			$stifInfo->{"adhesiveThick"} = $mAdhInf->{"vyska"} * 1000000;    #
 			$stifInfo->{"adhesiveTg"}    = 204;
 

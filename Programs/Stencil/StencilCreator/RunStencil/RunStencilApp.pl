@@ -60,7 +60,7 @@ $launcher->SetWaitingFrm( "Stencil creator - $jobId", "Loading application ...",
 
 #$launcher->SetLogConfig($logPath);
 
-$launcher->Run();
+$launcher->RunFromInCAM();
 
 print STDERR "Stencil creator finish\n";
 

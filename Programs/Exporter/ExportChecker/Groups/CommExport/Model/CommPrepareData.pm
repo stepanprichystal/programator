@@ -15,10 +15,10 @@ use warnings;
 use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Model::CommGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Commesting::BasicHelper::Helper' => 'CommHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsIS';
+use aliased 'Programs::Comments::CommMail::Enums' => 'MailEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -77,14 +77,14 @@ sub OnPrepareGroupData {
 	 
 	# Prder status 
 	$groupData->SetChangeOrderStatus(0);
-	$groupData->SetOrderStatus(EnumsIS->CurStep_HOTOVOODSOUHLASIT);
+	$groupData->SetOrderStatus("");
 	
 	# sent mail
 	$groupData->SetExportEmail(0);
-	$groupData->SetEmailAction("send");
-	$groupData->SetEmailToAddress([EnumsPaths->MAIL_GATSALES]);
-	$groupData->SetEmailCCAddress([EnumsPaths->MAIL_GATCAM]);
-	$groupData->SetEmailSubject("Approval - ".uc($jobId));
+	$groupData->SetEmailAction(MailEnums->EmailAction_SEND);
+	$groupData->SetEmailToAddress([]);
+	$groupData->SetEmailCCAddress([]);
+	$groupData->SetEmailSubject("");
 	$groupData->SetClearComments(0);
  
 	return $groupData;

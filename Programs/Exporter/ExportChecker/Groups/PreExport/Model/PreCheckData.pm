@@ -29,11 +29,11 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::CAMJob::Material::MaterialInfo';
-use aliased 'Packages::CAM::Netlist::NetlistCompare';
 use aliased 'Packages::CAMJob::Scheme::SchemeCheck';
 use aliased 'Packages::CAMJob::Matrix::LayerNamesCheck';
 use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
@@ -58,6 +58,18 @@ sub OnCheckGroupData {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
 
+	my $offer = JobHelper->GetJobIsOffer( $dataMngr->{"jobId"} );
+
+	$self->__CheckGroupDataBasic($dataMngr);
+	$self->__CheckGroupDataExtend($dataMngr) if ( !$offer );
+
+}
+
+# Basic control
+sub __CheckGroupDataBasic {
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
+
 	my $groupData = $dataMngr->GetGroupData();
 	my $inCAM     = $dataMngr->{"inCAM"};
 	my $jobId     = $dataMngr->{"jobId"};
@@ -67,7 +79,7 @@ sub OnCheckGroupData {
 
 	my @sig      = $defaultInfo->GetSignalLayers();
 	my $layerCnt = $defaultInfo->GetLayerCnt();
- 
+
 	# 1) Check if pcb class is at lest 3
 	my $pcbClass = $defaultInfo->GetPcbClass();
 	if ( !defined $pcbClass || $pcbClass < 3 ) {
@@ -131,31 +143,6 @@ sub OnCheckGroupData {
 
 	if ($err) {
 		$dataMngr->_AddErrorResult( "Layer check", "Order of signal layers in matrix is wrong. Fix it." );
-	}
-
-	# 4) Check if inner layers has properly set layer attribute "layer_side" (schema depands on this attribute)
-	if ( $layerCnt > 2 ) {
-
-		my $stackup = $defaultInfo->GetStackup();
-
-		foreach my $l ( grep { $_->{"gROWname"} =~ /^v\d+$/ } @sig ) {
-
-			# Get real side from stackup
-			my $side = StackupOperation->GetSideByLayer( $inCAM, $jobId, $l->{"gROWname"}, $stackup );
-
-			my %layerAttr = CamAttributes->GetLayerAttr( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
-			if ( $layerAttr{'layer_side'} !~ /^$side$/i ) {
-
-				$dataMngr->_AddErrorResult(
-											"Wrong inserted schema ",
-											"Signálová vrstva: \""
-											  . $l->{"gROWname"}
-											  . "\" má špatně nastavený atribut vrstvy: \"Layer side\" ("
-											  . $layerAttr{'layer_side'}
-											  . "). Ve stackupu je vstva vedená jako: \"$side\". Uprav atribut a znovu vlož schéma do panelu!"
-				);
-			}
-		}
 	}
 
 	# X) Check proper number of signal layers
@@ -334,6 +321,251 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# 9) Check if board base layers, not contain attribute .rout_chan
+
+	foreach my $l ( $defaultInfo->GetBoardBaseLayers() ) {
+
+		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+
+		if ( $attHist{".rout_chain"} || $attHist{".comp"} ) {
+
+			$dataMngr->_AddErrorResult( "Rout attributes",
+									 "Layer : " . $l->{"gROWname"} . " contains rout attributes: '.rout_chain' or '.comp'. Delete them from layer." );
+		}
+	}
+
+	# 14) Test if stackup material is on stock
+	my @affectOrder = HegMethods->GetOrdersByState( $jobId, 2 );    # Orders on Predvzrobni priprava
+	my $area = undef;
+	if ( scalar(@affectOrder) ) {
+		my $inf           = HegMethods->GetInfoAfterStartProduce( $affectOrder[0]->{"reference_subjektu"} );
+		my %dimsPanelHash = JobDim->GetDimension( $inCAM, $jobId );
+		my %lim           = $defaultInfo->GetProfileLimits();
+		my $pArea         = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
+		$area = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
+	}
+
+	if ( $layerCnt <= 2 ) {
+
+		# check material only if it is standard material
+		my $matSpec = $defaultInfo->GetPcbBaseInfo("material_vlastni");
+
+		if ( $matSpec =~ /^n$/i ) {
+			my $errMes = "";
+			my $matOk = MaterialInfo->BaseMatInStock( $jobId, $area, \$errMes );
+
+			unless ($matOk) {
+				$dataMngr->_AddErrorResult( "Base material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
+			}
+		}
+
+	}
+	else {
+
+		# a) test id material in helios, match material in stackup
+		my $stackup = $defaultInfo->GetStackup();
+
+		my $errMes = "";
+		my $matOk = MaterialInfo->StackupMatInStock( $inCAM, $jobId, $defaultInfo->GetStackup(), $area, \$errMes );
+
+		unless ($matOk) {
+
+			$dataMngr->_AddErrorResult( "Stackup material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
+		}
+	}
+
+	# 17) Check if all our "board" layers are realy board
+	my @nonBoard = ();
+
+	unless ( LayerNamesCheck->CheckNonBoardBaseLayers( $inCAM, $jobId, \@nonBoard ) ) {
+
+		my $str = join( "; ", map { $_->{"gROWname"} } @nonBoard );
+
+		$dataMngr->_AddWarningResult( "Matrix", "V matrixu jsou \"misc\" vrstvy, které by měly být \"board\": $str " );
+	}
+
+	# 18) Check if more same jobid is in production, if so add warning
+	# Exclude job orders which are in production as slave
+	# (slave steps are copied to mother job, thus slave job data can't be infloenced)
+	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
+	if ( scalar(@orders) > 1 ) {
+
+		@orders = grep { $_->{"stav"} == 4 } @orders;    #Ve výrobě (4)
+
+		for ( my $i = scalar(@orders) - 1 ; $i > 0 ; $i-- ) {
+
+			if ( HegMethods->GetInfMasterSlave( $orders[$i]->{"reference_subjektu"} ) eq "S" ) {
+				splice @orders, $i, 1;
+			}
+		}
+
+		if ( scalar(@orders) > 1 ) {
+
+			$dataMngr->_AddWarningResult( "DPS ve výrobě",
+					 "Pozor deska je již ve výrobě a export ovlivní tyto zakázky: " . join( "; ", map { $_->{"reference_subjektu"} } @orders ) );
+		}
+
+	}
+
+	# X) Check RigidFlex minimal thickness
+	# RigidFlex Inner > 1,2mm
+	# RigidFlex Outer > 0,8mm
+	my $pcbThick = $defaultInfo->GetPcbThick($jobId);
+	if ( $pcbThick < 800 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXO ) {
+
+		$dataMngr->_AddErrorResult( "Minimální tloušťka RigidFlex",
+								  "Minimální vyrobitelná tloušťka RigidFlex Outer je : 800µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
+	}
+
+	if ( $pcbThick < 1200 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
+
+		$dataMngr->_AddErrorResult( "Minimální tloušťka RigidFlex",
+								  "Minimální vyrobitelná tlošťka RigidFlex Inner je : 1200µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
+	}
+
+	# X) Check if bend area layer is not missng
+	if ( ( $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXO || $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI )
+		 && !$defaultInfo->LayerExist( "bend", 1 ) )
+	{
+
+		$dataMngr->_AddErrorResult( "Bend area layer", "DPS je typu RigidFlex, v matrixu chybí board vrstva: \"bend\", typu: \"bend_area\" " );
+
+	}
+
+	# Check stiffener layer dont match with value in IS
+	my %stiffIS = HegMethods->GetStiffenerType($jobId);
+	my %stiffJob = ( "top" => $defaultInfo->LayerExist( "stiffc", 1 ), "bot" => $defaultInfo->LayerExist( "stiffs", 1 ) );
+
+	if ( ( $stiffIS{"top"} != $stiffJob{"top"} ) || ( $stiffIS{"bot"} != $stiffJob{"bot"} ) ) {
+
+		$dataMngr->_AddErrorResult(
+									"Stiffener vrstvy",
+									"Vrstvy v jobu pro stiffener nesedí s informací v IS. "
+									  . "\nStiffener TOP - v matrixu: "
+									  . ( $stiffJob{"top"} ? "ano" : "ne" )
+									  . ", v IS: "
+									  . ( $stiffIS{"top"} ? "ano" : "ne" )
+									  . "\nStiffener BOT - v matrixu: "
+									  . ( $stiffJob{"bot"} ? "ano" : "ne" )
+									  . ", v IS: "
+									  . ( $stiffIS{"bot"} ? "ano" : "ne" )
+		);
+
+	}
+
+	# Check coverlay layer dont match with value in IS
+	my %cvrlIS = HegMethods->GetCoverlayType($jobId);
+	my %cvrlJob = ( "top" => 0, "bot" => 0 );
+
+	foreach my $cvrl ( grep { $_->{"gROWlayer_type"} eq "coverlay" } $defaultInfo->GetBoardBaseLayers() ) {
+
+		$cvrlJob{"top"} = 1 if ( CamMatrix->GetNonSignalLayerSide( $inCAM, $jobId, $cvrl->{"gROWname"} ) eq "top" );
+		$cvrlJob{"bot"} = 1 if ( CamMatrix->GetNonSignalLayerSide( $inCAM, $jobId, $cvrl->{"gROWname"} ) eq "bot" );
+	}
+
+	if ( ( $cvrlIS{"top"} != $cvrlJob{"top"} ) || ( $cvrlIS{"bot"} != $cvrlJob{"bot"} ) ) {
+
+		$dataMngr->_AddErrorResult(
+									"Coverlay vrstvy",
+									"Vrstvy v jobu pro coverlay nesedí s informací v IS. "
+									  . "\nCoverlay TOP - v matrixu: "
+									  . ( $cvrlJob{"top"} ? "ano" : "ne" )
+									  . ", v IS: "
+									  . ( $cvrlIS{"top"} ? "ano" : "ne" )
+									  . "\nCoverlay BOT - v matrixu: "
+									  . ( $cvrlJob{"bot"} ? "ano" : "ne" )
+									  . ", v IS: "
+									  . ( $cvrlIS{"bot"} ? "ano" : "ne" )
+		);
+
+	}
+
+	# Check coverlay adhesive thickness which depands on cu thickness
+	foreach my $cvrl ( grep { $_->{"gROWlayer_type"} eq "coverlay" } $defaultInfo->GetBoardBaseLayers() ) {
+
+		my $cuLayerName;
+		my $side = CamMatrix->GetNonSignalLayerSide( $inCAM, $jobId, $cvrl->{"gROWname"}, $defaultInfo->GetStackup(), \$cuLayerName );
+		my $matInfo = HegMethods->GetPcbCoverlayMat( $jobId, $side );
+		my $adhThick = $matInfo->{"doplnkovy_rozmer"} * 1000000;    # in µm
+
+		my $cuLayer = first { $_->{"name"} eq $cuLayerName } @{ $groupData->GetSignalLayers() };
+		if ( defined $cuLayer ) {
+			my $cuThick = $defaultInfo->GetBaseCuThick($cuLayerName);
+			$cuThick += 25 if ( $cuLayer->{"technologyType"} eq EnumsGeneral->Technology_GALVANICS );    # add plating 25µm
+
+			my $minAdh = int($cuThick / 35 * 25);
+			my $maxAdh = int($minAdh + 15);
+			if ( $adhThick < $minAdh ) {
+
+				$dataMngr->_AddErrorResult(
+					"Coverlay - malá tloušťka lepidla",
+					"Coverlay: "
+					  . $cvrl->{"gROWname"}
+					  . " ze strany: $side, má příliš malou tloušťku lepidla ($adhThick µm lepidla na $cuThick µm Cu na straně: $cuLayerName)."
+					  . "\nMinimální potřebná tloušťka lepidla je: $minAdh µm. "
+					  . "\nMaximální doporučená tloušťka lepidla je: $maxAdh µm."
+					  . "\nPoužij materiál s větší tloušťkou lepidla, jinak dojde k delaminaci."
+					  . "\n(Pravidlo: na každých 35µm Cu, 25µm lepidla)"
+				);
+			}
+			elsif ( $adhThick > $maxAdh ) {
+
+				$dataMngr->_AddErrorResult(
+						"Coverlay - velká tloušťka lepidla",
+						"Coverlay: "
+						  . $cvrl->{"gROWname"}
+						  . " ze strany: $side, má příliš velkou tloušťku lepidla ($adhThick µm lepidla na $cuThick µm Cu na straně: $cuLayerName)."
+						  . "\nMinimální potřebná tloušťka lepidla je: $minAdh µm. "
+						  . "\nMaximální doporučená tloušťka lepidla je: $maxAdh µm."
+						  . "\nPoužij materiál s menší tloušťkou lepidla, jinak dojde zbytečně k vytečení lepidla - \"Adhezive squeezeout\""
+						  . "\n(Pravidlo: na každých 35µm Cu, 25µm lepidla)"
+				);
+			}
+		}
+	}
+
+}
+
+# Extended control
+sub __CheckGroupDataExtend {
+	my $self     = shift;
+	my $dataMngr = shift;    #instance of GroupDataMngr
+
+	my $groupData = $dataMngr->GetGroupData();
+	my $inCAM     = $dataMngr->{"inCAM"};
+	my $jobId     = $dataMngr->{"jobId"};
+	my $stepName  = "panel";
+
+	my $defaultInfo = $dataMngr->GetDefaultInfo();
+
+	my @sig      = $defaultInfo->GetSignalLayers();
+	my $layerCnt = $defaultInfo->GetLayerCnt();
+
+	# 4) Check if inner layers has properly set layer attribute "layer_side" (schema depands on this attribute)
+	if ( $layerCnt > 2 ) {
+
+		my $stackup = $defaultInfo->GetStackup();
+
+		foreach my $l ( grep { $_->{"gROWname"} =~ /^v\d+$/ } @sig ) {
+
+			# Get real side from stackup
+			my $side = StackupOperation->GetSideByLayer( $inCAM, $jobId, $l->{"gROWname"}, $stackup );
+
+			my %layerAttr = CamAttributes->GetLayerAttr( $inCAM, $jobId, $stepName, $l->{"gROWname"} );
+			if ( $layerAttr{'layer_side'} !~ /^$side$/i ) {
+
+				$dataMngr->_AddErrorResult(
+											"Wrong inserted schema ",
+											"Signálová vrstva: \""
+											  . $l->{"gROWname"}
+											  . "\" má špatně nastavený atribut vrstvy: \"Layer side\" ("
+											  . $layerAttr{'layer_side'}
+											  . "). Ve stackupu je vstva vedená jako: \"$side\". Uprav atribut a znovu vlož schéma do panelu!"
+				);
+			}
+		}
+	}
+
 	# 8) check if  if positive inner layer contains theraml pads
 	# (only standard orders, because nagative layers are converted to positive when pool )
 	if ( $defaultInfo->GetLayerCnt() > 2 && !$defaultInfo->IsPool() ) {
@@ -367,106 +599,6 @@ sub OnCheckGroupData {
 				}
 			}
 		}
-	}
-
-	# 9) Check if board base layers, not contain attribute .rout_chan
-
-	foreach my $l ( $defaultInfo->GetBoardBaseLayers() ) {
-
-		my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
-
-		if ( $attHist{".rout_chain"} || $attHist{".comp"} ) {
-
-			$dataMngr->_AddErrorResult( "Rout attributes",
-									 "Layer : " . $l->{"gROWname"} . " contains rout attributes: '.rout_chain' or '.comp'. Delete them from layer." );
-		}
-	}
-
-	# 10) Check if dimension of panel are ok, depand on finish surface
-	my $surface  = $defaultInfo->GetPcbSurface($jobId);
-	my $pcbThick = $defaultInfo->GetPcbThick($jobId);
-	my %profLim  = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
-	my $cutPnl   = $defaultInfo->GetJobAttrByName('technology_cut');
-
-	# if HAL PB , and thisck < 1.5mm, dim must be max 355mm height
-	my $maxThinHALPB = 355;
-	if (    $surface =~ /A/i
-		 && $pcbThick < 1500
-		 && $layerCnt <= 2 )
-	{
-		my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
-		if ( $h > $maxThinHALPB ) {
-			$dataMngr->_AddErrorResult(
-										"Panel dimension - thin PBC",
-										"Nelze použít velký rozměr panelu ("
-										  . $h
-										  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu je: $maxThinHALPB mm"
-			);
-		}
-	}
-	elsif (    $surface =~ /A/i
-			&& $pcbThick < 1500
-			&& $layerCnt > 2 )
-	{
-
-		my $pnl = StandardBase->new( $inCAM, $jobId );
-		if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
-			 && $pnl->HFr() > $maxThinHALPB )
-		{
-			$dataMngr->_AddErrorResult(
-										"Panel dimension - thin PBC",
-										"Nelze použít velký rozměr panelu ("
-										  . $pnl->HFr()
-										  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu (fr rámečku) je: $maxThinHALPB mm"
-			);
-		}
-	}
-
-	# X) If HAL PB and physical size of panel is larger than 460
-	my $maxHALPB = 460;    # max panel height for PB HAL
-
-	if ( $surface =~ /A/i && $layerCnt <= 2 ) {
-
-		if ( abs( $profLim{"yMax"} - $profLim{"yMin"} ) > $maxHALPB
-			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
-		{
-
-			$dataMngr->_AddErrorResult(
-										"Panel dimension",
-										"Nelze použít panel s výškou: "
-										  . abs( $profLim{"yMax"} - $profLim{"yMin"} )
-										  . "mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
-			);
-		}
-	}
-	elsif ( $surface =~ /A/i && $layerCnt > 2 ) {
-
-		my $pnl = StandardBase->new( $inCAM, $jobId );
-		if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
-			 && $pnl->HFr() > $maxHALPB
-			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
-		{
-			$dataMngr->_AddErrorResult(
-										"Panel dimension",
-										"Nelze použít panel s výškou (po ofrézování rámečku): "
-										  . $pnl->HFr()
-										  . " mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
-			);
-		}
-	}
-
-	# If panel will be cut during production, check if there is proper set active area
-	if ( $cutPnl !~ /^no$/i ) {
-
-		my $pnl = StandardBase->new( $inCAM, $jobId );
-		if ( $pnl->HArea() > 470 ) {
-			$dataMngr->_AddErrorResult(
-				"Výška aktivní plochy panelu",
-				"Výška aktivní plochy neodpovídá střihu. Zkontroluj, jestli kusy nejsou panelizované za hranicí střihu panelu."
-
-			);
-		}
-
 	}
 
 	# 11) Check gold finger layers (goldc, golds)
@@ -515,8 +647,8 @@ sub OnCheckGroupData {
 	}
 
 	# 13) Check if goldfinge exist or galvanic surface (G)  if panel equal to standard small dimension
-
-	if ( ( $surface =~ /G/i || $goldFinger ) ) {
+	my $surface = $defaultInfo->GetPcbSurface($jobId);
+	if ( $surface =~ /G/i || $goldFinger ) {
 
 		my $cutPnl = $defaultInfo->GetJobAttrByName('technology_cut');
 
@@ -575,129 +707,6 @@ sub OnCheckGroupData {
 
 			$dataMngr->_AddErrorResult( "Wrong Gold finger connection", $mess );
 		}
-	}
-
-	# 14) Test if stackup material is on stock
-	my @affectOrder = HegMethods->GetOrdersByState( $jobId, 2 );    # Orders on Predvzrobni priprava
-	my $area = undef;
-	if ( scalar(@affectOrder) ) {
-		my $inf           = HegMethods->GetInfoAfterStartProduce( $affectOrder[0]->{"reference_subjektu"} );
-		my %dimsPanelHash = JobDim->GetDimension( $inCAM, $jobId );
-		my %lim           = $defaultInfo->GetProfileLimits();
-		my $pArea         = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
-		$area = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
-	}
-
-	if ( $layerCnt <= 2 ) {
-
-		# check material only if it is standard material
-		my $matSpec = $defaultInfo->GetPcbBaseInfo("material_vlastni");
-
-		if ( $matSpec =~ /^n$/i ) {
-			my $errMes = "";
-			my $matOk = MaterialInfo->BaseMatInStock( $jobId, $area, \$errMes );
-
-			unless ($matOk) {
-				$dataMngr->_AddErrorResult( "Base material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
-			}
-		}
-
-	}
-	else {
-
-		# a) test id material in helios, match material in stackup
-		my $stackup = $defaultInfo->GetStackup();
-
-		my $errMes = "";
-		my $matOk = MaterialInfo->StackupMatInStock( $inCAM, $jobId, $defaultInfo->GetStackup(), $area, \$errMes );
-
-		unless ($matOk) {
-
-			$dataMngr->_AddErrorResult( "Stackup material", "Materiál, který je obsažen ve složení nelze použít. Detail chyby: $errMes" );
-		}
-	}
-
-	# 15) Check if all netlist control was succes in past
-	my @reports = NetlistCompare->new( $inCAM, $jobId )->GetStoredReports();
-
-	@reports = grep { !$_->Result() } @reports;
-
-	if ( scalar(@reports) ) {
-
-		my $m = "Byly nalezeny Netlist reporty, které skončily neúspěšně. Zjisti proč, popř. proveď novou kontrolu netlistů. Reporty:";
-
-		foreach my $r (@reports) {
-
-			$m .=
-			    "\n- report: "
-			  . $r->GetShorts()
-			  . " shorts, "
-			  . $r->GetBrokens()
-			  . " brokens, "
-			  . "Stepy: \""
-			  . $r->GetStep()
-			  . "\", \""
-			  . $r->GetStepRef()
-			  . "\", Adresa: "
-			  . $r->GetReportPath();
-		}
-
-		$dataMngr->_AddErrorResult( "Netlist kontrola", $m );
-	}
-
-	# 16) If customer has required scheme, check if scheme in mpanel is ok
-	my $usedScheme = undef;
-	unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
-
-		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
-
-		$dataMngr->_AddWarningResult( "Customer schema",
-						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
-	}
-
-	# X) Check production panel schema
-	my $usedPnlScheme = undef;
-	unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme ) ) {
-
-		$dataMngr->_AddErrorResult(
-									"Špatné schéma",
-									"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
-									  . " Vlož do panelu správné schéma"
-		);
-
-	}
-
-	# 17) Check if all our "board" layers are realy board
-	my @nonBoard = ();
-
-	unless ( LayerNamesCheck->CheckNonBoardBaseLayers( $inCAM, $jobId, \@nonBoard ) ) {
-
-		my $str = join( "; ", map { $_->{"gROWname"} } @nonBoard );
-
-		$dataMngr->_AddWarningResult( "Matrix", "V matrixu jsou \"misc\" vrstvy, které by měly být \"board\": $str " );
-	}
-
-	# 18) Check if more same jobid is in production, if so add warning
-	# Exclude job orders which are in production as slave
-	# (slave steps are copied to mother job, thus slave job data can't be infloenced)
-	my @orders = HegMethods->GetPcbOrderNumbers($jobId);
-	if ( scalar(@orders) > 1 ) {
-
-		@orders = grep { $_->{"stav"} == 4 } @orders;    #Ve výrobě (4)
-
-		for ( my $i = scalar(@orders) - 1 ; $i > 0 ; $i-- ) {
-
-			if ( HegMethods->GetInfMasterSlave( $orders[$i]->{"reference_subjektu"} ) eq "S" ) {
-				splice @orders, $i, 1;
-			}
-		}
-
-		if ( scalar(@orders) > 1 ) {
-
-			$dataMngr->_AddWarningResult( "DPS ve výrobě",
-					 "Pozor deska je již ve výrobě a export ovlivní tyto zakázky: " . join( "; ", map { $_->{"reference_subjektu"} } @orders ) );
-		}
-
 	}
 
 	# 19) Check attribu "custom_year" if contains current year plus 1 (only SICURIT customer, id: 07418)
@@ -860,20 +869,115 @@ sub OnCheckGroupData {
 		}
 	}
 
-	# X) Check RigidFlex minimal thickness
-	# RigidFlex Inner > 1,2mm
-	# RigidFlex Outer > 0,8mm
-	if ( $pcbThick < 800 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXO ) {
+	# 16) If customer has required scheme, check if scheme in mpanel is ok
+	my $usedScheme = undef;
+	unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
 
-		$dataMngr->_AddErrorResult( "Minimální tloušťka RigidFlex",
-								 "Minimální vyrobitelná tloušťka RigidFlex Outer je : 800µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
+		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
+
+		$dataMngr->_AddWarningResult( "Customer schema",
+						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
 	}
 
-	if ( $pcbThick < 1200 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
+	# X) Check production panel schema
+	my $usedPnlScheme = undef;
+	unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme ) ) {
 
-		$dataMngr->_AddErrorResult( "Minimální tloušťka RigidFlex",
-								  "Minimální vyrobitelná tlošťka RigidFlex Inner je : 1200µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
+		$dataMngr->_AddErrorResult(
+									"Špatné schéma",
+									"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
+									  . " Vlož do panelu správné schéma"
+		);
+
 	}
+
+	# 10) Check if dimension of panel are ok, depand on finish surface
+
+	my $pcbThick = $defaultInfo->GetPcbThick($jobId);
+	my %profLim  = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+	my $cutPnl   = $defaultInfo->GetJobAttrByName('technology_cut');
+
+	# if HAL PB , and thisck < 1.5mm, dim must be max 355mm height
+	my $maxThinHALPB = 355;
+	if (    $surface =~ /A/i
+		 && $pcbThick < 1500
+		 && $layerCnt <= 2 )
+	{
+		my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+		if ( $h > $maxThinHALPB ) {
+			$dataMngr->_AddErrorResult(
+										"Panel dimension - thin PBC",
+										"Nelze použít velký rozměr panelu ("
+										  . $h
+										  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu je: $maxThinHALPB mm"
+			);
+		}
+	}
+	elsif (    $surface =~ /A/i
+			&& $pcbThick < 1500
+			&& $layerCnt > 2 )
+	{
+
+		my $pnl = StandardBase->new( $inCAM, $jobId );
+		if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
+			 && $pnl->HFr() > $maxThinHALPB )
+		{
+			$dataMngr->_AddErrorResult(
+										"Panel dimension - thin PBC",
+										"Nelze použít velký rozměr panelu ("
+										  . $pnl->HFr()
+										  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu (fr rámečku) je: $maxThinHALPB mm"
+			);
+		}
+	}
+
+	# X) If HAL PB and physical size of panel is larger than 460
+	my $maxHALPB = 460;    # max panel height for PB HAL
+
+	if ( $surface =~ /A/i && $layerCnt <= 2 ) {
+
+		if ( abs( $profLim{"yMax"} - $profLim{"yMin"} ) > $maxHALPB
+			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
+		{
+
+			$dataMngr->_AddErrorResult(
+										"Panel dimension",
+										"Nelze použít panel s výškou: "
+										  . abs( $profLim{"yMax"} - $profLim{"yMin"} )
+										  . "mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
+			);
+		}
+	}
+	elsif ( $surface =~ /A/i && $layerCnt > 2 ) {
+
+		my $pnl = StandardBase->new( $inCAM, $jobId );
+		if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
+			 && $pnl->HFr() > $maxHALPB
+			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
+		{
+			$dataMngr->_AddErrorResult(
+										"Panel dimension",
+										"Nelze použít panel s výškou (po ofrézování rámečku): "
+										  . $pnl->HFr()
+										  . " mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
+			);
+		}
+	}
+
+	# If panel will be cut during production, check if there is proper set active area
+	if ( $cutPnl !~ /^no$/i ) {
+
+		my $pnl = StandardBase->new( $inCAM, $jobId );
+		if ( $pnl->HArea() > 470 ) {
+			$dataMngr->_AddErrorResult(
+				"Výška aktivní plochy panelu",
+				"Výška aktivní plochy neodpovídá střihu. Zkontroluj, jestli kusy nejsou panelizované za hranicí střihu panelu."
+
+			);
+		}
+
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

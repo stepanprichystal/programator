@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::ExportUtility::UnitBuilder;
-use base("Managers::AbstractQueue::AbstractQueue::UnitBuilderBase");
+
 
 use Class::Interface;
 &implements('Managers::AbstractQueue::AbstractQueue::IUnitBuilder');
@@ -30,6 +30,8 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::PdfExport::PdfWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::OutExport::OutWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::StnclExport::StnclWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::ImpExport::ImpWorkUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::CommExport::CommWorkUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::OfferExport::OfferWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
@@ -38,16 +40,20 @@ use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $self  = {};
 	bless $self;
+	
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+	$self->{"jobStrData"} = shift;
 
-	my $json     = JSON->new();
-	my $hashData = $json->decode( $self->{"jobStrData"} );
+	#my $json     = JSON->new();
+	#my $hashData = $json->decode( $self->{"jobStrData"} );
 
  
-	my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_READFROMSTR, undef, $hashData->{"jsonData"} );
+	my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_READFROMSTR, undef, $self->{"jobStrData"} );
 
-	$self->{"taskData"} = $dataTransfer->GetExportData( $hashData->{"jsonData"} );
+	$self->{"taskData"} = $dataTransfer->GetExportData( $self->{"jobStrData"} );
 
 	return $self;
 }
@@ -146,6 +152,14 @@ sub __GetUnitClass {
 	}elsif ( $unitId eq UnitEnums->UnitId_IMP ) {
 
 		$unit = ImpWorkUnit->new($unitId);
+
+	}elsif ( $unitId eq UnitEnums->UnitId_COMM ) {
+
+		$unit = CommWorkUnit->new($unitId);
+
+	}elsif ( $unitId eq UnitEnums->UnitId_OFFER ) {
+
+		$unit = OfferWorkUnit->new($unitId);
 
 	}else{
 		
