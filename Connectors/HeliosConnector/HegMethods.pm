@@ -1103,7 +1103,7 @@ sub GetIdcustomer {
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
-	my $numberOrder = GetNumberOrder( '', $pcbId );
+	my $numberOrder = $self->GetNumberOrder( $pcbId );
 
 	my $cmd = "select top 1		
 				org.reference_subjektu
