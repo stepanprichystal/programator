@@ -190,7 +190,7 @@ sub SentToProduce {
 	# set state HOTOVO-zadat
 
 	# Check if Unit_COMM set new IS state too, because state bz units has higher priority
-	my $commUnit = $self->GetUnitData(UnitEnums->UnitId_COMM);
+	my $commUnit = $self->GetTaskData->GetUnitData(UnitEnums->UnitId_COMM);
 	return 0 if(defined $commUnit && $commUnit->GetChangeOrderStatus());
  
 
