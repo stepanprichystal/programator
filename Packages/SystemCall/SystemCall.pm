@@ -84,8 +84,8 @@ sub Run {
 	if ( -e $self->{"output"} ) {
 
 		my $serializeData = FileHelper->ReadAsString( $self->{"output"} );
-
-		my $json = JSON->new();
+ 
+		my $json = JSON::XS->new->ascii->pretty->allow_nonref;
 
 		$self->{"outputData"} = $json->decode($serializeData);
 

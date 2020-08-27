@@ -31,6 +31,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::OutExport::Presenter::Ou
 use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Presenter::ImpUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Presenter::CommUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::OfferExport::Presenter::OfferUnit';
+use aliased 'Programs::Exporter::ExportChecker::Groups::StnclExport::Presenter::StnclUnit';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
