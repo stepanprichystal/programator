@@ -168,7 +168,7 @@ sub __BuildMatListBody {
 	# sort pads first
 	my @pads      = grep { $_->GetIsPad() } @items;
 	my @mats      = grep { !$_->GetIsPad() } @items;
-	my @matsChild = grep { defined $_ } map { ( $_->GetChildTop(), $_->GetChildBot() ) } @items;
+	my @matsChild = grep { defined $_ } map { ( $_->GetChildTop(), $_->GetChildBot() ) } @mats;
 	push( @mats, @matsChild ) if (@matsChild);
 
 	# Filter only what we want to show

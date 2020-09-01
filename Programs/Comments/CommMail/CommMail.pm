@@ -149,8 +149,8 @@ sub Sent {
 		);
 	}
 
-	#my $result = $msg->send( 'smtp', EnumsPaths->URL_GATEMASMTP );
-	my $result = $msg->send( 'smtp', "127.0.0.1" );    # Paper cut testing smtp
+	my $result = $msg->send( 'smtp', EnumsPaths->URL_GATEMASMTP );
+	#my $result = $msg->send( 'smtp', "127.0.0.1" );    # Paper cut testing smtp
 
 	if ( $result ne 1 ) {
 

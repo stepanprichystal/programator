@@ -18,6 +18,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsIS';
+use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Comments::CommMail::Enums' => 'MailEnums';
 
 #-------------------------------------------------------------------------------------------#
@@ -46,7 +47,7 @@ sub OnGetGroupState {
 
 	my $state = Enums->GroupState_DISABLE;
 
-	if ( $defaultInfo->GetComments()->Exists() ) {
+	if ( $defaultInfo->GetComments()->Exists() || JobHelper->GetJobIsOffer($jobId) ) {
 
 		$state = Enums->GroupState_ACTIVEON;
 

@@ -614,7 +614,7 @@ sub __AddDefaultComm {
 
 	my $commCnt = scalar( $self->{"commLayout"}->GetAllComments() );
 
-	$self->SetText( $commCnt - 1, "Default comment ..." );
+	$self->SetText( $commCnt - 1, "" );
 	my $p = "";
 	if($self->SnapshotCAM(1, \$p)){
 		
