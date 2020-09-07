@@ -71,9 +71,9 @@ sub GetBaseMatInfo {
 	if ( $self->{"pcbInfoIS"}->{"material_vlastni"} =~ /^A$/i ) {
 
 		# Customer material
-		$inf{"matText"}      = "(customer mat)";
+		$inf{"matText"}      = "(customer material)";
 		$inf{"matKind"}      = $self->{"pcbInfoIS"}->{"material_druh"};
-		$inf{"baseMatThick"} = $self->{"pcbInfoIS"}->{"material_tloustka"};
+		$inf{"baseMatThick"} = $self->{"pcbInfoIS"}->{"material_tloustka"} * 1000;
 		$inf{"cuThick"}      = $self->{"pcbInfoIS"}->{"material_tloustka_medi"};
 
 	}
@@ -104,17 +104,15 @@ sub GetBaseMatInfo {
 
 		if ( $matInf->{"dps_type"} !~ /core/i ) {
 
-			if ( $matInf->{"nazev_subjektu"} =~ m/(\d+\/\d+)/ ) {
-				my @cu = split( "/", $1 );
-				$inf{"baseMatThick"} -= $cu[0] if ( defined $cu[0] );
-				$inf{"baseMatThick"} -= $cu[1] if ( defined $cu[1] );
-			}
+			my $cu = $matInf->{"doplnkovy_rozmer"};
+			$inf{"baseMatThick"} -= $matInf->{"doplnkovy_rozmer"};
+			$inf{"baseMatThick"} -= $matInf->{"doplnkovy_rozmer"};
 		}
 
 		# Parse Cu thick
 		$inf{"cuThick"} = undef;
-		if ( $matInf->{"nazev_subjektu"} =~ m/(\d+)\/(\d+)/ ) {
-			$inf{"cuThick"} = max( $1, $2 );
+		if ( defined $matInf->{"doplnkovy_rozmer"} && $matInf->{"doplnkovy_rozmer"} ne "" ) {
+			$inf{"cuThick"} =$matInf->{"doplnkovy_rozmer"};
 		}
 
 		# Parse Cu type ED/RA
@@ -230,13 +228,13 @@ sub GetThickness {
 
 		# Customer material
 
-		$t = $self->{"pcbInfoIS"}->{"material_tloustka"} *1000;
+		$t = $self->{"pcbInfoIS"}->{"material_tloustka"} * 1000;
 
 	}
 	else {
 
 		my $matInfo = HegMethods->GetPcbMat( $self->{"jobId"} );
-		my $m = $matInfo->{"vyska"};
+		my $m       = $matInfo->{"vyska"};
 
 		die "Material thickness (specifikace/vyska) is not defined for material: " . $self->{"pcbInfoIS"}->{"material_nazev"} unless ( defined $m );
 

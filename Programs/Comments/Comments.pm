@@ -8,7 +8,6 @@ package Programs::Comments::Comments;
 #3th party library
 use strict;
 use warnings;
-use Switch;
 use File::Basename;
 use File::Copy;
 use POSIX qw(strftime);

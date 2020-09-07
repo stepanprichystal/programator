@@ -124,9 +124,10 @@ sub Sent {
 	my $subject = $self->__GetSubjectByType($subjectType);
 
 	my $msg = MIME::Lite->new(
-		From => $from,
-		To   => join( ", ", @{$to} ),
-		Cc   => join( ", ", @{$cc} ),
+		From => 'stepan.prichystal@gatema.cz',
+		#To   => join( ", ", @{$to} ),
+		#To   => join( ", ", @{$to} ),
+		#Cc   => join( ", ", @{$cc} ),
 		Bcc  => 'stepan.prichystal@gatema.cz',    # TODO temporary for testing
 
 		Subject => encode( "UTF-8", $subject ),   # Encode must by use if subject with diacritics

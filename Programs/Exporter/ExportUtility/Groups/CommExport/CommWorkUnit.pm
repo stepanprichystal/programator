@@ -57,10 +57,11 @@ sub Init {
 	my $emailCC           = $taskData->GetEmailCCAddress();
 	my $emailSubject      = $taskData->GetEmailSubject();
 	my $includeOfferInf   = $taskData->GetIncludeOfferInf();
+	my $includeOfferStckp   = $taskData->GetIncludeOfferStckp();
 	my $clearComments     = $taskData->GetClearComments();
 
 	my $mngr = CommMngr->new( $inCAM,   $jobId,   $changeOrderStatus, $orderStatus,     $exportEmail, $emailAction,
-							  $emailTo, $emailCC, $emailSubject,      $includeOfferInf, $clearComments );
+							  $emailTo, $emailCC, $emailSubject,      $includeOfferInf, $includeOfferStckp, $clearComments );
 
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 

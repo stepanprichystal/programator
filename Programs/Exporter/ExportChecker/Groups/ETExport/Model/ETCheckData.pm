@@ -98,7 +98,7 @@ sub OnCheckGroupData {
 	# 5) Check if coverlay on outer signal layers are properly prepared (are not empty)
 	my @cvrl = grep { $_->{"gROWname"} =~ /^coverlay[cs]$/ } $defaultInfo->GetBoardBaseLayers();
 	if ( scalar(@cvrl) ) {
-
+		
 		my @steps = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 
 		foreach my $l (@cvrl) {
@@ -106,6 +106,7 @@ sub OnCheckGroupData {
 			foreach my $s (@steps) {
 
 				my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+				
 				if ( $hist{"total"} == 0 ) {
 
 					$dataMngr->_AddErrorResult(

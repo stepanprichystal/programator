@@ -102,6 +102,7 @@ sub Run {
 		my $emailExport = 1;
 		if ( $self->{"emailAction"} eq MailEnums->EmailAction_OPEN ) {
 
+
 			$emailExport = $mail->Open( $self->{"emailTo"}, $self->{"emailCC"}, $self->{"emailSubject"} );
 
 		}

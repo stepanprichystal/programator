@@ -238,7 +238,7 @@ sub __SetLayoutEmail {
 	}
 
 	my $clearCommentsTxt = Wx::StaticText->new( $statBox, -1, "Clear comments", &Wx::wxDefaultPosition, [ -1, -1 ] );
-	my $clearCommentsChb = Wx::CheckBox->new( $statBox, -1, "(if mail is properly sent/open)", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my $clearCommentsChb = Wx::CheckBox->new( $statBox, -1, "(if mail was properly sent/opened)", &Wx::wxDefaultPosition, [ -1, -1 ] );
 
 	# EVENTS
 
