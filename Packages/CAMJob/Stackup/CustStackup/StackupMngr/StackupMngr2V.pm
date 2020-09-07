@@ -92,7 +92,7 @@ sub GetBaseMatInfo {
 		for ( my $i = 0 ; $i < scalar(@parsedMat) ; $i++ ) {
 
 			# if item is not CU text, add it to name
-			last if ( $parsedMat[$i] =~ m/(\d+\/\d+)/ );
+			last if ( $parsedMat[$i] =~ m/^(\d+\/\d+)$/ );
 
 			$inf{"matText"} .= $parsedMat[$i] . " ";
 		}
