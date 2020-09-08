@@ -59,7 +59,7 @@ sub new {
 	$self->{"jobId"}       = $jobId;
 	$self->{"defaultInfo"} = $defaultInfo;
 
-	$self->{"commMail"} = CommMail->new( $self->{"defaultInfo"}->GetComments(), $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"commMail"} = CommMail->new($self->{"inCAM"}, $self->{"jobId"},  $self->{"defaultInfo"}->GetComments()->GetLayout() );
 
 	# Load data
 
@@ -145,7 +145,7 @@ sub __SetLayoutStatus {
 	my $changeOrderStatusChb = Wx::CheckBox->new( $statBox, -1, "Change", &Wx::wxDefaultPosition, [ -1, -1 ] );
 
 	my $orderStatusTxt = Wx::StaticText->new( $statBox, -1, "Status", &Wx::wxDefaultPosition, [ -1, -1 ] );
-	my @statuses = ( EnumsIS->CurStep_HOTOVOODSOUHLASIT, EnumsIS->CurStep_POSLANDOTAZ );
+	my @statuses = ( EnumsIS->CurStep_HOTOVOODSOUHLASIT, EnumsIS->CurStep_POSLANDOTAZ, EnumsIS->CurStep_NOVADATA );
 	my $orderStatusCb =
 	  Wx::ComboBox->new( $statBox, -1, $statuses[0], &Wx::wxDefaultPosition, [ 70, -1 ], \@statuses, &Wx::wxCB_READONLY );
 
@@ -389,7 +389,7 @@ sub __OnApprovalTypeChange {
 
 		# adress To
 		my $emailTo = "";
-		my @orders  = $self->{"commMail"}->GetCurrOrderNumbers();
+		my @orders  = $self->{"commMail"}->GetCurrOrderNumbers(0);
 		if (@orders) {
 
 			my %ordInf   = HegMethods->GetAllByOrderId( $orders[0] );
@@ -453,7 +453,7 @@ sub __OnApprovalTypeChange {
 
 		# adress To
 		my $emailTo = "";
-		my @orders  = $self->{"commMail"}->GetCurrOrderNumbers();
+		my @orders  = $self->{"commMail"}->GetCurrOrderNumbers(0);
 		if (@orders) {
 
 			my %ordInf   = HegMethods->GetAllByOrderId( $orders[0] );

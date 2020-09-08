@@ -16,6 +16,7 @@ use File::Basename;
 use File::Copy;
 use MIME::Lite;
 use File::Basename;
+use POSIX qw(strftime);
 use Encode qw(decode encode);
 
 #local library
@@ -84,6 +85,9 @@ sub Sent {
 	my $cc          = shift;
 	my $subjectType = shift;
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	# Do some checks before sent
 
 	die "No email adress" if ( scalar( @{$to} ) == 0 );
@@ -124,10 +128,9 @@ sub Sent {
 	my $subject = $self->__GetSubjectByType($subjectType);
 
 	my $msg = MIME::Lite->new(
-		From => 'stepan.prichystal@gatema.cz',
-		#To   => join( ", ", @{$to} ),
-		#To   => join( ", ", @{$to} ),
-		#Cc   => join( ", ", @{$cc} ),
+		From => $from,
+		To   => join( ", ", @{$to} ),
+		Cc   => join( ", ", @{$cc} ),
 		Bcc  => 'stepan.prichystal@gatema.cz',    # TODO temporary for testing
 
 		Subject => encode( "UTF-8", $subject ),   # Encode must by use if subject with diacritics
@@ -151,7 +154,18 @@ sub Sent {
 	}
 
 	my $result = $msg->send( 'smtp', EnumsPaths->URL_GATEMASMTP );
+
 	#my $result = $msg->send( 'smtp', "127.0.0.1" );    # Paper cut testing smtp
+
+	# Store stamp with date to InCAM job note
+	if ($result) {
+	
+		my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
+
+		$note .= "Approval mail (" . (strftime "%Y/%m/%d", localtime).")";
+		$inCAM->COM("set_job_notes", "job" => $jobId, "notes" => $note );
+
+	}
 
 	if ( $result ne 1 ) {
 
@@ -166,12 +180,19 @@ sub Sent {
 # Return order/offer number for given pcbid
 sub GetCurrOrderNumbers {
 	my $self = shift;
+	my $active = shift // 1;
 
 	my @orders = HegMethods->GetPcbOrderNumbers( $self->{"jobId"} );
 
-	# 5 - storno
-	# 7 - ukoncena
-	@orders = map { $_->{"reference_subjektu"} } grep { $_->{"stav"} !~ /^[57]$/ } @orders;
+	if ($active) {
+
+		# 5 - storno
+		# 7 - ukoncena
+		@orders = grep { $_->{"stav"} !~ /^[57]$/ } @orders;
+
+	}
+
+	@orders = map { $_->{"reference_subjektu"} } @orders;
 
 	return @orders;
 }
@@ -279,17 +300,19 @@ sub __GetBody {
 
 		my $listTag = "-";
 
-		if ( $allComm[$i]->GetType() eq CommEnums->CommentType_QUESTION ) {
+		#		if ( $allComm[$i]->GetType() eq CommEnums->CommentType_QUESTION ) {
+		#
+		#			#$listTag = ( $i + 1 ) . ") " . ( $self->{"lang"} eq "cz" ? "Otázka" : "Question" );
+		#
+		#		}
+		#		elsif ( $allComm[$i]->GetType() eq CommEnums->CommentType_NOTE ) {
+		#
+		#			#$listTag = ( $i + 1 ) . ") " . ( $self->{"lang"} eq "cz" ? "Poznámka" : "Note" );
+		#		}
 
-			$listTag = ( $i + 1 ) . ") " . ( $self->{"lang"} eq "cz" ? "Otázka" : "Question" );
+		$listTag = ( $i + 1 ) . ") ";
 
-		}
-		elsif ( $allComm[$i]->GetType() eq CommEnums->CommentType_NOTE ) {
-
-			$listTag = ( $i + 1 ) . ") " . ( $self->{"lang"} eq "cz" ? "Poznámka" : "Note" );
-		}
-
-		$messSngl .= $listTag . ": ";
+		$messSngl .= $listTag;
 		$messSngl .= $allComm[$i]->GetText();
 
 		my @char = ( "A" .. "Z" );
@@ -322,6 +345,28 @@ sub __GetBody {
 		my $inquiryInf = $self->__GetInquiryInf();
 
 		$body = $inquiryInf . "\n\n" . $body;
+	}
+
+	# Add footer
+	my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
+
+	if ( defined $name && $name ne "" ) {
+		my $userInfo = HegMethods->GetEmployyInfo($name);
+		if ( defined $userInfo ) {
+
+			my $footer = "";
+			$footer .= $userInfo->{"prijmeni"} . "\n";
+			$footer .= $userInfo->{"jmeno"} . "\n";
+			$footer .= "CAM Engineer" . "\n\n";
+
+			$footer .= $userInfo->{"telefon_prace"} . "\n";
+			$footer .= $userInfo->{"e_mail"} . "\n";
+			$footer .= "Gatema PCB a.s.";
+
+			$body .= "\n" . $footer;
+
+		}
+
 	}
 
 	die "Email body is empty" if ( !defined $body || $body eq "" );

@@ -22,7 +22,8 @@ use constant {
 	
 	# statuses of job approval
 	CurStep_HOTOVOODSOUHLASIT => "HOTOVO-odsouhlasit",
-	CurStep_POSLANDOTAZ => "poslan dotaz <user>"
+	CurStep_POSLANDOTAZ => "poslan dotaz <user>",
+	CurStep_NOVADATA => "posle nova data",
 
 };
 

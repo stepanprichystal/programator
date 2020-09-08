@@ -108,14 +108,14 @@ sub AddFile {
 	my $name = shift;
 	my $path = shift;
 
-	my $prefix = "";
+	my $prefix = "Q";
 
-	if ( $self->GetType() eq Enums->CommentType_NOTE ) {
-		$prefix = "N";
-	}
-	elsif ( $self->GetType() eq Enums->CommentType_QUESTION ) {
-		$prefix = "Q";
-	}
+#	if ( $self->GetType() eq Enums->CommentType_NOTE ) {
+#		$prefix = "N";
+#	}
+#	elsif ( $self->GetType() eq Enums->CommentType_QUESTION ) {
+#		$prefix = "Q";
+#	}
 
 	my $suffix = "";
 
