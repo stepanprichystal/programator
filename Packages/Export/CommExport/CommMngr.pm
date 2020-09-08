@@ -72,7 +72,7 @@ sub Run {
 
 				if ( $curStep ne $self->{"orderStatus"} ) {
 
-					my $succ = HegMethods->UpdatePcbOrderState( $orderNum, $self->{"orderStatus"} );
+					my $succ = HegMethods->UpdatePcbOrderState( $orderNum, $self->{"orderStatus"}, 1 );
 				}
 			}
 
