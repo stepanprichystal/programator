@@ -110,8 +110,8 @@ sub Sent {
 		}
 	}
 
-	my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
-
+	#my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
+	my $name       = getlogin();
 	my %employyInf = ();
 
 	my $from = 'tpvserver@gatema.cz';
@@ -159,11 +159,11 @@ sub Sent {
 
 	# Store stamp with date to InCAM job note
 	if ($result) {
-	
+
 		my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
 
-		$note .= "Approval mail (" . (strftime "%Y/%m/%d", localtime).")";
-		$inCAM->COM("set_job_notes", "job" => $jobId, "notes" => $note );
+		$note .= "Approval mail (" . ( strftime "%Y/%m/%d", localtime ) . ")";
+		$inCAM->COM( "set_job_notes", "job" => $jobId, "notes" => $note );
 
 	}
 
@@ -348,20 +348,28 @@ sub __GetBody {
 	}
 
 	# Add footer
-	my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
-
+	#my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
+	my $name = getlogin();
 	if ( defined $name && $name ne "" ) {
-		my $userInfo = HegMethods->GetEmployyInfo($name);
+		my $userInfo = HegMethods->GetEmployyInfo( getlogin() );
 		if ( defined $userInfo ) {
 
-			my $footer = "";
+			my $footer = "---\n";
+			$footer .= ( $self->{"lang"} eq "cz" ? "S pozdravem"                   : "With Best Regards" ) . "\n\n";
 			$footer .= $userInfo->{"prijmeni"} . "\n";
 			$footer .= $userInfo->{"jmeno"} . "\n";
-			$footer .= "CAM Engineer" . "\n\n";
+			$footer .= ( $self->{"lang"} eq "cz" ? "Technická příprava výroby" : "CAM Department" ) . "\n\n";
 
-			$footer .= $userInfo->{"telefon_prace"} . "\n";
+			my $tel = $userInfo->{"telefon_prace"};
+
+			# add +420
+			$tel = "+420 " . $tel if ( $tel !~ /\+420/ );
+
+			$footer .= "T " . $tel . "\n";
 			$footer .= $userInfo->{"e_mail"} . "\n";
-			$footer .= "Gatema PCB a.s.";
+			$footer .= "Gatema PCB a.s.\n";
+			$footer .= "Průmyslová 2503/2\n";
+			$footer .= "CZ 680 01 Boskovice";
 
 			$body .= "\n" . $footer;
 

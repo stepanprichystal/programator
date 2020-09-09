@@ -438,7 +438,7 @@ sub __WriteMessages() {
 
 		# Write end of message
 		if ( length($messPom) - 1 > $writePos ) {
-			$richTxt->WriteText( decode( 'UTF-8', substr( $messPom, $writePos + 1, length($messPom) - 1 ) ) );
+			$richTxt->WriteText( decode( 'UTF-8', substr( $messPom, $writePos + 1, length($messPom)  ) ) );
 			$writePos = length($messPom) - 1;
 		}
 

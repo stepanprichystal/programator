@@ -238,6 +238,8 @@ sub __SetIconByApp {
 	my $self    = shift;
 	my $button  = shift;
 	my $appPath = shift;
+	
+	return 0 unless(-e $appPath);
 
 	Wx::InitAllImageHandlers();
 	my $exeCAM = Win32::Exe->new($appPath);

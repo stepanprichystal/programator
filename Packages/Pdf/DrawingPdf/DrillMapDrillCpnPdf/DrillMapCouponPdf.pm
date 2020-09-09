@@ -110,7 +110,7 @@ sub CreateIPC3Main {
 
 	my $title = uc( $self->{"jobId"} ) . " - IPC-3 customer coupon drill map";
 
-	return $self->__Create( $m, $title, "",1, 0, 1, 0  );
+	return $self->__Create( $m, $title, "", 1, 0, 1, 0 );
 
 }
 
@@ -129,10 +129,10 @@ sub CreateIPC3Drill {
 }
 
 sub __Create {
-	my $self      = shift;
-	my $couponObj = shift;    # inspected layers
-	my $titleText = shift;    # titles
-	my $noteText  = shift;    # note under drill table
+	my $self            = shift;
+	my $couponObj       = shift;    # inspected layers
+	my $titleText       = shift;    # titles
+	my $noteText        = shift;    # note under drill table
 	my $tblColDrillSize = shift;
 	my $tblColFinSize   = shift;
 	my $tblColDepth     = shift;
@@ -148,8 +148,7 @@ sub __Create {
 	CamHelper->SetStep( $inCAM, $couponObj->GetStep() );
 
 	# 1) Prepare drill map layer
-	my $drillMapL = $self->__PrepareDrillMapLayer($couponObj, $tblColDrillSize, $tblColFinSize, $tblColDepth, $tblColTol);
- 
+	my $drillMapL = $self->__PrepareDrillMapLayer( $couponObj, $tblColDrillSize, $tblColFinSize, $tblColDepth, $tblColTol );
 
 	# 2) Prepare title
 	my %lim = CamJob->GetLayerLimits2( $inCAM, $jobId, $couponObj->GetStep(), "c" );
@@ -358,7 +357,7 @@ sub __PrepareDrillMapLayer {
 				for ( my $i = 0 ; $i < scalar(@uniTools) ; $i++ ) {
 
 					$self->__PrepareDrillMapTableRow(
-													  $l,          $toolInf->{"drillSize"}, $uniTools[$i],   $tMain,
+													  $l,          $toolInf->{"drillSize"}, $uniTools[$i], $tMain,
 													  $curSymNum2, $i + 1,                  $colDrillSize, $colFinSize,
 													  $colDepth,   $colTol
 					);
@@ -422,17 +421,17 @@ sub __PrepareDrillMapTableRow {
 	my $tMain        = shift;
 	my $symId        = shift;
 	my $symIdSub     = shift;
-	my $colDrillSize = shift ;
-	my $colFinSize   = shift ;
-	my $colDepth     = shift ;
-	my $colTol       = shift ;
+	my $colDrillSize = shift;
+	my $colFinSize   = shift;
+	my $colDepth     = shift;
+	my $colTol       = shift;
 
 	$tMain->AddRowDef( $tMain->GetRowCnt(), 3, undef, $thinBorderStyle );
 
 	# Tool Id
-	$tMain->AddCell( $tMain->GetCollByKey("col_id")->GetId() ,
+	$tMain->AddCell( $tMain->GetCollByKey("col_id")->GetId(),
 					 $tMain->GetRowCnt() - 1,
-					 undef, undef, "T" . $symId. ( defined $symIdSub ? ".$symIdSub" : "" ),
+					 undef, undef, "T" . $symId . ( defined $symIdSub ? ".$symIdSub" : "" ),
 					 $stdTextStyle, undef );
 
 	# Tool layer
@@ -446,16 +445,18 @@ sub __PrepareDrillMapTableRow {
 
 	# some tools can by fake and not physically on PCB
 	# Thus we cant find them in panel
+	if ( defined $uniDTMTool ) {
 
-	# Tool size
-	my $tFinSize = sprintf( "%.3f", $uniDTMTool->GetFinishSize() / 1000 );
-	$tMain->AddCell( $tMain->GetCollByKey("col_finSize")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $tFinSize, $stdTextStyle, undef )
-	  if ($colFinSize);
+		# Tool size
+		my $tFinSize = sprintf( "%.3f", $uniDTMTool->GetFinishSize() / 1000 );
+		$tMain->AddCell( $tMain->GetCollByKey("col_finSize")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $tFinSize, $stdTextStyle, undef )
+		  if ($colFinSize);
 
-	# Tool depth
-	if ( $colDepth && $uniDTMTool->GetDepth() ) {
-		my $tDepth = sprintf( "%.3f", $uniDTMTool->GetDepth() );
-		$tMain->AddCell( $tMain->GetCollByKey("col_depth")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $tDepth, $stdTextStyle, undef );
+		# Tool depth
+		if ( $colDepth && $uniDTMTool->GetDepth() ) {
+			my $tDepth = sprintf( "%.3f", $uniDTMTool->GetDepth() );
+			$tMain->AddCell( $tMain->GetCollByKey("col_depth")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $tDepth, $stdTextStyle, undef );
+		}
 	}
 
 	$tMain->AddCell( $tMain->GetCollByKey("col_tol")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, "NAN", $stdTextStyle, undef )
@@ -474,9 +475,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d285728";
+	my $jobId = "d291827";
 	my $map = DrillMapCouponPdf->new( $inCAM, $jobId );
-	$map->CreateIPC3Drill();
+	$map->CreateIPC3Main();
 
 }
 

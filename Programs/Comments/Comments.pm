@@ -247,6 +247,14 @@ sub AddComment {
 	my $type = shift;
 
 	my $comment = $self->{"commLayout"}->AddComment($type);
+	my $commCnt = scalar( $self->{"commLayout"}->GetAllComments() );
+
+	# Add default screenshot from InCAM
+	my $p = "";
+	if ( $self->SnapshotCAM( 1, \$p ) ) {
+
+		$self->AddFile( $commCnt - 1, "", $p );
+	}
 
 	return $comment;
 }
@@ -314,7 +322,7 @@ sub ClearCoomments {
 
 	# 4) Save
 	$self->Save();
-	
+
 	$self->__ClearOldFiles();
 }
 
@@ -615,11 +623,10 @@ sub __AddDefaultComm {
 
 	$self->SetText( $commCnt - 1, "" );
 	my $p = "";
-	if($self->SnapshotCAM(1, \$p)){
-		
+	if ( $self->SnapshotCAM( 1, \$p ) ) {
+
 		$self->AddFile( $commCnt - 1, "", $p );
 	}
-	
 
 }
 

@@ -15,6 +15,7 @@ use strict;
 use warnings;
 use threads;
 use threads::shared;
+use File::Basename;
 
 #use strict;
 
@@ -26,7 +27,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Comments::CommMail::CommMail';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Programs::Exporter::ExportCheckerMini::RunExport::RunExporterCheckerMini';
-		use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -107,6 +108,9 @@ sub __SaveExitHndl {
 			$self->{"comments"}->Save();
 			$self->{"form"}->RefreshCommListViewForm( $self->{"comments"}->GetLayout() );
 		}
+		else {
+			return 0;
+		}
 	}
 
 	if ($export) {
@@ -119,20 +123,20 @@ sub __SaveExitHndl {
 		if ( $self->{"inCAM"}->IsConnected() ) {
 			$self->{"inCAM"}->ClientFinish();
 		}
-		
+
 		# 2) Tell to launcher, do not close/exit server when this app ends
 		$self->{"launcher"}->SetLetServerRun();
 
 		# 3) Run new app via ExportCheckerMiniWrapper ( wrapper for AppLauncher package and RunFromApp method)
 		# Pass current port from launcher to AppLauncher
-		my $unitId  = UnitEnums->UnitId_COMM;
+		my $unitId = UnitEnums->UnitId_COMM;
 		my $unitDim = [ 555, 285 ];
 
 		my $app = RunExporterCheckerMini->new( $self->{"jobId"}, $unitId, $unitDim, 1, $self->{"launcher"}->GetServerPort() );
 
 		# 4) End this app
 		$self->{"form"}->{"mainFrm"}->Close();
- 
+
 	}
 
 	if ($exit) {
@@ -152,7 +156,7 @@ sub __OnEmailPreview {
 		# if country CZ
 		$lang = "cz" if ( $inf{"zeme"} eq 25 );
 
-		my $mail = CommMail->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"comments"}->GetLayout(),  $lang );
+		my $mail = CommMail->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"comments"}->GetLayout(), $lang );
 		$mail->Open( ["\@"], [], "Comment preview..." );
 
 		#$mail->Sent(['stepan.prichystal@gatema.cz'], [], "Comment preview...");
@@ -174,7 +178,7 @@ sub __OnClearAllHndl {
 		push( @mess, "You are about to clear all comments:\n" );
 		push( @mess, " 1) First, all coments will be archived in: " . $self->{"comments"}->GetCommArchiveDir() );
 		push( @mess, " 2) All coments will be removed from viewer" );
-		push( @mess, " 3) You can restore last cleared comments by click on Restore button (activ3e only if Comemnt list is empty)");
+		push( @mess, " 3) You can restore last cleared comments by click on Restore button (activ3e only if Comemnt list is empty)" );
 		push( @mess, "\n\nDo you want continue?" );
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "No", "Yes, archive and clear comments" ] );    #  Script is stopped
@@ -362,6 +366,21 @@ sub __OnEditFileHndl {
 	my $commId = shift;
 	my $fileId = shift;
 
+	# Check if exist green shot
+	if ( !-e CommEnums->Path_GREENSHOT ) {
+		my $messMngr = $self->{"form"}->GetMessMngr();
+		$messMngr->ShowModal(
+							  -1,
+							  EnumsGeneral->MessageType_WARNING,
+							  [
+								 "Nelze použít aplikaci GreenShot.",
+								 "Aplikace musí být nainstalovaná na následující cestě: " . CommEnums->Path_GREENSHOT
+							  ]
+		);
+		
+		return 0;
+	}
+
 	unless ( $self->{"comments"}->EditFile( $commId, $fileId ) ) {
 
 		my $messMngr = $self->{"form"}->GetMessMngr();
@@ -377,7 +396,9 @@ sub __OnAddFileHndl {
 	my $addGS   = shift;
 	my $addFile = shift;
 
-	$self->{"form"}->HideFrm() if ($addCAM || $addGS);
+	my $messMngr = $self->{"form"}->GetMessMngr();
+
+	$self->{"form"}->HideFrm() if ( $addCAM || $addGS );
 
 	my $p = "";
 	my $res;
@@ -386,18 +407,41 @@ sub __OnAddFileHndl {
 		$res = $self->{"comments"}->SnapshotCAM( 0, \$p );
 	}
 	elsif ($addGS) {
-		$res = $self->{"comments"}->SnapshotGS( \$p );
+
+		# Check if exist green shot
+		if ( -e CommEnums->Path_GREENSHOT ) {
+			$res = $self->{"comments"}->SnapshotGS( \$p );
+		}
+		else {
+			$res = 0;
+			$messMngr->ShowModal(
+								  -1,
+								  EnumsGeneral->MessageType_WARNING,
+								  [
+									 "Nelze použít aplikaci GreenShot.",
+									 "Aplikace musí být nainstalovaná na následující cestě: " . CommEnums->Path_GREENSHOT
+								  ]
+			);
+		}
 
 	}
 	elsif ($addFile) {
 		$res = $self->{"comments"}->ChooseFile( \$p, $self->{"form"}->{"mainFrm"} );
 	}
 
-	$self->{"form"}->ShowFrm() if ($addCAM || $addGS);
+	$self->{"form"}->ShowFrm() if ( $addCAM || $addGS );
 
 	if ($res) {
 
-		$self->{"comments"}->AddFile( $commId, undef, $p );
+		my $custName = undef;
+
+		if ($addFile) {
+
+			my ( $name, $a, $suf ) = fileparse( $p, qr/\.\w*/ );
+			$custName = $name;
+		}
+
+		$self->{"comments"}->AddFile( $commId, $custName, $p );
 
 		# Refresh Comm view
 		my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
@@ -408,7 +452,6 @@ sub __OnAddFileHndl {
 	}
 	else {
 
-		my $messMngr = $self->{"form"}->GetMessMngr();
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during create snapshot"] );    #  Script is stopped
 	}
 
