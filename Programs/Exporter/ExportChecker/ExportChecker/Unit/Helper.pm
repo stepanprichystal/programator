@@ -50,7 +50,7 @@ sub PrepareUnits {
 	my @cells       = $groupTables->GetAllUnits();
 
 	my $units = Units->new();
-	$units->Init( $inCAM, $jobId, \@cells );
+	$units->Init( $inCAM, $jobId, undef, \@cells );
 	$units->InitDataMngr($inCAM);
 
 	return $units;
