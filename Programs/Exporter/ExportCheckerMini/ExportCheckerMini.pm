@@ -118,8 +118,18 @@ sub Init {
 	$self->{"unit"} = UnitHelper->GetUnitById( $self->{"unitId"}, $self->{"jobId"} );
 
 	# Init unit/units
+	my $step = undef;
+	if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, "panel" ) ) {
+		$step = "panel";
+	}
+	elsif ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, "o+1" ) ) {
+		$step = "o+1";
+	}
+	else {
+		$step = ( CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} ) )[0];
+	}
 
-	$self->{"units"}->Init( $self->{"inCAM"}, $self->{"jobId"}, [ $self->{"unit"} ] );
+	$self->{"units"}->Init( $self->{"inCAM"}, $self->{"jobId"}, $step, [ $self->{"unit"} ] );
 	$self->{"units"}->InitDataMngr( $self->{"inCAM"} );
 
 	# Add unit to form
@@ -225,9 +235,9 @@ sub __ExportFinishHandler {
 }
 
 sub __OnSwitchAppHandler {
-	my $self    = shift;
- 
-	 die "Not omplemented";
+	my $self = shift;
+
+	die "Not omplemented";
 
 }
 

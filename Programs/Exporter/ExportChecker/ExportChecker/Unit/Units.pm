@@ -40,10 +40,11 @@ sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
+	my $step = shift;
 	my @units = @{ shift(@_) };
 
 	# Each unit contain reference on default info - info with general info about pcb
-	$self->{"defaultInfo"} = DefaultInfo->new($jobId);
+	$self->{"defaultInfo"} = DefaultInfo->new($jobId, $step);
 	$self->{"defaultInfo"}->Init($inCAM);
 
 	# Save to each unit->dataMngr default info

@@ -259,6 +259,8 @@ sub __GetSubjectByType {
 
 	my $subject = $subjectType;    # by default subject equals subjectType
 
+	my $jobId = $self->{"jobId"};
+
 	my %sub = ();
 
 	$sub{ Enums->Subject_JOBFINIFHAPPROVAL }{"en"}    = "Approval before production";
@@ -272,14 +274,26 @@ sub __GetSubjectByType {
 
 	if ( defined $sub{$subjectType} && defined $sub{$subjectType}{ $self->{"lang"} } ) {
 
-		$subject = $sub{$subjectType}{ $self->{"lang"} };
+		$subject = "";
 
+		# 1) Add order/offer id
 		my $jobTxt = "<job number not found>";
 		my @orders = $self->GetCurrOrderNumbers();
 		if (@orders) {
 			$jobTxt = uc( join( "; ", @orders ) );
+
 		}
-		$subject = $jobTxt . ": " . $subject;
+		$subject .= $jobTxt . ": ";
+
+		# 2) Add subject title
+		$subject .= $sub{$subjectType}{ $self->{"lang"} };
+
+		# 3) Add customer data name
+		my $pcbInf = HegMethods->GetBasePcbInfo($jobId);
+		if ( defined $pcbInf->{"nazev_subjektu"} && $pcbInf->{"nazev_subjektu"} ne "" ) {
+			$subject .= " (" . $pcbInf->{"nazev_subjektu"} . ")";
+		}
+
 	}
 
 	die "Email subject is empty" if ( !defined $subject || $subject eq "" );

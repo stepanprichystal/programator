@@ -120,7 +120,7 @@ sub Init {
 
 	# Save all references of groups
 	my @cells = $self->{"groupTables"}->GetAllUnits();
-	$self->{"units"}->Init( $self->{"inCAM"}, $self->{"jobId"}, \@cells );
+	$self->{"units"}->Init( $self->{"inCAM"}, $self->{"jobId"}, "panel" ,\@cells );
 
 	# Build phyisic table with groups, which has completely set GUI
 	$self->{"form"}->BuildGroupTableForm( $self->{"inCAM"}, $self->{"groupTables"} );

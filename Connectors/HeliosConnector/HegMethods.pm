@@ -317,6 +317,7 @@ sub GetBasePcbInfo {
 	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
+				d.nazev_subjektu,
 				 d.pocet_vrstev,
 				 d.rozmer_x x_size,
 				 d.rozmer_y y_size,
