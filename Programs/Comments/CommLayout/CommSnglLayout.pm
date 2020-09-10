@@ -61,18 +61,18 @@ sub SetType {
 
 	# set new type to filename prefix
 
-	foreach my $f ( $self->GetAllFiles() ) {
-
-		my $prefix;
-
-		if ( $self->{"type"} eq Enums->CommentType_NOTE ) {
-			$prefix = "N";
-		}
-		elsif ( $self->{"type"} eq Enums->CommentType_QUESTION ) {
-			$prefix = "Q";
-		}
-		$f->SetFilePrefix($prefix);
-	}
+#	foreach my $f ( $self->GetAllFiles() ) {
+#
+#		my $prefix;
+#
+#		if ( $self->{"type"} eq Enums->CommentType_NOTE ) {
+#			$prefix = "N";
+#		}
+#		elsif ( $self->{"type"} eq Enums->CommentType_QUESTION ) {
+#			$prefix = "Q";
+#		}
+#		$f->SetFilePrefix($prefix);
+#	}
 
 	# Remove suggstions if exist
 	if ( $self->{"type"} eq Enums->CommentType_NOTE ) {
