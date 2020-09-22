@@ -117,8 +117,8 @@ sub GetBaseMatInfo {
 
 		# Parse Cu type ED/RA
 		$inf{"cuType"} = undef;
-		if ( $matName =~ m/(ap)|(cg)/i ) {
-			$inf{"cuType"} = $matName =~ m/ap/i ? "RA" : "ED";
+		if ( $matName =~ m/(ap)|(cg)|(ag)/i ) {
+			$inf{"cuType"} = $matName =~ m/R/i ? "RA" : "ED";
 		}
 
 	}

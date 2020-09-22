@@ -1118,6 +1118,36 @@ sub GetIdcustomer {
 	return $res;
 }
 
+
+# Return order information by specific order item
+sub GetCustomerOrderInfo {
+	my $self  = shift;
+	my $orderId = shift; # Dxxxxxx-xx
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+
+
+	my $cmd = 
+	"SELECT
+       obh.nazev_subjektu
+	FROM lcs.sk_hlavicka obh
+       JOIN lcs.sk_polozka obp ON obp.cislo_subjektu = obh.cislo_subjektu
+       JOIN lcs.zakazky_dps_22_hlavicka z ON z.cislo_subjektu = obp.obchodni_pripad
+	WHERE z.reference_subjektu = _OrderId";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@result) == 1 ) {
+		return $result[0];
+	}
+	else {
+		return undef;
+	}
+}
+
+
+
+
 #sub UpdateConstructionClass {
 #	my $self        = shift;
 #	my $pcbId       = shift;
@@ -2573,7 +2603,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->GetContactPersonInfo("N74477");
+	my $mat = HegMethods->GetCustomerOrderInfo("D292836-01");
 
 	dump($mat);
 	die;

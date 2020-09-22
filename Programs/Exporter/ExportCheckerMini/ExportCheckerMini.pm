@@ -38,6 +38,8 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Widgets::Forms::LoadingForm';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamLayer';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 
@@ -93,14 +95,14 @@ sub new {
 	# Class whin manage popup form for checking
 	$self->{"messMngr"} = $self->{"form"}->GetMessageMngr();
 
-	# Keep all references of used groups/units in form
+	$self->{"fakeStackup"} = 0;    # indicate if fake temporarz stackup was created in order show export
 
 	return $self;
 }
 
 sub Init {
 	my $self     = shift;
-	my $launcher = shift;    # contain InCAM library conencted to server
+	my $launcher = shift;          # contain InCAM library conencted to server
 
 	# 1) Get InCAm from Launcher
 
@@ -127,6 +129,17 @@ sub Init {
 	}
 	else {
 		$step = ( CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} ) )[0];
+	}
+
+	# Hide temporary inner signal layers if stackup not exist
+	my $layerCnt = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+	if ( $layerCnt > 2 && !JobHelper->StackupExist( $self->{"jobId"} ) ) {
+
+		$self->{"hidenLayers"} = [ CamJob->GetSignalLayerNames( $self->{"inCAM"}, $self->{"jobId"} ) ];
+		foreach my $l ( @{ $self->{"hidenLayers"} } ) {
+			CamLayer->SetLayerContextLayer( $self->{"inCAM"}, $self->{"jobId"}, $l, "misc" );
+		}
+
 	}
 
 	$self->{"units"}->Init( $self->{"inCAM"}, $self->{"jobId"}, $step, [ $self->{"unit"} ] );
@@ -387,6 +400,10 @@ sub __CleanUpAndExitForm {
 	my ($self) = @_;
 
 	FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, $self->{"jobId"} ) if ( $self->{"fakeLayers"} );
+
+	foreach my $l ( @{ $self->{"hidenLayers"} } ) {
+			CamLayer->SetLayerContextLayer( $self->{"inCAM"}, $self->{"jobId"}, $l, "board" );
+	 }
 
 	$self->{"inCAM"}->ClientFinish();
 

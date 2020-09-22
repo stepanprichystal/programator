@@ -292,6 +292,20 @@ sub __GetSubjectByType {
 		my $pcbInf = HegMethods->GetBasePcbInfo($jobId);
 		if ( defined $pcbInf->{"nazev_subjektu"} && $pcbInf->{"nazev_subjektu"} ne "" ) {
 			$subject .= " (" . $pcbInf->{"nazev_subjektu"} . ")";
+
+		}
+
+		# 4) If job is not offer try to add customer order
+		if (@orders) {
+			my $custOrderInf = HegMethods->GetCustomerOrderInfo( $orders[0] );
+
+			if ( defined $custOrderInf ) {
+				my $custOrder = $custOrderInf->{"nazev_subjektu"};
+
+				if ( defined $custOrder && $custOrder ne "" ) {
+					$subject .= " - " . $custOrder;
+				}
+			}
 		}
 
 	}
