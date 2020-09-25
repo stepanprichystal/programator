@@ -97,8 +97,8 @@ sub Sent {
 	push( @emails, @{$cc} ) if ( defined $cc );
 
 	foreach my $m (@emails) {
-
-		if ( $m !~ /\w+\@\w+\.\w+/ ) {
+ 
+		if ( $m !~ /^.+\@.+\..+$/i ) {
 			die "Wrong email format: $m";
 		}
 	}
