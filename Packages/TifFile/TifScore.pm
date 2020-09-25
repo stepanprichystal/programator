@@ -44,6 +44,22 @@ sub SetScoreThick {
 	$self->_Save();
 }
 
+sub GetScoreOptimize {
+	my $self = shift;
+
+	return  $self->{"tifData"}->{ $self->{"key"} }->{"optimize"};
+
+}
+
+sub SetScoreOptimize {
+	my $self         = shift;
+	my $optimize = shift;
+
+	$self->{"tifData"}->{ $self->{"key"} }->{"optimize"} = $optimize;
+
+	$self->_Save();
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

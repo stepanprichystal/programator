@@ -28,6 +28,7 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
+	my $step = shift // 'panel'; 
 
 	# PROPERTY
 
@@ -40,7 +41,7 @@ sub new {
 		$self->{"stackupNC"} = StackupNC->new( $inCAM, $jobId );
 	}
 
-	$self->{"panelComp"} = PanelComp->new( $inCAM, $jobId, $self->{"stackupNC"} );
+	$self->{"panelComp"} = PanelComp->new( $inCAM, $jobId, $step, $self->{"stackupNC"} );
 
 	return $self;
 }

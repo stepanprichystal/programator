@@ -45,9 +45,9 @@ sub OnlineWrite_order {
 	);
 
 	if ( $result =~ /FAIL/ ) {
-		
+
 		print STDERR $result;
-		die HeliosException->new( EnumsErrors->HELIOSDBWRITEERROR , $result);
+		die HeliosException->new( EnumsErrors->HELIOSDBWRITEERROR, $result );
 	}
 
 	return $result;
@@ -60,17 +60,24 @@ sub OnlineWrite_pcb {
 	my $attribute  = shift;    #do jakeho pole v norisu
 	$reference = uc $reference;
 
+	my $folderId = undef;
+	if ( $reference =~ /^d$/i ) {
+		$folderId = "22041"; # desky
+	}
+	elsif ( $reference =~ /^x$/i ) {
+		$folderId = "22044"; # desky nabidky
+	}
+
 	my $result = UpdateRecord(
 							   classid   => "22201",
-							   folderid  => "22041",
+							   folderid  => $folderId,
 							   refer     => $reference,
 							   attribute => $attribute,
 							   value     => $stavOnline
 	);
 
-	if ( $result =~ /FAIL/ )
-	{
-		
+	if ( $result =~ /FAIL/ ) {
+
 		print STDERR $result;
 		die HeliosException->new( EnumsErrors->HELIOSDBWRITEERROR, $result );
 	}
@@ -84,7 +91,7 @@ sub LogOn {
 	my $password = $__dbPassword;
 	my $language = $__dbLanguage;
 	my $options  = $__dbOptions;
-		 
+
 	my $result = $service->LogOn(
 		{
 		  profile  => $profile,     # string
@@ -94,24 +101,19 @@ sub LogOn {
 		  options  => $options,     # string
 		}
 	);
-		 
+
 	$result =~ m{\&lt;LogOnResult&gt;(.*?)\&lt;/LogOnResult&gt;};
 	return $1;
 }
 
 sub LogOff {
 	my %args = @_;
-	
-		 
-	
-	
+
 	my $result = $service->LogOff(
 		{
 		  sessionToken => $args{sessionToken},    # string
 		}
 	);
-	
-		 
 
 	$result =~ m{\&lt;LogOffResult&gt;(.*?)\&lt;/LogOffResult&gt;};
 	return $1;
@@ -125,12 +127,8 @@ sub CreateXml {
 	my $attribute = $args{attribute};
 	my $value     = $args{value};
 
-
-		 
 	my $writer = new XML::Writer( OUTPUT => 'self' );
-	
-		 
-	
+
 	$writer->startTag( "INSERTUPDATE", "action" => "update" );
 	$writer->startTag(
 					   "RECORD",
@@ -144,13 +142,9 @@ sub CreateXml {
 	$writer->endTag("ATTRIBUTE");
 	$writer->endTag("RECORD");
 	$writer->endTag("INSERTUPDATE");
-	
-		 
-	
+
 	$writer->end();
-	
-	
-		 
+
 	return $writer->to_string();
 }
 
@@ -159,8 +153,6 @@ sub ProcessXml {
 	my $sessionToken = $args{sessionToken};
 	my $xml          = $args{xml};
 
-		 
-
 	my $result = $service->ProcessXml(
 									   {
 										 sessionToken => $sessionToken,
@@ -168,19 +160,18 @@ sub ProcessXml {
 									   }
 	);
 
-	 
-
 	print STDERR $result;
 
 	$result =~ /STATE=(.*)START/;
 	my $res = $1;
 	$res =~ tr/&quot;//d;
-	if ( !defined $res || $res eq ""){
-		
+	if ( !defined $res || $res eq "" ) {
+
 		$res = "FAIL, unknown error. HEG return no value";
 
-	}elsif (   $res =~ m/^FAIL/ ) {
-		
+	}
+	elsif ( $res =~ m/^FAIL/ ) {
+
 		$res = $res . "\n";
 		$result =~ /errorMessage=(.*)WHEN/;
 		my $error = $1;
@@ -189,7 +180,7 @@ sub ProcessXml {
 			$res = $res . $error;
 		}
 	}
-	
+
 	return $res;
 }
 
@@ -201,11 +192,9 @@ sub UpdateRecord {
 	my $attribute = $args{attribute};
 	my $value     = $args{value};
 
-	 
-
 	my $sessionToken = LogOn();
-	
-	print STDERR "LogOn is not defined" if(!defined $sessionToken);
+
+	print STDERR "LogOn is not defined" if ( !defined $sessionToken );
 
 	my $xml = CreateXml(
 						 classid   => $classid,
@@ -215,11 +204,8 @@ sub UpdateRecord {
 						 value     => $value
 	);
 
-
 	my $processXmlResult = ProcessXml( sessionToken => $sessionToken,
 									   xml          => $xml );
-
-		 
 
 	my $logOffResult = LogOff( sessionToken => $sessionToken );
 

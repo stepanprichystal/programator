@@ -12,7 +12,6 @@ use warnings;
 use threads;
 use threads::shared;
 
-
 #local library
 
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -53,7 +52,7 @@ sub new {
 	$self->{"inCAM"} = undef;
 
 	# Main application form
-	$self->{"form"} = StencilFrm->new( -1,  $self->{"jobId"} );
+	$self->{"form"} = StencilFrm->new( -1, $self->{"jobId"} );
 
 	# Data where are stored stencil position, deimensions etc
 	$self->{"dataMngr"}        = DataMngr->new();
@@ -62,7 +61,7 @@ sub new {
 	$self->{"stencilPopup"} = StencilPopup->new( $self->{"jobId"}, $self->{"form"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"},
 												 $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
 
-	$self->{"output"} = undef;
+	$self->{"output"}     = undef;
 	$self->{"dataHelper"} = undef;
 
 	return $self;
@@ -74,13 +73,13 @@ sub Init {
 
 	$self->{"launcher"} = $launcher;
 	$self->{"inCAM"}    = $launcher->GetInCAM();
-	
+
 	$self->{"output"} = Output->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"} );
 	$self->{"dataHelper"} = DataHelper->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"dataMngr"}, $self->{"stencilDataMngr"},
 											 $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
-											 
+
 	# 1) Set source data to DataMngr
-	$self->{"dataHelper"}->SetSourceData();										 
+	$self->{"dataHelper"}->SetSourceData();
 
 	#set handlers for main app form
 	$self->__SetHandlers();
@@ -93,7 +92,6 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
- 
 	# 2) Set default settings by IS
 	my $warnMess = "";
 	my $res      = $self->{"dataHelper"}->SetDefaultByIS( \$warnMess );
@@ -132,8 +130,8 @@ sub __SetHandlers {
 	$self->{"form"}->{"fmrDataChanged"}->Add( sub { $self->__OnFrmDataChanged(@_) } );
 
 	$self->{"form"}->{"prepareClick"}->Add( sub { $self->__OnPrepareClick(@_) } );
-	
-	$self->{"stencilPopup"}->{'stencilOutputEvt'}->Add(  sub {$self->__OutputStencil(@_)});
+
+	$self->{"stencilPopup"}->{'stencilOutputEvt'}->Add( sub { $self->__OutputStencil(@_) } );
 
 }
 
@@ -156,27 +154,23 @@ sub __OnPrepareClick {
 
 	# Do check before prepare
 
-	$self->{"stencilPopup"}->Init(  $self->{"launcher"} );
+	$self->{"stencilPopup"}->Init( $self->{"launcher"} );
 	$self->{"stencilPopup"}->Run();
-	
-	
 
-#	my $mess = "";
-#	my $res  = $self->{"dataHelper"}->CheckBeforeOutput( \$mess );
-#
-#	unless ($res) {
-#
-#		my $messMngr = $self->{"form"}->GetMessageMngr();
-#		my @mess1    = ($mess);
-#		my @btn      = ( "Prepare force", "Cancel" );
-#
-#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn );
-#		if ( $messMngr->Result() == 1 ) {
-#			return 0;
-#		}
-#	}
-
-	
+	#	my $mess = "";
+	#	my $res  = $self->{"dataHelper"}->CheckBeforeOutput( \$mess );
+	#
+	#	unless ($res) {
+	#
+	#		my $messMngr = $self->{"form"}->GetMessageMngr();
+	#		my @mess1    = ($mess);
+	#		my @btn      = ( "Prepare force", "Cancel" );
+	#
+	#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess1, \@btn );
+	#		if ( $messMngr->Result() == 1 ) {
+	#			return 0;
+	#		}
+	#	}
 
 }
 
@@ -266,15 +260,16 @@ sub __RefreshForm {
 # Prepare final layer
 sub __OutputStencil {
 	my $self = shift;
-	
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
- 
-	my $par = $self->{"output"}->SaveStencilParams($self->{"stencilSrc"}, $self->{"jobIdSrc"});
-	
-	my $stencilL = StencilLayer->new($inCAM, $jobId, $par);
+
+	my $par = $self->{"output"}->SaveStencilParams( $self->{"stencilSrc"}, $self->{"jobIdSrc"} );
+
+	my $stencilL = StencilLayer->new( $inCAM, $jobId, $par );
+	$stencilL->PrepareSteps();
 	$stencilL->PrepareLayer();
-	
+
 	$self->{"form"}->{"mainFrm"}->Close();
 }
 
@@ -332,10 +327,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId = "f13609";
 
 	#my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_JOB, "f13609" );
-	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_CUSTDATA);
-	
-	
-	
+	my $creator = StencilCreator->new( $inCAM, $jobId, Enums->StencilSource_CUSTDATA );
+
 	$creator->Run();
 
 }

@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::ProcessStackup';
+use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::ProcessStackupTmpl';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDrawing';
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsBuilder';
 use aliased 'Packages::Other::TableDrawing::Enums'                  => 'TblDrawEnums';
@@ -23,13 +23,16 @@ my $inCAM = InCAM->new();
 
 #my $jobId = "d266566"; # inner flex
 #my $jobId = "d146753"; # 1v flex
-my $jobId = "d267628" ; # flex 2v + stiff
+#my $jobId = "d267628" ; # flex 2v + stiff
 #my $jobId = "d064915"; # neplat
 #my $jobId = "d275112"; # standard 1v
 #my $jobId = "d275162"; # standard 2v
 
+
+my $jobId = "d293099" ; # flex 2v + stiff
+
 # 1) Init customer stackup class
-my $processStckp = ProcessStackup->new( $inCAM, $jobId );
+my $processStckp = ProcessStackupTmpl->new( $inCAM, $jobId );
 
 # 2)
 my $lamCnt = $processStckp->LamintaionCnt();

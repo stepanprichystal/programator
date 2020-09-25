@@ -83,7 +83,7 @@ sub Build {
 		my $viaHoleArea = ( $cpnSingleSett->GetCpnSingleWidth() - 2 * $tOrigin->X() - 2 * $viaHoleOffset );
 
 		my $viaCnt = int( $viaHoleArea / ( $cpnSett->GetGNDViaHoleDX() / 1000 ) ) + 1;
-		my $areaLeft = $viaHoleArea % ( $cpnSett->GetGNDViaHoleDX() / 1000 );
+		my $areaLeft = ($viaHoleArea %  $cpnSett->GetGNDViaHoleDX() ) / 1000 ;
 
 		my $yPosTopVia =
 		  $tOrigin->Y() + $p2pDist/2+

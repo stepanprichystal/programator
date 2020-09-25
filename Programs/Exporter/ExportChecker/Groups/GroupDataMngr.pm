@@ -1,7 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Structure represent group of operation on technical procedure
-# Tell which operation will be merged, thus which layer will be merged to one file
+# Description: 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::GroupDataMngr;
@@ -153,9 +152,13 @@ sub SetGroupState {
 
 sub CheckGroupData {
 	my $self = shift;
+	my $mode = shift;  # EnumsJobMngr->TaskMode_SYNC /  EnumsJobMngr->TaskMode_ASYNC
+
+	# Clear result mngr
+	$self->{'resultMngr'}->Clear();
 
 	if ( $self->{"checkData"}->can("OnCheckGroupData") ) {
-		$self->{"checkData"}->OnCheckGroupData($self);
+		$self->{"checkData"}->OnCheckGroupData($self, $mode);
 
 		return $self->{'resultMngr'}->Succes();
 

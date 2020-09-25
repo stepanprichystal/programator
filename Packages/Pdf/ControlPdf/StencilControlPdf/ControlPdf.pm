@@ -45,6 +45,7 @@ sub new {
 	my $inCAM     = shift;
 	my $jobId     = shift;
 	my $step      = shift;
+	my $drawDim   = shift;    # draw dimension to pdf
 	my $lang      = shift;
 	my $infoToPdf = shift;
 
@@ -54,12 +55,12 @@ sub new {
 	$self->{"inCAM"}     = $inCAM;
 	$self->{"jobId"}     = $jobId;
 	$self->{"step"}      = $step;
+	$self->{"drawDim"}   = $drawDim;
 	$self->{"lang"}      = $lang;        # language of pdf, values cz/en
 	$self->{"infoToPdf"} = $infoToPdf;
 
 	# PROPERTIES
 
-	 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";             # place where pdf is created
 	$self->{"outputPdf"}  = OutputFinalPdf->new( $self->{"lang"}, $self->{"infoToPdf"}, $self->{"jobId"} );
 	$self->{"params"}     = StencilSerializer->new( $self->{"jobId"} )->LoadStenciLParams();
@@ -92,6 +93,7 @@ sub AddInfoPreview {
 	my $fillTempl = FillTemplatePrevInfo->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"params"} );
 
 	$fillTempl->FillKeysData( $templData, $self->{"infoToPdf"} );
+
 	#$fillTempl->FillKeysLayout($templData);
 
 	my $templ = HtmlTemplate->new( $self->{"lang"} );
@@ -138,10 +140,10 @@ sub AddImagePreview {
 	my $imgPreview = undef;
 	if ( $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOP || $self->{"params"}->GetStencilType() eq StnclEnums->StencilType_TOPBOT )
 	{
-		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, EnumsFinal->View_FROMTOP, $self->{"params"} );
+		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, EnumsFinal->View_FROMTOP, $self->{"params"}, $self->{"drawDim"} );
 	}
 	else {
-		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, EnumsFinal->View_FROMBOT, $self->{"params"} );
+		$imgPreview = ImgPreview->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, EnumsFinal->View_FROMBOT, $self->{"params"}, $self->{"drawDim"} );
 	}
 
 	# We create only one preview image which depends
@@ -158,7 +160,7 @@ sub AddImagePreview {
 
 	# 2) Fill data template with images
 	my $templData = TemplateKey->new();
-	my $fillTempl = FillTemplatePrevImg->new( $inCAM, $jobId, $self->{"params"}  );
+	my $fillTempl = FillTemplatePrevImg->new( $inCAM, $jobId, $self->{"params"} );
 
 	$fillTempl->FillKeysData( $templData, $imgPath, $self->{"infoToPdf"} );
 
@@ -210,7 +212,6 @@ sub AddLayersPreview {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	 
 	my $resultItem = $self->_GetNewItem("Single layers");
 
 	$self->{"previewLayersReq"}->{"req"} = 1;
@@ -229,7 +230,7 @@ sub AddLayersPreview {
 		else {
 			$title = "Production data";
 		}
-		
+
 		$self->__AddPageTitle($title);
 
 	}
@@ -373,7 +374,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d276512";
+	my $jobId = "d277289";
 
 	#	foreach my $l ( CamJob->GetAllLayers( $inCAM, $jobId ) ) {
 	#
@@ -386,8 +387,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $mess = "";
 
 	my $control = ControlPdf->new( $inCAM, $jobId, "o+1", "en", 1 );
-	$control->AddInfoPreview( \$mess );
-	$control->AddImagePreview( \$mess, 1, 1 );
+
+	#$control->AddInfoPreview( \$mess );
+	#$control->AddImagePreview( \$mess, 1, 1 );
 	$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 

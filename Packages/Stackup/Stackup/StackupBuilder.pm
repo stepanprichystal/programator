@@ -147,8 +147,6 @@ sub __AddCoverlayLayers {
 
 	return 0 unless (@cvrL);
 
-	my $matInfo = HegMethods->GetPcbCoverlayMat($jobId);
-
 	@cvrL = map { $_->{"gROWname"} } @cvrL;
 
 	for ( my $i = 0 ; $i < scalar(@cvrL) ; $i++ ) {
@@ -156,20 +154,33 @@ sub __AddCoverlayLayers {
 		my $sigL    = ( $cvrL[$i] =~ /^\w+([csv]\d*)$/ )[0];
 		my $cvrlPos = undef;
 
-		foreach my $c ( $stackup->GetAllCores() ) {
+		if ( $sigL eq "c" ) {
+			$cvrlPos = "above";
+		}
+		elsif ( $sigL eq "s" ) {
+			$cvrlPos = "below";
+		}
+		else {
 
-			if ( $c->GetTopCopperLayer()->GetCopperName() eq $sigL ) {
+			# coverlay lay on core
 
-				$cvrlPos = "above";
-				last;
-			}
+			foreach my $c ( $stackup->GetAllCores() ) {
 
-			if ( $c->GetBotCopperLayer()->GetCopperName() eq $sigL ) {
+				if ( $c->GetTopCopperLayer()->GetCopperName() eq $sigL ) {
 
-				$cvrlPos = "below";
-				last;
+					$cvrlPos = "above";
+					last;
+				}
+
+				if ( $c->GetBotCopperLayer()->GetCopperName() eq $sigL ) {
+
+					$cvrlPos = "below";
+					last;
+				}
 			}
 		}
+
+		my $matInfo = HegMethods->GetPcbCoverlayMat( $jobId, ( $cvrlPos eq "above" ? "top" : "bot" ) );
 
 		# Build coverlay layer
 
@@ -195,7 +206,8 @@ sub __AddCoverlayLayers {
 		$layerInfo->{"text"}          = ( $name =~ /LF\s*(\d{4})/i )[0];
 		$layerInfo->{"typetext"}      = "Pyralux " . ( $name =~ /Coverlay\s+(\w+)\s*/i )[0];
 		$layerInfo->{"method"} =
-		  defined( first { $_->{"gROWname"} eq "coverlaypins" } @{ $self->{"boardBaseLayers"} } )
+
+		  ( $sigL =~ /^v\d+$/ || defined( first { $_->{"gROWname"} eq "coverlaypins" } @{ $self->{"boardBaseLayers"} } ) )
 		  ? Enums->Coverlay_SELECTIVE
 		  : Enums->Coverlay_FULL;
 		$layerInfo->{"copperName"} = $sigL;
@@ -711,7 +723,7 @@ sub __IdentifyFlexCoreProduct {
 			if (
 				 defined $P1Bot
 				 && ( $P1Bot->{"l"}->GetType() ne Enums->MaterialType_PREPREG
-					  || !$P1Top->{"l"}->GetIsNoFlow() )
+					  || !$P1Bot->{"l"}->GetIsNoFlow() )
 				 && $P1Bot->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
 			  )
 			{
@@ -914,7 +926,7 @@ sub __BuildProductPress {
 		# Exception for pressing more flexocore together, which has laminated prepreg on outer side
 		# OR if there is extra coverlay pressing
 		if (
-			 $pLayers[0]->GetType() eq Enums->ProductL_PRODUCT
+			 $pLayers[-1]->GetType() eq Enums->ProductL_PRODUCT
 			 && (    $pLayers[-1]->GetData()->GetProductOuterMatLayer("last")->GetData()->GetType() eq Enums->MaterialType_PREPREG
 				  || $pLayers[-1]->GetData()->GetProductOuterMatLayer("last")->GetData()->GetType() eq Enums->MaterialType_COVERLAY )
 		  )
@@ -928,23 +940,23 @@ sub __BuildProductPress {
 		}
 
 		# Check if extra layers (coverlay) left after last pressing
-		#		if ( $pTopCuOrder == 1 && $pBotCuOrder == $stackup->GetCuLayerCnt() ) {
-		#
-		#			if ( $sLIdx > 0 ) {
-		#
-		#				my @extraPressL = map { ProductLayer->new( $_->{"t"}, $_->{"l"} ) } @{$pars}[ 0 .. $sLIdx - 1 ];
-		#				unshift( @pLayers, @extraPressL );
-		#				push( @pExtraPressLayers, @extraPressL );
-		#			}
-		#
-		#			if ( $eLIdx < scalar( @{$pars} ) ) {
-		#
-		#				my @extraPressL = map { ProductLayer->new( $_->{"t"}, $_->{"l"} ) } @{$pars}[ $eLIdx + 1 .. scalar( @{$pars} ) - 1 ];
-		#				push( @pLayers,           @extraPressL );
-		#				push( @pExtraPressLayers, @extraPressL );
-		#			}
-		#
-		#		}
+		if ( $pTopCuOrder == 1 && $pBotCuOrder == $stackup->GetCuLayerCnt() ) {
+
+			if ( $sLIdx == 1 ) {
+
+				my $extraL = ProductLayer->new( $pars->[0]->{"t"}, $pars->[0]->{"l"} );
+				push( @pExtraPressLayers, $extraL  );
+				unshift( @pLayers, $extraL );
+			}
+
+			if ( $eLIdx == scalar( @{$pars} ) - 2 ) {
+
+				my $extraL = ProductLayer->new( $pars->[-1]->{"t"}, $pars->[-1]->{"l"} );
+				push( @pExtraPressLayers, $extraL ); 
+				push( @pLayers, $extraL );
+			}
+
+		}
 
 		# Prepare product NC layers
 		my @pNC =
@@ -1116,7 +1128,7 @@ sub __AdjustPrepregThickness {
 			my $topPL = undef;    # Product layer
 
 			if ( $i - 1 >= 0 && $layers[ $i - 1 ]->GetType() eq Enums->ProductL_PRODUCT ) {
-				$topPL     = $layers[ $i - 1 ]->GetData()->GetProductOuterMatLayer("last");
+				$topPL = $layers[ $i - 1 ]->GetData()->GetProductOuterMatLayer("last");
 			}
 
 			my $topCopper = undef;
@@ -1130,16 +1142,16 @@ sub __AdjustPrepregThickness {
 
 			# Get BOT  layer next by prepreg
 
-			my $botPL        = undef;    # Product layer
+			my $botPL = undef;    # Product layer
 			if ( $i + 1 < scalar(@layers) && $layers[ $i + 1 ]->GetType() eq Enums->ProductL_PRODUCT ) {
-				$botPL        = $layers[ $i + 1 ]->GetData()->GetProductOuterMatLayer("first");
+				$botPL = $layers[ $i + 1 ]->GetData()->GetProductOuterMatLayer("first");
 			}
 
 			my $botCopper = undef;
 
 			# Consider only copper which is inside product. This mean copper si already etched
 			# (coper which is not insode copepr is foil type, which is not etched during current press)
-			if ( defined $botPL && $botPL->GetData()->GetType() eq Enums->MaterialType_COPPER  ) {
+			if ( defined $botPL && $botPL->GetData()->GetType() eq Enums->MaterialType_COPPER ) {
 
 				$botCopper = $botPL->GetData();
 			}

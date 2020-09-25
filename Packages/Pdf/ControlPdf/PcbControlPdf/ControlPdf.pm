@@ -215,7 +215,7 @@ sub AddImagePreview {
 	}
 
 	# 2) For each step output image
-	my @nestStepSign = ( 'a', 'b', 'c', 'd', 'e', 'f', 'g' );
+	my @nestStepSign = ( 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' );
 
 	foreach my $sInf ( @{ $self->{"steps"} } ) {
 		my $messTop = "";
@@ -351,7 +351,7 @@ sub AddLayersPreview {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my @nestStepSign = ( 'a', 'b', 'c', 'd', 'e', 'f', 'g' );
+	my @nestStepSign = ( 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' );
 
 	foreach my $sInf ( @{ $self->{"steps"} } ) {
 
@@ -363,7 +363,8 @@ sub AddLayersPreview {
 		my $prev = SinglePreview->new( $inCAM, $jobId, $sInf->{"name"}, $sInf->{"considerSR"}, $self->{"lang"} );
 
 		my $draw1UpProfile = $sInf->{"containSR"} && !$sInf->{"considerSR"} && $sInf->{"type"} eq "parent" ? 1 : 0;
-		if ( $prev->Create( 1, $draw1UpProfile, $sInf->{"containSR"}, \$messL ) ) {
+		my $resCreate = $prev->Create( 1, $draw1UpProfile, $sInf->{"containSR"}, \$messL );
+		if ( $resCreate == 1 ) {
 			$self->{"previewLayersReq"}->{ $sInf->{"name"} }->{"outfile"} = $prev->GetOutput();
 
 			# Add page title
@@ -397,6 +398,11 @@ sub AddLayersPreview {
 			for ( my $i = 0 ; $i < scalar( scalar( $pdf->pages ) ) ; $i++ ) {
 				$self->__AddPageTitle($title);
 			}
+		}
+		elsif ( $resCreate == 2 ) {
+			# No layers in step to export
+			
+			$self->{"previewLayersReq"}->{ $sInf->{"name"} }->{"req"} = 0;
 		}
 		else {
 
@@ -496,10 +502,11 @@ sub __Checks {
 	my $self = shift;
 
 	# check when step is panel, nif file already exist too
+	# Some values like solder mask color are loaded from nif
 	my $panelExist = CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
 	my $nifFile = NifFile->new( $self->{"jobId"} );
-
-	if ( $panelExist && !$nifFile->Exist() ) {
+	
+	if ( 	  !JobHelper->GetJobIsOffer( $self->{"jobId"} ) && $panelExist && !$nifFile->Exist() ) {
 
 		die "If panel exist, nif file has to exist too.";
 	}
@@ -524,7 +531,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d243615";
+	my $jobId = "d267628";
+ 
 
 	my $mess = "";
 
@@ -532,24 +540,22 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $SR = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
 
 	#my $nested = $SR;
-	my $detailPrev = 1;
+	my $detailPrev = 0;
 
 	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $detailPrev, "en", 1 );
-	
-		my $f = sub { 
+
+	my $f = sub {
 		my $item = $_[0];
 		$item->SetGroup("Control data");
-		
-		print STDERR $item->ItemId()."\n";
-		
+
+		print STDERR $item->ItemId() . "\n";
+
 	};
-	$control->{"onItemResult"}->Add( sub { $f->(  @_ ) } );
+	$control->{"onItemResult"}->Add( sub { $f->(@_) } );
 
 	#$control->AddInfoPreview( \$mess );
-
-	$control->AddStackupPreview( \$mess );
-	#$control->AddImagePreview( \$mess, 1, 0 );
-
+	#$control->AddStackupPreview( \$mess );
+	$control->AddImagePreview( \$mess, 1, 1 );
 	#$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 
@@ -558,12 +564,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	}
 
 	$control->GetOutputPath();
-	
-	
-	
-	
-
-	
 
 }
 

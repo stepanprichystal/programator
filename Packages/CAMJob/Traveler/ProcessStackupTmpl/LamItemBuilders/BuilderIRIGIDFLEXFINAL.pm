@@ -42,6 +42,15 @@ sub Build {
 	my $steelPlateInf = $stckpMngr->GetSteelPlateInfo();
 	my $rubberPadInf  = $stckpMngr->GetPressPadFF10NInfo();
 	my $filmInf       = $stckpMngr->GetReleaseFilmPacoViaInfo();
+	my $rubberPadYOMInf  = $stckpMngr->GetPressPad01FGKInfo();
+
+	# LAYER: Top rubber pad outside of steel plate
+	$lam->AddItem( $rubberPadYOMInf->{"ISRef"},
+				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   undef, undef,
+				   $rubberPadYOMInf->{"text"},
+				   $rubberPadYOMInf->{"thick"} );
+
 
 	# LAYER: Steel plate top
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );
@@ -53,9 +62,7 @@ sub Build {
 				   $rubberPadInf->{"text"},
 				   $rubberPadInf->{"thick"} );
 
-	# LAYER: Top release film
-	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
-				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+	 
 
 	# MATERIAL LAYERS
 
@@ -87,10 +94,7 @@ sub Build {
 			}
 		}
 	}
-
-	# LAYER: Bot release film
-	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
-				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+ 
 
 	# LAYER: Bot rubber pad
 	$lam->AddItem( $rubberPadInf->{"ISRef"},
@@ -101,6 +105,13 @@ sub Build {
 
 	# LAYER: Steel plate Bot
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );
+	
+	# LAYER: Bot rubber pad outside of steel plate
+	$lam->AddItem( $rubberPadYOMInf->{"ISRef"},
+				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   undef, undef,
+				   $rubberPadYOMInf->{"text"},
+				   $rubberPadYOMInf->{"thick"} );
 
 }
 

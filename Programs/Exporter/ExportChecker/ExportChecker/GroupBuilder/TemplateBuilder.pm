@@ -15,8 +15,9 @@ use warnings;
 #local library
 
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTable';
-use aliased 'Programs::Exporter::ExportChecker::Groups::StnclExport::Presenter::StnclUnit';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupBuilder::Enums';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Helper' => "UnitHelper";
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -40,10 +41,12 @@ sub Build {
 	my $tableTab1 = $groupTables->AddTable("Main groups");
 
 	# Units
-	my $stnclUnit = StnclUnit->new( $self->{"jobId"} );
+	my $stnclUnit = UnitHelper->GetUnitById( UnitEnums->UnitId_STNCL,  $self->{"jobId"} );
+	my $commUnit1 = UnitHelper->GetUnitById( UnitEnums->UnitId_COMM, $self->{"jobId"} );
 
 	my $row1Tab1 = $tableTab1->AddRow();
 	$row1Tab1->AddCell( $stnclUnit, Enums->Width_50 );
+	$row1Tab1->AddCell( $commUnit1, Enums->Width_50 );
 
 }
 

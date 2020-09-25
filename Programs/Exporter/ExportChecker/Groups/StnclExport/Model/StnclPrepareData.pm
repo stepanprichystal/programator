@@ -65,6 +65,7 @@ sub OnPrepareGroupData {
 	$groupData->SetExportNif(1);
 	$groupData->SetExportData(1);
 	$groupData->SetExportPdf(1);
+	$groupData->SetDim2ControlPdf( 1);
 	
 	if($stencilInfo{"tech"} eq StnclEnums->Technology_DRILL){
 		$groupData->SetExportMeasureData(0);

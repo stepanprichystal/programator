@@ -53,6 +53,7 @@ sub new {
 	$self->{"groupPosX"}   = shift;
 	$self->{"groupPosY"}   = shift;
 	$self->{"groupUniRTM"} = shift;
+	$self->{"onBridges"}   = shift // 0;    # rout drom source step contain bridges
 
 	return $self;
 }
@@ -69,7 +70,7 @@ sub GetSourceStep {
 	return $self->{"sourceStep"};
 }
 
- sub GetSourceLayer {
+sub GetSourceLayer {
 	my $self = shift;
 
 	return $self->{"sourceLayer"};
@@ -91,6 +92,12 @@ sub GetGroupUniRTM {
 	my $self = shift;
 
 	return $self->{"groupUniRTM"};
+}
+
+sub GetOnBridges {
+	my $self = shift;
+
+	return $self->{"onBridges"};
 }
 
 # =======================================

@@ -2064,7 +2064,7 @@ sub __FindStart {
 	# reset attribut "rout_on_bridges" to NO, thus pcb is not on bridges
 
 	my $unitRTM  = $stepRot->GetUniRTM();
-	my @outlines = $unitRTM->GetOutlineChains();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	foreach my $outline (@outlines) {
 

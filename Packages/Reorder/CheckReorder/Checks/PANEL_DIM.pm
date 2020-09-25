@@ -66,7 +66,7 @@ sub Run {
 		# Do control check if SR step are whole inside active area
 
 		my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, "panel" );
-		my %limSR = CamStepRepeatPnl->GetStepAndRepeatLim( $inCAM, $jobId, 0, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
+		my %limSR = CamStepRepeatPnl->GetStepAndRepeatLim( $inCAM, $jobId, 0, 1, [ EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN ] );
 
 		if (    $limActive{"xMin"} > $limSR{"xMin"}
 			 || $limActive{"yMax"} < $limSR{"yMax"}

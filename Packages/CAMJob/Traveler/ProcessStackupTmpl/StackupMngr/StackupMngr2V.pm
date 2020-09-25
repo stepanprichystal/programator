@@ -37,21 +37,20 @@ sub GetAllLamination {
 	my $self = shift;
 	my $lamType = shift;
 
-	my $cvrlInfTop = {};
-	my $cvrlTopExist = $self->GetExistCvrl( "top", $cvrlInfTop );
+	my $cvrlTopExist = $self->GetExistCvrl( "top" );
 
-	my $cvrlInfBot = {};
-	my $cvrlBotExist = $self->GetExistCvrl( "bot", $cvrlInfBot );
+	
+	my $cvrlBotExist = $self->GetExistCvrl( "bot" );
 
-	my $stiffInfTop = {};
-	my $stiffTopExist = $self->GetExistCvrl( "top", $stiffInfTop );
 
-	my $stiffInfBot = {};
-	my $stiffBotExist = $self->GetExistCvrl( "bot", $stiffInfBot );
+	my $stiffTopExist = $self->GetExistStiff( "top" );
+
+	
+	my $stiffBotExist = $self->GetExistStiff( "bot" );
 
 	my @lam = ();
 
-	if ( $cvrlInfBot || $cvrlInfTop ) {
+	if ( $cvrlTopExist || $cvrlBotExist ) {
 		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_CVRLBASE, undef, "P" . ( scalar(@lam) + 1 ) );
 		push( @lam, $inf );
 	}
@@ -196,7 +195,7 @@ sub GetExistCvrl {
 
 		if ( defined $inf ) {
 
-			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
+			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"}, $side );
 
 			$inf->{"cvrlISRef"} = $matInfo->{"reference_subjektu"};
 
@@ -272,9 +271,11 @@ sub GetPressProgramInfo {
 	}
 	elsif ( $lamType eq Enums->LamType_CVRLBASE ) {
 
-		$pInfo{"name"} = "Flex";
+		$pInfo{"name"} = "Flex_coverlay";
 
 	}
+	
+	$pInfo{"name"} .= "_$h";
  
 
 	# 2) Program dim
@@ -292,8 +293,7 @@ sub GetPressProgramInfo {
 	
 	die "Press program name was found for lamination type: $lamType" unless(defined $pInfo{"name"});
 	
-	$pInfo{"name"} .= "_<poč. pater>";
-	
+	 
 	return %pInfo;
 }
 

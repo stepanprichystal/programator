@@ -12,6 +12,7 @@ use strict;
 use warnings;
 use File::Copy;
 use List::Util qw[max min];
+use List::Util qw(first);
 
 #local library
 use aliased 'CamHelpers::CamLayer';
@@ -777,6 +778,57 @@ sub OnCheckGroupData {
 				);
 			}
 		}
+	}
+
+	# X) If IPC3 request in IS, check if exist at least one IPC3 coupons, max 3
+	my $ipc3type = $defaultInfo->GetPcbBaseInfo()->{"ipc_class_3"};
+	if ( defined $ipc3type ) {
+		my @allSteps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepName );
+
+		my $IPC3CustStep = first { $_->{"stepName"} eq EnumsGeneral->Coupon_IPC3MAIN } @allSteps;
+
+		if ( !defined $IPC3CustStep ) {
+
+			$dataMngr->_AddErrorResult(
+										"IPC-3 zákaznický kupón",
+										"V IS je požadavek na IPC-3 (typ: $ipc3type), ale v panelu nebyl dohledán kupón step: "
+										  . EnumsGeneral->Coupon_IPC3MAIN
+										  . " Vlož do panelu 1-3 kopóny."
+			);
+		}
+		elsif ( $IPC3CustStep->{"totalCnt"} < 1 || $IPC3CustStep->{"totalCnt"} > 3 ) {
+			$dataMngr->_AddWarningResult(
+				"IPC3 zákaznický kupón - špatný počet",
+				"Při požadavku na IPC3, musí být v panelu minimálně 1 maximálně 3 kupóny ("
+				  . EnumsGeneral->Coupon_IPC3MAIN
+				  . "). Aktuální počet: "
+				  . $IPC3CustStep->{"totalCnt"}
+			);
+
+		}
+
+		my $IPC3DrillStep = first { $_->{"stepName"} eq EnumsGeneral->Coupon_IPC3DRILL } @allSteps;
+
+		if ( !defined $IPC3DrillStep ) {
+
+			$dataMngr->_AddErrorResult(
+										"IPC-3 vrtací kupón",
+										"V IS je požadavek na IPC-3 (typ: $ipc3type), ale v panelu nebyl dohledán kupón step: "
+										  . EnumsGeneral->Coupon_IPC3DRILL
+										  . " Vlož do okolí panelu panelu 1-2 kopóny."
+			);
+		}
+		elsif ( $IPC3DrillStep->{"totalCnt"} < 1 || $IPC3DrillStep->{"totalCnt"} > 3 ) {
+			$dataMngr->_AddWarningResult(
+										  "IPC-3 vrtací kupón - špatný počet",
+										  "Při požadavku na IPC3, musí být v okolí panelu 2 vrtací kupóny ("
+											. EnumsGeneral->Coupon_IPC3DRILL
+											. "). Aktuální počet: "
+											. $IPC3DrillStep->{"totalCnt"}
+			);
+
+		}
+
 	}
 
 }

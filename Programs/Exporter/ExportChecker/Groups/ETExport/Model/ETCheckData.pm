@@ -20,6 +20,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'Packages::ETesting::BasicHelper::Helper' => 'ETHelper';
+use aliased 'Packages::CAM::Netlist::NetlistCompare';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -76,9 +77,9 @@ sub OnCheckGroupData {
 
 			$dataMngr->_AddErrorResult( "Empty step",
 									 "Není vybrán žádný step ze kterého se vytvoří IPC soubor. Step musí mít název \"et_<jmeno stepu>\"" );
-
 		}
 	}
+
 
 	# 3) Check place of storeing IPC file
 	if ( $groupData->GetLocalCopy() == 0 && $groupData->GetServerCopy() == 0 ) {
@@ -97,7 +98,7 @@ sub OnCheckGroupData {
 	# 5) Check if coverlay on outer signal layers are properly prepared (are not empty)
 	my @cvrl = grep { $_->{"gROWname"} =~ /^coverlay[cs]$/ } $defaultInfo->GetBoardBaseLayers();
 	if ( scalar(@cvrl) ) {
-
+		
 		my @steps = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 
 		foreach my $l (@cvrl) {
@@ -105,6 +106,7 @@ sub OnCheckGroupData {
 			foreach my $s (@steps) {
 
 				my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+				
 				if ( $hist{"total"} == 0 ) {
 
 					$dataMngr->_AddErrorResult(
@@ -118,6 +120,34 @@ sub OnCheckGroupData {
 				}
 			}
 		}
+	}
+	
+	# 15) Check if all netlist control was succes in past
+	my @reports = NetlistCompare->new( $inCAM, $jobId )->GetStoredReports();
+
+	@reports = grep { !$_->Result() } @reports;
+
+	if ( scalar(@reports) ) {
+
+		my $m = "Byly nalezeny Netlist reporty, které skončily neúspěšně. Zjisti proč, popř. proveď novou kontrolu netlistů. Reporty:";
+
+		foreach my $r (@reports) {
+
+			$m .=
+			    "\n- report: "
+			  . $r->GetShorts()
+			  . " shorts, "
+			  . $r->GetBrokens()
+			  . " brokens, "
+			  . "Stepy: \""
+			  . $r->GetStep()
+			  . "\", \""
+			  . $r->GetStepRef()
+			  . "\", Adresa: "
+			  . $r->GetReportPath();
+		}
+
+		$dataMngr->_AddErrorResult( "Netlist kontrola", $m );
 	}
 
 }

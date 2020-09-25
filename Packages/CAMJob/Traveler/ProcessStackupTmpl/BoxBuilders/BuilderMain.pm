@@ -95,7 +95,7 @@ sub __BuildStckpTitle {
 
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 								   EnumsStyle->TxtSize_NORMAL,
-								   Color->new( 0, 0, 0 ),
+								   Color->new( EnumsStyle->Clr_TITLETXT ),
 								   TblDrawEnums->Font_BOLD, undef,
 								   TblDrawEnums->TextHAlign_LEFT,
 								   TblDrawEnums->TextVAlign_CENTER, 1 );
@@ -140,8 +140,8 @@ sub __BuildStckpBody {
 									  TblDrawEnums->TextVAlign_CENTER, 0.5 );
 	my $txtStdBoldStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 										  EnumsStyle->TxtSize_NORMAL,
-										  Color->new( 0, 0, 0 ),
-										  undef, undef,
+										  Color->new( 255, 255, 255 ),
+										  TblDrawEnums->Font_BOLD, undef,
 										  TblDrawEnums->TextHAlign_LEFT,
 										  TblDrawEnums->TextVAlign_CENTER, 0.5 );
 
@@ -157,7 +157,7 @@ sub __BuildStckpBody {
 		my $botItem = $item->GetChildBot();
 
 		if ( defined $topItem ) {
-			$self->__DrawItem( $topItem, dclone($txtStckpStyle), dclone($txtStdStyle), dclone($txtStdBoldStyle) );
+			$self->__DrawItem( $topItem, dclone($txtStckpStyle), dclone($txtStdStyle), dclone($txtStckpStyle) );
 		}
 
 		$self->__DrawItem( $item, dclone($txtStckpStyle), dclone($txtStdStyle),
@@ -166,7 +166,7 @@ sub __BuildStckpBody {
 
 		if ( defined $botItem ) {
 			
-			$self->__DrawItem( $botItem, dclone($txtStckpStyle), dclone($txtStdStyle), dclone($txtStdBoldStyle), dclone($borderStyle) );
+			$self->__DrawItem( $botItem, dclone($txtStckpStyle), dclone($txtStdStyle), dclone($txtStckpStyle), dclone($borderStyle) );
 			
 		}
 

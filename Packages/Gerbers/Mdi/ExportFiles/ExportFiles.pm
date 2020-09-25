@@ -17,14 +17,15 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamMatrix';
-use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::Gerbers::Export::ExportLayers';
@@ -36,6 +37,9 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Technology::EtchOperation';
 use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,6 +58,11 @@ sub new {
 	# Info about  pcb ===========================
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+
+	if ( $self->{"layerCnt"} > 2 ) {
+
+		$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobId"} );
+	}
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -154,8 +163,31 @@ sub __ExportLayers {
 		# 8) Copy file to mdi folder after exportig xml template
 		my $fileName = $l->{"gROWname"};
 
-		if ( $fileName =~ /outer/ ) {
+		if ( $l->{"gROWname"} =~ /outer/ ) {
+
+			# Convert outer signal layer name to standard layer name
 			$fileName = Helper->ConverOuterName2FileName( $l->{"gROWname"}, $self->{"layerCnt"} );
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^v\d+$/ ) {
+
+			my %lPars = JobHelper->ParseSignalLayerName( $l->{"gROWname"} );
+
+			my $p = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+			if ( $p->GetProductType() eq StackEnums->Product_PRESS ) {
+
+				my $side = $self->{"stackup"}->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+				my $matL = $p->GetProductOuterMatLayer( $side eq "top" ? "first" : "last" )->GetData();
+
+				if ( $matL->GetType() eq StackEnums->MaterialType_COPPER && !$matL->GetIsFoil() ) {
+
+					# Convert standard inner signal layer name to name "after press"
+					$fileName = Helper->ConverInnerName2AfterPressFileName($fileName);
+				}
+			}
+
 		}
 
 		my $finalName = EnumsPaths->Jobs_PCBMDI . $jobId . $fileName . "_mdi.ger";
@@ -178,8 +210,8 @@ sub __DeleteOldFiles {
 
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . '^[csv]\d*_mdi' );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . '^[csv]\d*_mdi' );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . '^[csv]\d*' );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . '^[csv]\d*' );
 
 		push( @file2del, ( @f, @f2 ) );
 	}
@@ -263,6 +295,7 @@ sub __GetLayerLimit {
 	my $layerName = shift;
 
 	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	my %lim = ();
 
@@ -289,15 +322,12 @@ sub __GetLayerLimit {
 		%lim = %{ $self->{"profLim"} };
 	}
 
-	#	# Exceptions for Outer Rigid-Flex with top coverlay
-	#	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
-	#
-	#		if (    JobHelper->GetPcbFlexType( $self->{"jobId"} ) eq EnumsGeneral->PcbType_RIGIDFLEXO
-	#			 && CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "coverlayc" ) )
-	#		{
-	#			%lim = %{ $self->{"profLim"} };
-	#		}
-	#	}
+	#	# Exceptions for goldc/s when panel is cut
+	my $cutHeight;
+	if ( $layerName =~ /^gold[cs]$/ && JobDim->GetCutPanel( $inCAM, $jobId, undef, \$cutHeight, undef, \%lim ) ) {
+
+		$lim{"yMax"} = $lim{"yMin"} + $cutHeight;
+	}
 
 	return %lim;
 }
@@ -345,7 +375,7 @@ sub __GetFiducials {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	# Decide wich drill layer take fiducial position from
+	# 1) Decide wich drill layer take fiducial position from
 	# v - panel profile frame drilling
 	# v1 - core frame drilling
 
@@ -361,32 +391,34 @@ sub __GetFiducials {
 		$drillLayer = "v";
 	}
 
-	#	# Exceptions for Outer Rigid-Flex with top coverlay
-	#	if ( $layerName =~ /^[cs]$/ && JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
-	#
-	#		if (    JobHelper->GetPcbType($jobId) eq EnumsGeneral->PcbType_RIGIDFLEXO
-	#			 && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) )
-	#		{
-	#			$drillLayer = "v1";
-	#		}
-	#	}
-
+	# 2) Choose proper 4 camera marks
 	my $f = Features->new();
 	$f->Parse( $inCAM, $jobId, $step, $drillLayer );
 
-	# Features with text extra in pnl_place serve onlz for scoring
 	my @features =
-	  grep { defined $_->{"att"}->{".pnl_place"} && $_->{"att"}->{".pnl_place"} !~ /extra/ }
-	  grep { defined $_->{"att"}->{".geometry"}  && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_((IN)|(2V))$/ } $f->GetFeatures();
+	  grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_((IN)|(2V))$/ } $f->GetFeatures();
 
-	die "All fiducial marks (four marks, attribut: OLEC_otvor_<IN/2V>) were not found in layer: $drillLayer" unless ( scalar(@features) == 4 );
+	my $useCut = ( $layerName =~ /^gold[cs]$/ && CamAttributes->GetJobAttrByName( $inCAM, $jobId, "technology_cut" ) !~ /no/i ) ? 1 : 0;
 
-	# take position and sort them: lefttop; right-top; right-bot; left-bot
+	# Exception for layers goldc/golds. Thera are 4 top camera marks and wee need lower one, which remain after pnl cut
+	unless ($useCut) {
+		@features = grep { $_->{"att"}->{".pnl_place"} !~ /cut/i } @features;
+	}
+
+	# Therea are 4-6 (2 extra top marks when cut panel) marks
+	die "All fiducial marks (four marks, attribut: OLEC_otvor_<IN/2V>) were not found in layer: $drillLayer" if ( scalar(@features) < 4 );
+
+	# Take position and sort them: lefttop; right-top; right-bot; left-bot
 	my @fiducials = ();
 
-	# Left top mark can have suffix
 	my $fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top/i } @features )[0];     # left top mark can contain suffix
 	my $fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top/i } @features )[0];    # right top mark can contain suffix
+
+	if ($useCut) {
+		$fLT = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-top.*cut/i } @features )[0];     # left top mark can contain suffix
+		$fRT = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-top.*cut/i } @features )[0];    # right top mark can contain suffix
+	}
+
 	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/i } @features )[0];
 	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/i } @features )[0];
 
@@ -395,10 +427,10 @@ sub __GetFiducials {
 	die "OLEC fiducial mark right-top was not found" if ( !defined $fRB );
 	die "OLEC fiducial mark left-bot was not found"  if ( !defined $fLB );
 
-	push( @fiducials, { "x" => $fLT->{"x1"}, "y" => $fLT->{"y1"} } );                   # left-top
-	push( @fiducials, { "x" => $fRT->{"x1"}, "y" => $fRT->{"y1"} } );                   # right-top
-	push( @fiducials, { "x" => $fRB->{"x1"}, "y" => $fRB->{"y1"} } );                   # right-bot
-	push( @fiducials, { "x" => $fLB->{"x1"}, "y" => $fLB->{"y1"} } );                   # left-bot
+	push( @fiducials, { "x" => $fLT->{"x1"}, "y" => $fLT->{"y1"} } );                         # left-top
+	push( @fiducials, { "x" => $fRT->{"x1"}, "y" => $fRT->{"y1"} } );                         # right-top
+	push( @fiducials, { "x" => $fRB->{"x1"}, "y" => $fRB->{"y1"} } );                         # right-bot
+	push( @fiducials, { "x" => $fLB->{"x1"}, "y" => $fLB->{"y1"} } );                         # left-bot
 
 	# Adjust fiducial position by real PCB dimension (move to InCAM job zero)
 	foreach my $f (@fiducials) {
@@ -593,7 +625,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d280577";
+	my $jobId    = "d288631";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -602,10 +634,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
-				 Enums->Type_SIGNAL => "1",
-				 Enums->Type_MASK   => "0",
+				 Enums->Type_SIGNAL => "0",
+				 Enums->Type_MASK   => "1",
 				 Enums->Type_PLUG   => "0",
-				 Enums->Type_GOLD   => "0"
+				 Enums->Type_GOLD   => "1"
 	);
 
 	$export->Run( \%type );

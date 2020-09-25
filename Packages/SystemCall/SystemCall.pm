@@ -10,7 +10,7 @@ package Packages::SystemCall::SystemCall;
 #3th party library
 use strict;
 use warnings;
-use JSON;
+use JSON::XS;
 use Win32::Process;
 use Config;
 
@@ -35,10 +35,11 @@ sub new {
 	$self->{"scriptPath"} = shift;    # path of script which will be execute
 
 	# all parameters, which srcipt above consum
-	while ( my $p = shift ) {
+	#
+	my @par = @_;
 
-		$self->_AddParameter($p);
-
+	for ( my $i = 0 ; $i < scalar(@par) ; $i++ ) {
+		$self->_AddParameter( $par[$i] );
 	}
 
 	$self->{"runScrpit"}  = GeneralHelper->Root() . "\\Packages\\SystemCall\\Run.pl";
@@ -77,19 +78,18 @@ sub Run {
 	  || die "$!\n";
 
 	$processObj->Wait(INFINITE);
-	
 
 	# read output
 
 	if ( -e $self->{"output"} ) {
 
 		my $serializeData = FileHelper->ReadAsString( $self->{"output"} );
-
-		my $json = JSON->new();
+ 
+		my $json = JSON::XS->new->ascii->pretty->allow_nonref;
 
 		$self->{"outputData"} = $json->decode($serializeData);
-		
-		unlink($self->{"output"});
+
+		unlink( $self->{"output"} );
 
 	}
 	else {
@@ -121,8 +121,8 @@ sub _AddParameter {
 	my $self = shift;
 	my $ref  = shift;
 
-	my $json = JSON->new()->allow_nonref();
-
+	my $json = JSON::XS->new->ascii->pretty->allow_nonref;
+ 
 	my $serialized = $json->pretty->encode($ref);
 
 	my $paramId = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();

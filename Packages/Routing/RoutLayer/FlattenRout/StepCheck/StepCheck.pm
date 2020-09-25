@@ -104,7 +104,7 @@ sub __OnlyBridges {
 	# reset attribut "rout_on_bridges" to NO, thus pcb is not on bridges
 
 	my $unitRTM  = $nestedStep->GetUniRTM();
-	my @outlines = $unitRTM->GetOutlineChains();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	my @chains = $unitRTM->GetChains();
 	my @lefts = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chains;
@@ -139,7 +139,7 @@ sub __OutsideChains {
 
 	my $unitRTM = $nestedStep->GetUniRTM();
 
-	my @lefts = $unitRTM->GetOutlineChains();
+	my @lefts = $unitRTM->GetOutlineChainSeqs();
 
 	# If exist outline rout, check if other chains are inside
 	if ( scalar(@lefts) ) {
@@ -235,7 +235,7 @@ sub __LeftRoutChecks {
 #	}
 
 	# 2) Test if outline orut has only one attribute "foot_down_<angle>deg" of specific kind
-	my @outlines = $unitRTM->GetOutlineChains();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	foreach my $oSeq (@outlines) {
 
@@ -350,7 +350,7 @@ sub __OutlineToolIsLast {
 
 	my @chains = $unitRTM->GetChains();
 
-	my @outlines = $unitRTM->GetOutlineChains();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	unless ( scalar(@outlines) ) {
 		return 0;

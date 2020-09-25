@@ -49,7 +49,7 @@ sub _ProcessStckpProduct {
 	if ( $IProduct->GetProductType() eq StackEnums->Product_INPUT ) {
 
 		$itemType = Enums->ItemType_MATPRODUCTCORE;
-		$itemId   = "J" . $IProduct->GetId();
+		$itemId   = "P" . $IProduct->GetId();
 
 	}
 	elsif ( $IProduct->GetProductType() eq StackEnums->Product_PRESS ) {
@@ -62,9 +62,10 @@ sub _ProcessStckpProduct {
 	 
 	my $item = $lam->AddItem( $itemId, $itemType, EnumsStyle->GetItemTitle($itemType), $itemId, undef, undef, $IProduct->GetThick() );
 
-	$lam->AddChildItem( $item, "top", $itemId . "productTop", Enums->$itemType, "TOP", undef, undef, undef, undef );
-	$lam->AddChildItem( $item, "bot", $itemId . "productBot", Enums->$itemType, "BOT", undef, undef, undef, undef );
-
+	$lam->AddChildItem( $item, "top", $itemId . "productTop", Enums->$itemType, "TOP", "v".$IProduct->GetTopCopperNum(), undef, undef, undef );
+	$lam->AddChildItem( $item, "bot", $itemId . "productBot", Enums->$itemType, "BOT", "v".$IProduct->GetBotCopperNum(), undef, undef, undef );
+	
+	 
 }
 
 # Build stackup material layer for Multilayer PCB
@@ -139,6 +140,8 @@ sub _ProcessStckpMatLayer {
 			$itemType = Enums->ItemType_MATFLEXCORE;
 		}
 
+  
+
 		my $item = $lam->AddItem( $layerISRef, $itemType,
 								  EnumsStyle->GetItemTitle($itemType),
 								  "J" . $stckpLayer->GetCoreNumber(),
@@ -146,8 +149,8 @@ sub _ProcessStckpMatLayer {
 								  $stckpLayer->GetText(),
 								  $stckpLayer->GetThick() );
 
-		$lam->AddChildItem( $item, "top", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $topCuLayer->GetCopperName(), undef, undef, undef, undef );
-		$lam->AddChildItem( $item, "bot", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $botCuLayer->GetCopperName(), undef, undef, undef, undef );
+		$lam->AddChildItem( $item, "top", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $topCuLayer->GetCopperName(), undef, undef, $stckpLayer->GetTopCopperLayer()->GetThick(), undef );
+		$lam->AddChildItem( $item, "bot", $layerISRef,Enums->ItemType_MATCUCORE,  EnumsStyle->GetItemTitle( Enums->ItemType_MATCUCORE ), $botCuLayer->GetCopperName(), undef, undef, $stckpLayer->GetBotCopperLayer()->GetThick(), undef );
 
 	}
 	elsif ( $stckpLayer->GetType() eq StackEnums->MaterialType_COVERLAY ) {

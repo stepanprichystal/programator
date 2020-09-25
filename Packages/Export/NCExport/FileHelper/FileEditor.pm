@@ -376,7 +376,7 @@ sub EditBeforeSave {
 		my $messageCnt = 0;
 		my $bracket = first { $_ =~ /[\(\)]/ } @{ $parseFile->{"header"} };
 
-		if ( !defined $bracket &&  scalar(@{ $parseFile->{"header"} }) > 1) {
+		if ( !defined $bracket && scalar( @{ $parseFile->{"header"} } ) > 1 ) {
 
 			my $l;
 
@@ -384,6 +384,23 @@ sub EditBeforeSave {
 				 || $self->{"pcbType"} eq EnumsGeneral->PcbType_2VFLEX
 				 || $self->{"pcbType"} eq EnumsGeneral->PcbType_MULTIFLEX )
 			{
+
+				my @depthMill = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot }
+				  $opItem->GetSortedLayers();
+
+				if (@depthMill) {
+
+					# Add extra text after depth milling - add white drill pad
+
+					my $extraText = "\nM47, Pridani frezovaci podlozky po navedeni CCD\n";
+					for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
+
+						if ( $parseFile->{"body"}->[$i]->{"line"} =~ /Frezovani po prokovu/i ) {
+							$parseFile->{"body"}->[$i]->{"line"} = "M47, Frezovani po prokovu - Pridej bilou vrtaci podlozku!\n";
+							last;
+						}
+					}
+				}
 
 				$l = "\nM47, Oddelej pripravek pro navadeni a pridej bilou vrtaci podlozku\n";
 

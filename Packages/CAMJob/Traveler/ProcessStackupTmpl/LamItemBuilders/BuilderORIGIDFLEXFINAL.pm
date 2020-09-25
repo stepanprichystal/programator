@@ -56,6 +56,14 @@ sub Build {
 	my $rubberThickPadInf = $stckpMngr->GetPressPadTB317KInfo();
 	my $rubberThinPadInf  = $stckpMngr->GetPressPad01FGKInfo();
 	my $aluPadInf         = $stckpMngr->GetAluPlateInfo();
+	my $rubberPadYOMInf  = $stckpMngr->GetPressPad01FGKInfo();
+
+	# LAYER: Top rubber pad outside of steel plate
+	$lam->AddItem( $rubberPadYOMInf->{"ISRef"},
+				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   undef, undef,
+				   $rubberPadYOMInf->{"text"},
+				   $rubberPadYOMInf->{"thick"} );
 
 	# LAYER: Steel plate top
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );
@@ -144,6 +152,13 @@ sub Build {
 
 	# LAYER: Steel plate Bot
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );
+	
+	# LAYER: Bot rubber pad outside of steel plate
+	$lam->AddItem( $rubberPadYOMInf->{"ISRef"},
+				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   undef, undef,
+				   $rubberPadYOMInf->{"text"},
+				   $rubberPadYOMInf->{"thick"} );
 
 }
 

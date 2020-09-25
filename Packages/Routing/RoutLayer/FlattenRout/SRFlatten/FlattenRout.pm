@@ -79,7 +79,7 @@ sub CreateFromSRStep {
 	}
 
 	# 1) Create structures for creating flatten layer and tool ordering
- 
+
 	my @stepPos = $self->__GetNestedStepsPositions($srStep);
 
 	my @groupChains = $self->__GetGroupChains( $srStep, \@stepPos );
@@ -120,9 +120,9 @@ sub __GetNestedStepsPositions {
 	my @repeatedSteps = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $srStep->GetStep() );
 
 	foreach my $nestStep ( $srStep->GetNestedSteps() ) {
- 
-		foreach ( grep { $_->{"stepName"} eq $nestStep->GetStepName() && $_->{"angle"} eq $nestStep->GetAngle()} @repeatedSteps ) {
-			
+
+		foreach ( grep { $_->{"stepName"} eq $nestStep->GetStepName() && $_->{"angle"} eq $nestStep->GetAngle() } @repeatedSteps ) {
+
 			push( @stepPos, SRStepPos->new( $nestStep, $_->{"originX"}, $_->{"originY"} ) );
 		}
 	}
@@ -145,8 +145,15 @@ sub __GetGroupChains {
 
 	foreach my $stepPos ( @{$stepPositions} ) {
 
-		my $gCh = GroupChain->new( $stepPos->GetStepId(), $stepPos->GetStepName(), $stepPos->GetRoutLayer(), $stepPos->GetPosX(),
-								   $stepPos->GetPosY(),   $stepPos->GetUniRTM() );
+		my $gCh = GroupChain->new(
+								   $stepPos->GetStepId(),
+								   $stepPos->GetStepName(),
+								   $stepPos->GetRoutLayer(),
+								   $stepPos->GetPosX(),
+								   $stepPos->GetPosY(),
+								   $stepPos->GetUniRTM(),
+								   CamAttributes->GetStepAttrByName( $inCAM, $jobId, $stepPos->GetStepName(), "rout_on_bridges" ) =~ /^yes$/i
+		);
 
 		push( @groupChains, $gCh );
 	}
@@ -156,7 +163,11 @@ sub __GetGroupChains {
 
 		my $unitRTM = UniRTM->new( $inCAM, $jobId, $srStep->GetStep(), $srStep->GetSourceLayer() );
 
-		my $gCh = GroupChain->new( GeneralHelper->GetGUID(), $srStep->GetStep(), $srStep->GetSourceLayer(), 0, 0, $unitRTM );
+		my $gCh = GroupChain->new( GeneralHelper->GetGUID(),
+								   $srStep->GetStep(), $srStep->GetSourceLayer(),
+								   0, 0, $unitRTM,
+								   CamAttributes->GetStepAttrByName( $inCAM, $jobId, $srStep->GetStep(), "rout_on_bridges" ) =~ /^yes$/i )
+		  ;
 
 		push( @groupChains, $gCh );
 

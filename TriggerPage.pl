@@ -31,14 +31,15 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::TriggerFunction::Travelers';
 use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
 use aliased 'Connectors::TpvConnector::TaskOndemMethods';
- 
+
 my $orderId  = shift;    # job order for process (Dxxxxxx-xx-Jx Core - Dxxxxxx-xx Order)
 my $taskType = shift;    # type of task to process
 my $loginId  = shift;    # user which do request
 my $extraId  = shift;    # extra order id (number of extra product - dodelavka)
 
-#$orderId = "d270787-03";
+#$orderId  = "d287452-01";
 #$taskType = TaskEnums->PCB_TOPRODUCE;
+#$extraId  = 1;
 
 my $logConfig = "c:\\Apache24\\htdocs\\tpv\\Logger.conf";
 Log::Log4perl->init($logConfig);
@@ -82,8 +83,16 @@ if ( $orderId =~ /^\w\d{6}-\d{2}$/ ) {
 
 	}
 }
+elsif ( $orderId =~ /^\w\d{6}$/ ) {
+
+	if ( $taskType eq TaskEnums->Data_AOI ) {
+
+		__DataAOI();
+
+	}
+}
 else {
-	
+
 	$processed = 0;
 }
 
@@ -224,6 +233,26 @@ sub __DataControl {
 
 		$processed = 0;
 		$logger->error( "\n Error when processing task: " . TaskEnums->Data_CONTROL . " for job: $orderId.\n" . $@, 1 );
+	}
+
+}
+
+sub __DataAOI {
+
+	my ($jobId) = $orderId;
+	$jobId = lc($jobId);
+
+	# Insert new request to tpv database. Window services process theses request
+	eval {
+
+		$logger->info("AOI data $jobId.");
+		TaskOndemMethods->InsertTaskPcb( $jobId, TaskEnums->Data_AOI, $loginId );
+
+	};
+	if ($@) {
+
+		$processed = 0;
+		$logger->error( "\n Error when processing task: " . TaskEnums->Data_AOI . " for job: $orderId.\n" . $@, 1 );
 	}
 
 }

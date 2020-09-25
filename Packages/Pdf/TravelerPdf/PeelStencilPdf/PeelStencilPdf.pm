@@ -26,6 +26,7 @@ use aliased 'Packages::Pdf::TravelerPdf::PeelStencilPdf::PeelStencilBuilder';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::CAMJob::Traveler::UniTravelerTmpl::Enums' => 'UniTrvlEnums';
+
 #-------------------------------------------------------------------------------------------#
 #  Interface
 #-------------------------------------------------------------------------------------------#
@@ -49,9 +50,8 @@ sub BuildTemplate {
 
 	# 1) Init traveler
 
-	my @NClayers =
-	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_lcMill, EnumsGeneral->LAYERTYPE_nplt_lsMill ] );
-
+	my @NClayers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_lcMill, EnumsGeneral->LAYERTYPE_nplt_lsMill ] );
+	# if there is prepared rout layer
 	if ( scalar(@NClayers) ) {
 
 		my @bldrs = ();
@@ -72,7 +72,6 @@ sub BuildTemplate {
 
 	return $result;
 }
- 
 
 # Output stackup serialized Template to PDF file
 # Following values will be replaced:
@@ -111,7 +110,7 @@ sub __UpdateJSONTemplate {
 	my $infoIS = undef;
 
 	if ( $extraOrder > 0 ) {
-		$infoIS = ( HegMethods->GetProducOrderByOederId( $orderId, $extraOrder, "N" ) )[0];
+		$infoIS = ( HegMethods->GetProducOrderByOrderId( $orderId, $extraOrder, "N" ) )[0];
 	}
 	else {
 		$infoIS = { HegMethods->GetAllByOrderId($orderId) };
@@ -164,7 +163,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
-	my $jobId = "d270787";    #Outer RigidFLex BOT
+	my $jobId = "d285183";    #Outer RigidFLex BOT
 	                          #my $jobId = "d266566"; # inner flex
 	                          #my $jobId = "d146753"; # 1v flex
 	                          #my $jobId = "d267628";    # flex 2v + stiff
@@ -216,6 +215,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			# 3) Output all orders in production
 			my @PDFOrders = ();
 			my @orders    = HegMethods->GetPcbOrderNumbers($jobId);
+
 			#@orders = grep { $_->{"stav"} =~ /^4$/ } @orders;    # not ukoncena and stornovana
 
 			push( @PDFOrders, map { { "orderId" => $_->{"reference_subjektu"}, "extraProducId" => 0 } } @orders );
@@ -223,7 +223,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			# Add all extro production
 			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
 
-				my @extraOrders = HegMethods->GetProducOrderByOederId( $orderId, undef, "N" );
+				my @extraOrders = HegMethods->GetProducOrderByOrderId( $orderId, undef, "N" );
 				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
 				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
 			}

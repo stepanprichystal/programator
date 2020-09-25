@@ -282,11 +282,12 @@ sub __ParseLines {
 		}
 
 		# surfaces
-		elsif ( $l =~ m/^#(\d*)\s*#(s)\s*([\w\d\s]*);?(.*)/i ) {
+		elsif ( $l =~ m/^#(\d*)\s*#(s)\s*([pn])\s*([\w\d\s]*);?(.*)/i ) {
 
 			$featInfo->{"id"}   = $1;
 			$featInfo->{"type"} = $2;
-			@attr = split( ",", $4 );
+			$featInfo->{"polarity"} = $3;
+			@attr = split( ",", $5 );
 
 			$i++;
 
@@ -540,14 +541,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $f = Features->new();
 
-	my $jobId = "d208968";
+	my $jobId = "d285828";
 	my $inCAM = InCAM->new();
 
-	my $step  = "o+1";
-	my $layer = "mc";
+	my $step  = "test";
+	my $layer = "c";
 
-	my @feat = (293);
-	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 0, \@feat );
+	 
+	$f->Parse( $inCAM, $jobId, $step, $layer );
 
 	my @features = $f->GetFeatures();
 

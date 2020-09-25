@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::AOIExport::AOIMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -21,41 +21,39 @@ use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::ETesting::BasicHelper::OptSet';
-use aliased 'Packages::ETesting::BasicHelper::ETSet';
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::AOTesting::BasicHelper::AOSet';
-use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Helpers::JobHelper';
-use aliased 'CamHelpers::CamDrilling';
-use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::AOTesting::ExportOPFX::ExportOPFX';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $class       = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $packageId   = __PACKAGE__;
+	my $createFakeL = 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL );
 	bless $self;
 
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-
-	$self->{"stepToTest"}      = shift;         # step, which will be tested
-	$self->{"layerNames"}      = shift;         # step, which will be tested
-	$self->{"sendToServer"}    = shift;         # if AOI data shoul be send to server from ot folder
+	$self->{"stepToTest"}     = shift;         # step, which will be tested
+	$self->{"layerNames"}     = shift;         # step, which will be tested
+	$self->{"sendToServer"}   = shift;         # if AOI data shoul be send to server from ot folder
 	$self->{"incldMpanelFrm"} = shift // 1;    # if pcb step is placed in SR panel, test optically panel frame
 
-	$self->{"attemptCnt"}  = 50;                # max count of attempt
-	$self->{"machineName"} = "fusion";
+	# PROPERTIES
+	$self->{"attemptCnt"} = 50;                                                              # max count of attempt
+	$self->{"path"}       = JobHelper->GetJobArchive( $self->{"jobId"} ) . "zdroje\\ot\\";
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+
+	$self->{"exportOPFX"} = ExportOPFX->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepToTest"}, $self->{"attemptCnt"}, 0 );
+	$self->{"exportOPFX"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	return $self;
 }
@@ -66,88 +64,6 @@ sub Run {
 	my $inCAM      = $self->{"inCAM"};
 	my $jobId      = $self->{"jobId"};
 	my $stepToTest = $self->{"stepToTest"};
-	my $layerName  = $self->{"layer"};
-
-	my @signalLayers = @{ $self->{"layerNames"} };
-
-	if ( $self->{"layerCnt"} > 2 ) {
-		$self->{"stackup"} = Stackup->new($inCAM, $jobId);
-	}
-
-	# Delete old files
-	$self->__DeleteOutputFiles();
-
-	#open et step
-	#$inCAM->COM( "set_step", "name" => $stepToTest );
-	$inCAM->COM( 'open_entity', job => $jobId, type => 'step', name => $stepToTest, iconic => 'no' );
-	$inCAM->AUX( 'set_group', group => $inCAM->{COMANS} );
-
-	my $setName = "cdr";
-
-	#my $setName = GeneralHelper->GetGUID();
-
-	#my $strLayers = join("\;", @signalLayers);
-
-	#$inCAM->COM("cdr_delete_sets_by_name","layers" => "","sets" => $setName);
-
-	#$inCAM->COM("delete_entity","job" => $jobId,"name" => $setName, "type" => "cdr");
-
-	# Raise result item for optimization set
-	my $resultItemOpenSession = $self->_GetNewItem("Open AOI session");
-
-	# START HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(1);
-
-	# try take AOI interface. If seats occupied, try again in two sec
-	foreach ( my $i = 0 ; $i < $self->{"attemptCnt"} ; $i++ ) {
-
-		$self->__OpenAOISession($setName);
-		my $ex = $inCAM->GetException();
-
-		# test if max session seats exceeded
-		if ( $ex && $ex->{"errorId"} == 282002 ) {
-
-			print STDERR "\n\nTrying to attempt AOI seat (try $i)...\n\n";
-			sleep(5);
-		}
-		else {
-			last;
-		}
-	}
-
-	# STOP HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(0);
-
-	$resultItemOpenSession->AddError( $inCAM->GetExceptionError() );
-	$self->_OnItemResult($resultItemOpenSession);
-
-	# Do not continue, if any AOI seats is not free
-	if ( $resultItemOpenSession->Result() eq ItemResEnums->ItemResult_Fail ) {
-
-		return 0;
-	}
-
-	$inCAM->COM( "cdr_set_current_cdr_name", "job" => $jobId, "step" => $stepToTest, "set_name" => $setName );
-
-	#$inCAM->COM( "cdr_clear_displayed_layers", );
-	$inCAM->COM(
-				 "cdr_create_configuration",
-				 "set_name" => "",
-				 "cfg_name" => $self->{"machineName"} . "DefaultConfiguration",
-				 "cfg_path" => "//incam/incam_server/site_data/hooks/cdr",
-				 "sub_dir"  => $self->{"machineName"}
-	);
-
-	$inCAM->COM( "cdr_set_machine", "machine" => $self->{"machineName"}, "cfg_name" => $self->{"machineName"} . "DefaultConfiguration" );
-	$inCAM->COM( "cdr_set_table", "set_name" => "", "name" => "30X30", "x_dim" => "762", "y_dim" => "762" );
-
-	# un affected all layer
-	foreach my $l (@signalLayers) {
-
-		$inCAM->COM( "cdr_affected_layer", "mode" => "off", "layer" => $l );
-		$inCAM->COM( "cdr_display_layer", "name" => "$l", "display" => "no", "type" => "physical" );
-
-	}
 
 	# Set solder mask layer as non board and document
 	# It gives better result on AOI 19.1.2018
@@ -167,11 +83,13 @@ sub Run {
 		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "ms", "misc" );
 	}
 
-	# For each layer export AOI
-	foreach my $layer (@signalLayers) {
+	# Eport OT
 
-		# For each layer export AOI
-		$self->__ExportAOI( $layer, $setName );
+	$self->{"exportOPFX"}->Export( $self->{"path"}, $self->{"layerNames"}, $self->{"incldMpanelFrm"} );
+
+	# Copy created IPC to server where are ipc stored
+	if ( $self->{"sendToServer"} ) {
+		$self->__CopyOPFXToServer();
 	}
 
 	if ($mc) {
@@ -188,284 +106,28 @@ sub Run {
 		#CamLayer->SetLayerContextLayer( $inCAM, $jobId, "ms", "board" );
 	}
 
-	# send to server
-	if ( $self->{"sendToServer"} ) {
-
-		my $path = JobHelper->GetJobArchive( $self->{"jobId"} ) . "zdroje\\ot\\";
-
-		foreach my $layer (@signalLayers) {
-
-			my @aoiFile = FileHelper->GetFilesNameByPattern( $path, "$jobId@" . "$layer" );
-
-			if ( scalar(@aoiFile) ) {
-
-				my $dest = EnumsPaths->Jobs_AOITESTSFUSION . ( fileparse( $aoiFile[0] ) )[0];
-
-				unless ( copy( $aoiFile[0], $dest ) ) {
-					die "Unable to copy AOI test $aoiFile[0] to server\n";
-				}
-			}
-
-		}
-
-	}
-
-	# For each layer export AOI
-	foreach my $layer (@signalLayers) {
-		$inCAM->COM( "cdr_display_layer", "name" => $layer, "display" => "no", "type" => "physical" );
-	}
-
-	# After export, release licence/ close seeeion
-	$inCAM->COM("cdr_close");
-
 }
 
-# Function try to open session manager
-sub __OpenAOISession {
-	my $self       = shift;
-	my $setName    = shift;
-	my $inCAM      = $self->{"inCAM"};
-	my $jobId      = $self->{"jobId"};
-	my $stepToTest = $self->{"stepToTest"};
+sub __CopyOPFXToServer {
+	my $self  = shift;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
-	# START HANDLE EXCEPTION IN INCAM
-	#$inCAM->HandleException(1);
+	foreach my $layer ( @{ $self->{"layerNames"} } ) {
 
-	$inCAM->COM(
-				 "cdr_open_session",
-				 "job"       => $jobId,
-				 "step"      => $stepToTest,
-				 "set_name"  => $setName,
-				 "interface" => $self->{"machineName"},
-				 "cfg_type"  => "user_defined_cfg",
-				 "cfg_name"  => $self->{"machineName"} . "DefaultConfiguration",
-				 "cfg_path"  => "//incam/incam_server/site_data/hooks/cdr",
-				 "sub_dir"   => $self->{"machineName"}
-	);
+		my @aoiFile = FileHelper->GetFilesNameByPattern( $self->{"path"}, "$jobId@" . "$layer" );
 
-	# STOP HANDLE EXCEPTION IN INCAM
-	#$inCAM->HandleException(0);
-}
+		if ( scalar(@aoiFile) ) {
 
-sub __ExportAOI {
+			my $dest = EnumsPaths->Jobs_AOITESTSFUSION . ( fileparse( $aoiFile[0] ) )[0];
 
-	my $self = shift;
-
-	my $layerName = shift;
-	my $setName   = shift;
-
-	my $inCAM      = $self->{"inCAM"};
-	my $jobId      = $self->{"jobId"};
-	my $stepToTest = $self->{"stepToTest"};
-
-	# ===== Set AOI parameters ======
-
-	## START HANDLE EXCEPTION IN INCAM
-	#$inCAM->HandleException(1);
-
-	# Raise result item for optimization set
-	#my $resultItemAOIparams = $self->_GetNewItem("Set params - $layerName");
-
-	$inCAM->COM( "cdr_display_layer", "name" => $layerName, "display" => "yes", "type" => "physical" );
-
-	#$inCAM->COM( "work_layer", "name" => $layerName );
-	$inCAM->COM( "cdr_work_layer", "layer" => $layerName );
-
-	# Param set driils
-	AOSet->SetStage( $inCAM, $jobId, $stepToTest, $layerName, $self->{"stackup"} );
-
-	# Set nominal space, line
-
-	# NOT work properly
-	#$inCAM->COM( "cdr_get_nom_line", "layer" => "c" );
-	#my $line = $inCAM->GetReply();
-
-	#$inCAM->COM( "cdr_get_nom_space", "layer" => "c", "space_type" => "nom_space" );
-	#my $space = $inCAM->GetReply();
-
-	# If Incam didn't compute values, set it by construction class
-	#if ( $line == 0 || $space == 0 ) {
-
-	my $class = CamJob->GetJobPcbClass( $inCAM, $jobId );
-	my $isolation = JobHelper->GetIsolationByClass($class);
-
-	#$line  = $isolation;
-	#$space = $isolation;
-	#}
-
-	$inCAM->COM( "cdr_line_width", "nom_width" => $isolation, "min_width" => "0" );
-	$inCAM->COM( "cdr_spacing",    "nom_space" => $isolation, "min_space" => "0" );
-
-	# Set step to test
-	my @steps = ();
-	
-	if ( $stepToTest eq "mpanel" ) {
-
-		if ( $self->{"incldMpanelFrm"} ) {
-			@steps = ( {"stepName" => $stepToTest} );
-		}
-		else {
-			@steps = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepToTest );
-		}
-	}
-	elsif ( $stepToTest eq "panel" ) {
-
-		my $mPanelExist = CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepToTest, "mpanel" );
-
-		if ( $mPanelExist && $self->{"incldMpanelFrm"} ) {
-
-			@steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest );
-		}
-		else {
-
-			@steps = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepToTest );
-		}
-	}
-	else {
-
-		@steps = ({"stepName" => $stepToTest} );
-	}
-	
-	CamStepRepeat->RemoveCouponSteps( \@steps, 1, [ EnumsGeneral->Coupon_IMPEDANCE ] );
-
-	@steps = map { $_->{"stepName"} } @steps;
-
-	my $stepsStr = join( "\;", @steps );
-	$inCAM->COM( "cdr_set_area_auto", "steps" => $stepsStr, "margin_x" => "0", "margin_y" => "0", "inspected_steps" => "" );
-
-	# Exclude texts from test
-	$inCAM->COM( "cdr_auto_zone_text", "margin" => "100", "pcb" => "yes", "panel" => "no" );
-
-	# STOP HANDLE EXCEPTION IN INCAM
-	#$inCAM->HandleException(0);
-
-	#$resultItemAOIparams->AddErrors( $inCAM->GetExceptionsError() );
-	#$self->_OnItemResult($resultItemAOIparams);
-
-	# ===== Do AOI output ======
-
-	my $incamResult;
-	my $reportResult;
-
-	# START HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(1);
-
-	# Raise result item for optimization set
-	my $resultItemAOIOutput = $self->_GetNewItem($layerName);
-	$resultItemAOIOutput->SetGroup("Layers");
-
-	my $result = AOSet->OutputOpfx( $inCAM, $jobId, $layerName, $self->{"machineName"}, \$incamResult, \$reportResult );
-
-	# STOP HANDLE EXCEPTION IN INCAM
-	$inCAM->HandleException(0);
-
-	if ( $result == 0 ) {
-
-		if ( $incamResult > 0 ) {
-			$resultItemAOIOutput->AddErrors( $inCAM->GetExceptionsError() );
-		}
-
-		if ( $reportResult ne "" ) {
-			$resultItemAOIOutput->AddError($reportResult);
-		}
-	}
-
-	$self->_OnItemResult($resultItemAOIOutput);
-
-}
-
-sub __CreateTmpRoutLayer {
-	my $self      = shift;
-	my $layerName = shift;
-
-	my $inCAM      = $self->{"inCAM"};
-	my $jobId      = $self->{"jobId"};
-	my $stepToTest = $self->{"stepToTest"};
-
-	my @pltLayer = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@pltLayer );
-
-	# get plated rout, which goes from <$layerName>
-	my @routLayer = grep { $_->{"NCSigStart"} eq $layerName && $_->{"gROWlayer_type"} eq "rout" } @pltLayer;
-
-	if ( scalar(@routLayer) ) {
-
-		my $lTmpName = "aoi_rout_tmp";
-
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $lTmpName ) ) {
-
-			$inCAM->COM( 'delete_layer', "layer" => $lTmpName );
-		}
-
-		$inCAM->COM(
-					 'create_layer',
-					 "layer"     => $lTmpName,
-					 "context"   => 'board',
-					 "type"      => 'drill',
-					 "polarity"  => 'positive',
-					 "ins_layer" => ''
-		);
-
-		my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest );
-
-		foreach my $nestStep (@steps) {
-
-			CamHelper->OpenStep( $inCAM, $jobId, $nestStep->{"stepName"} );
-
-			foreach my $l (@routLayer) {
-
-				my $lName = GeneralHelper->GetGUID();
-
-				$inCAM->COM(
-							 "compensate_layer",
-							 "source_layer"    => $l->{"gROWname"},
-							 "dest_layer"      => $lName,
-							 "dest_layer_type" => "document"
-				);
-				$inCAM->COM(
-					"copy_layer",
-					"dest"         => "layer_name",
-					"source_job"   => $jobId,
-					"source_step"  => $nestStep->{"stepName"},
-					"source_layer" => $lName,
-
-					"dest_step"  => $nestStep->{"stepName"},
-					"dest_layer" => $lTmpName,
-					"mode"       => "append",
-					"invert"     => "no"
-				);
-
-				$inCAM->COM( "delete_layer", "layer" => $lName );
-
-			}
-		}
-	}
-}
-
-# Delete all files from ot dir
-sub __DeleteOutputFiles {
-	my $self = shift;
-
-	my $path = JobHelper->GetJobArchive( $self->{"jobId"} ) . "zdroje\\ot\\";
-	my $dir;
-
-	if ( opendir( $dir, $path ) ) {
-		while ( my $file = readdir($dir) ) {
-			next if ( $file =~ /^\.$/ );
-			next if ( $file =~ /^\.\.$/ );
-
-			# delete only if layer is requested to export
-			foreach my $exportL ( @{ $self->{"layerNames"} } ) {
-
-				if ( $file =~ /$exportL/i ) {
-					unlink $path . $file;
-					last;
-				}
+			unless ( copy( $aoiFile[0], $dest ) ) {
+				die "Unable to copy AOI test $aoiFile[0] to server\n";
 			}
 		}
 
-		closedir($dir);
 	}
+
 }
 
 sub TaskItemsCount {
@@ -491,11 +153,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobName   = "d092494";
-	my $stepName  = "o+1";
+	my $jobName   = "d282870";
+	my $stepName  = "mpanel";
 	my $layerName = "c";
 
-	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, [ "c", "s" ],  0, 1);
+	my $mngr = AOIMngr->new( $inCAM, $jobName, $stepName, [ "c", "s" ], 0, 1 );
 	$mngr->Run();
 }
 

@@ -15,6 +15,7 @@ use constant {
 	App_TASKONDEMAND => "taskOnDemand",
 	App_TEST => "testService",
 	App_CHECKELTESTS => "checkElTests",
+	App_ETKOOPER => "ETKooper",
 	App_APPCHECKER => "appChecker",
 	App_JOBSREEXPORT => "jobsReExport"
 };

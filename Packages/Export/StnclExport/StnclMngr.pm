@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::StnclExport::StnclMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -38,19 +38,21 @@ use aliased 'Packages::Export::StnclExport::MeasureData::MeasureData';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class     = shift;
-	my $packageId = __PACKAGE__;
-	my $self      = $class->SUPER::new( $packageId, @_ );
+	my $class       = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $packageId   = __PACKAGE__;
+	my $createFakeL = 0;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL );
 	bless $self;
 
-	$self->{"inCAM"}         = shift;
-	$self->{"jobId"}         = shift;
-	$self->{"exportNif"}     = shift;
-	$self->{"exportData"}    = shift;
-	$self->{"exportPdf"}     = shift;
-	$self->{"exportMeasure"} = shift;
-	$self->{"stencilThick"}  = shift;
-	$self->{"fiducInfo"}     = shift;
+	$self->{"exportNif"}        = shift;
+	$self->{"exportData"}       = shift;
+	$self->{"exportControlPdf"} = shift;
+	$self->{"dim2ControlPdf"}   = shift;
+	$self->{"exportMeasure"}    = shift;
+	$self->{"stencilThick"}     = shift;
+	$self->{"fiducInfo"}        = shift;
 
 	# PROPERTIES
 
@@ -113,7 +115,7 @@ sub Run {
 	}
 
 	# Export pdf
-	if ( $self->{"exportPdf"} ) {
+	if ( $self->{"exportControlPdf"} ) {
 
 		# choose language
 		my $defLang = "en";
@@ -133,7 +135,7 @@ sub Run {
 			$userInfo = 0;
 		}
 
-		my $controlPdf = ControlPdf->new( $inCAM, $jobId, "o+1", $defLang, $userInfo );
+		my $controlPdf = ControlPdf->new( $inCAM, $jobId, "o+1", $self->{"dim2ControlPdf"}, $defLang, $userInfo );
 
 		my $f = sub {
 
@@ -248,7 +250,7 @@ sub TaskItemsCount {
 		$totalCnt += 3;    # NC export OR gerbers
 	}
 
-	if ( $self->{"exportPdf"} ) {
+	if ( $self->{"exportControlPdf"} ) {
 		$totalCnt += 3;    # pdf export
 	}
 

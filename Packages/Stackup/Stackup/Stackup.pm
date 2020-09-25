@@ -42,37 +42,40 @@ sub new {
 	if ( !defined $stackup ) {
 
 		$self = $class->SUPER::new( $jobId, @_ );
+		bless $self;
+
+		# Properties
+
+		# Is stackup progressive lamination
+		$self->{"sequentialLam"} = 0;
+
+		# Number of pressing
+		$self->{"pressCount"} = 0;
+
+		#info (hash) for each pressing, which layer are pressed (most top/bot layers)
+		# type of item is <ProductPress>
+		$self->{"productPress"} = {};
+
+		# type of item is <ProductInput>
+		$self->{"productInputs"} = [];
+
+		# Structure contains IProduct reference to each copper layer
+		# which depand on attributes: PLugging, Outer core, etc..
+		$self->{"copperMatrix"} = [];
+
+		# Build stackup structure
+		my $builder = StackupBuilder->new( $inCAM, $jobId, $self );
+		$builder->BuildStackupLamination();
+
 		$cache->set( $key, $self, 200 );
 	}
 	else {
+
 		$self = $stackup;
+		bless $self;
 	}
 
-	bless $self;
-
-	# Properties
-
-	$self->{"inCAM"} = $inCAM;
-
-	# Is stackup progressive lamination
-	$self->{"sequentialLam"} = 0;
-
-	# Number of pressing
-	$self->{"pressCount"} = 0;
-
-	#info (hash) for each pressing, which layer are pressed (most top/bot layers)
-	# type of item is <ProductPress>
-	$self->{"productPress"} = {};
-
-	# type of item is <ProductInput>
-	$self->{"productInputs"} = [];
-
-	# Structure contains IProduct reference to each copper layer
-	# which depand on attributes: PLugging, Outer core, etc..
-	$self->{"copperMatrix"} = [];
-
-	my $builder = StackupBuilder->new( $inCAM, $jobId, $self );
-	$builder->BuildStackupLamination();
+ 
 
 	return $self;
 }
@@ -135,17 +138,16 @@ sub GetInputChildProducts {
 	return @inputCoreProduct;
 }
 
-
-# Return all existing product in stackup 
-# - product press, 
-# - product input - parent, 
+# Return all existing product in stackup
+# - product press,
+# - product input - parent,
 # - product input - leaf/core
 sub GetAllProducts {
 	my $self = shift;
 
 	my @allProduct = ();
 	$self->__GetAllProducts( $self->GetLastPress(), \@allProduct );
-	 
+
 	return @allProduct;
 }
 
@@ -167,20 +169,22 @@ sub GetSequentialLam {
 }
 
 sub GetSideByCuLayer {
-	my $self = shift;
+	my $self      = shift;
 	my $lName     = shift;
-	my $outerCore = shift;           # indicate if copper is located on the core and on the outer of press package in the same time
-	my $plugging  = shift;           # indicate if layer contain plugging
+	my $outerCore = shift;    # indicate if copper is located on the core and on the outer of press package in the same time
+	my $plugging  = shift;    # indicate if layer contain plugging
 
 	my $side = undef;
 
-	my $p = $self->GetProductByLayer($lName, $outerCore, $plugging);
-	
-	if($p->GetTopCopperLayer() eq $lName){
-		$side =  "top";
-	}elsif($p->GetBotCopperLayer() eq $lName){
-		$side =  "bot"
-	}else{
+	my $p = $self->GetProductByLayer( $lName, $outerCore, $plugging );
+
+	if ( $p->GetTopCopperLayer() eq $lName ) {
+		$side = "top";
+	}
+	elsif ( $p->GetBotCopperLayer() eq $lName ) {
+		$side = "bot";
+	}
+	else {
 		die "Unable identify side for copper layer: $lName, outerCore: $outerCore, plugging: $plugging";
 	}
 
@@ -210,8 +214,8 @@ sub GetThickByCuLayer {
 sub GetProductByLayer {
 	my $self      = shift;
 	my $lName     = shift;
-	my $outerCore = shift;           # indicate if copper is located on the core and on the outer of press package in the same time
-	my $plugging  = shift;           # indicate if layer contain plugging
+	my $outerCore = shift;    # indicate if copper is located on the core and on the outer of press package in the same time
+	my $plugging  = shift;    # indicate if layer contain plugging
 
 	# Check format of layer name
 	die "Wrong signal layer name: $lName" if ( $lName !~ /^([cs])|(v\d+)$/ );
@@ -259,14 +263,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d277311";
- 
+	my $jobId = "d293099";
+
 	my $stackup = Stackup->new( $inCAM, $jobId );
 
-	#my $thick = $stackup->GetFinalThick();
-
-	StackupTester->PrintStackupTree($stackup);
-
+ 
 	die;
 
 }

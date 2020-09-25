@@ -126,12 +126,12 @@ sub __DrawPrimitives {
 
 			# Every primitive feature have set attribute feat_group_id
 			CamSymbol->AddCurAttribute( $self->{"inCAM"}, $self->{"jobId"}, "feat_group_id", $p->GetGroupGUID() );
-			
+
 			# Add other primitive attributes
 			foreach my $att ( $p->GetAttributes() ) {
 				CamSymbol->AddCurAttribute( $self->{"inCAM"}, $self->{"jobId"}, $att->{"name"}, $att->{"val"} );
 			}
-			
+
 			if ( $p->GetType() eq Enums->Primitive_LINE ) {
 
 				$self->__DrawLine( $p, $pos );
@@ -348,6 +348,25 @@ sub __DrawSurfPoly {
 		);
 
 	}
+	elsif ( $patt->GetPredefined_pattern_type() eq "cross_hatch" ) {
+
+		CamSymbolSurf->SurfaceCrossHatchPattern( $self->{"inCAM"}, 0,
+												 $patt->GetOutline_draw(),
+												 $patt->GetOutline_width(),
+												 $patt->GetLines_angle(),
+												 $patt->GetOutline_invert(),
+												 $patt->GetLines_width(),
+												 $patt->GetLines_dist() );
+
+	}
+	elsif ( $patt->GetPredefined_pattern_type() eq "symbol" ) {
+
+		CamSymbolSurf->AddSurfaceSymbolPattern( $self->{"inCAM"},
+												$patt->GetOutline_draw(),
+												$patt->GetOutline_width(),
+												$patt->GetOutline_invert(),
+												0, $patt->GetSymbol(), $patt->GetSymbolDX(), $patt->GetSymbolDY() );
+	}
 	elsif ( $patt->GetPredefined_pattern_type() eq "solid" ) {
 
 		CamSymbolSurf->AddSurfaceSolidPattern( $self->{"inCAM"}, $patt->GetOutline_draw(), $patt->GetOutline_width() );
@@ -364,7 +383,27 @@ sub __DrawSurfFill {
 
 	my $patt = $surf->GetPattern();
 
-	if ( $patt->GetPredefined_pattern_type() eq "solid" ) {
+	if ( $patt->GetPredefined_pattern_type() eq "lines" ) {
+
+		CamSymbolSurf->AddSurfaceLinePattern(
+											  $self->{"inCAM"},           $patt->GetOutline_draw(),
+											  $patt->GetOutline_width(),  $patt->GetLines_angle(),
+											  $patt->GetOutline_invert(), $patt->GetLines_width(),
+											  $patt->GetLines_dist()
+		);
+
+	}
+	elsif ( $patt->GetPredefined_pattern_type() eq "cross_hatch" ) {
+
+		CamSymbolSurf->SurfaceCrossHatchPattern(
+			$self->{"inCAM"}, 0, $patt->GetOutline_draw(),
+			$patt->GetOutline_width(),  $patt->GetLines_angle(),
+			$patt->GetOutline_invert(), $patt->GetLines_width(),
+			$patt->GetLines_dist()
+		);
+
+	}
+	elsif ( $patt->GetPredefined_pattern_type() eq "solid" ) {
 
 		CamSymbolSurf->AddSurfaceFillSolid(
 											$self->{"inCAM"},          $patt->GetOutline_draw(),

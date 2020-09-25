@@ -30,6 +30,7 @@ use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
 use aliased 'Packages::Input::HelperInput';
 use aliased 'Packages::GuideSubs::Netlist::NetlistControl';
 use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
+use aliased 'Packages::CAMJob::Dim::JobDim';
 
 
 use aliased 'CamHelpers::CamHelper';
@@ -80,7 +81,8 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp'
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpPool';
 
 use aliased 'Managers::MessageMngr::MessageMngr';
-
+use aliased 'Packages::CAMJob::Microsection::CouponIPC3Main';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
 
 
 unless ($ENV{JOB}) {
@@ -94,7 +96,7 @@ unless ($ENV{JOB}) {
 	$jobName = "$ENV{JOB}";
 }
 
-#$jobName= "d123626";
+#$jobName= "d285728";
 
 my $inCAM = InCAM->new();
 my @errorMessageArr = ();
@@ -189,6 +191,9 @@ unless ($panelSizeCheck == 0) {
  		#			$inCAM->COM ('set_step',name=> 'o+1');
  		#}
  			
+ 		# Move drills  < 1 to m
+ 		#$inCAM->COM('script_run',name=>"y:/server/site_data/scripts/_from_z/npth2m.pl",dirmode=>'global');
+ 			
  			
 		# check CompareLayers
 		my %att = CamAttributes->GetStepAttr( $inCAM, $jobName, 'o+1' );
@@ -202,6 +207,18 @@ unless ($panelSizeCheck == 0) {
 						CompareLayers->CompareOrigLayers($inCAM, $jobName);
 				}
 			}
+			
+		# Warning when cut panel
+		my $cutType = undef;
+		if( CamHelper->StepExists( $inCAM, $jobName, 'panel') &&  JobDim->GetCutPanel( $inCAM, $jobName, \$cutType )){
+	 		
+	 		my $messMngr = MessageMngr->new($jobName);
+	 		my @mess = ("Pozor, prirez bude behem vyroby ostrizen, panelizuj kusy pouze na oktivni oblast danou strihem");
+	 		push(@mess, "\nTyp strihu: <b> ".$cutType );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess ); 	
+		 }
+		
+			
 		# Run panelize GUI
 		_GUIpanelizace();
 		
@@ -496,14 +513,26 @@ sub _GUIpanelizace {
 											_CheckStateOfVeVyrobe($jobName);
 											
 											
+											# Check holes 500 in rout	
+											 
+											if(CamHelper->LayerExists($inCAM, $jobName, "f")){
+												
+												my $uniDTM = UniDTM->new( $inCAM, $jobName, "o+1", "f");
+												my @unitTools =$uniDTM->GetTools();									
 											
-											my $messWarn = "";
-											my $resultWarn = LayerWarnInfo->CheckNCLayers( $inCAM, $jobName, "o+1", undef, \$messWarn );
-											
-											if ($resultWarn == 0) {
-													push @warnMessageArr, $messWarn;
-											}
-											
+												foreach my $t (@unitTools) {
+
+													if ( $t->GetDrillSize() < 500 ) {
+														my  $messWarn .=
+					    								"Routing layers should not contain tools diamaeter smaller than 500µm. Layer contains tool diameter: "
+					  									. $t->GetDrillSize()
+					  									. "µm.\n";
+					  									
+					  									push @errorMessageArr, $messWarn;
+													}
+												}
+											} 
+	 
 											# contain error messages
 											my $mess = "";
 											#
@@ -997,6 +1026,13 @@ sub _Panelize {
 					}
 					 $impCouponText = 'Pozor pridej impedancni kupon';
 			}
+			
+			# Add IPC3 coupon
+			
+
+			
+			
+			
 			$inCAM->COM ('set_step',name=> 'panel');
 			
 			
@@ -1060,7 +1096,7 @@ sub _Panelize {
 				
 				
 				
-				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy . _GetOptimalSpace("$jobName") . '     ' . $impCouponText );
+				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy . _GetOptimalSpace("$jobName") . '     ' . $impCouponText);
 			}
 			
 			# Check if there were put impedance step in the panel
@@ -1071,6 +1107,23 @@ sub _Panelize {
 						exit;
 					}
 
+			}
+			
+			
+			my $pcbInf = HegMethods->GetBasePcbInfo($jobName);
+			 
+			if ( defined $pcbInf->{"ipc_class_3"} && $pcbInf->{"ipc_class_3"} ne "" ) {
+				
+		 		$inCAM->SetDisplay(0);
+				my $cpn = CouponIPC3Main->new( $inCAM, $jobName );
+				$cpn->CreateCoupon();
+				$inCAM->SetDisplay(1);
+				CamHelper->SetStep($inCAM, 'panel');
+		 		
+		 		my $messMngr = MessageMngr->new($jobName);
+				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ['Pozor, DPS je v IPC 3, vloz 3 kupony na volne misto do panelu.'] ); 
+ 
+			 	$inCAM->PAUSE("Vloz 3x IPC3 coupon. Step: coupon_IPC3main");
 			}
 			
 			
@@ -1202,7 +1255,7 @@ sub _Panelize {
 	        
 			
 			
-			
+
 			
 			
 			
@@ -1234,7 +1287,7 @@ sub _Panelize {
 			}else{
 			
 				# If panel contain more drifrent step, the fsch create
-				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName, 1, [EnumsGeneral->Coupon_IMPEDANCE]);
+				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName, 1, [EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN]);
 				if ( scalar(@uniqueSteps) > 1 ){
 							my $fsch = CreateFsch->new( $inCAM, $jobName);
 							   $fsch->Create();
@@ -1564,11 +1617,11 @@ sub _CheckTableDrill {
 			$minVrtak = sprintf "%0.0f",($minVrtak);
 			
 			$inCAM->INFO(units=>'mm',entity_type => 'layer',entity_path => "$pcbId/$StepName/$lName",data_type => 'TOOL');
-			@hodnotyDrill = @{$inCAM->{doinfo}{gTOOLbit}};
+			@hodnotyDrill = @{$inCAM->{doinfo}{gTOOLdrill_size}};
 			
 			foreach my $oneDrill (@hodnotyDrill) {
 				if ($oneDrill == 0) {
-					push @errorMessageArr,  '- Pozor v seznamu VRTANI ve vrstve: $lName jsou nulove hodnoty!';
+					push @errorMessageArr,  "- Pozor v seznamu VRTANI ve vrstve: $lName jsou nulove hodnoty!";
 				}
 			} 
 			

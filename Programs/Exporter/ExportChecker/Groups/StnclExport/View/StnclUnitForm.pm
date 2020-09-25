@@ -58,116 +58,210 @@ sub __SetLayout {
 
 	#define panels
 
-	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szMain      = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szClmnLeft  = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szClmnRight = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
-	my $settings  = $self->__SetLayoutSettings($self);
-	my $fiducials = $self->__SetLayoutFiducials($self);
+	my $exportNif        = $self->__SetLayoutExportNif($self);
+	my $exportGer        = $self->__SetLayoutExportGerbers($self);
+	my $exportPadInfo    = $self->__SetLayoutExportPadIfo($self);
+	my $exportControlPDF = $self->__SetLayoutExportControlPDF($self);
+	my $fiducials        = $self->__SetLayoutFiducials($self);
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $settings, 1, &Wx::wxEXPAND );
+	$szMain->Add( $szClmnLeft, 1, &Wx::wxEXPAND );
 	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
-	$szMain->Add( $fiducials, 1, &Wx::wxEXPAND );
+	$szMain->Add( $szClmnRight, 1, &Wx::wxEXPAND );
+
+	$szClmnLeft->Add( $exportNif,        0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szClmnLeft->Add( $exportControlPDF, 0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szClmnLeft->Add( $exportPadInfo,    0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szClmnLeft->Add( $exportGer,        0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+
+
+	$szClmnRight->Add( $fiducials, 0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
 
 	$self->SetSizer($szMain);
 
 	# save control references
-
 }
 
 # Set layout for Quick set box
-sub __SetLayoutSettings {
+sub __SetLayoutExportNif {
 	my $self   = shift;
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Settings' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Nif file' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow5 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow6 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	#my $szRowDetail2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+	# my $nifTxt = Wx::StaticText->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $nifChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ 90, 22 ] );
+	my $typeTxt = Wx::StaticText->new( $statBox, -1, "Technology", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $typeValTxt = Wx::StaticText->new( $statBox, -1, $self->{"stencilInfo"}->{"tech"}, &Wx::wxDefaultPosition, [ 90, 20 ] );
+
+	my $thickTxt = Wx::StaticText->new( $statBox, -1, "Thickness [mm]", &Wx::wxDefaultPosition, [ 120, 20 ] );
+
+	my @thick = ( 0.100, 0.120, 0.125, 0.150, 0.175, 0.200, 0.250 );
+
+	if ( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_LASER ) {
+		@thick = ( 0.100, 0.120, 0.130, 0.150, 0.180, 0.200, 0.250 );
+	}
+
+	my $thickValCb = Wx::ComboBox->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 120, 22 ], \@thick, &Wx::wxCB_READONLY );
+
+	# SET EVENTS
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szRow1->Add( $nifChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	#$szRow1->Add( $nifChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szRow2->Add( $typeTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $typeValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szRow3->Add( $thickTxt,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow3->Add( $thickValCb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	# Set References
+	$self->{"typeValTxt"} = $typeValTxt;
+	$self->{"nifChb"}     = $nifChb;
+	$self->{"thickValCb"} = $thickValCb;
+	return $szStatBox;
+}
+
+# Set layout for  export Gerbers
+sub __SetLayoutExportGerbers {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $str = "";
+	if ( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_DRILL ) {
+		$str = "NC programs";
+	}
+	elsif ( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_LASER || $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_ETCH ) {
+		$str = "Production gerbers";
+	}
+
+	my $statBox = Wx::StaticBox->new( $parent, -1, $str );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	#my $szRowDetail2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
 
-	my $typeTxt = Wx::StaticText->new( $statBox, -1, "Technology", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $typeValTxt = Wx::StaticText->new( $statBox, -1, $self->{"stencilInfo"}->{"tech"}, &Wx::wxDefaultPosition, [ 90, 20 ] );
-
-	my $nifTxt = Wx::StaticText->new( $statBox, -1, "Export nif", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $nifChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 22 ] );
-
-	my $str = "";
-	if ( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_DRILL ) {
-		$str = "Export NC data";
-	}
-	elsif ( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_LASER || $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_ETCH ) {
-		$str = "Export gerber data";
-	}
-
-	my $dataTxt = Wx::StaticText->new( $statBox, -1, $str, &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $dataChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 22 ] );
-
-	my $pdfTxt = Wx::StaticText->new( $statBox, -1, "Export pdf", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $pdfChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 22 ] );
-	
-	my $measureDataTxt = Wx::StaticText->new( $statBox, -1, "Export \"pad info\"", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $measureDataChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 22 ] );
-
-	my $thickTxt = Wx::StaticText->new( $statBox, -1, "Thickness [mm]", &Wx::wxDefaultPosition, [ 120, 20 ] );
- 
-	my @thick = ( 0.100, 0.120, 0.125, 0.150, 0.175, 0.200, 0.250 );
-	
-	if( $self->{"stencilInfo"}->{"tech"} eq StnclEnums->Technology_LASER){
-		@thick =  ( 0.100, 0.120, 0.130, 0.150, 0.180, 0.200, 0.250 );
-	}
- 
-	
-	my $thickValCb = Wx::ComboBox->new( $statBox, -1, "0", &Wx::wxDefaultPosition, [ 120, 22 ], \@thick, &Wx::wxCB_READONLY );
+	#my $dataTxt = Wx::StaticText->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $dataChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ 90, 22 ] );
 
 	# SET EVENTS
- 
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $typeTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $typeValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow2->Add( $nifTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $nifChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $dataChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow3->Add( $dataTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow3->Add( $dataChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	#$szRow1->Add( $dataChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow4->Add( $pdfTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow4->Add( $pdfChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	
-	$szRow5->Add( $measureDataTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow5->Add( $measureDataChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow6->Add( $thickTxt,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow6->Add( $thickValCb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	# Set References
+
+	$self->{"dataChb"} = $dataChb;
+
+	return $szStatBox;
+}
+
+# Set layout for  export Pad info PDF
+sub __SetLayoutExportPadIfo {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Pad info file' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	#my $szRowDetail2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+
+	# my $measureDataTxt = Wx::StaticText->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $measureDataChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ 90, 22 ] );
+
+	# SET EVENTS
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szRow1->Add( $measureDataChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	# $szRow1->Add( $measureDataChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	# Set References
+
+	$self->{"measureDataChb"} = $measureDataChb;
+
+	return $szStatBox;
+}
+
+# Set layout for  export Gerbers
+sub __SetLayoutExportControlPDF {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Control PDF' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	#my $szRowDetail2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+
+	# my $pdfTxt = Wx::StaticText->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $pdfChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ 90, 22 ] );
+	my $dim2PDFTxt = Wx::StaticText->new( $statBox, -1, "Draw dimensions", &Wx::wxDefaultPosition, [ 120, 20 ] );
+	my $dim2PDFChb = Wx::CheckBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 22 ] );
+
+	# SET EVENTS
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	$szRow1->Add( $pdfChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	# $szRow1->Add( $pdfChb,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $dim2PDFTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $dim2PDFChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRow4, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRow5, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRow6, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# Set References
-	$self->{"typeValTxt"} = $typeValTxt;
-	$self->{"nifChb"}     = $nifChb;
-	$self->{"dataChb"}    = $dataChb;
-	$self->{"pdfChb"}     = $pdfChb;
-	$self->{"measureDataChb"}     = $measureDataChb;
-	$self->{"thickValCb"} = $thickValCb;
+
+	$self->{"pdfChb"}  = $pdfChb;
+	$self->{"dim2pdf"} = $dim2PDFChb;
 
 	return $szStatBox;
 }
@@ -178,7 +272,7 @@ sub __SetLayoutFiducials {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Fiducials' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Fiducial settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	# DEFINE CONTROLS
@@ -235,7 +329,7 @@ sub DisableControls {
 	my $thick = $self->{"thickValCb"}->GetValue();
 
 	# if default thick is not known, enable
-	if ( !defined $thick  || $thick eq "" || $thick == 0 ) {
+	if ( !defined $thick || $thick eq "" || $thick == 0 ) {
 		$self->{"thickValCb"}->Enable();
 	}
 	else {
@@ -252,7 +346,6 @@ sub DisableControls {
 
 		$self->{"measureDataChb"}->Enable();
 		$self->{"halfFiducChb"}->Enable();
-		
 
 		if ( $self->{"halfFiducChb"}->GetValue() == 1 ) {
 
@@ -274,6 +367,8 @@ sub DisableControls {
 sub SetThickness {
 	my $self  = shift;
 	my $value = shift;
+
+	$value = sprintf("%.3f", $value);
 
 	$self->{"thickValCb"}->SetValue($value);
 }
@@ -340,6 +435,27 @@ sub GetExportPdf {
 	my $self = shift;
 
 	if ( $self->{"pdfChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
+# Store dimensions to control PDF
+sub SetDim2ControlPdf {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"dim2pdf"}->SetValue($value);
+}
+
+sub GetDim2ControlPdf {
+	my $self = shift;
+
+	if ( $self->{"dim2pdf"}->IsChecked() ) {
 
 		return 1;
 	}
@@ -419,7 +535,7 @@ sub GetFiducialInfo {
 	else {
 		$inf{"fiducSide"} = "";
 	}
-	
+
 	return \%inf;
 }
 

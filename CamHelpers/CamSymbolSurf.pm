@@ -63,8 +63,8 @@ sub AddSurfacePolyline {
 	if ( scalar(@points) < 4 ) {
 		die "Minimal count of surface points is 4.\n";
 	}
-	
-	if ( $points[0]->{"x"} !=  $points[scalar(@points)-1]->{"x"} || $points[0]->{"y"} !=  $points[scalar(@points)-1]->{"y"}  ) {
+
+	if ( $points[0]->{"x"} != $points[ scalar(@points) - 1 ]->{"x"} || $points[0]->{"y"} != $points[ scalar(@points) - 1 ]->{"y"} ) {
 		die "First and last polygon point coordinate has to by equal.\n";
 	}
 
@@ -186,21 +186,41 @@ sub AddSurfaceSymbolPattern {
 	$outline_invert = $outline_invert ? "yes" : 'no';
 	$cut_prims      = $cut_prims      ? "yes" : 'no';
 
-	$inCAM->COM(
-				 'add_surf_fill',
-				 "type"           => "pattern",
-				 "symbol"         => $symbol,
-				 "dx"             => $dx,
-				 "dy"             => $dy,
-				 "x_off"          => "0",
-				 "y_off"          => "0",
-				 "break_partial"  => "yes",
-				 "cut_prims"      => $cut_prims,
-				 "outline_draw"   => $outline_draw,
-				 "outline_width"  => $outline_width,
-				 "outline_invert" => $outline_invert,
-	);
+#	$inCAM->COM(
+#		'add_surf_fill',
+#		"type"           => "pattern",
+#		"cut_prims"      => $cut_prims,
+#		"outline_draw"   => $outline_draw,
+#		"outline_width"  => $outline_width,
+#		"outline_invert" => $outline_invert,
+#
+#		"indentation"   => "even",
+#		"symbol"        => $symbol,
+#		"dx"            => $dx,
+#		"dy"            => $dy,
+#		"x_off"         => "0",
+#		"y_off"         => "0",
+#		"break_partial" => "yes",
+#		"origin_type"   => "datum",
+#
+#	);
 
+	$inCAM->COM( "add_surf_fill",
+		"type"                    => "pattern",
+		"origin_type"             => "datum",
+		"symbol"                  => $symbol,
+		"dx"            => $dx,
+		"dy"            => $dy,
+		"x_off"                   => "0",
+		"y_off"                   => "0",
+		"break_partial"           => "yes",
+		"cut_prims"      => $cut_prims,
+		"outline_draw"   => $outline_draw,
+		"outline_width"  => $outline_width,
+		"outline_invert" => $outline_invert,
+		"predefined_pattern_type" => "dots",
+		"indentation"             => "even")
+		 
 }
 
 # surface cross_hatch pattern

@@ -3,7 +3,7 @@
 # Description: Paclage which generate drilling coupon for microsections
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Microsection::Microsection;
+package Packages::CAMJob::Microsection::CouponDrill;
 
 #3th party library
 use strict;
@@ -287,14 +287,14 @@ sub __GetAllHoles {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Microsection::Microsection';
+	use aliased 'Packages::CAMJob::Microsection::CouponDrill';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 	my $jobId = "d113609";
 	my $step  = "panel";
 
-	my $m = Microsection->new( $inCAM, $jobId );
+	my $m = CouponDrill->new( $inCAM, $jobId );
 	$m->CreateCoupon();
 
 }

@@ -20,11 +20,13 @@ use aliased 'Packages::NifFile::NifFile';
 use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -193,39 +195,35 @@ sub __ExportXml {
 		# set power by mask color
 		my %mask = ();
 
-		if ( $layerName =~ /^m[cs]flex/ ) {
-
-			$power = 250;    # SD 2460 - UV FLEX
+		if ( $layerName =~ /^m[cs]2/ ) {
+			%mask = HegMethods->GetSolderMaskColor2($jobId);
 		}
 		else {
+			%mask = HegMethods->GetSolderMaskColor($jobId);
+		}
 
-			if ( $layerName =~ /^m[cs]2/ ) {
-				%mask = HegMethods->GetSolderMaskColor2($jobId);
-			}
-			else {
-				%mask = HegMethods->GetSolderMaskColor($jobId);
-			}
+		my $clr = $mask{ ( $layerName =~ /c/ ? "top" : "bot" ) };
 
-			my $clr = $mask{ ( $layerName =~ /c/ ? "top" : "bot" ) };
-
-			if ( $clr =~ /Z/i ) {
-				$power = 250;    # green #POZOR dle MH jiz nikdy nemenit hodnotu 250!
-			}
-			elsif ( $clr =~ /B/i ) {
-				$power = 240;    # black
-			}
-			elsif ( $clr =~ /M/i ) {
-				$power = 240;    # blue
-			}
-			elsif ( $clr =~ /W/i ) {
-				$power = 220;    # white
-			}
-			elsif ( $clr =~ /R/i ) {
-				$power = 240;    # red
-			}
-			else {
-				$power = 230;    # other
-			}
+		if ( $clr =~ /Z/i ) {
+			$power = 250;    # green #POZOR dle MH jiz nikdy nemenit hodnotu 250!
+		}
+		elsif ( $clr =~ /B/i ) {
+			$power = 240;    # black
+		}
+		elsif ( $clr =~ /M/i ) {
+			$power = 240;    # blue
+		}
+		elsif ( $clr =~ /W/i ) {
+			$power = 220;    # white
+		}
+		elsif ( $clr =~ /R/i ) {
+			$power = 240;    # red
+		}
+		elsif ( $clr =~ /G/i ) {
+			$power = 350;    # green SMD flex
+		}
+		else {
+			die "Energy for color: $clr is not defined";
 		}
 
 		$diameter   = 2.85;
@@ -255,6 +253,26 @@ sub __ExportXml {
 
 	if ( $fileName =~ /outer/ ) {
 		$fileName = Helper->ConverOuterName2FileName( $layerName, $self->{"layerCnt"} );
+	}
+	elsif ( $layerName =~ /^v\d+$/ ) {
+
+		my %lPars = JobHelper->ParseSignalLayerName($layerName);
+
+		my $p = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+		if ( $p->GetProductType() eq StackEnums->Product_PRESS ) {
+
+			my $side = $self->{"stackup"}->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+			my $matL = $p->GetProductOuterMatLayer( $side eq "top" ? "first" : "last" )->GetData();
+
+			if ( $matL->GetType() eq StackEnums->MaterialType_COPPER && !$matL->GetIsFoil() ) {
+
+				# Convert standard inner signal layer name to name "after press"
+				$fileName = Helper->ConverInnerName2AfterPressFileName($layerName);
+			}
+		}
+
 	}
 
 	$templ->{"job_params"}->[0]->{"job_name"}->[0] = $jobId . $fileName . "_mdi";

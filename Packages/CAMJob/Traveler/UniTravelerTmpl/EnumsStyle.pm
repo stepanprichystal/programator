@@ -71,8 +71,8 @@ sub GetTravelerMarking {
 
 	my %t = ();
 
-	$t{ Enums->ProductType_STENCILFLEX } = "S";
-	$t{ Enums->ProductType_STENCILPEEL } = "S";
+	$t{ Enums->ProductType_STENCILFLEX } = "SAB";
+	$t{ Enums->ProductType_STENCILPEEL } = "SAB";
 	return $t{$type};
 
 }

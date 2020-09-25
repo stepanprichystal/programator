@@ -30,6 +30,7 @@ use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Routing::RoutLayer::RoutOutline::RoutOutline';
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveText';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
 use aliased 'Packages::Routing::RoutLayer::RoutOutline::RoutRadiusHelper';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
@@ -376,6 +377,18 @@ sub TestNarrowPlaces {
 
 			my $pLine = PrimitiveLine->new( Point->new( $p1->[0], $p1->[1] ), Point->new( $p2->[0], $p2->[1] ), "r400" );
 			$draw->AddPrimitive($pLine);
+			
+			# Add length of line
+		 
+			my $pText = ( $p1->[0] >  $p2->[0]) ? Point->new( $p1->[0], $p1->[1] ) :Point->new( $p2->[0], $p2->[1] );
+			$pText->Move(2, 0);
+			
+			my $len =  sprintf("%.1f", sqrt( ($p1->[0] - $p2->[0] )**2 + ( $p1->[1] - $p2->[1] )**2 )); 
+			
+			 
+			$draw->AddPrimitive(PrimitiveText->new( $len."mm", $pText, 2, undef, 1 ));
+			
+			 
 		}
 
 		$draw->Draw();

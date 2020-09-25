@@ -134,32 +134,52 @@ sub __RunRule {
 
 						my $xSum = $x + $ruleSet->GetWidth();
 
+
 						# text if pcb size exceeds fil dimension
-						if ( $xSum > Enums->FilmSize_BigX || $y > Enums->FilmSize_BigY ) {
+						if ( $xSum > Enums->FilmSize_SmallX || $y > Enums->FilmSize_SmallY ) {
 							next;
 						}
 
-						if ( $y > Enums->FilmSize_SmallY ) {
-							$ruleSet->SetDimenison( Enums->FilmSize_Big );
-						}
-						else {
-							$ruleSet->SetDimenison( Enums->FilmSize_Small );
-						}
+						$ruleSet->SetDimenison( Enums->FilmSize_Small );
+						 
+# Big film: Enums->FilmSize_Big was canceled 11.6.2020
+#			
+#						# text if pcb size exceeds fil dimension
+#						if ( $xSum > Enums->FilmSize_BigX || $y > Enums->FilmSize_BigY ) {
+#							next;
+#						}
+#
+#						if ( $y > Enums->FilmSize_SmallY ) {
+#							$ruleSet->SetDimenison( Enums->FilmSize_Big );
+#						}
+#						else {
+#							$ruleSet->SetDimenison( Enums->FilmSize_Small );
+#						}
+
 
 					}
 					elsif ( $rule->GetOrientation() eq Enums->Ori_HORIZONTAL ) {
 
 						# text if pcb size exceeds fil dimension
-						if ( $y > Enums->FilmSize_BigX || $x > Enums->FilmSize_BigY ) {
+						if ( $y > Enums->FilmSize_SmallX || $x > Enums->FilmSize_SmallY ) {
 							next;
 						}
-						if ( $x > Enums->FilmSize_SmallY ) {
-							$ruleSet->SetDimenison( Enums->FilmSize_Big );
-						}
-						else {
-							$ruleSet->SetDimenison( Enums->FilmSize_Small );
-						}
+						
+						$ruleSet->SetDimenison( Enums->FilmSize_Small );
 
+# Big film: Enums->FilmSize_Big was canceled 11.6.2020
+#
+#						# text if pcb size exceeds fil dimension
+#						if ( $y > Enums->FilmSize_BigX || $x > Enums->FilmSize_BigY ) {
+#							next;
+#						}
+#						if ( $x > Enums->FilmSize_SmallY ) {
+#							$ruleSet->SetDimenison( Enums->FilmSize_Big );
+#						}
+#						else {
+#							$ruleSet->SetDimenison( Enums->FilmSize_Small );
+#						}
+	 
 					}
 
 					# add this type to result set

@@ -8,23 +8,20 @@
 use strict;
 use warnings;
 
-
 #necessary for load pall packages
 use FindBin;
 use lib "$FindBin::Bin/../";
 use PackagesLib;
 
-
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemandApp' => "App";
- 
-my $jobId    = "d235721";
-my $orderId    = "d235721-01";
-my $app = App->new();
 
-my $inCAM    = InCAM->new();
+my $jobId   = "d235721";
+my $orderId = "d235721-01";
+my $app     = App->new();
+my $inCAM = InCAM->new();
 
 $inCAM->SupressToolkitException(1);
 
@@ -33,7 +30,6 @@ $app->{"inCAM"} = $inCAM;
 $app->Run();
 
 #$app->__RunJob($jobId, $orderId, "cooperation_data", undef, "th");
-
 
 #	my $jobId    = shift;
 #	my $orderId  = shift;

@@ -14,9 +14,10 @@ use XML::Simple;
 
 #local library
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDTM';
-use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamNCHooks';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsMachines';
@@ -127,15 +128,7 @@ sub GetRoutDuration {
 
 	# Compute tool change by tool limits (tool limit is taken from default machine)
 	my $materialName = HegMethods->GetMaterialKind($jobId);
-	my %lInfo = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, $layer, 1, 1 );
-
-	if ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
-		$materialName = "PREPREG";
-	}
-	elsif ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
-		$materialName = "COVERLAY";
-	}
-
+ 
 	my %toolParams = CamNCHooks->GetMaterialParams( $inCAM, $jobId, $layer, $materialName, EnumsMachines->MACHINE_DEF );
 	my $tChangeCnt = 0;
 
@@ -199,12 +192,21 @@ sub GetRoutToolUsage {
 
 	my $unitDTM = UniDTM->new( $inCAM, $jobId, $step, $layer, $SR );
 	my $uniRTM = UniRTM->new( $inCAM, $jobId, $step, $workLayer, $SR, $unitDTM );
-	my $materialName = HegMethods->GetMaterialKind($jobId);
+    
+    # From IS (druh_materialu). If hybrid => material code by stackup
+	my $materialCode = HegMethods->GetMaterialKind($jobId);
+	
+	my $matKinds = [];
+	if ( JobHelper->GetIsHybridMat( $jobId, $materialCode, $matKinds ) ) {
+
+		$materialCode = JobHelper->GetHybridMatCode( $jobId, $matKinds );
+	}
+	 
 
 	# 1) Compute duration of standard rout tools
 	foreach my $uniChainSeq ( $uniRTM->GetChainSequences() ) {
 
-		$self->__SetSequenceToolUsage( $uniChainSeq, 0, $materialName, \%toolUsage );
+		$self->__SetSequenceToolUsage( $uniChainSeq, 0, $materialCode, \%toolUsage );
 
 	}
 
@@ -217,9 +219,7 @@ sub GetRoutToolUsage {
 													   $uniChainSeq->IsOutline(),
 													   $layer, $step );
 
-#		if ($isDupl) {
-#			$self->__SetSequenceToolUsage( $uniChainSeq, 1, $materialName, \%toolUsage );
-#		}
+ 
 	}
 
 	return %toolUsage;

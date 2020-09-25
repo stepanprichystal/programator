@@ -28,8 +28,8 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
 use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::Enums' => 'TaskEnums';
-use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData';
-
+use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData::ControlData';
+use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::AOIData::AOIData';
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
@@ -177,6 +177,11 @@ sub __ProcessJob {
 
 			my $data = ControlData->new( $self, $inCAM, $jobId );
 			$result = $data->Run( \$errMess, TaskEnums->Data_CONTROL, $inserted, $loginId );
+		
+		}elsif ( $taskType eq TaskEnums->Data_AOI ) {
+
+			my $data = AOIData->new( $self, $inCAM, $jobId );
+			$result = $data->Run( \$errMess, TaskEnums->Data_AOI, $inserted, $loginId );
 		}
 		else {
 

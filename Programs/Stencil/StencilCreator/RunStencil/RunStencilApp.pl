@@ -32,7 +32,7 @@ unless ( defined $jobId ) {
 my $inCAM   = InCAM->new();
 
 
-#$jobId ="f13610";
+#$jobId ="d265718";
 
 # 1) Check before run
 my $mess = "";
@@ -60,7 +60,7 @@ $launcher->SetWaitingFrm( "Stencil creator - $jobId", "Loading application ...",
 
 #$launcher->SetLogConfig($logPath);
 
-$launcher->Run();
+$launcher->RunFromInCAM();
 
 print STDERR "Stencil creator finish\n";
 

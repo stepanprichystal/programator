@@ -8,7 +8,7 @@ package Packages::SystemCall::Helper;
 #3th party library
 use strict;
 use warnings;
-use JSON;
+use JSON::XS;
 
 #local library
  
@@ -24,6 +24,8 @@ sub ParseParams {
 	my $self        = shift;
 	my $paramsFiles = shift;
 
+	my $json = JSON::XS->new->ascii->pretty->allow_nonref;
+
 	my @p = ();
 
 	if ( defined $paramsFiles ) {
@@ -35,9 +37,7 @@ sub ParseParams {
 				# read from disc
 				# Load data from file
 				my $serializeData = FileHelper->ReadAsString($param);
-
-				my $json = JSON->new()->allow_nonref();
-
+ 
 				my $d = $json->decode($serializeData);
 
 				unlink($param);

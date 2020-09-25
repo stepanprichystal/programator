@@ -27,21 +27,15 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 
 # Return if el test is requested:
 # - class > 3
-# - check Heg if el test requested
+# - check IS if el test requested
+# Return undef if there is no clues if EL test is requested
 sub ElTestRequested {
 	my $self  = shift;
 	my $jobId = shift;
 
-	# Load nif info
-	my $nif = NifFile->new($jobId);
-
-	if ( !defined $nif->GetValue("pocet_vrstev") || !defined $nif->GetValue("kons_trida") ) {
-		die "Information from nif file is not complete (rows: pocet_vrstev; kons_trida )";
-	}
+	my $testRequested = 0;
 
 	# get if test is mandatory
-
-	my $testRequested = 0;
 
 	if ( HegMethods->GetElTest($jobId) ) {
 
@@ -49,15 +43,26 @@ sub ElTestRequested {
 	}
 	else {
 
-		if ( $nif->GetValue("pocet_vrstev") == 0 || ( $nif->GetValue("kons_trida") <= 3 && $nif->GetValue("pocet_vrstev") == 1 ) ) {
+		my $nif = NifFile->new($jobId);
 
-			$testRequested = 0;
+		if ( !$nif->Exist() || !defined $nif->GetValue("pocet_vrstev") || !defined $nif->GetValue("kons_trida") ) {
+
+			$testRequested = undef;
 		}
 		else {
 
-			$testRequested = 1;
+			if ( $nif->GetValue("pocet_vrstev") == 0 || ( $nif->GetValue("kons_trida") <= 3 && $nif->GetValue("pocet_vrstev") == 1 ) ) {
+
+				$testRequested = 0;
+			}
+			else {
+
+				$testRequested = 1;
+			}
 		}
 	}
+
+	return $testRequested;
 
 }
 
@@ -105,10 +110,10 @@ sub ElTestPrepared {
 				else {
 
 					# Load nif info
-					my $nif       = NifFile->new($jobId);
+					my $nif          = NifFile->new($jobId);
 					my $totalMultipl = $nif->GetValue("nasobnost");
 
-					if (  $totalMultipl == 1 ) {
+					if ( $totalMultipl == 1 ) {
 						$elTestExist = 1;
 					}
 
@@ -116,7 +121,33 @@ sub ElTestPrepared {
 			}
 		}
 	}
-	 
+
+	return $elTestExist;
+}
+
+# Return if job has created IPC file
+# Search IPC file dir in el test storage
+# If no original dir, search original ipc file
+sub IPCPrepared {
+	my $self   = shift;
+	my $jobId  = shift;
+	my $kooper = shift // 0;
+
+	my $ipcPath = JobHelper->GetJobElTest( $jobId, $kooper );
+
+	my $elTestExist = 0;
+	if ( -e $ipcPath ) {
+
+		my $ipcFile = $ipcPath . $jobId . "t";
+		$ipcFile .= "_kooperace" if ($kooper);
+		$ipcFile .= ".ipc";
+
+		if ( -e $ipcFile ) {
+
+			$elTestExist = 1;
+		}
+
+	}
 
 	return $elTestExist;
 }

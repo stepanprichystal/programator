@@ -46,6 +46,21 @@ sub new {
 	return $self;
 }
 
+sub StencilParamsExists {
+	my $self = shift;
+
+	if ( -e $self->{"filePath"} ) {
+		
+		return 1;
+	
+	}
+	else {
+		
+		return 0;
+	}
+
+}
+
 sub LoadStenciLParams {
 	my $self = shift;
 

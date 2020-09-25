@@ -17,6 +17,7 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::CAMJob::Stackup::StackupCode';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -66,6 +67,14 @@ sub OnPrepareGroupData {
 	$groupData->SetStepToTest($stepToTest);
 
 	# 2) Set test layers
+	my $stackupCode = StackupCode->new( $inCAM, $jobId, $stepToTest );
+	for ( my $i = scalar(@layers) - 1 ; $i >= 0 ; $i-- ) {
+
+		if ( $stackupCode->GetIsLayerEmpty( $layers[$i] ) ) {
+			splice @layers, $i, 1;
+		}
+	}
+
 	$groupData->SetLayers( \@layers );
 
 	# 3) Set send to server
@@ -86,10 +95,10 @@ sub OnPrepareGroupData {
 	# 4) Set test panel frame
 	my $testFrame = 0;
 	if (
-		CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepToTest )
-		&& ( $stepToTest eq "mpanel"
-			 || grep { $_->{"stepName"} =~ /^mpanel\d*/ } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest ) )
-		&& !$defaultInfo->GetIsFlex()
+		 CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepToTest )
+		 && ( $stepToTest eq "mpanel"
+			  || grep { $_->{"stepName"} =~ /^mpanel\d*/ } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $stepToTest ) )
+		 && !$defaultInfo->GetIsFlex()
 	  )
 	{
 		$testFrame = 1;

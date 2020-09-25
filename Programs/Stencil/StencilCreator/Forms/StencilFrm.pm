@@ -9,7 +9,7 @@ use base 'Widgets::Forms::StandardFrm';
 #3th party librarysss
 use strict;
 use warnings;
- 
+
 use Wx;
 use aliased 'Packages::Events::Event';
 
@@ -119,6 +119,10 @@ sub SetStencilSize {
 	my $width  = shift;
 	my $height = shift;
 
+	# Format size to 1 decimal number
+	$width  = sprintf( "%.1f", $width );
+	$height = sprintf( "%.1f", $height );
+
 	# "300mm x 480mm", "300mm x 520mm", "custom"
 	if ( $self->{"customSize"} == 1 ) {
 		$self->{"sizeCb"}->SetValue( Enums->StencilSize_CUSTOM );
@@ -127,10 +131,7 @@ sub SetStencilSize {
 	}
 	else {
 
-		my @t = (
-				  Enums->StencilSize_300x480,
-				  Enums->StencilSize_300x520
-		);
+		my @t = ( Enums->StencilSize_300x480, Enums->StencilSize_300x520 );
 
 		my $selType = undef;
 		foreach my $t (@t) {
@@ -573,10 +574,10 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szcol1->Add( $general, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szcol1->Add( $schema,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szcol1->Add( $other,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szcol1->Add( $custInfo,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szcol1->Add( $general,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szcol1->Add( $schema,   0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szcol1->Add( $other,    1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szcol1->Add( $custInfo, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMain->Add( $szcol1,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $drawing, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -892,8 +893,8 @@ sub __SetLayoutCustomerInfo {
 		$szStatBox->Add( $rTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	}
 
-	if(scalar(@request) == 0){
-			$szStatBox->Add( 10, 10); # add blank, because when is empty statBox is not placed on the right place
+	if ( scalar(@request) == 0 ) {
+		$szStatBox->Add( 10, 10 );    # add blank, because when is empty statBox is not placed on the right place
 	}
 
 	# Set References

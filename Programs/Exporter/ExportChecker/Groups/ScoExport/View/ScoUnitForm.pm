@@ -18,7 +18,6 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 
-
 use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::Export::ScoExport::Enums' => "ScoExport";
 
@@ -45,7 +44,6 @@ sub new {
 	# Load data
 
 	$self->__SetLayout();
- 
 
 	# EVENTS
 	$self->{'onCustomerJumpChange'} = Event->new();
@@ -62,15 +60,15 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 	my $settings = $self->__SetLayoutSettings($self);
-	my $optimize   = $self->__SetLayoutOptimize($self);
+	my $optimize = $self->__SetLayoutOptimize($self);
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $settings, 0, &Wx::wxEXPAND );
-	$szMain->Add( 20,20, 0 );
-	$szMain->Add( $optimize, 0, &Wx::wxEXPAND );
+	$szMain->Add( $settings, 0,  &Wx::wxEXPAND );
+	$szMain->Add( 20,        20, 0 );
+	$szMain->Add( $optimize, 0,  &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
@@ -94,7 +92,7 @@ sub __SetLayoutSettings {
 	# DEFINE CONTROLS
 
 	my $coreThickTxt = Wx::StaticText->new( $statBox, -1, "Core thick", &Wx::wxDefaultPosition, [ 120, 20 ] );
-	my $coreThickValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 20 ]  );
+	my $coreThickValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 90, 20 ] );
 	my $unitTxt = Wx::StaticText->new( $statBox, -1, "mm", &Wx::wxDefaultPosition, [ 20, 20 ] );
 
 	# SET EVENTS
@@ -102,7 +100,7 @@ sub __SetLayoutSettings {
 	# BUILD STRUCTURE OF LAYOUT
 	$szRowDetail1->Add( $coreThickTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szRowDetail1->Add( $coreThickValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRowDetail1->Add( $unitTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRowDetail1->Add( $unitTxt,         1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szStatBox->Add( $szRowDetail1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
@@ -149,10 +147,10 @@ sub __SetLayoutOptimize {
 	$szRowMain1->Add( $optimizeTxt, 0, &Wx::wxALL, 0 );
 	$szRowMain1->Add( $optimizeCb,  0, &Wx::wxALL, 0 );
 
-	$szRowMain2->Add( $typeTxt, 0, &Wx::wxALL, 0 );
+	$szRowMain2->Add( $typeTxt,     0, &Wx::wxALL, 0 );
 	$szRowMain2->Add( $scoreTypeCb, 0, &Wx::wxALL, 0 );
 
-	$szRowMain3->Add( $jumpTxt, 0, &Wx::wxALL, 0 );
+	$szRowMain3->Add( $jumpTxt,    0, &Wx::wxALL, 0 );
 	$szRowMain3->Add( $jumpTxtChb, 0, &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRowMain1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -182,19 +180,18 @@ sub __OnCustomerJumpChange {
 
 	$self->{"onCustomerJumpChange"}->Do($val);
 
+ 
 }
 
 # =====================================================================
 # DISABLING CONTROLS
 # =====================================================================
 
-sub DisableControls{
-	
-	
+sub DisableControls {
+	my $self = shift;
+ 
+
 }
-
-
-
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
@@ -203,7 +200,7 @@ sub DisableControls{
 sub SetCoreThick {
 	my $self  = shift;
 	my $value = shift;
-	
+
 	$self->{"coreThickValTxt"}->SetValue($value);
 }
 
@@ -265,8 +262,8 @@ sub GetOptimize {
 # Scoring type classic/one direction
 sub SetScoringType {
 	my $self = shift;
- 
-	my $val  = shift;
+
+	my $val = shift;
 
 	my $valControl;
 
@@ -302,20 +299,21 @@ sub GetScoringType {
 
 # Customer jump scoring
 sub SetCustomerJump {
-	my $self = shift;
+	my $self  = shift;
 	my $value = shift;
-	
+
 	$self->{"jumpTxtChb"}->SetValue($value);
 }
 
 sub GetCustomerJump {
 	my $self = shift;
- 
-	if($self->{"jumpTxtChb"}->IsChecked()){
-		
+
+	if ( $self->{"jumpTxtChb"}->IsChecked() ) {
+
 		return 1;
-	}else{
-		
+	}
+	else {
+
 		return 0;
 	}
 }

@@ -50,6 +50,10 @@ sub new {
 	return $self;
 }
 
+# Return
+# 0 - error
+# 1 - succes
+# 2 - no layer to export
 sub Create {
 	my $self           = shift;
 	my $drawProfile    = shift;
@@ -81,11 +85,17 @@ sub Create {
 
 	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} eq "silk_screen" } @dataLayers );
 	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} eq "solder_mask" } @dataLayers );
-	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} =~ /(siglnal)|(power_ground)|(mixed)/ } @dataLayers );
-
+	push( @sorted, grep { $_->GetOriLayer()->{"gROWlayer_type"} =~ /(signal)|(power_ground)|(mixed)/ } @dataLayers );
 	$_->{"sorted"} = 1 foreach (@sorted);
 	push( @sorted, grep { !defined $_->{"sorted"} } @dataLayers );
 	delete $_->{"sorted"} foreach (@sorted);
+
+	# If no layers for export return 0
+	unless ( scalar(@sorted) ) {
+
+		$$message = "No layers";
+		return 2;
+	}
 
 	# 3) Set layer list structure
 
@@ -97,8 +107,8 @@ sub Create {
 	my $featsCnt = 0;
 	my @layers   = $self->{"layerList"}->GetLayers();
 	foreach my $l ( map { $_->GetOutput() } @layers ) {
-		  my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"outputData"}->GetStepName(), $l );
-		  $featsCnt += $hist{"total"};
+		my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"outputData"}->GetStepName(), $l );
+		$featsCnt += $hist{"total"};
 	}
 
 	my $featPerL = $featsCnt / scalar(@layers);
@@ -107,8 +117,8 @@ sub Create {
 	my $multiplX = 3;
 	my $multiplY = 3;
 	if ( $featPerL > 4000 ) {
-		  $multiplX = 2;
-		  $multiplY = 2;
+		$multiplX = 2;
+		$multiplY = 2;
 	}
 
 	# 5) Output pdf
@@ -117,29 +127,29 @@ sub Create {
 	# clear job
 	$self->{"outputData"}->Clear();
 
-	return 1;
+	return $result;
 
 }
 
 sub GetOutput {
-	  my $self = shift;
+	my $self = shift;
 
-	  return $self->{"outputPdf"}->GetOutput();
+	return $self->{"outputPdf"}->GetOutput();
 }
 
 sub __FilterLayersForOutput {
-	  my $self       = shift;
-	  my $dataLayers = shift;
-	  my $SRExist    = shift;
+	my $self       = shift;
+	my $dataLayers = shift;
+	my $SRExist    = shift;
 
-	  # 1) Remove outline layers
-	  @{$dataLayers} = grep { !( $_->GetType() eq OutDataEnums->Type_OUTLINE && $_->GetOriLayer()->{"gROWname"} eq "o" ) } @{$dataLayers};
+	# 1) Remove outline layers
+	@{$dataLayers} = grep { !( $_->GetType() eq OutDataEnums->Type_OUTLINE && $_->GetOriLayer()->{"gROWname"} eq "o" ) } @{$dataLayers};
 
-	  # 2) Remove inner layers of panel
-	  if ($SRExist) {
-		  @{$dataLayers} =
-			grep { !( $_->GetType() eq OutDataEnums->Type_BOARDLAYERS && $_->GetOriLayer()->{"gROWname"} =~ /^v\d$/ ) } @{$dataLayers};
-	  }
+	# 2) Remove inner layers of panel
+	if ($SRExist) {
+		@{$dataLayers} =
+		  grep { !( $_->GetType() eq OutDataEnums->Type_BOARDLAYERS && $_->GetOriLayer()->{"gROWname"} =~ /^v\d$/ ) } @{$dataLayers};
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

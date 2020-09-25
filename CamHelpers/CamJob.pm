@@ -78,7 +78,7 @@ sub GetSignalLayer {
 			if ( $rowType eq "signal" || $rowType eq "mixed" || $rowType eq "power_ground" ) {
 
 				my %info = ();
-				$info{"gROWrow"}       = ${ $inCAM->{doinfo}{gROWrow} }[$i];
+				$info{"gROWrow"}        = ${ $inCAM->{doinfo}{gROWrow} }[$i];
 				$info{"gROWname"}       = ${ $inCAM->{doinfo}{gROWname} }[$i];
 				$info{"gROWlayer_type"} = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
 				$info{"gROWpolarity"}   = ${ $inCAM->{doinfo}{gROWpolarity} }[$i];
@@ -106,10 +106,9 @@ sub GetSignalLayer {
 # - layers for plugging vias
 # - layers for outer cores Copper exposing
 sub GetSignalExtLayer {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $jobId   = shift;
- 
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
 
 	my @boarBase = $self->GetBoardBaseLayers( $inCAM, $jobId );
 
@@ -120,7 +119,7 @@ sub GetSignalExtLayer {
 
 	# Add outer core layers
 	push( @extraL, grep { $_->{"gROWname"} =~ /^outer[csv]\d*$/ } @boarBase );
- 
+
 	return @extraL;
 }
 
@@ -377,7 +376,7 @@ sub GetAllLayers {
 
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gROWname} } ) ; $i++ ) {
 		my %info = ();
-		$info{"gROWrow"}       = ${ $inCAM->{doinfo}{gROWrow} }[$i];
+		$info{"gROWrow"}        = ${ $inCAM->{doinfo}{gROWrow} }[$i];
 		$info{"gROWname"}       = ${ $inCAM->{doinfo}{gROWname} }[$i];
 		$info{"gROWlayer_type"} = ${ $inCAM->{doinfo}{gROWlayer_type} }[$i];
 		$info{"gROWcontext"}    = ${ $inCAM->{doinfo}{gROWcontext} }[$i];
@@ -483,6 +482,25 @@ sub SetJobAttribute {
 				 "name3"     => "",
 				 "units"     => "mm"
 	);
+}
+
+# Creates new job
+sub CreateJob {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $jobName = shift;
+	my $db      = shift // "incam";
+
+	$inCAM->COM(
+				 "new_job",
+				 "name"       => $jobName,
+				 "db"         => $db,
+				 "customer"   => "",
+				 "disp_name"  => "",
+				 "notes"      => "",
+				 "attributes" => ""
+	);
+
 }
 
 # Open given job

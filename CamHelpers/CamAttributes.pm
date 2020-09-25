@@ -284,7 +284,7 @@ sub DelAllFeatuesAttribute {
 	$inCAM->COM( "sel_delete_atr", "mode" => "all" );
 }
 
-
+ 
 
 
 # Return array of all atributes in job (feature attributes)

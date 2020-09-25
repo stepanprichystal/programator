@@ -42,7 +42,7 @@ sub OutsideChains {
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
-	my @lefts = $unitRTM->GetOutlineChains();
+	my @lefts = $unitRTM->GetOutlineChainSeqs();
 
 	# If exist outline rout, check if other chains are inside
 	if ( scalar(@lefts) ) {
@@ -105,7 +105,7 @@ sub OnlyBridges {
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
-	my @outlines = $unitRTM->GetOutlineChains();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	my @chains = $unitRTM->GetChains();
 	my @lefts  = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chains;
@@ -227,7 +227,7 @@ sub LeftRoutChecks {
 	}
 
 	# 2) Test if outline orut has only one attribute "foot_down_<angle>deg" of specific kind
-	my @outlines = $unitRTM->GetOutlineChains();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	foreach my $oSeq (@outlines) {
 
@@ -347,7 +347,7 @@ sub TestFindStart {
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
-	my @lefts = $unitRTM->GetOutlineChains();
+	my @lefts = $unitRTM->GetOutlineChainSeqs();
 	my @res   = ();
 
 	foreach my $left (@lefts) {

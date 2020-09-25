@@ -39,7 +39,7 @@ use aliased 'Helpers::GeneralHelper';
  	
  	$launcher->SetLogConfig($logPath);
  	
- 	$launcher->Run();
+ 	$launcher->RunFromInCAM();
  
   
 

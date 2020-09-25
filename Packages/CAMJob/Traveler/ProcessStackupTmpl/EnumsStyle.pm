@@ -10,9 +10,10 @@ use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::Enums';
 
 use constant {
 
-	Clr_BOXBORDER      => "0, 0, 0",
+	Clr_BOXBORDER      => "80, 80, 80",
 	Clr_BOXBORDERLIGHT => "191, 191, 191",
 	Clr_PRODUCT        => "31, 133, 222",
+	Clr_TITLETXT      => "80, 80, 80",
 
 	Clr_COPPER    => "156, 1, 1",
 	Clr_CORERIGID => "159, 149, 19",
@@ -33,9 +34,9 @@ use constant {
 # Text size [mm]
 use constant {
 	TxtSize_SMALL => 3.0,
-	TxtSize_NORMAL => 3.4,
+	TxtSize_NORMAL => 3.5,
 	TxtSize_BIG    => 4.0,
-	TxtSize_PCBID  => 4.3,
+	TxtSize_PCBID  => 5.3,
 
 };
 
@@ -76,9 +77,9 @@ use constant {
 	BoxTitleRowHeight_STD => 6,
 
 	BoxMainRowHeight_TITLE       => 6,
-	BoxMainRowHeight_TITLEGAP    => 5,
+	BoxMainRowHeight_TITLEGAP    => 6,
 	BoxMainRowHeight_MATGAP      => 0.7,
-	BoxMainRowHeight_MATROW      => 5,
+	BoxMainRowHeight_MATROW      => 6,
 	BoxMainRowHeight_STEELPADROW => 2,
 
 };
@@ -86,7 +87,7 @@ use constant {
 # Other sizes
 use constant {
 	BoxSpace_SIZE => 2.5,
-	Border_THICK  => 0.1,
+	Border_THICK  => 0.25,
 
 };
 

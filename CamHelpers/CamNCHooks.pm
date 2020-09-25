@@ -315,42 +315,29 @@ sub GetMaterialParams {
 	my $macDefName = "machine_default";
 
 	# Get proper material file
+	my $materialFile = $materialName;
+
 	if ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 
-		$materialName = "PREPREG";
+		$materialFile = "PREPREG";
 	}
 	elsif ( $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ) {
 
-		$materialName = "COVERLAY";
-	}
+		$materialFile = "COVERLAY";
 
-	if ( $materialName =~ /Hybrid/i ) {
+	}
+	else {
 
 		# Get proper material type from stackup
 
-		my $stackup = StackupBase->new($jobId);
-		my @types   = $stackup->GetStackupHybridTypes();
+		my $matKinds = [];
+		if ( JobHelper->GetIsHybridMat( $jobId, $materialName, $matKinds ) ) {
+			
+			$materialFile = undef;
+			
+			$materialFile = JobHelper->GetHybridMatCode( $jobId, $matKinds );
+		}
 
-		if (    scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types )
-			 && scalar( grep { $_ =~ /(PYRALUX)/i } @types ) )
-		{
-			$materialName = "HYBRID_PYRALUX-FR4";
-		}
-		elsif (    scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types )
-				&& scalar( grep { $_ =~ /(RO3)/i } @types ) )
-		{
-			$materialName = "HYBRID_RO3-FR4";
-		}
-		elsif (    scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types )
-				&& scalar( grep { $_ =~ /(RO4)/i } @types ) )
-		{
-			$materialName = "HYBRID_RO4-FR4";
-		}
-		elsif (    scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types )
-				&& scalar( grep { $_ =~ /(R58X0)/i } @types ) )
-		{
-			$materialName = "HYBRID_R58X0-FR4";
-		}
 	}
 
 	# 1) parse Drilling parameter
@@ -359,11 +346,11 @@ sub GetMaterialParams {
 	my $drillSpec = {};
 
 	# parse default parems
-	my $drillDefFile = $path . "\\ncd\\parametersFile\\$macDefName\\" . $materialName;
+	my $drillDefFile = $path . "\\ncd\\parametersFile\\$macDefName\\" . $materialFile;
 	my $drillDefRes = $self->__ParseMaterialParams( $drillDefFile, $drillDef, $drillSpec, "drill", $drillOp );
 
 	# parse special params for machine
-	my $drillMachFile = $path . "\\ncd\\parametersFile\\$machine\\" . $materialName;
+	my $drillMachFile = $path . "\\ncd\\parametersFile\\$machine\\" . $materialFile;
 	my $drillMachRes = $self->__ParseMaterialParams( $drillMachFile, $drillDef, $drillSpec, "drill", $drillOp );
 
 	# check if drill was parsed
@@ -381,11 +368,11 @@ sub GetMaterialParams {
 		my $routSpec = {};
 
 		# parse default parems
-		my $routDefFile = $path . "\\ncr\\parametersFile\\$macDefName\\" . $materialName;
+		my $routDefFile = $path . "\\ncr\\parametersFile\\$macDefName\\" . $materialFile;
 		my $routDefRes = $self->__ParseMaterialParams( $routDefFile, $routDef, $routSpec, "rout", $routOp );
 
 		# parse special params for machine
-		my $routMachFile = $path . "\\ncr\\parametersFile\\$machine\\" . $materialName;
+		my $routMachFile = $path . "\\ncr\\parametersFile\\$machine\\" . $materialFile;
 		my $routMachRes = $self->__ParseMaterialParams( $routMachFile, $routDef, $routSpec, "rout", $routOp );
 
 		# check if drill was parsed
@@ -559,11 +546,11 @@ sub GetDrilledNumber {
 	# select
 	if ( $position eq "vvframe" ) {
 
-		$scanMark = qr/^drilled_pcbId_v2/; # attribut value can have suffix
+		$scanMark = qr/^drilled_pcbId_v2/;    # attribut value can have suffix
 	}
 	elsif ( $position eq "stdframe" ) {
 
-		$scanMark = qr/^drilled_pcbId_c/;    # attribut value can have suffix
+		$scanMark = qr/^drilled_pcbId_c/;     # attribut value can have suffix
 	}
 	else {
 
@@ -587,7 +574,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d270787";
+	my $jobId    = "d283335";
 	my $stepName = "panel";
 
 	my $materialName = "Hybrid";

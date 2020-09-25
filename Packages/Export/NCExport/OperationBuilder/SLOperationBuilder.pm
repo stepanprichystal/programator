@@ -250,11 +250,11 @@ sub __DefineNPlatedOperations {
 
 	# 12) Operation name = fstiffc - can contain layer
 	# - @nplt_stiffcMill
-	$opManager->AddOperationDef( "fstiffc", \@nplt_stiffcMill, -1 );
+	$opManager->AddOperationDef( "stiffc", \@nplt_stiffcMill, -1 );
 
 	# 13) Operation name = fstiffs - can contain layer
 	# - @nplt_stiffcMill
-	$opManager->AddOperationDef( "fstiffs", \@nplt_stiffsMill, -1 );
+	$opManager->AddOperationDef( "stiffs", \@nplt_stiffsMill, -1 );
 
 }
 

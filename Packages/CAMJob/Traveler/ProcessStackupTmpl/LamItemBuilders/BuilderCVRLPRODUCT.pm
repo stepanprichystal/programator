@@ -38,6 +38,22 @@ sub Build {
 
 	my @pLayers = $lam->GetLamData()->GetLayers();
 
+	# Add extra layers - coverlays
+#	my @extraPLayers = $lam->GetLamData()->GetExtraPressLayers();
+#	die "No Extra coverlay press layer" unless ( scalar(@extraPLayers) );
+#
+#	foreach my $l (@extraPLayers) {
+#
+#		if ( $l->GetData()->GetCoveredCopperName() eq "c" ) {
+#			unshift( @pLayers, $l );
+#
+#		}
+#		elsif ( $l->GetData()->GetCoveredCopperName() eq "s" ) {
+#			push( @pLayers, $l );
+#		}
+#
+#	}
+
 	# Pads info
 	my $steelPlateInf     = $stckpMngr->GetSteelPlateInfo();
 	my $filmInf           = $stckpMngr->GetFilmPacoflexUltraInfo();
@@ -88,6 +104,8 @@ sub Build {
 					   $rubberThickPadInf->{"thick"} );
 
 	}
+	
+	
 
 	# MATERIAL LAYERS
 

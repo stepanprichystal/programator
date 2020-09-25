@@ -112,11 +112,13 @@ sub __UpdateJSONTemplate {
 	my $infoIS = undef;
 
 	if ( $extraOrder > 0 ) {
-		$infoIS = ( HegMethods->GetProducOrderByOederId( $orderId, $extraOrder, "N" ) )[0];
+		$infoIS = ( HegMethods->GetProducOrderByOrderId( $orderId, $extraOrder, undef ) )[0];
 	}
 	else {
 		$infoIS = { HegMethods->GetAllByOrderId($orderId) };
 	}
+	
+	die "Order info from IS is not defined" unless(defined $infoIS);
 
 	my ($orderNum) = $orderId =~ m/\w\d{6}-(\d+)/;
 
@@ -159,6 +161,10 @@ sub __UpdateJSONTemplate {
 
 	my $v_KEYORDEAMOUNTEXT = ProcStckpEnums->KEYORDEAMOUNTEXT;
 	$$JSONstr =~ s/$v_KEYORDEAMOUNTEXT/$orderAmountExt/g;
+	
+	 
+	$$JSONstr =~ s/$v_KEYORDEAMOUNTTOT/$orderAmountTot/g;
+	
 
 	my @JSONstrUpdt = ();
 	foreach my $pageStr ( split( JSONPAGESEP, $$JSONstr ) ) {
@@ -225,7 +231,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $jobId    = "d087972"; # standard vv 14V
 	#my $jobId    = "d152456"; #Outer RigidFLex TOP
-	my $jobId = "d270787";    #Outer RigidFLex BOT
+	#my $jobId = "d270787";    #Outer RigidFLex BOT
 	#my $jobId    = "d261919"; # standard vv 10V
 	#my $jobId = "d274753"; # standard vv 8V
 	#my $jobId = "d274611"; # standard vv 10V bez postup laminace
@@ -238,8 +244,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $jobId = "d275112"; # standard 1v
 	#my $jobId = "d275162"; # standard 2v
 
-	#my $jobId       = "d162595";
-	my $pDirStackup = EnumsPaths->Client_INCAMTMPOTHER . "pdfstackup\\";
+	my $jobId       = "d293101";
+	my $pDirStackup = EnumsPaths->Client_INCAMTMPOTHER . "tpvpostup\\";
 	my $pDirPdf     = EnumsPaths->Client_INCAMTMPOTHER . "pdf\\";
 
 	unless ( -d $pDirStackup ) {
@@ -294,7 +300,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 			# Add all extro production
 			foreach my $orderId ( map { $_->{"orderId"} } @PDFOrders ) {
 
-				my @extraOrders = HegMethods->GetProducOrderByOederId( $orderId, undef, "N" );
+				my @extraOrders = HegMethods->GetProducOrderByOrderId( $orderId, undef,undef );
 				@extraOrders = grep { $_->{"cislo_dodelavky"} >= 1 } @extraOrders;
 				push( @PDFOrders, map { { "orderId" => $_->{"nazev_subjektu"}, "extraProducId" => $_->{"cislo_dodelavky"} } } @extraOrders );
 			}

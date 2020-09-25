@@ -13,6 +13,7 @@ use List::MoreUtils qw(uniq);
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDTM';
@@ -25,6 +26,7 @@ use aliased 'CamHelpers::CamFilter';
 use aliased 'CamHelpers::CamNCHooks';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::CAMJob::Scheme::SchemeFrame::SchemeFrame';
@@ -69,8 +71,9 @@ sub AddFlexiHoles {
 	  CamDrilling->GetNCLayersByTypes(
 									   $inCAM, $jobId,
 									   [
-										  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
-										  EnumsGeneral->LAYERTYPE_nplt_prepregMill
+										  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill,  EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
+										  EnumsGeneral->LAYERTYPE_nplt_prepregMill, EnumsGeneral->LAYERTYPE_nplt_cbMillTop,
+										  EnumsGeneral->LAYERTYPE_nplt_cbMillBot,
 									   ]
 	  );
 
@@ -109,6 +112,19 @@ sub AddFlexiHoles {
 
 		CamSymbol->ResetCurAttributes($inCAM);
 
+		# TODO set depth for layers LAYERTYPE_nplt_cbMillTop an LAYERTYPE_nplt_cbMillBot, because all tools must have
+		if ( $layer =~ /^jfz[cs]/ ) {
+
+			my $defDTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, "panel", $layer, 1 );
+			my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, "panel", $layer );
+
+			foreach my $DTMt (@DTMTools) {
+
+				$DTMt->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = 1.5;    # 1,5mm depth
+			}
+
+			CamDTM->SetDTMTools( $inCAM, $jobId, "panel", $layer, \@DTMTools, $defDTMType );
+		}
 	}
 
 	return $result;
@@ -124,12 +140,10 @@ sub AddHolesCoverlay {
 
 	return 0 if ( $stepName ne "panel" );
 
-	my $flexType = JobHelper->GetPcbType($jobId);
-
-	return 0 if ( $flexType ne EnumsGeneral->PcbType_RIGIDFLEXI && $flexType ne EnumsGeneral->PcbType_RIGIDFLEXO );
-
 	my @coverlay =
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
+
+	return 0 unless ( scalar(@coverlay) );
 
 	my @scanMarks = CamNCHooks->GetLayerCamMarks( $inCAM, $jobId, $stepName, "v1" );
 
@@ -217,8 +231,8 @@ sub AddFlexiCoreFrame {
 	return 0 if ( !JobHelper->GetIsFlex($jobId) );
 
 	my $frameAttr = "flexicore_frame";
-	my $frameWidthLR;                     # 18mm of copper frame on left and right
-	my $frameWidthTB;                     # 25 mm of copper frame on top and bot
+	my $frameWidthLR;    # 18mm of copper frame on left and right
+	my $frameWidthTB;    # 25 mm of copper frame on top and bot
 
 	my $type = JobHelper->GetPcbType($jobId);
 
@@ -229,13 +243,13 @@ sub AddFlexiCoreFrame {
 		push( @layers, { "side" => "top", "polarity" => "positive", "name" => "c" } );
 		push( @layers, { "side" => "bot", "polarity" => "positive", "name" => "s" } );
 
-		$frameWidthLR = 12;               # 18mm of copper frame on left and right
-		$frameWidthTB = 12;               # 25 mm of copper frame on top and bot
+		$frameWidthLR = 12;    # 18mm of copper frame on left and right
+		$frameWidthTB = 12;    # 25 mm of copper frame on top and bot
 
 	}
 	elsif ( $type eq EnumsGeneral->PcbType_RIGIDFLEXO || $type eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
 
-		my $stackup = Stackup->new($inCAM, $jobId);
+		my $stackup = Stackup->new( $inCAM, $jobId );
 
 		foreach my $c ( grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } $stackup->GetAllCores() ) {
 
@@ -417,16 +431,12 @@ sub AddFlexiCoreFrame {
 #
 #}
 
-sub AddCoverlayRegisterHoles {
+sub AddFlexRegisterHoles {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 
 	my $result = 1;
-
-	my $flexType = JobHelper->GetPcbType($jobId);
-
-	return unless ($flexType);
 
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
 
@@ -441,6 +451,8 @@ sub AddCoverlayRegisterHoles {
 													 EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill
 												  ]
 	);
+
+	return 0 unless (@lOther);
 
 	push( @layers, map { $_->{"gROWname"} } @lOther ) if (@lOther);
 

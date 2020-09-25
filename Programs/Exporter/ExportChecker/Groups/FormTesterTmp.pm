@@ -18,9 +18,11 @@ use Widgets::Style;
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::GroupWrapperForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitForm';
-
+use aliased 'CamHelpers::CamStep';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::View::CommUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::OfferExport::View::OfferUnitForm';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 
@@ -42,6 +44,21 @@ sub new {
 	$self->{"inCAM"} = InCAM->new();
 	$self->{"jobId"} = shift;
 
+	my @allSteps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
+
+	$self->{"step"} = undef;
+
+	if ( scalar( grep { $_ eq "panel" } @allSteps ) ) {
+		$self->{"step"} = "panel";
+	}
+	elsif ( scalar( grep { $_ eq "mpanel" } @allSteps ) ) {
+		$self->{"step"} = "mpanel";
+	}
+	elsif ( scalar( grep { $_ eq "o+1" } @allSteps ) ) {
+		$self->{"step"} = "o+1";
+	}
+
+	 
 	my $mainFrm = $self->__SetLayout($parent);
 
 	# Properties
@@ -97,21 +114,21 @@ sub __SetLayout {
 	return $mainFrm;
 }
 
-
 sub _TestedForm {
 	my $self         = shift;
 	my $groupWrapper = shift;
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
 
-	my %types = FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, "panel", 1 );
+	#my %types = FakeLayers->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, 1 );
 
-	my $d = DefaultInfo->new( $self->{"jobId"} );
+	my $d = DefaultInfo->new( $self->{"jobId"}, $self->{"step"} );
 	$d->Init( $self->{"inCAM"} );
 
-	use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Presenter::NCUnit';
+	#use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Presenter::CommUnit';
+	use aliased 'Programs::Exporter::ExportChecker::Groups::OfferExport::Presenter::OfferUnit';
 
-	my $preUnit = NCUnit->new( $self->{"jobId"} );
+	my $preUnit = OfferUnit->new( $self->{"jobId"} );
 
 	$preUnit->SetDefaultInfo($d);
 	$preUnit->InitDataMngr( $self->{"inCAM"} );
@@ -160,16 +177,14 @@ sub _TestedForm {
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
-if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-<<<<<<< HEAD
-	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "d262773" );
-=======
-	my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "d264954" );
->>>>>>> refs/heads/Zaplnene_pohrbene
+#if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	$test->MainLoop();
-}
+my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "x66981" );
+
+$test->MainLoop();
+
+#}
 
 1;
 

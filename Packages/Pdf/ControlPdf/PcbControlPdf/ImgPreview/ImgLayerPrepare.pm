@@ -81,7 +81,24 @@ sub PrepareLayers {
 	$self->__PrepareLayers($layerList);
 
 	# 3) Remove special overlays
-	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"bendAreaL"} ) if ( defined $self->{"bendAreaL"} );    # bend area
+#	# TODO Temporary, we need to fix bug. Copy layer to ori step
+#	if ( defined $self->{"bendAreaL"} ) {
+#		my $oriStep = $self->{"pdfStep"};
+#		$oriStep =~ s/pdf_//;
+#		$inCAM->COM(
+#					 'copy_layer',
+#					 "source_job"   => $jobId,
+#					 "source_step"  => $self->{"pdfStep"},
+#					 "source_layer" => $self->{"bendAreaL"},
+#					 "dest"         => 'layer_name',
+#					 "dest_step"    => $oriStep,
+#					 "dest_layer"   => "bend_area_wong_pdf",
+#					 "mode"         => 'replace',
+#					 "invert"       => 'no'
+#		);
+#	}
+
+	#CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"bendAreaL"} ) if ( defined $self->{"bendAreaL"} );    # bend area
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"coverlaysL"}->{$_} ) foreach ( keys %{ $self->{"coverlaysL"} } );    # coverlays
 }
 
@@ -239,7 +256,13 @@ sub __PrepareOUTERSURFACE {
 		my $lName = GeneralHelper->GetGUID();
 		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
 
-		foreach my $maskL ( ( "m" . $layers[0]->{"gROWname"}, "m" . $layers[0]->{"gROWname"} . "flex" ) ) {
+		my @maskLs =
+		  grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );    #[possible mask layer]
+
+		my $sigL = $layers[0]->{"gROWname"};
+		@maskLs = grep { $_->{"gROWname"} =~ /^m$sigL(2)?(flex)?/ } @maskLs;
+
+		foreach my $maskL ( map { $_->{"gROWname"} } @maskLs ) {
 
 			# If mask exist,
 			# 1) copy to help layer, 2) do negative and conturize
@@ -249,7 +272,11 @@ sub __PrepareOUTERSURFACE {
 				$inCAM->COM( "merge_layers", "source_layer" => $maskL, "dest_layer" => $lNameMask );
 
 				CamLayer->WorkLayer( $inCAM, $lNameMask );
-				CamLayer->NegativeLayerData( $inCAM, $lNameMask, $self->{"profileLim"} );
+				
+				if ( $maskL !~ /flex/ ) {
+					CamLayer->NegativeLayerData( $inCAM, $lNameMask, $self->{"profileLim"} );
+				}
+				
 				CamLayer->Contourize( $inCAM, $lNameMask );
 				$inCAM->COM( "merge_layers", "source_layer" => $lNameMask, "dest_layer" => $lName, "invert" => "yes" );
 				$inCAM->COM( "delete_layer", "layer" => $lNameMask );
@@ -464,10 +491,6 @@ sub __PrepareFLEXMASK {
 		CamLayer->WorkLayer( $inCAM, $maskLayer );
 
 		$inCAM->COM( "merge_layers", "source_layer" => $maskLayer, "dest_layer" => $lName );
-
-		CamLayer->WorkLayer( $inCAM, $lName );
-
-		CamLayer->NegativeLayerData( $self->{"inCAM"}, $lName, $self->{"profileLim"} );
 
 		$layer->SetOutputLayer($lName);
 
@@ -751,18 +774,18 @@ sub __PreparePLTTHROUGHNC {
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
 	}
 
-	# Consider coverlay
-	my $coverlayL = undef;
-	if ( $self->{"viewType"} eq Enums->View_FROMTOP && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) ) {
-		$coverlayL = "coverlayc";
-	}
-	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT && CamHelper->LayerExists( $inCAM, $jobId, "coverlays" ) ) {
-		$coverlayL = "coverlays";
-
-	}
-	if ( defined $self->{"coverlaysL"}->{$coverlayL} ) {
-		$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{$coverlayL}, "dest_layer" => $lName, "invert" => "yes" );
-	}
+#	# Consider coverlay
+#	my $coverlayL = undef;
+#	if ( $self->{"viewType"} eq Enums->View_FROMTOP && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) ) {
+#		$coverlayL = "coverlayc";
+#	}
+#	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT && CamHelper->LayerExists( $inCAM, $jobId, "coverlays" ) ) {
+#		$coverlayL = "coverlays";
+#
+#	}
+#	if ( defined $self->{"coverlaysL"}->{$coverlayL} ) {
+#		$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{$coverlayL}, "dest_layer" => $lName, "invert" => "yes" );
+#	}
 
 	#CamLayer->WorkLayer( $inCAM, $lName );
 	#$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
@@ -859,7 +882,7 @@ sub __PrepareNPLTTHROUGHNC {
 		my @outFeatsId =
 		  map { $_->{"id"} } map { $_->GetOriFeatures() } grep { $_->GetCyclic() && !$_->GetIsInside() } $unitRTM->GetMultiChainSeqList();
 
-		#my @outline = $unitRTM->GetOutlineChains();
+		#my @outline = $unitRTM->GetOutlineChainSeqs();
 		#my @outFeatsId =  map {$_->{"id"}} map { $_->GetOriFeatures() } @outline;
 
 		CamFilter->SelectByFeatureIndexes( $inCAM, $self->{"jobId"}, \@outFeatsId );
@@ -1013,7 +1036,7 @@ sub __GetOverlayBendArea {
 			CamLayer->WorkLayer( $inCAM, $bendNegL );
 		}
 
-		$inCAM->COM( "sel_change_sym", "symbol" => "r0", "reset_angle" => "no" );
+		$inCAM->COM( "sel_change_sym", "symbol" => "r10", "reset_angle" => "no" );   # r10 because when smaller diemater, countourze not work properly
 		CamLayer->Contourize( $inCAM, $bendNegL, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
 		CamLayer->WorkLayer( $inCAM, $bendNegL );
 

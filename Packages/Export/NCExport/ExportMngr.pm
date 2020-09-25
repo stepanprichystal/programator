@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::NCExport::ExportMngr;
-use base('Packages::ItemResult::ItemEventMngr');
+use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
@@ -39,12 +39,14 @@ use aliased 'Packages::CAM::UniDTM::UniDTM';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $class     = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $packageId = __PACKAGE__;
+	my $createFakeL = 1;
+	my $self        = $class->SUPER::new( $inCAM, $jobId, $packageId, $createFakeL);
 	bless $self;
-
-	$self->{"inCAM"}           = shift;
-	$self->{"jobId"}           = shift;
+ 
 	$self->{"stepName"}        = shift;
 	$self->{"exportSingle"}    = shift;
 	$self->{"allModeLayers"}   = shift;
@@ -56,6 +58,7 @@ sub new {
 
 sub Run {
 	my $self = shift;
+ 
 
 	# move nptp hole from f and fsch to layer "d"
 	# "d" is standard NC layer, but so far we work with merged chains and holes in one layer
@@ -235,7 +238,6 @@ sub __SetRoutFeedSpeed {
 	if ( $pcbStatus == 4 || $pcbStatus == 12 || JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 
 		my $info    = HegMethods->GetInfoAfterStartProduce($lastOrder);
-		my $matKind = HegMethods->GetMaterialKind( $self->{"jobId"} );
 
 		die "pocet_prirezu is no defined in HEG for orderid: $lastOrder"
 		  if ( !defined $info->{'pocet_prirezu'} || !defined $info->{'prirezu_navic'} );
@@ -243,7 +245,7 @@ sub __SetRoutFeedSpeed {
 		my $totalPnlCnt = $info->{'pocet_prirezu'} + $info->{'prirezu_navic'};
 
 		my $errMess = "";
-		unless ( RoutSpeed->CompleteRoutSpeed( $self->{"jobId"}, $totalPnlCnt, $matKind, \$errMess ) ) {
+		unless ( RoutSpeed->CompleteRoutSpeed( $self->{"jobId"}, $totalPnlCnt, \$errMess ) ) {
 
 			$resultItem->AddError($errMess);
 		}

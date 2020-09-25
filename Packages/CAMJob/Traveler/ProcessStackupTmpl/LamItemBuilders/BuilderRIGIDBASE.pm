@@ -36,6 +36,8 @@ sub Build {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	my $pInput = $lam->GetLamData();
+
 	# Pad info
 	my $steelPlateInf = $stckpMngr->GetSteelPlateInfo();
 	my $filmInf       = $stckpMngr->GetReleaseFilmPacoViaInfo();
@@ -44,11 +46,15 @@ sub Build {
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );
 
 	# LAYER: Top release film
-	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
-				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+	# Add only always except case when first layer is cu foil
+	my $matFirst = $pInput->GetProductOuterMatLayer("first")->GetData();
+	if ( !( $matFirst->GetType() eq StackEnums->MaterialType_COPPER && $matFirst->GetIsFoil() ) ) {
+
+		$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
+					   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+	}
 
 	# MATERIAL LAYERS
-	my $pInput = $lam->GetLamData();
 
 	foreach my $pLayer ( $pInput->GetLayers() ) {
 
@@ -67,8 +73,13 @@ sub Build {
 	}
 
 	# LAYER: Bot release film
-	$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
-				   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+	# Add only always except case when last layer is cu foil
+	my $matLast = $pInput->GetProductOuterMatLayer("last")->GetData();
+	if ( !( $matLast->GetType() eq StackEnums->MaterialType_COPPER && $matLast->GetIsFoil() ) ) {
+
+		$lam->AddItem( $filmInf->{"ISRef"}, Enums->ItemType_PADFILM, EnumsStyle->GetItemTitle( Enums->ItemType_PADFILM ),
+					   undef, undef, $filmInf->{"text"}, $filmInf->{"thick"} );
+	}
 
 	# LAYER: Steel plate Bot
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );

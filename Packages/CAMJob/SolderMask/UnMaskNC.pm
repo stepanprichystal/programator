@@ -22,6 +22,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamHistogram';
+
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -168,14 +169,22 @@ sub __UnMaskThroughHoleNearPads {
 
 	CamHelper->SetStep( $inCAM, $step );
 
+	my $lNCTmp = GeneralHelper->GetGUID();
+
+	foreach my $nc (@NC) {
+
+		$inCAM->COM( "merge_layers", "source_layer" => $nc, "dest_layer" => $lNCTmp );
+	}
+
 	# 1) Check if unmask features alread exist and delete it
 
 	my $f = FeatureFilter->new( $inCAM, $jobId, undef, \@sm );
-
+	$f->SetRefLayer($lNCTmp);
+	$f->SetReferenceMode( FiltrEnums->RefMode_COVER );
 	$f->SetFeatureTypes( "pad" => 1 );    # select only pad umnask
 	$f->SetPolarity( FiltrEnums->Polarity_POSITIVE );    # select only positive unmask
 	$f->AddIncludeAtt( ".string", $unMaskAttrVal );
-
+ 
 	if ( $f->Select() ) {
 
 		$inCAM->COM('sel_delete');
@@ -183,13 +192,7 @@ sub __UnMaskThroughHoleNearPads {
 	}
 
 	# 2) Add umask
-	my $lNCTmp      = GeneralHelper->GetGUID();
 	my $lResizedSMD = GeneralHelper->GetGUID();
-
-	foreach my $nc (@NC) {
-
-		$inCAM->COM( "merge_layers", "source_layer" => $nc, "dest_layer" => $lNCTmp );
-	}
 
 	CamLayer->AffectLayers( $inCAM, $padLayers );
 
@@ -219,15 +222,18 @@ sub __UnMaskThroughHoleNearPads {
 
 			CamLayer->ClearLayers($inCAM);
 
-			# Final check
-			my $total = 0;
-			foreach my $smL (@sm) {
+#			Check was removed, because after optimization features which touch unmask pads with attr $unMaskAttrVal
+# 			inehrit atribut $unMaskAttrVal
 
-				my %attHist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, $step, $smL, 0 );
-				$total += $attHist{".string"}->{$unMaskAttrVal};
-			}
-
-			die "Error during copy negative feature to solder masks" if ( $total != (scalar(@sm) * $$unMaskedCnt) );
+#			# Final check
+#			my $total = 0;
+#			foreach my $smL (@sm) {
+#
+#				my %attHist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, $step, $smL, 0 );
+#				$total += $attHist{".string"}->{$unMaskAttrVal};
+#			}
+#
+#			die "Error during copy negative feature to solder masks" if ( $total != ( scalar(@sm) * $$unMaskedCnt ) );
 
 		}
 		else {
@@ -239,6 +245,8 @@ sub __UnMaskThroughHoleNearPads {
 
 		$result = 0;
 	}
+	
+	CamLayer->ClearLayers($inCAM);
 
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $lNCTmp );
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $lResizedSMD );

@@ -147,6 +147,30 @@ sub GetExportNCSpecial {
 }
 
 
+sub SetExportCustCpnIPC3Map {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportCustCpnIPC3Map"} = $value;
+}
+
+sub GetExportCustCpnIPC3Map {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportCustCpnIPC3Map"};
+}
+
+sub SetExportDrillCpnIPC3Map {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportDrillCpnIPC3Map"} = $value;
+}
+
+sub GetExportDrillCpnIPC3Map {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportDrillCpnIPC3Map"};
+}
+
 sub SetExportPeelStencil {
 	my $self  = shift;
 	my $value = shift;

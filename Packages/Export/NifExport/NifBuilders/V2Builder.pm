@@ -24,7 +24,7 @@ use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderScore';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderRout';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderDrill';
 use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderOther';
-use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderNCDuration';
+use aliased 'Packages::Export::NifExport::SectionBuilders::BuilderOpEstimate';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -82,8 +82,8 @@ sub Build {
 	push(@req, "panel_y");
 	push(@req, "nasobnost_panelu");
 	push(@req, "nasobnost");
-	push(@req, "fr_rozmer_x");
-	push(@req, "fr_rozmer_y");
+	push(@req, "fr_rozmer_x"); # need fr, because of traveler
+	push(@req, "fr_rozmer_y"); # need fr, because of traveler
 	push(@req, "rozmer_x");
 	push(@req, "rozmer_y");
 
@@ -179,10 +179,10 @@ sub Build {
 	$nifMngr->AddSection("Vrtani", BuilderDrill->new(\@req));
 
 
-	# NC operation duration
-	@req = ();
+	# Process operation estimate
+	@req = ("tac_et");
  	
-	$nifMngr->AddSection("Delka NC operaci", BuilderNCDuration->new(\@req));
+	$nifMngr->AddSection("Odhad delky operaci", BuilderOpEstimate->new(\@req));
 
 
 

@@ -36,16 +36,17 @@ sub new {
 
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
-	$self->{"step"}  = shift;
+	$self->{"step"}     = shift;
 	$self->{"viewType"} = shift;    # TOP/BOT
 	$self->{"params"}   = shift;    # Stencil parameters
+	$self->{"drawDim"}  = shift;    # Draw dimension to PDF
 
 	$self->{"pdfStep"} = $self->{"step"} . ( $self->{"viewType"} eq Enums->View_FROMTOP ? "_top" : "_bot" ) . "_pdf";
 	$self->{"layerList"} = LayerDataList->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"} );
 	$self->{"imgLayerPrepare"} =
-	  ImgLayerPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"}, $self->{"params"} );
+	  ImgLayerPrepare->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"viewType"}, $self->{"pdfStep"}, $self->{"params"}, $self->{"drawDim"} );
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".png";
-	$self->{"outputPdf"}= ImgPreviewOut->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"layerList"}, $self->{"viewType"} );
+	$self->{"outputPdf"} = ImgPreviewOut->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pdfStep"}, $self->{"layerList"}, $self->{"viewType"} );
 
 	return $self;
 }
@@ -60,7 +61,6 @@ sub Create {
 	CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"pdfStep"}, 0 );
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"pdfStep"} );
 
-
 	# 2)Get layers for output
 	my @layers = CamJob->GetAllLayers( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -70,9 +70,9 @@ sub Create {
 
 	# 3) Prepare layers for image
 	$self->{"imgLayerPrepare"}->PrepareLayers( $self->{"layerList"} );
-	
+
 	# 4) Output image
-	
+
 	$self->{"outputPdf"}->Output( $self->{"layerList"} );
 
 	return 1;
@@ -160,8 +160,7 @@ sub __DefineSurfaces {
 }
 
 sub Clean {
-	my $self        = shift;
- 
+	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};

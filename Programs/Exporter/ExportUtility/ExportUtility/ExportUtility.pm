@@ -274,7 +274,7 @@ sub __CheckFilesHandler {
 	foreach my $filePath (@files) {
 
 		my $fileName = basename($filePath);
-		my $fileDir = dirname($filePath)."\\";
+		my $fileDir  = dirname($filePath) . "\\";
 
 		next unless $fileName =~ /^[a-z](\d+)$/i;
 
@@ -319,15 +319,15 @@ sub __CheckFilesHandler {
 			# TODO odkomentovat abt to mazalo
 			unlink($f);
 
-			# serialize job data to strin
-			my %hashData = ();
-			$hashData{"jsonData"} = $jsonString;
+			# serialize job data to string (use hash in order serialize via JSON)
+			#my %hashData = ();
+			#$hashData{"jsonData"} = $jsonString;
 
-			my $json = JSON->new();
+			#my $json = JSON->new();
 
-			my $taskStrData = $json->pretty->encode( \%hashData );
+			#my $taskStrData = $json->pretty->encode( \%hashData );
 
-			$self->__AddNewJob( $jobId, $taskData, $taskStrData );
+			$self->__AddNewJob( $jobId, $taskData, $jsonString );
 		}
 	}
 
@@ -343,7 +343,10 @@ sub __AddNewJob {
 	my $taskData    = shift;
 	my $taskStrData = shift;
 
-	my $path = JobHelper->GetJobArchive($jobId) . "Status_export";
+	my $path = undef;
+	if ( !JobHelper->GetJobIsOffer($jobId) ) {
+		$path = JobHelper->GetJobArchive($jobId) . "Status_export";
+	}
 
 	my $status = TaskStatus->new($path);
 

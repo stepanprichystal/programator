@@ -80,7 +80,7 @@ sub GetAllLamination {
 				$lamType = Enums->LamType_FLEXBASE;
 			}
 
-			my $lam = StackupLam->new( $lamOrder, $lamType, "J" . $inputP->GetId(), $inputP );
+			my $lam = StackupLam->new( $lamOrder, $lamType, "P" . $inputP->GetId(), $inputP );
 			push( @lamintaions, $lam );
 
 			$lamOrder++;
@@ -217,7 +217,7 @@ sub GetPressProgramInfo {
 	}
 	elsif ( $lamType eq Enums->LamType_CVRLPRODUCT ) {
 
-		$pInfo{"name"} = "RigidFlex_coverlay";
+		$pInfo{"name"} = "Flex_coverlay";
 
 	}
 	elsif ( $lamType eq Enums->LamType_RIGIDBASE ) {
@@ -238,6 +238,8 @@ sub GetPressProgramInfo {
 		$matKind =~ s/\s//g;
 		$pInfo{"name"} = $matKind;
 	}
+	
+	$pInfo{"name"} .= "_$h";
 
 	# 2) Program dim
 
@@ -254,8 +256,7 @@ sub GetPressProgramInfo {
 
 	die "Press program name was found for lamination type: $lamType" unless ( defined $pInfo{"name"} );
 
-	$pInfo{"name"} .= "_<poč. pater>";
-
+ 
 	return %pInfo;
 }
 

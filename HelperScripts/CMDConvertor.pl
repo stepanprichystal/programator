@@ -7,11 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="
-clip_area_end,layers_mode=layer_name,layer=test,area=profile,area_type=rectangle,inout=outside,contour_cut=no,margin=5000,feat_types=line\;pad\;surface\;arc\;text,pol_types=positive\;negative (2)
-";
-
-
+my $inputLine ="sel_delete_atr,mode=list,attributes=attlistStr";
 
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );

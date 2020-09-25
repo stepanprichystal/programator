@@ -9,6 +9,7 @@ use aliased 'Packages::Other::TableDrawing::DrawingBuilders::PDFDrawing::PDFDraw
 use aliased 'Packages::Other::TableDrawing::DrawingBuilders::Enums' => 'EnumsBuilder';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::InCAM::InCAM';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 
 
@@ -17,7 +18,7 @@ my $inCAM = InCAM->new();
 #my $jobId    = "d270787"; #Outer RigidFLex BOT
 #my $jobId    = "d261919"; # standard vv 10V
 #my $jobId = "d274753"; # standard vv 8V
-my $jobId = "d274986"; # standard vv 4V
+#my $jobId = "d274986"; # standard vv 4V
 #my $jobId = "d266566"; # inner flex
 #my $jobId = "d146753"; # 1v flex
 #my $jobId = "d267628" ; # flex 2v + stiff
@@ -26,8 +27,11 @@ my $jobId = "d274986"; # standard vv 4V
 #my $jobId = "d275162"; # standard 2v
 
 
+my $jobId = "x68554"; # standard vv 4V
+my $step = "panel";
+
 # 1) Init customer stackup class
-my $newCustStckp = CustStackup->new($inCAM, $jobId);
+my $newCustStckp = CustStackup->new($inCAM, $jobId,$step);
 
 # 2) Build stackup
 $newCustStckp->Build();
@@ -46,7 +50,7 @@ my $canvasY = $rotation ? $a4W : $a4H;
 my $margin = 15;
 
 
-my $p      = 'c:/Export/Test/test.pdf';
+my $p      = 'c:/Export/Test/'.GetJobId($jobId).'_stackup.pdf';
 
 unlink($p);
 my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [$canvasX, $canvasY], $margin, $rotation );
@@ -55,7 +59,7 @@ my $drawBuilder = PDFDrawing->new( TblDrawEnums->Units_MM, $p, undef, [$canvasX,
  
 # Gemerate output
 
-$newCustStckp->Output($drawBuilder, 0 ,0);
+$newCustStckp->Output($drawBuilder, 1);
 
 
 
@@ -126,3 +130,17 @@ $newCustStckp->Output($drawBuilder, 0 ,0);
 ##my  = $tDrawing->FitToCanvas( $w, $h );
 #
 #$tDrawing->Draw( $drawBuilder, $scaleX, $scaleY, $xOffset, $yOffset );
+
+
+sub GetJobId {
+	my $jobId = shift;
+
+	my $order = ( HegMethods->GetPcbOrderNumbers($jobId ) )[0];
+
+	my $id = $order->{"reference_subjektu"};
+
+	# Remove -<order number>
+	$id =~ s/-\d+$//i;
+
+	return $id;
+}

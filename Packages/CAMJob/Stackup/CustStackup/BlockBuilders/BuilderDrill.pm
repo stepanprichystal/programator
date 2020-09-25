@@ -204,20 +204,22 @@ sub __BuildDrillRow {
 			push( @NCtxt, $let . " = $type L$start-L$end" );
 		}
 
-		my $NCTxt = "";
-		for ( my $i = 0 ; $i < scalar(@NCtxt) ; $i++ ) {
+		if ( scalar(@NCtxt) > 0 ) {
+			my $NCTxt = "";
+			for ( my $i = 0 ; $i < scalar(@NCtxt) ; $i++ ) {
 
-			$NCTxt .= $NCtxt[$i] . ( $i <= scalar(@NCtxt) - 2 ? "; " : "" ) . ( ( $i + 1 ) % 3 == 0 ? "\n" : "" );
+				$NCTxt .= $NCtxt[$i] . ( $i <= scalar(@NCtxt) - 2 ? "; " : "" ) . ( ( $i + 1 ) % 3 == 0 ? "\n" : "" );
+			}
+
+			my $NCTextStyle = TextStyle->new( TblDrawEnums->TextStyle_MULTILINE,
+											  EnumsStyle->TxtSize_STANDARD,
+											  Color->new( 0, 0, 0 ),
+											  undef, undef,
+											  TblDrawEnums->TextHAlign_LEFT,
+											  TblDrawEnums->TextVAlign_CENTER );
+
+			$tblMain->AddCell( $posX, $tblMain->GetRowDefPos($row), $cellLen, undef, $NCTxt, $NCTextStyle );
 		}
-
-		my $NCTextStyle = TextStyle->new( TblDrawEnums->TextStyle_MULTILINE,
-										  EnumsStyle->TxtSize_STANDARD,
-										  Color->new( 0, 0, 0 ),
-										  undef, undef,
-										  TblDrawEnums->TextHAlign_LEFT,
-										  TblDrawEnums->TextVAlign_CENTER );
-
-		$tblMain->AddCell( $posX, $tblMain->GetRowDefPos($row), $cellLen, undef, $NCTxt, $NCTextStyle );
 	}
 }
 

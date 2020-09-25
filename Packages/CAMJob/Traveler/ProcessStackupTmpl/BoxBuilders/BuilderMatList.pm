@@ -95,7 +95,7 @@ sub __BuildMatListTitle {
 
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 								   EnumsStyle->TxtSize_NORMAL,
-								   Color->new( 0, 0, 0 ),
+								   Color->new( EnumsStyle->Clr_TITLETXT ),
 								   TblDrawEnums->Font_BOLD, undef,
 								   TblDrawEnums->TextHAlign_LEFT,
 								   TblDrawEnums->TextVAlign_CENTER, 1 );
@@ -133,14 +133,23 @@ sub __BuildMatListBody {
 									  undef, undef,
 									  TblDrawEnums->TextHAlign_LEFT,
 									  TblDrawEnums->TextVAlign_CENTER, 0.5 );
+	my $txtBoldStyle = TextStyle->new(  TblDrawEnums->TextStyle_LINE,
+								   EnumsStyle->TxtSize_NORMAL,
+								   Color->new( EnumsStyle->Clr_TITLETXT ),
+								   TblDrawEnums->Font_BOLD, undef,
+								   TblDrawEnums->TextHAlign_LEFT,
+								   TblDrawEnums->TextVAlign_CENTER, 1 );
 
 	my $borderStyle = BorderStyle->new();
 	$borderStyle->AddEdgeStyle( "bot", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.3, Color->new( EnumsStyle->Clr_BOXBORDERLIGHT ) );
+	
+	my $borderTitStyle = BorderStyle->new();
+	$borderTitStyle->AddEdgeStyle( "bot", TblDrawEnums->EdgeStyle_SOLIDSTROKE, EnumsStyle->Border_THICK, Color->new( EnumsStyle->Clr_BOXBORDER ) );
+		
 
-	# 1) Add title TOP GAP
-	$tbl->AddRowDef( "titleMatListTopGap", EnumsStyle->BoxHFRowHeight_TITLE );
+	
 
-	# 2) Add material amounts
+	# 1) Add material and pads amounts
 
 	my @items = $lam->GetItems();
 
@@ -159,32 +168,61 @@ sub __BuildMatListBody {
 	# sort pads first
 	my @pads      = grep { $_->GetIsPad() } @items;
 	my @mats      = grep { !$_->GetIsPad() } @items;
-	my @matsChild = grep { defined $_ } map { ( $_->GetChildTop(), $_->GetChildBot() ) } @items;
+	my @matsChild = grep { defined $_ } map { ( $_->GetChildTop(), $_->GetChildBot() ) } @mats;
+	push( @mats, @matsChild ) if (@matsChild);
 
-	@items = ( @pads, @mats, @matsChild );
-
-	# get inique materials (pads first)
-	@items = grep {
+	# Filter only what we want to show
+	@pads = grep {
 		     $_->GetItemType() ne Enums->ItemType_PADSTEEL
 		  && $_->GetItemType() ne Enums->ItemType_PADFILMGLOSS
-		  && $_->GetItemType() ne Enums->ItemType_MATPRODUCTDPS
+		  && $_->GetItemType() ne Enums->ItemType_PADFILMGLOSS
+		  && $_->GetItemType() ne Enums->ItemType_PADFILMMATT
+
+	} @pads;
+
+	my @uniqPads = do {
+		my %seen;
+		grep { !$seen{ $_->GetItemId() }++ } @pads;
+	};
+
+	# Filter only what we want to show
+	@mats = grep {
+		     $_->GetItemType() ne Enums->ItemType_MATPRODUCTDPS
 		  && $_->GetItemType() ne Enums->ItemType_MATCORE
 		  && $_->GetItemType() ne Enums->ItemType_MATFLEXCORE
 		  && $_->GetItemType() ne Enums->ItemType_MATCUCORE
 		  && $_->GetItemType() ne Enums->ItemType_MATCVRLADHESIVE
 		  && $_->GetItemType() ne Enums->ItemType_MATPRODUCTDPS
 		  && $_->GetItemType() ne Enums->ItemType_MATPRODUCTCORE
-		  && $_->GetItemType() ne Enums->ItemType_PADFILMGLOSS
-		  && $_->GetItemType() ne Enums->ItemType_PADFILMMATT
 
-	} @items;
+	} @mats;
 
-	my @uniqItems = do {
+	my @uniqMats = do {
 		my %seen;
-		grep { !$seen{ $_->GetItemId() }++ } @items;
+		grep { !$seen{ $_->GetItemId() }++ } @mats;
 	};
 
-	foreach my $item (@uniqItems) {
+	my $currItemType = undef;
+
+	foreach my $item ( @uniqMats, @uniqPads ) {
+
+		my $itemType = $item->GetIsPad() ? "pad" : "mat";
+
+		if ( !defined $currItemType || $currItemType ne $itemType ) {
+
+			$currItemType = $itemType;
+
+			#  Add title GAP
+			$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+			 
+			my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_TITLE );
+
+			# Mat type title
+			my $titleTxt = $currItemType eq "pad" ? "Podložky" : "Materiál";
+			$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matType") ),
+						   $tbl->GetRowDefPos($row),
+						   5, undef, $titleTxt, $txtBoldStyle, undef, $borderTitStyle );
+		}
 
 		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
 
@@ -214,7 +252,7 @@ sub __BuildMatListBody {
 		$valStr = "" if ( !defined $valStr );      # draw border
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matName") ),
 					   $tbl->GetRowDefPos($row),
-					   undef, undef, substr( $item->GetValText(), 0, 28 ),
+					   undef, undef, substr( $item->GetValText(), 0, 25 ),
 					   $txtStdStyle, undef, $borderStyle );
 
 		# Mat count

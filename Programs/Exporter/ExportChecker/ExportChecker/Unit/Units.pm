@@ -29,26 +29,36 @@ sub new {
 	bless $self;
 
 	$self->{"onCheckEvent"} = Event->new();
+	$self->{"switchAppEvt"} = Event->new();    # allow to run another app from unitForm
 
 	$self->{"defaultInfo"} = undef;
 
-	return $self;    # Return the reference to the hash.
+	return $self;                              # Return the reference to the hash.
 }
 
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
+	my $step = shift;
 	my @units = @{ shift(@_) };
 
 	# Each unit contain reference on default info - info with general info about pcb
-	$self->{"defaultInfo"} = DefaultInfo->new($jobId);
+	$self->{"defaultInfo"} = DefaultInfo->new($jobId, $step);
 	$self->{"defaultInfo"}->Init($inCAM);
 
 	# Save to each unit->dataMngr default info
 	foreach my $unit (@units) {
 
 		$unit->SetDefaultInfo( $self->{"defaultInfo"} );
+	}
+
+	# Add handelr to "switchAppEvt" for some events
+	foreach my $unit (@units) {
+		if ( defined $unit->{"switchAppEvt"} ) {
+
+			$unit->{"switchAppEvt"}->Add( sub { $self->{"switchAppEvt"}->Do(@_) } );
+		}
 	}
 
 	$self->{"units"} = \@units;
@@ -106,6 +116,7 @@ sub RefreshWrapper {
 sub CheckBeforeExport {
 	my $self  = shift;
 	my $inCAM = shift;
+	my $mode  = shift;    # EnumsJobMngr->TaskMode_SYNC /  EnumsJobMngr->TaskMode_ASYNC
 
 	#my $totalRes = 1;
 
@@ -124,7 +135,7 @@ sub CheckBeforeExport {
 		# Start checking
 		$self->{"onCheckEvent"}->Do( "start", \%info );
 
-		my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr );
+		my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr, $mode );
 
 		#unless ($succes) {
 		#	$totalRes = 0;
@@ -173,6 +184,13 @@ sub SetGroupState {
 
 }
 
+# Return current group data
+sub GetGroupData {
+	my $self = shift;
+
+	die "group is Not implemented";
+}
+
 sub GetExportData {
 	my $self         = shift;
 	my $activeGroups = shift;
@@ -194,21 +212,14 @@ sub GetExportData {
 	return %allExportData;
 }
 
-sub GetGroupData {
+# Update group data from GUI
+sub UpdateGroupData {
 	my $self = shift;
 
-	die "GetGroupData is not implemented ";
+	foreach my $unit ( @{ $self->{"units"} } ) {
 
-	#	my %groupData = ();
-	#
-	#	foreach my $unit ( @{ $self->{"units"} } ) {
-	#
-	#		my $groupData = $unit->GetGroupData();
-	#		my %hashData  = %{ $groupData->{"data"} };
-	#		$groupData{ $unit->{"unitId"} } = \%hashData;
-	#	}
-	#
-	#	return %groupData;
+		$unit->UpdateGroupData();
+	}
 }
 
 # ===================================================================

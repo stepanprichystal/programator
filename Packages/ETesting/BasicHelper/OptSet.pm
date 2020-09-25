@@ -11,7 +11,9 @@ use warnings;
 
 #loading of locale modules
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::ETesting::BasicHelper::NetPointReport';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -67,18 +69,17 @@ sub OptSetExist {
 # return 0/1 depand on failure/succes
 # parameter $optName is reference and will  contain optSet name
 sub OptSetCreate {
-	my $self         = shift;
-	my $inCAM        = shift;
-	my $jobName      = shift;
-	my $stepName     = shift;             #step, which optSet is tied with
-	my $setupOptName = shift;
-	my @steps        = @{ shift(@_) };    #tell, which steps are tested in this optSet
-	my $optName      = shift;             #reference
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $jobName       = shift;
+	my $stepName      = shift;             #step, which optSet is tied with
+	my $setupOptName  = shift;
+	my @steps         = @{ shift(@_) };    #tell, which steps are tested in this optSet
+	my $optName       = shift;             #reference
+	my $netPoinReport = shift;             # Ref to storing Test Point report after optimization
 
 	$$optName = GeneralHelper->GetGUID();
 	my $strSteps = join( "\\;", @steps );
-
-
 
 	my $result = $inCAM->COM(
 							  "etset_create_opt",
@@ -98,6 +99,17 @@ sub OptSetCreate {
 
 	#if ok, InCAm return 0
 	if ( $result == 0 ) {
+
+		if ( defined $netPoinReport ) {
+
+			my $pReport = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
+
+			# Warning, this command couse InCAM crash, if OPT set was not created properly
+			$inCAM->COM( "et_optimization_text_report", "output" => "file", "out_file" => $pReport );
+			$$netPoinReport = NetPointReport->new($pReport);
+			unlink($pReport);
+		}
+
 		return 1;
 	}
 	else {

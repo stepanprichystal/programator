@@ -33,6 +33,7 @@ sub GetChains {
 	my @features  = @{ shift(@_) };
 
 	my @chains = ();
+	my $chanSeqId = 0;
 
 	# 1) Detect Chain
 	foreach my $ch (@chainList) {
@@ -51,7 +52,8 @@ sub GetChains {
 
 		foreach my $seqPoints (@sequences) {
 
-			my $chSeq = UniChainSeq->new($uniChain);
+			my $chSeq = UniChainSeq->new($uniChain, $chanSeqId);
+			$chanSeqId++;
 
 			$chSeq->SetOriFeatures( dclone($seqPoints) );
 			$chSeq->SetFeatures($seqPoints);

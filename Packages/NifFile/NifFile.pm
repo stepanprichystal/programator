@@ -7,6 +7,7 @@ package Packages::NifFile::NifFile;
 #3th party library
 use strict;
 use warnings;
+use Path::Tiny qw(path);
 
 #local library
 use aliased 'Enums::EnumsPaths';
@@ -24,31 +25,14 @@ sub new {
 
 	$self->{"jobId"} = shift;
 
-	my $nifPath = JobHelper->GetJobArchive( $self->{"jobId"} ) . $self->{"jobId"} . ".nif";
+	$self->{"nifPath"} = JobHelper->GetJobArchive( $self->{"jobId"} ) . $self->{"jobId"} . ".nif";
 
 	my %nifData = ();
 	$self->{"nifData"}  = \%nifData;
 	$self->{"nifExist"} = 0;
 	$self->{"nifRows"}  = undef;
 
-	if ( -e $nifPath ) {
-
-		$self->{"nifExist"} = 1;
-
-		my @lines = @{ FileHelper->ReadAsLines($nifPath) };
-		$self->{"nifRows"} = \@lines;
-
-		foreach my $l (@lines) {
-
-			if ( $l =~ /.*[^=]=[^=].*/ ) {
-
-				my @splited = split( "=", $l );
-				chomp @splited;
-
-				$self->{"nifData"}->{ $splited[0] } = $splited[1];
-			}
-		}
-	}
+	$self->__ParseNif();
 
 	return $self;
 }
@@ -63,6 +47,24 @@ sub Exist {
 	else {
 		return 0;
 	}
+}
+
+# Return if attribute exist in nif file
+sub AttributeExists {
+	my $self      = shift;
+	my $attribute = shift;
+	my $value     = shift;
+	chomp($attribute);
+
+	if ( exists $self->{"nifData"}->{$attribute} ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+
 }
 
 sub GetSection {
@@ -150,10 +152,9 @@ sub GetSilkScreenColor {
 
 	$silk{"top"} = $self->GetValue("potisk_c_1");
 	$silk{"bot"} = $self->GetValue("potisk_s_1");
-	
+
 	return %silk;
 }
-
 
 #Return second color of silk screen in hash for top and bot side
 sub GetSilkScreenColor2 {
@@ -183,6 +184,54 @@ sub GetPayment {
 	}
 
 	return $payement;
+}
+
+sub ReplaceValue {
+	my $self      = shift;
+	my $attribute = shift;
+	my $value     = shift;
+
+	chomp($attribute);
+	if ( exists $self->{"nifData"}->{$attribute} ) {
+
+		my $file = path( $self->{"nifPath"} );
+		my $data = $file->slurp_utf8;
+		$data =~ s/($attribute)=.*/$1=$value/i;
+		$file->spew_utf8($data);
+
+		# Parse NIF again
+		$self->__ParseNif();
+
+	}
+	else {
+		die "Nif attribute: $attribute, doesn't exist";
+
+	}
+	return $self->{"nifData"}->{$attribute};
+
+}
+
+sub __ParseNif {
+	my $self = shift;
+
+	if ( -e $self->{"nifPath"} ) {
+
+		$self->{"nifExist"} = 1;
+
+		my @lines = @{ FileHelper->ReadAsLines( $self->{"nifPath"} ) };
+		$self->{"nifRows"} = \@lines;
+
+		foreach my $l (@lines) {
+
+			if ( $l =~ /.*[^=]=[^=].*/ ) {
+
+				my @splited = split( "=", $l );
+				chomp @splited;
+
+				$self->{"nifData"}->{ $splited[0] } = $splited[1];
+			}
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

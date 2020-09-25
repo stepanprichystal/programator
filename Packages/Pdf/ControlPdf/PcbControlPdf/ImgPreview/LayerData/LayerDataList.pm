@@ -10,7 +10,7 @@ use base ('Packages::Pdf::ControlPdf::Helpers::ImgPreview::LayerData::LayerDataL
 #3th party library
 use strict;
 use warnings;
-use List::MoreUtils qw(first_index);
+use List::MoreUtils qw(first_index last_index);
 
 #local library
 use aliased 'Packages::Pdf::ControlPdf::Helpers::ImgPreview::LayerData::LayerData';
@@ -60,12 +60,19 @@ sub InitSurfaces {
 
 	my $background = $self->GetBackground();
 
-	my $plt  = ( $self->GetLayers( Enums->Type_PLTTHROUGHNC ) )[0];
-	my $nplt = ( $self->GetLayers( Enums->Type_NPLTTHROUGHNC ) )[0];
+	foreach my $l ( $self->GetLayers( Enums->Type_PLTTHROUGHNC ) ) {
 
-	$plt->GetSurface()->SetColor( $self->GetBackground() );
-	$nplt->GetSurface()->SetColor( $self->GetBackground() );
+		$l->GetSurface()->SetColor( $self->GetBackground() );
+		$l->GetSurface()->SetColor( $self->GetBackground() );
+	}
 
+	foreach my $l ( $self->GetLayers( Enums->Type_NPLTTHROUGHNC ) ) {
+
+		$l->GetSurface()->SetColor( $self->GetBackground() );
+		$l->GetSurface()->SetColor( $self->GetBackground() );
+	}
+	
+	
 	# 2) Set 3D edge for Cu visible from top side
 	my @CuLayers3D = ();
 
@@ -129,7 +136,7 @@ sub GetBackground {
 	my @l =
 	  $self->GetLayers( Enums->Type_MASK, ( $self->{"viewType"} eq Enums->View_FROMTOP ? Enums->Visible_FROMTOP : Enums->Visible_FROMBOT ) );
 
-	if ( defined $l[0] && $l[0]->HasLayers()) {
+	if ( defined $l[0] && $l[0]->HasLayers() ) {
 		my $surf = $l[0]->GetSurface();
 
 		if ( $surf->GetType() eq PrevEnums->Surface_COLOR && $surf->GetColor() eq "250,250,250" ) {
@@ -193,19 +200,6 @@ sub __InitLayers {
 	);
 	push( @NCThroughLayers, $LDNPltThrough );
 
-	# POS 2.f: Type_PLTTHROUGHNC from TOP or BOT
-	my $LDPltThrough = LayerData->new( Enums->Type_PLTTHROUGHNC, Enums->Visible_FROMTOPBOT );
-	$LDPltThrough->AddSingleLayers(
-		grep {
-			defined $_->{"type"}
-			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot )
-		} @boardL
-	);
-	push( @NCThroughLayers, $LDPltThrough );
-
 	@NCThroughLayers = reverse(@NCThroughLayers) if ( $self->{"viewType"} eq Enums->View_FROMBOT );
 
 	# 2) Prepare layers which are visible either from BOT or from TOP
@@ -265,6 +259,19 @@ sub __InitLayers {
 	$LDMaskTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^mc$/ } @boardL );
 	push( @pdfLayers, $LDMaskTOP );
 
+	# POS 11: Type_PLTTHROUGHNC from TOP
+	my $LDPltThroughTOP = LayerData->new( Enums->Type_PLTTHROUGHNC, Enums->Visible_FROMTOP );
+	$LDPltThroughTOP->AddSingleLayers(
+		grep {
+			defined $_->{"type"}
+			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot )
+		} @boardL
+	);
+	push( @pdfLayers, $LDPltThroughTOP );
+
 	# POS 11: Type_PLTDEPTHNC from TOP
 	my $LDPltDepthTOP = LayerData->new( Enums->Type_PLTDEPTHNC, Enums->Visible_FROMTOP );
 	$LDPltDepthTOP->AddSingleLayers(
@@ -310,6 +317,10 @@ sub __InitLayers {
 
 		# For multilayer, read stackup
 		my @stackupL = $stackup->GetAllLayers();
+		splice @stackupL, 0, 1 if ( $stackupL[0]->GetType() eq EnumsStack->MaterialType_COVERLAY );    # Remove very top coverlay if exist
+		splice @stackupL, scalar(@stackupL) - 1, 1
+		  if ( $stackupL[-1]->GetType() eq EnumsStack->MaterialType_COVERLAY );                        # Remove very bot coverlay if exist
+
 		for ( my $i = 0 ; $i < scalar(@stackupL) ; $i++ ) {
 
 			my $l = $stackupL[$i];
@@ -387,6 +398,19 @@ sub __InitLayers {
 		} @boardL
 	);
 	push( @pdfLayers, $LDPltDepthBOT );
+
+	# POS 19: Type_PLTTHROUGHNC from BOT
+	my $LDPltThroughBOT = LayerData->new( Enums->Type_PLTTHROUGHNC, Enums->Visible_FROMBOT );
+	$LDPltThroughBOT->AddSingleLayers(
+		grep {
+			defined $_->{"type"}
+			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot )
+		} @boardL
+	);
+	push( @pdfLayers, $LDPltThroughBOT );
 
 	# POS 20: Type_MASK from BOT
 	my $LDMaskBOT = LayerData->new( Enums->Type_MASK, Enums->Visible_FROMBOT );
@@ -467,14 +491,49 @@ sub __InitLayers {
 		my $LDCoverlay = LayerData->new( Enums->Type_COVERLAY, ( $side eq "top" ? Enums->Visible_FROMTOP : Enums->Visible_FROMBOT ) );
 		$LDCoverlay->AddSingleLayers($l);
 		$LDCoverlay->AddSingleLayers( grep { defined $_->{"type"} && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) } @boardL );
-		my $idx = first_index {
-			( grep { $_->{"gROWname"} eq $sigL } $_->GetSingleLayers() )[0]
 
-			  && (    $_->GetType() eq Enums->Type_INNERCU
-				   || $_->GetType() eq Enums->Type_OUTERSURFACE )
+		if ( $sigL =~ /^v\d+$/ ) {
+
+			my $idx = first_index {
+				( grep { $_->{"gROWname"} eq $sigL } $_->GetSingleLayers() )[0]
+
+				  && (    $_->GetType() eq Enums->Type_INNERCU
+					   || $_->GetType() eq Enums->Type_OUTERSURFACE )
+			}
+			@pdfLayers;
+			splice @pdfLayers, ( $side eq "top" ? $idx : $idx + 1 ), 0, $LDCoverlay;
 		}
-		@pdfLayers;
-		splice @pdfLayers, ( $side eq "top" ? $idx : $idx + 1 ), 0, $LDCoverlay;
+		else {
+
+			if ( $side eq "top" ) {
+
+				my $idx = first_index {
+					(
+					   $_->GetVisibleFrom() eq Enums->Visible_FROMTOP
+
+						 && (    $_->GetType() eq Enums->Type_PLTTHROUGHNC
+							  || $_->GetType() eq Enums->Type_OUTERSURFACE )
+					  )
+				}
+				@pdfLayers;
+				splice @pdfLayers, $idx, 0, $LDCoverlay;
+			}
+			else {
+				my $idx = last_index {
+					(
+					   $_->GetVisibleFrom() eq Enums->Visible_FROMBOT
+
+						 && (    $_->GetType() eq Enums->Type_PLTTHROUGHNC
+							  || $_->GetType() eq Enums->Type_OUTERSURFACE )
+					  )
+				}
+				@pdfLayers;
+				splice @pdfLayers, $idx + 1, 0, $LDCoverlay;
+
+			}
+
+		}
+
 	}
 
 	@pdfLayers = reverse(@pdfLayers) if ( $self->{"viewType"} eq Enums->View_FROMBOT );

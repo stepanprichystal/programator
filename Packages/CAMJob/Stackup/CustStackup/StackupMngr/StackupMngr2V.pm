@@ -68,42 +68,65 @@ sub GetBaseMatInfo {
 
 	my %inf = ();
 
-	my $matInf = HegMethods->GetPcbMat( $self->{"jobId"} );
+	if ( $self->{"pcbInfoIS"}->{"material_vlastni"} =~ /^A$/i ) {
 
-	my $matName = $matInf->{"nazev_subjektu"};
+		# Customer material
+		$inf{"matText"}      = "(customer material)";
+		$inf{"matKind"}      = $self->{"pcbInfoIS"}->{"material_druh"};
+		$inf{"baseMatThick"} = $self->{"pcbInfoIS"}->{"material_tloustka"} * 1000;
+		$inf{"cuThick"}      = $self->{"pcbInfoIS"}->{"material_tloustka_medi"};
 
-	# Parse material name
-	my @parsedMat = split( /\s/, $matName );
-	shift @parsedMat if ( $parsedMat[0] =~ /lam/i );
-	$inf{"matText"} = $parsedMat[0];
+	}
+	else {
 
-	# Parse mat thick  + remove Cu thickness if material is type of Laminate (core material thickness not include Cu thickness)
-	$inf{"baseMatThick"} = $matInf->{"vyska"} * 1000000;
+		# Standard material
 
-	if ( $matInf->{"dps_type"} !~ /core/i ) {
+		my $matInf = HegMethods->GetPcbMat( $self->{"jobId"} );
 
-		if ( $matInf->{"nazev_subjektu"} =~ m/(\d+\/\d+)/ ) {
-			my @cu = split( "/", $1 );
-			$inf{"baseMatThick"} -= $cu[0] if ( defined $cu[0] );
-			$inf{"baseMatThick"} -= $cu[1] if ( defined $cu[1] );
+		my $matName = $matInf->{"nazev_subjektu"};
+
+		# Parse material name
+		my @parsedMat = split( /\s/, $matName );
+		shift @parsedMat if ( $parsedMat[0] =~ /lam/i );
+
+		for ( my $i = 0 ; $i < scalar(@parsedMat) ; $i++ ) {
+
+			# if item is not CU text, add it to name
+			last if ( $parsedMat[$i] =~ m/^(\d+\/\d+)$/ );
+
+			$inf{"matText"} .= $parsedMat[$i] . " ";
 		}
+
+		$inf{"matKind"} = $matInf->{"dps_druh"};
+
+		# Parse mat thick  + remove Cu thickness if material is type of Laminate (core material thickness not include Cu thickness)
+		$inf{"baseMatThick"} = $matInf->{"vyska"} * 1000000;
+
+		if ( $matInf->{"dps_type"} !~ /core/i ) {
+
+			my $cu = $matInf->{"doplnkovy_rozmer"};
+			$inf{"baseMatThick"} -= $matInf->{"doplnkovy_rozmer"};
+			$inf{"baseMatThick"} -= $matInf->{"doplnkovy_rozmer"};
+		}
+
+		# Parse Cu thick
+		$inf{"cuThick"} = undef;
+		if ( defined $matInf->{"doplnkovy_rozmer"} && $matInf->{"doplnkovy_rozmer"} ne "" ) {
+			$inf{"cuThick"} =$matInf->{"doplnkovy_rozmer"};
+		}
+
+		# Parse Cu type ED/RA
+		$inf{"cuType"} = undef;
+		if ( $matName =~ m/(ap)|(cg)|(ag)/i ) {
+			$inf{"cuType"} = $matName =~ m/R/i ? "RA" : "ED";
+		}
+
 	}
 
-	# Parse Cu thick
-	$inf{"cuThick"} = undef;
-	if ( $matInf->{"nazev_subjektu"} =~ m/(\d+)\/(\d+)/ ) {
-		$inf{"cuThick"} = max( $1, $2 );
-	}
-
-	# Parse Cu type ED/RA
-	$inf{"cuType"} = undef;
-	if ( $matName =~ m/(ap)|(cg)/i ) {
-		$inf{"cuType"} = $matName =~ m/ap/i ? "RA" : "ED";
-	}
-
-	die "Material text was not found at material: $matName"         unless ( defined $inf{"matText"} );
-	die "Base mat thick was not found at material: $matName"        unless ( defined $inf{"baseMatThick"} );
-	die "Material cu thickness was not found at material: $matName" unless ( defined $inf{"cuThick"} );
+	die "Material text was not found"         unless ( defined $inf{"matText"} );
+	die "Base mat thick was not found"        unless ( defined $inf{"baseMatThick"} );
+	die "Material cu thickness was not found" unless ( defined $inf{"cuThick"} );
+	die "Material druh was not found"         unless ( defined $inf{"matKind"} );
 
 	return %inf;
 
@@ -122,7 +145,7 @@ sub GetExistCvrl {
 
 		if ( defined $inf ) {
 
-			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"} );
+			my $matInfo = HegMethods->GetPcbCoverlayMat( $self->{"jobId"}, $side );
 
 			my $thick    = $matInfo->{"vyska"} * 1000000;
 			my $thickAdh = $matInfo->{"doplnkovy_rozmer"} * 1000000;
@@ -180,48 +203,54 @@ sub GetTG {
 }
 
 sub GetThicknessStiffener {
-	my $self = shift;
-	my $t    = $self->GetThickness();
+	my $self      = shift;
+	my $stiffSide = shift;
 
-	my $topStiff = {};
-	if ( $self->GetExistStiff( "top", $topStiff ) ) {
+	my $t = $self->GetThickness();
 
-		$t += $topStiff->{"adhesiveThick"} * $self->{"adhReduction"};
-		$t += $topStiff->{"stiffThick"};
-	}
+	my $stiff = {};
+	if ( $self->GetExistStiff( $stiffSide, $stiff ) ) {
 
-	my $botStiff = {};
-	if ( $self->GetExistStiff( "bot", $botStiff ) ) {
-
-		$t += $botStiff->{"adhesiveThick"} * $self->{"adhReduction"};
-		$t += $botStiff->{"stiffThick"};
+		$t += $stiff->{"adhesiveThick"} * $self->{"adhReduction"};
+		$t += $stiff->{"stiffThick"};
 	}
 
 	return $t;
-
 }
 
 # Real PCB thickness
 sub GetThickness {
 	my $self = shift;
 
-	my $matInfo = HegMethods->GetPcbMat( $self->{"jobId"} );
-	my $m       = $matInfo->{"vyska"};
+	my $t = undef;
 
-	die "Material thickness (specifikace/vyska) is not defined for material: " . $self->{"pcbInfoIS"}->{"material_nazev"} unless ( defined $m );
+	if ( $self->{"pcbInfoIS"}->{"material_vlastni"} =~ /^A$/i ) {
 
-	my $t = $m;
+		# Customer material
 
-	$t =~ s/,/\./;
-	$t *= 1000000;
+		$t = $self->{"pcbInfoIS"}->{"material_tloustka"} * 1000;
 
-	# Remove cu from base material thickness
-	if ( $matInfo->{"dps_type"} !~ /core/i ) {
+	}
+	else {
 
-		if ( $matInfo->{"nazev_subjektu"} =~ m/(\d+\/\d+)/ ) {
-			my @cu = split( "/", $1 );
-			$t -= $cu[0] if ( defined $cu[0] );
-			$t -= $cu[1] if ( defined $cu[1] );
+		my $matInfo = HegMethods->GetPcbMat( $self->{"jobId"} );
+		my $m       = $matInfo->{"vyska"};
+
+		die "Material thickness (specifikace/vyska) is not defined for material: " . $self->{"pcbInfoIS"}->{"material_nazev"} unless ( defined $m );
+
+		$t = $m;
+
+		$t =~ s/,/\./;
+		$t *= 1000000;
+
+		# Remove cu from base material thickness
+		if ( $matInfo->{"dps_type"} !~ /core/i ) {
+
+			if ( $matInfo->{"nazev_subjektu"} =~ m/(\d+\/\d+)/ ) {
+				my @cu = split( "/", $1 );
+				$t -= $cu[0] if ( defined $cu[0] );
+				$t -= $cu[1] if ( defined $cu[1] );
+			}
 		}
 	}
 
@@ -296,17 +325,7 @@ sub GetNominalThickness {
 sub GetFlexPCBCode {
 	my $self = shift;
 
-	my $pcbType = $self->GetPcbType();
-	my $code    = undef;
-	if ( $pcbType eq EnumsGeneral->PcbType_1VFLEX ) {
-		$code = "1F";
-	}
-	elsif ( $pcbType eq EnumsGeneral->PcbType_2VFLEX ) {
-		$code = "2F";
-	}
-	elsif ( $pcbType eq EnumsGeneral->PcbType_MULTIFLEX ) {
-		$code = $self->GetLayerCnt() . "F";
-	}
+	my $code = $self->{"stackupCode"}->GetStackupCode();
 
 	return $code;
 }

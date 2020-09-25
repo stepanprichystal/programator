@@ -18,6 +18,7 @@ use warnings;
 #local library
 
 use aliased 'Packages::CAM::UniRTM::Enums';
+use aliased 'Enums::EnumsRout';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -32,14 +33,32 @@ sub new {
 	return $self;
 }
 
-# Get left cycle chain
-sub GetOutlineChains {
+# Return array UniChainSeq, which are outline
+sub GetOutlineChainSeqs {
 	my $self = shift;
 
 	my @seqs = map { $_->GetChainSequences() } @{ $self->{"chains"} };
 	@seqs = grep { $_->IsOutline() } @seqs;
 
 	return @seqs;
+}
+
+# Return array of UniChain which are probably outline rout with bridges
+sub GetOutlineChainsOnBridges {
+	my $self = shift;
+
+	my @chains = ();
+
+	foreach my $ch ( @{ $self->{"chains"} } ) {
+
+		if ( scalar( $ch->GetChainSequences() ) >= 2 ) {
+			
+			my @s = grep { !$_->GetIsInside() && $_->GetChain()->GetComp() eq EnumsRout->Comp_LEFT } $ch->GetChainSequences();
+			push( @chains, $ch ) if ( scalar(@s) );
+		}	
+	}
+	
+	return @chains;
 }
 
 # Get max chain number
@@ -86,6 +105,34 @@ sub GetChainListByOutline {
 			}
 		}
 
+	}
+
+	return @chainList;
+}
+
+# Return UniChainTool which contain UniChain where at lest one UniChanSeq is "routed on bridges"
+sub GetChainListByOutlineOnBridges {
+	my $self = shift;
+
+	my @chainList    = ();
+	my @chainListAll = $self->GetChainList();
+	for ( my $i = scalar(@chainListAll) - 1 ; $i >= 0 ; $i-- ) {
+
+		# get chain woth actual chainTool
+		my $chainTool = $chainListAll[$i];
+
+		my $ch = $self->GetChainByChainTool($chainTool);
+
+		# test if given chain seq is routed on bridges:
+		# - Right comp
+		# - not inside
+
+		my $existBridges = scalar( grep { !$_->GetIsInside() && $_->GetChain()->GetComp() eq EnumsRout->Comp_LEFT } $ch->GetChainSequences() )
+		  && scalar( $ch->GetChainSequences() ) >= 2 ? 1 : 0;
+
+		if ($existBridges) {
+			push( @chainList, $chainTool );
+		}
 	}
 
 	return @chainList;
@@ -153,7 +200,6 @@ sub GetCircleChainSeq {
 
 	return @circleChainSeq;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -170,10 +216,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $step  = "mpanel";
 	my $layer = 'f';
 
-	my $dtm = UniDTM->new($inCAM, $jobId, $step, $layer, 1);
+	my $dtm = UniDTM->new( $inCAM, $jobId, $step, $layer, 1 );
 
 	my $rtm = UniRTM->new( $inCAM, $jobId, $step, $layer, 1, $dtm );
-	
+
 	my @outline = $rtm->GetMultiChainSeqList();
 
 	die;

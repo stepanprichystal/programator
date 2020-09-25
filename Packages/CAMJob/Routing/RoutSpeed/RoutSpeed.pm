@@ -16,12 +16,15 @@ use Path::Tiny qw(path);
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamRouting';
+use aliased 'CamHelpers::CamNCHooks';
+use aliased 'CamHelpers::CamRouting';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Helpers::FileHelper';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::CAMJob::Routing::RoutDuplicated::RoutDuplicated';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::TifFile::TifNCOperations';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -34,35 +37,44 @@ sub GetToolRoutSpeed {
 	my $magazineInfo = shift;          # Special tools and its magazine info are located at Config/MagazinePsec.xml
 	my $isOutline    = shift;          # Rout is outlie
 	my $isDuplicated = shift;          # Rout go through same paths for second time
-	my $materialKind = shift;          # From IS (druh_materialu)
+	my $materialKind = shift;          # From IS (druh_materialu). If hybrid => material code by stackup
 	                                   # - 0: packet type <= 1500 mm
 	                                   # - 1: packet type <= 3000 mm
 	                                   # - 2: packet type >= 3000 mm
 	my $packetType   = shift // 0;     # default is 0 -> assume packet from pcb panels is thinner than 1,5 mm
-	my %routSpeedTab = shift // ();    # parsed rout speed table (by RoutSpeed::ParseRoutSpeedFile method)
-	
-	$magazineInfo = undef if(defined $magazineInfo && $magazineInfo eq "");
+	my %routSpeedTab = shift // ();    # parsed rout speed table (by RoutSpeed::__ParseRoutSpeedFile method)
+
+	$magazineInfo = undef if ( defined $magazineInfo && $magazineInfo eq "" );
 
 	# parse rout speed tab if not defined
-	%routSpeedTab = $self->ParseRoutSpeedFile($materialKind) unless (%routSpeedTab);
+	%routSpeedTab = $self->__ParseRoutSpeedFile($materialKind) unless (%routSpeedTab);
 
 	my $speed = $self->__GetRoutSpeed( $toolSize, $magazineInfo, $isOutline, $isDuplicated, $packetType, $routSpeedTab{$operation} );
 
-	die "No speed defined for tool size: $toolSize, magazineInfo: $magazineInfo, outline: $isOutline, duplicated: $isDuplicated" unless(defined $speed);
+	unless ( defined $speed ) {
+		die "No speed defined for tool size: $toolSize, magazineInfo: $magazineInfo, outline: $isOutline, duplicated: $isDuplicated";
+	}
 
 	return $speed;
 
 }
 
-# Complete rout speed to exported NC files located in hob archive
+# Complete rout speed to exported NC files located in job archive
 sub CompleteRoutSpeed {
-	my $self         = shift;
-	my $jobId        = shift;
-	my $totalPnlCnt  = shift;
-	my $materialKind = shift;
-	my $errMess      = shift;
+	my $self        = shift;
+	my $jobId       = shift;
+	my $totalPnlCnt = shift;
+	my $errMess     = shift;
 
 	my $result = 1;
+
+	# From IS (druh_materialu). If hybrid => material code by stackup
+	my $materialKind = HegMethods->GetMaterialKind($jobId);
+	my $matKinds     = [];
+	if ( JobHelper->GetIsHybridMat( $jobId, $materialKind, $matKinds ) ) {
+
+		$materialKind = JobHelper->GetHybridMatCode( $jobId, $matKinds );
+	}
 
 	my $ncPath = JobHelper->GetJobArchive($jobId) . "nc\\";
 
@@ -71,7 +83,7 @@ sub CompleteRoutSpeed {
 	return 0 unless ( $tif->TifFileExist() );
 
 	# Parse csv file with rout speed
-	my %routSpeedTab = $self->ParseRoutSpeedFile($materialKind);
+	my %routSpeedTab = $self->__ParseRoutSpeedFile($materialKind);
 
 	# Only operation which contain rout layer
 
@@ -85,8 +97,8 @@ sub CompleteRoutSpeed {
 
 			my $ncFile = $ncPath . $jobId . "_" . $ncOper->{"opName"} . "." . $m;
 
-			unless ( -e $ncFile ){
-				
+			unless ( -e $ncFile ) {
+
 				$$errMess .= "NCFile doesn't exist $ncFile\n";
 				$result = 0;
 				next;
@@ -273,9 +285,9 @@ sub __GetPacketType {
 
 }
 
-sub ParseRoutSpeedFile {
+sub __ParseRoutSpeedFile {
 	my $self         = shift;
-	my $materialKind = shift;
+	my $materialKind = shift;    # From IS (druh_materialu). If hybrid => material code by stackup
 
 	my %operations = ();
 
@@ -407,7 +419,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $errMess = "";
-	my $result = RoutSpeed->CompleteRoutSpeed( "d113609", 100, "IS400", \$errMess );
+	my $result = RoutSpeed->CompleteRoutSpeed( "d113609", 100, \$errMess );
 
 	print STDERR "Result is: $result, mess: $errMess";
 

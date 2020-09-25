@@ -435,7 +435,7 @@ sub RecalcDTMTools {
 	my $jobId   = shift;
 	my $step    = shift;
 	my $layer   = shift;
-	my $DTMType = shift;         # vysledne, vrtane (do not do DTM recalculate. Use SetDTMTable)
+	my $DTMType = shift;         # vysledne, vrtane 
 	my $holes   = shift // 1;    # 0 = don't recalculate holes / 1 = recalculate holes
 	my $slots   = shift // 1;    # 0 = don't recalculate slots / 1 = recalculate slots
 
@@ -448,11 +448,7 @@ sub RecalcDTMTools {
 
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
-
-	unless ( defined $DTMType ) {
-		$DTMType = $self->GetDTMType( $inCAM, $jobId, $step, $layer );
-	}
-
+ 
 	$inCAM->COM('tools_tab_reset');
 
 	foreach my $t (@tools) {
@@ -532,7 +528,11 @@ sub RecalcDTMTools {
 
 }
 
-# Set new tools to DTM
+# Set DTM type
+# Do not do recalculate
+# Warning, if this function run on some layer, which is then deleted
+# InCAM display window "Drill size will be recalcualted" during layer delete
+# It is caused by not close DTM manager (tools close doesn't work)
 sub SetDTMTable {
 	my $self    = shift;
 	my $inCAM   = shift;
@@ -546,7 +546,6 @@ sub SetDTMTable {
 
 	$inCAM->COM( 'tools_show', "layer" => $layer );
 	$inCAM->COM( 'tools_set', layer => $layer, thickness => '0', user_params => $DTMType );
-	$inCAM->COM('tools_recalc');
 	$inCAM->COM('tools_close');
 
 }

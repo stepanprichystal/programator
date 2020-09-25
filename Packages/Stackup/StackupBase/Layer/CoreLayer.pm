@@ -84,11 +84,12 @@ sub GetCoreExtraPlating {
 }
 
 # Return if core is rigid or flex
-# Decision is basend on core thickness (less than 100µm is flex core )
+# Decision is basend on core thickness (less than 90µm is flex core )
+# TODO - read core type from HEG core specificatiopn (rigid and flex core can have same thickness)
 sub GetCoreRigidType{
 	my $self = shift;
 	
-	if($self->GetThick() < 100){
+	if($self->GetThick() < 90){
 		
 		return Enums->CoreType_FLEX;
 	

@@ -5,11 +5,10 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::PdfData;
- 
+
 #3th party library
 use strict;
 use warnings;
-
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Enums';
@@ -25,9 +24,8 @@ sub new {
 	my %exportData = ();
 	$self->{"data"} = \%exportData;
 
-	return $self; 
+	return $self;
 }
- 
 
 sub SetExportControl {
 	my $self  = shift;
@@ -76,7 +74,7 @@ sub GetControlLang {
 	my $value = shift;
 	return $self->{"data"}->{"controlLang"};
 }
- 
+
 # Info about tpv technik to pdf
 
 sub GetInfoToPdf {
@@ -90,7 +88,7 @@ sub SetInfoToPdf {
 	my $value = shift;
 	$self->{"data"}->{"infoToPdf"} = $value;
 }
- 
+
 sub SetExportStackup {
 	my $self  = shift;
 	my $value = shift;
@@ -101,8 +99,7 @@ sub GetExportStackup {
 	my $self  = shift;
 	my $value = shift;
 	return $self->{"data"}->{"exportStackup"};
-} 
-
+}
 
 sub SetExportPressfit {
 	my $self  = shift;
@@ -128,7 +125,6 @@ sub GetExportToleranceHole {
 	return $self->{"data"}->{"exportToleranceHole"};
 }
 
-
 sub SetExportNCSpecial {
 	my $self  = shift;
 	my $value = shift;
@@ -139,6 +135,30 @@ sub GetExportNCSpecial {
 	my $self  = shift;
 	my $value = shift;
 	return $self->{"data"}->{"exportNCSpecial"};
+}
+
+sub SetExportCustCpnIPC3Map {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportCustCpnIPC3Map"} = $value;
+}
+
+sub GetExportCustCpnIPC3Map {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportCustCpnIPC3Map"};
+}
+
+sub SetExportDrillCpnIPC3Map {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"exportDrillCpnIPC3Map"} = $value;
+}
+
+sub GetExportDrillCpnIPC3Map {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"exportDrillCpnIPC3Map"};
 }
 
 sub SetExportPeelStencil {
@@ -164,13 +184,13 @@ sub GetExportCvrlStencil {
 	my $value = shift;
 	return $self->{"data"}->{"exportCvrlStencil"};
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
 }
 
 1;

@@ -15,6 +15,7 @@ use List::MoreUtils qw(uniq);
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamHistogram';
@@ -91,6 +92,20 @@ sub new {
 
 			$self->{"fiducials"} = Enums->Fiducials_SUN;
 		}
+	}
+
+	# Prinitng frame. If PCB is flexible 1-2v, we use special printing frame
+	# This frame is wider and longer than Flex panel. 10mm in all sides
+	my $pcbType = JobHelper->GetPcbType( $self->{"jobId"} );
+
+	$self->{"printFrm"} = 0;
+
+	if (    $pcbType eq EnumsGeneral->PcbType_1VFLEX
+		 || $pcbType eq EnumsGeneral->PcbType_2VFLEX
+		 || $pcbType eq EnumsGeneral->PcbType_MULTIFLEX )
+	{
+
+		$self->{"printFrm"} = 10;
 	}
 
 	return $self;
@@ -187,17 +202,9 @@ sub __GetLayerLimit {
 
 	my %lim = ();
 
-	# if top/bot layer, clip around fr frame
-	if ( $self->{"layerCnt"} > 2 && ( $layerName =~ /^[(gold)(plg)m]*[cs]$/ ) ) {
+	if ( $self->{"layerCnt"} > 2 ) {
 
 		%lim = %{ $self->{"frLim"} };
-	}
-
-	#if inner layers, clip around profile
-	elsif ( $layerName =~ /^v\d$/ ) {
-
-		%lim = %{ $self->{"profLim"} };
-
 	}
 	else {
 
@@ -353,10 +360,10 @@ sub __PutFrameAorundPcb {
 
 	my @coord = ();
 
-	my %p1 = ( "x" => $lim{"xMin"}, "y" => $lim{"yMin"} );
-	my %p2 = ( "x" => $lim{"xMin"}, "y" => $lim{"yMax"} );
-	my %p3 = ( "x" => $lim{"xMax"}, "y" => $lim{"yMax"} );
-	my %p4 = ( "x" => $lim{"xMax"}, "y" => $lim{"yMin"} );
+	my %p1 = ( "x" => $lim{"xMin"} - $self->{"printFrm"}, "y" => $lim{"yMin"} - $self->{"printFrm"} );
+	my %p2 = ( "x" => $lim{"xMin"} - $self->{"printFrm"}, "y" => $lim{"yMax"} + $self->{"printFrm"} );
+	my %p3 = ( "x" => $lim{"xMax"} + $self->{"printFrm"}, "y" => $lim{"yMax"} + $self->{"printFrm"} );
+	my %p4 = ( "x" => $lim{"xMax"} + $self->{"printFrm"}, "y" => $lim{"yMin"} - $self->{"printFrm"} );
 	push( @coord, \%p1 );
 	push( @coord, \%p2 );
 	push( @coord, \%p3 );
@@ -406,8 +413,21 @@ sub __MoveToZero {
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
-		$inCAM->COM( "sel_move", "dx" => -$self->{"frLim"}->{"xMin"}, "dy" => -$self->{"frLim"}->{"yMin"} );
+		$inCAM->COM(
+					 "sel_move",
+					 "dx" => -$self->{"frLim"}->{"xMin"} + $self->{"printFrm"},
+					 "dy" => -$self->{"frLim"}->{"yMin"} + $self->{"printFrm"}
+		);
 	}
+	else {
+		$inCAM->COM(
+			"sel_move",
+			"dx" =>  $self->{"printFrm"},
+			"dy" =>  $self->{"printFrm"}
+		);
+
+	}
+
 }
 
 # Rotate layer 90 degree cw and move to zero
@@ -420,8 +440,8 @@ sub __RotateLayer {
 
 	if ( $self->{"rotation"} ) {
 
-		CamLayer->RotateLayerData( $inCAM, $layerName, 90, 0);
-		$inCAM->COM( "sel_move", "dx" => 0, "dy" => abs( $lim->{"xMax"} - $lim->{"xMin"} ) );
+		CamLayer->RotateLayerData( $inCAM, $layerName, 90, 0 );
+		$inCAM->COM( "sel_move", "dx" => 0, "dy" => abs( $lim->{"xMax"} - $lim->{"xMin"} ) + 2 * $self->{"printFrm"} );
 	}
 }
 
@@ -439,12 +459,12 @@ sub __MirrorLayer {
 
 		if ( $self->{"rotation"} ) {
 
-			$inCAM->COM( "sel_move", "dx" => abs( $lim->{"yMax"} - $lim->{"yMin"} ), "dy" => 0 );
+			$inCAM->COM( "sel_move", "dx" => abs( $lim->{"yMax"} - $lim->{"yMin"} ) + 2 * $self->{"printFrm"}, "dy" => 0 );
 
 		}
 		else {
 
-			$inCAM->COM( "sel_move", "dx" => abs( $lim->{"xMax"} - $lim->{"xMin"} ), "dy" => 0 );
+			$inCAM->COM( "sel_move", "dx" => abs( $lim->{"xMax"} - $lim->{"xMin"} ) + 2 * $self->{"printFrm"}, "dy" => 0 );
 
 		}
 
@@ -458,10 +478,9 @@ sub __CreateJetprintStep {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	my @silkL = map { $_->{"gROWname"} } @{ $self->{"layers"} };
 
-	my @silkL = map {$_->{"gROWname"} } @{$self->{"layers"}};
-
-	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"jetprintStep"}, 0,  \@silkL);
+	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"jetprintStep"}, 0, \@silkL );
 
 	CamHelper->SetStep( $inCAM, $self->{"jetprintStep"} );
 }

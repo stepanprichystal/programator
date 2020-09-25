@@ -93,25 +93,26 @@ sub RefreshGUI {
 	$self->{"form"}->SetExportPressfit( $groupData->GetExportPressfit() );
 	$self->{"form"}->SetExportToleranceHole( $groupData->GetExportToleranceHole() );
 	$self->{"form"}->SetExportNCSpecial( $groupData->GetExportNCSpecial() );
+	$self->{"form"}->SetExportCustCpnIPC3Map( $groupData->GetExportCustCpnIPC3Map() );
+	$self->{"form"}->SetExportDrillCpnIPC3Map( $groupData->GetExportDrillCpnIPC3Map() );
 	$self->{"form"}->SetInfoToPdf( $groupData->GetInfoToPdf() );
 	$self->{"form"}->SetExportPeelStencil( $groupData->GetExportPeelStencil() );
 	$self->{"form"}->SetExportCvrlStencil( $groupData->GetExportCvrlStencil() );
 
 }
 
-sub GetGroupData {
 
+# Update groupd data with values from GUI
+sub UpdateGroupData {
 	my $self = shift;
 
 	my $frm = $self->{"form"};
-
-	my $groupData;
 
 	#if form is init/showed to user, return group data edited by form
 	#else return default group data, not processed by form
 
 	if ($frm) {
-		$groupData = $self->{"dataMngr"}->GetGroupData();
+		my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 		$groupData->SetExportControl( $frm->GetExportControl() );
 		$groupData->SetControlStep( $frm->GetControlStep() );
@@ -121,16 +122,13 @@ sub GetGroupData {
 		$groupData->SetExportPressfit( $frm->GetExportPressfit() );
 		$groupData->SetExportToleranceHole( $frm->GetExportToleranceHole() );
 		$groupData->SetExportNCSpecial( $frm->GetExportNCSpecial() );
+		$groupData->SetExportCustCpnIPC3Map( $frm->GetExportCustCpnIPC3Map() );
+		$groupData->SetExportDrillCpnIPC3Map( $frm->GetExportDrillCpnIPC3Map() );
 		$groupData->SetInfoToPdf( $frm->GetInfoToPdf() );
 		$groupData->SetExportPeelStencil( $frm->GetExportPeelStencil() );
 		$groupData->SetExportCvrlStencil( $frm->GetExportCvrlStencil() );
 	}
-	else {
-
-		$groupData = $self->{"dataMngr"}->GetGroupData();
-	}
-
-	return $groupData;
+	 
 }
 
 #-------------------------------------------------------------------------------------------#

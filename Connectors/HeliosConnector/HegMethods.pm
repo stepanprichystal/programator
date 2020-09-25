@@ -29,14 +29,16 @@ use aliased 'Packages::Exceptions::HeliosException';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
-
+# Return lots of information from deska, zakazka,..
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetAllByPcbId {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
-	my $cmd = "select top 1
+	my $cmd = "select top 1 
 				 d.nazev_subjektu board_name,
 				 c.nazev_subjektu customer,
 				 d.maska_c_1 c_mask_colour,
@@ -58,6 +60,7 @@ sub GetAllByPcbId {
 				 d.flash,
 				 d.material_tloustka_medi,
 				 d.material_typ_materialu,
+				 d.material_vlastni,
 				 d.poznamka,
 				 d.poznamka_tpv,
 				 d.tloustka,
@@ -68,6 +71,7 @@ sub GetAllByPcbId {
 				 d.zlaceni,
 				 d.lak_typ,
 				 d.stiffener,
+				 d.ipc_class_3,
 				 dn.kus_x n_kus_x,
 				 dn.kus_y n_kus_y,
 				 dn.panel_x n_mpanel_x,
@@ -120,7 +124,7 @@ sub GetAllByPcbId {
 				 left outer join lcs.subjekty prijal with (nolock) on prijal.cislo_subjektu=n.prijal
 				 left outer join lcs.desky_22 dn with (nolock) on n.deska=dn.cislo_subjektu
 				 left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace =_PoradacId
 				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
@@ -282,13 +286,38 @@ sub GetEmployyInfo {
 	}
 }
 
+# Return hash ref with information about contact person
+sub GetContactPersonInfo {
+	my $self     = shift;
+	my $personId = shift;
+
+	my @params = ( SqlParameter->new( "_PersonId", Enums->SqlDbType_VARCHAR, $personId ) );
+
+	my $cmd = "SELECT
+       			e_mail
+				FROM lcs.kontaktni_osoby
+				WHERE cislo_subjektu = _PersonId";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@result) == 1 ) {
+		return $result[0];
+	}
+	else {
+		return undef;
+	}
+}
+
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetBasePcbInfo {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
+				d.nazev_subjektu,
 				 d.pocet_vrstev,
 				 d.rozmer_x x_size,
 				 d.rozmer_y y_size,
@@ -300,11 +329,16 @@ sub GetBasePcbInfo {
 				 d.material_tloustka,
 				 d.material_tloustka_medi,
 				 d.material_typ_materialu,
+				 d.material_vlastni,
 				 d.merit_presfitt,
 				 d.mereni_tolerance_vrtani,
 				 d.srazeni_hran,
 				 d.zlaceni,
 				 d.zaplneni_otvoru,
+				 d.ipc_class_3,
+				 d.lak_typ,
+				 d.stiffener,
+				 d.coverlay,
 				 z.pooling,
 				 d.stav
 				 from lcs.desky_22 d with (nolock)
@@ -316,7 +350,51 @@ sub GetBasePcbInfo {
 				 left outer join lcs.subjekty prijal with (nolock) on prijal.cislo_subjektu=n.prijal
 				 left outer join lcs.desky_22 dn with (nolock) on n.deska=dn.cislo_subjektu
 				 left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId
+				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@result) == 1 ) {
+		return $result[0];
+	}
+	else {
+		return undef;
+	}
+}
+
+# Return info about stencil
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
+sub GetBaseStencilInfo {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
+
+	my $cmd = "select top 1
+				 d.nazev_subjektu,
+				 d.sablona_strana,
+				 d.sablona_typ,
+				 d.kus_x,
+				 d.kus_y,
+				 d.rozmer_x,
+				 d.rozmer_y,
+				 d.material_tloustka,
+				 d.material_typ_materialu,
+				 d.material_vlastni,
+				 d.stav,
+				 d.poznamka
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.subjekty m with (nolock) on m.cislo_subjektu=d.material
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 left outer join lcs.vztahysubjektu vs with (nolock) on vs.cislo_subjektu=z.cislo_subjektu and vs.cislo_vztahu=22175
+				 left outer join lcs.zakazky_dps_22_hlavicka n with (nolock) on vs.cislo_vztaz_subjektu=n.cislo_subjektu
+				 left outer join lcs.subjekty prijal with (nolock) on prijal.cislo_subjektu=n.prijal
+				 left outer join lcs.desky_22 dn with (nolock) on n.deska=dn.cislo_subjektu
+				 left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId
 				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
@@ -330,12 +408,14 @@ sub GetBasePcbInfo {
 }
 
 # Return material kind like FR4, S400, etc..
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetMaterialKind {
 	my $self      = shift;
 	my $pcbId     = shift;
 	my $editStyle = shift;    # if checked ,return value will be edited FR4 => FR4 tg150
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $column = "d.material_druh";
 
@@ -347,7 +427,7 @@ sub GetMaterialKind {
 				 " . $column . "
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	return Helper->ExecuteScalar( $cmd, \@params );
 
@@ -379,12 +459,14 @@ sub GetElTest {
 
 #Return scalar value of pcb type without diacritics
 # - Vicevrstvy, oboustranny, ...
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetTypeOfPcb {
 	my $self        = shift;
 	my $pcbId       = shift;
 	my $noEditStyle = shift // 0;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $editStyle = "lcs.nf_edit_style('typ_desky_22', d.material_typ) typ_desky";
 	if ($noEditStyle) {
@@ -395,7 +477,7 @@ sub GetTypeOfPcb {
 				 $editStyle
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	return Helper->ExecuteScalar( $cmd, \@params, 1 );
 
@@ -446,18 +528,20 @@ sub GetFlexSolderMask {
 }
 
 # Return color of mask in hash for top and bot side
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetSolderMaskColor {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				 d.maska_c_1 c_mask_colour,
 				 d.maska_s_1 s_mask_colour
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	my %mask = ();
 
@@ -477,18 +561,20 @@ sub GetSolderMaskColor {
 }
 
 # Return second color of mask in hash for top and bot side
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetSolderMaskColor2 {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				 d.maska_c_2 c_mask_colour2,
 				 d.maska_s_2 s_mask_colour2
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	my %mask = ();
 
@@ -508,18 +594,20 @@ sub GetSolderMaskColor2 {
 }
 
 #Return color of silk screen in hash for top and bot side
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetSilkScreenColor {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				 d.potisk_c_1 c_silk_screen_colour,
 				 d.potisk_s_1 s_silk_screen_colour
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	my %silk = ();
 
@@ -539,18 +627,20 @@ sub GetSilkScreenColor {
 }
 
 #Return color of silk screen in hash for top and bot side
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetSilkScreenColor2 {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				 d.potisk_c_2 c_silk_screen_colour2,
 				 d.potisk_s_2 s_silk_screen_colour2
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	my %silk = ();
 
@@ -570,17 +660,19 @@ sub GetSilkScreenColor2 {
 }
 
 # Return type of coverlay
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetCoverlayType {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				 d.coverlay
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	my %coverlay = ( "top" => undef, "bot" => undef );
 
@@ -595,35 +687,67 @@ sub GetCoverlayType {
 	return %coverlay;
 }
 
+# Return type of stiffener
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
+sub GetStiffenerType {
+	my $self  = shift;
+	my $pcbId = shift;
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
+
+	my $cmd = "select top 1
+				 d.stiffener
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
+
+	my %stiff = ( "top" => undef, "bot" => undef );
+
+	my $val = Helper->ExecuteScalar( $cmd, \@params );
+
+	if ($val) {
+
+		$stiff{"top"} = ( $val eq "C" || $val eq "2" ) ? 1 : 0;
+		$stiff{"bot"} = ( $val eq "S" || $val eq "2" ) ? 1 : 0;
+	}
+
+	return %stiff;
+}
+
 #Return scalar value of pcb thick in helios
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetPcbMaterialThick {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				 d.material_tloustka
 				 from lcs.desky_22 d with (nolock)
 				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	return Helper->ExecuteScalar( $cmd, \@params );
 
 }
 
 #Return scalar value of base outer cu thick
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetOuterCuThick {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				 d.material_tloustka_medi
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	return Helper->ExecuteScalar( $cmd, \@params );
 
@@ -887,6 +1011,7 @@ sub GetPcbOrderNumbers {
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select 				  
 				 z.reference_subjektu,
@@ -896,7 +1021,7 @@ sub GetPcbOrderNumbers {
 				 
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
 
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId 
 				 order by z.reference_subjektu desc";
 
 	my @res = Helper->ExecuteDataSet( $cmd, \@params );
@@ -916,11 +1041,14 @@ sub GetOrdersByState {
 	return @orders;
 }
 
+# Return first order of pcbid
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetNumberOrder {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				 z.reference_subjektu reference_zakazky
@@ -933,7 +1061,7 @@ sub GetNumberOrder {
 				 left outer join lcs.subjekty prijal with (nolock) on prijal.cislo_subjektu=n.prijal
 				 left outer join lcs.desky_22 dn with (nolock) on n.deska=dn.cislo_subjektu
 				 left outer join lcs.subjekty mn with (nolock) on mn.cislo_subjektu=dn.material
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId
 				 order by z.reference_subjektu desc,n.cislo_subjektu desc,z.cislo_subjektu desc";
 
 	my $res = Helper->ExecuteScalar( $cmd, \@params );
@@ -949,7 +1077,7 @@ sub GetCustomerInfo {
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
-	my $numberOrder = GetNumberOrder( '', $pcbId );
+	my $numberOrder = $self->GetNumberOrder($pcbId);
 
 	my $cmd = "select top 1		
 				org.reference_subjektu,
@@ -976,7 +1104,7 @@ sub GetIdcustomer {
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
-	my $numberOrder = GetNumberOrder( '', $pcbId );
+	my $numberOrder = $self->GetNumberOrder( $pcbId );
 
 	my $cmd = "select top 1		
 				org.reference_subjektu
@@ -989,6 +1117,36 @@ sub GetIdcustomer {
 
 	return $res;
 }
+
+
+# Return order information by specific order item
+sub GetCustomerOrderInfo {
+	my $self  = shift;
+	my $orderId = shift; # Dxxxxxx-xx
+
+	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+
+
+	my $cmd = 
+	"SELECT
+       obh.nazev_subjektu
+	FROM lcs.sk_hlavicka obh
+       JOIN lcs.sk_polozka obp ON obp.cislo_subjektu = obh.cislo_subjektu
+       JOIN lcs.zakazky_dps_22_hlavicka z ON z.cislo_subjektu = obp.obchodni_pripad
+	WHERE z.reference_subjektu = _OrderId";
+
+	my @result = Helper->ExecuteDataSet( $cmd, \@params );
+
+	if ( scalar(@result) == 1 ) {
+		return $result[0];
+	}
+	else {
+		return undef;
+	}
+}
+
+
+
 
 #sub UpdateConstructionClass {
 #	my $self        = shift;
@@ -1310,6 +1468,38 @@ sub UpdateOrderTerm {
 
 }
 
+# Update more attributes in offer job
+sub UpdateOfferSpecification {
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $params      = shift;    #key/value pairs (key == DB column)
+	my $childThread = shift;
+
+	if ($childThread) {
+
+		my $result = $self->__SystemCall( "UpdateOfferSpecification", $pcbId, $params );
+
+		return $result;
+	}
+	else {
+
+		my $res = 1;
+
+		require Connectors::HeliosConnector::HelperWriter;
+
+		foreach my $attr ( keys %{$params} ) {
+
+			my $resIn = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $params->{$attr}, $attr );
+
+			$res = 0 unless ($resIn);
+
+		}
+		
+		return $res;
+	}
+
+}
+
 # Return value from clolumn "stav" for pcb order
 #Poøízeno na eshopu (02)
 #Zavedeno (0)
@@ -1404,20 +1594,23 @@ sub GetTermOfOrder {
 }
 
 # Return value of term order
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetAllByOrderId {
 	my $self    = shift;
 	my $orderId = shift;
 
 	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($orderId) ) );
 
 	my $cmd = "SELECT top 1
 				termin,
 				datum_zahajeni,
 				pocet_prirezu,
 				prirezu_navic,
-				kusy_pozadavek
+				kusy_pozadavek,
+				predano_komu
 				from lcs.zakazky_dps_22_hlavicka 
-				WHERE reference_subjektu = _OrderId";
+				WHERE reference_subjektu = _OrderId and  cislo_poradace =_PoradacId";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 
@@ -1913,7 +2106,8 @@ sub GetMatInfo {
 				 uda.dps_id,
   				 uda.dps_id2,
  				 uda.dps_qid,
- 				  uda.dps_type
+ 				  uda.dps_type,
+ 				  uda.dps_druh
 				FROM lcs.kmenova_karta_skladu kks
 				join lcs.uda_kmenova_karta_skladu uda on uda.cislo_subjektu= kks.cislo_subjektu
 				WHERE kks.reference_subjektu = __matReference";
@@ -1958,11 +2152,13 @@ sub GetMatStoreInfo {
 }
 
 # Return information of coverlay material in PCB
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetPcbMat {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 	
@@ -1972,7 +2168,7 @@ sub GetPcbMat {
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
 				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
 
@@ -1984,11 +2180,16 @@ sub GetPcbMat {
 }
 
 # Return information of coverlay material in PCB
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetPcbCoverlayMat {
 	my $self  = shift;
 	my $pcbId = shift;
+	my $side  = shift;    # top/bot
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params,
+		  SqlParameter->new( "_MatCoverlay", Enums->SqlDbType_INT, ( $side eq "top" ? "d.material_coverlay_1" : "d.material_coverlay_2" ) ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 	
@@ -1996,9 +2197,9 @@ sub GetPcbCoverlayMat {
 				
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
-				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_coverlay
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=_MatCoverlay
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
 
@@ -2010,11 +2211,16 @@ sub GetPcbCoverlayMat {
 }
 
 # Return information of stiffener material in PCB
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetPcbStiffenerMat {
 	my $self  = shift;
 	my $pcbId = shift;
+	my $side  = shift;    # top/bot
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params,
+		  SqlParameter->new( "_MatStiffener", Enums->SqlDbType_INT, ( $side eq "top" ? "d.material_stiffener_1" : "d.material_stiffener_2" ) ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				
@@ -2022,9 +2228,40 @@ sub GetPcbStiffenerMat {
 				 
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
-				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=d.material_stiffener
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=_MatStiffener
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
+
+	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
+
+	my $res = undef;
+
+	if ( defined $matReference ) {
+		$res = $self->GetMatInfo($matReference);
+	}
+}
+
+# Return information of stiffener adhesive material in PCB
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
+sub GetPcbStiffenerAdhMat {
+	my $self  = shift;
+	my $pcbId = shift;
+	my $side  = shift;    # top/bot
+
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params,
+		  SqlParameter->new( "_MatStiffenerAdh", Enums->SqlDbType_INT, ( $side eq "top" ? "d.lepidlo_stiffener_1" : "d.lepidlo_stiffener_2" ) ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
+
+	my $cmd = "select top 1
+				
+				kks.reference_subjektu
+				 
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 left outer join lcs.kmenova_karta_skladu kks (nolock) on kks.cislo_subjektu=_MatStiffenerAdh
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	my $matReference = Helper->ExecuteScalar( $cmd, \@params );
 
@@ -2262,25 +2499,24 @@ sub GetImpedancExist {
 #Uzavøený (Z)
 #Ukonèený (A)
 #Odloženo (O)
-sub GetProducOrderByOederId {
-	my $self            = shift;
-	my $orderId         = shift;
-	my $extraProducId = shift ;    # pouze prikazy s cislem dodelavky vetsi jak 0
-	my $status          = shift;         #  status of Produc order
+sub GetProducOrderByOrderId {
+	my $self          = shift;
+	my $orderId       = shift;
+	my $extraProducId = shift;    # pouze prikazy s cislem dodelavky vetsi jak 0
+	my $status        = shift;    #  status of Produc order
 
- 
 	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
 
 	my $extraProducCMD = "";
-	if(defined $extraProducId){
-		
+	if ( defined $extraProducId ) {
+
 		$extraProducCMD = " and udapo.cislo_dodelavky = $extraProducId /* jedna se o dodelavku */";
 	}
 
 	my $statusCMD = "";
-	if(defined $status){
-		
-		$statusCMD = " and po.status = '".uc($status)."'";
+	if ( defined $status ) {
+
+		$statusCMD = " and po.status = '" . uc($status) . "'";
 	}
 
 	my $cmd = "select
@@ -2336,6 +2572,24 @@ sub __SystemCall {
 
 }
 
+# Return number of poradac in order make select faster
+sub __GetPoradacNum {
+	my $self  = shift;
+	my $pcbId = shift;    # pcbId/offerid
+
+	my $type = substr( $pcbId, 0, 1 );
+	my $poradacNum = undef;
+
+	if ( $type =~ /^d$/i ) {
+		$poradacNum = '22050';    # zakazky/objednavky
+	}
+	elsif ( $type =~ /^[xn]$/i ) {
+		$poradacNum = '22045';    # deska cenova nabidky/ zakazka cenova nabidka
+	}
+
+	return $poradacNum;
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -2349,7 +2603,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->GetAllByPcbId( "X65285" );
+	my $mat = HegMethods->GetCustomerOrderInfo("D292836-01");
 
 	dump($mat);
 	die;

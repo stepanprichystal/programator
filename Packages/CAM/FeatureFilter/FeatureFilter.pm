@@ -419,12 +419,15 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'CamHelpers::CamHelper';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d113608";
+	my $jobId = "d284391";
 
-	my @layers = ("c", "s");
+	my $layer = "m";
 
-	my $f = FeatureFilter->new( $inCAM, $jobId, undef, \@layers);
-	$f->SetPolarity(FiltrEnums->Polarity_POSITIVE);
+	
+
+
+	my $f = FeatureFilter->new( $inCAM, $jobId, $layer);
+	$f->SetFeatureTypes("pads" => 1);
  
 	unless($f->Select()){
 		

@@ -83,6 +83,18 @@ sub GetExportPdf {
 	return $self->{"data"}->{"exportPdf"};
 }
 
+# Store dimensions to control PDF
+sub SetDim2ControlPdf {
+	my $self  = shift;
+	 
+	$self->{"data"}->{"dim2ControlPdf"} = shift;
+}
+
+sub GetDim2ControlPdf {
+	my $self = shift;
+
+	return $self->{"data"}->{"dim2ControlPdf"};
+}
 
 # Export measure data
 sub SetExportMeasureData {

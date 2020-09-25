@@ -43,7 +43,7 @@ sub new {
 	
 	$self->{"taskStrData"} = shift;    # task data serialized in string
 
-	$self->{"taskStatus"} = shift;  # Class responsible for updating StatusFile in job archive
+	$self->{"taskStatus"} = shift;  # Class responsible for updating StatusFile in job archive 
 	
 	# when some group finish only with warning (no error), whole taks result is:
 	# ignoreWarn = 1 => succes

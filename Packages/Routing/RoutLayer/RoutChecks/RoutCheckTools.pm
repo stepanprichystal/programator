@@ -32,7 +32,7 @@ sub OutlineToolIsLast {
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 	my @chains = $unitRTM->GetChains();
 
-	my @outlines = $unitRTM->GetOutlineChains();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	unless ( scalar(@outlines) ) {
 		return $result;

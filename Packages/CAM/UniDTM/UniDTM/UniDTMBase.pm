@@ -15,6 +15,7 @@ use XML::Simple;
 use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamDTMSurf';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamNCHooks';
 use aliased 'Packages::CAM::UniDTM::UniTool::UniToolBase';
 use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTM';
 use aliased 'Packages::CAM::UniDTM::UniTool::UniToolDTMSURF';
@@ -40,9 +41,11 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
-	$self->{"step"}    = shift;
-	$self->{"layer"}   = shift;
-	$self->{"breakSR"} = shift;
+	$self->{"step"}           = shift;
+	$self->{"layer"}          = shift;
+	$self->{"breakSR"}        = shift;
+	$self->{"loadMagazine"}   = shift // 0;    # Load tool magazine by material
+	$self->{"loadPilotHoles"} = shift // 1;    # Load pilot holes for big diameters
 
 	my @pilots = ();
 	$self->{"pilotDefs"} = \@pilots;
@@ -50,14 +53,19 @@ sub new {
 	$self->{"magazineDef"}  = undef;
 	$self->{"magazineSpec"} = undef;
 
-	$self->{"materialName"} = HegMethods->GetMaterialKind( $jobId );
+	$self->{"materialName"} = HegMethods->GetMaterialKind($jobId);
 
 	my @t = ();
 	$self->{"tools"} = \@t;
 
-	$self->__LoadMagazineXml();
+	# 1) Init tools by InCAM DTM
+	$self->__InitUniDTM( $inCAM, $jobId );
 
-	$self->__InitUniDTM($inCAM, $jobId);
+	# 2) Add pilot hole definitions if tools diameter is bigger than 5.3mm
+	$self->__AddPilotHolesDefinition( $inCAM, $jobId ) if ( $self->{"loadPilotHoles"} );
+
+	# 3) Load magazine code by magazine info and PCB material
+	$self->__LoadToolsMagazine( $inCAM, $jobId ) if ( $self->{"loadMagazine"} );
 
 	$self->{"check"} = UniDTMCheck->new($self);
 
@@ -204,7 +212,7 @@ sub __InitUniDTM {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	
+
 	my $step  = $self->{"step"};
 	my $layer = $self->{"layer"};
 
@@ -259,19 +267,39 @@ sub __InitUniDTM {
 		push( @{ $self->{"tools"} }, $uniT );
 	}
 
-	# 3) Add pilot hole definitions if tools diameter is bigger than 5.3mm
-	$self->__AddPilotHolesDefinition($inCAM, $jobId);
+	# 3) Set tool operation
+	foreach my $uniT ( @{ $self->{"tools"} } ) {
 
-	# 4) Load magazine code by magazine info
+		my $operation = CamDrilling->GetToolOperation( $inCAM, $jobId, $layer, $uniT->GetTypeProcess() );
+		$uniT->SetToolOperation($operation);
+	}
 
-	$self->__LoadToolsMagazine($inCAM, $jobId);
+	# 4) Set special tool parameters
+	$self->__LoadToolSpecMagazineXml();
+	foreach my $t ( @{ $self->{"tools"} } ) {
+
+		my $mInfo = $t->GetMagazineInfo();
+
+		# load special tool
+		if ( defined $mInfo && $mInfo ne "" ) {
+
+			my $xmlTool = $self->{"magazineSpec"}->{"tool"}->{$mInfo};
+
+			# if exist geven magazine info eg "6.5_90st";
+			if ($xmlTool) {
+
+				$t->SetSpecial(1);
+				$t->SetAngle( $xmlTool->{"angle"} );
+			}
+		}
+	}
 
 }
 
 # Add pilot tool definitions
 sub __AddPilotHolesDefinition {
-	my $self  = shift;
-	
+	my $self = shift;
+
 	my $inCAM = shift;
 	my $jobId = shift;
 
@@ -301,7 +329,6 @@ sub __AddPilotHolesDefinition {
 		  grep { $_->GetDrillSize() >= 4000 && $_->GetDrillSize() <= 6500 && $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE }
 		  @{ $self->{"tools"} };
 		$self->__AddPilotHoles( \@tools1, 1200 );
-
 	}
 
 	# 2) Go throught pilot holes and create their tool definition
@@ -332,30 +359,32 @@ sub __AddPilotHoles {
 }
 
 sub __LoadToolsMagazine {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 
+	$self->__LoadToolDefMagazineXml();
+
 	my $materialName = $self->{"materialName"};
 
+	# Check on hybrid materials
+	my $matKinds = [];
+	if ( JobHelper->GetIsHybridMat( $jobId, $materialName, $matKinds ) ) {
+
+		$materialName = JobHelper->GetHybridMatCode( $jobId, $matKinds );
+	}
+
 	foreach my $t ( @{ $self->{"tools"} } ) {
-
-		my $operation = CamDrilling->GetToolOperation( $inCAM, $jobId, $self->{"layer"}, $t->GetTypeProcess() );
-
-		$t->SetToolOperation($operation);
 
 		my $mInfo = $t->GetMagazineInfo();
 
 		# load special tool
-		if ( defined $mInfo && $mInfo ne "" ) {
+		if ( $t->GetSpecial() ) {
 
 			my $xmlTool = $self->{"magazineSpec"}->{"tool"}->{$mInfo};
 
 			# if exist geven magazine info eg "6.5_90st";
 			if ($xmlTool) {
-
-				$t->SetSpecial(1);
-				$t->SetAngle( $xmlTool->{"angle"} );
 
 				# search magazine by materal of pcb
 				my $m = undef;
@@ -379,10 +408,11 @@ sub __LoadToolsMagazine {
 		# load default tool
 		else {
 
-			my $magazines = $self->{"magazineDef"}->{"tooloperation"}->{$operation}->{"magazine"};
+			my $magazines = $self->{"magazineDef"}->{"tooloperation"}->{ $t->GetToolOperation() }->{"magazine"};
 
 			if ( defined $magazines ) {
 				my @mArr = @{$magazines};
+
 				my $m = ( grep { $_->{"material"} =~ /^$materialName$/i } @mArr )[0];
 
 				if ( defined $m ) {
@@ -390,12 +420,11 @@ sub __LoadToolsMagazine {
 					$t->SetMagazine( $m->{"content"} );
 				}
 			}
-
 		}
 	}
 }
 
-sub __LoadMagazineXml {
+sub __LoadToolDefMagazineXml {
 	my $self = shift;
 
 	my $templPath1 = GeneralHelper->Root() . "\\Config\\MagazineDef.xml";
@@ -409,6 +438,11 @@ sub __LoadMagazineXml {
 		# KeepRoot   => 1
 	);
 
+}
+
+sub __LoadToolSpecMagazineXml {
+	my $self = shift;
+
 	my $templPath2 = GeneralHelper->Root() . "\\Config\\MagazineSpec.xml";
 	my $templXml2  = FileHelper->Open($templPath2);
 
@@ -418,7 +452,6 @@ sub __LoadMagazineXml {
 		#ForceArray => 1,
 		# KeepRoot   => 1
 	);
-
 }
 
 #-------------------------------------------------------------------------------------------#
