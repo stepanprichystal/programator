@@ -148,7 +148,9 @@ sub __Init {
 
 	# 1) Choose stackup manager
 
-	if (    $pcbType eq EnumsGeneral->PcbType_1VFLEX
+	if (    $pcbType eq EnumsGeneral->PcbType_1V
+		 || $pcbType eq EnumsGeneral->PcbType_2V
+		 || $pcbType eq EnumsGeneral->PcbType_2VFLEX
 		 || $pcbType eq EnumsGeneral->PcbType_2VFLEX )
 	{
 

@@ -367,11 +367,11 @@ sub __LoadToolsMagazine {
 
 	my $materialName = $self->{"materialName"};
 
-	if ( $materialName =~ /^Hybrid$/i ) {
+	# Check on hybrid materials
+	my $matKinds = [];
+	if ( JobHelper->GetIsHybridMat( $jobId, $materialName, $matKinds ) ) {
 
-		# If material is hybrid, real used material is possible get only from stackup
-		die "Stackup must exist to load tool magazine" unless ( JobHelper->StackupExist($jobId) );
-		$materialName = JobHelper->GetHybridMatCode($jobId);
+		$materialName = JobHelper->GetHybridMatCode( $jobId, $matKinds );
 	}
 
 	foreach my $t ( @{ $self->{"tools"} } ) {
@@ -420,7 +420,6 @@ sub __LoadToolsMagazine {
 					$t->SetMagazine( $m->{"content"} );
 				}
 			}
-
 		}
 	}
 }

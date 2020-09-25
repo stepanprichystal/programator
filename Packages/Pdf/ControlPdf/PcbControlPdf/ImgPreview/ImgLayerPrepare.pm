@@ -774,18 +774,18 @@ sub __PreparePLTTHROUGHNC {
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
 	}
 
-	# Consider coverlay
-	my $coverlayL = undef;
-	if ( $self->{"viewType"} eq Enums->View_FROMTOP && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) ) {
-		$coverlayL = "coverlayc";
-	}
-	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT && CamHelper->LayerExists( $inCAM, $jobId, "coverlays" ) ) {
-		$coverlayL = "coverlays";
-
-	}
-	if ( defined $self->{"coverlaysL"}->{$coverlayL} ) {
-		$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{$coverlayL}, "dest_layer" => $lName, "invert" => "yes" );
-	}
+#	# Consider coverlay
+#	my $coverlayL = undef;
+#	if ( $self->{"viewType"} eq Enums->View_FROMTOP && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) ) {
+#		$coverlayL = "coverlayc";
+#	}
+#	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT && CamHelper->LayerExists( $inCAM, $jobId, "coverlays" ) ) {
+#		$coverlayL = "coverlays";
+#
+#	}
+#	if ( defined $self->{"coverlaysL"}->{$coverlayL} ) {
+#		$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{$coverlayL}, "dest_layer" => $lName, "invert" => "yes" );
+#	}
 
 	#CamLayer->WorkLayer( $inCAM, $lName );
 	#$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );

@@ -140,12 +140,10 @@ sub AddHolesCoverlay {
 
 	return 0 if ( $stepName ne "panel" );
 
-	my $flexType = JobHelper->GetPcbType($jobId);
-
-	return 0 if ( $flexType ne EnumsGeneral->PcbType_RIGIDFLEXI && $flexType ne EnumsGeneral->PcbType_RIGIDFLEXO );
-
 	my @coverlay =
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
+
+	return 0 unless ( scalar(@coverlay) );
 
 	my @scanMarks = CamNCHooks->GetLayerCamMarks( $inCAM, $jobId, $stepName, "v1" );
 
@@ -433,16 +431,12 @@ sub AddFlexiCoreFrame {
 #
 #}
 
-sub AddCoverlayRegisterHoles {
+sub AddFlexRegisterHoles {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 
 	my $result = 1;
-
-	my $flexType = JobHelper->GetPcbType($jobId);
-
-	return unless ($flexType);
 
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
 
@@ -457,6 +451,8 @@ sub AddCoverlayRegisterHoles {
 													 EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill
 												  ]
 	);
+
+	return 0 unless (@lOther);
 
 	push( @layers, map { $_->{"gROWname"} } @lOther ) if (@lOther);
 

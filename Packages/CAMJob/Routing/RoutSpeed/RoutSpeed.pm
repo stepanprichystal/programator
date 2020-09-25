@@ -23,7 +23,7 @@ use aliased 'Helpers::FileHelper';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::CAMJob::Routing::RoutDuplicated::RoutDuplicated';
 use aliased 'Helpers::JobHelper';
-use aliased 'Packages::TifFile::TifNCOperations'; 
+use aliased 'Packages::TifFile::TifNCOperations';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
@@ -51,10 +51,9 @@ sub GetToolRoutSpeed {
 
 	my $speed = $self->__GetRoutSpeed( $toolSize, $magazineInfo, $isOutline, $isDuplicated, $packetType, $routSpeedTab{$operation} );
 
-	 unless ( defined $speed ){
+	unless ( defined $speed ) {
 		die "No speed defined for tool size: $toolSize, magazineInfo: $magazineInfo, outline: $isOutline, duplicated: $isDuplicated";
-	 }
-	 
+	}
 
 	return $speed;
 
@@ -71,7 +70,11 @@ sub CompleteRoutSpeed {
 
 	# From IS (druh_materialu). If hybrid => material code by stackup
 	my $materialKind = HegMethods->GetMaterialKind($jobId);
-	$materialKind = JobHelper->GetHybridMatCode($jobId) if ( $materialKind =~ /Hybrid/i );
+	my $matKinds     = [];
+	if ( JobHelper->GetIsHybridMat( $jobId, $materialKind, $matKinds ) ) {
+
+		$materialKind = JobHelper->GetHybridMatCode( $jobId, $matKinds );
+	}
 
 	my $ncPath = JobHelper->GetJobArchive($jobId) . "nc\\";
 

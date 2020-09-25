@@ -326,12 +326,17 @@ sub GetMaterialParams {
 		$materialFile = "COVERLAY";
 
 	}
-	elsif ( $materialName =~ /Hybrid/i ) {
-
-		$materialFile = undef;
+	else {
 
 		# Get proper material type from stackup
-		$materialFile = JobHelper->GetHybridMatCode($jobId);
+
+		my $matKinds = [];
+		if ( JobHelper->GetIsHybridMat( $jobId, $materialName, $matKinds ) ) {
+			
+			$materialFile = undef;
+			
+			$materialFile = JobHelper->GetHybridMatCode( $jobId, $matKinds );
+		}
 
 	}
 
@@ -556,8 +561,6 @@ sub GetDrilledNumber {
 
 	return $numberStr;
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

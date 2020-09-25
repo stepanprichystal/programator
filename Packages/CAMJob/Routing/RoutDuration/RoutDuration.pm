@@ -195,8 +195,13 @@ sub GetRoutToolUsage {
     
     # From IS (druh_materialu). If hybrid => material code by stackup
 	my $materialCode = HegMethods->GetMaterialKind($jobId);
-	$materialCode = JobHelper->GetHybridMatCode($jobId) if ( $materialCode =~ /Hybrid/i );
-	 # From IS (druh_materialu). If hybrid => material code by stackup
+	
+	my $matKinds = [];
+	if ( JobHelper->GetIsHybridMat( $jobId, $materialCode, $matKinds ) ) {
+
+		$materialCode = JobHelper->GetHybridMatCode( $jobId, $matKinds );
+	}
+	 
 
 	# 1) Compute duration of standard rout tools
 	foreach my $uniChainSeq ( $uniRTM->GetChainSequences() ) {

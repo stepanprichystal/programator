@@ -136,7 +136,7 @@ sub OnCheckGroupData {
 
 		foreach my $m (@emailsTo, @emailsCC) {
 
-			if ( $m !~ /\w+\@\w+\.\w+/ ) {
+			if ( $m !~ /^([a-zA-Z][\w\_]{6,15})\@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,4})$/ ) {
 				$dataMngr->_AddErrorResult( "Export approval email - špatný formát", "Špatný formát emailu: $m" );
 			}
 		}
