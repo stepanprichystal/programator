@@ -92,6 +92,7 @@ sub RefreshGUI {
 	$self->{"form"}->SetEmailToAddress( $groupData->GetEmailToAddress() );
 	$self->{"form"}->SetEmailCCAddress( $groupData->GetEmailCCAddress() );
 	$self->{"form"}->SetEmailSubject( $groupData->GetEmailSubject() );
+	$self->{"form"}->SetEmailIntro( $groupData->GetEmailIntro() );
 	$self->{"form"}->SetIncludeOfferInf( $groupData->GetIncludeOfferInf() );
 	$self->{"form"}->SetIncludeOfferStckp( $groupData->GetIncludeOfferStckp() );
 	$self->{"form"}->SetClearComments( $groupData->GetClearComments() );
@@ -117,12 +118,13 @@ sub UpdateGroupData {
 		$groupData->SetEmailToAddress( $frm->GetEmailToAddress() );
 		$groupData->SetEmailCCAddress( $frm->GetEmailCCAddress() );
 		$groupData->SetEmailSubject( $frm->GetEmailSubject() );
+		$groupData->SetEmailIntro( $frm->GetEmailIntro() );
 		$groupData->SetIncludeOfferInf( $frm->GetIncludeOfferInf() );
 		$groupData->SetIncludeOfferStckp( $frm->GetIncludeOfferStckp() );
 		$groupData->SetClearComments( $frm->GetClearComments() );
 
 	}
-	 
+
 }
 
 #-------------------------------------------------------------------------------------------#

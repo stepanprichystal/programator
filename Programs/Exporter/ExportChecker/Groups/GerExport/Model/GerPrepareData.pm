@@ -19,8 +19,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper' => 'MdiHelper';
-use aliased "Packages::Polygon::PolygonFeatures";
-use aliased 'Packages::Polygon::Features::Features::Features';
+
+use aliased 'Packages::Gerbers::Jetprint::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -291,29 +291,15 @@ sub __GetJetprintInfo {
 		$jetInfo{"exportGerbers"} = 0;
 	}
 
-	# Special fiduc
+	# Set fiduc mark
 
-	$jetInfo{"fiduc3p2"} = 0;
+	my $pcbType   = $defaultInfo->GetPcbType();
+	my @boardBase = $defaultInfo->GetBoardBaseLayers();
+
+	$jetInfo{"fiducType"} = Helper->GetDefaultFiduc( $inCAM, $jobId, $pcbType, \@boardBase );
 
 	# Rotate data 90° if PCB is too long
-	$jetInfo{"rotation"} = 0;
-	my %lim = ();
-
-	if ( $defaultInfo->GetLayerCnt() > 2 ) {
-
-		my $route = Features->new();
-		$route->Parse( $inCAM, $jobId, "panel", "fr" );
-		my @features = $route->GetFeatures();
-		%lim = PolygonFeatures->GetLimByRectangle( \@features );
-
-	}
-	else {
-
-		%lim = $defaultInfo->GetProfileLimits();
-	}
-
-	my $maxJetprintLen = 600;    # 600 mm height panel
-	$jetInfo{"rotation"} = 1 if ( ($lim{"yMax"} - $lim{"yMin"} ) > $maxJetprintLen );
+	$jetInfo{"rotation"} = Helper->GetDefaultRotation( $inCAM, $jobId, $defaultInfo->GetLayerCnt(), {$defaultInfo->GetProfileLimits()});
 
 	return %jetInfo;
 }

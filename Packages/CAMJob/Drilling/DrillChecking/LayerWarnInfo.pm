@@ -300,6 +300,11 @@ sub CheckToolDiameter {
 	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
 	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_soldcMill );
 	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_soldsMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
 	
 	
 	 

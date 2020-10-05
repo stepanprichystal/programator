@@ -90,7 +90,7 @@ sub GetStackupCode {
 
 		my @boardL = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-		my $cvrlCnt   = scalar( grep { $_->{"gROWlayer_type"} eq "coverlay" } @boardL );
+		my $cvrlCnt   = scalar( grep { $_->{"gROWlayer_type"} eq "cvrl" } @boardL );
 		my $stiffCnt  = scalar( grep { $_->{"gROWlayer_type"} eq "stiffener" } @boardL );
 		my $uvFlexCnt = scalar( grep { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} =~ /^m[cs]flex$/ } @boardL );
 
@@ -295,7 +295,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d287802";
+	my $jobId = "x68938";
 
 	my $stckpCode = StackupCode->new( $inCAM, $jobId );
 	my $c = $stckpCode->GetStackupCode(1);

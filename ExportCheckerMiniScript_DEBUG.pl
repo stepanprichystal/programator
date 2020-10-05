@@ -24,7 +24,7 @@ my $pidLoadFrm = shift;
 
 unless ($jobId) {
 
-	$jobId = "d292964";
+	$jobId = "d294253";
 
 }
 
@@ -32,7 +32,7 @@ unless ($jobId) {
 #my $unitDim = [320, 400];
 
 my $unitId = UnitEnums->UnitId_COMM;
-my $unitDim = [555, 285];
+my $unitDim = [ 600, 400];
 
 my $form = ExportCheckerMini->new( $jobId, $unitId, $unitDim,0);
 

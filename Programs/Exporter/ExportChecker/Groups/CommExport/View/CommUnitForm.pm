@@ -10,6 +10,7 @@ use Class::Interface;
 &implements('Programs::Exporter::ExportChecker::Groups::IUnitForm');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use Wx;
@@ -23,6 +24,7 @@ BEGIN {
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsIS';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamStepRepeat';
@@ -31,6 +33,7 @@ use aliased 'Programs::Comments::CommMail::CommMail';
 use aliased 'Programs::Comments::Comments';
 use aliased 'Programs::Comments::CommMail::Enums' => 'MailEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Managers::MessageMngr::MessageMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -59,7 +62,9 @@ sub new {
 	$self->{"jobId"}       = $jobId;
 	$self->{"defaultInfo"} = $defaultInfo;
 
-	$self->{"commMail"} = CommMail->new($self->{"inCAM"}, $self->{"jobId"},  $self->{"defaultInfo"}->GetComments()->GetLayout() );
+	my %inf = %{ HegMethods->GetCustomerInfo( $self->{"jobId"} ) };
+	my $lang = ( $inf{"zeme"} eq 25 || $inf{"zeme"} eq 79 ) ? "cz" : "en";
+	$self->{"commMail"} = CommMail->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"defaultInfo"}->GetComments()->GetLayout(), $lang );
 
 	# Load data
 
@@ -67,7 +72,7 @@ sub new {
 
 	# EVENTS
 	$self->{'exportEmailEvt'} = Event->new();
-	$self->{"switchAppEvt"} = Event->new();
+	$self->{"switchAppEvt"}   = Event->new();
 
 	return $self;
 }
@@ -111,8 +116,8 @@ sub __SetLayout {
 
 	#$szRow1->Add( $commViewerHL,  0, &Wx::wxEXPAND );
 
-	$szRow3->Add( $statusLyt, 40, &Wx::wxEXPAND );
-	$szRow3->Add( $emailLyt,  60, &Wx::wxEXPAND );
+	$szRow3->Add( $statusLyt, 35, &Wx::wxEXPAND );
+	$szRow3->Add( $emailLyt,  65, &Wx::wxEXPAND );
 
 	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
 	$szMain->Add( 5,       5, 0,                          &Wx::wxEXPAND );
@@ -155,8 +160,8 @@ sub __SetLayoutStatus {
 	# BUILD STRUCTURE OF LAYOUT
 	$szRow1->Add( $changeOrderStatusChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow2->Add( $orderStatusTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $orderStatusCb,  70, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $orderStatusTxt, 25, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $orderStatusCb,  75, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( 6,       6, 0 );
@@ -186,12 +191,13 @@ sub __SetLayoutEmail {
 	my $szRow6   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow7   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow8   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow9   = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szAction = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
 
 	my $exportEmailChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ -1, -1 ] );
-	my $mailPreviewHL = my $btnSync = Wx::HyperlinkCtrl->new( $statBox, -1, "Mail preview", "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $mailPreviewHL = my $btnSync = Wx::HyperlinkCtrl->new( $statBox, -1, "Final mail preview", "", &Wx::wxDefaultPosition, [ 100, 25 ] );
 
 	my $emailActionTxt = Wx::StaticText->new( $statBox, -1, "Email action", &Wx::wxDefaultPosition, [ -1, -1 ] );
 
@@ -217,6 +223,12 @@ sub __SetLayoutEmail {
 	my $emailSubjectCb =
 	  Wx::ComboBox->new( $statBox, -1, $subject[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@subject, &Wx::wxCB_READONLY );
 
+	my $emailIntroTxt = Wx::StaticText->new( $statBox, -1, "Introduc", &Wx::wxDefaultPosition, [ -1, -1 ] );
+
+	my $emailIntroRTxt = Wx::RichTextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ -1, 80 ], &Wx::wxRE_MULTILINE | &Wx::wxWANTS_CHARS );
+	$emailIntroRTxt->SetEditable(1);
+	$emailIntroRTxt->SetBackgroundColour($Widgets::Style::clrWhite);
+
 	my $includeOfferInfTxt = Wx::StaticText->new( $statBox, -1, "Incl. offer data", &Wx::wxDefaultPosition, [ -1, -1 ] );
 	my $includeOfferInfChb = Wx::CheckBox->new( $statBox, -1, "(basic specification ...)", &Wx::wxDefaultPosition, [ -1, -1 ] );
 
@@ -237,41 +249,45 @@ sub __SetLayoutEmail {
 		$includeOfferStckpChb->Hide();
 	}
 
-	my $clearCommentsTxt = Wx::StaticText->new( $statBox, -1, "Clear comments", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my $clearCommentsTxt = Wx::StaticText->new( $statBox, -1, "Clear comm.", &Wx::wxDefaultPosition, [ -1, -1 ] );
 	my $clearCommentsChb = Wx::CheckBox->new( $statBox, -1, "(if mail was properly sent/opened)", &Wx::wxDefaultPosition, [ -1, -1 ] );
 
 	# EVENTS
 
 	Wx::Event::EVT_HYPERLINK( $mailPreviewHL, -1, sub { $self->__OnMailPreviewHndl() } );
 	Wx::Event::EVT_CHECKBOX( $exportEmailChb, -1, sub { $self->{"exportEmailEvt"}->Do( $exportEmailChb->GetValue() ) } );
-	
+	Wx::Event::EVT_COMBOBOX( $emailSubjectCb, -1, sub { $self->__OnEmailSubjectChange(@_) } );
+
 	# BUILD STRUCTURE OF LAYOUT
 	$szRow1->Add( $exportEmailChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szRow1->Add( 5, 5, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szRow1->Add( $mailPreviewHL, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$szRow2->Add( $emailActionTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow2->Add( $szAction,       70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow2->Add( $emailActionTxt, 25, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow2->Add( $szAction,       80, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szAction->Add( $emailActionSentRb, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szAction->Add( $emailActionOpenRb, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$szRow3->Add( $emailToAddressTxt,  30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow3->Add( $emailToAddressCtrl, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow3->Add( $emailToAddressTxt,  25, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow3->Add( $emailToAddressCtrl, 80, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$szRow4->Add( $emailCCAddressTxt,  30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow4->Add( $emailCCAddressCtrl, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow4->Add( $emailCCAddressTxt,  25, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow4->Add( $emailCCAddressCtrl, 80, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$szRow5->Add( $emailSubjectTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow5->Add( $emailSubjectCb,  70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow5->Add( $emailSubjectTxt, 25, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow5->Add( $emailSubjectCb,  80, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$szRow6->Add( $includeOfferInfTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow6->Add( $includeOfferInfChb, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow6->Add( $emailIntroTxt,  25, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow6->Add( $emailIntroRTxt, 80, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$szRow7->Add( $includeOfferStckpTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow7->Add( $includeOfferStckpChb, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow7->Add( $includeOfferInfTxt, 25, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow7->Add( $includeOfferInfChb, 80, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$szRow8->Add( $clearCommentsTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow8->Add( $clearCommentsChb, 70, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow8->Add( $includeOfferStckpTxt, 25, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow8->Add( $includeOfferStckpChb, 80, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szRow9->Add( $clearCommentsTxt, 25, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow9->Add( $clearCommentsChb, 80, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( 6,       6, 0 );
@@ -282,6 +298,7 @@ sub __SetLayoutEmail {
 	$szStatBox->Add( $szRow6, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow7, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow8, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow9, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# Set References
 	$self->{"exportEmailChb"}       = $exportEmailChb;
@@ -290,6 +307,7 @@ sub __SetLayoutEmail {
 	$self->{"emailToAddressCtrl"}   = $emailToAddressCtrl;
 	$self->{"emailCCAddressCtrl"}   = $emailCCAddressCtrl;
 	$self->{"emailSubjectCb"}       = $emailSubjectCb;
+	$self->{"emailIntroRTxt"}       = $emailIntroRTxt;
 	$self->{"includeOfferInfChb"}   = $includeOfferInfChb;
 	$self->{"includeOfferStckpChb"} = $includeOfferStckpChb;
 	$self->{"clearCommentsChb"}     = $clearCommentsChb;
@@ -318,7 +336,7 @@ sub __OnApprovalTypeChange {
 		$self->{"orderStatusCb"}->SetValue("");
 
 		$self->{"exportEmailChb"}->SetValue(0);
-		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() );    # SetValue doesn't emmit event
 
 		# adress To
 		$self->{"emailToAddressCtrl"}->SetValue("");
@@ -328,6 +346,9 @@ sub __OnApprovalTypeChange {
 
 		# subject
 		$self->{"emailSubjectCb"}->SetValue("");
+
+		# introduction
+		$self->{"emailIntroRTxt"}->Clear();
 
 	}
 
@@ -354,7 +375,7 @@ sub __OnApprovalTypeChange {
 
 		# export email
 		$self->{"exportEmailChb"}->SetValue(1);
-		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() );    # SetValue doesn't emmit event
 
 		# email action
 		$self->{"emailActionSentRb"}->SetValue(1);
@@ -367,6 +388,10 @@ sub __OnApprovalTypeChange {
 
 		# subject
 		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_JOBFINIFHAPPROVAL );
+
+		# introduction
+		$self->{"emailIntroRTxt"}->Clear();
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( $self->{"emailSubjectCb"}->GetValue() ) );
 
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(0);
@@ -382,7 +407,7 @@ sub __OnApprovalTypeChange {
 
 		# export email
 		$self->{"exportEmailChb"}->SetValue(1);
-		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() );    # SetValue doesn't emmit event
 
 		# email action
 		$self->{"emailActionOpenRb"}->SetValue(1);
@@ -405,6 +430,10 @@ sub __OnApprovalTypeChange {
 		# subject
 		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_JOBPROCESSAPPROVAL );
 
+		# introduction
+		$self->{"emailIntroRTxt"}->Clear();
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( $self->{"emailSubjectCb"}->GetValue() ) );
+
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(0);
 
@@ -418,7 +447,7 @@ sub __OnApprovalTypeChange {
 
 		# export email
 		$self->{"exportEmailChb"}->SetValue(1);
-		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() );    # SetValue doesn't emmit event
 
 		# email action
 		$self->{"emailActionSentRb"}->SetValue(1);
@@ -427,10 +456,14 @@ sub __OnApprovalTypeChange {
 		$self->{"emailToAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATSALES );
 
 		# adress CC
-		$self->{"emailCCAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATCAM );
+		$self->{"emailCCAddressCtrl"}->SetValue(""); # no copy
 
 		# subject
 		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_OFFERFINIFHAPPROVAL );
+
+		# introduction
+		$self->{"emailIntroRTxt"}->Clear();
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( $self->{"emailSubjectCb"}->GetValue() ) );
 
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(1);
@@ -446,7 +479,7 @@ sub __OnApprovalTypeChange {
 
 		# export email
 		$self->{"exportEmailChb"}->SetValue(1);
-		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() ); # SetValue doesn't emmit event
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() );    # SetValue doesn't emmit event
 
 		# email action
 		$self->{"emailActionOpenRb"}->SetValue(1);
@@ -469,6 +502,10 @@ sub __OnApprovalTypeChange {
 		# subject
 		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_OFFERPROCESSAPPROVAL );
 
+		# introduction
+		$self->{"emailIntroRTxt"}->Clear();
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( $self->{"emailSubjectCb"}->GetValue() ) );
+
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(0);
 
@@ -486,30 +523,50 @@ sub __OnApprovalTypeChange {
 	#use constant APPROVAL_JOBPROC   => "Job processing";
 }
 
+# Email subject changed
+sub __OnEmailSubjectChange {
+	my $self = shift;
+
+	# Change introduction
+
+	$self->{"emailIntroRTxt"}->Clear();
+	$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( $self->{"emailSubjectCb"}->GetValue() ) );
+
+}
+
 sub __OnMailPreviewHndl {
 	my $self = shift;
+
+	# Aware customer preview is not intended for email sending
+	my $messMngr = MessageMngr->new( $self->{"jobId"} );
+	my @txt      = ("Náhled v MS Outlook slouží pouze pro <b>kontrolu vygenerování emailu</b>. Pro odeslání používejte vždy tlačítko \"Export\"");
+	push( @txt, "\n(Export uloží příznak o odeslání mailu do InCAM jobu + nastavení stav zakázky v IS atd..)" );
+	$messMngr->ShowModal( $self, EnumsGeneral->MessageType_INFORMATION, \@txt );
 
 	# Init comments
 	my $c = $self->{"defaultInfo"}->GetComments();
 
 	my %inf = %{ HegMethods->GetCustomerInfo( $self->{"jobId"} ) };
-	my $lang = $inf{"zeme"} eq 25 ? "cz" : "en";
+	my $lang = ( $inf{"zeme"} eq 25 || $inf{"zeme"} eq 79 ) ? "cz" : "en";
 
-	my $mail = CommMail->new( $self->{"inCAM"}, $self->{"jobId"}, $c->GetLayout(),$lang, $self->GetIncludeOfferInf(), $self->GetIncludeOfferStckp() );
+	my $mail = CommMail->new( $self->{"inCAM"}, $self->{"jobId"}, $c->GetLayout(), $lang );
 
-	unless ( $mail->Open( $self->GetEmailToAddress(), $self->GetEmailCCAddress(), $self->GetEmailSubject() ) ) {
+	unless (
+			 $mail->Open( $self->GetEmailToAddress(), $self->GetEmailCCAddress(),  $self->GetEmailSubject(), $self->GetEmailIntro(),
+						  1,                          $self->GetIncludeOfferInf(), $self->GetIncludeOfferStckp() )
+	  )
+	{
 
-		my $messMngr = MessageMngr->new( $self->{"jobId"} );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during creating mail preview"] );
+		$messMngr->ShowModal( $self, EnumsGeneral->MessageType_ERROR, ["Error during creating mail preview"] );
 	}
 
 }
 
 #sub __OnCommViewerHndl {
 #	my $self = shift;
-#	
+#
 #	my $appName = "Test";
-#	
+#
 #	$self->{"switchAppEvt"}->Do($appName);
 #
 #}
@@ -718,6 +775,21 @@ sub GetEmailSubject {
 	my $self = shift;
 
 	return $self->{"emailSubjectCb"}->GetValue();
+}
+
+# Email subjects
+sub SetEmailIntro {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"emailIntroRTxt"}->Clear();
+	return $self->{"emailIntroRTxt"}->WriteText($value);
+}
+
+sub GetEmailIntro {
+	my $self = shift;
+
+	return $self->{"emailIntroRTxt"}->GetValue();
 }
 
 # Include offer inf

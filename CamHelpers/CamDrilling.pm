@@ -385,21 +385,21 @@ sub AddNCLayerType {
 		}
 
 		# new for flexi
-		elsif ( $l->{"gROWname"} =~ /^fcoverlayc\d?/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fcvrlc\d?/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_cvrlycMill;
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fcoverlays\d?/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fcvrls\d?/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_cvrlysMill;
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fprepreg[12]/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fprpg[12]/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_prepregMill;
 			$l->{"plated"}    = 0;
@@ -419,6 +419,19 @@ sub AddNCLayerType {
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
+		}elsif ( $l->{"gROWname"} =~ /^fzstiffc\d?/ ) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bstiffcMill;
+			$l->{"plated"}    = 0;
+			$l->{"technical"} = 0;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fzstiffs\d?/ ) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bstiffsMill;
+			$l->{"plated"}    = 0;
+			$l->{"technical"} = 0;
+
 		}
 		elsif ( $l->{"gROWname"} =~ /^fsoldc\d?/ ) {
 
@@ -430,6 +443,24 @@ sub AddNCLayerType {
 		elsif ( $l->{"gROWname"} =~ /^fsolds\d?/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_soldsMill;
+			$l->{"plated"}    = 0;
+			$l->{"technical"} = 0;
+		
+		}elsif ( $l->{"gROWname"} =~ /^ftpc$/ ) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_tapecMill;
+			$l->{"plated"}    = 0;
+			$l->{"technical"} = 0;
+		
+		}elsif ( $l->{"gROWname"} =~ /^ftps$/ ) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_tapesMill;
+			$l->{"plated"}    = 0;
+			$l->{"technical"} = 0;
+		
+		}elsif ( $l->{"gROWname"} =~ /^ftpbr$/ ) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_tapebrMill;
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 		}

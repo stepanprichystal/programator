@@ -57,15 +57,17 @@ sub __SetLayout {
 
 	my $nb = Wx::Notebook->new( $self, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
-	my $btnRemove  = Wx::Button->new( $self, -1, "- Remove",   &Wx::wxDefaultPosition, [ 80,  28 ] );
-	my $btnEditGS  = Wx::Button->new( $self, -1, "Edit in GS", &Wx::wxDefaultPosition, [ 80,  28 ] );
-	my $btnAddCAM  = Wx::Button->new( $self, -1, "+ Add CAM",  &Wx::wxDefaultPosition, [ 100, 28 ] );
-	my $btnAddGS   = Wx::Button->new( $self, -1, "+ Add GS",   &Wx::wxDefaultPosition, [ 100, 28 ] );
-	my $btnAddFile = Wx::Button->new( $self, -1, "+ Add File", &Wx::wxDefaultPosition, [ 100, 28 ] );
+	my $btnRemove    = Wx::Button->new( $self, -1, "- Remove",             &Wx::wxDefaultPosition, [ 90,  28 ] );
+	my $btnEditGS    = Wx::Button->new( $self, -1, "Edit in GS",           &Wx::wxDefaultPosition, [ 90,  28 ] );
+	my $btnAddCAMDir = Wx::Button->new( $self, -1, "+ CAM (direct)", &Wx::wxDefaultPosition, [ 110, 28 ] );
+	my $btnAddCAM    = Wx::Button->new( $self, -1, "+ CAM",    &Wx::wxDefaultPosition, [ 70, 28 ] );
+	my $btnAddGS     = Wx::Button->new( $self, -1, "+ GS",             &Wx::wxDefaultPosition, [ 70, 28 ] );
+	my $btnAddFile   = Wx::Button->new( $self, -1, "+ File",           &Wx::wxDefaultPosition, [ 70, 28 ] );
 
 	# Set icons
-	$self->__SetIconByApp( $btnAddGS,  Enums->Path_GREENSHOT );
-	$self->__SetIconByApp( $btnAddCAM, GeneralHelper->GetLastInCAMVersion() . "bin\\InCAM.exe" );
+	$self->__SetIconByApp( $btnAddGS,     Enums->Path_GREENSHOT );
+	$self->__SetIconByApp( $btnAddCAMDir, GeneralHelper->GetLastInCAMVersion() . "bin\\InCAM.exe" );
+	$self->__SetIconByApp( $btnAddCAM,    GeneralHelper->GetLastInCAMVersion() . "bin\\InCAM.exe" );
 	my $pAddFile = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\file24x24.ico";
 
 	my $im = Wx::Image->new( $pAddFile, &Wx::wxBITMAP_TYPE_ICO );
@@ -73,11 +75,12 @@ sub __SetLayout {
 	$btnAddFile->SetBitmap($btmIco);
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_BUTTON( $btnAddCAM,  -1, sub { $self->{"onAddFileEvt"}->Do( 1, 0, 0 ) } );
-	Wx::Event::EVT_BUTTON( $btnAddGS,   -1, sub { $self->{"onAddFileEvt"}->Do( 0, 1, 0 ) } );
-	Wx::Event::EVT_BUTTON( $btnAddFile, -1, sub { $self->{"onAddFileEvt"}->Do( 0, 0, 1 ) } );
-	Wx::Event::EVT_BUTTON( $btnEditGS,  -1, sub { $self->{"onEditFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
-	Wx::Event::EVT_BUTTON( $btnRemove,  -1, sub { $self->{"onRemoveFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
+	Wx::Event::EVT_BUTTON( $btnAddCAMDir, -1, sub { $self->{"onAddFileEvt"}->Do( 1, 0, 0, 0 ) } );
+	Wx::Event::EVT_BUTTON( $btnAddCAM,    -1, sub { $self->{"onAddFileEvt"}->Do( 0, 1, 0, 0 ) } );
+	Wx::Event::EVT_BUTTON( $btnAddGS,     -1, sub { $self->{"onAddFileEvt"}->Do( 0, 0, 1, 0 ) } );
+	Wx::Event::EVT_BUTTON( $btnAddFile,   -1, sub { $self->{"onAddFileEvt"}->Do( 0, 0, 0, 1 ) } );
+	Wx::Event::EVT_BUTTON( $btnEditGS, -1, sub { $self->{"onEditFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
+	Wx::Event::EVT_BUTTON( $btnRemove, -1, sub { $self->{"onRemoveFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -85,9 +88,10 @@ sub __SetLayout {
 	$szMain->Add( $nb,     1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $szBtns, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szBtns->Add( $btnAddCAM,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnAddGS,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szBtns->Add( $btnAddFile, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnAddCAMDir, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnAddCAM,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnAddGS,     0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBtns->Add( $btnAddFile,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szBtns->Add( 1, 1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szBtns->Add( $btnEditGS, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -238,8 +242,8 @@ sub __SetIconByApp {
 	my $self    = shift;
 	my $button  = shift;
 	my $appPath = shift;
-	
-	return 0 unless(-e $appPath);
+
+	return 0 unless ( -e $appPath );
 
 	Wx::InitAllImageHandlers();
 	my $exeCAM = Win32::Exe->new($appPath);

@@ -187,7 +187,7 @@ sub GetExistCvrl {
 	my $side = shift;    # top/bot
 	my $inf  = shift;    # reference for storing info
 
-	my $l = $side eq "top" ? "coverlayc" : "coverlays";
+	my $l = $side eq "top" ? "cvrlc" : "cvrls";
 
 	my $exist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
 

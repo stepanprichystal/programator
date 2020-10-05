@@ -80,7 +80,7 @@ sub CreateCoverlayPins {
 
 	my $messMngr = MessageMngr->new($jobId);
 
-	my $lName = "coverlaypins";
+	my $lName = "cvrlpins";
 
 	my $type = JobHelper->GetPcbType($jobId);
 	return 0 if ( $type ne EnumsGeneral->PcbType_RIGIDFLEXI && $type ne EnumsGeneral->PcbType_RIGIDFLEXO );
@@ -300,7 +300,7 @@ sub __CreatePin_HOLDEROUT {
 
 	my $result = 1;
 
-	my $lName = "coverlaypins";
+	my $lName = "cvrlpins";
 
 	CamLayer->WorkLayer( $inCAM, $lName );
 
@@ -460,7 +460,7 @@ sub __CreatePin_HOLDERIN {
 
 	my $result = 1;
 
-	my $lName = "coverlaypins";
+	my $lName = "cvrlpins";
 
 	CamLayer->WorkLayer( $inCAM, $lName );
 
@@ -600,7 +600,7 @@ sub __CreatePin_REGPAD {
 
 	my $result = 1;
 
-	my $lName = "coverlaypins";
+	my $lName = "cvrlpins";
 
 	# Prepare working layer
 	my $workLayer = GeneralHelper->GetGUID();

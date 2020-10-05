@@ -111,7 +111,7 @@ sub Build {
 
 		my $templ = "-19031138";
 
-		if(CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" )){
+		if(CamHelper->LayerExists( $inCAM, $jobId, "cvrlpins" )){
 			
 			$templ = "19031138";
 		}

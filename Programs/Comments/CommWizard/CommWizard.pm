@@ -153,11 +153,13 @@ sub __OnEmailPreview {
 		my %inf  = %{ HegMethods->GetCustomerInfo( $self->{"jobId"} ) };
 		my $lang = "en";
 
-		# if country CZ
-		$lang = "cz" if ( $inf{"zeme"} eq 25 );
+		# if country CZ or SK
+		$lang = "cz" if ( $inf{"zeme"} eq 25 || $inf{"zeme"} eq 79 );
 
 		my $mail = CommMail->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"comments"}->GetLayout(), $lang );
-		$mail->Open( ["\@"], [], "Comment preview..." );
+
+		my $txt = "!!! NEODESÍLAT !!! (pouze náhled, odeslat vždy přes Export)";
+		$mail->Open( [$txt], [], "-", undef, 0, 0, 0 );
 
 		#$mail->Sent(['stepan.prichystal@gatema.cz'], [], "Comment preview...");
 
@@ -171,19 +173,19 @@ sub __OnClearAllHndl {
 
 	if ( scalar( $layout->GetAllComments ) ) {
 
-		my $messMngr = $self->{"form"}->GetMessMngr();
-
-		my @mess = ();
-
-		push( @mess, "You are about to clear all comments:\n" );
-		push( @mess, " 1) First, all coments will be archived in: " . $self->{"comments"}->GetCommArchiveDir() );
-		push( @mess, " 2) All coments will be removed from viewer" );
-		push( @mess, " 3) You can restore last cleared comments by click on Restore button (activ3e only if Comemnt list is empty)" );
-		push( @mess, "\n\nDo you want continue?" );
-
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "No", "Yes, archive and clear comments" ] );    #  Script is stopped
-
-		if ( $messMngr->Result() == 1 ) {
+#		my $messMngr = $self->{"form"}->GetMessMngr();
+#
+#		my @mess = ();
+#
+#		push( @mess, "You are about to clear all comments:\n" );
+#		push( @mess, " 1) First, all coments will be archived in: " . $self->{"comments"}->GetCommArchiveDir() );
+#		push( @mess, " 2) All coments will be removed from viewer" );
+#		push( @mess, " 3) You can restore last cleared comments by click on Restore button (activ3e only if Comemnt list is empty)" );
+#		push( @mess, "\n\nDo you want continue?" );
+#
+#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "No", "Yes, archive and clear comments" ] );    #  Script is stopped
+#
+#		if ( $messMngr->Result() == 1 ) {
 
 			# Remove comments from list
 
@@ -192,7 +194,7 @@ sub __OnClearAllHndl {
 			$self->{"form"}->RefreshCommListViewForm($layout);
 			$self->{"form"}->RefreshCommViewForm(-1);
 
-		}
+#		}
 
 	}
 
@@ -377,7 +379,7 @@ sub __OnEditFileHndl {
 								 "Aplikace musí být nainstalovaná na následující cestě: " . CommEnums->Path_GREENSHOT
 							  ]
 		);
-		
+
 		return 0;
 	}
 
@@ -390,11 +392,12 @@ sub __OnEditFileHndl {
 }
 
 sub __OnAddFileHndl {
-	my $self    = shift;
-	my $commId  = shift;
-	my $addCAM  = shift;
-	my $addGS   = shift;
-	my $addFile = shift;
+	my $self      = shift;
+	my $commId    = shift;
+	my $addCAMDir = shift;                                                                                        # Add CAM directly without pause
+	my $addCAM    = shift;
+	my $addGS     = shift;
+	my $addFile   = shift;
 
 	my $messMngr = $self->{"form"}->GetMessMngr();
 
@@ -402,9 +405,9 @@ sub __OnAddFileHndl {
 
 	my $p = "";
 	my $res;
-	if ($addCAM) {
+	if ( $addCAM || $addCAMDir ) {
 
-		$res = $self->{"comments"}->SnapshotCAM( 0, \$p );
+		$res = $self->{"comments"}->SnapshotCAM( $addCAMDir, \$p );
 	}
 	elsif ($addGS) {
 

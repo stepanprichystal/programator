@@ -70,7 +70,7 @@ sub __BuildInputProducts {
 	#		my $subG = $g->AddSubGroup( "1.2", StackEnums->Product_INPUT, \@pltNC );
 	#
 	#		 # Add TOP coverlay
-	#		if ( scalar( grep { $_->{"gROWname"} =~ /^coverlayc$/ } @{$boardBaseLayers} ) ) {
+	#		if ( scalar( grep { $_->{"gROWname"} =~ /^cvrlc$/ } @{$boardBaseLayers} ) ) {
 	#
 	#			$subG->AddCoverlayRow();
 	#
@@ -80,7 +80,7 @@ sub __BuildInputProducts {
 	#		$subG->AddProductRow( "1.1",    StackEnums->Product_INPUT);
 	#
 	#		# 1) Add BOT coverlay
-	#		if ( scalar( grep { $_->{"gROWlayer_type"} eq "coverlay" && $_->{"gROWname"} =~ /^coverlays$/ } @{$boardBaseLayers} ) ) {
+	#		if ( scalar( grep { $_->{"gROWlayer_type"} eq "coverlay" && $_->{"gROWname"} =~ /^cvrls$/ } @{$boardBaseLayers} ) ) {
 	#
 	#			$subG->AddCoverlayRow();
 	#		}

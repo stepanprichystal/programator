@@ -75,22 +75,51 @@ sub __DefineNPlatedGroups {
 	my $self      = shift;
 	my $opManager = shift;
 
-	# 1) Create group FROM TOP for mill and z-axis mill
+	# 1) Create group FROM TOP for mill and z-axis mill and z-axis stiff mill
+	{
+		my @operations = ();
+		my $name       = "fc";
 
-	my @operations = ();
-	my $name       = "fc";
+		my $operFc = $opManager->GetOperationDef("fc");
+		if ($operFc) {
+			push( @operations, $operFc );
+		}
 
-	my $operFc = $opManager->GetOperationDef("fc");
-	if ($operFc) {
-		push( @operations, $operFc );
+		my $operFzc = $opManager->GetOperationDef("fzc");
+		if ($operFzc) {
+			push( @operations, $operFzc );
+		}
+
+		my $operFzstiffc = $opManager->GetOperationDef("fzstiffc");
+		if ($operFzstiffc) {
+			push( @operations, $operFzstiffc );
+		}
+
+		$opManager->AddGroupDef( $name, \@operations, -1 );
 	}
 
-	my $operFzc = $opManager->GetOperationDef("fzc");
-	if ($operFzc) {
-		push( @operations, $operFzc );
-	}
+	# 2) Create group FROM BOT z-axis mill and BOT z-axis stiff mill
+	{
+		my @operations = ();
+		my $name       = "fzs";
 
-	$opManager->AddGroupDef( $name, \@operations, -1 );
+		my $operFzstiffs = $opManager->GetOperationDef("fzstiffs");
+
+		if ($operFzstiffs) {
+
+			push( @operations, $operFzstiffs );
+
+			my $operFzs = $opManager->GetOperationDef("fzs");
+			if ($operFzs) {
+
+				push( @operations, $operFzs );
+
+			}
+
+			$opManager->AddGroupDef( $name, \@operations, -1 );
+
+		}
+	}
 }
 
 # Create single operations, which represent operation on technical procedure
@@ -161,21 +190,24 @@ sub __DefineNPlatedOperations {
 	my %npltDrillInfo = %{ $self->{"npltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 
 	#non plated
-	my @nplt_nDrill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };      #normall nplt drill
-	my @nplt_nMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };       #normall mill slits
-	my @nplt_bMillTop = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };    #z-axis top mill
-	my @nplt_bMillBot = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };    #z-axis bot mill
-	my @nplt_rsMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_rsMill } };      #rs mill before plating
-	my @nplt_frMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };      #milling frame
-	my @nplt_kMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };       #milling conneector
-	my @nplt_lcMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };      #milling template snim lak c
-	my @nplt_lsMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };      #milling template snim lak s
-
+	my @nplt_nDrill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };        #normall nplt drill
+	my @nplt_nMill      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };         #normall mill slits
+	my @nplt_bMillTop   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };      #z-axis top mill
+	my @nplt_bMillBot   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };      #z-axis bot mill
+	my @nplt_rsMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_rsMill } };        #rs mill before plating
+	my @nplt_frMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };        #milling frame
+	my @nplt_kMill      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };         #milling conneector
+	my @nplt_lcMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };        #milling template snim lak c
+	my @nplt_lsMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };        #milling template snim lak s
 	my @nplt_cvrlycMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };    #top coverlay mill
 	my @nplt_cvrlysMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };    #bot coverlay mill
-
 	my @nplt_stiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };    # milling for stiffener from side c
 	my @nplt_stiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };    # milling for stiffener from side s
+	my @nplt_bstiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } };  # depth milling of stiffener from side c
+	my @nplt_bstiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } };  # depth milling of stiffener from side s
+	my @nplt_tapecMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapecMill } };    # milling of doublesided tape sticked from top
+	my @nplt_tapesMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapesMill } };    # milling of doublesided tape sticked from bot
+	my @nplt_tapebrMill  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill } };   # milling of doublesided tape bridges after tape is pressed
 
 	#Define operation:
 
@@ -226,6 +258,14 @@ sub __DefineNPlatedOperations {
 
 	$opManager->AddOperationDef( "fzs", \@layers2, -1 );
 
+	# X) Operation name = fzstiffc - can contain layer
+	# - @nplt_bstiffcMill
+	$opManager->AddOperationDef( "fzstiffc", \@nplt_bstiffcMill, -1 );
+
+	# X) Operation name = fzstiffs - can contain layer
+	# - @nplt_bstiffsMill
+	$opManager->AddOperationDef( "fzstiffs", \@nplt_bstiffsMill, -1 );
+
 	# 4) Operation name = rs - can contain layer
 	# - @nplt_rsMill
 	$opManager->AddOperationDef( "rs", \@nplt_rsMill, -1 );
@@ -255,6 +295,18 @@ sub __DefineNPlatedOperations {
 	# 13) Operation name = fstiffs - can contain layer
 	# - @nplt_stiffcMill
 	$opManager->AddOperationDef( "stiffs", \@nplt_stiffsMill, -1 );
+
+	# 14) Operation name = ftapec - can contain layer
+	# - @nplt_tapecMill
+	$opManager->AddOperationDef( "ftapec", \@nplt_tapecMill, -1 );
+
+	# 15) Operation name = ftapes - can contain layer
+	# - @nplt_tapesMill
+	$opManager->AddOperationDef( "ftapes", \@nplt_tapesMill, -1 );
+	
+	# 16) Operation name = ftapes - can contain layer
+	# - @nplt_tapesMill
+	$opManager->AddOperationDef( "ftapebr", \@nplt_tapebrMill, -1 );
 
 }
 

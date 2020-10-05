@@ -70,12 +70,14 @@ sub SortLayersByRules {
 	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }    = 1080;
 
 	# nplted layer are merged together
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }   = 2010;
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } = 2020;
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } = 2030;
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_nMill }    = 2040;
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_rsMill }   = 2050;
-	$priority{ EnumsGeneral->LAYERTYPE_nplt_frMill }   = 2060;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }      = 2010;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }    = 2020;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }    = 2030;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } = 2040;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } = 2050;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_nMill }       = 2060;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_rsMill }      = 2070;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_frMill }      = 2080;
 
 	#1) sort by priority bz tep of layer
 
@@ -161,9 +163,11 @@ sub GetHeaderLayer {
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillTop } = 1020;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bDrillBot } = 1020;
 
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop } = 1040;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot } = 1040;
-	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }    = 1050;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillTop }     = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_bMillBot }     = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } = 1040;
+	$priority{ EnumsGeneral->LAYERTYPE_plt_nMill }        = 1050;
 
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop } = 1040;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } = 1040;
@@ -625,7 +629,7 @@ sub StoreNClayerSettTif {
 	my $operationMngr = shift;
 
 	# 1) Before store settings, check if layers which are merged have same scale settings
- 
+
 	my @opItems = ();
 	foreach my $opItem ( $operationMngr->GetOperationItems() ) {
 
@@ -640,7 +644,7 @@ sub StoreNClayerSettTif {
 
 		die "NC layers (" . join( "; ", map { $_->{"name"} } @lSetts ) . ") to merging has different \"StretchX\" parameter."
 		  if ( scalar(@stretchX) > 1 );
-		  
+
 		die "NC layers (" . join( "; ", map { $_->{"name"} } @lSetts ) . ") to merging has different \"StretchY\" parameter."
 		  if ( scalar(@stretchY) > 1 );
 	}

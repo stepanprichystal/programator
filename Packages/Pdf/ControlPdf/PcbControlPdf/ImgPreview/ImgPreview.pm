@@ -468,6 +468,17 @@ sub __DefineSurfaces {
 	my $npltThroughNcClr = LayerColor->new( PrevEnums->Surface_COLOR );
 	$clrs{ Enums->Type_NPLTTHROUGHNC } = $npltThroughNcClr;
 
+	# Double sided tape
+
+	my $tapeClr = LayerColor->new( PrevEnums->Surface_TEXTURE, Enums->Texture_TAPE );
+	$clrs{ Enums->Type_TAPE } = $tapeClr;
+	
+	my $tapeBackClr = LayerColor->new( PrevEnums->Surface_COLOR, "228,195,150" );
+	$clrs{ Enums->Type_TAPEBACK } = $tapeBackClr;
+	
+
+
+
 	return \%clrs;
 
 }

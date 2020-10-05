@@ -139,6 +139,8 @@ sub AddHolesCoverlay {
 	my $result = 1;
 
 	return 0 if ( $stepName ne "panel" );
+	
+	return 0 if ( CamJob->GetSignalLayerCnt($inCAM, $jobId) <= 2 );
 
 	my @coverlay =
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
@@ -375,7 +377,7 @@ sub AddFlexiCoreFrame {
 #	foreach my $l (@layers) {
 #
 #		# Inner layer with coverlay
-#		if ( $l =~ /^v\d$/ && CamHelper->LayerExists( $inCAM, $jobId, "coverlay" . $l ) ) {
+#		if ( $l =~ /^v\d$/ && CamHelper->LayerExists( $inCAM, $jobId, "cvrl" . $l ) ) {
 #
 #			CamLayer->WorkLayer( $inCAM, $l );
 #
@@ -549,7 +551,7 @@ sub AddCoverlayRegisterMarks {
 	return 0 if ( $flexType ne EnumsGeneral->PcbType_RIGIDFLEXI && $flexType ne EnumsGeneral->PcbType_RIGIDFLEXO );
 
 	my @coverLay =
-	  grep { $_->{"gROWname"} =~ /^coverlay([cs])$/ || $_->{"gROWname"} =~ /^coverlay(v\d+)$/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	  grep { $_->{"gROWname"} =~ /^cvrl([cs])$/ || $_->{"gROWname"} =~ /^cvrl(v\d+)$/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
 	return 0 unless (@coverLay);
 
@@ -557,7 +559,7 @@ sub AddCoverlayRegisterMarks {
 
 	foreach my $cvrLayer (@coverLay) {
 
-		my ($sigLayer) = $cvrLayer->{"gROWname"} =~ m/^coverlay(.*)$/;
+		my ($sigLayer) = $cvrLayer->{"gROWname"} =~ m/^cvrl(.*)$/;
 
 		my $tmp = GeneralHelper->GetGUID();
 

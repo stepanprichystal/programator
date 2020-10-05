@@ -75,7 +75,7 @@ sub GetJobLayerTitle {
 			$title = "Obrys";
 		}
 	}
-	
+
 	elsif ( $l->{"gROWname"} =~ /^bend$/i ) {
 
 		$title = "Flexible area outline";
@@ -134,7 +134,7 @@ sub GetJobLayerTitle {
 			$title = $czl{ $l->{"gROWname"} };
 		}
 	}
-	elsif ( $l->{"gROWname"} =~ /^coverlay(\w*)$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^cvrl(\w*)$/i ) {
 
 		# coverlay
 		my $sigLayer = $1;
@@ -160,8 +160,9 @@ sub GetJobLayerTitle {
 		if ($cz) {
 			$title = "Coverlay na " . $sigLayerCz;
 		}
-	
-	}elsif ( $l->{"gROWname"} =~ /^stiff(\w*)$/i ) {
+
+	}
+	elsif ( $l->{"gROWname"} =~ /^stiff(\w*)$/i ) {
 
 		# coverlay
 		my $sigLayer = $1;
@@ -187,8 +188,9 @@ sub GetJobLayerTitle {
 		if ($cz) {
 			$title = "Stiffener na " . $sigLayerCz;
 		}
-	
+
 	}
+
 	# nc layers
 	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
 			|| ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $outputType eq Enums->Type_NCLAYERS ) )
@@ -237,7 +239,8 @@ sub GetJobLayerTitle {
 			$title = "Zaplněné slepé otvory z bot";
 		}
 
-	}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill && $outputType eq Enums->Type_FILLEDHOLES ) {
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill && $outputType eq Enums->Type_FILLEDHOLES ) {
 
 		$title = "Filled burried drilling";
 		if ($cz) {
@@ -327,7 +330,19 @@ sub GetJobLayerTitle {
 		if ($cz) {
 			$title = "V-drážka";
 		}
-	}
+	}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ) {
+		$title = "Z-axis milling of TOP stiffener";
+		if ($cz) {
+			$title = "Zahloubené frézování top stiffeneru.";
+		}
+	}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ) {
+		$title = "Z-axis milling of BOT stiffener";
+		if ($cz) {
+			$title = "Zahloubené frézování bot stiffeneru.";
+		}
+	} 
+
+	die "Title is empty for layer: " . $l->{"gROWname"} if ( $title eq "" );
 
 	return $title;
 

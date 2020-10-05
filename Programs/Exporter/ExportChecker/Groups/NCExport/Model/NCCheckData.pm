@@ -409,10 +409,10 @@ sub OnCheckGroupData {
 				map {
 					    "- Layer: "
 					  . $_->{"layer"}
-					  . " has right dir: "
-					  . $_->{"rightDir"}
-					  . ",  wrong dir: "
+					  . " contains wrong pocket dir: "
 					  . $_->{"wrongDir"}
+					  . ",  instead of proper pocket dir: "
+					  . $_->{"rightDir"}
 					  . ". Wrong surface ids: "
 					  . join( "; ", map { $_->{"id"} } @{ $_->{"surfaces"} } )
 				} @layerInf

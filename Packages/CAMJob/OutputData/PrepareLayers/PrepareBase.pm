@@ -303,7 +303,7 @@ sub __PrepareFLEXLAYERS {
 	my $step  = $self->{"step"};
 
 	# 1) Define coverlays
-	my @lCoverlay = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "coverlay" } @layers;
+	my @lCoverlay = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "cvrl" } @layers;
 	foreach my $cvrL (@lCoverlay) {
 
 		# 1) Create full surface by profile
@@ -324,7 +324,7 @@ sub __PrepareFLEXLAYERS {
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 
 		# 3) If exist coverlay pins, final shape of coverlay depands on NPLT rout layers
-		if ( CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" ) ) {
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "cvrlpins" ) ) {
 
 			# Countourize whole layers and keep surfaces in bend area only
 

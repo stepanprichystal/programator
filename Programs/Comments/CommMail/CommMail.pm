@@ -44,12 +44,10 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}         = shift;
-	$self->{"jobId"}         = shift;
-	$self->{"commLayout"}    = shift;           # make a deep copy. Package can cange layout
-	$self->{"lang"}          = shift // "en";
-	$self->{"addOfferInf"}   = shift // 0;      # Add offer data specitication to email
-	$self->{"addOfferStckp"} = shift // 0;      # Add offer pdf stackup to email
+	$self->{"inCAM"}      = shift;
+	$self->{"jobId"}      = shift;
+	$self->{"commLayout"} = shift;           # make a deep copy. Package can cange layout
+	$self->{"lang"}       = shift // "en";
 
 	die "Language " . $self->{"lang"} . " is not implemented" if ( $self->{"lang"} !~ /(cz)|(en)/ );
 
@@ -58,10 +56,14 @@ sub new {
 
 # Open via MS outlook
 sub Open {
-	my $self        = shift;
-	my $to          = shift;
-	my $cc          = shift;
-	my $subjectType = shift;
+	my $self          = shift;
+	my $to            = shift;
+	my $cc            = shift;
+	my $subjectType   = shift;
+	my $introduction  = shift;
+	my $addFooter     = shift // 1;
+	my $addOfferInf   = shift // 0;    # Add offer data specitication to email
+	my $addOfferStckp = shift // 0;    # Add offer pdf stackup to email
 
 	my $p = GeneralHelper->Root() . "\\Programs\\Comments\\CommMail\\OutlookMail.pl";
 
@@ -69,8 +71,16 @@ sub Open {
 	push( @cmds, $to );
 	push( @cmds, $cc );
 	push( @cmds, $self->__GetSubjectByType($subjectType) );
-	push( @cmds, $self->__GetBody() );
-	push( @cmds, [ $self->__GetAttachments() ] );
+
+	my $bodyTxt = "";
+	$bodyTxt .= $introduction."\n\n"        if ($introduction);
+	$bodyTxt .= $self->__GetBody($addOfferInf);
+	$bodyTxt .= $self->__GetFooter() if ($addFooter);
+	
+	#$bodyTxt=  encode( "UTF-8", $bodyTxt );
+
+	push( @cmds, $bodyTxt );
+	push( @cmds, [ $self->__GetAttachments($addOfferStckp) ] );
 	push( @cmds, "open" );
 
 	my $call = SystemCall->new( $p, @cmds );
@@ -80,10 +90,14 @@ sub Open {
 
 # Sent via MIME::Lite
 sub Sent {
-	my $self        = shift;
-	my $to          = shift;
-	my $cc          = shift;
-	my $subjectType = shift;
+	my $self          = shift;
+	my $to            = shift;
+	my $cc            = shift;
+	my $subjectType   = shift;
+	my $introduction  = shift;
+	my $addFooter     = shift // 1;
+	my $addOfferInf   = shift // 0;    # Add offer data specitication to email
+	my $addOfferStckp = shift // 0;    # Add offer pdf stackup to email
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -97,7 +111,7 @@ sub Sent {
 	push( @emails, @{$cc} ) if ( defined $cc );
 
 	foreach my $m (@emails) {
- 
+
 		if ( $m !~ /^.+\@.+\..+$/i ) {
 			die "Wrong email format: $m";
 		}
@@ -123,9 +137,12 @@ sub Sent {
 		}
 	}
 
-	my @attach  = $self->__GetAttachments();
-	my $body    = $self->__GetBody();
 	my $subject = $self->__GetSubjectByType($subjectType);
+
+	my $body = "";
+	$body .= $introduction."\n\n"        if ($introduction);
+	$body .= $self->__GetBody($addOfferInf);
+	$body .= $self->__GetFooter() if ($addFooter);
 
 	my $msg = MIME::Lite->new(
 		From => $from,
@@ -141,6 +158,8 @@ sub Sent {
 	# Add your text message.
 	$msg->attach( Type => 'TEXT',
 				  Data => encode( "UTF-8", $body ) );
+
+	my @attach = $self->__GetAttachments();
 
 	foreach my $att (@attach) {
 
@@ -197,59 +216,78 @@ sub GetCurrOrderNumbers {
 	return @orders;
 }
 
-sub __GetInquiryInf {
-	my $self = shift;
+# Get email introduction
+sub GetDefaultIntro {
+	my $self        = shift;
+	my $subjectType = shift;    # subject type
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-	my $step  = "panel";
+	die "No subject type" if ( !defined $subjectType );
 
-	if ( !CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
-		$step = "o+1";
+	my $intro = "";
+
+	# 1) Build greeting
+
+	my %helloTbl = ();
+
+	$helloTbl{ Enums->Subject_JOBFINIFHAPPROVAL }{"en"}    = "Ahoj";                     # email goes to sales
+	$helloTbl{ Enums->Subject_JOBFINIFHAPPROVAL }{"cz"}    = "Ahoj";                     # email goes to sales
+	$helloTbl{ Enums->Subject_JOBPROCESSAPPROVAL }{"en"}   = "Dear customer";            # email goes to customer
+	$helloTbl{ Enums->Subject_JOBPROCESSAPPROVAL }{"cz"}   = "Vážený zákazníku";    # email goes to customer
+	$helloTbl{ Enums->Subject_OFFERFINIFHAPPROVAL }{"en"}  = "Ahoj";                     # email goes to sales
+	$helloTbl{ Enums->Subject_OFFERFINIFHAPPROVAL }{"cz"}  = "Ahoj";                     # email goes to sales
+	$helloTbl{ Enums->Subject_OFFERPROCESSAPPROVAL }{"en"} = "Dear customer";            # email goes to customer
+	$helloTbl{ Enums->Subject_OFFERPROCESSAPPROVAL }{"cz"} = "Vážený zákazníku";    # email goes to customer
+
+	$intro .= $helloTbl{$subjectType}{ $self->{"lang"} };
+
+	$intro .= ",\n\n";
+
+	# 1) Build introduction
+	if ( $subjectType eq Enums->Subject_JOBFINIFHAPPROVAL ) {
+
+		# Go to Gatema sales
+
+		$intro .= "zakázka je zpracovaná, před zahájením výroby prosím odsouhlasit u zákazníka následující TPV komentáře:";
+
 	}
+	elsif ( $subjectType eq Enums->Subject_OFFERFINIFHAPPROVAL ) {
 
-	my $stckpCode = StackupCode->new( $inCAM, $jobId, $step );
+		# Go to Gatema sales
 
-	my $txt = shift;
+		$intro .= "nabídka je zpracovaná.";
 
-	my @text = ();
+	}
+	elsif ( $subjectType eq Enums->Subject_JOBPROCESSAPPROVAL ) {
 
-	my $isFlex = JobHelper->GetIsFlex($jobId);
+		# Go to Gatema customer
 
-	push( @text, "Informace o poptávce pro obchodní úsek Gatema:" );
-	push( @text, "" );
+		if ( $self->{"lang"} eq "cz" ) {
 
-	if ( $self->{"addOfferStckp"} ) {
+			$intro .= "prosíme o reakci na následující komentáře z TPV oddělení, týkající se vaší objednávky.";
 
-		my $stckpName = "_stackup.pdf";
-		my @orders    = $self->GetCurrOrderNumbers();
-		if ( scalar(@orders) ) {
-			$stckpName = uc( $orders[0] ) . $stckpName;
 		}
-		else {
-			$stckpName = uc($jobId) . $stckpName;
+		elsif ( $self->{"lang"} eq "en" ) {
+
+			$intro .= "please respond to the following comments from CAM department regarding your order.";
+
 		}
 
-		push( @text, "• PDF stackup ($stckpName) v příloze" );
 	}
-	push( @text, "• Typ: " . HegMethods->GetTypeOfPcb($jobId) );
-	push( @text, "• Flex kód: " . $stckpCode->GetStackupCode(1) ) if ($isFlex);
-	push( @text, "• Třída: " . CamJob->GetJobPcbClass( $inCAM, $jobId ) . "." );
+	elsif ( $subjectType eq Enums->Subject_OFFERPROCESSAPPROVAL ) {
 
-	my %dim = JobDim->GetDimension( $inCAM, $jobId );
+		# Go to Gatema customer
 
-	push( @text, "• Rozměr kusu: " . $dim{"single_x"} . "x" . $dim{"single_y"} . "mm" );
+		if ( $self->{"lang"} eq "cz" ) {
 
-	if ( CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) ) {
-		push( @text, "• Rozměr panelu: " . $dim{"panel_x"} . "x" . $dim{"panel_y"} . "mm" );
-		push( @text, "• Násobnost panelu: " . $dim{"nasobnost_panelu"} );
+			$intro .= "prosíme o reakci na následující komentáře z TPV oddělení, týkající se vaší poptávky.";
+
+		}
+		elsif ( $self->{"lang"} eq "en" ) {
+
+			$intro .= "please respond to the following comments from CAM department regarding your inquiry.";
+
+		}
 	}
-
-	push( @text, "• Násobnost přířezu: " . $dim{"nasobnost"} );
-
-	push( @text, "\nInformace o poptávce pro zákazníka:" );
-
-	return join( "\n", @text );
 
 }
 
@@ -316,7 +354,8 @@ sub __GetSubjectByType {
 }
 
 sub __GetBody {
-	my $self = shift;
+	my $self        = shift;
+	my $addOfferInf = shift;
 
 	my $body = "";
 
@@ -378,11 +417,12 @@ sub __GetBody {
 	# Add footer
 	#my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
 	my $name = getlogin();
-	if ( defined $name && $name ne "" ) {
+	if ( $self->{"addFooter"} && defined $name && $name ne "" ) {
 		my $userInfo = HegMethods->GetEmployyInfo( getlogin() );
 		if ( defined $userInfo ) {
 
 			my $footer = "---\n";
+			$footer .= ( $self->{"lang"} eq "cz" ? "Děkuji"                       : "Thank you" ) . "\n";
 			$footer .= ( $self->{"lang"} eq "cz" ? "S pozdravem"                   : "With Best Regards" ) . "\n\n";
 			$footer .= $userInfo->{"prijmeni"} . "\n";
 			$footer .= $userInfo->{"jmeno"} . "\n";
@@ -410,8 +450,45 @@ sub __GetBody {
 	return $body;
 }
 
-sub __GetAttachments {
+# Return mail footer with contact information
+sub __GetFooter {
 	my $self = shift;
+
+	my $footer = "";
+
+	# Add footer
+	#my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
+	my $name = getlogin();
+	if (   defined $name && $name ne "" ) {
+		my $userInfo = HegMethods->GetEmployyInfo( getlogin() );
+		if ( defined $userInfo ) {
+
+			$footer = "---\n";
+			$footer .= ( $self->{"lang"} eq "cz" ? "Děkuji"                       : "Thank you" ) . "\n";
+			$footer .= ( $self->{"lang"} eq "cz" ? "S pozdravem"                   : "With Best Regards" ) . "\n\n";
+			$footer .= $userInfo->{"prijmeni"} . "\n";
+			$footer .= $userInfo->{"jmeno"} . "\n";
+			$footer .= ( $self->{"lang"} eq "cz" ? "Technická příprava výroby" : "CAM Department" ) . "\n\n";
+
+			my $tel = $userInfo->{"telefon_prace"};
+
+			# add +420
+			$tel = "+420 " . $tel if ( $tel !~ /\+420/ );
+
+			$footer .= "T " . $tel . "\n";
+			$footer .= $userInfo->{"e_mail"} . "\n";
+			$footer .= "Gatema PCB a.s.\n";
+			$footer .= "Průmyslová 2503/2\n";
+			$footer .= "CZ 680 01 Boskovice";
+		}
+	}
+
+	return $footer;
+}
+
+sub __GetAttachments {
+	my $self          = shift;
+	my $addOfferStckp = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -438,7 +515,7 @@ sub __GetAttachments {
 	}
 
 	# Add inquiry infstackup
-	if ( $self->{"addOfferStckp"} ) {
+	if ($addOfferStckp) {
 		my $mess = "";
 		my $control = ControlPdf->new( $inCAM, $jobId, "o+1", 0, 0, $self->{"lang"}, 1 );
 

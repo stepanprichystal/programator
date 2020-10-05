@@ -8,10 +8,14 @@ use base('Packages::Export::MngrBase');
 
 use Class::Interface;
 &implements('Packages::Export::IMngr');
+
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use Log::Log4perl qw(get_logger :levels);
+use Encode qw(decode encode);
+
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -41,6 +45,7 @@ sub new {
 	$self->{"emailTo"}           = shift;    #
 	$self->{"emailCC"}           = shift;    #
 	$self->{"emailSubject"}      = shift;    #
+	$self->{"emailIntro"}        = shift;    #
 	$self->{"includeOfferInf"}   = shift;    #
 	$self->{"includeOfferStckp"} = shift;    #
 	$self->{"clearComments"}     = shift;    # Clear commetns when mail is sent
@@ -95,20 +100,31 @@ sub Run {
 		my $comm = Comments->new( $inCAM, $jobId );
 
 		my %inf = %{ HegMethods->GetCustomerInfo($jobId) };
-		my $lang = $inf{"zeme"} eq 25 ? "cz" : "en";
+		my $lang = ( $inf{"zeme"} eq 25 || $inf{"zeme"} eq 79 ) ? "cz" : "en";
 
-		my $mail = CommMail->new( $inCAM, $jobId, $comm->GetLayout(), $lang,  $self->{"includeOfferInf"},  $self->{"includeOfferStckp"} );
+		my $mail = CommMail->new( $inCAM, $jobId, $comm->GetLayout(), $lang );
 
 		my $emailExport = 1;
 		if ( $self->{"emailAction"} eq MailEnums->EmailAction_OPEN ) {
 
+			 
 
-			$emailExport = $mail->Open( $self->{"emailTo"}, $self->{"emailCC"}, $self->{"emailSubject"} );
+			$emailExport = $mail->Open(
+				$self->{"emailTo"},
+				$self->{"emailCC"},
+				$self->{"emailSubject"},
+				$self->{"emailIntro"}, 1,
+				$self->{"includeOfferInf"},
+				$self->{"includeOfferStckp"}
+			);
 
 		}
 		elsif ( $self->{"emailAction"} eq MailEnums->EmailAction_SEND ) {
 
-			$emailExport = $mail->Sent( $self->{"emailTo"}, $self->{"emailCC"}, $self->{"emailSubject"} );
+			$emailExport = $mail->Sent( $self->{"emailTo"}, $self->{"emailCC"}, $self->{"emailSubject"},
+										$self->{"emailIntro"}, 1,
+										$self->{"includeOfferInf"},
+										$self->{"includeOfferStckp"} );
 		}
 
 		unless ($emailExport) {

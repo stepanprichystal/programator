@@ -232,7 +232,16 @@ sub CheckAttributes {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
-
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
+	
+	
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	# 2) Check if rout layers has attribute rout chain
@@ -303,6 +312,14 @@ sub CheckInvalidSymbols {
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
 
 	# check all nc layers on wrong shaped pads. Pads has to by only r<number>
 
@@ -375,6 +392,9 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
 
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 
@@ -462,6 +482,8 @@ sub CheckDirBot2Top {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
 
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 
@@ -535,6 +557,10 @@ sub CheckDrillStartStop {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
 
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 
@@ -625,18 +651,13 @@ sub CheckContainDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
+	
+
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
-	# 1) Check if layers contain depth in DTM table
-	foreach my $l (@layers) {
 
-		unless ( $l->{"uniDTM"}->GetChecks()->CheckToolDepthSet($mess) ) {
-			$result = 0;
-		}
-	}
-
-	# 2) Check if layer start/stop/go through signal layer
+	# 1) Check if layer start/stop/go through signal layer
 	foreach my $l (@layers) {
 
 		unless ( $l->{"NCThroughSig"} ) {
@@ -646,6 +667,17 @@ sub CheckContainDepth {
 			$$mess .= "Thist type of NC layer has to START or END or GO THROUGH at least one signal layer.\n";
 		}
 
+	}
+	
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
+	
+	# 2) Check if layers contain depth in DTM table
+	foreach my $l (@layers) {
+
+		unless ( $l->{"uniDTM"}->GetChecks()->CheckToolDepthSet($mess) ) {
+			$result = 0;
+		}
 	}
 
 	return $result;
@@ -678,6 +710,14 @@ sub CheckContainNoDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
+	
+	
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
@@ -691,7 +731,6 @@ sub CheckContainNoDepth {
 	return $result;
 
 }
- 
 
 # Check if drill size is greater than finish size
 sub CheckDiamterDiff {

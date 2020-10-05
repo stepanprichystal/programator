@@ -122,7 +122,7 @@ sub InitSurfaces {
 	}
 
 	$_->GetSurface()->Set3DEdges(4) foreach (@flex3D);
-
+ 
 }
 
 # Return background color of final image
@@ -186,7 +186,7 @@ sub __InitLayers {
 
 	my @NCThroughLayers = ();
 
-	# POS 1.f: Type_NPLTTHROUGHNC from TOP or BOT
+	# POS 0.f: Type_NPLTTHROUGHNC from TOP or BOT
 	my $LDNPltThrough = LayerData->new( Enums->Type_NPLTTHROUGHNC, Enums->Visible_FROMTOPBOT );
 	$LDNPltThrough->AddSingleLayers(
 		grep {
@@ -204,20 +204,36 @@ sub __InitLayers {
 
 	# 2) Prepare layers which are visible either from BOT or from TOP
 
-	# POS 8: Type_NPLTDEPTHNC from TOP
+	# POS 1: Type_NPLTDEPTHNC from TOP
 	my $LDNPltDepthTOP = LayerData->new( Enums->Type_NPLTDEPTHNC, Enums->Visible_FROMTOP );
 	$LDNPltDepthTOP->AddSingleLayers(
 		grep {
 			$_->{"type"}
-			  && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score )
+			  && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score )
 		} @boardL
 	);
 	push( @pdfLayers, $LDNPltDepthTOP );
+ 
+	# POS 2: Type_TAPE from TOP
+	my $LDTapestiffTOP = LayerData->new( Enums->Type_TAPE, Enums->Visible_FROMTOP );
+	$LDTapestiffTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tpstiffc$/ } @boardL );
+	push( @pdfLayers, $LDTapestiffTOP );
 
 	# POS 3: Type_STIFFENER from TOP
 	my $LDStiffenerTOP = LayerData->new( Enums->Type_STIFFENER, Enums->Visible_FROMTOP );
 	$LDStiffenerTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^stiffc\d*$/ } @boardL );
 	push( @pdfLayers, $LDStiffenerTOP );
+	
+	# POS 2: Type_TAPE from TOP
+	my $LDTapeTOP = LayerData->new( Enums->Type_TAPE, Enums->Visible_FROMTOP );
+	$LDTapeTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tpc$/ } @boardL );
+	push( @pdfLayers, $LDTapeTOP );
+	
+	# POS 2: Type_TAPEBACK from TOP
+	my $LDTapeBackTOP = LayerData->new( Enums->Type_TAPEBACK, Enums->Visible_FROMTOP );
+	$LDTapeBackTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tpc$/ } @boardL );
+	push( @pdfLayers, $LDTapeBackTOP );
+ 
 
 	# POS 4: Type_GRAFIT from TOP
 	my $LDGraffitTOP = LayerData->new( Enums->Type_GRAFIT, Enums->Visible_FROMTOP );
@@ -398,20 +414,7 @@ sub __InitLayers {
 		} @boardL
 	);
 	push( @pdfLayers, $LDPltDepthBOT );
-
-	# POS 19: Type_PLTTHROUGHNC from BOT
-	my $LDPltThroughBOT = LayerData->new( Enums->Type_PLTTHROUGHNC, Enums->Visible_FROMBOT );
-	$LDPltThroughBOT->AddSingleLayers(
-		grep {
-			defined $_->{"type"}
-			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot )
-		} @boardL
-	);
-	push( @pdfLayers, $LDPltThroughBOT );
-
+ 
 	# POS 20: Type_MASK from BOT
 	my $LDMaskBOT = LayerData->new( Enums->Type_MASK, Enums->Visible_FROMBOT );
 	$LDMaskBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^ms$/ } @boardL );
@@ -451,13 +454,28 @@ sub __InitLayers {
 	my $LDGraffitBOT = LayerData->new( Enums->Type_GRAFIT, Enums->Visible_FROMBOT );
 	$LDGraffitBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^gs$/ } @boardL );
 	push( @pdfLayers, $LDGraffitBOT );
+	
+	# POS 28: Type_TAPEBACK from BOT
+	my $LDTapeBackBOT = LayerData->new( Enums->Type_TAPEBACK, Enums->Visible_FROMBOT );
+	$LDTapeBackBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tps$/ } @boardL );
+	push( @pdfLayers, $LDTapeBackBOT );
+	
+	# POS 28: Type_TAPE from BOT
+	my $LDTapeBOT = LayerData->new( Enums->Type_TAPE, Enums->Visible_FROMBOT );
+	$LDTapeBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tps$/ } @boardL );
+	push( @pdfLayers, $LDTapeBOT );
 
 	# POS 27: Type_STIFFENER from BOT
 	my $LDStiffenerBOT = LayerData->new( Enums->Type_STIFFENER, Enums->Visible_FROMBOT );
 	$LDStiffenerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^stiffs\d*$/ } @boardL );
 	push( @pdfLayers, $LDStiffenerBOT );
 
-	# POS 28: Type_NPLTDEPTHNC from BOT
+	# POS 2: Type_TAPE from TOP
+	my $LDTapestiffBOT = LayerData->new( Enums->Type_TAPE, Enums->Visible_FROMBOT );
+	$LDTapestiffBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tpstiffs$/ } @boardL );
+	push( @pdfLayers, $LDTapestiffBOT );
+ 
+	# POS 29: Type_NPLTDEPTHNC from BOT
 	my $LDNPltDepthBOT = LayerData->new( Enums->Type_NPLTDEPTHNC, Enums->Visible_FROMBOT );
 	$LDNPltDepthBOT->AddSingleLayers(
 		grep {
@@ -471,7 +489,7 @@ sub __InitLayers {
 
 	foreach my $l ( grep { $_->{"gROWlayer_type"} eq "coverlay" } @boardL ) {
 
-		my $sigL = ( $l->{"gROWname"} =~ /^coverlay(\w*)/ )[0];
+		my $sigL = ( $l->{"gROWname"} =~ /^cvrl(\w*)/ )[0];
 
 		# POS 9.f: Type_COVERLAY from TOP or BOT
 		my $side;

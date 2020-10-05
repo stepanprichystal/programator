@@ -161,7 +161,7 @@
 2.80     ; def        ; 8;8;7             ; -;-;-
 3.00     ; def        ; 7;7;7             ; -;-;-
 #=============================================================
- OPERATIONS = PrepregRout; CoverlayRout 
+ OPERATIONS = PrepregRout; CoverlayRout; TapeRout 
 #-------------------------------------------------------------
 # Tool D | Tool type | Rout speed INSIDE  | Rout speed OUTLINE 
 #        |           | Packet thickness   | Packet thickness  

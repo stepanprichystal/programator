@@ -53,7 +53,7 @@ sub PrepareTemplateLayers {
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
-	if (  CamHelper->LayerExists($inCAM, $jobId, "coverlaypins") ) {
+	if (  CamHelper->LayerExists($inCAM, $jobId, "cvrlpins") ) {
 
 		$self->__PrepareTemplate( $inCAM, $jobId, $step, $messMngr );
 	}

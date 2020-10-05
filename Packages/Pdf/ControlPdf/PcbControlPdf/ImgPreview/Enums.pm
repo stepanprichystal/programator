@@ -23,7 +23,9 @@ use constant {
 	Type_PEELABLE => "typePeelableMask",
 	Type_GRAFIT => "typeGrafitPaste",
 	Type_VIAFILL => "typeViaFill",
-	Type_STIFFENER => "typeStiffener"
+	Type_STIFFENER => "typeStiffener",
+	Type_TAPEBACK => "typeTapeBack",
+	Type_TAPE => "typeTape",
 };
 
 use constant {
@@ -48,7 +50,8 @@ use constant {
 	Texture_HAL => "hal",
 	Texture_PEELABLE => "peelable",
 	Texture_GRAFIT => "grafit",
-	Texture_MILLEDRIGID => "milledrigid"
+	Texture_MILLEDRIGID => "milledrigid",
+	Texture_TAPE => "adhesivetape",
 }; 
 
 use constant {

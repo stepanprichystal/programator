@@ -40,5 +40,9 @@
       <magazine material="PYRALUX">I7</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">I7</magazine>
    </tooloperation>
+      <tooloperation name="TapeRout">
+      <magazine material="PYRALUX">I7</magazine>
+      <magazine material="HYBRID_PYRALUX-FR4">I7</magazine>
+   </tooloperation>
    
 </tooloperations>

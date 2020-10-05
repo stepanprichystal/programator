@@ -101,7 +101,7 @@ sub OnPrepareGroupData {
 #
 #	# Remove layers not to by plotted
 #	@prepared = grep { $_->{"name"} ne "bend" } @prepared;
-#	@prepared = grep { $_->{"name"} !~ /^coverlay/ } @prepared;
+#	@prepared = grep { $_->{"name"} !~ /^cvrl/ } @prepared;
 #
 #	return @prepared;
 #

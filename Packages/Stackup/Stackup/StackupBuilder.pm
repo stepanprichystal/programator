@@ -207,7 +207,7 @@ sub __AddCoverlayLayers {
 		$layerInfo->{"typetext"}      = "Pyralux " . ( $name =~ /Coverlay\s+(\w+)\s*/i )[0];
 		$layerInfo->{"method"} =
 
-		  ( $sigL =~ /^v\d+$/ || defined( first { $_->{"gROWname"} eq "coverlaypins" } @{ $self->{"boardBaseLayers"} } ) )
+		  ( $sigL =~ /^v\d+$/ || defined( first { $_->{"gROWname"} eq "cvrlpins" } @{ $self->{"boardBaseLayers"} } ) )
 		  ? Enums->Coverlay_SELECTIVE
 		  : Enums->Coverlay_FULL;
 		$layerInfo->{"copperName"} = $sigL;

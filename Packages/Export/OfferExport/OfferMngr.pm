@@ -52,7 +52,6 @@ sub Run {
 	my $jobId = $self->{"jobId"};
 
 	if ( $self->{"specifToIS"} ) {
- 
 
 		my %jobPar = ();
 
@@ -69,10 +68,12 @@ sub Run {
 
 			$jobPar{"panel_x"}          = $dim{"panel_x"};
 			$jobPar{"panel_y"}          = $dim{"panel_y"};
-			$jobPar{"nasobnost_panelu"} = $dim{"nasobnost_panelu"}
+			$jobPar{"nasobnost_panelu"} = $dim{"nasobnost_panelu"};
 
 		}
 		$jobPar{"nasobnost"} = $dim{"nasobnost"};
+		$jobPar{"rozmer_x"}  = $dim{"vyrobni_panel_x"};
+		$jobPar{"rozmer_y"}  = $dim{"vyrobni_panel_y"};
 
 		HegMethods->UpdateOfferSpecification( $jobId, \%jobPar, 1 );
 	}
@@ -84,7 +85,7 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 1 if ( $self->{"specifToIS"} );     # OfferStep Created
+	$totalCnt += 1 if ( $self->{"specifToIS"} );           # OfferStep Created
 
 	return $totalCnt;
 

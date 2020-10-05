@@ -9,7 +9,7 @@ package Programs::Exporter::ExportUtility::DataTransfer::DataTransfer;
 use strict;
 use warnings;
 use utf8;
-use JSON;
+use JSON::XS;
 
 #local library
 use aliased "Programs::Exporter::ExportUtility::DataTransfer::ExportData";
@@ -105,7 +105,7 @@ sub __BuildExportData {
 		# Delete file
 		#unlink($self->{"filePath"});
 
-		my $json = JSON->new();
+		my $json = JSON::XS->new->ascii->pretty->allow_nonref;
 
 		my $hashData = $json->decode($serializeData);
 
@@ -209,7 +209,8 @@ sub __SerializeExportData {
 
 	my $hashData = $self->{"hashData"};
 
-	my $json = JSON->new();
+	my $json = JSON::XS->new->ascii->pretty->allow_nonref;
+ 
 
 	my $serialized = $json->pretty->encode($hashData);
 

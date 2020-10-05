@@ -74,32 +74,34 @@ sub PrepareLayers {
 	$self->{"profileLim"} = \%lim;
 
 	# 1) Create special overlays which are used more than once
-	$self->{"bendAreaL"}  = $self->__GetOverlayBendArea($layerList);
-	$self->{"coverlaysL"} = $self->__GetOverlayCoverlays($layerList);
+	$self->{"pltThroughL"} = $self->__GetPltThroughCuts($layerList);
+	$self->{"bendAreaL"}   = $self->__GetOverlayBendArea($layerList);
+	$self->{"cvrlsL"}      = $self->__GetOverlayCoverlays($layerList);
 
 	# 2) Prepare PDF layers
 	$self->__PrepareLayers($layerList);
 
 	# 3) Remove special overlays
-#	# TODO Temporary, we need to fix bug. Copy layer to ori step
-#	if ( defined $self->{"bendAreaL"} ) {
-#		my $oriStep = $self->{"pdfStep"};
-#		$oriStep =~ s/pdf_//;
-#		$inCAM->COM(
-#					 'copy_layer',
-#					 "source_job"   => $jobId,
-#					 "source_step"  => $self->{"pdfStep"},
-#					 "source_layer" => $self->{"bendAreaL"},
-#					 "dest"         => 'layer_name',
-#					 "dest_step"    => $oriStep,
-#					 "dest_layer"   => "bend_area_wong_pdf",
-#					 "mode"         => 'replace',
-#					 "invert"       => 'no'
-#		);
-#	}
+	#	# TODO Temporary, we need to fix bug. Copy layer to ori step
+	#	if ( defined $self->{"bendAreaL"} ) {
+	#		my $oriStep = $self->{"pdfStep"};
+	#		$oriStep =~ s/pdf_//;
+	#		$inCAM->COM(
+	#					 'copy_layer',
+	#					 "source_job"   => $jobId,
+	#					 "source_step"  => $self->{"pdfStep"},
+	#					 "source_layer" => $self->{"bendAreaL"},
+	#					 "dest"         => 'layer_name',
+	#					 "dest_step"    => $oriStep,
+	#					 "dest_layer"   => "bend_area_wong_pdf",
+	#					 "mode"         => 'replace',
+	#					 "invert"       => 'no'
+	#		);
+	#	}
 
-	#CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"bendAreaL"} ) if ( defined $self->{"bendAreaL"} );    # bend area
-	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"coverlaysL"}->{$_} ) foreach ( keys %{ $self->{"coverlaysL"} } );    # coverlays
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"pltThroughL"} ) if ( defined $self->{"pltThroughL"} );    # bend area
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"bendAreaL"} )   if ( defined $self->{"bendAreaL"} );      # bend area
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $self->{"cvrlsL"}->{$_} ) foreach ( keys %{ $self->{"cvrlsL"} } ); # coverlays
 }
 
 # MEthod do necessary stuff for each layer by type
@@ -129,9 +131,10 @@ sub __PrepareLayers {
 		$self->__PrepareSILK($l)          if ( $l->GetType() eq Enums->Type_SILK2 );
 		$self->__PreparePLTDEPTHNC($l)    if ( $l->GetType() eq Enums->Type_PLTDEPTHNC );
 		$self->__PrepareNPLTDEPTHNC($l)   if ( $l->GetType() eq Enums->Type_NPLTDEPTHNC );
-		$self->__PreparePLTTHROUGHNC($l)  if ( $l->GetType() eq Enums->Type_PLTTHROUGHNC );
 		$self->__PrepareNPLTTHROUGHNC($l) if ( $l->GetType() eq Enums->Type_NPLTTHROUGHNC );
 		$self->__PrepareSTIFFENER($l)     if ( $l->GetType() eq Enums->Type_STIFFENER );
+		$self->__PrepareTAPE($l)          if ( $l->GetType() eq Enums->Type_TAPE );
+		$self->__PrepareTAPE($l)          if ( $l->GetType() eq Enums->Type_TAPEBACK );
 	}
 
 }
@@ -160,9 +163,14 @@ sub __PrepareRIGIDMAT {
 				 "step_margin_y" => -1
 	);
 
+	if ( defined $self->{"pltThroughL"} ) {
+
+		$inCAM->COM( "merge_layers", "source_layer" => $self->{"pltThroughL"}, "dest_layer" => $lName );
+	}
+
+	# Consider plated through hole
 	if ( defined $self->{"bendAreaL"} ) {
 
-		CamLayer->WorkLayer( $inCAM, $self->{"bendAreaL"} );
 		$inCAM->COM( "merge_layers", "source_layer" => $self->{"bendAreaL"}, "dest_layer" => $lName );
 	}
 
@@ -193,6 +201,12 @@ sub __PrepareFLEXMAT {
 				 "step_margin_y" => -1
 	);
 
+	# Consider plated through hole
+	if ( defined $self->{"pltThroughL"} ) {
+
+		$inCAM->COM( "merge_layers", "source_layer" => $self->{"pltThroughL"}, "dest_layer" => $lName );
+	}
+
 	$layer->SetOutputLayer($lName);
 }
 
@@ -213,8 +227,14 @@ sub __PrepareOUTERCU {
 
 		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
 
+		# Consider plated through hole
+		if ( defined $self->{"pltThroughL"} ) {
+			$inCAM->COM( "merge_layers", "source_layer" => $self->{"pltThroughL"}, "dest_layer" => $lName );
+		}
+
 		$layer->SetOutputLayer($lName);
 	}
+
 }
 
 sub __PrepareINNERCU {
@@ -233,6 +253,11 @@ sub __PrepareINNERCU {
 		my $lName = GeneralHelper->GetGUID();
 
 		$inCAM->COM( "merge_layers", "source_layer" => $layers[0]->{"gROWname"}, "dest_layer" => $lName );
+
+		# Consider plated through hole
+		if ( defined $self->{"pltThroughL"} ) {
+			$inCAM->COM( "merge_layers", "source_layer" => $self->{"pltThroughL"}, "dest_layer" => $lName );
+		}
 
 		$layer->SetOutputLayer($lName);
 	}
@@ -272,11 +297,11 @@ sub __PrepareOUTERSURFACE {
 				$inCAM->COM( "merge_layers", "source_layer" => $maskL, "dest_layer" => $lNameMask );
 
 				CamLayer->WorkLayer( $inCAM, $lNameMask );
-				
+
 				if ( $maskL !~ /flex/ ) {
 					CamLayer->NegativeLayerData( $inCAM, $lNameMask, $self->{"profileLim"} );
 				}
-				
+
 				CamLayer->Contourize( $inCAM, $lNameMask );
 				$inCAM->COM( "merge_layers", "source_layer" => $lNameMask, "dest_layer" => $lName, "invert" => "yes" );
 				$inCAM->COM( "delete_layer", "layer" => $lNameMask );
@@ -285,11 +310,16 @@ sub __PrepareOUTERSURFACE {
 			}
 		}
 
-		# 2) Use coverlay overlay
+		# 2) Consider overlay
 
-		my $cvrL = "coverlay" . $layers[0]->{"gROWname"};
-		if ( defined $self->{"coverlaysL"}->{$cvrL} ) {
-			$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{$cvrL}, "dest_layer" => $lName, "invert" => "yes" );
+		my $cvrL = "cvrl" . $layers[0]->{"gROWname"};
+		if ( defined $self->{"cvrlsL"}->{$cvrL} ) {
+			$inCAM->COM( "merge_layers", "source_layer" => $self->{"cvrlsL"}->{$cvrL}, "dest_layer" => $lName, "invert" => "yes" );
+		}
+
+		# 3) Consider plated through hole
+		if ( defined $self->{"pltThroughL"} ) {
+			$inCAM->COM( "merge_layers", "source_layer" => $self->{"pltThroughL"}, "dest_layer" => $lName );
 		}
 
 		$layer->SetOutputLayer($lName);
@@ -326,6 +356,11 @@ sub __PrepareGOLDFINGER {
 		}
 
 		my $resultL = Helper->FeaturesByRefLayer( $inCAM, $jobId, $baseCuL, $goldL, $maskL, $self->{"profileLim"} );
+
+		# Consider plated through hole
+		if ( defined $self->{"pltThroughL"} ) {
+			$inCAM->COM( "merge_layers", "source_layer" => $self->{"pltThroughL"}, "dest_layer" => $resultL );
+		}
 
 		$layer->SetOutputLayer($resultL);
 
@@ -415,6 +450,11 @@ sub __PreparePEELABLE {
 					 "lines_witdh"             => "1300",
 					 "lines_dist"              => "660"
 		);
+
+		# Consider plated through hole
+		if ( defined $self->{"pltThroughL"} ) {
+			$inCAM->COM( "merge_layers", "source_layer" => $self->{"pltThroughL"}, "dest_layer" => $lName );
+		}
 
 		$layer->SetOutputLayer($lName);
 	}
@@ -511,11 +551,11 @@ sub __PrepareCOVERLAY {
 	my @layers = $layer->GetSingleLayers();
 	my $lName  = GeneralHelper->GetGUID();
 
-	my $cvrL = ( grep { $_->{"gROWname"} =~ /^coverlay/ } $layer->GetSingleLayers() )[0];
+	my $cvrL = ( grep { $_->{"gROWname"} =~ /^cvrl/ } $layer->GetSingleLayers() )[0];
 
 	$inCAM->COM(
 				 "merge_layers",
-				 "source_layer" => $self->{"coverlaysL"}->{ $cvrL->{"gROWname"} },
+				 "source_layer" => $self->{"cvrlsL"}->{ $cvrL->{"gROWname"} },
 				 "dest_layer"   => $lName
 	);
 	$layer->SetOutputLayer($lName);
@@ -681,118 +721,118 @@ sub __PrepareNPLTDEPTHNC {
 	$layer->SetOutputLayer($lName);
 
 }
-
-sub __PreparePLTTHROUGHNC {
-	my $self  = shift;
-	my $layer = shift;
-
-	unless ( $layer->HasLayers() ) {
-		return 0;
-	}
-
-	my $inCAM  = $self->{"inCAM"};
-	my $jobId  = $self->{"jobId"};
-	my @layers = $layer->GetSingleLayers();
-	my $lName  = GeneralHelper->GetGUID();
-
-	$inCAM->COM(
-				 'create_layer',
-				 layer     => $lName,
-				 context   => 'misc',
-				 type      => 'document',
-				 polarity  => 'positive',
-				 ins_layer => ''
-	);
-
-	my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
-
-	# compensate
-	foreach my $l (@layers) {
-
-		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
-
-		my $result = $outputParser->Prepare($l);
-
-		next unless ( $result->GetResult() );
-
-		foreach my $classResult ( $result->GetClassResults(1) ) {
-
-			# When angle tool, resize final tool dieameter by tool depth
-			if (    $classResult->GetType() eq OutParserEnums->Type_ROUT
-				 || $classResult->GetType() eq OutParserEnums->Type_DRILL )
-			{
-				foreach my $classL ( $classResult->GetLayers() ) {
-
-					if ( $l->{"gROWlayer_type"} eq "rout" ) {
-
-						CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
-						CamLayer->Contourize( $inCAM, $classL->GetLayerName(), "area", "25000" );
-					}
-
-					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
-				}
-
-			}
-			else {
-				foreach my $classL ( $classResult->GetLayers() ) {
-
-					my $DTMTool = $classL->GetDataVal("DTMTool");
-					next if ( $DTMTool->GetDepth() * 1000 < $pcbThick );
-
-					my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * ( $DTMTool->GetDepth() * 1000 - $pcbThick ) * 2;
-
-					my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter );
-
-					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
-					CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
-
-					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
-				}
-			}
-		}
-
-		$outputParser->Clear();
-
-	}
-
-	# Addstifener
-	my $stiffL = undef;
-	if ( $self->{"viewType"} eq Enums->View_FROMTOP && CamHelper->LayerExists( $inCAM, $jobId, "stiffc" ) ) {
-		$stiffL = "stiffc";
-	}
-	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT && CamHelper->LayerExists( $inCAM, $jobId, "stiffs" ) ) {
-		$stiffL = "stiffs";
-
-	}
-	if ( defined $stiffL ) {
-
-		my $tmp = GeneralHelper->GetGUID();
-		$inCAM->COM( "merge_layers", "source_layer" => $stiffL, "dest_layer" => $tmp, "invert" => "no" );
-		CamLayer->WorkLayer( $inCAM, $tmp );
-		CamLayer->Contourize( $inCAM, $tmp, "x_or_y", "0" );
-		$inCAM->COM( "merge_layers", "source_layer" => $tmp, "dest_layer" => $lName, "invert" => "yes" );
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
-	}
-
-#	# Consider coverlay
-#	my $coverlayL = undef;
-#	if ( $self->{"viewType"} eq Enums->View_FROMTOP && CamHelper->LayerExists( $inCAM, $jobId, "coverlayc" ) ) {
-#		$coverlayL = "coverlayc";
+#
+#sub __PreparePLTTHROUGHNC {
+#	my $self  = shift;
+#	my $layer = shift;
+#
+#	unless ( $layer->HasLayers() ) {
+#		return 0;
 #	}
-#	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT && CamHelper->LayerExists( $inCAM, $jobId, "coverlays" ) ) {
-#		$coverlayL = "coverlays";
+#
+#	my $inCAM  = $self->{"inCAM"};
+#	my $jobId  = $self->{"jobId"};
+#	my @layers = $layer->GetSingleLayers();
+#	my $lName  = GeneralHelper->GetGUID();
+#
+#	$inCAM->COM(
+#				 'create_layer',
+#				 layer     => $lName,
+#				 context   => 'misc',
+#				 type      => 'document',
+#				 polarity  => 'positive',
+#				 ins_layer => ''
+#	);
+#
+#	my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
+#
+#	# compensate
+#	foreach my $l (@layers) {
+#
+#		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
+#
+#		my $result = $outputParser->Prepare($l);
+#
+#		next unless ( $result->GetResult() );
+#
+#		foreach my $classResult ( $result->GetClassResults(1) ) {
+#
+#			# When angle tool, resize final tool dieameter by tool depth
+#			if (    $classResult->GetType() eq OutParserEnums->Type_ROUT
+#				 || $classResult->GetType() eq OutParserEnums->Type_DRILL )
+#			{
+#				foreach my $classL ( $classResult->GetLayers() ) {
+#
+#					if ( $l->{"gROWlayer_type"} eq "rout" ) {
+#
+#						CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+#						CamLayer->Contourize( $inCAM, $classL->GetLayerName(), "area", "25000" );
+#					}
+#
+#					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+#				}
+#
+#			}
+#			else {
+#				foreach my $classL ( $classResult->GetLayers() ) {
+#
+#					my $DTMTool = $classL->GetDataVal("DTMTool");
+#					next if ( $DTMTool->GetDepth() * 1000 < $pcbThick );
+#
+#					my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * ( $DTMTool->GetDepth() * 1000 - $pcbThick ) * 2;
+#
+#					my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter );
+#
+#					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+#					CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+#
+#					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+#				}
+#			}
+#		}
+#
+#		$outputParser->Clear();
 #
 #	}
-#	if ( defined $self->{"coverlaysL"}->{$coverlayL} ) {
-#		$inCAM->COM( "merge_layers", "source_layer" => $self->{"coverlaysL"}->{$coverlayL}, "dest_layer" => $lName, "invert" => "yes" );
+#
+#	# Addstifener
+#	my $stiffL = undef;
+#	if ( $self->{"viewType"} eq Enums->View_FROMTOP && CamHelper->LayerExists( $inCAM, $jobId, "stiffc" ) ) {
+#		$stiffL = "stiffc";
 #	}
-
-	#CamLayer->WorkLayer( $inCAM, $lName );
-	#$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
-
-	$layer->SetOutputLayer($lName);
-
-}
+#	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT && CamHelper->LayerExists( $inCAM, $jobId, "stiffs" ) ) {
+#		$stiffL = "stiffs";
+#
+#	}
+#	if ( defined $stiffL ) {
+#
+#		my $tmp = GeneralHelper->GetGUID();
+#		$inCAM->COM( "merge_layers", "source_layer" => $stiffL, "dest_layer" => $tmp, "invert" => "no" );
+#		CamLayer->WorkLayer( $inCAM, $tmp );
+#		CamLayer->Contourize( $inCAM, $tmp, "x_or_y", "0" );
+#		$inCAM->COM( "merge_layers", "source_layer" => $tmp, "dest_layer" => $lName, "invert" => "yes" );
+#		CamMatrix->DeleteLayer( $inCAM, $jobId, $tmp );
+#	}
+#
+#	#	# Consider coverlay
+#	#	my $coverlayL = undef;
+#	#	if ( $self->{"viewType"} eq Enums->View_FROMTOP && CamHelper->LayerExists( $inCAM, $jobId, "cvrlc" ) ) {
+#	#		$coverlayL = "cvrlc";
+#	#	}
+#	#	elsif ( $self->{"viewType"} eq Enums->View_FROMBOT && CamHelper->LayerExists( $inCAM, $jobId, "cvrls" ) ) {
+#	#		$coverlayL = "cvrls";
+#	#
+#	#	}
+#	#	if ( defined $self->{"cvrlsL"}->{$coverlayL} ) {
+#	#		$inCAM->COM( "merge_layers", "source_layer" => $self->{"cvrlsL"}->{$coverlayL}, "dest_layer" => $lName, "invert" => "yes" );
+#	#	}
+#
+#	#CamLayer->WorkLayer( $inCAM, $lName );
+#	#$inCAM->COM( "sel_resize", "size" => -100, "corner_ctl" => "no" );
+#
+#	$layer->SetOutputLayer($lName);
+#
+#}
 
 sub __PrepareNPLTTHROUGHNC {
 	my $self  = shift;
@@ -999,6 +1039,61 @@ sub __PrepareSTIFFENER {
 
 }
 
+sub __PrepareTAPE {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# 1) Create full surface by profile
+	my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
+
+	# 2) Copy negative of stiffener rout
+	my $tapeL = ( grep { $_->{"gROWname"} =~ /^tp(stiff)?[cs]/ } $layer->GetSingleLayers() )[0];
+	my @tapeRoutLs =
+	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_tapecMill, EnumsGeneral->LAYERTYPE_nplt_tapesMill ] );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@tapeRoutLs );
+
+	my $routL = GeneralHelper->GetGUID();
+
+	my $tapeRoutL = ( grep { $_->{"gROWdrl_start"} eq $tapeL->{"gROWname"} && $_->{"gROWdrl_end"} eq $tapeL->{"gROWname"} } @tapeRoutLs )[0];
+	my $lTmp1 = CamLayer->RoutCompensation( $inCAM, $tapeRoutL->{"gROWname"}, "document" );
+	$inCAM->COM(
+				 "merge_layers",
+				 "source_layer" => $lTmp1,
+				 "dest_layer"   => $routL
+	);
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp1 );
+
+#	if ( CamHelper->LayerExists( $inCAM, $jobId, "ftapebr" ) ) {
+#
+#		my $lTmp2 = CamLayer->RoutCompensation( $inCAM, "ftapebr", "document" );
+#
+#		$inCAM->COM(
+#					 "merge_layers",
+#					 "source_layer" => $lTmp2,
+#					 "dest_layer"   => $routL
+#		);
+#		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp2 );
+#	}
+
+	CamLayer->Contourize( $inCAM, $routL, "x_or_y", "203200" );    # 203200 = max size of empty space in InCAM which can be filled by surface
+	$inCAM->COM(
+				 "merge_layers",
+				 "source_layer" => $routL,
+				 "dest_layer"   => $lName,
+				 "invert"       => "yes"
+	);
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $routL );
+
+	$layer->SetOutputLayer($lName);
+}
+
 # Prepare negative data of bend area shape to special layer
 # This layer can be used by another function which prepare standard layers
 sub __GetOverlayBendArea {
@@ -1116,7 +1211,7 @@ sub __GetOverlayCoverlays {
 		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
 
 		# 2) Copy coverlay milling
-		my $cvrL = ( grep { $_->{"gROWname"} =~ /^coverlay/ } $layer->GetSingleLayers() )[0];
+		my $cvrL = ( grep { $_->{"gROWname"} =~ /^cvrl/ } $layer->GetSingleLayers() )[0];
 		my @cvrRoutLs =
 		  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill ] );
 		CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@cvrRoutLs );
@@ -1128,7 +1223,7 @@ sub __GetOverlayCoverlays {
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 
 		# 3) If exist coverlay pins, final shape of coverlay depands on NPLT rout layers
-		if ( CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" ) ) {
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "cvrlpins" ) ) {
 
 			my @NPLTNClayers = grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill } $layer->GetSingleLayers();
 
@@ -1159,6 +1254,87 @@ sub __GetOverlayCoverlays {
 	}
 
 	return \%coverLayers;
+
+}
+
+# Prepare negative data of all plt through holes
+# This layer can be used for create cutouts in material layer, copper layer , solder mask layer etc
+sub __GetPltThroughCuts {
+	my $self      = shift;
+	my $layerList = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @troughLayers = map { $_->GetSingleLayers() } grep { $_->GetType() eq Enums->Type_PLTTHROUGHNC } $layerList->GetLayers();
+
+	my $pcbThick = undef;
+	my $lName    = undef;
+
+	if (@troughLayers) {
+
+		$pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
+		$lName = GeneralHelper->GetGUID();
+
+		$inCAM->COM(
+					 'create_layer',
+					 layer     => $lName,
+					 context   => 'misc',
+					 type      => 'document',
+					 polarity  => 'positive',
+					 ins_layer => ''
+		);
+	}
+
+	foreach my $l (@troughLayers) {
+
+		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
+
+		my $result = $outputParser->Prepare($l);
+
+		next unless ( $result->GetResult() );
+
+		foreach my $classResult ( $result->GetClassResults(1) ) {
+
+			# When angle tool, resize final tool dieameter by tool depth
+			if (    $classResult->GetType() eq OutParserEnums->Type_ROUT
+				 || $classResult->GetType() eq OutParserEnums->Type_DRILL )
+			{
+				foreach my $classL ( $classResult->GetLayers() ) {
+
+					if ( $l->{"gROWlayer_type"} eq "rout" ) {
+
+						CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+						CamLayer->Contourize( $inCAM, $classL->GetLayerName(), "area", "25000" );
+					}
+
+					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName, "invert" => "yes" );
+				}
+
+			}
+			else {
+				foreach my $classL ( $classResult->GetLayers() ) {
+
+					my $DTMTool = $classL->GetDataVal("DTMTool");
+					next if ( $DTMTool->GetDepth() * 1000 < $pcbThick );
+
+					my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * ( $DTMTool->GetDepth() * 1000 - $pcbThick ) * 2;
+
+					my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter );
+
+					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+					CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+
+					$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName, "invert" => "yes" );
+				}
+			}
+		}
+
+		$outputParser->Clear();
+
+	}
+
+	return $lName;
 
 }
 

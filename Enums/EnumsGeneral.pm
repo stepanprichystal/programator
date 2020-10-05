@@ -91,8 +91,13 @@ use constant {
 	LAYERTYPE_nplt_prepregMill => "nplt_prepregMill",      # prepreg mill
 	LAYERTYPE_nplt_stiffcMill  => "nplt_stiffcMill",       # milling for stiffener from side c
 	LAYERTYPE_nplt_stiffsMill  => "nplt_stiffsMill",       # milling for stiffener from side s
+	LAYERTYPE_nplt_bstiffcMill => "nplt_bstiffcMill",      # depth milling of stiffener from side c
+	LAYERTYPE_nplt_bstiffsMill => "nplt_bstiffsMill",      # depth milling for stiffener from side s
 	LAYERTYPE_nplt_soldcMill   => "nplt_soldfcMill",       # milling of template for soldering coverlay from side c
 	LAYERTYPE_nplt_soldsMill   => "nplt_soldfsMill",       # milling of template for soldering coverlay from side s
+	LAYERTYPE_nplt_tapecMill   => "nplt_tapecMill",        # milling of doublesided tape sticked from top
+	LAYERTYPE_nplt_tapesMill   => "nplt_tapesMill",        # milling of doublesided tape sticked from bot
+	LAYERTYPE_nplt_tapebrMill  => "nplt_tapebrMill",       # milling of doublesided tape bridges after tape is pressed
 
 };
 
@@ -116,11 +121,11 @@ use constant {
 
 # names of special coupon steps
 use constant {
-	Coupon_IMPEDANCE => 'coupon_impedance', # coupon for impedance measurement
-	Coupon_DRILL     => 'coupon_drill',     # coupon for drill hole measrument
-	Coupon_IPC3MAIN  => 'coupon_ipc3main',  # coupon for IPC class 3 - contain holes + lines
-	Coupon_IPC3DRILL => 'coupon_drill'      # coupon for IPC class 3 - through hole measurement (Warning - same step name as coupon_drill)
-	 
+	Coupon_IMPEDANCE => 'coupon_impedance',    # coupon for impedance measurement
+	Coupon_DRILL     => 'coupon_drill',        # coupon for drill hole measrument
+	Coupon_IPC3MAIN  => 'coupon_ipc3main',     # coupon for IPC class 3 - contain holes + lines
+	Coupon_IPC3DRILL => 'coupon_drill'         # coupon for IPC class 3 - through hole measurement (Warning - same step name as coupon_drill)
+
 };
 
 1;

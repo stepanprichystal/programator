@@ -163,7 +163,9 @@ sub EditAfterOpen {
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldcMill
-		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldsMill )
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldsMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill )
 	{
 
 		# get tool number of r850 tool
@@ -197,7 +199,7 @@ sub EditAfterOpen {
 				if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 
 					my ( $pre, $suf ) = $dn =~ m/^(.*M97,\w\d{6})(.*)$/;
-					my $pNum = " P" . ( $layer->{"gROWname"} =~ m/^fprepreg(\d)$/ )[0];
+					my $pNum = " P" . ( $layer->{"gROWname"} =~ m/^fprpg(\d)$/ )[0];
 					$dn = $pre . $pNum . $suf . "\n";
 				}
 
@@ -205,7 +207,9 @@ sub EditAfterOpen {
 				if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
 					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
 					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
-					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill )
+					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill 
+					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
+					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill)
 				{
 
 					my ( $pre, $suf ) = $dn =~ m/^(.*M97,\w\d{6})(.*)$/;
@@ -215,13 +219,19 @@ sub EditAfterOpen {
 						 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill )
 					{
 
-						($sigLayer) = $ncStart =~ /^coverlay(.*)/;
+						($sigLayer) = $ncStart =~ /^cvrl(.*)/;
 					}
 					elsif (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
 							|| $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill )
 					{
 
 						($sigLayer) = $ncStart =~ /^stiff(.*)/;
+					
+					}elsif (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
+							|| $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill )
+					{
+
+						($sigLayer) = $ncStart =~ /^tp(.*)/;
 					}
 
 					$dn = $pre . " " . $sigLayer . $suf . "\n";

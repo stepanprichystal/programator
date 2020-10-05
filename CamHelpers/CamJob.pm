@@ -684,7 +684,9 @@ sub CopyJob {
 	);
 }
 
-#return final thick of pcb in µm
+# Return final thick of pcb including plating 
+# Units [µm]
+# Note: Stiffener thickness is not  included!!
 sub GetFinalPcbThick {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -702,8 +704,9 @@ sub GetFinalPcbThick {
 
 		$thick = HegMethods->GetPcbMaterialThick($jobId);
 		$thick = $thick * 1000;
+	 
 	}
-
+ 
 	return $thick;
 }
 

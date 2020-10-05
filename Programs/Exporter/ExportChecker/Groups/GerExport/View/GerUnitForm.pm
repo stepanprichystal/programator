@@ -22,6 +22,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::Gerbers::Jetprint::Enums' => "EnumsJet";
 
 #use aliased 'CamHelpers::CamJob';
 
@@ -165,21 +166,27 @@ sub __SetLayoutJetprint {
 
 	# DEFINE CONTROLS
 
-	my $exportChb   = Wx::CheckBox->new( $statBox, -1, "Export",      &Wx::wxDefaultPosition );
-	my $fiduc3p2Chb = Wx::CheckBox->new( $statBox, -1, "Fiduc 3.2mm", &Wx::wxDefaultPosition );
+	my $exportChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
+
+	my $fiducSunRb = Wx::RadioButton->new( $statBox, -1, "Fiduc:Sun 5mm", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
+	my $fiducHoleRb = Wx::RadioButton->new( $statBox, -1, "Fiduc:Hole 3mm", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+
 	my $rotationChb = Wx::CheckBox->new( $statBox, -1, "Rotate 90°", &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szStatBox->Add( $exportChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $fiduc3p2Chb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $rotationChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $fiducSunRb,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $fiducHoleRb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
 
 	# Set References
 	$self->{"exportJetprintChb"} = $exportChb;
-	$self->{"fiduc3p2Chb"}       = $fiduc3p2Chb;
+	$self->{"fiducSunRb"}        = $fiducSunRb;
+	$self->{"fiducHoleRb"}       = $fiducHoleRb;
 	$self->{"rotationChb"}       = $rotationChb;
 
 	return $szStatBox;
@@ -356,7 +363,8 @@ sub DisableControls {
 
 	if ( !$defaultInfo->LayerExist("pc") && !$defaultInfo->LayerExist("ps") ) {
 		$self->{"exportJetprintChb"}->Disable();
-		$self->{"fiduc3p2Chb"}->Disable();
+		$self->{"fiducSunRb"}->Disable();
+		$self->{"fiducHoleRb"}->Disable();
 		$self->{"rotationChb"}->Disable();
 	}
 
@@ -540,7 +548,19 @@ sub SetJetprintInfo {
 	my $info = shift;
 
 	$self->{"exportJetprintChb"}->SetValue( $info->{"exportGerbers"} );
-	$self->{"fiduc3p2Chb"}->SetValue( $info->{"fiduc3p2"} );
+
+	if ( $info->{"fiducType"} eq EnumsJet->Fiducials_SUN5 ) {
+
+		$self->{"fiducSunRb"}->SetValue(1);
+	}
+	elsif ( $info->{"fiducType"} eq EnumsJet->Fiducials_HOLE3 ) {
+
+		$self->{"fiducHoleRb"}->SetValue(1);
+	}
+	else {
+		die "Ilegal fiduc type:" . $info->{"fiducType"};
+	}
+
 	$self->{"rotationChb"}->SetValue( $info->{"rotation"} );
 }
 
@@ -556,13 +576,20 @@ sub GetJetprintInfo {
 		$info{"exportGerbers"} = 0;
 	}
 
-	if ( $self->{"fiduc3p2Chb"}->IsChecked() ) {
-		$info{"fiduc3p2"} = 1;
+	if ( $self->{"fiducSunRb"}->GetValue() ) {
+
+		$info{"fiducType"} = EnumsJet->Fiducials_SUN5;
+
+	}
+	elsif ( $self->{"fiducHoleRb"}->GetValue() ) {
+
+		$info{"fiducType"} = EnumsJet->Fiducials_HOLE3;
 	}
 	else {
-		$info{"fiduc3p2"} = 0;
+
+		die "Ilegal fiduc type";
 	}
-	
+
 	if ( $self->{"rotationChb"}->IsChecked() ) {
 		$info{"rotation"} = 1;
 	}

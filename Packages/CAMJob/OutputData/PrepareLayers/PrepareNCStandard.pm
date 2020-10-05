@@ -137,7 +137,9 @@ sub __PrepareNCMILL {
 
 	# Scoring + plated mill
 	my @layersSingle =
-	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score } @layers;
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill 
+	  	|| $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score
+	   } @layers;
 
 	foreach my $l (@layersSingle) {
 

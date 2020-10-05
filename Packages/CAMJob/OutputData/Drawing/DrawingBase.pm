@@ -182,8 +182,8 @@ sub _CreateDetailZaxisSurf {
 	my $depth = shift;
 
 	if ( $depth >= $self->{"pcbThick"} ) {
+		
 		die "Tool depth $depth is bigger than pcb thick " . $self->{"pcbThick"} . ".\n";
-
 		#return 0;
 	}
 

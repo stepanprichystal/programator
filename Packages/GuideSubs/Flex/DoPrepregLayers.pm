@@ -78,7 +78,7 @@ sub __PreparePreregNo1 {
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
-	my $prereglName = "fprepreg1";
+	my $prereglName = "fprpg1";
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $prereglName ) ) {
 
 		$messMngr->ShowModal( -1,
@@ -99,7 +99,7 @@ sub __PreparePreregNo1 {
 
 	# When only top coverlay on outer RigidFlex (without pins)
 		my $pins = 1;
-	if ( !CamHelper->LayerExists( $inCAM, $jobId, "coverlaypins" ) ) {
+	if ( !CamHelper->LayerExists( $inCAM, $jobId, "cvrlpins" ) ) {
 		$pins = 0;
 	}
 
@@ -207,7 +207,7 @@ sub __PreparePreregNo2 {
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
-	my $prereglName = "fprepreg2";
+	my $prereglName = "fprpg2";
 	my $refLayer    = "bend";
 
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $prereglName ) ) {

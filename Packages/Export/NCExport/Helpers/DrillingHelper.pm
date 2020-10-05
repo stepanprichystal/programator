@@ -199,6 +199,12 @@ sub GetNPltNCLayerInfo {
 	my @nplt_soldcMill   = ();  # milling of template for soldering coverlay from side c
 	my @nplt_soldsMill   = ();  # milling of template for soldering coverlay from side s
 
+	my @nplt_bstiffcMill = ();  # depth milling of stiffener from side c
+	my @nplt_bstiffsMill = ();  # depth milling for stiffener from side s
+	my @nplt_tapecMill   = ();  # milling of doublesided tape sticked from top
+	my @nplt_tapesMill   = ();  # milling of doublesided tape sticked from bot
+	my @nplt_tapebrMill  = ();  # milling of doublesided tape bridges after tape is pressed
+
 	my @ncPar = ();
 	foreach my $l (@layers) {
 
@@ -274,29 +280,54 @@ sub GetNPltNCLayerInfo {
 
 		}
 
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ) {
+			push( @nplt_bstiffcMill, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ) {
+			push( @nplt_bstiffsMill, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill ) {
+			push( @nplt_tapecMill, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill ) {
+			push( @nplt_tapesMill, $l );
+
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapebrMill ) {
+			push( @nplt_tapebrMill, $l );
+
+		}
+
 	}
 
-	$info{ EnumsGeneral->LAYERTYPE_nplt_nDrill }    = \@nplt_nDrill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_nMill }     = \@nplt_nMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }  = \@nplt_bMillTop;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }  = \@nplt_bMillBot;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_rsMill }    = \@nplt_rsMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_frMill }    = \@nplt_frMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop } = \@nplt_cbMillTop;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot } = \@nplt_cbMillBot;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_kMill }     = \@nplt_kMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_lcMill }    = \@nplt_lcMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_lsMill }    = \@nplt_lsMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec } = \@nplt_fMillSpec;
-
+	$info{ EnumsGeneral->LAYERTYPE_nplt_nDrill }      = \@nplt_nDrill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_nMill }       = \@nplt_nMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }    = \@nplt_bMillTop;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }    = \@nplt_bMillBot;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_rsMill }      = \@nplt_rsMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_frMill }      = \@nplt_frMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }   = \@nplt_cbMillTop;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }   = \@nplt_cbMillBot;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_kMill }       = \@nplt_kMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_lcMill }      = \@nplt_lcMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_lsMill }      = \@nplt_lsMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_fMillSpec }   = \@nplt_fMillSpec;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill }  = \@nplt_cvrlycMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }  = \@nplt_cvrlysMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_prepregMill } = \@nplt_prepregMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill }  = \@nplt_stiffcMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill }  = \@nplt_stiffsMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_soldcMill }   = \@nplt_soldcMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_soldsMill }   = \@nplt_soldsMill;
 
-	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } = \@nplt_stiffcMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } = \@nplt_stiffsMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_soldcMill }  = \@nplt_soldcMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_soldsMill }  = \@nplt_soldsMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } = \@nplt_bstiffcMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } = \@nplt_bstiffsMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_tapecMill }   = \@nplt_tapecMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_tapesMill }   = \@nplt_tapesMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill }  = \@nplt_tapebrMill;
 
 	return %info;
 }

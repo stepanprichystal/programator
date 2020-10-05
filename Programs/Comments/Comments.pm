@@ -50,7 +50,7 @@ sub new {
 
 	$self->__LoadFromJob();
 
-	$self->__AddDefaultComm() if ( $self->{"addDefaulComm"} );
+	$self->__AddDefaultComm() if ( $self->{"addDefaulComm"} && scalar($self->{"commLayout"}->GetAllComments()) == 0 );
 
 	$self->__ClearOldFiles();
 
@@ -250,11 +250,11 @@ sub AddComment {
 	my $commCnt = scalar( $self->{"commLayout"}->GetAllComments() );
 
 	# Add default screenshot from InCAM
-	my $p = "";
-	if ( $self->SnapshotCAM( 1, \$p ) ) {
-
-		$self->AddFile( $commCnt - 1, "", $p );
-	}
+#	my $p = "";
+#	if ( $self->SnapshotCAM( 1, \$p ) ) {
+#
+#		$self->AddFile( $commCnt - 1, "", $p );
+#	}
 
 	return $comment;
 }

@@ -33,7 +33,7 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'Packages::Tooling::CountersinkHelper';
 use aliased 'CamHelpers::CamSymbolArc';
 use aliased 'Packages::Polygon::Polygon::PolygonAttr';
-
+use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutEnums';
 
@@ -57,8 +57,9 @@ sub new {
 
 	$self->{"outputNClayer"} = shift;
 
-	$self->{"pcbThick"}    = CamJob->GetFinalPcbThick( $self->{"inCAM"}, $self->{"jobId"} ) / 1000;    # in mm
-	$self->{"dataOutline"} = "200";                                                     # symbol def, which is used for outline
+	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $self->{"inCAM"}, $self->{"jobId"} ) / 1000;    # in mm
+
+	$self->{"dataOutline"} = "200";                                                                 # symbol def, which is used for outline
 
 	return $self;
 }
@@ -79,6 +80,8 @@ sub Prepare {
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillTop
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill
 	} @layers;
 
 	foreach my $l (@layers) {
@@ -100,12 +103,12 @@ sub __ProcessNClayer {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->{"step"};
 
-	my $enTit = Helper->GetJobLayerTitle($l, $type);
-	my $czTit = Helper->GetJobLayerTitle($l, $type, 1 );
+	my $enTit = Helper->GetJobLayerTitle( $l, $type );
+	my $czTit = Helper->GetJobLayerTitle( $l, $type, 1 );
 	my $enInf = Helper->GetJobLayerInfo($l);
-	my $czInf = Helper->GetJobLayerInfo($l, 1 );
+	my $czInf = Helper->GetJobLayerInfo( $l, 1 );
 
-	#my $drawingPos = Point->new( 0, abs( $self->{"profileLim"}->{"yMax"} - $self->{"profileLim"}->{"yMin"} ) + 50 );    # starts 150
+	 
 
 	# Get if NC operation is from top/bot
 	my $side = $l->{"gROWname"} =~ /c/ ? "top" : "bot";
@@ -248,7 +251,7 @@ sub __ProcessLayerData {
 
 			# Adjust copied feature data. Create outlilne from each feature
 			CamLayer->WorkLayer( $inCAM, $drawLayer );
-			CamLayer->Contourize( $inCAM, $drawLayer ); # onlz counourize, no fill empty places
+			CamLayer->Contourize( $inCAM, $drawLayer );    # onlz counourize, no fill empty places
 
 			CamLayer->WorkLayer( $inCAM, $drawLayer );
 
@@ -280,7 +283,30 @@ sub __ProcessDrawing {
 		my $lTmp = GeneralHelper->GetGUID();
 		$inCAM->COM( 'create_layer', layer => $lTmp );
 
-		my $draw = Drawing->new( $inCAM, $jobId, $lTmp, Point->new( 0, 0 ), $self->{"pcbThick"}, $side, $l->{"plated"} );
+		my $pcbThick = $self->{"pcbThick"};
+
+		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ) {
+
+			my $mInf = HegMethods->GetPcbStiffenerMat( $jobId, "top" );
+
+			die "No TOP stiffener material defined in IS" unless ($mInf);
+
+			$pcbThick = $mInf->{"vyska"};
+			$pcbThick =~ s/,/\./;
+			$pcbThick *= 1000; # mm
+			
+		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ) {
+			my $mInf = HegMethods->GetPcbStiffenerMat( $jobId, "bot" );
+
+			die "No TOP stiffener material defined in IS" unless ($mInf);
+
+			$pcbThick = $mInf->{"vyska"};
+			$pcbThick =~ s/,/\./;
+			$pcbThick *= 1000; # mm
+		}
+
+		my $draw = Drawing->new( $inCAM, $jobId, $lTmp, Point->new( 0, 0 ), $pcbThick, $side, $l->{"plated"} );
 
 		if (    $classRes->GetType() eq OutEnums->Type_COUNTERSINKSURF
 			 || $classRes->GetType() eq OutEnums->Type_COUNTERSINKARC )

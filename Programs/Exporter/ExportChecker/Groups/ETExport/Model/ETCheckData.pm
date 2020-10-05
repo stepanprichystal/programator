@@ -96,7 +96,7 @@ sub OnCheckGroupData {
 	}
 
 	# 5) Check if coverlay on outer signal layers are properly prepared (are not empty)
-	my @cvrl = grep { $_->{"gROWname"} =~ /^coverlay[cs]$/ } $defaultInfo->GetBoardBaseLayers();
+	my @cvrl = grep { $_->{"gROWname"} =~ /^cvrl[cs]$/ } $defaultInfo->GetBoardBaseLayers();
 	if ( scalar(@cvrl) ) {
 		
 		my @steps = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );

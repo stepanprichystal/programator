@@ -327,7 +327,7 @@ sub PrepareRoutCoverlay {
 	my $result = 1;
 
 	# coverlay mask layer must exist
-	my $coverlayMaskL = "coverlay$sigLayer";
+	my $coverlayMaskL = "cvrl$sigLayer";
 	die "Coverlay mask layer: $coverlayMaskL doesn't exist" unless ( CamHelper->LayerExists( $inCAM, $jobId, $coverlayMaskL ) );
 
 	# put Cu only to rigid signal layer
@@ -345,7 +345,7 @@ sub PrepareRoutCoverlay {
 	}
 
 	# Build coverlay rout name
-	my $routLName = "fcoverlay";
+	my $routLName = "fcvrl";
 	$routLName .= $side eq "top" ? "c" : "s";
 
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $routLName );
@@ -457,7 +457,7 @@ sub PrepareRoutPrepreg {
 
 	my $bendParser;
 
-	if ( $refLayer eq "coverlaypins" ) {
+	if ( $refLayer eq "cvrlpins" ) {
 
 		$bendParser = CoverlayPinParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, $clearance );
 
@@ -829,7 +829,7 @@ sub PrepareCoverlayTemplate {
 		CamMatrix->CreateLayer( $inCAM, $jobId, $routName, "rout", "positive", 1 );
 	}
 
-	CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $routName, "coverlaypins", "coverlaypins" );
+	CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $routName, "cvrlpins", "cvrlpins" );
 
 	# Draw transition features
 	CamLayer->WorkLayer( $inCAM, $routName );

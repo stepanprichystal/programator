@@ -150,7 +150,7 @@ sub __Init {
 
 	if (    $pcbType eq EnumsGeneral->PcbType_1V
 		 || $pcbType eq EnumsGeneral->PcbType_2V
-		 || $pcbType eq EnumsGeneral->PcbType_2VFLEX
+		 || $pcbType eq EnumsGeneral->PcbType_1VFLEX
 		 || $pcbType eq EnumsGeneral->PcbType_2VFLEX )
 	{
 

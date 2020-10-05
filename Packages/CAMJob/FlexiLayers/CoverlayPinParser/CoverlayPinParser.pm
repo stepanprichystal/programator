@@ -45,7 +45,7 @@ sub new {
 	$self->{"step"}           = shift;
 	$self->{"bendAreaDir"}    = shift // PolyEnums->Dir_CCW;    # Packages::Polygon::Enums::Dir_<CW|CCW>
 	$self->{"resizeBendArea"} = shift // 0;                     # Resize polygon feature of bend area
-	$self->{"layer"}          = shift // "coverlaypins";
+	$self->{"layer"}          = shift // "cvrlpins";
 
 	# PROPERTIES
 

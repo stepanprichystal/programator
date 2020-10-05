@@ -133,6 +133,22 @@ sub GetEmailSubject {
 	return $self->{"data"}->{"emailSubject"};
 }
 
+# Email introduction
+sub SetEmailIntro {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"emailIntro"} = $value;
+}
+
+sub GetEmailIntro {
+	my $self  = shift;
+	my $value = shift;
+
+	return $self->{"data"}->{"emailIntro"};
+}
+
+
+
 
 # Include offer inf like stackup, class etc..
 sub SetIncludeOfferInf {

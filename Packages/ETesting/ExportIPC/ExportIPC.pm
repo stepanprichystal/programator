@@ -123,7 +123,7 @@ sub Export {
 #
 #	my @nestedSteps = CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
 #
-#	my @coverlays = ( "fcoverlayc", "fcoverlays" );
+#	my @coverlays = ( "fcvrlc", "fcvrls" );
 #
 #	foreach my $coverlay (@coverlays) {
 #

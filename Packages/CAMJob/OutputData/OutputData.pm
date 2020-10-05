@@ -158,7 +158,7 @@ sub __GetLayersForExport {
 
 	# 2) Filter internal layers, which are unable to export
 
-	my @internal = ( "fr", "v1", "fsch", "coverlaypins" );
+	my @internal = ( "fr", "v1", "fsch", "cvrlpins" );
 
 	my %tmp;
 	@tmp{@internal} = ();

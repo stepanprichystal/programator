@@ -126,7 +126,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $step = "o+1";
 
-	my $max = RoutingOperation->RoutCompensationDelRemains( $inCAM, $jobId, $step, "fcoverlayc" );
+	my $max = RoutingOperation->RoutCompensationDelRemains( $inCAM, $jobId, $step, "fcvrlc" );
 
 	print "area exceeded=" . $max . "---\n";
 

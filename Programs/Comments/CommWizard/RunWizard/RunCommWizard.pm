@@ -39,7 +39,7 @@ sub new {
 
 	my $appName = 'Programs::Comments::CommWizard::CommWizard';    # has to implement IAppLauncher
 
-	my $addDefaultComment = 0;
+	my $addDefaultComment = 1;
 	my @params = ($self->{"jobid"}, $addDefaultComment );
 	my $launcher = AppLauncher->new( $appName, @params);
  

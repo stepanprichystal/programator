@@ -15,7 +15,7 @@ use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 my $jobId   = $ENV{"JOB"};
 my $unitId  = UnitEnums->UnitId_COMM;
-my $unitDim = [ 555, 285 ];
+my $unitDim = [ 600, 400 ];
 
 my $form = RunExporterCheckerMini->new( $jobId, $unitId, $unitDim );
 $form->LaunchViaAppLauncher();

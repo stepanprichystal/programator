@@ -11,6 +11,7 @@ use strict;
 use warnings;
 use File::Copy;
 use List::MoreUtils qw(uniq);
+use List::Util qw(first);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -34,6 +35,7 @@ use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::ItemResult::Enums' => 'ItemResEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::CAMJob::SilkScreen::SilkScreenCheck';
+use aliased 'Packages::Gerbers::Jetprint::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -43,10 +45,10 @@ sub new {
 	my $class = shift;
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
-	$self->{"inCAM"} = shift;
-	$self->{"jobId"} = shift;
-	my $specFiduc = shift;    # set, only if special fiduc marks
-	$self->{"rotation"} = shift;    # rotation data 90°°if panel is too height
+	$self->{"inCAM"}     = shift;
+	$self->{"jobId"}     = shift;
+	$self->{"fiducials"} = shift;    # set, only if special fiduc marks
+	$self->{"rotation"}  = shift;    # rotation data 90°°if panel is too height
 
 	$self->{"step"} = "panel";
 
@@ -71,27 +73,17 @@ sub new {
 
 	$self->{"jetprintStep"} = "jetprint_panel";
 
-	# set default fiducials
-	if ( defined $specFiduc ) {
+	# Default fiducials
 
-		$self->{"fiducials"} = $specFiduc;
+	if ( !defined $self->{"fiducials"} ) {
 
+		$self->{"fiducials"} = Helper->GetDefaultFiduc( $self->{"inCAM"}, $self->{"jobId"} );
 	}
-	else {
 
-		my $pcbType = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-
-		# If no copper OR 1V with bottom silcscreen, use 3.2 holes
-		if ( $pcbType eq 'Neplatovany'
-			 || ( $pcbType eq 'Jednostranny' && scalar( grep { $_->{"gROWname"} =~ /^p[s]$/i } @l ) ) )
-		{
-
-			$self->{"fiducials"} = Enums->Fiducials_HOLE3P2;
-		}
-		else {
-
-			$self->{"fiducials"} = Enums->Fiducials_SUN;
-		}
+	# Default rotation
+	if ( !defined $self->{"rotation"} ) {
+		
+		$self->{"rotation"} = Helper->GetDefaultRotation( $self->{"inCAM"}, $self->{"jobId"} );
 	}
 
 	# Prinitng frame. If PCB is flexible 1-2v, we use special printing frame
@@ -308,7 +300,7 @@ sub __DeleteFeatures {
 	$f->SetIncludeAttrCond( FilterEnums->Logic_OR );
 
 	# delete standard fiducials
-	if ( $self->{"fiducials"} ne Enums->Fiducials_SUN ) {
+	if ( $self->{"fiducials"} ne Enums->Fiducials_SUN5 ) {
 
 		$f->AddIncludeAtt( ".pnl_place", "SF-*" );
 	}
@@ -382,19 +374,29 @@ sub __PrepareFiducials {
 	my $jobId = $self->{"jobId"};
 
 	# hole 3.2 mm
-	if ( $self->{"fiducials"} eq Enums->Fiducials_HOLE3P2 ) {
+	if ( $self->{"fiducials"} eq Enums->Fiducials_HOLE3 ) {
 
 		# put 100µm symbols on 3.2mm hole position in "m" layer
 		my $f = Features->new();
 		$f->Parse( $inCAM, $jobId, $self->{"step"}, "v" );
-		my @holes3p2 = grep { $_->{"type"} eq "P" && $_->{"att"}->{".pnl_place"} =~ /^M-(.*)-c$/ } $f->GetFeatures();
+		my @holes3p2 = grep { $_->{"type"} eq "P" && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor/i } $f->GetFeatures();
 
-		die "No fiducial holes 3.2mm was found in layer \"v\"" unless ( scalar(@holes3p2) );
+		# select only 3 fiduc (2x bot and lright top)
+		my @fiduc = ();
+		my $LB = first {$_->{"att"}->{".pnl_place"} =~ /left.?bot/i} @holes3p2;
+		my $RB = first {$_->{"att"}->{".pnl_place"} =~ /right.?bot/i} @holes3p2;
+		my $RT = first {$_->{"att"}->{".pnl_place"} =~ /right.?top/i} @holes3p2;
+		push(@fiduc, $LB) if($LB);
+		push(@fiduc, $RB) if($RB);
+		push(@fiduc, $RT) if($RT);
+		
+		die "No OLEC fiducial holes 3mm was found in layer \"v\"" unless ( scalar(@fiduc) );
 
+		
 		# add point
 		CamLayer->WorkLayer( $inCAM, $layerName );
 
-		foreach my $hole (@holes3p2) {
+		foreach my $hole (@fiduc) {
 
 			my %pos = ( "x" => $hole->{"x1"}, "y" => $hole->{"y1"} );
 
@@ -421,9 +423,9 @@ sub __MoveToZero {
 	}
 	else {
 		$inCAM->COM(
-			"sel_move",
-			"dx" =>  $self->{"printFrm"},
-			"dy" =>  $self->{"printFrm"}
+					 "sel_move",
+					 "dx" => $self->{"printFrm"},
+					 "dy" => $self->{"printFrm"}
 		);
 
 	}
@@ -511,10 +513,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d270114";
+	my $jobId    = "d293788";
 	my $stepName = "panel";
 
-	my $export = ExportFiles->new( $inCAM, $jobId, undef, 1 );
+	my $export = ExportFiles->new( $inCAM, $jobId, undef, undef );
 
 	$export->Run();
 

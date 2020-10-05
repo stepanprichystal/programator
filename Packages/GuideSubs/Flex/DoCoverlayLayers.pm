@@ -118,7 +118,7 @@ sub __PrepareCoverlay {
 	my $messMngr = shift;
 
 	# Create coverlay mask layer
-	my $coverMaskL  = "coverlay" . $sigLayer;
+	my $coverMaskL  = "cvrl" . $sigLayer;
 	my $createMaskL = 1;
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $coverMaskL ) ) {
 

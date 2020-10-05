@@ -294,7 +294,9 @@ sub GetContactPersonInfo {
 	my @params = ( SqlParameter->new( "_PersonId", Enums->SqlDbType_VARCHAR, $personId ) );
 
 	my $cmd = "SELECT
-       			e_mail
+       			e_mail,
+       			jmeno,
+       			prijmeni
 				FROM lcs.kontaktni_osoby
 				WHERE cislo_subjektu = _PersonId";
 
@@ -306,6 +308,24 @@ sub GetContactPersonInfo {
 	else {
 		return undef;
 	}
+}
+
+# Return IS Id of contact person
+sub GetContactNumberByMail {
+	my $self        = shift;
+	my $personEmail = shift;
+
+	my @params = ( SqlParameter->new( "_PersonEmail", Enums->SqlDbType_VARCHAR, $personEmail ) );
+	push( @params, SqlParameter->new( "_PersonEmail", Enums->SqlDbType_VARCHAR, $personEmail ) );
+
+	my $cmd = "SELECT
+       			cislo_subjektu
+				FROM lcs.kontaktni_osoby
+				WHERE e_mail = _PersonEmail or e_mail2 = _PersonEmail";
+
+	my $result = Helper->ExecuteScalar( $cmd, \@params );
+
+	return $result;
 }
 
 # Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
@@ -1104,7 +1124,7 @@ sub GetIdcustomer {
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
-	my $numberOrder = $self->GetNumberOrder( $pcbId );
+	my $numberOrder = $self->GetNumberOrder($pcbId);
 
 	my $cmd = "select top 1		
 				org.reference_subjektu
@@ -1118,17 +1138,14 @@ sub GetIdcustomer {
 	return $res;
 }
 
-
 # Return order information by specific order item
 sub GetCustomerOrderInfo {
-	my $self  = shift;
-	my $orderId = shift; # Dxxxxxx-xx
+	my $self    = shift;
+	my $orderId = shift;    # Dxxxxxx-xx
 
 	my @params = ( SqlParameter->new( "_OrderId", Enums->SqlDbType_VARCHAR, $orderId ) );
 
-
-	my $cmd = 
-	"SELECT
+	my $cmd = "SELECT TOP 1 
        obh.nazev_subjektu
 	FROM lcs.sk_hlavicka obh
        JOIN lcs.sk_polozka obp ON obp.cislo_subjektu = obh.cislo_subjektu
@@ -1144,9 +1161,6 @@ sub GetCustomerOrderInfo {
 		return undef;
 	}
 }
-
-
-
 
 #sub UpdateConstructionClass {
 #	my $self        = shift;
@@ -1494,7 +1508,7 @@ sub UpdateOfferSpecification {
 			$res = 0 unless ($resIn);
 
 		}
-		
+
 		return $res;
 	}
 
@@ -2603,7 +2617,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->GetCustomerOrderInfo("D292836-01");
+	my $mat = HegMethods->GetContactNumberByMail('bortelr@fel.cvut.cz');
 
 	dump($mat);
 	die;

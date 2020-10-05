@@ -2,7 +2,7 @@
 package Packages::CAMJob::FlexiLayers::CoverlayPinParser::Enums;
 
 # Enums of .string feature attribute values
-# Each feature in "coverlaypin" layer contain one of these value in .string attribute.
+# Each feature in "cvrlpin" layer contain one of these value in .string attribute.
 use constant {
 
 	PinString_REGISTER      => "pin_register",        # pad which is used for register coverlay with flex core
