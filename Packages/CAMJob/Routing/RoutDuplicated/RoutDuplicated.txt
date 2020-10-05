@@ -2,7 +2,7 @@
 # Each line contain one rout and constant speed
 # <rout_size_um>=<rout_speed>
 
-600=6
-700=6
-800=8
-900=8
+600=60
+700=60
+800=80
+900=80
