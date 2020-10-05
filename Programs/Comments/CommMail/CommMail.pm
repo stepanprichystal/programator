@@ -181,7 +181,7 @@ sub Sent {
 
 		my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
 
-		$note .= "Approval mail (" . ( strftime "%Y/%m/%d", localtime ) . ")";
+		$note .= " Approval email (" . ( strftime "%Y/%m/%d", localtime ) . ")";
 		$inCAM->COM( "set_job_notes", "job" => $jobId, "notes" => $note );
 
 	}

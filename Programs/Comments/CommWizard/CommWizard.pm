@@ -130,7 +130,7 @@ sub __SaveExitHndl {
 		# 3) Run new app via ExportCheckerMiniWrapper ( wrapper for AppLauncher package and RunFromApp method)
 		# Pass current port from launcher to AppLauncher
 		my $unitId = UnitEnums->UnitId_COMM;
-		my $unitDim = [ 555, 285 ];
+		my $unitDim = [ 600, 400 ];
 
 		my $app = RunExporterCheckerMini->new( $self->{"jobId"}, $unitId, $unitDim, 1, $self->{"launcher"}->GetServerPort() );
 
