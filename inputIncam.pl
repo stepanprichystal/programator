@@ -1284,7 +1284,7 @@ sub _CheckREDresult {
 								 entity_type     => 'check',
 								 entity_path     => "$jobId/$StepName/clean_up",
 								 data_type       => 'MEAS',
-								 options         => "action=11+severity=R",
+								 options         => "action=10+severity=R",
 								 parse           => 'no'
 	);
 

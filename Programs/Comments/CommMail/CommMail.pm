@@ -65,6 +65,9 @@ sub Open {
 	my $addOfferInf   = shift // 0;    # Add offer data specitication to email
 	my $addOfferStckp = shift // 0;    # Add offer pdf stackup to email
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	my $p = GeneralHelper->Root() . "\\Programs\\Comments\\CommMail\\OutlookMail.pl";
 
 	my @cmds = ();
@@ -85,7 +88,15 @@ sub Open {
 
 	my $call = SystemCall->new( $p, @cmds );
 
-	return $call->Run();
+	if($call->Run()){
+		
+		my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
+
+		$note .= " Approval email (" . ( strftime "%Y/%m/%d", localtime ) . ")";
+		$inCAM->COM( "set_job_notes", "job" => $jobId, "notes" => $note );
+	}
+
+	return ;
 }
 
 # Sent via MIME::Lite
@@ -117,12 +128,12 @@ sub Sent {
 		}
 	}
 
-	foreach my $m (@emails) {
-
-		if ( $m !~ /\@gatema/ ) {
-			die "Unable to send email directly for email adress outside company: $m";
-		}
-	}
+#	foreach my $m (@emails) {
+#
+#		if ( $m !~ /\@gatema/ ) {
+#			die "Unable to send email directly for email adress outside company: $m";
+#		}
+#	}
 
 	#my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
 	my $name       = getlogin();

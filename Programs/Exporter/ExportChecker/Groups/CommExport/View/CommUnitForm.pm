@@ -410,7 +410,7 @@ sub __OnApprovalTypeChange {
 		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() );    # SetValue doesn't emmit event
 
 		# email action
-		$self->{"emailActionOpenRb"}->SetValue(1);
+		$self->{"emailActionSentRb"}->SetValue(1);
 
 		# adress To
 		my $emailTo = "";
@@ -482,7 +482,7 @@ sub __OnApprovalTypeChange {
 		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() );    # SetValue doesn't emmit event
 
 		# email action
-		$self->{"emailActionOpenRb"}->SetValue(1);
+		$self->{"emailActionSentRb"}->SetValue(1);
 
 		# adress To
 		my $emailTo = "";

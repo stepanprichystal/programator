@@ -1728,7 +1728,7 @@ sub _CheckIfCleanUpDone {
 			        entity_type => 'check',
 			        entity_path => "$pcbId/$step/clean_up",
 			        data_type => 'STATUS',
-			        options => "action=9");
+			        options => "action=8");
 			        
 			        if($inCAM->{doinfo}{gSTATUS} eq 'UNDONE' ){
 			        		push @errorMessageArr,  '- Pozor, nebyl proveden clean_up, naprav to.';

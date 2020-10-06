@@ -142,22 +142,22 @@ sub OnCheckGroupData {
 		}
 	}
 
-	# 3) Unable to sent email directly to not internal mail (mail which not contain gatema.cz)
-	if ( $groupData->GetExportEmail() ) {
-
-		if ( $groupData->GetEmailAction() eq MailEnums->EmailAction_SEND ) {
-			foreach my $m (@emailsTo, @emailsCC) {
-
-				if ( $m !~ /\@gatema/ ) {
-					$dataMngr->_AddErrorResult(
-							  "Export approval email - sent directly",
-							  "Nelze odeslat email na adresu: $m na přímo (\"Send directly\") pokud email obsahuje venkovní adresu mimo gatemu."
-								. " Je to z bezpečnostních důvodů, aby se email zákazníkovi neodesílal neůmyslně vícekrát při každém exportu"
-					);
-				}
-			}
-		}
-	}
+#	# 3) Unable to sent email directly to not internal mail (mail which not contain gatema.cz)
+#	if ( $groupData->GetExportEmail() ) {
+#
+#		if ( $groupData->GetEmailAction() eq MailEnums->EmailAction_SEND ) {
+#			foreach my $m (@emailsTo, @emailsCC) {
+#
+#				if ( $m !~ /\@gatema/ ) {
+#					$dataMngr->_AddErrorResult(
+#							  "Export approval email - sent directly",
+#							  "Nelze odeslat email na adresu: $m na přímo (\"Send directly\") pokud email obsahuje venkovní adresu mimo gatemu."
+#								. " Je to z bezpečnostních důvodů, aby se email zákazníkovi neodesílal neůmyslně vícekrát při každém exportu"
+#					);
+#				}
+#			}
+#		}
+#	}
 	
 
 }
