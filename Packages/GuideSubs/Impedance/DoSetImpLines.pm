@@ -55,7 +55,7 @@ sub SetImpedanceLines {
 	# Parse  XML xonstraints
 	my $inStackJob = InStackJob->new($jobId);
 
-	my @steps = grep { $_ =~ /^o\+\d+$/ } CamStep->GetAllStepNames( $inCAM, $jobId );
+	my @steps = grep { $_ =~ /\w+\+1$/ } CamStep->GetAllStepNames( $inCAM, $jobId );
 
 	foreach my $step (@steps) {
 
@@ -98,7 +98,8 @@ sub __SetImpedanceLine {
 	my @mess = ();
 	push( @mess, "Označení impedančních vodičů: $cId/$totalConstrCnt (atribut \".imp_constraint_id\")" );
 	push( @mess, "=========================================\n" );
-	push( @mess, " <b>Impedance</b> - Constraint id: <b>$cId</b>\n" );
+	push( @mess, " Step - <b>$step</b>" );
+	push( @mess, " Impedance - <b>Constraint id: $cId</b>\n" );
 
 	push( @mess, "- Typ: <img1> " . ValueConvertor->GetImpedanceType($cType) . " + $cModel" );
 	push( @mess, "- Vrstva: <b>$l</b>" );
@@ -467,7 +468,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d238681";
+	my $jobId = "d294390";
 
 	my $notClose = 0;
 

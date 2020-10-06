@@ -399,7 +399,7 @@ sub AddNCLayerType {
 			$l->{"technical"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fprpg[12]/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fprprg[12]/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_prepregMill;
 			$l->{"plated"}    = 0;

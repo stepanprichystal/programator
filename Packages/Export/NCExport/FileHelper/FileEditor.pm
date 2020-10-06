@@ -199,7 +199,7 @@ sub EditAfterOpen {
 				if ( $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_prepregMill ) {
 
 					my ( $pre, $suf ) = $dn =~ m/^(.*M97,\w\d{6})(.*)$/;
-					my $pNum = " P" . ( $layer->{"gROWname"} =~ m/^fprpg(\d)$/ )[0];
+					my $pNum = " P" . ( $layer->{"gROWname"} =~ m/^fprprg(\d)$/ )[0];
 					$dn = $pre . $pNum . $suf . "\n";
 				}
 

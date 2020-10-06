@@ -69,9 +69,14 @@ sub OnCheckGroupData {
 		my @steps = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 
 		my $impPresent = 0;
+
+		# Some impedance have not to by present in all steps, so merge attributes from all step together
+		my %attHist = {};
 		foreach my $step (@steps) {
 
 			my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $step->{"stepName"}, $c->GetTrackLayer(1), 1 );
+
+			#%attHist = (%attHist, %attHistStep);
 
 			if ( grep { $_ == $c->GetId() } @{ $attHist{".imp_constraint_id"} } ) {
 				$impPresent = 1;
@@ -119,8 +124,8 @@ sub OnCheckGroupData {
 			$f->Parse( $inCAM, $jobId, $step->{"stepName"}, $trackL, 1 );
 			my @feats = grep { $_->{"type"} =~ /^[LA]$/ } $f->GetFeatures();
 			@feats = grep { $_->{"att"}->{".imp_constraint_id"} == $cId } @feats;
-			
-			next unless(@feats);
+
+			next unless (@feats);
 
 			my @wrongW = grep { $_->{"thick"} != $compW } @feats;
 

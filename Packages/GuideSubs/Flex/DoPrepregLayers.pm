@@ -78,7 +78,7 @@ sub __PreparePreregNo1 {
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
-	my $prereglName = "fprpg1";
+	my $prereglName = "fprprg1";
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $prereglName ) ) {
 
 		$messMngr->ShowModal( -1,
@@ -207,7 +207,7 @@ sub __PreparePreregNo2 {
 
 	my %coverlayType = HegMethods->GetCoverlayType($jobId);
 
-	my $prereglName = "fprpg2";
+	my $prereglName = "fprprg2";
 	my $refLayer    = "bend";
 
 	if ( CamHelper->LayerExists( $inCAM, $jobId, $prereglName ) ) {

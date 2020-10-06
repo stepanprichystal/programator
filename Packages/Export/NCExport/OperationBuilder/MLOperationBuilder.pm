@@ -686,7 +686,7 @@ sub __DefineNPlatedOperations {
 	# 11) Operation name = fls - can contain layer
 	foreach my $l (@nplt_prepregMill) {
 
-		my ($prepregNum) = $l->{"gROWname"} =~ /^fprpg(\d)$/;
+		my ($prepregNum) = $l->{"gROWname"} =~ /^fprprg(\d)$/;
 
 		$opManager->AddOperationDef( "prprg" . $prepregNum, [$l], -1 );
 	}
