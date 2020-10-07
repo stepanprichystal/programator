@@ -223,7 +223,7 @@ sub __SetLayoutEmail {
 	my $emailSubjectCb =
 	  Wx::ComboBox->new( $statBox, -1, $subject[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@subject, &Wx::wxCB_READONLY );
 
-	my $emailIntroTxt = Wx::StaticText->new( $statBox, -1, "Introduc", &Wx::wxDefaultPosition, [ -1, -1 ] );
+	my $emailIntroTxt = Wx::StaticText->new( $statBox, -1, "Introduction", &Wx::wxDefaultPosition, [ -1, -1 ] );
 
 	my $emailIntroRTxt = Wx::RichTextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ -1, 80 ], &Wx::wxRE_MULTILINE | &Wx::wxWANTS_CHARS );
 	$emailIntroRTxt->SetEditable(1);
@@ -391,7 +391,7 @@ sub __OnApprovalTypeChange {
 
 		# introduction
 		$self->{"emailIntroRTxt"}->Clear();
-		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( $self->{"emailSubjectCb"}->GetValue() ) );
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( MailEnums->Subject_JOBFINIFHAPPROVAL) );
 
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(0);
@@ -432,7 +432,7 @@ sub __OnApprovalTypeChange {
 
 		# introduction
 		$self->{"emailIntroRTxt"}->Clear();
-		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( $self->{"emailSubjectCb"}->GetValue() ) );
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro(  MailEnums->Subject_JOBPROCESSAPPROVAL ) );
 
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(0);
@@ -463,7 +463,7 @@ sub __OnApprovalTypeChange {
 
 		# introduction
 		$self->{"emailIntroRTxt"}->Clear();
-		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( $self->{"emailSubjectCb"}->GetValue() ) );
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( MailEnums->Subject_OFFERFINIFHAPPROVAL ) );
 
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(1);
@@ -504,7 +504,7 @@ sub __OnApprovalTypeChange {
 
 		# introduction
 		$self->{"emailIntroRTxt"}->Clear();
-		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( $self->{"emailSubjectCb"}->GetValue() ) );
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( MailEnums->Subject_OFFERPROCESSAPPROVAL ) );
 
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(0);

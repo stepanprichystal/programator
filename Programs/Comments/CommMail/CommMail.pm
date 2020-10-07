@@ -76,10 +76,10 @@ sub Open {
 	push( @cmds, $self->__GetSubjectByType($subjectType) );
 
 	my $bodyTxt = "";
-	$bodyTxt .= $introduction."\n\n"        if ($introduction);
+	$bodyTxt .= $introduction . "\n\n" if ($introduction);
 	$bodyTxt .= $self->__GetBody($addOfferInf);
-	$bodyTxt .= $self->__GetFooter() if ($addFooter);
-	
+	$bodyTxt .= $self->__GetFooter()   if ($addFooter);
+
 	#$bodyTxt=  encode( "UTF-8", $bodyTxt );
 
 	push( @cmds, $bodyTxt );
@@ -88,15 +88,17 @@ sub Open {
 
 	my $call = SystemCall->new( $p, @cmds );
 
-	if($call->Run()){
-		
+	my $res = $call->Run();
+
+	if ( $res ) {
+
 		my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
 
 		$note .= " Approval email (" . ( strftime "%Y/%m/%d", localtime ) . ")";
 		$inCAM->COM( "set_job_notes", "job" => $jobId, "notes" => $note );
 	}
 
-	return ;
+	return $res;
 }
 
 # Sent via MIME::Lite
@@ -128,12 +130,12 @@ sub Sent {
 		}
 	}
 
-#	foreach my $m (@emails) {
-#
-#		if ( $m !~ /\@gatema/ ) {
-#			die "Unable to send email directly for email adress outside company: $m";
-#		}
-#	}
+	#	foreach my $m (@emails) {
+	#
+	#		if ( $m !~ /\@gatema/ ) {
+	#			die "Unable to send email directly for email adress outside company: $m";
+	#		}
+	#	}
 
 	#my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
 	my $name       = getlogin();
@@ -151,9 +153,9 @@ sub Sent {
 	my $subject = $self->__GetSubjectByType($subjectType);
 
 	my $body = "";
-	$body .= $introduction."\n\n"        if ($introduction);
+	$body .= $introduction . "\n\n" if ($introduction);
 	$body .= $self->__GetBody($addOfferInf);
-	$body .= $self->__GetFooter() if ($addFooter);
+	$body .= $self->__GetFooter()   if ($addFooter);
 
 	my $msg = MIME::Lite->new(
 		From => $from,
@@ -232,7 +234,7 @@ sub GetDefaultIntro {
 	my $self        = shift;
 	my $subjectType = shift;    # subject type
 
-	die "No subject type" if ( !defined $subjectType );
+	die "No subject type defined" if ( !defined $subjectType );
 
 	my $intro = "";
 
@@ -410,50 +412,19 @@ sub __GetBody {
 			my $f = $files[$i];
 			my $fullName = $self->{"commLayout"}->GetFileNameByTag( $i, '@f' . ($j) );
 
-			my $referTo = ( $self->{"lang"} eq "cz" ? "viz" : "refer to" );
-			$messSngl =~ s/\@f$j/$referTo $fullName/g;
+			#my $referTo = ( $self->{"lang"} eq "cz" ? "viz" : "refer to" );
+			$messSngl =~ s/\@f$j/$fullName/g;
 		}
 
 		$body .= $messSngl . "\n\n";
 	}
 
 	# Add inquiry information
-	if ( $self->{"addOfferInf"} ) {
+	if ($addOfferInf) {
 
 		my $inquiryInf = $self->__GetInquiryInf();
 
 		$body = $inquiryInf . "\n\n" . $body;
-	}
-
-	# Add footer
-	#my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
-	my $name = getlogin();
-	if ( $self->{"addFooter"} && defined $name && $name ne "" ) {
-		my $userInfo = HegMethods->GetEmployyInfo( getlogin() );
-		if ( defined $userInfo ) {
-
-			my $footer = "---\n";
-			$footer .= ( $self->{"lang"} eq "cz" ? "Děkuji"                       : "Thank you" ) . "\n";
-			$footer .= ( $self->{"lang"} eq "cz" ? "S pozdravem"                   : "With Best Regards" ) . "\n\n";
-			$footer .= $userInfo->{"prijmeni"} . "\n";
-			$footer .= $userInfo->{"jmeno"} . "\n";
-			$footer .= ( $self->{"lang"} eq "cz" ? "Technická příprava výroby" : "CAM Department" ) . "\n\n";
-
-			my $tel = $userInfo->{"telefon_prace"};
-
-			# add +420
-			$tel = "+420 " . $tel if ( $tel !~ /\+420/ );
-
-			$footer .= "T " . $tel . "\n";
-			$footer .= $userInfo->{"e_mail"} . "\n";
-			$footer .= "Gatema PCB a.s.\n";
-			$footer .= "Průmyslová 2503/2\n";
-			$footer .= "CZ 680 01 Boskovice";
-
-			$body .= "\n" . $footer;
-
-		}
-
 	}
 
 	die "Email body is empty" if ( !defined $body || $body eq "" );
@@ -470,7 +441,7 @@ sub __GetFooter {
 	# Add footer
 	#my $name = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, "user_name" );
 	my $name = getlogin();
-	if (   defined $name && $name ne "" ) {
+	if ( defined $name && $name ne "" ) {
 		my $userInfo = HegMethods->GetEmployyInfo( getlogin() );
 		if ( defined $userInfo ) {
 
@@ -561,6 +532,62 @@ sub __GetAttachments {
 	}
 
 	return @attachmenst;
+}
+
+sub __GetInquiryInf {
+	my $self = shift;
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = "panel";
+
+	if ( !CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
+		$step = "o+1";
+	}
+
+	my $stckpCode = StackupCode->new( $inCAM, $jobId, $step );
+
+	my $txt = shift;
+
+	my @text = ();
+
+	my $isFlex = JobHelper->GetIsFlex($jobId);
+
+	push( @text, "Informace o poptávce pro obchodní úsek Gatema:" );
+	push( @text, "" );
+
+	if ( $self->{"addOfferStckp"} ) {
+
+		my $stckpName = "_stackup.pdf";
+		my @orders    = $self->GetCurrOrderNumbers();
+		if ( scalar(@orders) ) {
+			$stckpName = uc( $orders[0] ) . $stckpName;
+		}
+		else {
+			$stckpName = uc($jobId) . $stckpName;
+		}
+
+		push( @text, "- PDF stackup ($stckpName) v příloze" );
+	}
+	push( @text, "- Typ: " . HegMethods->GetTypeOfPcb($jobId) );
+	push( @text, "- Flex kód: " . $stckpCode->GetStackupCode(1) ) if ($isFlex);
+	push( @text, "- Třída: " . CamJob->GetJobPcbClass( $inCAM, $jobId ) . "." );
+
+	my %dim = JobDim->GetDimension( $inCAM, $jobId );
+
+	push( @text, "- Rozměr kusu: " . $dim{"single_x"} . "x" . $dim{"single_y"} . "mm" );
+
+	if ( CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) ) {
+		push( @text, "- Rozměr panelu: " . $dim{"panel_x"} . "x" . $dim{"panel_y"} . "mm" );
+		push( @text, "- Násobnost panelu: " . $dim{"nasobnost_panelu"} );
+	}
+
+	push( @text, "- Násobnost přířezu: " . $dim{"nasobnost"} );
+	push( @text, "- Rozměr přířezu: " . $dim{"vyrobni_panel_x"} . "x" . $dim{"vyrobni_panel_y"} . "mm" );
+
+	push( @text, "\nInformace o poptávce pro zákazníka:" );
+
+	return join( "\n", @text );
+
 }
 
 #-------------------------------------------------------------------------------------------#
