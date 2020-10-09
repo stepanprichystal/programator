@@ -16,7 +16,6 @@ use warnings;
 use Log::Log4perl qw(get_logger :levels);
 use Encode qw(decode encode);
 
-
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
@@ -106,17 +105,10 @@ sub Run {
 
 		my $emailExport = 1;
 		if ( $self->{"emailAction"} eq MailEnums->EmailAction_OPEN ) {
-
-			 
-
-			$emailExport = $mail->Open(
-				$self->{"emailTo"},
-				$self->{"emailCC"},
-				$self->{"emailSubject"},
-				$self->{"emailIntro"}, 1,
-				$self->{"includeOfferInf"},
-				$self->{"includeOfferStckp"}
-			);
+			$emailExport = $mail->Open( $self->{"emailTo"}, $self->{"emailCC"}, $self->{"emailSubject"},
+										$self->{"emailIntro"}, 1,
+										$self->{"includeOfferInf"},
+										$self->{"includeOfferStckp"} );
 
 		}
 		elsif ( $self->{"emailAction"} eq MailEnums->EmailAction_SEND ) {

@@ -395,8 +395,8 @@ sub __BuildProductInput {
 		my @pNClayers =
 		  grep { !$_->{"usedInProduct"} }
 		  grep {
-			( $_->{"NCSigStartOrder"} eq $pTopCu->GetCopperNumber() && $_->{"NCSigEndOrder"} eq $pTopCu->GetCopperNumber() )
-			  || (    $_->{"NCSigStartOrder"} eq $pTopCu->GetCopperNumber()
+			( $_->{"NCSigStartOrder"} eq $pTopCu->GetCopperNumber() && $_->{"NCSigEndOrder"} eq $pBotCu->GetCopperNumber() )
+			  || (    $_->{"NCSigStartOrder"} eq $pBotCu->GetCopperNumber()
 				   && $_->{"NCSigEndOrder"} eq $pTopCu->GetCopperNumber() )
 		  } ( @NCNoAffect, @NCNoCore );
 
@@ -840,7 +840,14 @@ sub __BuildProductPress {
 				{
 					my $pInput = $pars->[$sLIdx]->{"l"};
 					my @NC =
-					  grep { !$_->{"usedInProduct"} && $_->{"NCSigStartOrder"} eq $pInput->GetTopCopperNum() }
+
+					  # keep only not used NC
+					  grep { !$_->{"usedInProduct"} }
+
+					  # keep only drilling which starts from top input Cu and deeper than bot input Cu
+					  grep { $_->{"NCSigStartOrder"} eq $pInput->GetTopCopperNum() && $_->{"NCSigEndOrder"} > $pInput->GetBotCopperNum() }
+
+					  # keep only not core drilling
 					  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NCAffect;
 
 					last if ( scalar(@NC) );
@@ -859,7 +866,14 @@ sub __BuildProductPress {
 				{
 					my $pInput = $pars->[$eLIdx]->{"l"};
 					my @NC =
-					  grep { !$_->{"usedInProduct"} && $_->{"NCSigStartOrder"} eq $pInput->GetBotCopperNum() }
+
+					  # keep only not used NC
+					  grep { !$_->{"usedInProduct"} }
+
+					  # keep only drilling which starts from top input Cu and deeper than bot input Cu
+					  grep { $_->{"NCSigStartOrder"} eq $pInput->GetBotCopperNum() && $_->{"NCSigEndOrder"} > $pInput->GetTopCopperNum() }
+
+					  # keep only not core drilling
 					  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NCAffect;
 
 					last if ( scalar(@NC) );
@@ -945,15 +959,15 @@ sub __BuildProductPress {
 			if ( $sLIdx == 1 ) {
 
 				my $extraL = ProductLayer->new( $pars->[0]->{"t"}, $pars->[0]->{"l"} );
-				push( @pExtraPressLayers, $extraL  );
+				push( @pExtraPressLayers, $extraL );
 				unshift( @pLayers, $extraL );
 			}
 
 			if ( $eLIdx == scalar( @{$pars} ) - 2 ) {
 
 				my $extraL = ProductLayer->new( $pars->[-1]->{"t"}, $pars->[-1]->{"l"} );
-				push( @pExtraPressLayers, $extraL ); 
-				push( @pLayers, $extraL );
+				push( @pExtraPressLayers, $extraL );
+				push( @pLayers,           $extraL );
 			}
 
 		}
