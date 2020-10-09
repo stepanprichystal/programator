@@ -627,6 +627,23 @@ sub DisableControls {
 # SComm/GComm CONTROLS VALUES
 # =====================================================================
 
+
+# Approval type
+sub SetApprovalType {
+	my $self  = shift;
+	my $value = shift;
+	
+	$self->{"approvalTypeCb"}->SetValue($value);
+}
+
+sub GetApprovalType {
+	my $self = shift;
+
+	return $self->{"approvalTypeCb"}->GetValue();
+}
+
+ 
+
 # Change status of order in CAM department
 
 sub SetChangeOrderStatus {

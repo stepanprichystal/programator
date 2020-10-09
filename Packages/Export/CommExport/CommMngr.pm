@@ -15,6 +15,7 @@ use strict;
 use warnings;
 use Log::Log4perl qw(get_logger :levels);
 use Encode qw(decode encode);
+use POSIX qw(strftime);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -23,6 +24,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Programs::Comments::Comments';
 use aliased 'Programs::Comments::CommMail::Enums' => 'MailEnums';
 use aliased 'Programs::Comments::CommMail::CommMail';
+use aliased 'CamHelpers::CamAttributes';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -119,9 +121,19 @@ sub Run {
 										$self->{"includeOfferStckp"} );
 		}
 
-		unless ($emailExport) {
+		# Store stamp with date to InCAM job note
+		if ($emailExport) {
+
+			my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
+		 
+			$note .= " Approval email (" . ( strftime "%Y/%m/%d", localtime ) . ")";
+			$inCAM->COM( "set_job_notes", "job" => $jobId, "notes" => $note );
+
+		}
+		else {
 			$resultEmail->AddError("Error duriong generating email");
 		}
+		
 		$self->_OnItemResult($resultEmail);
 
 		# Clear comments if mail was exported properly

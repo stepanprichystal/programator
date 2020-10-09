@@ -60,8 +60,6 @@ sub OnExportGroupData {
 	$exportData->SetEmailToAddress( $groupData->GetEmailToAddress() );
 	$exportData->SetEmailCCAddress( $groupData->GetEmailCCAddress() );
 	$exportData->SetEmailSubject( $groupData->GetEmailSubject() );
-#	use Encode qw(decode encode);
-#	my $data = encode( "UTF-8", $groupData->GetEmailIntro() );
 	$exportData->SetEmailIntro( $groupData->GetEmailIntro() );
 	$exportData->SetIncludeOfferInf( $groupData->GetIncludeOfferInf() );
 	$exportData->SetIncludeOfferStckp( $groupData->GetIncludeOfferStckp() );

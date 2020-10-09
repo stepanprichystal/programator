@@ -12,7 +12,7 @@ use warnings;
 #local library
 use aliased "Enums::EnumsPaths";
 use aliased "Helpers::FileHelper";
-use JSON;
+use JSON::XS;
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -47,7 +47,8 @@ sub ExistGroupData {
 		if ( -e $self->{"groupDataFile"} ) {
 
 			my $serializeData = FileHelper->ReadAsString( $self->{"groupDataFile"} );
-			my $groupData     = decode_json($serializeData);
+			my $json = JSON::XS->new->ascii->pretty->allow_nonref;
+			my $groupData     = $json->decode($serializeData);
 			$self->{"hashGroupData"} = $groupData;
 
 			$dataExist =  1;
@@ -116,7 +117,7 @@ sub SaveGroupData {
 	
 	$self->{"hashGroupData"} = \%hashGroupData;
 
-	my $json = JSON->new();
+	my $json = JSON::XS->new->ascii->pretty->allow_nonref;
 
 	my $serializedData = $json->pretty->encode( \%hashGroupData );
 

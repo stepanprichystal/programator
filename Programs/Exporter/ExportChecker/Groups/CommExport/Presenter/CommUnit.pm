@@ -85,6 +85,7 @@ sub RefreshGUI {
 	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
+	$self->{"form"}->SetApprovalType( $groupData->GetApprovalType() );
 	$self->{"form"}->SetChangeOrderStatus( $groupData->GetChangeOrderStatus() );
 	$self->{"form"}->SetOrderStatus( $groupData->GetOrderStatus() );
 	$self->{"form"}->SetExportEmail( $groupData->GetExportEmail() );
@@ -111,6 +112,7 @@ sub UpdateGroupData {
 	if ($frm) {
 		my $groupData = $self->{"dataMngr"}->GetGroupData();
 
+		$groupData->SetApprovalType( $frm->GetApprovalType() );
 		$groupData->SetChangeOrderStatus( $frm->GetChangeOrderStatus() );
 		$groupData->SetOrderStatus( $frm->GetOrderStatus() );
 		$groupData->SetExportEmail( $frm->GetExportEmail() );

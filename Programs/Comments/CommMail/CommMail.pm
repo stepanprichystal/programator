@@ -16,7 +16,6 @@ use File::Basename;
 use File::Copy;
 use MIME::Lite;
 use File::Basename;
-use POSIX qw(strftime);
 use Encode qw(decode encode);
 
 #local library
@@ -89,14 +88,6 @@ sub Open {
 	my $call = SystemCall->new( $p, @cmds );
 
 	my $res = $call->Run();
-
-	if ($res) {
-
-		my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
-
-		$note .= " Approval email (" . ( strftime "%Y/%m/%d", localtime ) . ")";
-		$inCAM->COM( "set_job_notes", "job" => $jobId, "notes" => $note );
-	}
 
 	return $res;
 }
@@ -172,7 +163,7 @@ sub Sent {
 	$msg->attach( Type => 'TEXT',
 				  Data => encode( "UTF-8", $body ) );
 
-	my @attach = $self->__GetAttachments();
+	my @attach = $self->__GetAttachments($addOfferStckp);
 
 	foreach my $att (@attach) {
 
@@ -188,16 +179,6 @@ sub Sent {
 	my $result = $msg->send( 'smtp', EnumsPaths->URL_GATEMASMTP );
 
 	#my $result = $msg->send( 'smtp', "127.0.0.1" );    # Paper cut testing smtp
-
-	# Store stamp with date to InCAM job note
-	if ($result) {
-
-		my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
-
-		$note .= " Approval email (" . ( strftime "%Y/%m/%d", localtime ) . ")";
-		$inCAM->COM( "set_job_notes", "job" => $jobId, "notes" => $note );
-
-	}
 
 	if ( $result ne 1 ) {
 
@@ -373,6 +354,8 @@ sub __GetBody {
 
 	my $body = "";
 
+	# 1) Build body from comments
+
 	my @allComm = $self->{"commLayout"}->GetAllComments();
 
 	for ( my $i = 0 ; $i < scalar(@allComm) ; $i++ ) {
@@ -381,15 +364,7 @@ sub __GetBody {
 
 		my $listTag = "-";
 
-		#		if ( $allComm[$i]->GetType() eq CommEnums->CommentType_QUESTION ) {
-		#
-		#			#$listTag = ( $i + 1 ) . ") " . ( $self->{"lang"} eq "cz" ? "Otázka" : "Question" );
-		#
-		#		}
-		#		elsif ( $allComm[$i]->GetType() eq CommEnums->CommentType_NOTE ) {
-		#
-		#			#$listTag = ( $i + 1 ) . ") " . ( $self->{"lang"} eq "cz" ? "Poznámka" : "Note" );
-		#		}
+ 
 
 		$listTag = ( $i + 1 ) . ") ";
 
@@ -420,7 +395,7 @@ sub __GetBody {
 		$body .= $messSngl . "\n\n";
 	}
 
-	# Add inquiry information
+	# 2) Build body from inquiry information
 	if ($addOfferInf) {
 
 		my $inquiryInf = $self->__GetInquiryInf($addOfferStckp);
@@ -428,7 +403,7 @@ sub __GetBody {
 		$body = $inquiryInf . "\n\n" . $body;
 	}
 
-	die "Email body is empty" if ( !defined $body || $body eq "" );
+	die "Email body is empty" if ( scalar(@allComm) > 1 && ( !defined $body || $body eq "" ) );
 
 	return $body;
 }

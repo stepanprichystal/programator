@@ -32,6 +32,21 @@ sub GetData {
 	return %{ $self->{"data"} };
 }
 
+# Approval type
+sub SetApprovalType {
+	my $self  = shift;
+	my $value = shift;
+	$self->{"data"}->{"approvalType"} = $value;
+}
+
+sub GetApprovalType {
+	my $self  = shift;
+	my $value = shift;
+
+	return $self->{"data"}->{"approvalType"};
+}
+
+
 # Change status of order in CAM department
 
 sub SetChangeOrderStatus {
@@ -191,6 +206,9 @@ sub GetClearComments {
 
 	return $self->{"data"}->{"clearComments"};
 }
+
+
+
 
 
 #-------------------------------------------------------------------------------------------#
