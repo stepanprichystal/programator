@@ -11,12 +11,15 @@ use base('Packages::CAMJob::Stackup::CustStackup::StackupMngr::StackupMngrBase')
 use strict;
 use warnings;
 use List::Util qw(first min max);
+use List::MoreUtils qw(uniq);
 
 #local library
 
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
 
@@ -112,7 +115,7 @@ sub GetBaseMatInfo {
 		# Parse Cu thick
 		$inf{"cuThick"} = undef;
 		if ( defined $matInf->{"doplnkovy_rozmer"} && $matInf->{"doplnkovy_rozmer"} ne "" ) {
-			$inf{"cuThick"} =$matInf->{"doplnkovy_rozmer"};
+			$inf{"cuThick"} = $matInf->{"doplnkovy_rozmer"};
 		}
 
 		# Parse Cu type ED/RA
@@ -202,6 +205,60 @@ sub GetTG {
 	return $minTG;
 }
 
+# Return all requested total thiskcness fith stiffener in µm
+sub GetAllRequestedStiffThick {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @all = ();
+
+	my $stiff = {};
+	if ( $self->GetExistStiff("top") || $self->GetExistStiff("bot") ) {
+
+		my @steps = ();
+
+		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $self->{"step"} ) ) {
+			my @SR = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $self->{"step"} );
+
+			CamStepRepeat->RemoveCouponSteps( \@SR );
+			push( @steps, map { $_->{"stepName"} } @SR );
+		}
+		else {
+
+			@steps = ( $self->{"step"} );
+		}
+
+		my @stiffL = grep {
+			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+		} @{ $self->{"NCLayers"} };
+
+		foreach my $l (@stiffL) {
+
+			foreach my $s (@steps) {
+
+				my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $l->{"gROWname"} );
+
+				my $pcbThick = $att{"final_pcb_thickness"};
+
+				die "Missing reuqired stiff+pcb thickness (step: $s, layer: " . $l->{"gROWname"} . " )"
+				  if ( !$pcbThick || $pcbThick eq "" || $pcbThick <= 0 );
+
+				push( @all, $pcbThick );
+			}
+		}
+	}
+
+ 
+	@all = sort{$b <=> $a}uniq(@all);
+
+	return @all;
+}
+
 sub GetThicknessStiffener {
 	my $self      = shift;
 	my $stiffSide = shift;
@@ -236,7 +293,8 @@ sub GetThickness {
 		my $matInfo = HegMethods->GetPcbMat( $self->{"jobId"} );
 		my $m       = $matInfo->{"vyska"};
 
-		die "Material thickness (specifikace/vyska) is not defined for material: " . $self->{"pcbInfoIS"}->{"material_nazev"} unless ( defined $m );
+		die "Material thickness (specifikace/vyska) is not defined for material: " . $self->{"pcbInfoIS"}->{"material_nazev"}
+		  unless ( defined $m );
 
 		$t = $m;
 

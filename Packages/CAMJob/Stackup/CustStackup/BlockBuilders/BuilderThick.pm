@@ -57,6 +57,7 @@ sub __BuildHeadRow {
 	my $secMngr   = $self->{"sectionMngr"};
 
 	# Define first title row
+	my $rowGap = $tblMain->AddRowDef( "thick_gap",   EnumsStyle->RowHeight_BLOCKGAP );
 	my $rowBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_HEADSUBBACK ) );
 	my $row = $tblMain->AddRowDef( "thick_head", EnumsStyle->RowHeight_STANDARD, $rowBackgStyle );
 
@@ -140,7 +141,7 @@ sub __BuildHeadRow {
 						   $tblMain->GetRowDefPos($row),
 						   undef, undef, "Thick [µm]", $txtStyle );
 	}
-	
+
 	# Sec_F_STIFFENER ---------------------------------------------
 	my $sec_F_STIFFENER = $secMngr->GetSection( Enums->Sec_F_STIFFENER );
 
@@ -255,14 +256,24 @@ sub __BuildThickRows {
 		my $cThick = $self->{"helper"}->GetComputedThick( Enums->Sec_E_STIFFENER );
 		my $rThick = $self->{"helper"}->GetRequiredThick( Enums->Sec_E_STIFFENER );
 
+		if ( !defined $rThick ) {
+			$rThick = "-";
+		}
+		elsif ( $rThick =~ /^\*+$/ ) {
+			$rThick = "- ".$rThick;    # asterisk refer to block special notes
+		}
+		else {
+			$rThick = int($rThick);
+		}
+
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
 						   $tblMain->GetRowDefPos($rowComp),
 						   undef, undef, ( defined $cThick ? int($cThick) : "-" ), $txtStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
 						   $tblMain->GetRowDefPos($rowReq),
-						   undef, undef, ( defined $rThick ? int($rThick) : "-" ), $txtStyle );
+						   undef, undef, $rThick, $txtStyle );
 	}
-	
+
 	# Sec_F_STIFFENER ---------------------------------------------
 	my $sec_F_STIFFENER = $secMngr->GetSection( Enums->Sec_F_STIFFENER );
 
@@ -271,12 +282,22 @@ sub __BuildThickRows {
 		my $cThick = $self->{"helper"}->GetComputedThick( Enums->Sec_F_STIFFENER );
 		my $rThick = $self->{"helper"}->GetRequiredThick( Enums->Sec_F_STIFFENER );
 
+		if ( !defined $rThick ) {
+			$rThick = "-";
+		}
+		elsif ( $rThick =~ /^\*+$/ ) {
+			$rThick = "- ".$rThick;    # asterisk refer to block special notes
+		}
+		else {
+			$rThick = int($rThick);
+		}
+
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_F_STIFFENER, "matThick" ),
 						   $tblMain->GetRowDefPos($rowComp),
 						   undef, undef, ( defined $cThick ? int($cThick) : "-" ), $txtStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_F_STIFFENER, "matThick" ),
 						   $tblMain->GetRowDefPos($rowReq),
-						   undef, undef, ( defined $rThick ? int($rThick) : "-" ), $txtStyle );
+						   undef, undef, $rThick, $txtStyle );
 	}
 
 }

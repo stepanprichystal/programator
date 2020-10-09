@@ -240,8 +240,7 @@ sub CheckAttributes {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
-	
-	
+
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 
 	# 2) Check if rout layers has attribute rout chain
@@ -312,9 +311,9 @@ sub CheckInvalidSymbols {
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
+	push( @t,  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
+	push( @t,  EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
+	push( @t,  EnumsGeneral->LAYERTYPE_nplt_prepregMill );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
@@ -651,14 +650,11 @@ sub CheckContainDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
-	
 
-
-	@layers = $self->__GetLayersByType( \@layers, \@t );
-
+	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 
 	# 1) Check if layer start/stop/go through signal layer
-	foreach my $l (@layers) {
+	foreach my $l (@layers1) {
 
 		unless ( $l->{"NCThroughSig"} ) {
 
@@ -668,12 +664,14 @@ sub CheckContainDepth {
 		}
 
 	}
-	
+
+	# 2) Check if layers contain depth in DTM table
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
-	
-	# 2) Check if layers contain depth in DTM table
-	foreach my $l (@layers) {
+
+	my @layers2 = $self->__GetLayersByType( \@layers, \@t );
+
+	foreach my $l (@layers2) {
 
 		unless ( $l->{"uniDTM"}->GetChecks()->CheckToolDepthSet($mess) ) {
 			$result = 0;
@@ -716,8 +714,6 @@ sub CheckContainNoDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
-	
-	
 
 	@layers = $self->__GetLayersByType( \@layers, \@t );
 

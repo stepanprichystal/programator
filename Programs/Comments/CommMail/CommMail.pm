@@ -77,8 +77,8 @@ sub Open {
 
 	my $bodyTxt = "";
 	$bodyTxt .= $introduction . "\n\n" if ($introduction);
-	$bodyTxt .= $self->__GetBody($addOfferInf);
-	$bodyTxt .= $self->__GetFooter()   if ($addFooter);
+	$bodyTxt .= $self->__GetBody( $addOfferInf, $addOfferStckp );
+	$bodyTxt .= $self->__GetFooter() if ($addFooter);
 
 	#$bodyTxt=  encode( "UTF-8", $bodyTxt );
 
@@ -90,7 +90,7 @@ sub Open {
 
 	my $res = $call->Run();
 
-	if ( $res ) {
+	if ($res) {
 
 		my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
 
@@ -154,8 +154,8 @@ sub Sent {
 
 	my $body = "";
 	$body .= $introduction . "\n\n" if ($introduction);
-	$body .= $self->__GetBody($addOfferInf);
-	$body .= $self->__GetFooter()   if ($addFooter);
+	$body .= $self->__GetBody( $addOfferInf, $addOfferStckp );
+	$body .= $self->__GetFooter() if ($addFooter);
 
 	my $msg = MIME::Lite->new(
 		From => $from,
@@ -367,8 +367,9 @@ sub __GetSubjectByType {
 }
 
 sub __GetBody {
-	my $self        = shift;
-	my $addOfferInf = shift;
+	my $self          = shift;
+	my $addOfferInf   = shift;
+	my $addOfferStckp = shift;
 
 	my $body = "";
 
@@ -422,7 +423,7 @@ sub __GetBody {
 	# Add inquiry information
 	if ($addOfferInf) {
 
-		my $inquiryInf = $self->__GetInquiryInf();
+		my $inquiryInf = $self->__GetInquiryInf($addOfferStckp);
 
 		$body = $inquiryInf . "\n\n" . $body;
 	}
@@ -535,7 +536,9 @@ sub __GetAttachments {
 }
 
 sub __GetInquiryInf {
-	my $self = shift;
+	my $self          = shift;
+	my $addOfferStckp = shift;
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 	my $step  = "panel";
@@ -555,7 +558,7 @@ sub __GetInquiryInf {
 	push( @text, "Informace o poptávce pro obchodní úsek Gatema:" );
 	push( @text, "" );
 
-	if ( $self->{"addOfferStckp"} ) {
+	if ($addOfferStckp) {
 
 		my $stckpName = "_stackup.pdf";
 		my @orders    = $self->GetCurrOrderNumbers();

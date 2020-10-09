@@ -2191,6 +2191,8 @@ sub GetPcbMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
+	
+	return $res;
 }
 
 # Return information of coverlay material in PCB
@@ -2222,6 +2224,8 @@ sub GetPcbCoverlayMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
+	
+	return $res;
 }
 
 # Return information of stiffener material in PCB
@@ -2253,6 +2257,8 @@ sub GetPcbStiffenerMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
+	
+	return $res;
 }
 
 # Return information of stiffener adhesive material in PCB
@@ -2284,6 +2290,8 @@ sub GetPcbStiffenerAdhMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
+	
+	return $res;
 }
 
 # Return number of cores in pcb

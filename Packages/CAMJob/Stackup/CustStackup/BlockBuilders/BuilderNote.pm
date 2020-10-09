@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, allow build nif section
+# Description: Special notes regarding stackup
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderDrill;
+package Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderNote;
 use base('Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BlockBuilderBase');
 
 use Class::Interface;
@@ -23,7 +23,6 @@ use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::TextStyle'
 use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
-use aliased 'Packages::CAMJob::Stackup::CustStackup::BlockBuilders::BuilderThickHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -34,8 +33,6 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"helper"} = BuilderThickHelper->new( $self->{"stackupMngr"}, $self->{"sectionMngr"} );
-
 	return $self;
 }
 
@@ -43,7 +40,7 @@ sub Build {
 	my $self = shift;
 	$self->__BuildHeadRow();
 
-	$self->__BuildDrillRow();
+	$self->__BuildNotesStiffRow();
 
 }
 
@@ -58,9 +55,9 @@ sub __BuildHeadRow {
 	my $secMngr   = $self->{"sectionMngr"};
 
 	# Define first title row
-	my $rowGap = $tblMain->AddRowDef( "drill_layers_gap",   EnumsStyle->RowHeight_BLOCKGAP );
+	my $rowGap = $tblMain->AddRowDef( "note_gap",   EnumsStyle->RowHeight_BLOCKGAP );
 	my $rowBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_HEADSUBBACK ) );
-	my $row = $tblMain->AddRowDef( "drill_head", EnumsStyle->RowHeight_STANDARD, $rowBackgStyle );
+	my $row = $tblMain->AddRowDef( "note_head", EnumsStyle->RowHeight_STANDARD, $rowBackgStyle );
 
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 								   EnumsStyle->TxtSize_TITLE, Color->new( 0, 0, 0 ),
@@ -76,7 +73,8 @@ sub __BuildHeadRow {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
 						   $tblMain->GetRowDefPos($row),
-						   undef, undef, "Plated drill", $txtStyle, undef );
+						   undef, undef, "Special notes",
+						   $txtStyle, undef );
 	}
 
 	# Sec_A_MAIN ---------------------------------------------
@@ -142,7 +140,7 @@ sub __BuildHeadRow {
 
 }
 
-sub __BuildDrillRow {
+sub __BuildNotesStiffRow {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
@@ -152,12 +150,17 @@ sub __BuildDrillRow {
 	my $stckpMngr = $self->{"stackupMngr"};
 	my $secMngr   = $self->{"sectionMngr"};
 
-	my @NC = $stckpMngr->GetPlatedNC();
+	my @allStiffThickness = $stckpMngr->GetAllRequestedStiffThick();
 
 	# Define first title row
-	
+
+	my $txt = "List of all customer requested final thickness\non different stiffener areas: ";
+	$txt.= "\n" if(scalar(@allStiffThickness) > 2);
+	$txt .= join( "; ", map { $_."µm"} @allStiffThickness );
+ 
+
 	my $rowBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_HEADSUBBACK ) );
-	my $row = $tblMain->AddRowDef( "drill_layers", ( scalar(@NC) / 3 + 1 ) * EnumsStyle->RowHeight_STANDARD );
+	my $row = $tblMain->AddRowDef( "stiff_pcb_thick", (scalar(@allStiffThickness) > 2? 3 : 2) * EnumsStyle->RowHeight_STANDARD );
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 								   EnumsStyle->TxtSize_TITLE, Color->new( 0, 0, 0 ),
 								   undef, undef,
@@ -170,7 +173,7 @@ sub __BuildDrillRow {
 
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
 						   $tblMain->GetRowDefPos($row),
-						   undef, undef, "Description", $txtStyle );
+						   undef, undef, "* Note", $txtStyle );
 
 	}
 
@@ -181,48 +184,16 @@ sub __BuildDrillRow {
 		my $posX = $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" );
 		my $cellLen = $secMngr->GetColumnCnt(1) - $posX - 1;
 
-		my @letters = ( "A" .. "Z" );
-		my @NCtxt   = ();
-		foreach my $ncL (@NC) {
+		my $NCTextStyle = TextStyle->new( TblDrawEnums->TextStyle_MULTILINE,
+										  EnumsStyle->TxtSize_STANDARD,
+										  Color->new( 0, 0, 0 ),
+										  undef, undef,
+										  TblDrawEnums->TextHAlign_LEFT,
+										  TblDrawEnums->TextVAlign_CENTER );
 
-			my $start = $ncL->{"gROWdrl_dir"} eq "bot2top" ? $ncL->{"NCSigEndOrder"}   : $ncL->{"NCSigStartOrder"};
-			my $end   = $ncL->{"gROWdrl_dir"} eq "bot2top" ? $ncL->{"NCSigStartOrder"} : $ncL->{"NCSigEndOrder"};
-
-			my $let = shift @letters;
-
-			my $type = undef;
-
-			$type = "through"        if ( $ncL->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill );
-			$type = "filled through" if ( $ncL->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill );
-			$type = "blind"          if ( $ncL->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop );
-			$type = "filled blind"   if ( $ncL->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop );
-			$type = "blind"          if ( $ncL->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot );
-			$type = "filled blind"   if ( $ncL->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
-			$type = "burried"        if ( $ncL->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill );
-			$type = "filled burried" if ( $ncL->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill );
-
-			die "Unknow NC layer type: " . $ncL->{"type"} if ( !defined $type );
-
-			push( @NCtxt, $let . " = $type L$start-L$end" );
-		}
-
-		if ( scalar(@NCtxt) > 0 ) {
-			my $NCTxt = "";
-			for ( my $i = 0 ; $i < scalar(@NCtxt) ; $i++ ) {
-
-				$NCTxt .= $NCtxt[$i] . ( $i <= scalar(@NCtxt) - 2 ? "; " : "" ) . ( ( $i + 1 ) % 3 == 0 ? "\n" : "" );
-			}
-
-			my $NCTextStyle = TextStyle->new( TblDrawEnums->TextStyle_MULTILINE,
-											  EnumsStyle->TxtSize_STANDARD,
-											  Color->new( 0, 0, 0 ),
-											  undef, undef,
-											  TblDrawEnums->TextHAlign_LEFT,
-											  TblDrawEnums->TextVAlign_CENTER );
-
-			$tblMain->AddCell( $posX, $tblMain->GetRowDefPos($row), $cellLen, undef, $NCTxt, $NCTextStyle );
-		}
+		$tblMain->AddCell( $posX, $tblMain->GetRowDefPos($row), $cellLen, undef, $txt, $NCTextStyle );
 	}
+ 
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -84,8 +84,6 @@ use constant {
 	LAYERTYPE_nplt_lcMill       => "nplt_lcMill",          # milling of template for c side (snimaci lak)
 	LAYERTYPE_nplt_lsMill       => "nplt_lsMill",          # milling of template for s side (snimaci lak)
 	LAYERTYPE_nplt_fMillSpec    => "nplt_fMillSpec",       # special milling (ramecek, dovrtani apod)
-
-	# new tmp for flexi
 	LAYERTYPE_nplt_cvrlycMill  => "nplt_cvrlycMill",       # top coverlay mill
 	LAYERTYPE_nplt_cvrlysMill  => "nplt_cvrlysMill",       # bot coverlay mill
 	LAYERTYPE_nplt_prepregMill => "nplt_prepregMill",      # prepreg mill

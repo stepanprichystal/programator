@@ -277,9 +277,19 @@ sub __BuildStackupLayers {
 	if ( $stckpMngr->GetExistSMFlex( "top", $maskFlexTopInfo ) ) {
 
 		$self->__DrawMatSMFlex( $topOuterRows{ BuilderBodyHelper->smFlex },
-								$maskFlexTopInfo->{"text"},
-								$maskFlexTopInfo->{"thick"},
+								$maskFlexTopInfo->{"tapeText"},
+								$maskFlexTopInfo->{"tapeThick"},
 								dclone($txtTitleStyle), dclone($txtStandardStyle) );
+	}
+
+	# LAYER: TOP tape sticked directly to stiffener
+	my $tapeStiffTopInfo = {};
+	if ( $stckpMngr->GetExistTapeStiff( "top", $tapeStiffTopInfo ) ) {
+		$self->__DrawMatTapeStiff( $topOuterRows{ BuilderBodyHelper->tapeStiff },
+								   $tapeStiffTopInfo->{"text"},
+								   $tapeStiffTopInfo->{"thick"},
+								   "top", dclone($txtTitleStyle), dclone($txtStandardStyle) );
+
 	}
 
 	# LAYER: TOP stiffener adhesive
@@ -299,6 +309,16 @@ sub __BuildStackupLayers {
 							   $stiffTopInfo->{"stiffText"},
 							   $stiffTopInfo->{"stiffThick"},
 							   "top", dclone($txtTitleStyle), dclone($txtStandardStyle) );
+	}
+
+	# LAYER: TOP tape directly on flex
+	my $tapeTopInfo = {};
+	if ( $stckpMngr->GetExistTape( "top", $tapeTopInfo ) ) {
+		$self->__DrawMatTape( $topOuterRows{ BuilderBodyHelper->tape },
+							  $tapeTopInfo->{"tapeText"},
+							  $tapeTopInfo->{"tapeThick"},
+							  , dclone($txtTitleStyle), dclone($txtStandardStyle) );
+
 	}
 
 	# LAYER: TOP coverlay adhesive
@@ -544,6 +564,17 @@ sub __BuildStackupLayers {
 								$maskFlexBotInfo->{"thick"},
 								dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
+	
+	
+	# LAYER: BOT tape directly on flex
+	my $tapeBotInfo = {};
+	if ( $stckpMngr->GetExistTape( "bot", $tapeBotInfo ) ) {
+		$self->__DrawMatTape( $botOuterRows{ BuilderBodyHelper->tape },
+							  $tapeBotInfo->{"tapeText"},
+							  $tapeBotInfo->{"tapeThick"},
+							  , dclone($txtTitleStyle), dclone($txtStandardStyle) );
+
+	}
 
 	# LAYER: BOT stiffener adhesive
 	my $stiffBotInfo = {};
@@ -555,8 +586,6 @@ sub __BuildStackupLayers {
 								  "bot", dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
 
-	# 2) Add material rows
-
 	# LAYER: BOT stiffener
 	if ( $stckpMngr->GetExistStiff("bot") ) {
 
@@ -564,6 +593,15 @@ sub __BuildStackupLayers {
 							   $stiffBotInfo->{"stiffText"},
 							   $stiffBotInfo->{"stiffThick"},
 							   "bot", dclone($txtTitleStyle), dclone($txtStandardStyle) );
+	}
+
+	# LAYER: BOT tape sticked directly to stiffener
+	my $tapeStiffBotInfo = {};
+	if ( $stckpMngr->GetExistTapeStiff( "bot", $tapeStiffBotInfo ) ) {
+		$self->__DrawMatTapeStiff( $botOuterRows{ BuilderBodyHelper->tapeStiff },
+								   $tapeStiffBotInfo->{"tapeText"},
+								   $tapeStiffBotInfo->{"tapeThick"},
+								   "bot", dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
 
 	# LAYER: BOT coverlay adhesive
@@ -577,7 +615,7 @@ sub __BuildStackupLayers {
 										  dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
 
-	# LAYER: Top coverlay
+	# LAYER: BOT coverlay
 	if ( $stckpMngr->GetExistCvrl("bot") ) {
 
 		$self->__DrawMatCoverlayOuter(
@@ -586,6 +624,8 @@ sub __BuildStackupLayers {
 									   dclone($txtTitleStyle),                   dclone($txtStandardStyle)
 		);
 	}
+
+
 
 }
 
@@ -761,6 +801,151 @@ sub __DrawMatSMFlex {
 		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_D_FLEXTAIL, -1, 0 );
 
 	}
+}
+
+sub __DrawMatTape {
+	my $self             = shift;
+	my $row              = shift;
+	my $matText          = shift;
+	my $matThick         = shift;
+	my $txtTitleStyle    = shift;
+	my $txtStandardStyle = shift;
+
+	my $tblMain   = $self->{"tblMain"};
+	my $stckpMngr = $self->{"stackupMngr"};
+	my $secMngr   = $self->{"sectionMngr"};
+
+	# 1) Define styles
+	$txtStandardStyle->SetColor( Color->new( 0, 0, 0 ) );
+
+	my $matBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_TAPE ) );
+
+	# Sec_BEGIN ---------------------------------------------
+	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
+	if ( $sec_BEGIN->GetIsActive() ) {
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matText, $txtTitleStyle );
+	}
+
+	# Sec_A_MAIN ---------------------------------------------
+	my $sec_A_MAIN = $secMngr->GetSection( Enums->Sec_A_MAIN );
+	if ( $sec_A_MAIN->GetIsActive() ) {
+
+		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_A_MAIN, 0, 0 );
+
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matType" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Adhesive tape",
+						   $txtStandardStyle, $matBackgStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_A_MAIN, "matThick" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matThick, $txtStandardStyle, $matBackgStyle );
+	}
+
+	# $sec_B_FLEX ---------------------------------------------
+	my $sec_B_FLEX = $secMngr->GetSection( Enums->Sec_B_FLEX );
+	if ( $sec_B_FLEX->GetIsActive() ) {
+
+	}
+
+	# Sec_C_RIGIDFLEX ---------------------------------------------
+	my $sec_C_RIGIDFLEX = $secMngr->GetSection( Enums->Sec_C_RIGIDFLEX );
+	if ( $sec_C_RIGIDFLEX->GetIsActive() ) {
+
+	}
+
+	# Sec_D_FLEXTAIL ---------------------------------------------
+	my $sec_D_FLEXTAIL = $secMngr->GetSection( Enums->Sec_D_FLEXTAIL );
+	if ( $sec_D_FLEXTAIL->GetIsActive() ) {
+
+	}
+
+	# Sec_E_STIFFENER ---------------------------------------------
+	my $sec_E_STIFFENER = $secMngr->GetSection( Enums->Sec_E_STIFFENER );
+
+	if ( $sec_E_STIFFENER->GetIsActive() ) {
+
+		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_E_STIFFENER, 0, 0 );
+
+	}
+
+	# Sec_F_STIFFENER ---------------------------------------------
+	my $sec_F_STIFFENER = $secMngr->GetSection( Enums->Sec_F_STIFFENER );
+
+	if ( $sec_F_STIFFENER->GetIsActive() ) {
+
+		$self->__FillRowBackg( $row, $matBackgStyle, Enums->Sec_F_STIFFENER, 0, 0 );
+	}
+
+}
+
+sub __DrawMatTapeStiff {
+	my $self             = shift;
+	my $row              = shift;
+	my $matText          = shift;
+	my $matThick         = shift;
+	my $stiffSide        = shift;
+	my $txtTitleStyle    = shift;
+	my $txtStandardStyle = shift;
+
+	my $tblMain   = $self->{"tblMain"};
+	my $stckpMngr = $self->{"stackupMngr"};
+	my $secMngr   = $self->{"sectionMngr"};
+
+	# 1) Define styles
+	$txtStandardStyle->SetColor( Color->new( 0, 0, 0 ) );
+
+	my $tapeBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_TAPE ) );
+
+	# Sec_BEGIN ---------------------------------------------
+	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
+	if ( $sec_BEGIN->GetIsActive() ) {
+
+		# stiffener
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, $matText, $txtTitleStyle );
+	}
+
+	if ( $stiffSide eq "top" ) {
+
+		# Sec_E_STIFFENER ---------------------------------------------
+		my $sec_E_STIFFENER = $secMngr->GetSection( Enums->Sec_E_STIFFENER );
+
+		if ( $sec_E_STIFFENER->GetIsActive() ) {
+
+			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matType" ),
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, "Adhesive tape",
+							   $txtStandardStyle, $tapeBackgStyle );
+
+			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_E_STIFFENER, "matThick" ),
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, int($matThick), $txtStandardStyle, $tapeBackgStyle );
+
+		}
+	}
+	elsif ( $stiffSide eq "bot" ) {
+
+		# Sec_F_STIFFENER ---------------------------------------------
+		my $sec_F_STIFFENER = $secMngr->GetSection( Enums->Sec_F_STIFFENER );
+
+		if ( $sec_F_STIFFENER->GetIsActive() ) {
+
+			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_F_STIFFENER, "matType" ),
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, "Adhesive tape",
+							   $txtStandardStyle, $tapeBackgStyle );
+
+			$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_F_STIFFENER, "matThick" ),
+							   $tblMain->GetRowDefPos($row),
+							   undef, undef, int($matThick), $txtStandardStyle, $tapeBackgStyle );
+
+		}
+	}
+
 }
 
 sub __DrawMatCoverlayAdhOuter {

@@ -158,6 +158,88 @@ sub __CheckGroupDataBasic {
 					  "Pokud je deska typu: Jednostranný flex, musí mít dvě signálové vrstvy (vždy se vyrábí z oboustranného materiálu)" );
 	}
 
+	# X) Check proper layer names according layer tape
+	{
+		my @boardBase = $defaultInfo->GetBoardBaseLayers();
+
+		my @errLayer = ();
+
+		# Coverlay names
+		my @cvrl = grep { $_->{"gROWlayer_type"} eq "coverlay" } @boardBase;
+		if ( scalar(@cvrl) ) {
+
+			my @wrong = map { $_->{"gROWname"} } grep { $_->{"gROWname"} !~ /^cvrl([cs]|(v\d+))$/ } @cvrl;
+
+			push( @errLayer, [ "coverlay", \@wrong ] ) if ( scalar(@wrong) );
+		}
+
+		# Stiffener names
+		my @stiff = grep { $_->{"gROWlayer_type"} eq "stiffener" } @boardBase;
+		if ( scalar(@stiff) ) {
+
+			my @wrong = map { $_->{"gROWname"} } grep { $_->{"gROWname"} !~ /^stiff[cs]$/ } @stiff;
+
+			push( @errLayer, [ "stiffener", \@wrong ] ) if ( scalar(@wrong) );
+		}
+
+		# Tape names
+		my @tapes = grep { $_->{"gROWlayer_type"} eq "psa" } @boardBase;
+		if ( scalar(@tapes) ) {
+
+			my @wrong = map { $_->{"gROWname"} } grep { $_->{"gROWname"} !~ /^tp(stiff)?[cs]$/ } @tapes;
+
+			push( @errLayer, [ "psa", \@wrong ] ) if ( scalar(@wrong) );
+		}
+
+		foreach my $err (@errLayer) {
+
+			$dataMngr->_AddErrorResult( "Wrong layer names",
+						 "V matrixu jsou vrstvy typu: \"" . $err->[0] . "\", které mají špatný formát názvu: " . join( "; ", @{ $err->[1] } ) );
+		}
+
+	}
+
+	# X) Check proper layer types according layer name
+	{
+		my @boardBase = $defaultInfo->GetBoardBaseLayers();
+
+		my @errLayer = ();
+
+		# Coverlay names
+		my @cvrl = grep { $_->{"gROWname"} =~ /^cvrl([cs]|(v\d+))$/ } @boardBase;
+		if ( scalar(@cvrl) ) {
+
+			my @wrong = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} ne "coverlay" } @cvrl;
+
+			push( @errLayer, [ "coverlay", \@wrong ] ) if ( scalar(@wrong) );
+		}
+
+		# Stiffener names
+		my @stiff = grep { $_->{"gROWname"} =~ /^stiff[cs]$/ } @boardBase;
+		if ( scalar(@stiff) ) {
+
+			my @wrong = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} ne "stiffener" } @stiff;
+
+			push( @errLayer, [ "stiffener", \@wrong ] ) if ( scalar(@wrong) );
+		}
+
+		# Tape names
+		my @tapes = grep { $_->{"gROWname"} =~ /^tp(stiff)?[cs]$/ } @boardBase;
+		if ( scalar(@tapes) ) {
+
+			my @wrong = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} ne "psa" } @tapes;
+
+			push( @errLayer, [ "psa", \@wrong ] ) if ( scalar(@wrong) );
+		}
+
+		foreach my $err (@errLayer) {
+
+			$dataMngr->_AddErrorResult( "Wrong layer types",
+									"V matrixu jsou vrstvy s názvy: " . join( "; ", @{ $err->[1] } ) . ", které mají špatný typ: " . $err->[0] );
+		}
+
+	}
+
 	# X) Check if exist plt layers and technology is not galvanic
 	if ( $layerCnt >= 2 ) {
 
@@ -434,7 +516,10 @@ sub __CheckGroupDataBasic {
 
 	# Check stiffener layer dont match with value in IS
 	my %stiffIS = HegMethods->GetStiffenerType($jobId);
-	my %stiffJob = ( "top" => $defaultInfo->LayerExist( "stiffc", 1 ), "bot" => $defaultInfo->LayerExist( "stiffs", 1 ) );
+	my %stiffJob = (
+					 "top" => $defaultInfo->LayerExist( "stiffc", 1 ),
+					 "bot" => $defaultInfo->LayerExist( "stiffs", 1 )
+	);
 
 	if ( ( $stiffIS{"top"} != $stiffJob{"top"} ) || ( $stiffIS{"bot"} != $stiffJob{"bot"} ) ) {
 
@@ -455,7 +540,10 @@ sub __CheckGroupDataBasic {
 
 	# Check coverlay layer dont match with value in IS
 	my %cvrlIS = HegMethods->GetCoverlayType($jobId);
-	my %cvrlJob = ( "top" => 0, "bot" => 0 );
+	my %cvrlJob = (
+					"top" => 0,
+					"bot" => 0
+	);
 
 	foreach my $cvrl ( grep { $_->{"gROWlayer_type"} eq "coverlay" } $defaultInfo->GetBoardBaseLayers() ) {
 
@@ -493,8 +581,8 @@ sub __CheckGroupDataBasic {
 			my $cuThick = $defaultInfo->GetBaseCuThick($cuLayerName);
 			$cuThick += 25 if ( $cuLayer->{"technologyType"} eq EnumsGeneral->Technology_GALVANICS );    # add plating 25µm
 
-			my $minAdh = int($cuThick / 35 * 25);
-			my $maxAdh = int($minAdh + 15);
+			my $minAdh = int( $cuThick / 35 * 25 );
+			my $maxAdh = int( $minAdh + 15 );
 			if ( $adhThick < $minAdh ) {
 
 				$dataMngr->_AddErrorResult(
@@ -511,14 +599,59 @@ sub __CheckGroupDataBasic {
 			elsif ( $adhThick > $maxAdh ) {
 
 				$dataMngr->_AddErrorResult(
-						"Coverlay - velká tloušťka lepidla",
-						"Coverlay: "
-						  . $cvrl->{"gROWname"}
-						  . " ze strany: $side, má příliš velkou tloušťku lepidla ($adhThick µm lepidla na $cuThick µm Cu na straně: $cuLayerName)."
-						  . "\nMinimální potřebná tloušťka lepidla je: $minAdh µm. "
-						  . "\nMaximální doporučená tloušťka lepidla je: $maxAdh µm."
-						  . "\nPoužij materiál s menší tloušťkou lepidla, jinak dojde zbytečně k vytečení lepidla - \"Adhezive squeezeout\""
-						  . "\n(Pravidlo: na každých 35µm Cu, 25µm lepidla)"
+					"Coverlay - velká tloušťka lepidla",
+					"Coverlay: "
+					  . $cvrl->{"gROWname"}
+					  . " ze strany: $side, má příliš velkou tloušťku lepidla ($adhThick µm lepidla na $cuThick µm Cu na straně: $cuLayerName)."
+					  . "\nMinimální potřebná tloušťka lepidla je: $minAdh µm. "
+					  . "\nMaximální doporučená tloušťka lepidla je: $maxAdh µm."
+					  . "\nPoužij materiál s menší tloušťkou lepidla, jinak dojde zbytečně k vytečení lepidla - \"Adhezive squeezeout\""
+					  . "\n(Pravidlo: na každých 35µm Cu, 25µm lepidla)"
+				);
+			}
+		}
+	}
+
+	# X) Check if rout stiffener layer has set attribute "thickness"
+	# which says total required PCB thickness in area of stiffener
+	my @stiffL = grep {
+		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+	} $defaultInfo->GetNCLayers();
+
+	foreach my $l (@stiffL) {
+
+		my @steps = ();
+
+		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName ) ) {
+			my @SR = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepName );
+
+			CamStepRepeat->RemoveCouponSteps( \@SR );
+			push( @steps, map { $_->{"stepName"} } @SR );
+		}
+		else {
+
+			@steps = ($stepName);
+		}
+
+		foreach my $step (@steps) {
+
+			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $step, $l->{"gROWname"} );
+
+			my $pcbThick = $att{"final_pcb_thickness"};
+
+			if ( !$pcbThick || $pcbThick eq "" || $pcbThick <= 0 ) {
+				$dataMngr->_AddErrorResult(
+					"Tloušťka DPS v místě stiffeneru",
+					"Není zadaná tloušťka DPS v místě stiffeneru pro vrstvu: "
+					  . $l->{"gROWname"} . " ve stepu: \"$step\"."
+					  . " Zadej celkovou tloušťku DPS v místě stiffeneru požadovanou zákazníkem. "
+					  . "Step: \"$step\", vrstva: \""
+					  . $l->{"gROWname"}
+					  . "\", atribut: \"Final pcb thickness\", jednotky: µm"
+
 				);
 			}
 		}
@@ -975,7 +1108,6 @@ sub __CheckGroupDataExtend {
 
 			);
 		}
-
 	}
 
 }

@@ -531,7 +531,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d293788";
+	my $jobId = "d284648";
  
 
 	my $mess = "";
@@ -554,8 +554,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	$control->{"onItemResult"}->Add( sub { $f->(@_) } );
 
 	#$control->AddInfoPreview( \$mess );
-	#$control->AddStackupPreview( \$mess );
-	$control->AddImagePreview( \$mess, 1, 1 );
+	$control->AddStackupPreview( \$mess );
+	#$control->AddImagePreview( \$mess, 1, 1 );
 	#$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 

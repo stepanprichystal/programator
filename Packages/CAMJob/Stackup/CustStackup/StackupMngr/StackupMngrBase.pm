@@ -138,6 +138,14 @@ sub GetPlatedNC {
 	return @sorted;
 }
 
+# Return all NC layers
+sub GetNCLayers {
+	my $self = shift;
+
+	return @{ $self->{"NCLayers"} };
+ 
+}
+
 sub GetExistStiff {
 	my $self     = shift;
 	my $side     = shift;    # top/bot
@@ -203,7 +211,77 @@ sub GetExistStiff {
 	}
 
 	return $exist;
+}
 
+sub GetExistTape {
+	my $self     = shift;
+	my $side     = shift;    # top/bot
+	my $tapeInfo = shift;    # reference for storing info
+
+	my $l = $side eq "top" ? "tpc" : "tps";
+
+	my $exist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
+
+	if ($exist) {
+
+		if ( defined $tapeInfo ) {
+
+			$self->__GetTapeInfo( $side, $tapeInfo );
+		}
+	}
+
+	return $exist;
+}
+
+sub GetExistTapeStiff {
+	my $self     = shift;
+	my $side     = shift;    # top/bot
+	my $tapeInfo = shift;    # reference for storing info
+
+	my $l = $side eq "top" ? "tpstiffc" : "tpstiffs";
+
+	my $exist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
+
+	if ($exist) {
+
+		if ( defined $tapeInfo ) {
+
+			$self->__GetTapeInfo( $side, $tapeInfo );
+		}
+	}
+
+	return $exist;
+}
+
+
+sub __GetTapeInfo {
+	my $self     = shift;
+	my $side     = shift;    # top/bot
+	my $tapeInfo = shift;    # reference for storing info
+
+	my $mAdhInf = HegMethods->GetPcbStiffenerAdhMat( $self->{"jobId"}, "top" );
+	$mAdhInf = HegMethods->GetPcbStiffenerAdhMat( $self->{"jobId"}, "bot" ) if ( !defined $mAdhInf );
+
+	die "Neni lepidlo!!!!!!!!!!!!! V HEGU" unless ( defined $mAdhInf );
+	my @nAdh = split( /\s/, $mAdhInf->{"nazev_subjektu"} );
+
+	$tapeInfo->{"tapeText"} = $mAdhInf->{"nazev_subjektu"};
+
+	# make name shorter if 3M tape
+	if ( $tapeInfo->{"tapeText"} =~ /^(3m)\s+(\w+)\s+/i ) {
+		$tapeInfo->{"tapeText"} = $1 . " " . $2;
+	}
+
+	$tapeInfo->{"tapeThick"} = $mAdhInf->{"vyska"} * 1000000;    #
+	$tapeInfo->{"tapeTg"}    = 204;
+
+	my $t = $mAdhInf->{"vyska"};
+	$t =~ s/,/\./;
+	$t *= 1000000;
+
+	die "Tape material name was not found at material:" . $mAdhInf->{"nazev_subjektu"} unless ( defined $tapeInfo->{"tapeText"} );
+	die "Tape thickness was not found at material:" . $mAdhInf->{"nazev_subjektu"}     unless ( defined $tapeInfo->{"tapeThick"} );
+	die "Tape TG was not found at material:" . $mAdhInf->{"nazev_subjektu"}            unless ( defined $tapeInfo->{"tapeTg"} );
 }
 
 # Decide of get mask color ftom NIF/Helios

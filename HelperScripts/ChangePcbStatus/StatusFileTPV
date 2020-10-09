@@ -8,6 +8,7 @@ poslan dotaz; (+ jmeno uzivatele)
 zpracovava; (+ jmeno uzivatele)
 k panelizaci;
 HOTOVO-zadat;
+HOTOVO-odsouhlasit;
 Exportovano;
 zpracovani-auto;(NEPOUZIVAT pouze pro testovani)
 zpracovani-rucni;(NEPOUZIVAT pouze pro testovani)

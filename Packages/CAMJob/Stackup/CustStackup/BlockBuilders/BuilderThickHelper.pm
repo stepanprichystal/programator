@@ -36,25 +36,27 @@ sub GetComputedThick {
 	my $section = shift;
 
 	my $t = undef;
-	
+
 	if ( $section eq Enums->Sec_A_MAIN ) {
 
 		$t = $self->{"stackupMngr"}->GetThickness();
-	
-	}elsif ( $section eq Enums->Sec_B_FLEX || $section eq Enums->Sec_D_FLEXTAIL) {
-		
+
+	}
+	elsif ( $section eq Enums->Sec_B_FLEX || $section eq Enums->Sec_D_FLEXTAIL ) {
+
 		# Only Rigid flex
 		$t = $self->{"stackupMngr"}->GetThicknessFlex(0);
-	
-	}elsif ( $section eq Enums->Sec_E_STIFFENER) {
-		
+
+	}
+	elsif ( $section eq Enums->Sec_E_STIFFENER ) {
+
 		$t = $self->{"stackupMngr"}->GetThicknessStiffener("top");
-	
-	}elsif ( $section eq Enums->Sec_F_STIFFENER) {
-		
+
+	}
+	elsif ( $section eq Enums->Sec_F_STIFFENER ) {
+
 		$t = $self->{"stackupMngr"}->GetThicknessStiffener("bot");
 	}
-	
 
 	return $t;
 }
@@ -68,6 +70,24 @@ sub GetRequiredThick {
 	if ( $section eq Enums->Sec_A_MAIN ) {
 
 		$t = $self->{"stackupMngr"}->GetNominalThickness();
+
+	}
+	elsif ( $section eq Enums->Sec_E_STIFFENER || $section eq Enums->Sec_F_STIFFENER ) {
+
+		my @allThickness = $self->{"stackupMngr"}->GetAllRequestedStiffThick();
+
+		my @stiff = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill }
+		  $self->{"stackupMngr"}->GetNCLayers();
+
+		# Set thickness only if stiffener from one side and only one depth exists
+		if ( scalar(@stiff) == 1 && scalar(@allThickness) == 1 ) {
+
+			$t = $allThickness[0];
+		}
+		else {
+
+			$t = "*";
+		}
 	}
 
 	return $t;

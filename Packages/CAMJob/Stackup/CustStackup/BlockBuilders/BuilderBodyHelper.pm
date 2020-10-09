@@ -21,12 +21,14 @@ use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::BackgStyle';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 
-use constant stiff    => "stiff";
-use constant stiffAdh => "stiffAdh";
-use constant cvrl     => "cvrl";
-use constant cvrlAdh  => "cvrlAdh";
-use constant sm       => "sm";
-use constant smFlex   => "smFlex";
+use constant tapeStiff => "tapeStiff";
+use constant stiff     => "stiff";
+use constant stiffAdh  => "stiffAdh";
+use constant tape      => "tape";
+use constant cvrl      => "cvrl";
+use constant cvrlAdh   => "cvrlAdh";
+use constant sm        => "sm";
+use constant smFlex    => "smFlex";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,59 +56,87 @@ sub BuildRowsStackupOuter {
 
 	my %topSpec = ();
 
-	$topSpec{stiff}    = $stckpMngr->GetExistStiff($outerSide);
-	$topSpec{stiffAdh} = $stckpMngr->GetExistStiff($outerSide);
-	$topSpec{cvrl}     = $stckpMngr->GetExistCvrl($outerSide);
-	$topSpec{cvrlAdh}  = $stckpMngr->GetExistCvrl($outerSide);
-	$topSpec{sm}       = $stckpMngr->GetExistSM($outerSide);
-	$topSpec{smFlex}   = $stckpMngr->GetExistSMFlex($outerSide);
+	$topSpec{tapeStiff} = $stckpMngr->GetExistTapeStiff($outerSide);
+	$topSpec{stiff}     = $stckpMngr->GetExistStiff($outerSide);
+	$topSpec{stiffAdh}  = $stckpMngr->GetExistStiff($outerSide);
+	$topSpec{tape}      = $stckpMngr->GetExistTape($outerSide);
+	$topSpec{cvrl}      = $stckpMngr->GetExistCvrl($outerSide);
+	$topSpec{cvrlAdh}   = $stckpMngr->GetExistCvrl($outerSide);
+	$topSpec{sm}        = $stckpMngr->GetExistSM($outerSide);
+	$topSpec{smFlex}    = $stckpMngr->GetExistSMFlex($outerSide);
 
 	# go from PCB nearest layer to most outer layer @r1 nearest layer, @r3 most oter layer
-	my ( @r1, @r2, @r3 ) = ();
-	my @topOuter = ( \@r1, \@r2, \@r3 );
+	# @r\d array contain more materials, which can be displayed in same row in stackup
+	# (they are next to eaxh other not above/belov)
+	my ( @r1, @r2, @r3, @r4, @r5 ) = ();
+	my @topOuter = ( \@r1, \@r2, \@r3, \@r4, \@r5 );
 
-	push( @{ $topOuter[0] }, sm )      if ( $topSpec{sm} );         # Solder mask alway on top Cu
-	push( @{ $topOuter[0] }, cvrlAdh ) if ( $topSpec{cvrlAdh} );    # Coverlay adhesive alway on top Cu
-	push( @{ $topOuter[0] }, smFlex )  if ( $topSpec{smFlex} );     # Solder mask Flex alway on top Cu
+	# 1) Add soldermask always directly to Copper
+	push( @{ $topOuter[0] }, sm ) if ( $topSpec{sm} );    # Solder mask alway on top Cu
 
-	# Add cvrl above cvrlAdh
+	# 2) Add flexible always soldermask directly to Copper
+	push( @{ $topOuter[0] }, smFlex ) if ( $topSpec{smFlex} );    # Solder mask Flex alway on top Cu
+
+	# 3) Add cvrl directly above cu OR sm
 	if ( $topSpec{cvrl} ) {
 
 		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
 
 			# Stiffener is on top Cu or above coverlay + coverlay adh
-			if ( scalar( grep { $_ eq cvrlAdh } @{ $topOuter[$i] } ) ) {
-				push( @{ $topOuter[ $i + 1 ] }, cvrl );
+			if ( !scalar( @{ $topOuter[$i] } ) ) {
+				push( @{ $topOuter[$i] }, cvrlAdh );
+				push( @{ $topOuter[$i+1] }, cvrl );
+				last;
+			}
+			elsif ( scalar( grep { $_ eq sm } @{ $topOuter[$i] } ) ) {
+				push( @{ $topOuter[ $i + 1 ] }, cvrlAdh );
+				push( @{ $topOuter[ $i + 2 ] }, cvrl );
+				last;
 			}
 		}
 	}
 
-	if ( $topSpec{stiffAdh} ) {
-		if ( $topSpec{cvrlAdh} ) {
-
-			for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
-
-				# Stiffener is on top Cu or above coverlay + coverlay adh
-				if ( !scalar( grep { $_ eq cvrlAdh || $_ eq cvrl } @{ $topOuter[$i] } ) ) {
-					push( @{ $topOuter[$i] }, stiffAdh );
-					last;
-				}
-			}
-		}
-		else {
-
-			push( @{ $topOuter[0] }, stiffAdh );    # Put stiffener adhesive on top cu
-		}
-	}
-
-	# Add stiff above stiffAdh
+	# 4) Add stiff directly above cu OR sm
 	if ( $topSpec{stiff} ) {
 
 		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
 
-			# Stiffener is on top Cu or above coverlay + coverlay adh
-			if ( scalar( grep { $_ eq stiffAdh } @{ $topOuter[$i] } ) ) {
-				push( @{ $topOuter[ $i + 1 ] }, stiff );
+			if ( !scalar( @{ $topOuter[$i] } ) ) {
+				push( @{ $topOuter[$i] }, stiffAdh );
+				push( @{ $topOuter[$i+1]  }, stiff );
+				last;
+
+			}
+			elsif ( scalar( grep { $_ eq cvrl || $_ eq sm } @{ $topOuter[$i] } ) ) {
+				push( @{ $topOuter[ $i + 1 ] }, stiffAdh );
+				push( @{ $topOuter[ $i + 2 ] }, stiff );
+				last;
+			}
+		}
+	}
+
+	# 5) Add double sided tape
+	if ( $topSpec{tape} ) {
+
+		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
+
+			# Add  on the same row as stiffener adh or above Cu or
+			if ( scalar( grep { $_ eq stiffAdh } @{ $topOuter[$i] } ) || !scalar( @{ $topOuter[$i] } ) ) {
+				push( @{ $topOuter[$i] }, tape );
+				last;
+			}
+		}
+	}
+
+	# 6) Add double sided tape sticked to stiffener
+	if ( $topSpec{tapeStiff} ) {
+
+		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
+
+			# Add  on the same row as stiffener adh or above Cu or
+			if ( scalar( grep { $_ eq stiff } @{ $topOuter[$i] } ) ) {
+				push( @{ $topOuter[$i+1] }, tapeStiff );
+				last;
 			}
 		}
 	}
