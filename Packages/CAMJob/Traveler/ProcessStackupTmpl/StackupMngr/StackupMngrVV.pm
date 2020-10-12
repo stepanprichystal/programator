@@ -54,9 +54,9 @@ sub GetAllLamination {
 	# Process input product laminations
 
 	# Sordt input products by "core type". Rigid frist, tahn flex
- 
-	my @rigid        = grep { $_->GetCoreRigidType() eq StackEnums->CoreType_RIGID } @inputProduct;
-	my @flex         = grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } @inputProduct;
+
+	my @rigid = grep { $_->GetCoreRigidType() eq StackEnums->CoreType_RIGID } @inputProduct;
+	my @flex  = grep { $_->GetCoreRigidType() eq StackEnums->CoreType_FLEX } @inputProduct;
 
 	@inputProduct = ();
 	push( @inputProduct, @rigid ) if ( scalar(@rigid) );
@@ -220,25 +220,19 @@ sub GetPressProgramInfo {
 		$pInfo{"name"} = "Flex_coverlay";
 
 	}
-	elsif ( $lamType eq Enums->LamType_RIGIDBASE ) {
+	elsif ( $lamType eq Enums->LamType_RIGIDBASE || $lamType eq Enums->LamType_RIGIDFINAL ) {
 
-		# Coose proper program by core material kind
+		# Choose proper program by prepreg material kind
 		# $IProduct should by tzpe of Product_INPUT
-		my @cores = map { $_->GetData()->GetLayers() } $IProduct->GetChildProducts();
-		my $core = first { $_->GetData()->GetType() eq StackEnums->MaterialType_CORE } @cores;
-		my $matKind = uc( $core->GetData()->GetTextType() );
+		my @matLayers = grep { $_->GetType() eq StackEnums->ProductL_MATERIAL } $IProduct->GetLayers();
+		my @prpgs = grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } map {$_->GetData() } @matLayers;
+		my $matKind = uc( $prpgs[0]->GetTextType() );
 		$matKind =~ s/\s//g;
+ 
 		$pInfo{"name"} = $matKind;
+		 
+	} 
 
-	}
-	elsif ( $lamType eq Enums->LamType_RIGIDFINAL ) {
-
-		my @mats = sort { $b->{"tg"} <=> $a->{"tg"} } @mats;
-		my $matKind = uc( $mats[0]->{"kind"} );
-		$matKind =~ s/\s//g;
-		$pInfo{"name"} = $matKind;
-	}
-	
 	$pInfo{"name"} .= "_$h";
 
 	# 2) Program dim
@@ -256,7 +250,6 @@ sub GetPressProgramInfo {
 
 	die "Press program name was found for lamination type: $lamType" unless ( defined $pInfo{"name"} );
 
- 
 	return %pInfo;
 }
 

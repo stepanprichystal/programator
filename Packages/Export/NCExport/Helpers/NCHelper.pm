@@ -543,7 +543,7 @@ sub StoreOperationInfoTif {
 		$opInf{"isRout"} = $isRout;
 
 		my $matThick;
-		if ( $layers[0]->{"gROWdrl_start"} =~ /(coverlay)|(bend)/ ) {
+		if ( $layers[0]->{"gROWdrl_start"} =~ /^(cvrl)|(bend)/ ) {
 			$matThick = 0;
 		}
 		else {
