@@ -127,6 +127,14 @@ sub Cz {
 	
 		$str = "Bílá";
 		
+	}elsif($val eq "WhiteMat"){
+	
+		$str = "Bílá mat";
+		
+	}elsif($val eq "WhiteGloss"){
+	
+		$str = "Bílá lesk";
+		
 	}elsif($val eq "Blue"){
 	
 		$str = "Modrá";
@@ -149,8 +157,7 @@ sub Cz {
 		
 	}
 	
-	
-	
+
 	else{
 		
 		die "Error when translating word:$val .\n";

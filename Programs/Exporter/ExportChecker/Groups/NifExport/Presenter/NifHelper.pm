@@ -19,7 +19,7 @@ use Wx;
 sub GetPcbMaskColors {
 	my $self = shift;
 
-	my @color = ( "Green", "Black", "White", "Blue", "Red", "GreenSMDFlex", "Transparent" );
+	my @color = ( "Green", "Black", "WhiteMat", "WhiteGloss", "Blue", "Red", "GreenSMDFlex", "Transparent" );
 
 	return @color;
 }
@@ -40,6 +40,8 @@ sub GetColorDef {
 	$colorMap{"Green"}         = Wx::Colour->new( 85,  128, 0 );
 	$colorMap{"Black"}         = Wx::Colour->new( 0,   0,   0 );
 	$colorMap{"White"}         = Wx::Colour->new( 255, 255, 255 );
+	$colorMap{"WhiteMat"}         = Wx::Colour->new( 255, 255, 255 );
+	$colorMap{"WhiteGloss"}         = Wx::Colour->new( 255, 255, 255 );
 	$colorMap{"Blue"}          = Wx::Colour->new( 0,   0,   255 );
 	$colorMap{"Transparent"}   = Wx::Colour->new( 245, 245, 245 );
 	$colorMap{"Red"}           = Wx::Colour->new( 230, 46,  0 );

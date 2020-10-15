@@ -75,7 +75,8 @@ sub GetMaskColorToCode {
 	my %colorMap = ();
 	$colorMap{"Green"}        = "Z";
 	$colorMap{"Black"}        = "B";
-	$colorMap{"White"}        = "W";
+	$colorMap{"WhiteMat"}     = "W";
+	$colorMap{"WhiteGloss"}   = "X";
 	$colorMap{"Blue"}         = "M";
 	$colorMap{"Transparent"}  = "T";
 	$colorMap{"Red"}          = "R";
@@ -95,7 +96,8 @@ sub GetMaskCodeToColor {
 	my %colorMap = ();
 	$colorMap{"Z"} = "Green";
 	$colorMap{"B"} = "Black";
-	$colorMap{"W"} = "White";
+	$colorMap{"W"} = "WhiteMat";
+	$colorMap{"X"} = "WhiteGloss";
 	$colorMap{"M"} = "Blue";
 	$colorMap{"T"} = "Transparent";
 	$colorMap{"R"} = "Red";

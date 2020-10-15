@@ -508,7 +508,8 @@ sub __GetMaskColor {
 	my %colorMap = ();
 	$colorMap{"Z"} = "0,115,42";       # green
 	$colorMap{"B"} = "59,59,59";       # black
-	$colorMap{"W"} = "250,250,250";    # white
+	$colorMap{"W"} = "250,250,250";    # white mat
+	$colorMap{"X"} = "250,250,250";    # white gloss
 	$colorMap{"M"} = "0,70,113";       # blue
 	$colorMap{"T"} = "255,255,255";    # ??
 	$colorMap{"R"} = "196,0,28";       # red
