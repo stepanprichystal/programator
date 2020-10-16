@@ -104,6 +104,8 @@ sub GetJobLayerTitle {
 		$en{"ps2"}   = "Silk screen (bot; second)";
 		$en{"mc"}    = "Solder mask (top)";
 		$en{"ms"}    = "Solder mask (bot)";
+		$en{"mc2"}    = "Solder mask (top; second)";
+		$en{"ms2"}    = "Solder mask (bot; second)";
 		$en{"c"}     = "Component layer (top)";
 		$en{"s"}     = "Solder layer (bot)";
 		$en{"lc"}    = "Peelable mask (top)";
@@ -120,6 +122,8 @@ sub GetJobLayerTitle {
 		$czl{"ps2"}   = "Potisk (bot; druhý)";
 		$czl{"mc"}    = "Nepájivá maska (top)";
 		$czl{"ms"}    = "Nepájivá maska (bot)";
+		$czl{"mc2"}    = "Nepájivá maska (top, druhá)";
+		$czl{"ms2"}    = "Nepájivá maska (bot, druhá)";
 		$czl{"c"}     = "Strana součástek (top)";
 		$czl{"s"}     = "Strana spojů (bot)";
 		$czl{"lc"}    = "Snímací lak (top)";

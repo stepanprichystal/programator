@@ -198,8 +198,24 @@ sub __InitLayers {
 				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot )
 		} @boardL
 	);
+	
 	push( @NCThroughLayers, $LDNPltThrough );
-
+	
+	
+	# POS 0: Type_PLTTHROUGHNC from TOP
+	my $LDPltThroughTOPBOT = LayerData->new( Enums->Type_PLTTHROUGHNC, Enums->Visible_FROMTOPBOT );
+	$LDPltThroughTOPBOT->AddSingleLayers(
+		grep {
+			defined $_->{"type"}
+			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
+				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot )
+		} @boardL
+	);
+	push( @pdfLayers, $LDPltThroughTOPBOT );
+	
+ 
 	@NCThroughLayers = reverse(@NCThroughLayers) if ( $self->{"viewType"} eq Enums->View_FROMBOT );
 
 	# 2) Prepare layers which are visible either from BOT or from TOP
@@ -275,18 +291,7 @@ sub __InitLayers {
 	$LDMaskTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^mc$/ } @boardL );
 	push( @pdfLayers, $LDMaskTOP );
 
-	# POS 11: Type_PLTTHROUGHNC from TOP
-	my $LDPltThroughTOP = LayerData->new( Enums->Type_PLTTHROUGHNC, Enums->Visible_FROMTOP );
-	$LDPltThroughTOP->AddSingleLayers(
-		grep {
-			defined $_->{"type"}
-			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot )
-		} @boardL
-	);
-	push( @pdfLayers, $LDPltThroughTOP );
+
 
 	# POS 11: Type_PLTDEPTHNC from TOP
 	my $LDPltDepthTOP = LayerData->new( Enums->Type_PLTDEPTHNC, Enums->Visible_FROMTOP );

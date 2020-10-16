@@ -1501,9 +1501,9 @@ sub UpdateOfferSpecification {
 
 		require Connectors::HeliosConnector::HelperWriter;
 
-		foreach my $attr ( keys %{$params} ) {
+		foreach my $par ( @{$params} ) {
 
-			my $resIn = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $params->{$attr}, $attr );
+			my $resIn = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $par->[1],  $par->[0] );
 
 			$res = 0 unless ($resIn);
 

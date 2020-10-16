@@ -53,29 +53,29 @@ sub Run {
 
 	if ( $self->{"specifToIS"} ) {
 
-		my %jobPar = ();
+		my @jobPar = ();
 
 		# KT
-		$jobPar{"konstr_trida"} = CamJob->GetJobPcbClass( $inCAM, $jobId );
+		push(@jobPar, ["konstr_trida",  CamJob->GetJobPcbClass( $inCAM, $jobId )]);
 
 		# Dimension
 		my %dim = JobDim->GetDimension( $inCAM, $jobId );
 
-		$jobPar{"kus_x"} = $dim{"single_x"};
-		$jobPar{"kus_y"} = $dim{"single_y"};
+		push(@jobPar, ["kus_x", $dim{"single_x"}]);
+		push(@jobPar, ["kus_y", $dim{"single_y"}]);
 
 		if ( CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) ) {
 
-			$jobPar{"panel_x"}          = $dim{"panel_x"};
-			$jobPar{"panel_y"}          = $dim{"panel_y"};
-			$jobPar{"nasobnost_panelu"} = $dim{"nasobnost_panelu"};
+			push(@jobPar, ["panel_x",$dim{"panel_x"}]);
+			push(@jobPar, ["panel_y", $dim{"panel_y"}]);
+			push(@jobPar, ["nasobnost_panelu", $dim{"nasobnost_panelu"}]);
 
 		}
-		$jobPar{"nasobnost"} = $dim{"nasobnost"};
-		$jobPar{"rozmer_x"}  = $dim{"vyrobni_panel_x"};
-		$jobPar{"rozmer_y"}  = $dim{"vyrobni_panel_y"};
+		push(@jobPar, ["nasobnost", $dim{"nasobnost"}]);
+		push(@jobPar, ["rozmer_x", $dim{"vyrobni_panel_x"}]);
+		push(@jobPar, ["rozmer_y", $dim{"vyrobni_panel_y"}]);
 
-		HegMethods->UpdateOfferSpecification( $jobId, \%jobPar, 1 );
+		HegMethods->UpdateOfferSpecification( $jobId, \@jobPar, 1 );
 	}
 
 }
