@@ -12,11 +12,13 @@ use Class::Interface;
 use utf8;
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
+use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
@@ -25,6 +27,7 @@ use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Reorder::Enums';
+use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -141,6 +144,51 @@ sub Run {
 			}
 
 		}
+	}
+
+	# Check if rout doesn't contain tool size smaller than 1000
+	# (do not consider rout pilot holes)
+	my $step = ();
+	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+
+		$step = "panel";
+
+	}
+	else {
+
+		$step = "o+1";
+
+	}
+
+	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] ) ) {
+
+		my $uniDTM = UniDTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 1 );
+		my @tools = grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $uniDTM->GetUniqueTools();
+		if ( scalar( grep { $_->GetDrillSize() <= 1000 } @tools ) ) {
+
+			# There are holes smaller than 1000µm, check if anz of tham are not pilot holes
+
+			my $f = Features->new();
+
+			$f->Parse( $inCAM, $jobId, $step, $l->{"gROWname"}, 1 );
+
+			my @features =
+			  map { $_->{"thick"} }
+			  grep { $_->{"type"} eq "P" && $_->{"thick"} <= 1000 && !defined $_->{"att"}->{".pilot_hole"} } $f->GetFeatures();
+
+			if ( scalar(@features) ) {
+
+				$self->_AddChange(
+								   "Frézovací vrstva: "
+									 . $l->{"gROWname"}
+									 . " obsahuje nástroje menší jak 1000µm (netýká se pilot holes / předvrtání ). "
+									 . " Seznam nástrojů pro přesunutí do prokoveného vrtání: "
+									 . join( "; ", map { $_ . "µm" } uniq(@features) ),
+								   1
+				);
+			}
+		}
+
 	}
 
 }

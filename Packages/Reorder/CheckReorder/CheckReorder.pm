@@ -150,11 +150,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM   = InCAM->new();
-	my $jobId   = "d146753";
-	my $orderId = "d146753-01";
+	my $jobId   = "d215629";
+	my $orderId = "d215629-01";
  
 
-	my $ch = CheckReorder->new( $inCAM, $jobId, $orderId, Enums->ReorderType_POOLFORMERSTD );
+	my $ch = CheckReorder->new( $inCAM, $jobId, $orderId, Enums->ReorderType_POOL );
 	my @arr = $ch->RunChecks();
 
 	dump(@arr)
