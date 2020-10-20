@@ -138,29 +138,7 @@ sub CheckToolParameters {
 			$result = 0;
 			$$mess .= "\n";
 		}
-
-		# Check if rout doesn't contain tool size smaller than 500
-		if ( $l->{"gROWlayer_type"} eq "rout" ) {
-
-			my @unitTools = $l->{"uniDTM"}->GetTools();
-
-			foreach my $t (@unitTools) {
-
-				if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score ) {
-					next;
-				}
-
-				if ( $t->GetDrillSize() < 500 ) {
-					$result = 0;
-					$$mess .= "NC layer \"" . $l->{"gROWname"} . "\".\n";
-					$$mess .=
-					    "Routing layers should not contain tools diamaeter smaller than 500Âµm. Layer contains tool diameter: "
-					  . $t->GetDrillSize()
-					  . "Âµm.\n";
-				}
-			}
-		}
-
+ 
 	}
 
 	# Check if some tools are same diameter as special tools and

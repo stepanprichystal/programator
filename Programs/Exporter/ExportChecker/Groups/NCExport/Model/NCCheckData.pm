@@ -11,6 +11,7 @@ use utf8;
 use strict;
 use warnings;
 use File::Copy;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'CamHelpers::CamLayer';
@@ -43,6 +44,7 @@ use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::CAMJob::ViaFilling::ViaFillingCheck';
+use aliased 'Packages::Polygon::Features::Features::Features';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -120,7 +122,8 @@ sub OnCheckGroupData {
 	}
 
 	# 3) If panel contain more drifrent step, check if fsch exist
-	my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN ] );
+	my @uniqueSteps =
+	  CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId, 1, [ EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN ] );
 
 	if ( scalar(@uniqueSteps) > 1 && !$defaultInfo->LayerExist("fsch") ) {
 
@@ -434,7 +437,7 @@ sub OnCheckGroupData {
 									"NC vrstva D",
 									"Něco se rozbilo. V matrixu je NC vrstva D. "
 									  . "Tato vrstva pravděpodobně obsahuje neprokovené otvory z vrstvy f. "
-									  . "Zkontroluj a vrať otovory v každého stepu do vrstvy f a smaž vrstvu d. Volej k tomu SPR."
+									  . "Zkontroluj a vrať otovory v každého stepu do vrstvy f a smaž vrstvu d."
 		);
 	}
 
@@ -687,19 +690,18 @@ sub OnCheckGroupData {
 	}
 
 	# 24) PLateed hole collision
-	foreach my $sName  ( map {$_->{"stepName"}}  CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" ) ){
-	
+	foreach my $sName ( map { $_->{"stepName"} } CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, "panel" ) ) {
+
 		my $errMess = "";
-	
-		unless(ViaFillingCheck->CheckDrillHoleCollision(  $inCAM, $jobId, $sName, \$errMess )){
-			
+
+		unless ( ViaFillingCheck->CheckDrillHoleCollision( $inCAM, $jobId, $sName, \$errMess ) ) {
+
 			$dataMngr->_AddErrorResult( "Plated holes collision", "Erorr in step: $sName; $errMess" );
 		}
-	
+
 	}
-	
-	
-		# 24) Check if fiducial holes in panel are not covered by stiffener or coverlay
+
+	# 24) Check if fiducial holes in panel are not covered by stiffener or coverlay
 	my @specL = grep {
 		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
@@ -714,12 +716,12 @@ sub OnCheckGroupData {
 		if ( defined $attHist{".fiducial_name"} ) {
 
 			foreach my $l (@specL) {
-				
-				next if($l->{"gROWdrl_start"} !~ /[cs]$/);
- 
+
+				next if ( $l->{"gROWdrl_start"} !~ /[cs]$/ );
+
 				my %lAttHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, "mpanel", $l->{"gROWname"} );
 
-				if ( !defined $lAttHist{".fiducial_name"})  {
+				if ( !defined $lAttHist{".fiducial_name"} ) {
 
 					$dataMngr->_AddWarningResult(
 						"Zakryté fiduciální značky",
@@ -736,6 +738,39 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# 25)
+	# Check if rout doesn't contain tool size smaller than 1000
+	# (do not consider rout pilot holes)
+
+	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] ) ) {
+
+		my $uniDTM = UniDTM->new( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
+		my @tools = grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $uniDTM->GetUniqueTools();
+		if ( scalar( grep { $_->GetDrillSize() <= 1000 } @tools ) ) {
+
+			# There are holes smaller than 1000µm, check if anz of tham are not pilot holes
+
+			my $f = Features->new();
+
+			$f->Parse( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
+
+			my @features =
+			  map { $_->{"thick"} }
+			  grep { $_->{"type"} eq "P" && $_->{"thick"} <= 1000 && !defined $_->{"att"}->{".pilot_hole"} } $f->GetFeatures();
+
+			if ( scalar(@features) ) {
+				$dataMngr->_AddErrorResult(
+					"Malé otvory ve fréze",
+					"Frézovací vrstva: "
+					  . $l->{"gROWname"}
+					  . " obsahuje nástroje menší jak 1000µm (netýká se pilot holes / předvrtání ). "
+					  . " Seznam nástrojů pro přesunutí do prokoveného vrtání: "
+					  . join( "; ", map { $_ . "µm" } uniq(@features) )
+
+				);
+			}
+		}
+	}
 
 }
 

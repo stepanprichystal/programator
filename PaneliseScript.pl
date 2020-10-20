@@ -1,13 +1,14 @@
 #!/usr/bin/perl
 
 use warnings;
-
+ 
 use Tk;
 use Tk::BrowseEntry;
 use Tk::LabEntry;
 use Tk::LabFrame;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use File::Path qw( rmtree );
+use List::MoreUtils qw(uniq);
 
 #use LoadLibrary;
 #use GenesisHelper;
@@ -75,6 +76,7 @@ use aliased 'Widgets::Forms::SimpleInput::SimpleInputFrm';
 use aliased 'Enums::EnumsProducPanel';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsDrill';
 
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
@@ -83,6 +85,7 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpP
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Packages::CAMJob::Microsection::CouponIPC3Main';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::Polygon::Features::Features::Features';
 
 
 unless ($ENV{JOB}) {
@@ -517,20 +520,37 @@ sub _GUIpanelizace {
 											 
 											if(CamHelper->LayerExists($inCAM, $jobName, "f")){
 												
-												my $uniDTM = UniDTM->new( $inCAM, $jobName, "o+1", "f");
-												my @unitTools =$uniDTM->GetTools();									
-											
-												foreach my $t (@unitTools) {
+											 
+		my $uniDTM = UniDTM->new( $inCAM, $jobName, "o+1", "f", 1 );
+		my @tools = grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $uniDTM->GetUniqueTools();
+		if ( scalar( grep { $_->GetDrillSize() <= 1000 } @tools ) ) {
 
-													if ( $t->GetDrillSize() < 500 ) {
-														my  $messWarn .=
-					    								"Routing layers should not contain tools diamaeter smaller than 500µm. Layer contains tool diameter: "
-					  									. $t->GetDrillSize()
-					  									. "µm.\n";
-					  									
-					  									push @errorMessageArr, $messWarn;
-													}
-												}
+			# There are holes smaller than 1000�m, check if anz of tham are not pilot holes
+
+			my $f = Features->new();
+
+			$f->Parse( $inCAM, $jobName, "o+1", "f", 1 );
+
+			my @features =
+			  map { $_->{"thick"} }
+			  grep { $_->{"type"} eq "P" && $_->{"thick"} <= 1000 && !defined $_->{"att"}->{".pilot_hole"} } $f->GetFeatures();
+
+			if ( scalar(@features) ) {
+				
+				
+				
+				 
+					my $mess = "Frezovaci vrstva: "
+					  . "f"
+					  . " obsahuje nastroje mensi jak 1000um (netyka se pilot holes / predvrtani ).\n"
+					  . " Seznam nastroju pro presunuti do prokoveneho vrtani: "
+					  . join( "; ", map { $_ . "um" } uniq(@features) );
+
+				push(@errorMessageArr, $mess);
+			}
+		}
+	 
+
 											} 
 	 
 											# contain error messages
