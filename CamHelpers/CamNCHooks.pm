@@ -574,10 +574,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d283335";
+	my $jobId    = "d296386";
 	my $stepName = "panel";
 
-	my $materialName = "Hybrid";
+	my $materialName = "RO4";
 	my $machine      = "machine_c";
 	my $layer        = "f";
 

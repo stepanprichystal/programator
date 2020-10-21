@@ -518,7 +518,7 @@ sub _GUIpanelizace {
 											
 											# Check holes 500 in rout	
 											 
-											if(CamHelper->LayerExists($inCAM, $jobName, "f")){
+											if(CamHelper->LayerExists($inCAM, $jobName, "f") && CamHelper->LayerExists($inCAM, $jobName, "m")){
 												
 											 
 		my $uniDTM = UniDTM->new( $inCAM, $jobName, "o+1", "f", 1 );

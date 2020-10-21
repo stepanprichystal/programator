@@ -741,33 +741,36 @@ sub OnCheckGroupData {
 	# 25)
 	# Check if rout doesn't contain tool size smaller than 1000
 	# (do not consider rout pilot holes)
+	if ( $defaultInfo->LayerExist("m") ) {
+		foreach
+		  my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] ) )
+		{
 
-	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] ) ) {
+			my $uniDTM = UniDTM->new( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
+			my @tools = grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $uniDTM->GetUniqueTools();
+			if ( scalar( grep { $_->GetDrillSize() <= 1000 } @tools ) ) {
 
-		my $uniDTM = UniDTM->new( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
-		my @tools = grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $uniDTM->GetUniqueTools();
-		if ( scalar( grep { $_->GetDrillSize() <= 1000 } @tools ) ) {
+				# There are holes smaller than 1000µm, check if anz of tham are not pilot holes
 
-			# There are holes smaller than 1000µm, check if anz of tham are not pilot holes
+				my $f = Features->new();
 
-			my $f = Features->new();
+				$f->Parse( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
 
-			$f->Parse( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
+				my @features =
+				  map { $_->{"thick"} }
+				  grep { $_->{"type"} eq "P" && $_->{"thick"} <= 1000 && !defined $_->{"att"}->{".pilot_hole"} } $f->GetFeatures();
 
-			my @features =
-			  map { $_->{"thick"} }
-			  grep { $_->{"type"} eq "P" && $_->{"thick"} <= 1000 && !defined $_->{"att"}->{".pilot_hole"} } $f->GetFeatures();
+				if ( scalar(@features) ) {
+					$dataMngr->_AddWarningResult(
+						"Malé otvory ve fréze",
+						"Frézovací vrstva: "
+						  . $l->{"gROWname"}
+						  . " obsahuje nástroje menší jak 1000µm (netýká se pilot holes / předvrtání ). "
+						  . " Seznam nástrojů pro přesunutí do prokoveného vrtání: "
+						  . join( "; ", map { $_ . "µm" } uniq(@features) )
 
-			if ( scalar(@features) ) {
-				$dataMngr->_AddErrorResult(
-					"Malé otvory ve fréze",
-					"Frézovací vrstva: "
-					  . $l->{"gROWname"}
-					  . " obsahuje nástroje menší jak 1000µm (netýká se pilot holes / předvrtání ). "
-					  . " Seznam nástrojů pro přesunutí do prokoveného vrtání: "
-					  . join( "; ", map { $_ . "µm" } uniq(@features) )
-
-				);
+					);
+				}
 			}
 		}
 	}
