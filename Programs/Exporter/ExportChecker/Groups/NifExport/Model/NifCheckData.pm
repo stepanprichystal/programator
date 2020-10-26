@@ -798,11 +798,11 @@ sub OnCheckGroupData {
 		}
 		elsif ( $IPC3CustStep->{"totalCnt"} < 1 || $IPC3CustStep->{"totalCnt"} > 3 ) {
 			$dataMngr->_AddWarningResult(
-				"IPC3 zákaznický kupón - špatný počet",
-				"Při požadavku na IPC3, musí být v panelu minimálně 1 maximálně 3 kupóny ("
-				  . EnumsGeneral->Coupon_IPC3MAIN
-				  . "). Aktuální počet: "
-				  . $IPC3CustStep->{"totalCnt"}
+										  "IPC3 zákaznický kupón - špatný počet",
+										  "Při požadavku na IPC3, musí být v panelu minimálně 1 maximálně 3 kupóny ("
+											. EnumsGeneral->Coupon_IPC3MAIN
+											. "). Aktuální počet: "
+											. $IPC3CustStep->{"totalCnt"}
 			);
 
 		}
@@ -830,6 +830,8 @@ sub OnCheckGroupData {
 		}
 
 	}
+
+
 
 }
 

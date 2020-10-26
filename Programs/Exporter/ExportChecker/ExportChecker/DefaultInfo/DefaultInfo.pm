@@ -36,12 +36,13 @@ use aliased 'Packages::Technology::DataComp::SigLayerComp';
 use aliased 'Packages::Technology::DataComp::NCLayerComp';
 use aliased 'Packages::CAMJob::Technology::LayerSettings';
 use aliased 'Programs::Comments::Comments';
+use aliased 'Packages::CAMJob::Stackup::StackupCode';
 
-#-------------------------------------------------------------------------------------------#
-#  Package methods
-#-------------------------------------------------------------------------------------------#
+  #-------------------------------------------------------------------------------------------#
+  #  Package methods
+  #-------------------------------------------------------------------------------------------#
 
-sub new {
+  sub new {
 	my $class = shift;
 	my $jobId = shift;
 	my $step  = shift // "panel";
@@ -88,7 +89,8 @@ sub new {
 	$self->{"profLim"}         = undef;    # panel profile limits
 	$self->{"layerSettings"}   = undef;    # Heklper class with default signal, nc and nonstignal settings
 	$self->{"comments"}        = undef;    # Approval comments
- 
+	$self->{"stackupCode"}     = undef;    # Package parsing used stackup layers
+
 	return $self;
 }
 
@@ -321,21 +323,20 @@ sub StepExist {
 
 # Return if layer existDoesn't load from income for each request
 sub LayerExist {
-	my $self      = shift;
-	my $layerName = shift;
-	my $boardLayers = shift//0;
+	my $self        = shift;
+	my $layerName   = shift;
+	my $boardLayers = shift // 0;
 
 	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
 
 	my @layers = ();
-	
-	if($boardLayers){
-		@layers  = @{ $self->{"baseLayers"} };
-	}else{
+
+	if ($boardLayers) {
+		@layers = @{ $self->{"baseLayers"} };
+	}
+	else {
 		@layers = @{ $self->{"allLayers"} };
 	}
-	
-	 
 
 	my @l = grep { $_->{"gROWname"} eq $layerName } @layers;
 
@@ -541,6 +542,15 @@ sub GetComments {
 	return $self->{"comments"};
 }
 
+# Get stackup code
+sub GetStackupCode {
+	my $self = shift;
+
+	die "DefaultInfo object is not inited" unless ( $self->{"init"} );
+
+	return $self->{"stackupCode"};
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#
@@ -632,8 +642,8 @@ sub __Init {
 	);
 
 	$self->{"comments"} = Comments->new( $inCAM, $self->{"jobId"} );
-
 	
+	$self->{"stackupCode"} = StackupCode->new( $inCAM, $self->{"jobId"});
 
 	$self->{"init"} = 1;
 

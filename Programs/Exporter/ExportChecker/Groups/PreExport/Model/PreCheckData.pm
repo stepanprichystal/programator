@@ -646,7 +646,8 @@ sub __CheckGroupDataBasic {
 				$dataMngr->_AddErrorResult(
 					"Tloušťka DPS v místě stiffeneru",
 					"Není zadaná tloušťka DPS v místě stiffeneru pro vrstvu: "
-					  . $l->{"gROWname"} . " ve stepu: \"$step\"."
+					  . $l->{"gROWname"}
+					  . " ve stepu: \"$step\"."
 					  . " Zadej celkovou tloušťku DPS v místě stiffeneru požadovanou zákazníkem. "
 					  . "Step: \"$step\", vrstva: \""
 					  . $l->{"gROWname"}
@@ -654,6 +655,41 @@ sub __CheckGroupDataBasic {
 
 				);
 			}
+		}
+	}
+
+	# X) Check if X-out required and too big panel
+	{
+		my $pcbType     = $defaultInfo->GetPcbType();
+		my $stackupCode = $defaultInfo->GetStackupCode();
+		if (
+			(
+			      $pcbType eq EnumsGeneral->PcbType_2VFLEX
+			   || $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI
+			   || ( $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO && $stackupCode->GetUsedFlexLayerCnt() >= 2 )
+			)
+			&& $defaultInfo->GetPcbBaseInfo()->{"xout"} =~ /^A$/i
+		  )
+		{
+
+			my %dim = JobDim->GetDimension( $inCAM, $jobId );
+
+			if ( defined $dim{"nasobnost_panelu"} && $dim{"nasobnost_panelu"} ne "" ) {
+
+				# max area of panel if xout 2,2dm
+				my $maxArea = 2.2;
+				my $curArea = sprintf( "%.2f", ( $dim{"panel_x"} * $dim{"panel_y"} ) ) / 10000;
+				if ( $dim{"nasobnost_panelu"} > 10 || ( $dim{"nasobnost_panelu"} > 1 && $curArea > $maxArea ) ) {
+
+					$dataMngr->_AddWarningResult(
+												  "X-out",
+												  "Zákazník požaduje panel bez X-outu a plocha panelu je větší jak 2,2dm2 ($curArea dm2). "
+													. "Ujisti se, jestli panel není možné zmenšit, jinak bude složité takový panel vyrobit bez vadných kusů"
+					);
+
+				}
+			}
+
 		}
 	}
 

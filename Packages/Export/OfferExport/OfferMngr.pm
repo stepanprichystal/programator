@@ -56,24 +56,29 @@ sub Run {
 		my @jobPar = ();
 
 		# KT
-		push(@jobPar, ["konstr_trida",  CamJob->GetJobPcbClass( $inCAM, $jobId )]);
+		push( @jobPar, [ "konstr_trida", CamJob->GetJobPcbClass( $inCAM, $jobId ) ] );
 
 		# Dimension
 		my %dim = JobDim->GetDimension( $inCAM, $jobId );
 
-		push(@jobPar, ["kus_x", $dim{"single_x"}]);
-		push(@jobPar, ["kus_y", $dim{"single_y"}]);
+		#clear old values (there are some constraints nasobnost must bz able devide to nasobnost_panelu)
+		push( @jobPar, [ "nasobnost_panelu",        1 ] );
+		push( @jobPar, [ "nasobnost", "" ] );
+		push( @jobPar, [ "nasobnost_panelu",        "" ] );
+
+		push( @jobPar, [ "kus_x", $dim{"single_x"} ] );
+		push( @jobPar, [ "kus_y", $dim{"single_y"} ] );
 
 		if ( CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) ) {
 
-			push(@jobPar, ["panel_x",$dim{"panel_x"}]);
-			push(@jobPar, ["panel_y", $dim{"panel_y"}]);
-			push(@jobPar, ["nasobnost_panelu", $dim{"nasobnost_panelu"}]);
+			push( @jobPar, [ "panel_x",          $dim{"panel_x"} ] );
+			push( @jobPar, [ "panel_y",          $dim{"panel_y"} ] );
+			push( @jobPar, [ "nasobnost_panelu", $dim{"nasobnost_panelu"} ] );
 
 		}
-		push(@jobPar, ["nasobnost", $dim{"nasobnost"}]);
-		push(@jobPar, ["rozmer_x", $dim{"vyrobni_panel_x"}]);
-		push(@jobPar, ["rozmer_y", $dim{"vyrobni_panel_y"}]);
+		push( @jobPar, [ "nasobnost", $dim{"nasobnost"} ] );
+		push( @jobPar, [ "rozmer_x",  $dim{"vyrobni_panel_x"} ] );
+		push( @jobPar, [ "rozmer_y",  $dim{"vyrobni_panel_y"} ] );
 
 		HegMethods->UpdateOfferSpecification( $jobId, \@jobPar, 1 );
 	}
@@ -85,7 +90,7 @@ sub TaskItemsCount {
 
 	my $totalCnt = 0;
 
-	$totalCnt += 1 if ( $self->{"specifToIS"} );           # OfferStep Created
+	$totalCnt += 1 if ( $self->{"specifToIS"} );    # OfferStep Created
 
 	return $totalCnt;
 

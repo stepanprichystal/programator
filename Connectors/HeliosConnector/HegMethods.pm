@@ -359,6 +359,7 @@ sub GetBasePcbInfo {
 				 d.lak_typ,
 				 d.stiffener,
 				 d.coverlay,
+				 d.xout,
 				 z.pooling,
 				 d.stav
 				 from lcs.desky_22 d with (nolock)

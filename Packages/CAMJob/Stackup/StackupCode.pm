@@ -27,6 +27,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Polygon::Features::Features::Features';
+
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
@@ -35,7 +36,7 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 	bless $self;
-	
+
 	$self->{"inCAM"}   = shift;
 	$self->{"jobId"}   = shift;
 	$self->{"step"}    = shift // "panel";
@@ -44,8 +45,8 @@ sub new {
 	# Properties
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"pcbType"}  = JobHelper->GetPcbType($self->{"jobId"});
-	$self->{"isFlex"}   = JobHelper->GetIsFlex($self->{"jobId"});
+	$self->{"pcbType"}  = JobHelper->GetPcbType( $self->{"jobId"} );
+	$self->{"isFlex"}   = JobHelper->GetIsFlex( $self->{"jobId"} );
 
 	if ( $self->{"layerCnt"} > 2 && !defined $self->{"stackup"} ) {
 
@@ -101,6 +102,62 @@ sub GetStackupCode {
 	}
 
 	return $code;
+}
+
+# Return number of used (not empty) rigid layer
+sub GetUsedRigidLayerCnt {
+	my $self  = shift;
+	my $outer = shift // 1;
+	my $inner = shift // 1;
+
+	my $code = $self->GetStackupCode();
+
+	my ( $xRi, $yRi, $zRi ) = 0;
+
+	my $cnt = 0;
+
+	if ( $code =~ /^(\d+)Ri-\d+F$/i ) {
+
+		$cnt += 1 if ($outer);
+		$cnt += $1 - 1 if ($inner);
+	}
+	elsif ( $code =~ /^(\d+)Ri-\d+F-(\d+)Ri$/i ) {
+
+		# Top Ri
+		$cnt += 1 if ($outer);
+		$cnt += $1 - 1 if ($inner);
+
+		# Bot Ri
+		$cnt += 1 if ($outer);
+		$cnt += $2 - 1 if ($inner);
+	}
+
+	return $cnt;
+}
+
+# Return number of used (not empty) flex layer
+sub GetUsedFlexLayerCnt {
+	my $self  = shift;
+	my $outer = shift // 1;
+	my $inner = shift // 1;
+
+	my $code = $self->GetStackupCode();
+
+	my ( $xRi, $yRi, $zRi ) = 0;
+
+	my $cnt = 0;
+
+	if ( $code =~ /^\d+Ri-(\d+)F$/i ) {
+
+		$cnt += 1 if ($outer);
+		$cnt += $1 - 1 if ($inner);
+	}
+	elsif ( $code =~ /^\d+Ri-(\d+)F-\d+Ri$/i ) {
+
+		$cnt += $1 if ($inner);
+	}
+
+	return $cnt;
 }
 
 sub __Get2VCode {
@@ -295,12 +352,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "x68938";
+	my $jobId = "d288054";
 
 	my $stckpCode = StackupCode->new( $inCAM, $jobId );
-	my $c = $stckpCode->GetStackupCode(1);
+	my $c = $stckpCode->GetUsedRigidLayerCnt( 0, 1 );
+	my $c2 = $stckpCode->GetUsedFlexLayerCnt( 1, 0 );
 
-	print $c;
+	print "Rigid: " . $c . "\n";
+	print "Flex: " . $c2 . "\n";
 
 }
 
