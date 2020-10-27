@@ -173,28 +173,28 @@ sub __OnClearAllHndl {
 
 	if ( scalar( $layout->GetAllComments ) ) {
 
-#		my $messMngr = $self->{"form"}->GetMessMngr();
-#
-#		my @mess = ();
-#
-#		push( @mess, "You are about to clear all comments:\n" );
-#		push( @mess, " 1) First, all coments will be archived in: " . $self->{"comments"}->GetCommArchiveDir() );
-#		push( @mess, " 2) All coments will be removed from viewer" );
-#		push( @mess, " 3) You can restore last cleared comments by click on Restore button (activ3e only if Comemnt list is empty)" );
-#		push( @mess, "\n\nDo you want continue?" );
-#
-#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "No", "Yes, archive and clear comments" ] );    #  Script is stopped
-#
-#		if ( $messMngr->Result() == 1 ) {
+	   #		my $messMngr = $self->{"form"}->GetMessMngr();
+	   #
+	   #		my @mess = ();
+	   #
+	   #		push( @mess, "You are about to clear all comments:\n" );
+	   #		push( @mess, " 1) First, all coments will be archived in: " . $self->{"comments"}->GetCommArchiveDir() );
+	   #		push( @mess, " 2) All coments will be removed from viewer" );
+	   #		push( @mess, " 3) You can restore last cleared comments by click on Restore button (activ3e only if Comemnt list is empty)" );
+	   #		push( @mess, "\n\nDo you want continue?" );
+	   #
+	   #		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "No", "Yes, archive and clear comments" ] );    #  Script is stopped
+	   #
+	   #		if ( $messMngr->Result() == 1 ) {
 
-			# Remove comments from list
+		# Remove comments from list
 
-			$self->{"comments"}->ClearCoomments();
+		$self->{"comments"}->ClearCoomments();
 
-			$self->{"form"}->RefreshCommListViewForm($layout);
-			$self->{"form"}->RefreshCommViewForm(-1);
+		$self->{"form"}->RefreshCommListViewForm($layout);
+		$self->{"form"}->RefreshCommViewForm(-1);
 
-#		}
+		#		}
 
 	}
 
@@ -405,35 +405,53 @@ sub __OnAddFileHndl {
 
 	my $p = "";
 	my $res;
-	if ( $addCAM || $addCAMDir ) {
 
-		$res = $self->{"comments"}->SnapshotCAM( $addCAMDir, \$p );
-	}
-	elsif ($addGS) {
+	# Process snapshots
+	if ( $addCAM || $addCAMDir || $addGS ) {
 
-		# Check if exist green shot
-		if ( -e CommEnums->Path_GREENSHOT ) {
-			$res = $self->{"comments"}->SnapshotGS( \$p );
+		if ( $addCAM || $addCAMDir ) {
+
+			$res = $self->{"comments"}->SnapshotCAM( $addCAMDir, \$p );
 		}
-		else {
-			$res = 0;
-			$messMngr->ShowModal(
-								  -1,
-								  EnumsGeneral->MessageType_WARNING,
-								  [
-									 "Nelze použít aplikaci GreenShot.",
-									 "Aplikace musí být nainstalovaná na následující cestě: " . CommEnums->Path_GREENSHOT
-								  ]
-			);
-		}
+		elsif ($addGS) {
 
+			# Check if exist green shot
+			if ( -e CommEnums->Path_GREENSHOT ) {
+				$res = $self->{"comments"}->SnapshotGS( \$p );
+			}
+			else {
+				$res = 0;
+				$messMngr->ShowModal(
+									  -1,
+									  EnumsGeneral->MessageType_WARNING,
+									  [
+										 "Nelze použít aplikaci GreenShot.",
+										 "Aplikace musí být nainstalovaná na následující cestě: " . CommEnums->Path_GREENSHOT
+									  ]
+				);
+			}
+
+		}
+		$self->{"form"}->ShowFrm();
+		unless ($res) {
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during create/attach file or image"] );    #  Script is stopped
+		}
 	}
+	# Process file attach
 	elsif ($addFile) {
+		
 		$res = $self->{"comments"}->ChooseFile( \$p, $self->{"form"}->{"mainFrm"} );
+
+		# No spaces alowed
+		if ( $p =~ /\s/ ) {
+
+			$res = 0;
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["File name has to be without spaces and diacritics"] );   #  Script is stopped
+		}
 	}
 
-	$self->{"form"}->ShowFrm() if ( $addCAM || $addGS );
 
+	# Store result
 	if ($res) {
 
 		my $custName = undef;
@@ -452,10 +470,6 @@ sub __OnAddFileHndl {
 
 		# Refresh Comm list
 		$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
-	}
-	else {
-
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during create snapshot"] );    #  Script is stopped
 	}
 
 }

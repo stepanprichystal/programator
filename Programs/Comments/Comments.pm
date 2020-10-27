@@ -622,11 +622,11 @@ sub __AddDefaultComm {
 	my $commCnt = scalar( $self->{"commLayout"}->GetAllComments() );
 
 	$self->SetText( $commCnt - 1, "" );
-	my $p = "";
-	if ( $self->SnapshotCAM( 1, \$p ) ) {
-
-		$self->AddFile( $commCnt - 1, "", $p );
-	}
+#	my $p = "";
+#	if ( $self->SnapshotCAM( 1, \$p ) ) {
+#
+#		$self->AddFile( $commCnt - 1, "", $p );
+#	}
 
 }
 

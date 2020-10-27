@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
@@ -45,7 +46,8 @@ use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::CAMJob::ViaFilling::ViaFillingCheck';
 use aliased 'Packages::Polygon::Features::Features::Features';
-
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => 'FiltrEnums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -771,6 +773,103 @@ sub OnCheckGroupData {
 
 					);
 				}
+			}
+		}
+	}
+
+	# 26) Check if one sided coverlay didn't coverl through holes.
+	# If so HAL (Pb and Pb free) surface is not possible
+	# If coverlay cover trhoug layer from both side, it is ok
+	if (
+		 $defaultInfo->GetPcbThick() > 100
+		 && (    $defaultInfo->LayerExist( "cvrlc", 1 )
+			  || $defaultInfo->LayerExist( "cvrls", 1 ) )
+		 && $defaultInfo->GetPcbSurface() =~ /^[AB]$/i
+	  )
+	{
+
+		# If exist coverlay pins, it means, only flex part without holes is covered by coverlay, thus no check
+		unless ( $defaultInfo->LayerExist( "cvrpin", 1 ) ) {
+
+			my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+			my @lThrough =   grep {
+				     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
+				  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
+			} $defaultInfo->GetNCLayers();
+
+			my @lCvrlsF = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }
+			  $defaultInfo->GetNCLayers();
+
+			foreach my $step (@childs) {
+
+				# Prepare helper coverlay from TOP and from BOT and do union
+				# to ensure through hole are fully covered or fully opened from both coverlay sides
+				my $cvrlUnion = GeneralHelper->GetGUID();
+
+				my @lCvrlsAll =
+				  map { $_->{"gROWname"} }
+				  grep { $_->{"gROWname"} =~ /[cs]/ && $_->{"gROWlayer_type"} eq "coverlay" } $defaultInfo->GetBoardBaseLayers();
+				
+				
+				my @preparedCvrl = ();
+				foreach my $lCvrl (@lCvrlsAll) {
+
+					my $lCvrlSide = CamLayer->FilledProfileLim( $inCAM, $jobId, $step );    # simulate coverlay layer form specific side
+					my $routCvrl = GeneralHelper->GetGUID();                            # all coverlay rout from specifis side
+
+					my @lCvrlsFTmp =
+					  ( grep { $_->{"gROWdrl_start"} eq $lCvrl && $_->{"gROWdrl_end"} eq $lCvrl } @lCvrlsF )[0];
+					foreach my $lCvrlF (@lCvrlsFTmp) {
+
+						my $lTmp = CamLayer->RoutCompensation( $inCAM, $lCvrlF->{"gROWname"}, "document" );
+						$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $routCvrl );
+						CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+					}
+
+					$inCAM->COM( "merge_layers", "source_layer" => $routCvrl, "dest_layer" => $lCvrlSide, "invert" => "yes" );
+					CamMatrix->DeleteLayer( $inCAM, $jobId, $routCvrl );
+					CamLayer->Contourize( $inCAM, $lCvrlSide );
+
+					$inCAM->COM( "merge_layers", "source_layer" => $lCvrlSide, "dest_layer" => $cvrlUnion, "invert" => "no" );
+
+					CamMatrix->DeleteLayer( $inCAM, $jobId, $lCvrlSide );
+				}
+
+				foreach my $lNC (@lThrough) {
+					my $routL = GeneralHelper->GetGUID();
+
+					if ( $lNC->{"gROWlayer_type"} eq "rout" ) {
+
+						my $lTmp = CamLayer->RoutCompensation( $inCAM, $lNC->{"gROWname"}, "document" );
+						$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $routL );
+						CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+					}
+					else {
+						$inCAM->COM( "merge_layers", "source_layer" => $lNC->{"gROWname"}, "dest_layer" => $routL );
+					}
+
+					# Do check if all through hole are uncovered
+					my $f = FeatureFilter->new( $inCAM, $jobId, $routL );
+
+					$f->SetRefLayer($cvrlUnion);
+					$f->SetReferenceMode( FiltrEnums->RefMode_TOUCH );
+
+					if ( $f->Select() ) {
+						$dataMngr->_AddErrorResult(
+								   "Odkryté otvory v coverlay",
+								   "Pokud je povrchová úprava HAL, "
+									 . "DPS nesmí obsahovat otvory/frézu skrz, která je z jedná strany zakrytá coverlay a z druhé odkrytá. "
+									 . "Ve stepu: \"$step\", ve vrstvě: \"".$lNC->{"gROWname"}."\" jsou otvory/pojezdy zakryty coverlay jen z jedné strany. "
+									 . "Plně zakryj nebo plně odkryj otvory/pojezdy coverlaym z obou stran, jinak dojde k delaminaci coverlay po úpravě HALem"
+						);
+					}
+
+					# Remove rout layer
+					CamMatrix->DeleteLayer( $inCAM, $jobId, $routL );
+				}
+
+				# Remove coverlay union
+				CamMatrix->DeleteLayer( $inCAM, $jobId, $cvrlUnion );
 			}
 		}
 	}

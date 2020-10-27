@@ -73,7 +73,10 @@ sub GetFileSufix {
 sub GetFilePath {
 	my $self = shift;
 
-	return $self->{"filePath"};
+	my $f = $self->{"filePath"};
+
+	$f =~ s/\ /\\\ /g;
+	return $f;
 
 }
 

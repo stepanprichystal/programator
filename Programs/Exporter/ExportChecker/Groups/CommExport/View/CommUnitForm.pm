@@ -45,6 +45,7 @@ use constant APPROVAL_OFFERDONE => "Offer DONE";
 use constant APPROVAL_OFFERPROC => "Offer PROCESSING";
 use constant APPROVAL_JOBDONE   => "Job DONE";
 use constant APPROVAL_JOBPROC   => "Job PROCESSING";
+use constant APPROVAL_JOBPTOSALES   => "Job RETURN TO SALES";
 
 sub new {
 	my $class  = shift;
@@ -95,7 +96,7 @@ sub __SetLayout {
 
 	}
 	else {
-		push( @types, APPROVAL_JOBDONE, APPROVAL_JOBPROC );
+		push( @types, APPROVAL_JOBDONE, APPROVAL_JOBPROC, APPROVAL_JOBPTOSALES );
 	}
 
 	my $approvalTypeCb = Wx::ComboBox->new( $self, -1, $types[0], &Wx::wxDefaultPosition, [ 140, -1 ], \@types, &Wx::wxCB_READONLY );
@@ -150,7 +151,7 @@ sub __SetLayoutStatus {
 	my $changeOrderStatusChb = Wx::CheckBox->new( $statBox, -1, "Change", &Wx::wxDefaultPosition, [ -1, -1 ] );
 
 	my $orderStatusTxt = Wx::StaticText->new( $statBox, -1, "Status", &Wx::wxDefaultPosition, [ -1, -1 ] );
-	my @statuses = ( EnumsIS->CurStep_HOTOVOODSOUHLASIT, EnumsIS->CurStep_POSLANDOTAZ, EnumsIS->CurStep_NOVADATA );
+	my @statuses = ( EnumsIS->CurStep_HOTOVOODSOUHLASIT, EnumsIS->CurStep_POSLANDOTAZ, EnumsIS->CurStep_NOVADATA, EnumsIS->CurStep_VRACENONAOU );
 	my $orderStatusCb =
 	  Wx::ComboBox->new( $statBox, -1, $statuses[0], &Wx::wxDefaultPosition, [ 70, -1 ], \@statuses, &Wx::wxCB_READONLY );
 
@@ -217,7 +218,7 @@ sub __SetLayoutEmail {
 		push( @subject, MailEnums->Subject_OFFERFINIFHAPPROVAL, MailEnums->Subject_OFFERPROCESSAPPROVAL );
 	}
 	else {
-		push( @subject, MailEnums->Subject_JOBFINIFHAPPROVAL, MailEnums->Subject_JOBPROCESSAPPROVAL );
+		push( @subject, MailEnums->Subject_JOBFINIFHAPPROVAL, MailEnums->Subject_JOBPROCESSAPPROVAL, MailEnums->Subject_JOBRETURNTOSALES );
 	}
 
 	my $emailSubjectCb =
@@ -368,7 +369,17 @@ sub __OnApprovalTypeChange {
 
 		# status
 		$self->{"orderStatusCb"}->SetValue( EnumsIS->CurStep_POSLANDOTAZ );
+	
 	}
+	elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBPTOSALES ) {
+
+		$self->{"changeOrderStatusChb"}->SetValue(1);
+
+		# status
+		$self->{"orderStatusCb"}->SetValue( EnumsIS->CurStep_VRACENONAOU );
+	}
+	
+	
 
 	# Set email by approval type
 	if ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBDONE ) {
@@ -442,8 +453,39 @@ sub __OnApprovalTypeChange {
 
 		# clear comments
 		$self->{"clearCommentsChb"}->SetValue(1);
-	}
-	elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_OFFERDONE ) {
+	
+	}elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBPTOSALES ) {
+
+		# export email
+		$self->{"exportEmailChb"}->SetValue(1);
+		$self->{"exportEmailEvt"}->Do( $self->{"exportEmailChb"}->GetValue() );    # SetValue doesn't emmit event
+
+		# email action
+		$self->{"emailActionSentRb"}->SetValue(1);
+
+		# adress To
+		$self->{"emailToAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATSALES );
+
+		# adress CC
+		$self->{"emailCCAddressCtrl"}->SetValue("");
+
+		# subject
+		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_JOBRETURNTOSALES );
+
+		# introduction
+		$self->{"emailIntroRTxt"}->Clear();
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( MailEnums->Subject_JOBRETURNTOSALES) );
+
+		# include offer data
+		$self->{"includeOfferInfChb"}->SetValue(0);
+
+		# include offer steckup
+		$self->{"includeOfferStckpChb"}->SetValue(0);
+
+		# clear comments
+		$self->{"clearCommentsChb"}->SetValue(1);
+
+	}elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_OFFERDONE ) {
 
 		# export email
 		$self->{"exportEmailChb"}->SetValue(1);

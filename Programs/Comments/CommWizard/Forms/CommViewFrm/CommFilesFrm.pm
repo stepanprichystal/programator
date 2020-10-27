@@ -140,7 +140,7 @@ sub __AddFile {
 		$p = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\file.png";
 	}
 
-	my $im = Wx::Image->new( $p, &Wx::wxBITMAP_TYPE_PNG );
+	my $im = Wx::Image->new( $p, &Wx::wxBITMAP_TYPE_ANY );
 
 	use constant MAXIMGW => 690;    # 500px
 	use constant MAXIMGH => 270;    # 500px

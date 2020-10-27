@@ -227,6 +227,8 @@ sub GetDefaultIntro {
 	$helloTbl{ Enums->Subject_JOBFINIFHAPPROVAL }{"cz"}    = "Ahoj";                     # email goes to sales
 	$helloTbl{ Enums->Subject_JOBPROCESSAPPROVAL }{"en"}   = "Dear customer";            # email goes to customer
 	$helloTbl{ Enums->Subject_JOBPROCESSAPPROVAL }{"cz"}   = "Vážený zákazníku";    # email goes to customer
+	$helloTbl{ Enums->Subject_JOBRETURNTOSALES }{"en"}     = "Ahoj";                     # email goes to sales
+	$helloTbl{ Enums->Subject_JOBRETURNTOSALES }{"cz"}     = "Ahoj";                     # email goes to sales
 	$helloTbl{ Enums->Subject_OFFERFINIFHAPPROVAL }{"en"}  = "Ahoj";                     # email goes to sales
 	$helloTbl{ Enums->Subject_OFFERFINIFHAPPROVAL }{"cz"}  = "Ahoj";                     # email goes to sales
 	$helloTbl{ Enums->Subject_OFFERPROCESSAPPROVAL }{"en"} = "Dear customer";            # email goes to customer
@@ -282,6 +284,18 @@ sub GetDefaultIntro {
 
 		}
 	}
+	elsif ( $subjectType eq Enums->Subject_JOBRETURNTOSALES ) {
+
+		# Go to Gatema customer
+
+		if ( $self->{"lang"} eq "cz" || $self->{"lang"} eq "en" ) {
+
+			$intro .= "vracím zakázku na OÚ a prosím o dořešení následujích komentářů:";
+
+		}
+	}
+	
+	return $intro;
 
 }
 
@@ -299,6 +313,8 @@ sub __GetSubjectByType {
 	$sub{ Enums->Subject_JOBFINIFHAPPROVAL }{"cz"}    = "Odsouhlasení před výrobou";    #"odsouhlasení před zahájením výroby";
 	$sub{ Enums->Subject_JOBPROCESSAPPROVAL }{"en"}   = "Technical question";
 	$sub{ Enums->Subject_JOBPROCESSAPPROVAL }{"cz"}   = "Technický dotaz";                #"technický dotaz";
+	$sub{ Enums->Subject_JOBRETURNTOSALES }{"en"}     = "Zakázka vrácena na OÚ";        # zakázka vrácena na oú
+	$sub{ Enums->Subject_JOBRETURNTOSALES }{"cz"}     = "Zakázka vrácena na OÚ";        # zakázka vrácena na oú
 	$sub{ Enums->Subject_OFFERFINIFHAPPROVAL }{"en"}  = "RFQ approval";
 	$sub{ Enums->Subject_OFFERFINIFHAPPROVAL }{"cz"}  = "RFQ odsouhlasení";               #"Poptávka hotovo";
 	$sub{ Enums->Subject_OFFERPROCESSAPPROVAL }{"en"} = "RFQ - technical question";
@@ -363,8 +379,6 @@ sub __GetBody {
 		my $messSngl = "";
 
 		my $listTag = "-";
-
- 
 
 		$listTag = ( $i + 1 ) . ") ";
 

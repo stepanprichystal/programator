@@ -5,6 +5,7 @@ package Programs::Comments::CommMail::Enums;
 use constant {
 			   Subject_JOBFINIFHAPPROVAL    => "Approval before production",
 			   Subject_JOBPROCESSAPPROVAL   => "Technical question",
+			   Subject_JOBRETURNTOSALES     => "Returned to sales",
 			   Subject_OFFERFINIFHAPPROVAL  => "RFQ approval",
 			   Subject_OFFERPROCESSAPPROVAL => "RFQ technical question"
 };
