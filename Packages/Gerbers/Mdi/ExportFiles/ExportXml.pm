@@ -213,7 +213,7 @@ sub __ExportXml {
 		elsif ( $clr =~ /M/i ) {
 			$power = 240;    # blue
 		}
-		elsif ( $clr =~ /W/i ) {
+		elsif ( $clr =~ /[WX]/i ) {
 			$power = 220;    # white
 		}
 		elsif ( $clr =~ /R/i ) {
