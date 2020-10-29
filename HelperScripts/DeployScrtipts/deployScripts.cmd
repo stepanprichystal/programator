@@ -23,12 +23,12 @@ cd %deploypath%
 git checkout master 
 
 
-git log -1 --pretty=medium > c:\delete\lastcommit
+git log -1 --pretty=medium > %gitlogbefore%
 
 git fetch --all
 git reset --hard origin/master
 
-git log -10 --pretty=medium  > c:\delete\last10commit
+git log -10 --pretty=medium  > %gitlogafter%
 
 :: If there are some differences in GIT logs send mail to TPV
 SET mailscript=SendMailScript.pl

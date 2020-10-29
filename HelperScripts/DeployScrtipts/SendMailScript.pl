@@ -35,6 +35,11 @@ if ( -e $commitBeforeP && -e $commitAfterP ) {
 	unlink($commitAfterP);
 
 }
+else {
+
+	print STDERR "Log file: $commitBeforeP doesn't exists" unless ( -e $commitBeforeP );
+	print STDERR "Log file: $commitAfterP doesn't exists"  unless ( -e $commitAfterP );
+}
 
 # Sent via MIME::Lite
 sub __Sent {
@@ -66,8 +71,13 @@ sub __Sent {
 	#my $body = "Ahoj, \n\n";
 
 	my $text = __GetChanges( $commitBeforeP, $commitAfterP );
+	if ( !defined $text ) {
 
-	return 0 if ( !defined $text );
+		print STDERR "No new commits\n";
+		return 0;
+
+	}
+
 	$body .= $text;
 	$body .= "\n\n" . "---\nToto je automaticky email vygenerovany pri spusteni prikazu GIT FETCH\n\n";
 	$body .= "GIT - version control system";
@@ -76,7 +86,8 @@ sub __Sent {
 		From => $from,
 
 		To => join( ", ", @{$to} ),
-		                               #To  => 'stepan.prichystal@gatema.cz',
+
+		#To  => 'stepan.prichystal@gatema.cz',
 		Bcc => 'stepan.prichystal@gatema.cz',    # TODO temporary for testing
 
 		Subject => encode( "UTF-8", $subject ),  # Encode must by use if subject with diacritics
@@ -90,9 +101,9 @@ sub __Sent {
 	$msg->attach(
 		Type => 'TEXT',
 
-		#				  Data => encode( "UTF-8", $body ) );
+		Data => encode( "UTF-8", $body )
 
-		Data => $body
+		  #Data => $body
 	);
 
 	my $result = $msg->send( 'smtp', EnumsPaths->URL_GATEMASMTP );
