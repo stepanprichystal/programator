@@ -23,12 +23,12 @@ cd %deploypath%
 git checkout master 
 
 
-git log -1 --pretty=medium > %gitlogbefore%
+git log -1 --name-status > %gitlogbefore%
 
 git fetch --all
 git reset --hard origin/master
 
-git log -10 --pretty=medium  > %gitlogafter%
+git log -10 --name-status  > %gitlogafter%
 
 :: If there are some differences in GIT logs send mail to TPV
 SET mailscript=SendMailScript.pl

@@ -464,22 +464,22 @@ sub GetHybridMatCode {
 	my $matCode = undef;
 
 	if (    scalar( grep { $_ =~ /(PYRALUX)/i } @{$matKinds} )
-		 && scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @{$matKinds} ) )
+		 && scalar( grep { $_ =~ /(FR4)|(IS400)|(PCL370)/i } @{$matKinds} ) )
 	{
 		$matCode = EnumsDrill->HYBRID_PYRALUX__FR4;
 	}
 	elsif (    scalar( grep { $_ =~ /(RO3)/i } @{$matKinds} )
-			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @{$matKinds} ) )
+			&& scalar( grep { $_ =~ /(FR4)|(IS400)|(PCL370)/i } @{$matKinds} ) )
 	{
 		$matCode = EnumsDrill->HYBRID_RO3__FR4;
 	}
 	elsif (    scalar( grep { $_ =~ /(RO4)/i } @{$matKinds} )
-			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @{$matKinds} ) )
+			&& scalar( grep { $_ =~ /(FR4)|(IS400)|(PCL370)/i } @{$matKinds} ) )
 	{
 		$matCode = EnumsDrill->HYBRID_RO4__FR4;
 	}
 	elsif (    scalar( grep { $_ =~ /(R58X0)/i } @{$matKinds} )
-			&& scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @{$matKinds} ) )
+			&& scalar( grep { $_ =~ /(FR4)|(IS400)|(PCL370)/i } @{$matKinds} ) )
 	{
 		$matCode = EnumsDrill->HYBRID_R58X0__FR4;
 

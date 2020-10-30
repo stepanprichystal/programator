@@ -643,7 +643,7 @@ sub __Init {
 
 	$self->{"comments"} = Comments->new( $inCAM, $self->{"jobId"} );
 	
-	$self->{"stackupCode"} = StackupCode->new( $inCAM, $self->{"jobId"});
+	$self->{"stackupCode"} = StackupCode->new( $inCAM, $self->{"jobId"}, $self->{"step"});
 
 	$self->{"init"} = 1;
 

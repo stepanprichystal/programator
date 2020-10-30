@@ -79,8 +79,8 @@ sub __Sent {
 	}
 
 	$body .= $text;
-	$body .= "\n\n" . "---\nToto je automaticky email vygenerovany pri spusteni prikazu GIT FETCH\n\n";
-	$body .= "GIT - version control system";
+	$body .= "\n\n" . "---\nGIT";
+
 
 	my $msg = MIME::Lite->new(
 		From => $from,
@@ -152,7 +152,7 @@ sub __GetChanges {
 
 			if ( $l =~ /^commit\s(\w+)/ ) {
 
-				$text .= $i . ") ------------------------------------------------------------------------\n";
+				$text .= $i . ") -------------------------------------------------------\n";
 				$i++;
 			}
 			else {
