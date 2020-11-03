@@ -46,7 +46,6 @@ sub CreateFakeLayers {
 	my $step = "panel";
 
 	my @fake = ();
-	
 
 	$self->RemoveFakeLayers( $inCAM, $jobId, $step );
 
@@ -288,6 +287,26 @@ sub __CreateFakePLGLayers {
 
 		$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => $step, "pcb" => 'o+1', "scheme" => $schema );
 
+		#	CamLayer->AffectLayers( $inCAM, $jobId, \@fakeLayers );
+		my $f = FeatureFilter->new( $inCAM, $jobId, undef, \@fakeLayers );
+		$f->AddIncludeSymbols( [ "cross_outer", "cross_outer_x" ] );
+		if ( $f->Select() ) {
+			$inCAM->COM("sel_invert");
+		}
+		CamLayer->ClearLayers($inCAM);
+
+		# Copy frame from c to plgc
+		my $f2 = FeatureFilter->new( $inCAM, $jobId, "c" );
+		$f2->AddIncludeAtt( ".pnl_place", "PCBF*" );
+		$f2->AddIncludeAtt( ".pnl_place", "Punch*" );
+		$f2->SetIncludeAttrCond( EnumsFiltr->Logic_OR );
+		if ( $f2->Select() ) {
+
+			CamLayer->CopySelOtherLayer( $inCAM, \@fakeLayers );
+
+		}
+		CamLayer->ClearLayers($inCAM);
+
 	}
 
 	return @fakeLayers;
@@ -520,10 +539,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d284944";
+	my $jobId    = "d296630";
 	my $stepName = "panel";
 
 	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
+
 	#FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
 
 }

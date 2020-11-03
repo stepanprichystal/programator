@@ -121,7 +121,7 @@ sub Build {
 	if ( $self->_IsRequire("gold_c") && $self->_IsRequire("gold_s") ) {
 
 		# comment
-		$section->AddComment("Plocha Cu odmaskovane dps");
+		$section->AddComment("Plocha Cu odmaskovane dps [cm2]");
 	}
 
 	#gold_c
