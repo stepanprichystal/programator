@@ -17,6 +17,8 @@ use constant {
 	LType_GOLDFINGER => "goldfinger",
 	
 	LType_PEELABLE => "peelableMask",
+	
+	LType_VIAFILL => "viaFill",
  
 	LType_ALL => "allTypes"
 };

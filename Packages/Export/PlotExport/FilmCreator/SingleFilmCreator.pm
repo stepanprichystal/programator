@@ -78,7 +78,11 @@ sub __BuildRules {
 
 	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
 	$rule->AddSingleTypes( Enums->LType_GOLDFINGER );
-
+	
+	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL );
+	$rule->AddSingleTypes( Enums->LType_VIAFILL );	
+	
+	
 	# add PEELABLE layers only  if is not already used in result set created by "multiCreator"
 
 	$rule = $self->_AddRule( Enums->Ori_HORIZONTAL, 1 );

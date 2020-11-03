@@ -261,6 +261,10 @@ sub __AddLayerTypes {
 			$l->{"plotType"} = Enums->LType_PEELABLE;
 
 		}
+		elsif ( $l->{"name"} =~ /^plg[cs]$/i ) {
+
+			$l->{"plotType"} = Enums->LType_VIAFILL;
+		}
 		else {
 
 			$l->{"plotType"} = Enums->LType_ALL;
