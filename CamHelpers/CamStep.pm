@@ -304,7 +304,7 @@ sub GetReferenceStep {
 # Get all edit steps in DPS
 # Edit steps means all leaf child steps in final production panel
 # If exist Panel steps, get deepsest step in panel
-# If panel step doesnt exist, return all step with name in format: \w+_\+1
+# If panel step doesnt exist, return all step with name in format: \w+\+1
 sub GetJobEditSteps {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -316,7 +316,7 @@ sub GetJobEditSteps {
 		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 	}
 	else {
-		@steps = grep { $_ =~ /^\w+_\+1$/ } $self->GetAllStepNames( $inCAM, $jobId );
+		@steps = grep { $_ =~ /^\w+\+1$/ } $self->GetAllStepNames( $inCAM, $jobId );
 	}
 	return @steps;
 }
