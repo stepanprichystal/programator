@@ -439,24 +439,6 @@ sub CheckDirTop2Bot {
 		}
 	}
 
-	# Check plated through blind layer if start and end not in c/s layer
-	my @layers4 = grep { $_->{"gROWname"} =~ /\d/ } $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
-
-	foreach my $l (@layers4) {
-
-		my $lName = $l->{"gROWname"};
-
-		if ( $l->{"NCSigStart"} eq "c" ) {
-			$result = 0;
-			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to start in layer \"c\"\n";
-		}
-
-		if ( $l->{"NCSigEnd"} eq "s" ) {
-			$result = 0;
-			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to end in layer \"s\"\n";
-		}
-	}
-
 	return $result;
 
 }
@@ -504,7 +486,8 @@ sub CheckDirBot2Top {
 		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill && $dir && $dir eq "bot2top" ) {
 
 			$result = 0;
-			$$mess .= "Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
+			$$mess .=
+"Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
 
 		}
 	}
@@ -571,6 +554,45 @@ sub CheckDrillStartStop {
 		if ( $l->{"NCThroughSig"} ) {
 			$result = 0;
 			$$mess .= "Layer $lName can't start or stop or go through signal layers in matrix.\n";
+		}
+	}
+
+	# Check plated through layer if start in c and not end in inner layer
+	my @layers3 = grep { $_->{"gROWname"} !~ /\d+$/ }
+	  $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_nFillDrill ] );
+
+	foreach my $l (@layers3) {
+
+		my $lName = $l->{"gROWname"};
+
+		if ( $l->{"NCSigStart"} ne "c" ) {
+			$result = 0;
+			$$mess .= "Plated through NC layer \"" . $lName . "\" has to start in layer \"c\"\n";
+		}
+
+		if ( $l->{"NCSigEnd"} =~ /v\d+/ ) {
+			$result = 0;
+			$$mess .= "Plated through NC layer \"" . $lName . "\" can not to end in  inner layer \"".$l->{"NCSigEnd"}."\"\n";
+		}
+	}
+
+
+	# Check plated through blind layer if start and end not in c/s layer
+	my @layers4 = grep { $_->{"gROWname"} =~ /\d+$/ }
+	  $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_nFillDrill ] );
+
+	foreach my $l (@layers4) {
+
+		my $lName = $l->{"gROWname"};
+
+		if ( $l->{"NCSigStart"} eq "c" ) {
+			$result = 0;
+			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to start in layer \"c\"\n";
+		}
+
+		if ( $l->{"NCSigEnd"} eq "s" ) {
+			$result = 0;
+			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to end in layer \"s\"\n";
 		}
 	}
 

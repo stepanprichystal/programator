@@ -268,11 +268,9 @@ sub __GenerateSingle {
 	my $jobId = $self->{"jobId"};
 
 	# coupon layers
-	my @layers = map { $_->{"gROWname"} } CamJob->GetBoardBaseLayers( $inCAM, $jobId );    # silks, mask, signal
-	push( @layers, "m" );                                                                  # Drill
-
+	my @layers = keys %{$layersLayout};    # silks, mask, signal
+ 
 	# Create step
-
 	if ( CamHelper->StepExists( $inCAM, $jobId, $stepName ) ) {
 		CamStep->DeleteStep( $inCAM, $jobId, $stepName );
 	}
