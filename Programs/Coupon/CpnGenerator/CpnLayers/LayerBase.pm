@@ -28,6 +28,10 @@ sub new {
 	#require rows in nif section
 	$self->{"layerName"} = shift;
 
+	# determines order of drawing in group of other layers
+	# Smaller number means higher priority
+	$self->{"drawPriority"} = shift;
+
 	$self->{"inCAM"} = undef;
 	$self->{"jobId"} = undef;
 	$self->{"step"}  = undef;
@@ -50,6 +54,16 @@ sub GetLayerName {
 	my $self = shift;
 
 	return $self->{"layerName"};
+}
+
+# determines order of drawing in group of other layers
+# Smaller number means higher priority
+sub GetDrawPriority {
+	my $self = shift;
+
+	die "Layer draw order priority is not defined" unless(defined $self->{"drawPriority"});
+
+	return $self->{"drawPriority"};
 }
 
 sub Draw {
@@ -77,7 +91,7 @@ sub _InvertPolar {
 		  : DrawEnums->Polar_POSITIVE;
 	}
 	else {
-		
+
 		return $polarity;
 	}
 }

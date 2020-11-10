@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Coated upper embedded builder
+# Description: Coated lower embedded builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded;
+package Programs::Coupon::CpnGenerator::ModelBuilders::CoatedLowerEmbedded;
 use base('Programs::Coupon::CpnGenerator::ModelBuilders::ModelBuilderBase');
 
 use Class::Interface;
@@ -55,7 +55,7 @@ sub Build {
 
 	# Info from constrain XML
 	my $trackL = $layout->GetTrackLayer();
-	my $gndL   = $layout->GetBotRefLayer();
+	my $gndL   = $layout->GetTopRefLayer();
 
 	# Build coupon layers
 

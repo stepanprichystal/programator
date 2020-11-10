@@ -34,7 +34,8 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $drawPriority = 13;
+	my $self  = $class->SUPER::new(@_, $drawPriority);
 	bless $self;
 
 	return $self;

@@ -27,7 +27,8 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePolyline';
 
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $drawPriority = 1;
+	my $self  = $class->SUPER::new(@_, $drawPriority);
 	bless $self;
 
 	return $self;

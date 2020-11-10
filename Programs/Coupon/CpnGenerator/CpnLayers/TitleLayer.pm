@@ -29,7 +29,8 @@ use aliased 'Packages::CAM::SymbolDrawing::Enums' => 'DrawEnums';
 
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $drawPriority = 16;
+	my $self  = $class->SUPER::new(@_, $drawPriority);
 	bless $self;
 
 	return $self;

@@ -30,7 +30,8 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveSurfPoly';
 
 sub new {
 	my $class = shift;
-	my $self  = $class->SUPER::new(@_);
+	my $drawPriority = 12;
+	my $self  = $class->SUPER::new(@_, $drawPriority);
 	bless $self;
 
 	return $self;

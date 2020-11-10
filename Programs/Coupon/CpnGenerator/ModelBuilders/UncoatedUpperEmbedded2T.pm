@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded2T;
-use base('Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded');
+use base('Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded2T');
 
 use Class::Interface;
 &implements('Programs::Coupon::CpnGenerator::ModelBuilders::IModelBuilder');

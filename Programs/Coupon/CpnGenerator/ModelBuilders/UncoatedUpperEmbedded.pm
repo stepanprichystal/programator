@@ -47,7 +47,6 @@ sub Build {
 
 	# Info from constrain XML
 	my $trackL = $layout->GetTrackLayer();
-	my $gndL   = $layout->GetBotRefLayer();
 
 	my $layerCnt = scalar( grep { $_ =~ /[csv]\d*/i } keys %{$layersLayout} );
 

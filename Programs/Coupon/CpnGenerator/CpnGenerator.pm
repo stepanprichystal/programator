@@ -30,8 +30,12 @@ use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline2T';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::Stripline2B';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedUpperEmbedded2T';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedLowerEmbedded';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::CoatedLowerEmbedded2B';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded';
 use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedUpperEmbedded2T';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedLowerEmbedded';
+use aliased 'Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedLowerEmbedded2B';
 
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
@@ -180,17 +184,14 @@ sub Generate {
 		my $countorTypeV = $routLayout->GetCountourTypeY();
 
 		CamHelper->SetStep( $inCAM, $layout->GetStepName() );
-		
+
 		# 1) process routed edges
 
 		CouponRoute->PrepareProfileRoutOnBridges(
 												  $inCAM, $jobId,
-												  $layout->GetStepName(), 
-												  ( $countorTypeH =~ /rout/i ? 1 : 0 ),
-												  ( $countorTypeV =~ /rout/i ? 1 : 0 ), 
-												  $routLayout->GetCountourBridgesCntX(),
-												  $routLayout->GetCountourBridgesCntY(), 
-												  $routLayout->GetBridgesWidth()
+												  $layout->GetStepName(), ( $countorTypeH =~ /rout/i ? 1 : 0 ),
+												  ( $countorTypeV =~ /rout/i ? 1 : 0 ), $routLayout->GetCountourBridgesCntX(),
+												  $routLayout->GetCountourBridgesCntY(), $routLayout->GetBridgesWidth()
 		);
 
 		# 2) process scored edges
@@ -347,9 +348,17 @@ sub __GenerateSingle {
 
 			  case EnumsImp->Model_COATED_UPPER_EMBEDDED_2T { $modelBuilder = CoatedUpperEmbedded2T->new() }
 
+			  case EnumsImp->Model_COATED_LOWER_EMBEDDED { $modelBuilder = CoatedLowerEmbedded->new() }
+
+			  case EnumsImp->Model_COATED_LOWER_EMBEDDED_2B { $modelBuilder = CoatedLowerEmbedded2B->new() }
+
 			  case EnumsImp->Model_UNCOATED_UPPER_EMBEDDED { $modelBuilder = UncoatedUpperEmbedded->new() }
 
 			  case EnumsImp->Model_UNCOATED_UPPER_EMBEDDED_2T { $modelBuilder = UncoatedUpperEmbedded2T->new() }
+
+			  case EnumsImp->Model_UNCOATED_LOWER_EMBEDDED { $modelBuilder = UncoatedLowerEmbedded->new() }
+
+			  case EnumsImp->Model_UNCOATED_LOWER_EMBEDDED_2B { $modelBuilder = UncoatedLowerEmbedded2B->new() }
 
 			  else { die "Microstirp model: " . $stripLayout->GetModel() . " is not implemented"; }
 		}
@@ -361,18 +370,43 @@ sub __GenerateSingle {
 		push( @builders, $modelBuilder );
 	}
 
-	# Draw layout layer by layer
+	# Draw layout layer by specific layer
 
 	foreach my $l (@layers) {
 
 		CamLayer->WorkLayer( $inCAM, $l );
 
+		# In current layer draw by ordered layer builders
+		# We need to sort layer builders of all model builders
+		# In other case, layer builder can be drawed in wronf order and cause
+		# undesirable covering/cutting features by negative
+		#
+		# Example:
+		# Model builder 1. contains layer builders: (TrackClearanceLayer, TrackLayer)
+		# Model builder 2. contains layer builders: (TrackClearanceLayer, TrackLayer)
+		# We need to acheive drawing order:
+		#	1.TrackClearanceLayer (Model builder 1)
+		#	2.TrackClearanceLayer (Model builder 2)
+		#	3.TrackLayer (Model builder 1)
+		#	4.TrackLayer (Model builder 2)
+		# NOT order:
+		#	1.TrackClearanceLayer (Model builder 1)
+		#	2.TrackLayer (Model builder 1)
+		#	3.TrackClearanceLayer (Model builder 2)
+		#	4.TrackLayer (Model builder 2)
+
+		my @layerBuilders = ();
 		foreach my $builder (@builders) {
 
 			my @curLayers = grep { $_->GetLayerName() eq $l } $builder->GetLayers();
-
-			$_->Draw() foreach (@curLayers);
+			push( @layerBuilders, @curLayers );
 		}
+
+		# Sort layer builders by given priority
+		@layerBuilders = sort { $a->GetDrawPriority() <=> $b->GetDrawPriority() } @layerBuilders;
+
+		# Draw
+		$_->Draw() foreach (@layerBuilders);
 	}
 
 	# Proces guard tracks
@@ -442,7 +476,6 @@ sub __GenerateSingle {
 	}
 
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

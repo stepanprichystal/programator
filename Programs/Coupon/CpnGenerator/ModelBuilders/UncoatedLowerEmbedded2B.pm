@@ -1,10 +1,10 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Uncoated microstrip builder
+# Description: Uncoated lower embedded 2B builder
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedMicrostrip;
-use base('Programs::Coupon::CpnGenerator::ModelBuilders::CoatedMicrostrip');
+package Programs::Coupon::CpnGenerator::ModelBuilders::UncoatedLowerEmbedded2B;
+use base('Programs::Coupon::CpnGenerator::ModelBuilders::CoatedLowerEmbedded2B');
 
 use Class::Interface;
 &implements('Programs::Coupon::CpnGenerator::ModelBuilders::IModelBuilder');
@@ -14,8 +14,15 @@ use strict;
 use warnings;
 
 #local library
-
-use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::TrackMaskLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::MaskLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::TrackLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::TrackClearanceLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::GNDLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadNegLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PthDrillLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadTextLayer';
+use aliased 'Programs::Coupon::CpnGenerator::CpnLayers::PadTextMaskLayer';
 use aliased 'Programs::Coupon::Helper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
@@ -51,12 +58,8 @@ sub Build {
 
 	my $layerCnt = scalar( grep { $_ =~ /[csv]\d*/i } keys %{$layersLayout} );
 
-	# Track layer can has index 1,2 or layer cnt, layer cnt -1
-	# (standard microstrip and embedded upper/lower)
-	my $layerNum = Helper->GetLayerNum( $trackL, $layerCnt );
-
 	# process: mc
-	if ( $layerNum == 1 ) {
+	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == 2 ) {
 		$self->_AddLayer( TrackMaskLayer->new("mc") );
 
 		if ( CamHelper->LayerExists( $inCAM, $jobId, "mc" ) ) {
@@ -68,7 +71,7 @@ sub Build {
 	}
 
 	# process: ms
-	if ( $layerNum == $layerCnt ) {
+	if ( Helper->GetLayerNum( $trackL, $layerCnt ) == $layerCnt - 1 ) {
 		$self->_AddLayer( TrackMaskLayer->new("ms") );
 
 		if ( CamHelper->LayerExists( $inCAM, $jobId, "ms" ) ) {

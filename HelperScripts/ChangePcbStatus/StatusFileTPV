@@ -1,7 +1,7 @@
 advancedMode = 1
 
 -;(prazdna hodnota)
-OBCHOD-Chybi papir;
+OBCHOD-Chybi specifikace;
 OBCHOD-Chybi data;
 posle nova data;
 poslan dotaz; (+ jmeno uzivatele)
