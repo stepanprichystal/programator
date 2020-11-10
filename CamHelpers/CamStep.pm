@@ -14,6 +14,7 @@ use warnings;
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamLayer';
@@ -300,6 +301,26 @@ sub GetReferenceStep {
 	return $refStep;
 }
 
+# Get all edit steps in DPS
+# Edit steps means all leaf child steps in final production panel
+# If exist Panel steps, get deepsest step in panel
+# If panel step doesnt exist, return all step with name in format: \w+_\+1
+sub GetJobEditSteps {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	my @steps = ();
+
+	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+	}
+	else {
+		@steps = grep { $_ =~ /^\w+_\+1$/ } $self->GetAllStepNames( $inCAM, $jobId );
+	}
+	return @steps;
+}
+
 # If step exist, delete it and return 1
 sub DeleteStep {
 	my $self  = shift;
@@ -398,7 +419,6 @@ sub CreateStep {
 	my $inCAM    = shift;
 	my $jobId    = shift;
 	my $stepName = shift;
-	
 
 	if ( !CamHelper->StepExists( $inCAM, $jobId, $stepName ) ) {
 		$inCAM->COM(
@@ -408,8 +428,6 @@ sub CreateStep {
 					 "is_fw" => 'no',
 					 "type"  => 'step'
 		);
-
-		
 
 		return 1;
 	}

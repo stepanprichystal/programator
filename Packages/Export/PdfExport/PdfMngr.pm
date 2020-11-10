@@ -312,25 +312,26 @@ sub __ExportStackupOld {
 	my $stackup = StackupPdf->new( $inCAM, $self->{"jobId"} );
 	my $resultCreate = $stackup->Create( 1, 1, 1 );
 
-	my $tmpPath = $stackup->GetStackupPath();
-	my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf";
-
-	# create folder
-	unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
-		mkdir( JobHelper->GetJobArchive($jobId) . "pdf" );
-	}
-
-	if ( -e $pdfPath ) {
-		unless ( unlink($pdfPath) ) {
-			die "Can not delete old pdf stackup file (" . $pdfPath . "). Maybe file is still open.\n";
-		}
-	}
-
-	copy( $tmpPath, $pdfPath ) or die "Copy failed: $!";
-
 	my $resultStackup = $self->_GetNewItem("Stackup pdf OLD");
 
-	unless ($resultCreate) {
+	if ($resultCreate) {
+		my $tmpPath = $stackup->GetStackupPath();
+		my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf/" . $jobId . "-cm.pdf";
+
+		# create folder
+		unless ( -e JobHelper->GetJobArchive($jobId) . "pdf" ) {
+			mkdir( JobHelper->GetJobArchive($jobId) . "pdf" );
+		}
+
+		if ( -e $pdfPath ) {
+			unless ( unlink($pdfPath) ) {
+				die "Can not delete old pdf stackup file (" . $pdfPath . "). Maybe file is still open.\n";
+			}
+		}
+
+		copy( $tmpPath, $pdfPath ) or die "Copy failed: $!";
+	}
+	else {
 		$resultStackup->AddError("Failed to create pdf stackup");
 	}
 

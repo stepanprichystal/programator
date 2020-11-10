@@ -22,12 +22,15 @@ use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Reorder::Enums';
 use aliased 'Packages::Polygon::Features::Features::Features';
+use aliased 'Packages::CAMJob::Drilling::NPltDrillCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -148,54 +151,44 @@ sub Run {
 
 	# Check if rout doesn't contain tool size smaller than 1000
 	# (do not consider rout pilot holes)
-	if ( CamHelper->LayerExists( $inCAM, $jobId, "m" ) ) {
+	{
 
-		my $step = ();
-		if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+		my $unMaskedCntRef   = 0;
+		my $unMaskAttrValRef = "";
 
-			$step = "panel";
+		my $maxTool  = 1000;
+		my $pltLayer = "m";
 
-		}
-		else {
+		if ( CamHelper->LayerExists( $inCAM, $jobId, $pltLayer ) ) {
 
-			$step = "o+1";
+			my @childs = CamStep->GetJobEditSteps( $inCAM, $jobId );
+			my @nplt =
+			  map { $_->{"gROWname"} }
+			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
 
-		}
+			foreach my $s (@childs) {
 
-		foreach
-		  my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] ) )
-		{
+				foreach my $npltLayer (@nplt) {
 
-			my $uniDTM = UniDTM->new( $inCAM, $jobId, $step, $l->{"gROWname"}, 1 );
-			my @tools = grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $uniDTM->GetUniqueTools();
-			if ( scalar( grep { $_->GetDrillSize() <= 1000 } @tools ) ) {
+					my $checkRes = {};
+					unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
 
-				# There are holes smaller than 1000µm, check if anz of tham are not pilot holes
-
-				my $f = Features->new();
-
-				$f->Parse( $inCAM, $jobId, $step, $l->{"gROWname"}, 1 );
-
-				my @features =
-				  map { $_->{"thick"} }
-				  grep { $_->{"type"} eq "P" && $_->{"thick"} <= 1000 && !defined $_->{"att"}->{".pilot_hole"} } $f->GetFeatures();
-
-				if ( scalar(@features) ) {
-
-					$self->_AddChange(
-									   "Frézovací vrstva: "
-										 . $l->{"gROWname"}
-										 . " obsahuje nástroje menší jak 1000µm (netýká se pilot holes / předvrtání ). "
-										 . " Seznam nástrojů pro přesunutí do prokoveného vrtání: "
-										 . join( "; ", map { $_ . "µm" } uniq(@features) ),
-									   0
-					);
+						$self->_AddChange(
+								 "Step: $s, NC vrstva: $npltLayer obsahuje nástroje menší jak "
+								   . $maxTool
+								   . "µm, které by měly být přesunuty do prokovené vrtačky. "
+								   . "\n- Seznam použitých nástrojů indikovaných otvorů: "
+								   . join( "; ", map { $_ . "µm" } uniq( @{ $checkRes->{"padTools"} } ) )
+								   . "\n- Seznam \"features Id\" padů, které mají být přesunuty: "
+								   . join( "; ", @{ $checkRes->{"padFeatures"} } )
+								   . "\nPozor, otvory obsahující atribut \".pilot_hole\" a otvory s nastavenou tolerancí v DTM se nepřesouvají!",
+								 0
+						);
+					}
 				}
 			}
-
 		}
 	}
-
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -203,6 +196,22 @@ sub Run {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::Reorder::CheckReorder::Checks::ROUTING' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+	my $jobId = "d298152";
+	my $orderId = "d298152-01";
+
+	my $check = Change->new( "key", $inCAM, $jobId, $orderId, Enums->ReorderType_STD );
+
+	my $mess = "";
+	print "Change result: " . $check->Run( \$mess );
+	
+	die;
+	 
+
 
 }
 

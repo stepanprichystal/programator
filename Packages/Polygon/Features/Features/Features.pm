@@ -50,8 +50,8 @@ sub Parse {
 	my $breakSR    = shift;
 	my $selected   = shift;    # parse only selected feature
 	my $featFilter = shift;    # parse only given feat id
- 
-	die "Parameter \"selected\" is not allowed in combination with parameter \"breakSR\""   if ( $breakSR && $selected );
+
+	die "Parameter \"selected\" is not allowed in combination with parameter \"breakSR\"" if ( $breakSR && $selected );
 
 	my $breakSRVal  = $breakSR  ? "break_sr+" : "";
 	my $selectedVal = $selected ? "select+"   : "";
@@ -233,6 +233,7 @@ sub __ParseLines {
 			$featInfo->{"symbol"} = $5;
 
 			$featInfo->{"polarity"} = $6;
+			$featInfo->{"dcode"}    = $7;
 			$featInfo->{"angle"}    = $8;
 			$featInfo->{"mirror"}   = $9;
 
@@ -272,6 +273,7 @@ sub __ParseLines {
 
 			$featInfo->{"symbol"}   = $5;
 			$featInfo->{"polarity"} = $6;
+			$featInfo->{"dcode"}    = $7;
 			$featInfo->{"oriDir"}   = $8 eq "Y" ? "CW" : "CCW";
 
 			@attr = split( ",", $9 );
@@ -284,8 +286,8 @@ sub __ParseLines {
 		# surfaces
 		elsif ( $l =~ m/^#(\d*)\s*#(s)\s*([pn])\s*([\w\d\s]*);?(.*)/i ) {
 
-			$featInfo->{"id"}   = $1;
-			$featInfo->{"type"} = $2;
+			$featInfo->{"id"}       = $1;
+			$featInfo->{"type"}     = $2;
 			$featInfo->{"polarity"} = $3;
 			@attr = split( ",", $5 );
 
@@ -386,11 +388,11 @@ sub __ParseLines {
 
 		# assing internal unique id
 		$featInfo->{"uid"} = $i + 1;
-		
-		# set source step. Default is parent step 
+
+		# set source step. Default is parent step
 		# (if breakSR, source step is set in __AddBreakSRInfo function)
-		$featInfo->{"uid"} = $i + 1;
-		$featInfo->{"step"} =  $step;
+		$featInfo->{"uid"}  = $i + 1;
+		$featInfo->{"step"} = $step;
 
 		push( @features, $featInfo );
 	}
@@ -547,7 +549,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $step  = "test";
 	my $layer = "c";
 
-	 
 	$f->Parse( $inCAM, $jobId, $step, $layer );
 
 	my @features = $f->GetFeatures();

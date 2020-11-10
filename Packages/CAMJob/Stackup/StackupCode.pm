@@ -70,7 +70,7 @@ sub GetIsLayerEmpty {
 
 sub GetStackupCode {
 	my $self     = shift;
-	my $extended = shift;    # after code is placed number of stiffener, coverlay, UV flex mask
+	my $extended = shift;    # after code is placed number of stiffener, coverlay, UV flex mask, tape
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -93,10 +93,12 @@ sub GetStackupCode {
 
 		my $cvrlCnt   = scalar( grep { $_->{"gROWlayer_type"} eq "cvrl" } @boardL );
 		my $stiffCnt  = scalar( grep { $_->{"gROWlayer_type"} eq "stiffener" } @boardL );
+		my $tapeCnt   = scalar( grep { $_->{"gROWlayer_type"} eq "psa" } @boardL );
 		my $uvFlexCnt = scalar( grep { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} =~ /^m[cs]flex$/ } @boardL );
 
 		$code .= " + $cvrlCnt" . "x coverlay"       if ($cvrlCnt);
 		$code .= " + $stiffCnt" . "x stiffener"     if ($stiffCnt);
+		$code .= " + $tapeCnt" . "x adhesive tape"  if ($tapeCnt);
 		$code .= " + $uvFlexCnt" . "x UV flex mask" if ($uvFlexCnt);
 
 	}

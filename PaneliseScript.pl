@@ -62,6 +62,7 @@ use aliased 'Packages::Routing::PlatedRoutAtt';
 use aliased 'Packages::Routing::PlatedRoutArea';
 
 use aliased 'Packages::GuideSubs::SolderMask::DoUnmaskNC';
+use aliased 'Packages::GuideSubs::Drilling::DoMoveNPltHole';
 use aliased 'Packages::GuideSubs::Scoring::DoFlattenScore';
 use aliased 'Packages::CAMJob::Stackup::StackupDefault';
 use aliased 'Packages::GuideSubs::Routing::CheckRout';
@@ -99,7 +100,7 @@ unless ($ENV{JOB}) {
 	$jobName = "$ENV{JOB}";
 }
 
-#$jobName= "d285728";
+$jobName= "d298152";
 
 my $inCAM = InCAM->new();
 my @errorMessageArr = ();
@@ -187,6 +188,9 @@ unless ($panelSizeCheck == 0) {
 		
 		# Un mask throuh hole if BGA on the boards
 		DoUnmaskNC->UnMaskSMDThroughHole( $inCAM, $jobName );
+		
+		# Move small npth holoes
+		DoMoveNPltHole->MoveSmallNpth2Pth( $inCAM, $jobName );
 			
 		#22.5.2018 zaremovano, delalo chyby pøi kopírování mpanelu z jiné zakázky.		
 		#if ( CamHelper->StepExists( $inCAM, $jobName, 'mpanel' ) ) { 

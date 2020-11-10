@@ -147,7 +147,7 @@ sub __UnMaskThroughHoleNearPads {
 	my $step            = shift;
 	my $padAttr         = shift;
 	my $padLayers       = shift;
-	my $unMaskAttrVal   = shift;
+	my $unMaskAttrVal   = shift; # value of .string attribute which unmasked pads will have
 	my $resize          = shift;
 	my $minDistHole2Pad = shift;
 	my $unMaskedCnt     = shift;

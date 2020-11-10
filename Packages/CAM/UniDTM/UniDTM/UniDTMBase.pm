@@ -98,6 +98,14 @@ sub GetTools {
 }
 
 # Return reduced unique tools
+# Uniqu tool is defined by same values of this attributes:
+# - GetDrillSize
+# - GetTypeProcess
+# - GetDepth
+# - GetMagazineInfo
+# Other UniToolBase attributes don't have to have same value. Specifically
+# - GetTolPlus
+# - GetTolMinus
 # If tool parameters are wrong, script die
 sub GetUniqueTools {
 	my $self = shift;
@@ -240,7 +248,7 @@ sub __InitUniDTM {
 		$uniT->SetTypeTool( $t->{"gTOOLtype"} );
 		$uniT->SetTypeUse( $t->{"gTOOLtype2"} );
 		$uniT->SetFinishSize( $t->{"gTOOLfinish_size"} );
-		$uniT->SetToolNum( $t->{"gTOOLnum"} );
+		$uniT->SetToolNum( $t->{"gTOOLnum"} ); # do not work with S&R
 
 		push( @{ $self->{"tools"} }, $uniT );
 

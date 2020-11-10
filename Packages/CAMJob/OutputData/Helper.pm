@@ -95,43 +95,47 @@ sub GetJobLayerTitle {
 	}
 
 	# board base layer
-	elsif ( $l->{"gROWname"} =~ /^([pmlg]|gold)?[cs]2?$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^([pmlg]|gold)?[cs]2?(flex)?$/i ) {
 
 		my %en = ();
-		$en{"pc"}    = "Silk screen (top)";
-		$en{"ps"}    = "Silk screen (bot)";
-		$en{"pc2"}   = "Silk screen (top; second)";
-		$en{"ps2"}   = "Silk screen (bot; second)";
-		$en{"mc"}    = "Solder mask (top)";
-		$en{"ms"}    = "Solder mask (bot)";
+		$en{"pc"}     = "Silk screen (top)";
+		$en{"ps"}     = "Silk screen (bot)";
+		$en{"pc2"}    = "Silk screen (top; second)";
+		$en{"ps2"}    = "Silk screen (bot; second)";
+		$en{"mc"}     = "Solder mask (top)";
+		$en{"ms"}     = "Solder mask (bot)";
 		$en{"mc2"}    = "Solder mask (top; second)";
 		$en{"ms2"}    = "Solder mask (bot; second)";
-		$en{"c"}     = "Component layer (top)";
-		$en{"s"}     = "Solder layer (bot)";
-		$en{"lc"}    = "Peelable mask (top)";
-		$en{"ls"}    = "Peelable mask (bot)";
-		$en{"gc"}    = "Carbon paste (top)";
-		$en{"gs"}    = "Carbon paste (bot)";
-		$en{"goldc"} = "Gold fingers (top)";
-		$en{"golds"} = "Gold fingers (bot)";
+		$en{"mcflex"} = "Flexible solder mask (top)";
+		$en{"msflex"} = "Flexible solder mask (bot)";
+		$en{"c"}      = "Component layer (top)";
+		$en{"s"}      = "Solder layer (bot)";
+		$en{"lc"}     = "Peelable mask (top)";
+		$en{"ls"}     = "Peelable mask (bot)";
+		$en{"gc"}     = "Carbon paste (top)";
+		$en{"gs"}     = "Carbon paste (bot)";
+		$en{"goldc"}  = "Gold fingers (top)";
+		$en{"golds"}  = "Gold fingers (bot)";
 
 		my %czl = ();
-		$czl{"pc"}    = "Potisk (top)";
-		$czl{"ps"}    = "Potisk (bot)";
-		$czl{"pc2"}   = "Potisk (top; druhý)";
-		$czl{"ps2"}   = "Potisk (bot; druhý)";
-		$czl{"mc"}    = "Nepájivá maska (top)";
-		$czl{"ms"}    = "Nepájivá maska (bot)";
+		$czl{"pc"}     = "Potisk (top)";
+		$czl{"ps"}     = "Potisk (bot)";
+		$czl{"pc2"}    = "Potisk (top; druhý)";
+		$czl{"ps2"}    = "Potisk (bot; druhý)";
+		$czl{"mc"}     = "Nepájivá maska (top)";
+		$czl{"ms"}     = "Nepájivá maska (bot)";
 		$czl{"mc2"}    = "Nepájivá maska (top, druhá)";
 		$czl{"ms2"}    = "Nepájivá maska (bot, druhá)";
-		$czl{"c"}     = "Strana součástek (top)";
-		$czl{"s"}     = "Strana spojů (bot)";
-		$czl{"lc"}    = "Snímací lak (top)";
-		$czl{"ls"}    = "Snímací lak (bot)";
-		$czl{"gc"}    = "Grafit (top)";
-		$czl{"gs"}    = "Grafit (bot)";
-		$czl{"goldc"} = "Zlacený konektor (top)";
-		$czl{"golds"} = "Zlacený konektor (bot)";
+		$czl{"mcflex"} = "Flexibilní nepájivá maska (top)";
+		$czl{"msflex"} = "Flexibilní nepájivá maska (bot)";
+		$czl{"c"}      = "Strana součástek (top)";
+		$czl{"s"}      = "Strana spojů (bot)";
+		$czl{"lc"}     = "Snímací lak (top)";
+		$czl{"ls"}     = "Snímací lak (bot)";
+		$czl{"gc"}     = "Grafit (top)";
+		$czl{"gs"}     = "Grafit (bot)";
+		$czl{"goldc"}  = "Zlacený konektor (top)";
+		$czl{"golds"}  = "Zlacený konektor (bot)";
 
 		$title = $en{ $l->{"gROWname"} };
 		if ($cz) {
@@ -334,17 +338,19 @@ sub GetJobLayerTitle {
 		if ($cz) {
 			$title = "V-drážka";
 		}
-	}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ) {
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ) {
 		$title = "Z-axis milling of TOP stiffener";
 		if ($cz) {
 			$title = "Zahloubené frézování top stiffeneru.";
 		}
-	}elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ) {
+	}
+	elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ) {
 		$title = "Z-axis milling of BOT stiffener";
 		if ($cz) {
 			$title = "Zahloubené frézování bot stiffeneru.";
 		}
-	} 
+	}
 
 	die "Title is empty for layer: " . $l->{"gROWname"} if ( $title eq "" );
 

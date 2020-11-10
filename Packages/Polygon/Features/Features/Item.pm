@@ -25,8 +25,8 @@ sub new {
 
 	# Integer Unique id assigned by Feature parser (counted from 1)
 	$self->{"uid"} = undef;
-	
- 	# feature source step
+
+	# feature source step
 	$self->{"step"} = undef;
 
 	# type of features - L, A, etc..
@@ -34,7 +34,7 @@ sub new {
 
 	#first x
 	$self->{"x1"} = undef;
-	
+
 	#second  x, if line or arc
 	$self->{"x2"} = undef;
 
@@ -54,25 +54,32 @@ sub new {
 	$self->{"ymid"} = undef;
 
 	$self->{"oriDir"} = undef;
-	
+
+	# symbol name
+	$self->{"symbol"} = undef;
+
+	# features polarity
+	$self->{"polarity"} = undef;
+
+	# features dcode
+	$self->{"dcode"} = undef;
+
 	# text value of type text
 	$self->{"text"} = undef;
-	
+
 	# array of surface item (holes and ilands)
 	$self->{"surfaces"} = undef;
 
 	#attributes of features
 	$self->{"att"} = undef;
- 
- 	# Properties set only if breakSR during parse layer
- 
- 	# feature source step ancestors in string format: <ancestor>/<ancestor parent>/...
+
+	# Properties set only if breakSR during parse layer
+
+	# feature source step ancestors in string format: <ancestor>/<ancestor parent>/...
 	$self->{"SRAncestors"} = undef;
 
 	return $self;
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

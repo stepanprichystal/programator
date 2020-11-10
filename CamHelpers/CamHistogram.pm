@@ -188,7 +188,6 @@ sub GetFeatuesHistogram {
 	my $stepName  = shift;
 	my $layerName = shift;
 	my $breakSR   = shift // 1;    # default is with SR
- 
 
 	if ($breakSR) {
 		$inCAM->INFO(
@@ -234,21 +233,29 @@ sub GetSymHistogram {
 	my $layerName     = shift;
 	my $breakSR       = shift;
 	my $hashStructure = shift;
-
-	my $sr = "break_sr";
-	if ( defined $breakSR && $breakSR == 0 ) {
-		$sr = "";
+	
+	if ($breakSR) {
+		$inCAM->INFO(
+					  "units"           => 'mm',
+					  "angle_direction" => 'ccw',
+					  "entity_type"     => 'layer',
+					  "entity_path"     => "$jobId/$stepName/$layerName",
+					  "data_type"       => 'SYMS_HIST',
+					  "parameters"      => "arc+line+pad+symbol",
+					  "options"         => "break_sr"
+		);
 	}
+	else {
+		$inCAM->INFO(
+			"units"           => 'mm',
+			"angle_direction" => 'ccw',
+			"entity_type"     => 'layer',
+			"entity_path"     => "$jobId/$stepName/$layerName",
+			"data_type"       => 'SYMS_HIST',
+			"parameters"      => "arc+line+pad+symbol"
 
-	$inCAM->INFO(
-				  "units"           => 'mm',
-				  "angle_direction" => 'ccw',
-				  "entity_type"     => 'layer',
-				  "entity_path"     => "$jobId/$stepName/$layerName",
-				  "data_type"       => 'SYMS_HIST',
-				  "parameters"      => "arc+line+pad+symbol",
-				  "options"         => $sr
-	);
+		);
+	}
 
 	my %result = ();
 
@@ -306,7 +313,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId    = "d272564";
 	my $stepName = "panel";
 
-	my %hist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, "o+1", "mc");
+	my %hist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, "o+1", "mc" );
 
 	die;
 

@@ -72,7 +72,11 @@ sub CheckToolDepthSet {
 		else {
 
 			$str .=
-			  "Surfaces id: \"" . join("; ",$t->GetSurfacesId()) . "\" has wrong value of \"tool_depth\" attribute (depth is: \"" . $t->GetDepth() . "\").\n";
+			    "Surfaces id: \""
+			  . join( "; ", $t->GetSurfacesId() )
+			  . "\" has wrong value of \"tool_depth\" attribute (depth is: \""
+			  . $t->GetDepth()
+			  . "\").\n";
 		}
 
 		$$mess .= $str;
@@ -104,7 +108,7 @@ sub CheckToolDepthNotSet {
 		}
 		else {
 
-			$str .= "Surfaces id: \"" . join("; ",$t->GetSurfacesId()) . "\" has set \"tool_depth\" attribute. This tool can't contain depth.\n";
+			$str .= "Surfaces id: \"" . join( "; ", $t->GetSurfacesId() ) . "\" has set \"tool_depth\" attribute. This tool can't contain depth.\n";
 		}
 
 		$$mess .= $str;
@@ -137,7 +141,7 @@ sub CheckMagazine {
 			$str .= "Finding magazine for DTM special tool: ";
 		}
 		else {
-			$str .= "Finding magazine for surfaces (id: " . join("; ",$t->GetSurfacesId()) . ") special tool: ";
+			$str .= "Finding magazine for surfaces (id: " . join( "; ", $t->GetSurfacesId() ) . ") special tool: ";
 		}
 
 		$str .=
@@ -213,33 +217,32 @@ sub __CheckUniqueTools {
 	my @tools = @{ $self->{"unitDTM"}->{"tools"} };
 
 	# Get all unique  diamters
-	
-	my @diamters = uniq(map { $_->GetDrillSize()} @tools);
-	
- 
+
+	my @diamters = uniq( map { $_->GetDrillSize() } @tools );
+
 	for ( my $i = 0 ; $i < scalar(@tools) ; $i++ ) {
 
 		for ( my $j = $i ; $j < scalar(@tools) ; $j++ ) {
 
-			next if($i == $j);
-	 
+			next if ( $i == $j );
+
 			my $ti = $tools[$i];
 			my $tj = $tools[$j];
 
 			# if tools equal, check if all attributes are same
 			if ( $ti->GetDrillSize() == $tj->GetDrillSize() && $ti->GetTypeProcess() eq $tj->GetTypeProcess() ) {
 				my @diffs = ();
- 
 
 				if ( $tools[$i]->GetDepth() != $tools[$j]->GetDepth() ) {
 					$result = 0;
-					push( @diffs, { "n" => "depth", "t1" => $tools[$i]->GetDepth(), "t2" => $tools[$j]->GetDepth() } )
+					push( @diffs, { "n" => "depth", "t1" => $tools[$i]->GetDepth(), "t2" => $tools[$j]->GetDepth() } );
 				}
 
 				if ( $tools[$i]->GetMagazineInfo() ne $tools[$j]->GetMagazineInfo() ) {
 					$result = 0;
-					push( @diffs, { "n" => "magazine info", "t1" => $tools[$i]->GetMagazine(), "t2" => $tools[$j]->GetMagazine() } )
+					push( @diffs, { "n" => "magazine info", "t1" => $tools[$i]->GetMagazine(), "t2" => $tools[$j]->GetMagazine() } );
 				}
+ 
 
 				if ( !$result ) {
 
@@ -249,12 +252,12 @@ sub __CheckUniqueTools {
 					$mStr .=
 					  $ti->GetSource() eq Enums->Source_DTM
 					  ? "column value: \"%s\" in DTM "
-					  : "attribute value: \"%s\" in surfaces id: " . join("; ",$ti->GetSurfacesId()) . " ";
+					  : "attribute value: \"%s\" in surfaces id: " . join( "; ", $ti->GetSurfacesId() ) . " ";
 					$mStr .= "is not equal to ";
 					$mStr .=
 					  $tj->GetSource() eq Enums->Source_DTM
 					  ? "column value: \"%s\" in DTM "
-					  : "attribute value: \"%s\" in surfaces id: " . join("; ",$tj->GetSurfacesId());
+					  : "attribute value: \"%s\" in surfaces id: " . join( "; ", $tj->GetSurfacesId() );
 					$mStr .= ")";
 					$mStr .= ".\n Set same value to parameter or move one tool to new NC layer.\n";
 
@@ -294,7 +297,7 @@ sub __CheckDrillSize {
 		}
 		else {
 
-			$str .= "Surfaces: " . join("; ",$t->GetSurfacesId()) . " has not set attribute \".rout_tool\".\n";
+			$str .= "Surfaces: " . join( "; ", $t->GetSurfacesId() ) . " has not set attribute \".rout_tool\".\n";
 		}
 
 		$$mess .= $str;
@@ -310,7 +313,7 @@ sub __CheckDrillSize {
 		    "NC layer: "
 		  . $self->{"unitDTM"}->{"layer"}
 		  . ". Attributes \".rout_tool\" and \".rout_tool2\" are not equal. Surface id: \""
-		  . join("; ",$t->GetSurfacesId()) . "\".\n";
+		  . join( "; ", $t->GetSurfacesId() ) . "\".\n";
 	}
 
 	return $result;
@@ -331,8 +334,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $f = FeatureFilter->new( $inCAM, "m" );
 
 	$f->SetPolarity("positive");
-
- 
 
 	my @syms = ( "r500", "r1" );
 	$f->AddIncludeSymbols( \[ "r500", "r1" ] );

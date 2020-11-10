@@ -48,6 +48,8 @@ use aliased 'Packages::CAMJob::ViaFilling::ViaFillingCheck';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => 'FiltrEnums';
+use aliased 'Packages::CAMJob::Drilling::NPltDrillCheck';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -743,35 +745,37 @@ sub OnCheckGroupData {
 	# 25)
 	# Check if rout doesn't contain tool size smaller than 1000
 	# (do not consider rout pilot holes)
-	if ( $defaultInfo->LayerExist("m") ) {
-		foreach
-		  my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] ) )
-		{
+	{
+		my $maxTool  = 1000;
+		my $pltLayer = "m";
 
-			my $uniDTM = UniDTM->new( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
-			my @tools = grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_HOLE } $uniDTM->GetUniqueTools();
-			if ( scalar( grep { $_->GetDrillSize() <= 1000 } @tools ) ) {
+		if ( $defaultInfo->LayerExist($pltLayer) ) {
 
-				# There are holes smaller than 1000µm, check if anz of tham are not pilot holes
+			my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+			my @nplt =
+			  map { $_->{"gROWname"} }
+			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] )
+			  ;
 
-				my $f = Features->new();
+			foreach my $s (@childs) {
 
-				$f->Parse( $inCAM, $jobId, $stepName, $l->{"gROWname"}, 1 );
+				foreach my $npltLayer (@nplt) {
 
-				my @features =
-				  map { $_->{"thick"} }
-				  grep { $_->{"type"} eq "P" && $_->{"thick"} <= 1000 && !defined $_->{"att"}->{".pilot_hole"} } $f->GetFeatures();
-
-				if ( scalar(@features) ) {
-					$dataMngr->_AddWarningResult(
-						"Malé otvory ve fréze",
-						"Frézovací vrstva: "
-						  . $l->{"gROWname"}
-						  . " obsahuje nástroje menší jak 1000µm (netýká se pilot holes / předvrtání ). "
-						  . " Seznam nástrojů pro přesunutí do prokoveného vrtání: "
-						  . join( "; ", map { $_ . "µm" } uniq(@features) )
-
-					);
+					my $checkRes = {};
+					unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
+ 
+						$dataMngr->_AddWarningResult(
+							"Malé otvory v neprokovené NC vrstvě",
+							"Step: $s, NC vrstva: $npltLayer obsahuje nástroje menší jak "
+							  . $maxTool
+							  . "µm, které by měly být přesunuty do prokovené vrtačky. "
+							  . "\n- Seznam použitých nástrojů indikovaných otvorů: "
+							  . join( "; ", map { $_ . "µm" } uniq( @{ $checkRes->{"padTools"} } ) )
+							  . "\n- Seznam \"features Id\" padů, které mají být přesunuty: "
+							  . join( "; ", @{ $checkRes->{"padFeatures"} } )
+							  . "\nPozor, otvory obsahující atribut \".pilot_hole\" a otvory s nastavenou tolerancí v DTM se nepřesouvají!"
+						);
+					}
 				}
 			}
 		}
@@ -792,10 +796,8 @@ sub OnCheckGroupData {
 		unless ( $defaultInfo->LayerExist( "cvrpin", 1 ) ) {
 
 			my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
-			my @lThrough =   grep {
-				     $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill
-				  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
-			} $defaultInfo->GetNCLayers();
+			my @lThrough = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill }
+			  $defaultInfo->GetNCLayers();
 
 			my @lCvrlsF = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill }
 			  $defaultInfo->GetNCLayers();
@@ -809,13 +811,12 @@ sub OnCheckGroupData {
 				my @lCvrlsAll =
 				  map { $_->{"gROWname"} }
 				  grep { $_->{"gROWname"} =~ /[cs]/ && $_->{"gROWlayer_type"} eq "coverlay" } $defaultInfo->GetBoardBaseLayers();
-				
-				
+
 				my @preparedCvrl = ();
 				foreach my $lCvrl (@lCvrlsAll) {
 
 					my $lCvrlSide = CamLayer->FilledProfileLim( $inCAM, $jobId, $step );    # simulate coverlay layer form specific side
-					my $routCvrl = GeneralHelper->GetGUID();                            # all coverlay rout from specifis side
+					my $routCvrl = GeneralHelper->GetGUID();                                # all coverlay rout from specifis side
 
 					my @lCvrlsFTmp =
 					  ( grep { $_->{"gROWdrl_start"} eq $lCvrl && $_->{"gROWdrl_end"} eq $lCvrl } @lCvrlsF )[0];
@@ -859,7 +860,9 @@ sub OnCheckGroupData {
 								   "Odkryté otvory v coverlay",
 								   "Pokud je povrchová úprava HAL, "
 									 . "DPS nesmí obsahovat otvory/frézu skrz, která je z jedná strany zakrytá coverlay a z druhé odkrytá. "
-									 . "Ve stepu: \"$step\", ve vrstvě: \"".$lNC->{"gROWname"}."\" jsou otvory/pojezdy zakryty coverlay jen z jedné strany. "
+									 . "Ve stepu: \"$step\", ve vrstvě: \""
+									 . $lNC->{"gROWname"}
+									 . "\" jsou otvory/pojezdy zakryty coverlay jen z jedné strany. "
 									 . "Plně zakryj nebo plně odkryj otvory/pojezdy coverlaym z obou stran, jinak dojde k delaminaci coverlay po úpravě HALem"
 						);
 					}

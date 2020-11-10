@@ -22,11 +22,14 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDTM';
+use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Reorder::Enums';
+use aliased 'Packages::CAMJob::Drilling::MoveDrillHoles';
+use aliased 'Packages::CAMJob::Drilling::NPltDrillCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -85,6 +88,42 @@ sub Run {
 		}
 	}
 
+	# Movesmall NPTH holes to plated layer
+#	{
+#		my $unMaskedCntRef   = 0;
+#		my $unMaskAttrValRef = "";
+#
+#		my $maxTool  = 1000;
+#		my $pltLayer = "m";
+#
+#		if ( CamHelper->LayerExists( $inCAM, $jobId, $pltLayer ) ) {
+#
+#			my @childs = CamStep->GetJobEditSteps( $inCAM, $jobId );
+#			my @nplt =
+#			  map { $_->{"gROWname"} }
+#			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
+#
+#			foreach my $s (@childs) {
+#
+#				foreach my $npltLayer (@nplt) {
+#
+#					my $checkRes = {};
+#					unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
+#
+#						my $movedHoleCntRef     = -1;
+#						my $movedHoleAttrValRef = -1;
+#						my $res = MoveDrillHoles->MoveSmallNpth2Pth( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, \$movedHoleCntRef,
+#																	 \$movedHoleAttrValRef );						 
+#						unless($res){
+#							$$mess .= "Error during move small npth holes from: $npltLayer to plated layer: $pltLayer";
+#							$result = 0;
+#						}										 
+#					}
+#				}
+#			}
+#		}
+#	}
+	
 	return $result;
 }
 
@@ -98,12 +137,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152457";
+	my $jobId = "d298152";
 
 	my $check = Change->new( "key", $inCAM, $jobId );
 
 	my $mess = "";
 	print "Change result: " . $check->Run( \$mess );
+	print "Mess:". $mess;
 }
 
 1;

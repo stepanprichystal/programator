@@ -146,8 +146,8 @@ sub __CreateRoutTransitionPart1 {
 		push( @mess, "----------------------------------------------------\n" );
 		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
 
-		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",          2 );                 #2mm
-		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
+		my $parTool   = $messMngr->GetTextParameter( "Velikost frézovacího nástroje [mm]",          2 );                 #2mm
+		my $parExtend = $messMngr->GetTextParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
 
 		my @params = ( $parTool, $parExtend );
 
@@ -237,8 +237,8 @@ sub __CreateRoutTransitionPart2 {
 		push( @mess, "----------------------------------------------------\n" );
 		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
 
-		my $parTool   = $messMngr->GetNumberParameter( "Velikost frézovacího nástroje [mm]",          $routSize );         #2mm
-		my $parExtend = $messMngr->GetNumberParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
+		my $parTool   = $messMngr->GetTextParameter( "Velikost frézovacího nástroje [mm]",          $routSize );         #2mm
+		my $parExtend = $messMngr->GetTextParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
 
 		my @params = ( $parTool, $parExtend );
 
