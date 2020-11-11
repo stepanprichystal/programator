@@ -450,7 +450,8 @@ sub AddFlexRegisterHoles {
 												  [
 													 EnumsGeneral->LAYERTYPE_nplt_cvrlycMill, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
 													 EnumsGeneral->LAYERTYPE_nplt_soldcMill,  EnumsGeneral->LAYERTYPE_nplt_soldsMill,
-													 EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+													 EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
+													 EnumsGeneral->LAYERTYPE_nplt_tapecMill, EnumsGeneral->LAYERTYPE_nplt_tapesMill
 												  ]
 	);
 

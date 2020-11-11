@@ -172,7 +172,7 @@ sub GetJobLayerTitle {
 	}
 	elsif ( $l->{"gROWname"} =~ /^stiff(\w*)$/i ) {
 
-		# coverlay
+		# Stiffener
 		my $sigLayer = $1;
 		my $sigLayerCz;
 		my $sigLayerEn;
@@ -195,6 +195,28 @@ sub GetJobLayerTitle {
 		$title = "Stiffener on " . $sigLayerEn;
 		if ($cz) {
 			$title = "Stiffener na " . $sigLayerCz;
+		}
+
+	}
+	elsif ( $l->{"gROWname"} =~ /^tp([cs])$/i ) {
+
+		# Adhesive tape
+		my $sigLayer = $1;
+		my $sigLayerCz;
+		my $sigLayerEn;
+
+		if ( $sigLayer eq "c" ) {
+			$sigLayerCz = "Strana součástek (top)";
+			$sigLayerEn = "Component layer (top)";
+		}
+		elsif ( $sigLayer eq "s" ) {
+			$sigLayerCz = "Strana spojů (bot)";
+			$sigLayerEn = "Solder layer (bot)";
+		}
+
+		$title = "Double sided adhesive tape on " . $sigLayerEn;
+		if ($cz) {
+			$title = "Oboustranná lepící páska na " . $sigLayerCz;
 		}
 
 	}
