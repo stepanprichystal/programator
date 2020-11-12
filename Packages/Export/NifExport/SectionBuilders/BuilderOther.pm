@@ -16,6 +16,7 @@ use warnings;
 
 #local library
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamDrilling';
@@ -111,14 +112,13 @@ sub Build {
 
 		my $templ = "-19031138";
 
-		if(CamHelper->LayerExists( $inCAM, $jobId, "cvrlpins" )){
-			
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "cvrlpins" ) ) {
+
 			$templ = "19031138";
 		}
- 
+
 		$section->AddRow( "rel(22305,L)", $templ );
 	}
-
 
 	#merit_presfitt
 	if ( $self->_IsRequire("merit_presfitt") ) {
@@ -174,20 +174,21 @@ sub Build {
 		$section->AddRow( "zaplneni_otvoru", $self->__GetViaFillType() );
 	}
 
-	#	#zaplneni_otvoru_STRANA
-	#	if ( $self->_IsRequire("zaplneni_otvoru_STRANA") ) {
-	#		my $res = "";
-	#
-	#		my $side;
-	#		if(CamDrilling->GetViaFillExists( $inCAM, $jobId, \$side )){
-	#
-	#			$res = "C" if($side eq "top");
-	#			$res = "S" if($side eq "bot");
-	#			$res = "2" if($side eq "both");
-	#		}
-	#
-	#		$section->AddRow( "zaplneni_otvoru_STRANA", $res );
-	#	}
+	#zaplneni_otvoru
+	if ( $self->_IsRequire("rizena_impedance") ) {
+		my $res = "N";
+
+		my @steps = CamStep->GetAllStepNames( $inCAM, $jobId );
+
+		my $var = EnumsGeneral->Coupon_IMPEDANCE;
+		my $imp = "N";
+		if ( scalar( grep { $_ =~ /$var/ } @steps ) ) {
+			$imp = "A";
+		}
+
+		$section->AddRow( "rizena_impedance", $imp );
+	}
+
 }
 
 sub __PrepareNote {

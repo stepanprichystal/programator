@@ -28,6 +28,7 @@ sub new {
 	$self->{"type"}           = shift;
 	$self->{"shareGNDLayers"} = shift;    # Tell which layer has to contain GND pads (connected to ground in this layer)
 	$self->{"padText"}        = shift;
+	$self->{"GNDDistance"}  = shift;    # specify pad clearance from GND (only coplanar types)
 	return $self;
 
 }
@@ -54,6 +55,19 @@ sub GetPadText {
 	my $self = shift;
 
 	return $self->{"padText"};
+}
+
+sub SetGNDDist {
+	my $self    = shift;
+	my $gndDist = shift;
+
+	$self->{"GNDDistance"} = $gndDist;
+}
+
+sub GetGNDDist {
+	my $self = shift;
+
+	return $self->{"GNDDistance"};
 }
 
 #-------------------------------------------------------------------------------------------#

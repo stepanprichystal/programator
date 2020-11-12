@@ -50,13 +50,18 @@ sub Build {
 	# 2) Set coplanar type
 	$self->{"layout"}->SetCoplanar(1);
 
-	# 2) Set GND to track distance
+	# 2) Set GND to track/pad distance
 
 	my $coSE = $self->_GetXmlConstr()->GetParamDouble("CS");    # µm
 
 	foreach my $t ( $self->{"layout"}->GetTracks() ) {
 
 		$t->SetGNDDist($coSE);
+	}
+	
+	foreach my $p ( $self->{"layout"}->GetPads() ) {
+
+		$p->SetGNDDist($coSE);
 	}
 
 	# 3) Set GND via hole positions

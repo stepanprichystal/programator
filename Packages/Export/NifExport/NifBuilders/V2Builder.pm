@@ -103,6 +103,8 @@ sub Build {
 	push(@req, "prerusovana_drazka");
 	push(@req, "srazeni_hran");
 	push(@req, "zaplneni_otvoru");
+	push(@req, "rizena_impedance");
+	
  
 	
 	$nifMngr->AddSection("Ostatni", BuilderOther->new(\@req));

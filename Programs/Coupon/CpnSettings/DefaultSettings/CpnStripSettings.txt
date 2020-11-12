@@ -1,13 +1,13 @@
 # ======================================================================================
 # Microstrip settings
 # ======================================================================================
-[t = Pads to ground dist]
-[h = Pads to ground dist. Default is isolation by max pcb class + 25µm reserve]
+[t = Pads to GND (no coplanar) dist]
+[h = Important: GND here does not mean coplanar GND, but reference GND of other microstrips on coupon. Default is isolation is defined by Construction class + 25µm reserve. ]
 [u = µm ]
 pad2GND = 200               #µm
 
-[t = Track to ground dist]
-[h = Track to ground dist]
+[t = Track to GND (no coplanar) dist]
+[h = Important: GND here does not mean coplanar GND, but reference GND of other microstrips on coupon.]
 [u = µm ]
 trackToCopper = 400 # µm
 

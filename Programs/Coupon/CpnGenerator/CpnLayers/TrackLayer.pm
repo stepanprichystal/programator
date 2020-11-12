@@ -33,9 +33,9 @@ use aliased 'Packages::CAM::SymbolDrawing::Point';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
+	my $class        = shift;
 	my $drawPriority = 9;
-	my $self  = $class->SUPER::new(@_, $drawPriority);
+	my $self         = $class->SUPER::new( @_, $drawPriority );
 	bless $self;
 
 	return $self;
@@ -68,8 +68,17 @@ sub Build {
 		}
 		else {
 
-			my $symClearance =
-			  $cpnSingleLayout->GetPadTrackShape() . ( $cpnSingleLayout->GetPadTrackSize() + 2 * $layout->GetPad2GND() );
+			my $symClearance = $cpnSingleLayout->GetPadTrackShape();
+
+			if ( $layout->GetCoplanar() ) {
+
+				$symClearance .= ( $cpnSingleLayout->GetPadTrackSize() + 2 * $pad->GetGNDDist() );
+
+			}
+			else {
+				$symClearance .= ( $cpnSingleLayout->GetPadTrackSize() + 2 * $layout->GetPad2GND() );
+			}
+
 			$self->{"drawing"}->AddPrimitive(
 							PrimitivePad->new( $symClearance, $pad->GetPoint(), 0, $self->_InvertPolar( DrawEnums->Polar_NEGATIVE, $layerLayout ) ) );
 		}
@@ -192,8 +201,6 @@ sub Build {
 		$self->{"drawing"}
 		  ->AddPrimitive( PrimitiveSurfFill->new( $solidPattern, 0, 0, 0, 0, 1, 0, $self->_InvertPolar( DrawEnums->Polar_POSITIVE, $layerLayout ) ) );
 	}
-
- 
 
 }
 
