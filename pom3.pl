@@ -1,15 +1,38 @@
+#3th party library
+use utf8;
+use strict;
+use warnings;
 
-use List::MoreUtils qw(uniq);
+#local library
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamDrilling';
+use aliased 'Packages::InCAM::InCAM';
 
-my %a = ( 1 => 200, 2 => 250 );
-my %b = ( 1 => 200, 3 => 500 );
+my $inCAM = InCAM->new();
 
-my %t = ();
- 
-foreach my $k (uniq( ( keys %a, keys %b ) )) {
-	$t{$k} = 0 if ( !exists $t{$k} );
-	$t{$k} += $a{$k} if ( $a{$k} );
-	$t{$k} += $b{$k} if ( $b{$k} );
+my $jobId    = "d298638";
+my $stepName = "panel";
+
+my @inL = CamJob->GetSignalLayerNames( $inCAM, $jobId, 1 );
+
+my $botCnt       = 0;
+my $prevLayerBot = undef;
+for ( my $i = scalar( @inL / 2 ) ; $i < scalar(@inL) ; $i++ ) {
+
+	my %srcLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, "panel", $inL[$i] );
+
+	if ( $srcLAtt{"layer_side"} =~ /bot/i && ( !defined $prevLayerBot || $prevLayerBot == 1 ) ) {
+		$botCnt++;
+		$prevLayerBot = 1;
+	}
+	else {
+		$botCnt = 0;
+	}
+
 }
 
-print %t;
+my $sLamCnt = $botCnt if ( $botCnt > 1 );
+

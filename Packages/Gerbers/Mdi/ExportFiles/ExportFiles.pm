@@ -400,12 +400,25 @@ sub __GetFiducials {
 
 	my $useCut = ( $layerName =~ /^gold[cs]$/ && CamAttributes->GetJobAttrByName( $inCAM, $jobId, "technology_cut" ) !~ /no/i ) ? 1 : 0;
 
-	# Exception for layers goldc/golds. Thera are 4 top camera marks and wee need lower one, which remain after pnl cut
+	# Exception 1: for layers goldc/golds. Thera are 4 top camera marks and wee need lower one, which remain after pnl cut
 	unless ($useCut) {
 		@features = grep { $_->{"att"}->{".pnl_place"} !~ /cut/i } @features;
 	}
 
-	# Therea are 4-6 (2 extra top marks when cut panel) marks
+	# Exception 2: If inner layer and sequential lamination, use OLEC which contain SL - sequential lamination
+	if ( $layerName =~ /^v\d+$/ && $self->{"stackup"}->GetSequentialLam() ) {
+
+		if ( $self->{"stackup"}->GetCuLayer($layerName)->GetIsFoil() ) {
+
+			@features = grep { $_->{"att"}->{".pnl_place"} =~ /-SL-/i } @features;
+		}
+		else {
+			
+			@features = grep { $_->{"att"}->{".pnl_place"} !~ /-SL-/i } @features;
+		}
+	}
+
+	# There are 4-6 (2 extra top marks when cut panel) marks
 	die "All fiducial marks (four marks, attribut: OLEC_otvor_<IN/2V>) were not found in layer: $drillLayer" if ( scalar(@features) < 4 );
 
 	# Take position and sort them: lefttop; right-top; right-bot; left-bot
@@ -625,7 +638,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d288631";
+	my $jobId    = "d296472";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -634,10 +647,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
-				 Enums->Type_SIGNAL => "0",
-				 Enums->Type_MASK   => "1",
+				 Enums->Type_SIGNAL => "1",
+				 Enums->Type_MASK   => "0",
 				 Enums->Type_PLUG   => "0",
-				 Enums->Type_GOLD   => "1"
+				 Enums->Type_GOLD   => "0"
 	);
 
 	$export->Run( \%type );

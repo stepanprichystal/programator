@@ -162,7 +162,7 @@ sub __UnMaskThroughHoleNearPads {
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@NC );
 	@NC = map { $_->{"gROWname"} } grep { $_->{"NCSigStartOrder"} == 1 } @NC;
 
-	my @sm = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	my @sm = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} !~ /flex/} CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
 	die "No NC layers exist"          if ( !scalar(@NC) );
 	die "No solder mask layers exist" if ( !scalar(@sm) );
