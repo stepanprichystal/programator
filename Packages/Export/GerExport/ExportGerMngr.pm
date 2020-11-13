@@ -55,9 +55,7 @@ sub __Export {
 	my $jobId = $self->{"jobId"};
 	my $step = "panel";
 	
-	# remove layers, which has plot= 0;
-	@{$self->{"layers"}} = grep {$_->{"plot"}} @{$self->{"layers"}};
-	 
+
 
 	my $archive     = JobHelper->GetJobArchive($jobId);
 	my $output      = JobHelper->GetJobOutput($jobId);
@@ -75,7 +73,7 @@ sub __Export {
 
 		my $l = shift;
 
-		my $suffix = "_komp" . abs($l->{"comp"}) . "um-.ger"; # if negative comp, remove minus
+		my $suffix = "_".abs($l->{"comp"}) .".ger"; # if negative comp, remove minus
 
 		if ( $l->{"polarity"} eq "negative" ) {
 			$suffix = "n" . $suffix;

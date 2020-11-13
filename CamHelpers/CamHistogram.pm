@@ -31,7 +31,7 @@ sub GetAttHistogram {
 	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layerName = shift;
-	my $breakSR   = shift;    # Default is SR
+	my $breakSR   = shift // 1;    # Default is SR
 	my $selected  = shift;
 
 	my $sr = "break_sr+";
@@ -104,7 +104,7 @@ sub GetAttCountHistogram {
 	my $jobId     = shift;
 	my $stepName  = shift;
 	my $layerName = shift;
-	my $breakSR   = shift;
+	my $breakSR   = shift // 1;
 	my $selected  = shift;
 
 	my $sr = "break_sr+";
@@ -231,7 +231,7 @@ sub GetSymHistogram {
 	my $jobId         = shift;
 	my $stepName      = shift;
 	my $layerName     = shift;
-	my $breakSR       = shift;
+	my $breakSR       = shift // 1;
 	my $hashStructure = shift;
 	
 	if ($breakSR) {

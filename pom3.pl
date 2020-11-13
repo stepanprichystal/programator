@@ -1,38 +1,4 @@
-#3th party library
-use utf8;
-use strict;
-use warnings;
+export_job,job=d293788,path=c:/Export/test,mode=tar_gzip,submode=full,format=incam,overwrite=yes,output_name=d293788 (0)
 
-#local library
-use aliased 'Helpers::GeneralHelper';
-use aliased 'Enums::EnumsGeneral';
-use aliased 'CamHelpers::CamAttributes';
-use aliased 'CamHelpers::CamJob';
-use aliased 'CamHelpers::CamDrilling';
-use aliased 'Packages::InCAM::InCAM';
-
-my $inCAM = InCAM->new();
-
-my $jobId    = "d298638";
-my $stepName = "panel";
-
-my @inL = CamJob->GetSignalLayerNames( $inCAM, $jobId, 1 );
-
-my $botCnt       = 0;
-my $prevLayerBot = undef;
-for ( my $i = scalar( @inL / 2 ) ; $i < scalar(@inL) ; $i++ ) {
-
-	my %srcLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, "panel", $inL[$i] );
-
-	if ( $srcLAtt{"layer_side"} =~ /bot/i && ( !defined $prevLayerBot || $prevLayerBot == 1 ) ) {
-		$botCnt++;
-		$prevLayerBot = 1;
-	}
-	else {
-		$botCnt = 0;
-	}
-
-}
-
-my $sLamCnt = $botCnt if ( $botCnt > 1 );
-
+export_job,job=d293788,path=c:/Export/test,mode=tar_gzip,submode=full,format=odb
+81,overwrite=yes,output_name=d293788_odb (0)

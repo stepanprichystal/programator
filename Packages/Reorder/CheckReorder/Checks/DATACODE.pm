@@ -17,7 +17,7 @@ use warnings;
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::CAMJob::Marking::Marking';
+use aliased 'Packages::CAMJob::Marking::MarkingDataCode';
 use aliased 'Packages::Reorder::Enums';
 
 #-------------------------------------------------------------------------------------------#
@@ -48,7 +48,7 @@ sub Run {
 		my $step = CamHelper->StepExists( $inCAM, $jobId, "panel" ) ? "panel" : "o+1";
 
 		$datacodeL = lc($datacodeL);
-		unless ( Marking->DatacodeExists( $inCAM, $jobId, $step, $datacodeL ) ) {
+		unless ( MarkingDataCode->DatacodeExists( $inCAM, $jobId, $step, $datacodeL ) ) {
 
 			$self->_AddChange("V Heliosu je datakód (vrstva: $datacodeL), ale v jobu nebyl dohledán dynamický datakód.");
 		}

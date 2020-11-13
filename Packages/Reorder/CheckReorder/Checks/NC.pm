@@ -18,7 +18,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamDrilling';
-use aliased 'Packages::CAMJob::Marking::Marking';
+use aliased 'Packages::CAMJob::Marking::MarkingDataCode';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 use aliased 'Packages::Reorder::Enums';
 #-------------------------------------------------------------------------------------------#

@@ -1,8 +1,8 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Helper methods for pcb marking
+# Description: Helper methods for datacode marking
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Marking::Marking;
+package Packages::CAMJob::Marking::MarkingDataCode;
 
 #3th party library
 use strict;
@@ -131,6 +131,7 @@ sub DatacodeExists {
 # Return ifnfo about dynamic datacodes
 # Return array of hashes
 # Hash: source=> feat/symbol, text=> "text", mirror => 1/0, wrongMirror => 1/0
+# Note: Not work with S&R
 sub GetDatacodesInfo {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -149,7 +150,7 @@ sub GetDatacodesInfo {
 								 entity_type     => 'layer',
 								 entity_path     => "$jobId/$step/$layer",
 								 data_type       => 'FEATURES',
-								 options         => 'feat_index+f0+break_sr+',
+								 options         => 'feat_index+f0+',
 								 parse           => 'no'
 	);
 	my @feat = ();
@@ -159,13 +160,13 @@ sub GetDatacodesInfo {
 		close($f);
 		unlink($infoFile);
 	}
-	 															 
+	 			
+	# Parse only lmited amount of features - datacoe features 															 
 	my @featsId = map { $_ =~ /^#(\d*)/i } grep { $_ =~ m/^#(\d*)\s*#T.*'$dataCodeReg'/i } @feat;
 	my $f = Features->new();
-	$f->Parse( $inCAM, $jobId, $step, $layer, 1, 0, \@featsId );
+	$f->Parse( $inCAM, $jobId, $step, $layer, 0, 0, \@featsId );
 
 	
-	# again filter, because if step is SR, there can by more feattures with same id
 	foreach my $f ( grep{ $_->{"text"} =~ /^$dataCodeReg$/ } $f->GetFeatures() ) {
 
 		my %inf = ("source" => "feat", "text" =>$f->{"text"},  "mirror" => $f->{"mirror"} =~ /y/i ? 1 : 0 );
@@ -237,7 +238,7 @@ sub GetDatacodesInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::CAMJob::Marking::Marking';
+	use aliased 'Packages::CAMJob::Marking::MarkingDataCode';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
@@ -245,7 +246,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	
 	
 
-	my $exist = Marking->GetDatacodesInfo( $inCAM, $jobId, "mpanel", "mc" );
+	my $exist = MarkingDataCode->GetDatacodesInfo( $inCAM, $jobId, "mpanel", "mc" );
 	
 	print STDERR $exist;
 

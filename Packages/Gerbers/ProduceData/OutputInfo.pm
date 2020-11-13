@@ -10,6 +10,7 @@ package Packages::Gerbers::ProduceData::OutputInfo;
 use threads;
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
 
 use Time::localtime;
 
@@ -23,6 +24,9 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamGoldArea';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::TifFile::TifScore';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Packages::CAMJob::Marking::MarkingULLogo';
+use aliased 'Helpers::ValueConvertor';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -167,8 +171,24 @@ sub Output {
 			die "Material thickness after scoring is not defined in \"TifFile\"."
 			  . " Export \"Score group\" first to store \"Material thickness after scoring\" to Tif file.";
 		}
-		
-		push( @lines, " - Material thickness after V-scoring is ".$scoreThickness."mm" );
+
+		push( @lines, " - Material thickness after V-scoring is " . $scoreThickness . "mm" );
+	}
+
+	# 4) UL logo
+	my $ulLogo = HegMethods->GetUlLogoLayer($jobId);
+	$ulLogo =~ s/\s//g;
+	$ulLogo = lc($ulLogo);
+	my @layerNames = split( ",", $ulLogo );
+	my @layersJob = MarkingULLogo->GetULLogoLayers( $inCAM, $jobId, "panel" );
+	push( @layerNames, @layersJob );
+
+	if ( scalar(@layerNames) ) {
+
+		for ( my $i = 0 ; $i < scalar(@layerNames) ; $i++ ) {
+			$layerNames[$i] = ValueConvertor->GetNifCodeValue( $layerNames[$i] );
+		}
+		push( @lines, " - PCB contains UL logo at layers: " .  join( "; ", uniq(@layerNames) )  );
 	}
 
 	my $path = $self->{"filesDir"} . "ReadMe.txt";

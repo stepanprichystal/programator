@@ -317,8 +317,8 @@ sub __CreateODB {
 
 	$inCAM->HandleException(1);
 
-	my $exportResult = $inCAM->COM( 'export_job', job => "$jobId", path => "$archive", mode => 'tar_gzip', submode => 'full', overwrite => 'yes', "format" =>"odb81");
-
+	my $exportResult = $inCAM->COM( 'export_job', job => "$jobId", path => "$archive", mode => 'tar_gzip', submode => 'full', overwrite => 'yes', "format" =>"incam");
+ 
 	$inCAM->HandleException(0);
 
 	# if export ok, do check if odb file really exist

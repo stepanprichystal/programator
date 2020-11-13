@@ -141,6 +141,7 @@ sub Build {
 
 	#Drill section
 	@req = ();
+	push(@req, "vrtani_pred");
 	push(@req, "min_vrtak");
 	push(@req, "otvory");
 	push(@req, "pocet_vrtaku");

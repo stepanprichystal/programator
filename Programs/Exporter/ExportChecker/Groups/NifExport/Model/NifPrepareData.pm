@@ -24,7 +24,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::NifFile::NifFile';
-use aliased 'Packages::CAMJob::Marking::Marking';
+use aliased 'Packages::CAMJob::Marking::MarkingDataCode';
+use aliased 'Packages::CAMJob::Marking::MarkingULLogo';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 
 #-------------------------------------------------------------------------------------------#
@@ -116,10 +117,10 @@ sub OnPrepareGroupData {
 	$groupData->SetNotes("");
 
 	# prepare datacode
-	$groupData->SetDatacode( $self->__GetDacode( $inCAM, $jobId, $defaultInfo ) );
+	$groupData->SetDatacode( $self->__GetDataCode( $inCAM, $jobId, $defaultInfo ) );
 
 	# prepare ul logo
-	$groupData->SetUlLogo( HegMethods->GetUlLogoLayer($jobId) );
+	$groupData->SetUlLogo( $self->__GetULLogo( $inCAM, $jobId, $defaultInfo ) );
 
 	# Mask color
 
@@ -134,7 +135,7 @@ sub OnPrepareGroupData {
 	}
 	$groupData->SetC_mask_colour( $masks{"top"} );
 	$groupData->SetS_mask_colour( $masks{"bot"} );
-	
+
 	# mask 2
 
 	my %masks2 = HegMethods->GetSolderMaskColor2($jobId);
@@ -259,7 +260,6 @@ sub __IsTenting {
 	my $jobId       = shift;
 	my $defaultInfo = shift;
 
-  
 	my $tenting = 0;
 
 	# if layer cnt > 1
@@ -303,7 +303,7 @@ sub __GetTechnology {
 }
 
 # Merge information about datacode from IS with found datacodes in job
-sub __GetDacode {
+sub __GetDataCode {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
@@ -316,7 +316,7 @@ sub __GetDacode {
 
 	my $step = $defaultInfo->IsPool() ? "o+1" : "panel";
 
-	my @layersJob = Marking->GetDatacodeLayers( $inCAM, $jobId, $step );
+	my @layersJob = MarkingDataCode->GetDatacodeLayers( $inCAM, $jobId, $step );
 
 	push( @layerNames, @layersJob );
 	@layerNames = uniq(@layerNames);
@@ -324,7 +324,30 @@ sub __GetDacode {
 	my $str = uc( join( ",", @layerNames ) );
 
 	return $str;
+}
 
+# Merge information about ullogo from IS with found ul in job
+sub __GetULLogo {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $defaultInfo = shift;
+
+	my $ulLogo = HegMethods->GetUlLogoLayer($jobId);
+	$ulLogo =~ s/\s//g;
+	$ulLogo = lc($ulLogo);
+	my @layerNames = split( ",", $ulLogo );
+
+	my $step = $defaultInfo->IsPool() ? "o+1" : "panel";
+
+	my @layersJob = MarkingULLogo->GetULLogoLayers( $inCAM, $jobId, $step );
+
+	push( @layerNames, @layersJob );
+	@layerNames = uniq(@layerNames);
+
+	my $str = uc( join( ",", @layerNames ) );
+
+	return $str;
 }
 
 #-------------------------------------------------------------------------------------------#

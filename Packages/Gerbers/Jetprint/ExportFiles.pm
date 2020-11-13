@@ -381,13 +381,11 @@ sub __PrepareFiducials {
 		$f->Parse( $inCAM, $jobId, $self->{"step"}, "v" );
 		my @holes3p2 = grep { $_->{"type"} eq "P" && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor/i } $f->GetFeatures();
 
-		# select only 3 fiduc (2x bot and lright top)
+		# select only 2 fiduc (1x left bot and 1x right top). Operators register on only 2 marks
 		my @fiduc = ();
 		my $LB = first {$_->{"att"}->{".pnl_place"} =~ /left.?bot/i} @holes3p2;
-		my $RB = first {$_->{"att"}->{".pnl_place"} =~ /right.?bot/i} @holes3p2;
 		my $RT = first {$_->{"att"}->{".pnl_place"} =~ /right.?top/i} @holes3p2;
 		push(@fiduc, $LB) if($LB);
-		push(@fiduc, $RB) if($RB);
 		push(@fiduc, $RT) if($RT);
 		
 		die "No OLEC fiducial holes 3mm was found in layer \"v\"" unless ( scalar(@fiduc) );

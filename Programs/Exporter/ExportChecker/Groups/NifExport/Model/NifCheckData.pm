@@ -34,7 +34,8 @@ use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::Tooling::PressfitOperation';
-use aliased 'Packages::CAMJob::Marking::Marking';
+use aliased 'Packages::CAMJob::Marking::MarkingDataCode';
+use aliased 'Packages::CAMJob::Marking::MarkingULLogo';
 use aliased 'Packages::CAMJob::Technology::CuLayer';
 use aliased 'Packages::CAMJob::PCBConnector::InLayersClearanceCheck';
 use aliased 'Packages::CAMJob::PCBConnector::PCBConnectorCheck';
@@ -74,9 +75,9 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Data code", "Nesedí zadaný datacode v heliosu s datacodem v exportu." );
 	}
 
-	my $errMess = "";
-	unless ( $self->__CheckDataCodeJob( $inCAM, $jobId, $defaultInfo, $groupData->GetDatacode(), \$errMess ) ) {
-		$dataMngr->_AddErrorResult( "Data code", $errMess );
+	my $errMessDC = "";
+	unless ( $self->__CheckDataCodeJob( $inCAM, $jobId, $defaultInfo, $groupData->GetDatacode(), \$errMessDC ) ) {
+		$dataMngr->_AddErrorResult( "Data code", $errMessDC );
 	}
 
 	# 2) ul logo
@@ -85,6 +86,12 @@ sub OnCheckGroupData {
 	unless ( defined $ulLogoLayer ) {
 		$dataMngr->_AddErrorResult( "Ul logo", "Nesedí zadané Ul logo v heliosu s datacodem v exportu." );
 	}
+	
+	my $errMessUl = "";
+	unless ( $self->__CheckULLogoJob( $inCAM, $jobId, $defaultInfo, $groupData->GetUlLogo(), \$errMessUl ) ) {
+		$dataMngr->_AddErrorResult( "Data code", $errMessUl );
+	}
+	
 
 	# 3) mask control
 	my %masks        = CamLayer->ExistSolderMasks( $inCAM, $jobId );
@@ -831,8 +838,6 @@ sub OnCheckGroupData {
 
 	}
 
-
-
 }
 
 # check if datacode exist
@@ -862,7 +867,7 @@ sub __CheckDataCodeJob {
 
 	unless ( $defaultInfo->IsPool() ) {
 
-		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
 	}
 
 	foreach my $step (@steps) {
@@ -873,7 +878,7 @@ sub __CheckDataCodeJob {
 
 			die "Layer: $layer, which the datacode should be located in does not exist." if ( !$defaultInfo->LayerExist($layer) );
 
-			my @dtCodes = Marking->GetDatacodesInfo( $inCAM, $jobId, $step, $layer );
+			my @dtCodes = MarkingDataCode->GetDatacodesInfo( $inCAM, $jobId, $step, $layer );
 
 			# check if mirror datacode is ok
 			if (@dtCodes) {
@@ -896,13 +901,63 @@ sub __CheckDataCodeJob {
 	return $result;
 }
 
+# Check if UL logo are ok (exist, right mirror)
+sub __CheckULLogoJob {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $defaultInfo = shift;
+	my $ULLogos     = shift;
+	my $mess        = shift;
+	
+	my $result      = 1;
+
+	my @steps = ("o+1");    #if pool
+
+	unless ( $defaultInfo->IsPool() ) {
+
+		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
+	}
+
+	foreach my $step (@steps) {
+
+		foreach my $layer ( split( ",", $ULLogos ) ) {
+
+			$layer = lc($layer);
+
+			die "Layer: $layer, which UL logo should be located in does not exist." if ( !$defaultInfo->LayerExist($layer) );
+
+			my @ULLogos = MarkingULLogo->GetULLogoInfo( $inCAM, $jobId, $step, $layer );
+
+			# check if mirror UL logo is ok
+			if (@ULLogos) {
+
+				my @ULLogoWrong = grep { $_->{"wrongMirror"} } @ULLogos;
+				if (@ULLogoWrong) {
+
+					my $str = join( "; ", map { $_->{"name"} } @ULLogoWrong );
+					$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" jsou nesprávně zrcadlené UL loga ($str).\n";
+					$result = 0;
+				}
+			}
+			else {
+				$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" nebylo dohledáno UL logo.\n";
+				$result = 0;
+			}
+		}
+	}
+
+	return $result;
+}
+
 # check if ul logo exist
 sub __CheckUlLogoIS {
 	my $self      = shift;
 	my $jobId     = shift;
 	my $groupData = shift;
 
-	my $layerIS     = HegMethods->GetUlLogoLayer($jobId);
+	my $layerIS = HegMethods->GetUlLogoLayer($jobId);
+
 	my $layerExport = $groupData->GetUlLogo();
 
 	return $self->__CheckMarkingLayer( $layerExport, $layerIS );

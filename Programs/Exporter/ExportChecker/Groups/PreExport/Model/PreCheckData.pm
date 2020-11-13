@@ -513,6 +513,14 @@ sub __CheckGroupDataBasic {
 		$dataMngr->_AddErrorResult( "Bend area layer", "DPS je typu RigidFlex, v matrixu chybí board vrstva: \"bend\", typu: \"bend_area\" " );
 
 	}
+	
+	# X) Check if cvrlpins is not missng
+	if (   $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI  && !$defaultInfo->LayerExist( "cvrlpins", 1 ) )
+	{
+
+		$dataMngr->_AddErrorResult( "Cvrlpins layer", "DPS je typu RigidFlex Inner, v matrixu chybí board vrstva: \"cvrlpins\", typu: \"bend_area\" " );
+
+	}
 
 	# Check stiffener layer dont match with value in IS
 	my %stiffIS = HegMethods->GetStiffenerType($jobId);

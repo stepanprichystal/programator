@@ -13,6 +13,7 @@ use Math::Trig ':pi';
 #local library
 
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Enums::EnumsDrill';
@@ -54,7 +55,7 @@ sub CheckDrillDepth {
 	else {
 		die "Unable to compute drill depth, because no calculation type (STANDARD/SPECIAL) can by used";
 	}
-	
+
 	return $result;
 
 }
@@ -83,7 +84,7 @@ sub CheckDrillIsolation {
 		my $l = $layers[$i];
 
 		if ( $l->GetType() eq StackEnums->MaterialType_COPPER && $l->GetCopperNumber() eq $ncLayer->{"NCSigEndOrder"} ) {
- 
+
 			$realIsol      = $layers[ $i + 1 ]->GetThick();
 			$reqIsolFromCu = $layers[ $i + 2 ]->GetCopperName();
 			last;
@@ -93,9 +94,13 @@ sub CheckDrillIsolation {
 	# Peal absolute length
 	my $peakLen = ( $drillSize / 2 ) / tan( deg2rad( Enums->DRILL_TOOL_ANGLE / 2 ) );
 
-	# End half cu
+	# End half cu + check if cu is plated
 	my $endCuThick = $stackup->GetCuLayer( $ncLayer->{"NCSigEnd"} )->GetThick();
-
+	
+	my %lPars      = JobHelper->ParseSignalLayerName( $ncLayer->{"NCSigEnd"} );
+	my $IProduct   = $stackup->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+	$endCuThick += StackEnums->Plating_STD if ( $IProduct->GetIsPlated() );
+	
 	if ( $drillType eq Enums->BLINDTYPE_STANDARD ) {
 
 		$reqIsol = Enums->MIN_ISOLATION + Enums->DRILL_TOLERANCE + $peakLen - $endCuThick / 2;

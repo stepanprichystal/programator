@@ -29,7 +29,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Helpers::ValueConvertor';
 
-use aliased 'Packages::CAMJob::Marking::Marking';
+use aliased 'Packages::CAMJob::Marking::MarkingDataCode';
 
 my $inCAM    = InCAM->new();
 
@@ -1020,7 +1020,7 @@ sub _CheckCorrectDataCode {
 	my $layer = shift;
 	my $step = 'o+1';
 	
-			unless ( Marking->DatacodeExists( $inCAM, $jobId, $step, $layer ) ) {
+			unless ( MarkingDataCode->DatacodeExists( $inCAM, $jobId, $step, $layer ) ) {
                                
 						push @errorMessageArr , $hashINFO{datacode}.  "- Datacode je ve spatnem formatu nebo v pozadovane vrstve chybi.";
 			}

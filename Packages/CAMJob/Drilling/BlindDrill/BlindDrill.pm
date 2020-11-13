@@ -14,6 +14,7 @@ use Math::Trig ':pi';
 #local library
 
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::Enums';
@@ -91,7 +92,7 @@ sub ComputeDrillDepth {
 
 	my $drillS   = $ncLayer->{"NCSigStartOrder"};
 	my $drillE   = $ncLayer->{"NCSigEndOrder"};
-	my $drillDir = $ncLayer->{"gROWdrl_dir"} ;
+	my $drillDir = $ncLayer->{"gROWdrl_dir"};
 
 	# Stackup thick from start to end Cu of drilling (end cu - compute only half thick of Cu)
 	my $stackThick = 0;       #µm
@@ -114,16 +115,27 @@ sub ComputeDrillDepth {
 
 		next unless ($addThick);
 
+		# Get layer thick
+		my $lThick = $l->GetThick();
+
+		# If layer is type of copper and is plated add plating thickness
+		# Do not add plating for start copper layer, in this time copper is not plated yet
+		if ( $l->GetType() eq StackEnums->MaterialType_COPPER && $l->GetCopperNumber() ne $drillS ) {
+			my %lPars = JobHelper->ParseSignalLayerName( $l->GetCopperName() );
+			my $IProduct = $stackup->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+			$lThick += StackEnums->Plating_STD if ( $IProduct->GetIsPlated() );
+		}
+
 		if ( $l->GetType() eq StackEnums->MaterialType_COPPER && $l->GetCopperNumber() eq $drillE ) {
 
-			$stackThick += $l->GetThick() / 2;    # end cu computed only half thick
+			$stackThick += $lThick / 2;                                            # end cu computed only half thick
 			last;
 		}
-		
-		$stackThick += $l->GetThick();
+
+		$stackThick += $lThick;
 	}
-	
-	die "Error during calculation of stackup thickness between start/end drill layer (".$ncLayer->{"gROWname"}.")" unless($stackThick);
+
+	die "Error during calculation of stackup thickness between start/end drill layer (" . $ncLayer->{"gROWname"} . ")" unless ($stackThick);
 
 	#  Absolute peak length/height
 	my $peakLen = ( $drillSize / 2 ) / tan( deg2rad( Enums->DRILL_TOOL_ANGLE / 2 ) );
@@ -133,13 +145,14 @@ sub ComputeDrillDepth {
 
 		$depth = $stackThick + Enums->DRILL_TOLERANCE + $peakLen;
 
-		print STDERR "Type 1: peak:" . $peakLen . ", depth = $depth\n";
+		#print STDERR "Type 1: peak:" . $peakLen . ", depth = $depth\n";
 
 	}
 	elsif ( $drillType eq Enums->BLINDTYPE_SPECIAL ) {
 
 		$depth = $stackThick + Enums->DRILL_TOLERANCE + $peakLen / 2;
-		print STDERR "Type 2: peak:" . ( $peakLen / 2 ) . ", depth = $depth\n";
+
+		#print STDERR "Type 2: peak:" . ( $peakLen / 2 ) . ", depth = $depth\n";
 	}
 
 	return $depth;
@@ -157,19 +170,19 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'CamHelpers::CamDrilling';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d218211";
+	my $jobId = "d293099";
 	my $step  = "o+1";
 
 	use aliased 'Packages::Stackup::Stackup::Stackup';
 
-	my $stackup = Stackup->new($inCAM,$jobId);
+	my $stackup = Stackup->new( $inCAM, $jobId );
 
 	my %res = ();
 
-	my %l = ( "gROWname" => "sc2" );
+	my %l = ( "gROWname" => "ss1" );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, [ \%l ] );
 
-	my $r = BlindDrill->GetDrillType( $stackup, 1650, \%l, \%res );
+	my $r = BlindDrill->GetDrillType( $stackup, 250, \%l, \%res );
 
 	print $r;
 

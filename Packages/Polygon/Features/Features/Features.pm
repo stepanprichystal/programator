@@ -52,6 +52,7 @@ sub Parse {
 	my $featFilter = shift;    # parse only given feat id
 
 	die "Parameter \"selected\" is not allowed in combination with parameter \"breakSR\"" if ( $breakSR && $selected );
+	die "Parameter \"featFilter\" is not allowed in combination with parameter \"breakSR\"" if ( $breakSR && $featFilter );
 
 	my $breakSRVal  = $breakSR  ? "break_sr+" : "";
 	my $selectedVal = $selected ? "select+"   : "";

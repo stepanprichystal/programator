@@ -169,7 +169,7 @@ sub __SetLayoutJetprint {
 	my $exportChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition );
 
 	my $fiducSunRb = Wx::RadioButton->new( $statBox, -1, "Fiduc:Sun 5mm", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
-	my $fiducHoleRb = Wx::RadioButton->new( $statBox, -1, "Fiduc:Hole 3mm", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+	my $fiducHoleRb = Wx::RadioButton->new( $statBox, -1, "Fiduc:OLEC 3mm", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
 	my $rotationChb = Wx::CheckBox->new( $statBox, -1, "Rotate 90°", &Wx::wxDefaultPosition );
 
@@ -483,7 +483,7 @@ sub SetLayers {
 	my $self   = shift;
 	my $layers = shift;
 
-	$self->{"layers"} = shift;
+	$self->{"layers"} = $layers;
 }
 
 sub GetLayers {
