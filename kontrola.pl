@@ -282,9 +282,9 @@ sub _PutXMLorder {
 									    							$viewInfo2 = 1;
 									    			}
 									    							
-													if ($hashINFO{special_layer_construction} eq 'yes') {
-																	$viewInfo3 = 1;
-													}
+#													if ($hashINFO{special_layer_construction} eq 'yes') {
+#																	$viewInfo3 = 1;
+#													}
 													if ($hashINFO{goldfingers} > 0 ) {
 																	$viewInfo4 = 1;
 													}
@@ -331,11 +331,11 @@ sub _PutXMLorder {
 													$framegrid->Label(-text=>"Potisk BOT",-font=>'arial 9',-fg=>'red')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													$framegrid->Label(-text=>"$hashINFO{silkscreenBOT}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
 													}
-													if ($viewInfo3){
-													$rowStart++;
-													$framegrid->Label(-text=>"Special stackup",-font=>'arial 9',-fg=>'red')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-													$framegrid->Label(-text=>"$hashINFO{special_layer_construction}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-													}
+#													if ($viewInfo3){
+#													$rowStart++;
+#													$framegrid->Label(-text=>"Special stackup",-font=>'arial 9',-fg=>'red')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+#													$framegrid->Label(-text=>"$hashINFO{special_layer_construction}",-font=>'arial 9',-fg=>'red')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+#													}
 													
 													if ($hashINFO{layer_buildup} eq 'N/D') {
 															$rowStart++;
@@ -344,7 +344,16 @@ sub _PutXMLorder {
 													}elsif($hashINFO{layer_buildup} eq '4L01') {
 															$rowStart++;
 															$framegrid->Label(-text=>"Stackup",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
-															$framegrid->Label(-text=>"Standradni slozeni (Core 1,20)",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");	
+															$framegrid->Label(-text=>"Multi 4L01 => 1x Core 1,20 (1,55mm)",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");	
+													}elsif($hashINFO{layer_buildup} eq '6L01') {
+															$rowStart++;
+															$framegrid->Label(-text=>"Stackup",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+															$framegrid->Label(-text=>"Multi 6L01 => 2x Core 0,30 (1,55mm)",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");	
+													
+													}elsif($hashINFO{layer_buildup} eq '8L01') {
+															$rowStart++;
+															$framegrid->Label(-text=>"Stackup",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
+															$framegrid->Label(-text=>"Multi 8L01 => 3x Core 0,20 (1,55mm)",-font=>'arial 9',-fg=>'DimGray')->grid(-column=>1,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");	
 													}elsif($hashINFO{layer_buildup} eq 'CUST') {
 															$rowStart++;
 															$framegrid->Label(-text=>"Stackup",-font=>'arial 9',-fg=>'red')->grid(-column=>0,-row=>"$rowStart",-columnspan=>1,-sticky=>"w");
@@ -790,6 +799,13 @@ sub _PutHeliosInfo {
 													my $topMask2 = ValueConvertor->GetMaskCodeToColor($maska2{'top'});
 													my $botMask1 = ValueConvertor->GetMaskCodeToColor($maska1{'bot'});
 													my $botMask2 = ValueConvertor->GetMaskCodeToColor($maska2{'bot'});
+													
+													
+													$topMask1 =~ s/GreenSMDFlex/green/i; 
+													$topMask2 =~ s/GreenSMDFlex/green/i; 
+													$botMask1 =~ s/GreenSMDFlex/green/i; 
+													$botMask2 =~ s/GreenSMDFlex/green/i; 
+													
 													
 													$topMask1 =~ s/gloss//i;
 													$topMask1 =~ s/mat//i;

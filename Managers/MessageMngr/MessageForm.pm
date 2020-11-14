@@ -372,7 +372,7 @@ sub __WriteMessages() {
 				$messPom = substr $messPom, 0, length($messPom) - 3;
 				my $buffer = substr( $messPom, $writePos + 1, length($messPom) );
 
-				$richTxt->WriteText( decode( 'UTF-8', $buffer ) );
+				$richTxt->WriteText( decode( 'UTF-8', $buffer ) ) if($buffer ne "");
 				$writePos = length($messPom) - 1;
 
 				if ( $1 eq "r" ) {
@@ -397,7 +397,7 @@ sub __WriteMessages() {
 
 				$messPom = substr $messPom, 0, length($messPom) - 4;
 				my $buffer = substr( $messPom, $writePos + 1, length($messPom) );
-				$richTxt->WriteText( decode( 'UTF-8', $buffer ) );
+				$richTxt->WriteText( decode( 'UTF-8', $buffer ) ) if($buffer ne "");;
 				$writePos = length($messPom) - 1;
 
 				if ( $1 eq "b" ) {

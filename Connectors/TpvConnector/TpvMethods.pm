@@ -47,7 +47,9 @@ sub GetCustomerInfo {
 					IF(t1.MinCustPnlDim1 = '', null , t1.MinCustPnlDim1) as MinCustPnlDim1,
 					IF(t1.MinCustPnlDim2 = '', null , t1.MinCustPnlDim2) as MinCustPnlDim2,
 					IF(t1.MaxCustPnlDim1 = '', null , t1.MaxCustPnlDim1) as MaxCustPnlDim1,
-					IF(t1.MaxCustPnlDim2 = '', null , t1.MaxCustPnlDim2) as MaxCustPnlDim2
+					IF(t1.MaxCustPnlDim2 = '', null , t1.MaxCustPnlDim2) as MaxCustPnlDim2,
+					IF(t1.InsertDataCode = '', null , t1.InsertDataCode) as InsertDataCode,
+					IF(t1.InsertULLogo = '', null , t1.InsertULLogo) as InsertULLogo
 	
     				FROM customer_note AS t1
 

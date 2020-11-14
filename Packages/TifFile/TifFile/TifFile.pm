@@ -10,7 +10,7 @@ package Packages::TifFile::TifFile::TifFile;
 #3th party library
 use strict;
 use warnings;
-use JSON;
+use JSON::XS;
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -58,7 +58,7 @@ sub __LoadTifFile {
 		# Load data from file
 		my $serializeData = FileHelper->ReadAsString( $self->{"filePath"} );
 
-		my $json = JSON->new();
+		my $json = JSON::XS->new->ascii->pretty->allow_nonref;
 
 		my $hashData = $json->decode($serializeData);
 
@@ -72,8 +72,8 @@ sub __LoadTifFile {
 sub _Save {
 	my $self = shift;
 
-	my $json = JSON->new();
-
+	my $json = JSON::XS->new->ascii->pretty->allow_nonref;
+ 
 	my $serialized = $json->pretty->encode( $self->{"tifData"} );
 
 	#delete old file

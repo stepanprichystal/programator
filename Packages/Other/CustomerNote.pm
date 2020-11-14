@@ -202,6 +202,32 @@ sub MaxCustPanelDim {
 	return ($a, $b); 
 }
 
+# Indicate if customer require datacode on PCB
+sub InsertDataCode {
+	my $self = shift;
+
+	# default value if customer is not in db
+	if ( !$self->Exist() ) {
+		return undef;
+	}
+
+	return $self->{"notes"}->{"InsertDataCode"};
+
+}
+
+# Indicate if customer require ULLogo on PCB
+sub InsertULLogo {
+	my $self = shift;
+
+	# default value if customer is not in db
+	if ( !$self->Exist() ) {
+		return undef;
+	}
+
+	return $self->{"notes"}->{"InsertULLogo"};
+
+}
+
 
 # ======== Stencil notes ============
 

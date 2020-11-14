@@ -17,6 +17,7 @@ use warnings;
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Reorder::Enums';
 use aliased 'Helpers::JobHelper';
+use aliased 'Packages::TifFile::TifRevision';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -40,7 +41,7 @@ sub Run {
 
 	my $needChange = 0;
 
-	# 1) check if pcb is in revision
+	# 1) check if pcb is in Salec revision
 	my $pcbInfo = HegMethods->GetBasePcbInfo($jobId);
 
 	my $revize = $pcbInfo->{"stav"} eq 'R' ? 1 : 0;    # indicate if pcb need user-manual process before go to produce
@@ -48,17 +49,33 @@ sub Run {
 	if ($revize) {
 
 		$self->_AddChange(
-						   "Deska je ve stavu \"revize\", uprav data jobu. Pokud: \n "
-							 . "a) opakovanÃ¡ pÅ™iÅ¡la z OÃš, najdi papÃ­r o zmÄ›nÃ¡ch v kastlÃ­ku\n "
-							 . "b) poÅ¾adavek z vÃ½roby, informuj se o zmÄ›nÃ¡ch v dps u autora opakovanÃ© objednÃ¡vky",
+						   "Deska má nastaveno v IS stav \"revize\", uprav data jobu. Pokud: \n "
+							 . "a) opakovaná pøišla z OÚ najdi papír se zmìnou v kastlíku nebo kontaktuj OÚ\n "
+							 . "b) se jedná o požadavek z výroby, informuj se o zmìnách u autora opakované výroby",
 						   0
+		);
+
+	}
+
+	# 2) Check if PCB is in TPV revision
+	my $difFile = TifRevision->new($jobId);
+	if ( $difFile->TifFileExist() && $difFile->GetRevisionIsActive() ) {
+
+		$self->_AddChange(
+						   "V DIF osuboru byla dohledána aktivní revize na základì požadavku TPV. "
+							 . "Proveï instrukce v revizi a deaktivuj (smaž) ji (RevisionScript.pl)"
+							 . "\nText revize:\n"
+							 . $difFile->GetRevisionText(),
+						   1
 		);
 
 	}
 
 	# 2) All flexible PCB must go through TPV
 	if ( JobHelper->GetIsFlex($jobId) ) {
-		$self->_AddChange( "Flexibilni DPS jde do vÃ½roby. Je tÅ™eba pÅ™ekontrolvoat na TPV jestli nedoÅ¡lo ke zmÄ›nÃ¡m v pÅ™Ã­pravÄ›\n ", 0 );
+		$self->_AddChange(
+				"Flexibilni DPS jde do výroby, je tøeba zkontrolovat, jestli nedošlo k zásadním zmìnám na pøípravì.\n ",
+				0 );
 	}
 
 }
@@ -69,15 +86,21 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Reorder::CheckReorder::Checks::KADLEC_PANEL' => "Change";
+	use aliased 'Packages::Reorder::CheckReorder::Checks::REVISION' => "Change";
 	use aliased 'Packages::InCAM::InCAM';
 
+	use Data::Dump qw(dump);
+
 	my $inCAM = InCAM->new();
-	my $jobId = "f52457";
+	my $jobId = "d298300";
+	my $orderId = "d298300-01";
 
-	my $check = Change->new();
+	my $check = Change->new( "key", $inCAM, $jobId, $orderId, "Reorder_Standard" );
 
-	print "Need change: " . $check->NeedChange( $inCAM, $jobId, 1 );
+	my $mess = "";
+	  $check->Run(  );
+
+	dump( $check->GetChanges() );
 }
 
 1;

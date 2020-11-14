@@ -49,7 +49,7 @@ sub Parse {
 	my $layer      = shift;
 	my $breakSR    = shift;
 	my $selected   = shift;    # parse only selected feature
-	my $featFilter = shift;    # parse only given feat id
+	my $featFilter = shift;    # parse only given feat in order faster results
 
 	die "Parameter \"selected\" is not allowed in combination with parameter \"breakSR\"" if ( $breakSR && $selected );
 	die "Parameter \"featFilter\" is not allowed in combination with parameter \"breakSR\"" if ( $breakSR && $featFilter );
@@ -75,6 +75,7 @@ sub Parse {
 	unlink($infoFile);
 
 	# if filter specify feats
+	# Filter before parsing in order get faster reslts
 	if ( $featFilter && scalar( @{$featFilter} ) ) {
 
 		my %tmp;
@@ -392,7 +393,6 @@ sub __ParseLines {
 
 		# set source step. Default is parent step
 		# (if breakSR, source step is set in __AddBreakSRInfo function)
-		$featInfo->{"uid"}  = $i + 1;
 		$featInfo->{"step"} = $step;
 
 		push( @features, $featInfo );

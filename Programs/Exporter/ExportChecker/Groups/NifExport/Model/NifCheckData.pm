@@ -40,6 +40,7 @@ use aliased 'Packages::CAMJob::Technology::CuLayer';
 use aliased 'Packages::CAMJob::PCBConnector::InLayersClearanceCheck';
 use aliased 'Packages::CAMJob::PCBConnector::PCBConnectorCheck';
 use aliased 'Packages::CAMJob::Checklist::PCBClassCheck';
+use aliased 'Packages::TifFile::TifRevision';
 use aliased 'Enums::EnumsChecklist';
 
 #-------------------------------------------------------------------------------------------#
@@ -75,23 +76,30 @@ sub OnCheckGroupData {
 		$dataMngr->_AddErrorResult( "Data code", "Nesedí zadaný datacode v heliosu s datacodem v exportu." );
 	}
 
+	if ( $defaultInfo->GetCustomerNote()->InsertDataCode() && !defined $datacodeLayer ) {
+		$dataMngr->_AddWarningResult( "Chybějící Data code", "Zákazník požaduje vždy vložit datakód, volba Datacode však není aktivní." );
+	}
+
 	my $errMessDC = "";
 	unless ( $self->__CheckDataCodeJob( $inCAM, $jobId, $defaultInfo, $groupData->GetDatacode(), \$errMessDC ) ) {
-		$dataMngr->_AddErrorResult( "Data code", $errMessDC );
+		$dataMngr->_AddWarningResult( "Data code", $errMessDC );
 	}
 
 	# 2) ul logo
 	my $ulLogoLayer = $self->__CheckUlLogoIS( $jobId, $groupData );
 
 	unless ( defined $ulLogoLayer ) {
-		$dataMngr->_AddErrorResult( "Ul logo", "Nesedí zadané Ul logo v heliosu s datacodem v exportu." );
+		$dataMngr->_AddErrorResult( "UL logo", "Nesedí zadané Ul logo v heliosu s datacodem v exportu." );
 	}
-	
+
+	if ( $defaultInfo->GetCustomerNote()->InsertULLogo() && !defined $ulLogoLayer ) {
+		$dataMngr->_AddWarningResult( "Chybějící UL logo", "Zákazník požaduje vždy vložit ULLogo, volba ULlogo však není aktivní." );
+	}
+
 	my $errMessUl = "";
 	unless ( $self->__CheckULLogoJob( $inCAM, $jobId, $defaultInfo, $groupData->GetUlLogo(), \$errMessUl ) ) {
-		$dataMngr->_AddErrorResult( "Data code", $errMessUl );
+		$dataMngr->_AddWarningResult( "UL logo", $errMessUl );
 	}
-	
 
 	# 3) mask control
 	my %masks        = CamLayer->ExistSolderMasks( $inCAM, $jobId );
@@ -838,6 +846,29 @@ sub OnCheckGroupData {
 
 	}
 
+	# X) Check if revision is not active for reorders
+	my $difFile = TifRevision->new($jobId);
+	if ( $difFile->TifFileExist() && $difFile->GetRevisionIsActive() ) {
+
+		my @affectOrder = ();
+		push( @affectOrder, HegMethods->GetOrdersByState( $jobId, 4 ) );    # Orders on Predvzrobni priprava = 2
+		@affectOrder = map { $_->{"reference_subjektu"} } grep { $_->{"reference_subjektu"} !~ /-01/ } @affectOrder;
+		 
+
+		if ( scalar(@affectOrder) ) {
+
+			$dataMngr->_AddErrorResult(
+										"Aktivní revize",
+										"Pozor, na předvýrobní přípravě je opakovaná zakázka ("
+										  . join( ";", @affectOrder )
+										  . ") a v DIF souboru byla nalezena aktivní revize. "
+										  . "Ujisti se, že instrukce v revizi byly provedeny a revizi smaž (RevisionScript.pl)"
+										  . "\nText revize:\n"
+										  . $difFile->GetRevisionText()
+			);
+		}
+	}
+
 }
 
 # check if datacode exist
@@ -870,9 +901,9 @@ sub __CheckDataCodeJob {
 		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
 	}
 
-	foreach my $step (@steps) {
+	foreach my $layer ( split( ",", $dataCodes ) ) {
 
-		foreach my $layer ( split( ",", $dataCodes ) ) {
+		foreach my $step (@steps) {
 
 			$layer = lc($layer);
 
@@ -880,7 +911,7 @@ sub __CheckDataCodeJob {
 
 			my @dtCodes = MarkingDataCode->GetDatacodesInfo( $inCAM, $jobId, $step, $layer );
 
-			# check if mirror datacode is ok
+			# check if mirror datacode is ok in all steps where is datacont present
 			if (@dtCodes) {
 
 				my @dtCodesWrong = grep { $_->{"wrongMirror"} } @dtCodes;
@@ -892,8 +923,13 @@ sub __CheckDataCodeJob {
 				}
 			}
 			else {
-				$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" nebyl dohledán dynamický datakód.\n";
-				$result = 0;
+
+				# Check if step contain child steps (datacode has to by present in each child step)
+				unless ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) ) {
+					$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" nebyl dohledán dynamický datakód.\n";
+					$result = 0;
+				}
+
 			}
 		}
 	}
@@ -909,8 +945,8 @@ sub __CheckULLogoJob {
 	my $defaultInfo = shift;
 	my $ULLogos     = shift;
 	my $mess        = shift;
-	
-	my $result      = 1;
+
+	my $result = 1;
 
 	my @steps = ("o+1");    #if pool
 
@@ -919,9 +955,9 @@ sub __CheckULLogoJob {
 		@steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
 	}
 
-	foreach my $step (@steps) {
+	foreach my $layer ( split( ",", $ULLogos ) ) {
 
-		foreach my $layer ( split( ",", $ULLogos ) ) {
+		foreach my $step (@steps) {
 
 			$layer = lc($layer);
 
@@ -929,7 +965,7 @@ sub __CheckULLogoJob {
 
 			my @ULLogos = MarkingULLogo->GetULLogoInfo( $inCAM, $jobId, $step, $layer );
 
-			# check if mirror UL logo is ok
+			# check if mirror UL logo is ok in all steps where is datacont present
 			if (@ULLogos) {
 
 				my @ULLogoWrong = grep { $_->{"wrongMirror"} } @ULLogos;
@@ -941,8 +977,12 @@ sub __CheckULLogoJob {
 				}
 			}
 			else {
-				$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" nebylo dohledáno UL logo.\n";
-				$result = 0;
+
+				# Check if step contain child steps (UL logo has to by present in each child step)
+				unless ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) ) {
+					$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" nebylo dohledáno UL logo.\n";
+					$result = 0;
+				}
 			}
 		}
 	}

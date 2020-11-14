@@ -366,18 +366,40 @@ sub __CheckGroupDataBasic {
 
 		}
 
-		# b) test if created stackup match thickness in helios +-5%
-		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick(0) / 1000;
+		# b) test if created stackup match thickness in helios +-10%
+		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick(1) / 1000;
 
 		unless ( $pcbThickHelios * 0.90 < $stackThick && $pcbThickHelios * 1.10 > $stackThick ) {
 
 			$stackThick     = sprintf( "%.2f", $stackThick );
 			$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
 
-			$dataMngr->_AddErrorResult( "Stackup thickness",
-										"Stackup thickness ($stackThick) isn't match witch thickness in Helios ($pcbThickHelios) +-10%." );
+			$dataMngr->_AddErrorResult(
+										"Tloušťka složení +-10%",
+										"Odhad výsledné tloušťky složení včetně nakovení (${stackThick}mm)"
+										  . " se nerovná požadované tloušťce zákazníka v HEG (${pcbThickHelios}mm) +-10%."
+			);
 
 		}
+		else {
+			# Stricter check than +-10%, but only warning
+			# Test if created stackup match thickness in helios +-7%
+
+			unless ( $pcbThickHelios * 0.93 < $stackThick && $pcbThickHelios * 1.07 > $stackThick ) {
+
+				$stackThick     = sprintf( "%.2f", $stackThick );
+				$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
+
+				$dataMngr->_AddWarningResult(
+					"Tloušťka složení +-7% (přísnější varianta kontroly +-10%)",
+					"Odhad výsledné tloušťky složení včetně nakovení (${stackThick}mm)"
+					  . " se nerovná požadované tloušťce zákazníka v HEG (${pcbThickHelios}mm) +-7% "
+					  . "(pozor, podmínka +-10% je splněna, jedná se však vždy pouze o předpokládanou tloušťku po vyrobení DPS!)."
+				);
+
+			}
+		}
+
 	}
 
 	# 7) Check if contain negative layers, if powerground type is set and vice versa
@@ -513,12 +535,12 @@ sub __CheckGroupDataBasic {
 		$dataMngr->_AddErrorResult( "Bend area layer", "DPS je typu RigidFlex, v matrixu chybí board vrstva: \"bend\", typu: \"bend_area\" " );
 
 	}
-	
-	# X) Check if cvrlpins is not missng
-	if (   $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI  && !$defaultInfo->LayerExist( "cvrlpins", 1 ) )
-	{
 
-		$dataMngr->_AddErrorResult( "Cvrlpins layer", "DPS je typu RigidFlex Inner, v matrixu chybí board vrstva: \"cvrlpins\", typu: \"bend_area\" " );
+	# X) Check if cvrlpins is not missng
+	if ( $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI && !$defaultInfo->LayerExist( "cvrlpins", 1 ) ) {
+
+		$dataMngr->_AddErrorResult( "Cvrlpins layer",
+									"DPS je typu RigidFlex Inner, v matrixu chybí board vrstva: \"cvrlpins\", typu: \"bend_area\" " );
 
 	}
 
@@ -671,12 +693,12 @@ sub __CheckGroupDataBasic {
 		my $pcbType     = $defaultInfo->GetPcbType();
 		my $stackupCode = $defaultInfo->GetStackupCode();
 		if (
-			(
+			 (
 			      $pcbType eq EnumsGeneral->PcbType_2VFLEX
 			   || $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI
 			   || ( $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO && $stackupCode->GetUsedFlexLayerCnt() >= 2 )
-			)
-			&& $defaultInfo->GetPcbBaseInfo()->{"xout"} =~ /^A$/i
+			 )
+			 && $defaultInfo->GetPcbBaseInfo()->{"xout"} =~ /^A$/i
 		  )
 		{
 

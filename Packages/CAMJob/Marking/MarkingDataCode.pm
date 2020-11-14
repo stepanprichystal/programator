@@ -60,6 +60,7 @@ sub GetDatacodeLayers {
 }
 
 # Return if dynamic datacode exist in layer
+# Note.: Work with S&R
 sub DatacodeExists {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -198,7 +199,7 @@ sub GetDatacodesInfo {
 	}
 
 	my $fSym = Features->new();
-	$fSym->Parse( $inCAM, $jobId, $step, $layer, 1, 0, \@symId );
+	$fSym->Parse( $inCAM, $jobId, $step, $layer, 0, 0, \@symId );
 
 	foreach my $f ( $fSym->GetFeatures() ) {
 
