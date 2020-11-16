@@ -77,15 +77,21 @@ sub BuildRowsStackupOuter {
 	# 2) Add flexible always soldermask directly to Copper
 	push( @{ $topOuter[0] }, smFlex ) if ( $topSpec{smFlex} );    # Solder mask Flex alway on top Cu
 
-	# 3) Add cvrl directly above cu OR sm
-	if ( $topSpec{cvrl} ) {
+	# 3) Add cvrl/cvrl adhesive directly above cu if PCB is RigidFlex Outer
+	if ( $topSpec{cvrl} && $stckpMngr->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXO ) {
+		push( @{ $topOuter[0] }, cvrlAdh );
+		push( @{ $topOuter[1] }, cvrl );
+	}
+
+	# 4) Add cvrl directly above cu OR sm
+	if ( $topSpec{cvrl} && $stckpMngr->GetPcbType() ne EnumsGeneral->PcbType_RIGIDFLEXO ) {
 
 		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
 
-			# Stiffener is on top Cu or above coverlay + coverlay adh
+			# Put directly on CU
 			if ( !scalar( @{ $topOuter[$i] } ) ) {
-				push( @{ $topOuter[$i] }, cvrlAdh );
-				push( @{ $topOuter[$i+1] }, cvrl );
+				push( @{ $topOuter[$i] },       cvrlAdh );
+				push( @{ $topOuter[ $i + 1 ] }, cvrl );
 				last;
 			}
 			elsif ( scalar( grep { $_ eq sm } @{ $topOuter[$i] } ) ) {
@@ -96,14 +102,14 @@ sub BuildRowsStackupOuter {
 		}
 	}
 
-	# 4) Add stiff directly above cu OR sm
+	# 5) Add stiff directly above cu OR sm
 	if ( $topSpec{stiff} ) {
 
 		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
 
 			if ( !scalar( @{ $topOuter[$i] } ) ) {
-				push( @{ $topOuter[$i] }, stiffAdh );
-				push( @{ $topOuter[$i+1]  }, stiff );
+				push( @{ $topOuter[$i] },       stiffAdh );
+				push( @{ $topOuter[ $i + 1 ] }, stiff );
 				last;
 
 			}
@@ -115,7 +121,7 @@ sub BuildRowsStackupOuter {
 		}
 	}
 
-	# 5) Add double sided tape
+	# 6) Add double sided tape
 	if ( $topSpec{tape} ) {
 
 		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
@@ -128,14 +134,14 @@ sub BuildRowsStackupOuter {
 		}
 	}
 
-	# 6) Add double sided tape sticked to stiffener
+	# 7) Add double sided tape sticked to stiffener
 	if ( $topSpec{tapeStiff} ) {
 
 		for ( my $i = 0 ; $i < scalar(@topOuter) ; $i++ ) {
 
 			# Add  on the same row as stiffener adh or above Cu or
 			if ( scalar( grep { $_ eq stiff } @{ $topOuter[$i] } ) ) {
-				push( @{ $topOuter[$i+1] }, tapeStiff );
+				push( @{ $topOuter[ $i + 1 ] }, tapeStiff );
 				last;
 			}
 		}

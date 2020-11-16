@@ -19,12 +19,15 @@ use POSIX qw(strftime);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Packages::ItemResult::Enums' => 'ItemResEnums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Programs::Comments::Comments';
 use aliased 'Programs::Comments::CommMail::Enums' => 'MailEnums';
 use aliased 'Programs::Comments::CommMail::CommMail';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Managers::AbstractQueue::Task::TaskStatus::TaskStatus';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -59,6 +62,8 @@ sub Run {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+
+	
 
 	#  1) Change status of orders
 	if ( $self->{"changeOrderStatus"} ) {
@@ -125,7 +130,7 @@ sub Run {
 		if ($emailExport) {
 
 			my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
-		 
+
 			$note .= " Approval email (" . ( strftime "%Y/%m/%d", localtime ) . ")";
 			$inCAM->COM( "set_job_notes", "job" => $jobId, "notes" => $note );
 
@@ -133,7 +138,7 @@ sub Run {
 		else {
 			$resultEmail->AddError("Error duriong generating email");
 		}
-		
+
 		$self->_OnItemResult($resultEmail);
 
 		# Clear comments if mail was exported properly

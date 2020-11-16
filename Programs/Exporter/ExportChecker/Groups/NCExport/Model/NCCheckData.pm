@@ -31,18 +31,19 @@ use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Packages::CAMJob::Drilling::AspectRatioCheck';
 use aliased 'Packages::CAMJob::Drilling::HolePadsCheck';
 use aliased 'Packages::CAMJob::Routing::RoutPocketCheck';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsDrill';
+use aliased 'Enums::EnumsRout';
 use aliased 'Packages::CAMJob::Routing::RoutDepthCheck';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'CamHelpers::CamDTM';
 use aliased 'Packages::CAMJob::Drilling::BlindDrill::BlindDrillInfo';
 use aliased 'Packages::CAMJob::Drilling::CountersinkCheck';
 use aliased 'Packages::Tooling::PressfitOperation';
-use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
 use aliased 'Packages::CAMJob::ViaFilling::ViaFillingCheck';
 use aliased 'Packages::Polygon::Features::Features::Features';
@@ -754,8 +755,7 @@ sub OnCheckGroupData {
 			my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 			my @nplt =
 			  map { $_->{"gROWname"} }
-			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] )
-			  ;
+			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
 
 			foreach my $s (@childs) {
 
@@ -763,17 +763,17 @@ sub OnCheckGroupData {
 
 					my $checkRes = {};
 					unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
- 
+
 						$dataMngr->_AddWarningResult(
-							"Malé otvory v neprokovené NC vrstvě",
-							"Step: $s, NC vrstva: $npltLayer obsahuje nástroje menší jak "
-							  . $maxTool
-							  . "µm, které by měly být přesunuty do prokovené vrtačky. "
-							  . "\n- Seznam použitých nástrojů indikovaných otvorů: "
-							  . join( "; ", map { $_ . "µm" } uniq( @{ $checkRes->{"padTools"} } ) )
-							  . "\n- Seznam \"features Id\" padů, které mají být přesunuty: "
-							  . join( "; ", @{ $checkRes->{"padFeatures"} } )
-							  . "\nPozor, otvory obsahující atribut \".pilot_hole\" a otvory s nastavenou tolerancí v DTM se nepřesouvají!"
+													  "Malé otvory v neprokovené NC vrstvě",
+													  "Step: $s, NC vrstva: $npltLayer obsahuje nástroje menší jak "
+														. $maxTool
+														. "µm, které by měly být přesunuty do prokovené vrtačky. "
+														. "\n- Seznam použitých nástrojů indikovaných otvorů: "
+														. join( "; ", map { $_ . "µm" } uniq( @{ $checkRes->{"padTools"} } ) )
+														. "\n- Seznam \"features Id\" padů, které mají být přesunuty: "
+														. join( "; ", @{ $checkRes->{"padFeatures"} } )
+														. "\nPozor, otvory obsahující atribut \".pilot_hole\" a otvory s nastavenou tolerancí v DTM se nepřesouvají!"
 						);
 					}
 				}
@@ -877,6 +877,111 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# X) Check if npth rout contain PilotHoles, important for flex (one flut tour tools must be pre-drilled)
+	if ( $defaultInfo->GetIsFlex() ) {
+
+		my @pilotL = map { $_->{"gROWname"} }
+		  CamDrilling->GetNCLayersByTypes(
+										   $inCAM, $jobId,
+										   [
+											  EnumsGeneral->LAYERTYPE_plt_nMill,        EnumsGeneral->LAYERTYPE_nplt_nMill,
+											  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill,  EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
+											  EnumsGeneral->LAYERTYPE_nplt_prepregMill, EnumsGeneral->LAYERTYPE_nplt_tapecMill,
+											  EnumsGeneral->LAYERTYPE_nplt_tapesMill
+										   ]
+		  );
+
+		my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+
+		foreach my $s (@childs) {
+
+			foreach my $l (@pilotL) {
+				my $rtm = UniRTM->new( $inCAM, $jobId, $s, $l, 0 );
+				my $chanSeqCnt = scalar( $rtm->GetChainSequences() );
+
+				if ($chanSeqCnt) {
+
+					my %attHist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, $s, $l, 0 );
+
+					if ( $attHist{".pilot_hole"}->{"_totalCnt"} < $chanSeqCnt ) {
+
+						my $pTxt = defined $attHist{".pilot_hole"}->{"_totalCnt"} ? $attHist{".pilot_hole"}->{"_totalCnt"} : 0;
+						$pTxt .= "\n";
+
+						if ( defined $attHist{".pilot_hole"} ) {
+							my @p = ();
+							foreach my $chainNum ( keys %{ $attHist{".pilot_hole"} } ) {
+
+								next if ( $chainNum eq "_totalCnt" );
+								push( @p, "Chain number ${chainNum} => " . $attHist{".pilot_hole"}->{$chainNum} . " pilot holes" );
+							}
+
+							$pTxt .= " (" . join( "\n ", @p ) . ")";
+						}
+
+						$dataMngr->_AddWarningResult(
+													  "Předvrtání fréz - $l",
+													  "Ve stepu: $s, NC vrstvě: $l byly nalezeny pojezdy frézou "
+														. "(pojez = sekvence lajn/akrů od začátku do rozpojení frézy) bez předvrtání.\n"
+														. " Celkem pojezdů: $chanSeqCnt vs celkem pilot holes: $pTxt\n "
+														. "Zkontroluj, jestli všechny začátky pojezdů, mají pilot hole otvor, raději pilot holes vlož znovu."
+						);
+					}
+				}
+			}
+
+		}
+
+	}
+
+	# X)Check if flex or Semi-hybrid PCB has proper comp (one flut tour tools must have com right/cw)
+	my $isSemiHybrid = 0;
+	my $isHybrid = JobHelper->GetIsHybridMat( $jobId, $defaultInfo->GetMaterialKind(), [], \$isSemiHybrid );
+
+	if (    $defaultInfo->GetIsFlex()
+		 || $isSemiHybrid )
+	{
+
+		my @NC = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "rout" } $defaultInfo->GetNCLayers();
+
+		my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+
+		foreach my $s (@childs) {
+
+			foreach my $l (@NC) {
+				my $rtm = UniRTM->new( $inCAM, $jobId, $s, $l, 0 );
+				my @wrongTools =
+				  grep { $_->GetComp() ne EnumsRout->Comp_RIGHT && $_->GetComp() ne EnumsRout->Comp_CW } $rtm->GetChainList();
+
+				if ( scalar(@wrongTools) ) {
+
+					my $listTxt = join(
+						";\n",
+						map {
+							    "Chain number: "
+							  . $_->GetChainOrder()
+							  . "; Chain tool: "
+							  . $_->GetChainSize()
+							  . "; Chain comp: "
+							  . $_->GetComp()
+						} @wrongTools
+					);
+
+					if ( scalar(@wrongTools) ) {
+						$dataMngr->_AddErrorResult(
+							"Kompenzace fréz - $l",
+							"Ve stepu: $s, NC vrstvě: $l byly nalezeny špatné kompenzace fréz. "
+							  . "Pokud se jedná o DPS typu Flex nebo o Semi-hybrid složení (standardní DPS + coverlay), "
+							  . "musí mít všechny pojezdy kompenzaci RIGHT nebo CW (jde-li o surface). Důvodem je použití jednobřitých nástrojů.\n"
+							  . "Seznam špatných fréz:\n$listTxt"
+						);
+					}
+				}
+			}
+
+		}
+
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

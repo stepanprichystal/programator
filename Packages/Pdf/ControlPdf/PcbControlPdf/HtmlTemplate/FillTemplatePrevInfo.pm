@@ -46,9 +46,9 @@ sub new {
 
 # Set keys regarding html temlate content
 sub FillKeysData {
-	my $self           = shift;
-	my $template       = shift;
-	my $infoToPdf      = shift;    # if put info about operator to pdf
+	my $self      = shift;
+	my $template  = shift;
+	my $infoToPdf = shift;    # if put info about operator to pdf
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -223,8 +223,6 @@ sub FillKeysData {
 	$template->SetKey( "DataCode",    "Data code",          "Datum" );
 	$template->SetKey( "DataCodeVal", $pcbInfo{"datacode"}, Translator->Cz( $pcbInfo{"datacode"} ) );
 
- 
-
 	return 1;
 }
 
@@ -232,6 +230,9 @@ sub FillKeysData {
 sub FillKeysLayout {
 	my $self     = shift;
 	my $template = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	# Default se visibility none
 	$template->SetKey( "CoverlayTopDisp",    "display:none" );
@@ -253,11 +254,16 @@ sub FillKeysLayout {
 	my $pcbType = JobHelper->GetPcbType( $self->{"jobId"} );
 
 	# Set visibility of coverlay cells
-	if (    $pcbType eq EnumsGeneral->PcbType_1VFLEX
-		 || $pcbType eq EnumsGeneral->PcbType_2VFLEX
-		 || $pcbType eq EnumsGeneral->PcbType_MULTIFLEX
-		 || $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO
-		 || $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI )
+	# If flex show cells always
+	# If standard, show cell only if coverlay exist
+	my @cvrl = grep { $_->{"gROWlayer_type"} } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	if (
+		   $pcbType eq EnumsGeneral->PcbType_1VFLEX
+		|| $pcbType eq EnumsGeneral->PcbType_2VFLEX
+		|| $pcbType eq EnumsGeneral->PcbType_MULTIFLEX
+		|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO
+		|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI || scalar(@cvrl)
+	  )
 	{
 
 		$template->SetKey( "CoverlayTopDisp",    "display:block" );

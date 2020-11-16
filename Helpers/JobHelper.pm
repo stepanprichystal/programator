@@ -387,16 +387,18 @@ sub GetCoverlaySigLayers {
 # - a) has got IS material kind Hybrid (hybrid)
 # - b) has not got IS material kind Hybrid and contains additional special layers eg. coverlay  (semi-hybrid)
 sub GetIsHybridMat {
-	my $self     = shift;
-	my $jobId    = shift;
-	my $matKind  = shift // HegMethods->GetMaterialKind($jobId);
-	my $matKinds = shift // [];                                    # Array ref, where all found mat kinds will by stored
- 
+	my $self         = shift;
+	my $jobId        = shift;
+	my $matKind      = shift // HegMethods->GetMaterialKind($jobId);
+	my $matKinds     = shift // [];                                  # Array ref, where all found mat kinds will by stored
+	my $isSemiHybrid = shift;                                        # Reference where is stored 1 if material is special type of hybrid - semi-hybrid
+
 	my $isHybrid = 0;
+	$$isSemiHybrid = 0 if ( defined $isSemiHybrid );
 
 	if ( $matKind =~ /Hybrid/i ) {
 
-		$isHybrid = 1;                                             # a) Hybrid
+		$isHybrid = 1;                                               # a) Hybrid
 
 		my $stackup = StackupBase->new($jobId);
 		my @types   = $stackup->GetStackupHybridTypes();
@@ -413,7 +415,8 @@ sub GetIsHybridMat {
 		my %cvrl = HegMethods->GetCoverlayType($jobId);
 		if ( ( defined $cvrl{"top"} && $cvrl{"top"} ) ) {
 
-			$isHybrid = 1;    # b) Semi-hybrid
+			$isHybrid = 1;                                     # b) Semi-hybrid
+			$$isSemiHybrid = 1 if ( defined $isSemiHybrid );
 
 			my $matInfo = HegMethods->GetPcbCoverlayMat( $jobId, "top" );
 			if ( defined $matInfo->{"dps_druh"} && $matInfo->{"dps_druh"} ne "" ) {
@@ -426,7 +429,8 @@ sub GetIsHybridMat {
 		# 2) Coverlay bot
 		if ( defined $cvrl{"bot"} && $cvrl{"bot"} ) {
 
-			$isHybrid = 1;    # b) Semi-hybrid
+			$isHybrid = 1;                                     # b) Semi-hybrid
+			$$isSemiHybrid = 1 if ( defined $isSemiHybrid );
 
 			my $matInfo = HegMethods->GetPcbCoverlayMat( $jobId, "bot" );
 			if ( defined $matInfo->{"dps_druh"} && $matInfo->{"dps_druh"} ne "" ) {
@@ -443,7 +447,8 @@ sub GetIsHybridMat {
 
 		@{$matKinds} = uniq( @{$matKinds} );
 
-		$isHybrid = 0 if ( scalar( @{$matKinds} ) == 1 );
+		$isHybrid      = 0 if ( scalar( @{$matKinds} ) == 1 );
+		$$isSemiHybrid = 0 if ( scalar( @{$matKinds} ) == 1 );
 	}
 
 	return $isHybrid;

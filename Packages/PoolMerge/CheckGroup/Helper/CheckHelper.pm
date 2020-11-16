@@ -165,7 +165,7 @@ sub DimensionsAreOk {
 			  . $order->{"width"} . " x "
 			  . $order->{"height"}
 			  . "), step \"o+1\".\n";
-			$$mess .= "Repair dimension in Helios and create \"pool panel\" again.";
+			$$mess .= "Repair dimension in Helios and create \"pool panel\" (xml from Optimizator) again.";
 		}
 	}
 

@@ -36,16 +36,26 @@ sub new {
 	$self->{"jobId"}         = shift;
 	$self->{"addDefaulComm"} = shift // 0;
 
+	# Path where structured coments are stored in JSON format + uploaded files
 	$self->{"commDir"} = JobHelper->GetJobOutput( $self->{"jobId"} ) . "comments\\";
 	unless ( -e $self->{"commDir"} ) {
 		mkdir( $self->{"commDir"} ) or die "$_";
 	}
 
+	# Path of archived commetns
 	$self->{"commArchiveDir"} = $self->{"commDir"} . "archive\\";
 
+	# Path of main JSON file where comments are stored
 	$self->{"mainFile"} = $self->{"commDir"} . "comments.json";
+	
+	# Path where is stored snapshot from GreenShot
+	$self->{"GSSnapshot"}  = EnumsPaths->Client_INCAMTMPOTHER . "snapshot" . ".png";
+	
 
+	# Complete comment layout structure
 	$self->{"commLayout"}  = CommLayout->new();
+	
+	# Object for storing/loading comments from json
 	$self->{"jsonStrMngr"} = JsonStorableMngr->new( $self->{"mainFile"} );
 
 	$self->__LoadFromJob();
@@ -146,6 +156,7 @@ sub Save {
 
 }
 
+# Create snapshot with InCAM
 sub SnapshotCAM {
 	my $self     = shift;
 	my $directly = shift // 1;
@@ -181,6 +192,7 @@ sub SnapshotCAM {
 	return $result;
 }
 
+# Create Snapshot with GreenSHot
 sub SnapshotGS {
 	my $self = shift;
 	my $p    = shift;
@@ -196,10 +208,9 @@ sub SnapshotGS {
 	my $fileName = "CAM_" . GeneralHelper->GetNumUID();
 	$$p = $self->{"commDir"} . $fileName . ".png";
 
-	my $pSrc = EnumsPaths->Client_INCAMTMPOTHER . "snapshot" . ".png";
-
-	if ( -e $pSrc ) {
-		move( $pSrc, $$p );
+ 
+	if ( -e $self->{"GSSnapshot"} ) {
+		move( $self->{"GSSnapshot"}, $$p );
 
 	}
 	else {
@@ -211,6 +222,32 @@ sub SnapshotGS {
 	return $result;
 }
 
+
+# Create Snapshot. GreenShot send image directly to app
+sub SnapshotGSDirectly {
+	my $self = shift;
+	my $p    = shift;
+
+	my $result = 1;
+ 
+	my $fileName = "CAM_" . GeneralHelper->GetNumUID();
+	$$p = $self->{"commDir"} . $fileName . ".png";
+ 
+	if ( -e $self->{"GSSnapshot"} ) {
+		move( $self->{"GSSnapshot"}, $$p );
+
+	}
+	else {
+
+		$result = 0;
+
+	}
+
+	return $result;
+}
+
+
+
 sub ChooseFile {
 	my $self = shift;
 	my $p    = shift;
@@ -221,8 +258,13 @@ sub ChooseFile {
 	my $dirDialog = Wx::FileDialog->new( $frm, "Select directory with data", "c:/pcb" );
 
 	if ( $dirDialog->ShowModal() != &Wx::wxID_CANCEL ) {
-
-		$$p = ( $dirDialog->GetPaths() )[0];
+		
+		my $fileName = "CAM_" . GeneralHelper->GetNumUID();
+		my $pTmp     = $self->{"commDir"} . $fileName;
+		
+		copy( ($dirDialog->GetPaths() )[0], $pTmp);
+		
+		$$p = $pTmp;
 
 	}
 	else {
@@ -579,6 +621,11 @@ sub GetCommArchiveDir {
 	return $self->{"commArchiveDir"};
 }
 
+# Return Green shot snapshot path
+sub GetGSSnapshotPath{
+	my $self = shift;
+	return $self->{"GSSnapshot"};
+}
 # --------------------------------------
 # Private methods
 # --------------------------------------
@@ -630,9 +677,12 @@ sub __AddDefaultComm {
 
 }
 
+
+# Remove rubbish
 sub __ClearOldFiles {
 	my $self = shift;
 
+	# 1) old files/images which are not referenced in JSON comments
 	my @filesP = map { $_->GetFilePath() } map { $_->GetAllFiles() } $self->{"commLayout"}->GetAllComments();
 
 	my @filesN = map { ( fileparse($_) )[0] } @filesP;
@@ -650,6 +700,9 @@ sub __ClearOldFiles {
 	}
 
 	close(DIR);
+	
+	# 2) remove snapshot image on GS snapshot path when init object
+	unlink($self->{"GSSnapshot"}) if(-e $self->{"GSSnapshot"});
 }
 
 #-------------------------------------------------------------------------------------------#

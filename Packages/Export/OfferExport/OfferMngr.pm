@@ -61,11 +61,24 @@ sub Run {
 		# Dimension
 		my %dim = JobDim->GetDimension( $inCAM, $jobId );
 
-		#clear old values (there are some constraints nasobnost must bz able devide to nasobnost_panelu)
-		push( @jobPar, [ "nasobnost_panelu",        1 ] );
-		push( @jobPar, [ "nasobnost", "" ] );
-		push( @jobPar, [ "nasobnost_panelu",        "" ] );
+		# 1) clear old values (there are some constraints nasobnost must bz able devide to nasobnost_panelu)
+		push( @jobPar, [ "rozmer_x", "" ] );
+		push( @jobPar, [ "rozmer_y", "" ] );
 
+		# There are integrity checks, panel multiple must be able to devide by mpanel multiple
+		# So check if there is filled mpanel multiple and first set it to panel multiple
+		my $formerDim = HegMethods->GetInfoDimensions($jobId);
+		if ( defined $formerDim->{"nasobnost_panelu"} ) {
+			push( @jobPar, [ "nasobnost", $formerDim->{"nasobnost_panelu"} ] );
+		}
+		push( @jobPar, [ "nasobnost_panelu", "" ] );
+		push( @jobPar, [ "nasobnost",        "" ] );
+		push( @jobPar, [ "panel_x",          "" ] );
+		push( @jobPar, [ "panel_y",          "" ] );
+		push( @jobPar, [ "kus_x",            "" ] );
+		push( @jobPar, [ "kus_y",            "" ] );
+
+		# 2) Set new dim
 		push( @jobPar, [ "kus_x", $dim{"single_x"} ] );
 		push( @jobPar, [ "kus_y", $dim{"single_y"} ] );
 

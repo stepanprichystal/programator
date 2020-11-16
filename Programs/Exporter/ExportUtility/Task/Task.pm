@@ -102,7 +102,7 @@ sub GetTaskWarningCnt {
 
 	return $self->{"units"}->GetWarningsCnt();
 }
- 
+
 # ===================================================================
 # Method regardings "to produce" issue
 # ===================================================================
@@ -189,35 +189,34 @@ sub SentToProduce {
 
 	# set state HOTOVO-zadat
 
-	# Check if Unit_COMM set new IS state too, because state bz units has higher priority
-	my $commUnit = $self->GetTaskData->GetUnitData(UnitEnums->UnitId_COMM);
-	return 0 if(defined $commUnit && $commUnit->GetChangeOrderStatus());
- 
-
 	eval {
 
-		my $taksData = $self->GetTaskData();
+		# Check if Unit_COMM set new IS state too, because state by units has higher priority
+		my $commUnit = $self->GetTaskData->GetUnitData( UnitEnums->UnitId_COMM );
+		if ( !defined $commUnit || !$commUnit->GetChangeOrderStatus() ) {
 
-		foreach my $orderNum ( $taksData->GetOrders() ) {
+			my $taksData = $self->GetTaskData();
 
-			my $curStep = HegMethods->GetCurStepOfOrder($orderNum);
+			foreach my $orderNum ( $taksData->GetOrders() ) {
 
-			#my $orderRef = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
-			#my $orderNum = $self->{"jobId"} . "-" . $orderRef;
+				my $curStep = HegMethods->GetCurStepOfOrder($orderNum);
 
-			if ( $curStep ne EnumsIS->CurStep_HOTOVOZADAT ) {
+				if ( $curStep ne EnumsIS->CurStep_HOTOVOZADAT ) {
 
-				my $succ = HegMethods->UpdatePcbOrderState( $orderNum, EnumsIS->CurStep_HOTOVOZADAT );
+					my $succ = HegMethods->UpdatePcbOrderState( $orderNum, EnumsIS->CurStep_HOTOVOZADAT );
+				}
 			}
+
+			$self->{"sentToProduce"} = 1;
 		}
-		
+
 		# remove auto process log
 		if ( AsyncJobHelber->ServerVersion() ) {
-			AutoProcLog->Delete($self->GetJobId()); 
+			AutoProcLog->Delete( $self->GetJobId() );
 		}
-		
+
 		$self->{"taskStatus"}->DeleteStatusFile();
-		$self->{"sentToProduce"} = 1;
+
 	};
 
 	if ( my $e = $@ ) {
@@ -226,7 +225,7 @@ sub SentToProduce {
 		my $toProduceMngr = $self->{"produceResultMngr"};
 		my $item = $toProduceMngr->GetNewItem( "Set state HOTOVO-zadat", EnumsGeneral->ResultType_FAIL );
 
-		$item->AddError("Set state HOTOVO-zadat failed, try it again. Detail: ".$@."\n");
+		$item->AddError( "Set state HOTOVO-zadat failed, try it again. Detail: " . $@ . "\n" );
 		$toProduceMngr->AddItem($item);
 
 		$result = 0;
@@ -285,7 +284,7 @@ sub SetErrorState {
 									 "Error during export job id: \"" . $self->GetJobId() . "\" on server computer. See details on server. \n $str" );
 
 			AutoProcLog->Create( EnumsApp->App_EXPORTUTILITY, $self->GetJobId(), "Job: " . $self->GetJobId() . " finished with errors.\n $str" );
- 
+
 		}
 	};
 	if ( my $e = $@ ) {

@@ -197,11 +197,13 @@ sub GetInfoAfterStartProduce {
 }
 
 # Return info abou pcb dimensions
+# Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetInfoDimensions {
 	my $self  = shift;
 	my $pcbId = shift;
 
 	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
+	push( @params, SqlParameter->new( "_PoradacId", Enums->SqlDbType_VARCHAR, $self->__GetPoradacNum($pcbId) ) );
 
 	my $cmd = "select top 1
 				 d.nasobnost_panelu,
@@ -213,7 +215,7 @@ sub GetInfoDimensions {
 				 
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
-				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = _PoradacId";
 
 	my @result = Helper->ExecuteDataSet( $cmd, \@params );
 

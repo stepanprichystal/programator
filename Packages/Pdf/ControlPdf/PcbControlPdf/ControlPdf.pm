@@ -531,12 +531,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d295750";
- 
+	#my $jobId = "x69801"; # RigidFlex Outer + cvrl
+#	my $jobId = "d298176"; # RigidFlex Outer + flexmask
+ 	my $jobId = "d294436"; 
 
 	my $mess = "";
 
-	my $step = "o+1";
+	my $step = "mpanel";
 	my $SR = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
 
 	#my $nested = $SR;
@@ -553,9 +554,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	};
 	$control->{"onItemResult"}->Add( sub { $f->(@_) } );
 
-	$control->AddInfoPreview( \$mess );
-	$control->AddStackupPreview( \$mess );
-	$control->AddImagePreview( \$mess, 1, 1 );
+	#$control->AddInfoPreview( \$mess );
+	#$control->AddStackupPreview( \$mess );
+	$control->AddImagePreview( \$mess, 1, 0 );
 	#$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 

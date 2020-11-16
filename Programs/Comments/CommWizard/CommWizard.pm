@@ -140,6 +140,8 @@ sub __SaveExitHndl {
 	}
 
 	if ($exit) {
+		
+		$self->__StopTimers();
 
 		$self->{"form"}->{"mainFrm"}->Close();
 	}
@@ -437,9 +439,10 @@ sub __OnAddFileHndl {
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during create/attach file or image"] );    #  Script is stopped
 		}
 	}
+
 	# Process file attach
 	elsif ($addFile) {
-		
+
 		$res = $self->{"comments"}->ChooseFile( \$p, $self->{"form"}->{"mainFrm"} );
 
 		# No spaces alowed
@@ -449,7 +452,6 @@ sub __OnAddFileHndl {
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["File name has to be without spaces and diacritics"] );   #  Script is stopped
 		}
 	}
-
 
 	# Store result
 	if ($res) {
@@ -624,14 +626,88 @@ sub __SetTimers {
 		}
 	);
 
+	# Check special folder, where greenshot scrrens are stored
+	# If tehere is new screenshot, ask user what to do with screen
+	my $tmGSSnapshot = Wx::Timer->new( $self->{"form"}->{"mainFrm"}, -1, );
+
+	Wx::Event::EVT_TIMER(
+		$self->{"form"}->{"mainFrm"}, $tmGSSnapshot,
+
+		sub {
+
+			my $pGS = $self->{"comments"}->GetGSSnapshotPath();
+
+			return 0 unless ( -e $pGS );
+
+			$tmGSSnapshot->Stop();
+
+			my $messMngr = $self->{"form"}->GetMessMngr();
+
+			my @comments = $self->{"comments"}->GetLayout()->GetAllComments();
+
+ 
+			if ( scalar(@comments) > 0 ) {
+
+				$messMngr->ShowModal( -1,
+									  EnumsGeneral->MessageType_QUESTION,
+									  ["Image was received from <b><g>GreenShot</g></b>.\n\nWhat woud you like to do with this image?"],
+									  [ "Nothing", "Add to new comment", "Add to selected comment" ] );
+
+			}
+			else {
+				$messMngr->ShowModal( -1,
+									  EnumsGeneral->MessageType_QUESTION,
+									  ["Image was received from <b><g>GreenShot</g></b>.\n\nWhat woud you like to do with this image?"],
+									  [ "Nothing", "Add to new comment" ] );
+			}
+
+			my $res = $messMngr->Result();
+
+			if ( $res > 0 ) {
+
+				my $commId;
+
+				# Create new comment
+				if ( $res == 1 ) {
+					$self->__OnAddCommdHndl();
+					$commId = scalar(@comments);
+				}
+				elsif ( $res == 2 ) {
+
+					$commId = $self->{"form"}->GetSelectedComment();
+				}
+
+				my $p = "";
+				$self->{"comments"}->SnapshotGSDirectly( \$p );
+				$self->{"comments"}->AddFile( $commId, undef, $p );
+
+				# Refresh Comm view
+				my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
+				$self->{"form"}->RefreshCommViewForm( $commId, $commSnglLayout );
+
+				# Refresh Comm list
+				$self->{"form"}->RefreshCommListItem( $commId, $commSnglLayout );
+
+			}
+			else {
+				unlink($pGS) if ( -e $pGS );
+			}
+
+			$tmGSSnapshot->Start(500);
+		}
+	);
+
 	$tmtImgUpdate->Start(1000);
+	$tmGSSnapshot->Start(500);
 
 	$self->{"tmtImgUpdate"} = $tmtImgUpdate;
+	$self->{"tmGSSnapshot"} = $tmGSSnapshot;
 }
 
 sub __StopTimers {
 	my $self = shift;
 	$self->{"tmtImgUpdate"}->Stop();
+	$self->{"tmGSSnapshot"}->Stop();
 }
 
 sub __FormChecks {
@@ -693,16 +769,24 @@ sub __FormChecks {
 
 			if ( $commSngl->GetType() eq CommEnums->CommentType_QUESTION && scalar( $commSngl->GetAllSuggestions() ) < 1 ) {
 
-				push( @warnMess, "Komentář číslo: " . ( $i + 1 ) . " i" . " je otázka, ale nejsou navrženy žádné odpovědi. Je to ok?" );
+				push( @warnMess,
+					      "Komentář číslo: "
+						. ( $i + 1 ) . " i"
+						. " je otázka, ale nejsou navrženy žádné odpovědi. Je to ok?" );
 			}
 		}
 
 		if ( scalar(@warnMess) ) {
 
-			$messMngr->ShowModal( -1,
+			$messMngr->ShowModal(
+								  -1,
 								  EnumsGeneral->MessageType_WARNING,
-								  [ "Varování při kontrole formuláře.", "Detail varování:\n" . join( "\n", map { "- " . $_ } @warnMess ) ],
-								  [ "Repair",                                "Continue" ] );
+								  [
+									 "Varování při kontrole formuláře.",
+									 "Detail varování:\n" . join( "\n", map { "- " . $_ } @warnMess )
+								  ],
+								  [ "Repair", "Continue" ]
+			);
 
 			if ( $messMngr->Result() == 0 ) {
 
