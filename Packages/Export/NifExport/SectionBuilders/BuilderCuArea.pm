@@ -51,9 +51,9 @@ sub Build {
 	my $stepName = "panel";
 
 	my $cuThickness = JobHelper->GetBaseCuThick( $jobId, "c" );
-	my $pcbThick    = CamJob->GetFinalPcbThick($inCAM, $jobId);
-	my $surface     = HegMethods->GetPcbSurface($jobId);
-	my $pcbClass    = CamJob->GetJobPcbClass( $inCAM, $jobId );
+	my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
+	my $surface  = HegMethods->GetPcbSurface($jobId);
+	my $pcbClass = CamJob->GetJobPcbClass( $inCAM, $jobId );
 
 	my $stackup;
 	my $stackupNC;
@@ -61,7 +61,7 @@ sub Build {
 	my $pressCnt;
 
 	if ( $self->{"layerCnt"} > 2 ) {
-		$stackup   = Stackup->new($inCAM, $jobId);
+		$stackup = Stackup->new( $inCAM, $jobId );
 		$stackupNC = StackupNC->new( $inCAM, $jobId );
 		$coreCnt   = $stackupNC->GetCoreCnt();
 		$pressCnt  = $stackupNC->GetPressCount();
@@ -290,8 +290,6 @@ sub Build {
 			my $pressOrder = $i + 1;
 			my $press      = $stackupNC->GetNCPressProduct($pressOrder);
 
- 
-
 			my $existTopPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 			my $existPlt_bDrillTop = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
@@ -300,7 +298,7 @@ sub Build {
 
 			if ( $existTopPlt_nDrill || $existPlt_bDrillTop || $existBotPlt_nDrill || $existPlt_bDrillBot ) {
 
-				my $actualThick = $stackup->GetThickByCuLayer( $press->GetTopCopperLayer() );    #in µm
+				my $actualThick = $stackup->GetThickByCuLayer( $press->GetTopCopperLayer() );        #in µm
 				my $baseCuThick = $stackup->GetCuLayer( $press->GetTopCopperLayer() )->GetThick();
 
 				my %resultTop;
@@ -309,8 +307,9 @@ sub Build {
 				if ( $pressOrder == $stackupNC->GetPressCount() ) {
 					%resultTop = CamCopperArea->GetCuAreaByBox( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", $press->GetTopCopperLayer(),
 																, undef, \%frLim, undef, 1 );
-					%resultBot = CamCopperArea->GetCuAreaByBox( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $press->GetBotCopperLayer(),
-																, \%frLim, undef, 1 );
+					%resultBot =
+					  CamCopperArea->GetCuAreaByBox( $baseCuThick, $actualThick, $inCAM, $jobId, "panel", undef, $press->GetBotCopperLayer(),
+													 , \%frLim, undef, 1 );
 				}
 				else {
 					%resultTop =
@@ -338,12 +337,12 @@ sub Build {
 			my $coreNum = $i + 1;
 			my $core    = $stackupNC->GetNCCoreProduct($coreNum);
 
-			my $existDrillTop = $core->ExistNCLayers( Enums->SignalLayer_TOP,undef,  EnumsGeneral->LAYERTYPE_plt_cDrill );
+			my $existDrillTop = $core->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_cDrill );
 			my $existDrillBot = $core->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_cDrill );
 
 			if ( $existDrillTop || $existDrillBot ) {
- 
-				my $actualThick = $stackup->GetThickByCuLayer( $core->GetTopCopperLayer() );    #in µm
+
+				my $actualThick = $stackup->GetThickByCuLayer( $core->GetTopCopperLayer() );        #in µm
 				my $baseCuThick = $stackup->GetCuLayer( $core->GetTopCopperLayer() )->GetThick();
 
 				my %resultTop =
@@ -396,7 +395,7 @@ sub Build {
 		#			$prog = 1;
 		#		}
 
-		if ( !$rsMillExist && !$blindDrillExist ) {
+		if ( !$rsMillExist && !$blindDrillExist && $pcbClass < 9) {
 
 			$prog = 0;
 		}
@@ -425,7 +424,7 @@ sub Build {
 		#			$prog = 3;
 		#		}
 
-		if ( !$rsMillExist && !$blindDrillExist ) {
+		if ( !$rsMillExist && !$blindDrillExist && $pcbClass < 9 ) {
 
 			$prog = 1;
 		}
@@ -441,12 +440,12 @@ sub Build {
 	if ( $self->_IsRequire("prog_tenting") ) {
 
 		my $prog;
-		
-		my ($minHole, $minAr) = $self->__GetInfoDrill($stepName, [EnumsGeneral->LAYERTYPE_plt_nDrill]);
-		
+
+		my ( $minHole, $minAr ) = $self->__GetInfoDrill( $stepName, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
+
 		# If min hole < 150µm OR Aspect ratio > 9 => tenting 2
-		if ( $minHole <= 150 ||  $minAr > 9 ) {
-	 
+		if ( $minHole <= 150 || $minAr > 9 ) {
+
 			$prog = 2;
 		}
 		else {
@@ -459,7 +458,6 @@ sub Build {
 
 }
 
-
 sub __GetInfoDrill {
 	my $self     = shift;
 	my $stepName = shift;
@@ -467,12 +465,12 @@ sub __GetInfoDrill {
 
 	my $inCAM    = $self->{"inCAM"};
 	my $jobId    = $self->{"jobId"};
-	my $pcbThick = CamJob->GetFinalPcbThick($inCAM, $jobId);
+	my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
 
 	my @holeTypes = ();    # all holes type of layers
 
 	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $lTypes );
- 
+
 	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
 		my $lName = $layers[$i]->{"gROWname"};

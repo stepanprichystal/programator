@@ -10,6 +10,7 @@ use warnings;
 
 #local library
 use aliased 'CamHelpers::CamHelper';
+use aliased 'Enums::EnumsGeneral';
 
 #use Genesis;
 
@@ -18,6 +19,7 @@ use aliased 'CamHelpers::CamHelper';
 #-------------------------------------------------------------------------------------------#
 
 # Return value of compensation according to settings Miroslav Tobola.
+# TODO - this function need reimplement, too much exception
 sub GetCompensation {
 	my $self        = shift;
 	my $cuThickness = shift;    # base layer Cu thickness
@@ -30,9 +32,23 @@ sub GetCompensation {
 
 	my %compensationAttr = ();
 
+	# Another temporary solutin for 9 class
+	if ( $constrClass == 9 ) {
+
+		if ( $isPlated && $cuThickness == 5 && $etchType eq EnumsGeneral->Etching_PATTERN ) {
+			return 15;
+		}
+
+		if ( !$isPlated && $cuThickness <= 9 ) {
+			return 20;
+		}
+
+		return undef;
+	}
+
 	# Temporary solution 12µm Cu have same compensation as 9µm
-	$cuThickness = 9 if($cuThickness == 12);
-	
+	$cuThickness = 9 if ( $cuThickness == 12 );
+
 	if ( !$isPlated ) {
 		%compensationAttr = (
 							  '5' => {
@@ -43,9 +59,9 @@ sub GetCompensation {
 									   'level' => [ 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1 ],
 									   'space' => 80
 							  },
-							   '12' => {
-									   'level' => [ 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1 ],
-									   'space' => 80
+							  '12' => {
+										'level' => [ 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1 ],
+										'space' => 80
 							  },
 							  '18' => {
 										'level' => [ 1.1, 1 ],
@@ -111,9 +127,9 @@ sub GetCompensation {
 									   'level' => [ 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6 ],
 									   'space' => 80
 							  },
-							   '12' => {
-									   'level' => [ 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6 ],
-									   'space' => 80
+							  '12' => {
+										'level' => [ 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6 ],
+										'space' => 80
 							  },
 							  '18' => {
 										'level' => [ 2.2, 2.1, 2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1 ],
@@ -138,7 +154,6 @@ sub GetCompensation {
 		);
 	}
 	my $minimumSpace = $compensationAttr{$cuThickness}->{'space'};
-
 
 	my @compensationLevel = @{ $compensationAttr{$cuThickness}->{'level'} };
 
@@ -201,8 +216,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Technology::EtchOperation';
 
-	my $cuThickness = 35;
-	my $class       = 6;
+	my $cuThickness = 5;
+	my $class       = 9;
 	my $plated      = 1;
 
 	print EtchOperation->GetCompensation( $cuThickness, $class, $plated );

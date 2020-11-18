@@ -645,13 +645,13 @@ sub _GUIpanelizace {
 
 sub _fill_const_list {
     $construct_class_entry->delete(0,'end');
-    foreach my $className (qw /3 4 5 6 7 8/) {
+    foreach my $className (qw /3 4 5 6 7 8 9/) {
         $construct_class_entry->insert('end',"$className");
     }
 }
 sub _fill_const_list_inner {
     $construct_class_entry_inner->delete(0,'end');
-    foreach my $className (qw /3 4 5 6 7 8/) {
+    foreach my $className (qw /3 4 5 6 7 8 9/) {
         $construct_class_entry_inner->insert('end',"$className");
     }
 }

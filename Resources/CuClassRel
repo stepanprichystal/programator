@@ -2,6 +2,7 @@
 
 # Consturction class = Cu thicness outer ; Cu thickness inner
 
+75  = 5   ; 18
 100 = 18  ; 35
 125 = 18  ; 35
 150 = 35  ; 35

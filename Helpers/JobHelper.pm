@@ -585,6 +585,10 @@ sub GetIsolationByClass {
 	elsif ( $class <= 8 ) {
 
 		$isolation = 100;
+	
+	}elsif ( $class <= 9 ) {
+
+		$isolation = 75;
 	}
 
 	return $isolation;

@@ -63,30 +63,30 @@ sub Run {
 	
 	my $groupData = $unit->{"dataMngr"}->GetGroupData();
 	
-	if(defined $poznamka){
-		$groupData->SetNotes($poznamka);
-	}
-	if(defined $tenting){
-		$groupData->SetTenting($tenting);
-	}
-	if(defined $pressfit){
-		$groupData->SetPressfit($pressfit);
-	}
-	if(defined $tolHole){
-		$groupData->SetToleranceHole($tolHole);
-	}
-	if(defined $maska01){
-		$groupData->SetMaska01($maska01);
-	}
-	if(defined $datacode){
-		$groupData->SetDatacode($datacode);
-	}
-	if(defined $ulLogo){
-		$groupData->SetUlLogo($ulLogo);
-	}
-	if(defined $jumpScore){
-		$groupData->SetJumpScoring($jumpScore);
-	}						
+#	if(defined $poznamka){
+#		$groupData->SetNotes($poznamka);
+#	}
+#	if(defined $tenting){
+#		$groupData->SetTenting($tenting);
+#	}
+#	if(defined $pressfit){
+#		$groupData->SetPressfit($pressfit);
+#	}
+#	if(defined $tolHole){
+#		$groupData->SetToleranceHole($tolHole);
+#	}
+#	if(defined $maska01){
+#		$groupData->SetMaska01($maska01);
+#	}
+#	if(defined $datacode){
+#		$groupData->SetDatacode($datacode);
+#	}
+#	if(defined $ulLogo){
+#		$groupData->SetUlLogo($ulLogo);
+#	}
+#	if(defined $jumpScore){
+#		$groupData->SetJumpScoring($jumpScore);
+#	}						
  
 	
 	$unit->CheckBeforeExport( $inCAM, \$resultMngr );
