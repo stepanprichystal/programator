@@ -942,7 +942,11 @@ sub OnCheckGroupData {
 		 || $isSemiHybrid )
 	{
 
-		my @NC = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "rout" } $defaultInfo->GetNCLayers();
+		my @NC =
+		 map { $_->{"gROWname"} }
+		 grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_tapebrMill }
+		 grep { $_->{"gROWlayer_type"} eq "rout" } $defaultInfo->GetNCLayers();
+		
 
 		my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 
