@@ -55,6 +55,8 @@ sub OnExportGroupData {
 	$exportData->SetExportDrillCpnIPC3Map( $groupData->GetExportDrillCpnIPC3Map() );
 	$exportData->SetExportPeelStencil( $groupData->GetExportPeelStencil() );
 	$exportData->SetExportCvrlStencil( $groupData->GetExportCvrlStencil() );
+	$exportData->SetExportStiffThick( $groupData->GetExportStiffThick() );
+	
 
 	return $exportData;
 

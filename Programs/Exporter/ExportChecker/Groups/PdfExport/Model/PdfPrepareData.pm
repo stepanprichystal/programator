@@ -165,6 +165,22 @@ sub OnPrepareGroupData {
 		$defDrillIPC3 = 1;
 	}
 
+	# 8) default stiffener thickness pdf
+	my $defStiffThick = 0;
+	if (
+		scalar(
+			grep {
+				     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+				  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+				  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+				  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+			} $defaultInfo->GetNCLayers()
+		)
+	  )
+	{
+		$defStiffThick = 1;
+	}
+
 	# 8) default cvrl stencil
 	my $defCvrlStncl = 0;
 	my @NCCvrlStncl =
@@ -198,6 +214,7 @@ sub OnPrepareGroupData {
 	$groupData->SetExportNCSpecial($defNCSpec);
 	$groupData->SetExportCustCpnIPC3Map($defCustIPC3);
 	$groupData->SetExportDrillCpnIPC3Map($defDrillIPC3);
+	$groupData->SetExportStiffThick($defStiffThick);
 	$groupData->SetExportPeelStencil($defPeelStncl);
 	$groupData->SetExportCvrlStencil($defCvrlStncl);
 

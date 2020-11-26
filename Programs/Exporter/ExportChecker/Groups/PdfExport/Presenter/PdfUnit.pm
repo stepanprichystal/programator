@@ -98,6 +98,8 @@ sub RefreshGUI {
 	$self->{"form"}->SetInfoToPdf( $groupData->GetInfoToPdf() );
 	$self->{"form"}->SetExportPeelStencil( $groupData->GetExportPeelStencil() );
 	$self->{"form"}->SetExportCvrlStencil( $groupData->GetExportCvrlStencil() );
+	$self->{"form"}->SetExportStiffThick( $groupData->GetExportStiffThick() );
+
 
 }
 
@@ -127,6 +129,7 @@ sub UpdateGroupData {
 		$groupData->SetInfoToPdf( $frm->GetInfoToPdf() );
 		$groupData->SetExportPeelStencil( $frm->GetExportPeelStencil() );
 		$groupData->SetExportCvrlStencil( $frm->GetExportCvrlStencil() );
+		$groupData->SetExportStiffThick( $frm->GetExportStiffThick() );
 	}
 	 
 }
