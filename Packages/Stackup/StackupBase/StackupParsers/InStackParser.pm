@@ -55,6 +55,7 @@ sub ParseStackup {
 	# 1) Parse nominal thickness requested by user
 	my $stackupNode = ( $stackupXml->findnodes('/document/interfacelist/JOB/STACKUP/STACKUP') )[0];
 	if ( defined $stackupNode->{"CUSTOMER_THICKNESS"} ) {
+
 		# convert from mills to µm
 		$self->{"nominalThick"} = $stackupNode->{"CUSTOMER_THICKNESS"} * 25.4;
 
@@ -116,6 +117,12 @@ sub ParseStackup {
 		my $seg = $segs[$i];
 
 		#$layerInfo->{"type"} = $elType;
+
+		# Check if seg materials are present in XML
+		unless ( scalar( $seg->findnodes('./SEGMENT_MATERIALS/SEGMENT_MATERIAL') ) )
+		{
+			die "Invalid InStack xml file. There are no child nodes in node: \"<SEGMENT_MATERIALS></SEGMENT_MATERIALS>\":" . $seg;
+		}
 
 		if ( $seg->{"SEGMENT_TYPE"} eq Enums->InStackMaterialType_FOIL ) {
 
@@ -230,9 +237,8 @@ sub ParseStackup {
 
 sub GetNominalThick {
 	my $self = shift;
- 
 
-	return $self->{"nominalThick"}
+	return $self->{"nominalThick"};
 }
 
 #-------------------------------------------------------------------------------------------#

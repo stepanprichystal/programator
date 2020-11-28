@@ -1,6 +1,8 @@
 
 #-------------------------------------------------------------------------------------------#
 # Description: Class cover sorting chain tools in flatenned layer
+# - Sort inner routs by tool size
+# - Sourt outer routs by physic PCB placement on panel
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::ToolsOrder;
@@ -26,6 +28,10 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
+# type of rout sequence
+use constant SEQUENCE_BTRL => 'routSequence_BTRL';    # From BOT -> TOP -> RIGHT -> LEFT
+use constant SEQUENCE_BTLR => 'routSequence_BTLR';    # From BOT -> TOP -> LEFT -> RIGHT
+
 sub new {
 	my $class = shift;
 	my $self  = {};
@@ -47,6 +53,7 @@ sub new {
 	return $self;
 }
 
+# Sort inner rout tools by tool size from smaller diameter
 sub SetInnerOrder {
 	my $self = shift;
 
@@ -89,8 +96,14 @@ sub SetInnerOrder {
 
 }
 
+# Sourt outer routs by physic PCB placement on panel
+# More types of sorting:
+#
 sub SetOutlineOrder {
 	my $self = shift;
+	my $seqType = shift; # SEQUENCE_BTRL / SEQUENCE_BTLR
+	
+	die "Sequence type is not defined" unless(defined $seqType);
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -236,7 +249,7 @@ sub ToolRenumberCheck {
 					}
 				}
 
-				if ( !$chSeq->IsOutline() &&  !$chainGroup->GetOnBridges() ) {
+				if ( !$chSeq->IsOutline() && !$chainGroup->GetOnBridges() ) {
 
 					$self->{"resultItem"}->AddError("Error during sorting tools in fsch layer. Some outline chain is not last in rout list.\n");
 					last;

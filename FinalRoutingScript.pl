@@ -37,6 +37,7 @@ use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
+use aliased 'Packages::Routing::RoutOutline';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -78,7 +79,8 @@ if ( scalar(@chainFeatures) ) {
 	else {
 
 		# errror
-		my @m = ( "Obrysová fréza je příliš tenká: " . $chainFeatures[0]->{"thick"} . "µm. Minimální tloušťka musí být alespoň 200µm." );
+		my @m =
+		  ( "Obrysová fréza je příliš tenká: " . $chainFeatures[0]->{"thick"} . "µm. Minimální tloušťka musí být alespoň 200µm." );
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );
 		exit(0);
 	}
@@ -174,8 +176,10 @@ sub __DoChain {
 	TestOpenRout( $sortResult{"result"}, $sortResult{"openPoint"} );
 
 	my @sorteEdges = @{ $sortResult{"edges"} };
-	
-	RoutCyclic->SetRoutDirection( \@sorteEdges, EnumsRout->Dir_CW );
+
+	my $defRoutDir = RoutOutline->GetDefRoutDirection($jobId);
+
+	RoutCyclic->SetRoutDirection( \@sorteEdges, $defRoutDir );
 
 	TestNarrowPlaces( \@sorteEdges );
 
@@ -377,18 +381,16 @@ sub TestNarrowPlaces {
 
 			my $pLine = PrimitiveLine->new( Point->new( $p1->[0], $p1->[1] ), Point->new( $p2->[0], $p2->[1] ), "r400" );
 			$draw->AddPrimitive($pLine);
-			
+
 			# Add length of line
-		 
-			my $pText = ( $p1->[0] >  $p2->[0]) ? Point->new( $p1->[0], $p1->[1] ) :Point->new( $p2->[0], $p2->[1] );
-			$pText->Move(2, 0);
-			
-			my $len =  sprintf("%.1f", sqrt( ($p1->[0] - $p2->[0] )**2 + ( $p1->[1] - $p2->[1] )**2 )); 
-			
-			 
-			$draw->AddPrimitive(PrimitiveText->new( $len."mm", $pText, 2, undef, 1 ));
-			
-			 
+
+			my $pText = ( $p1->[0] > $p2->[0] ) ? Point->new( $p1->[0], $p1->[1] ) : Point->new( $p2->[0], $p2->[1] );
+			$pText->Move( 2, 0 );
+
+			my $len = sprintf( "%.1f", sqrt( ( $p1->[0] - $p2->[0] )**2 + ( $p1->[1] - $p2->[1] )**2 ) );
+
+			$draw->AddPrimitive( PrimitiveText->new( $len . "mm", $pText, 2, undef, 1 ) );
+
 		}
 
 		$draw->Draw();
@@ -447,10 +449,10 @@ sub TestSmallRadius {
 				);
 
 				$inCAM->COM(
-					"display_layer",
-					name    => $lName,
-					display => "yes",
-					number  => 2
+							 "display_layer",
+							 name    => $lName,
+							 display => "yes",
+							 number  => 2
 				);
 				$inCAM->COM( "work_layer", name => $lName );
 
@@ -501,6 +503,8 @@ sub TestSmallRadius {
 sub FindRoutStart {
 	my $sorteEdges = shift;
 
+	# Find possinle start for rotation 90°; 270° if STD pcb
+
 	my %modify = RoutStart->RoutNeedModify($sorteEdges);
 
 	if ( $modify{"result"} ) {
@@ -508,7 +512,20 @@ sub FindRoutStart {
 		RoutStart->ProcessModify( \%modify, $sorteEdges );
 	}
 
-	my %startResult = RoutStart->GetRoutStart($sorteEdges);
+	my %startResult = ();
+
+	foreach my $angle ( ( 90, 270 ) ) {
+
+		if ( $angle == 90 ) {
+			my %startResAngle = RoutStart->GetRoutStart($sorteEdges);
+
+		}
+		elsif ( $angle == 270 ) {
+			die;
+			 
+		}
+
+	}
 
 	return %startResult;
 

@@ -27,6 +27,8 @@ use aliased 'Packages::Polygon::PointsTransform';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
+
+
 sub new {
 
 	my $class = shift;
@@ -41,12 +43,17 @@ sub new {
 }
 
 sub FindStart {
-	my $self = shift;
+	my $self      = shift;
+	# Packages::Routing::RoutLayer::RoutStart::RoutStart::START_LEFTTOP
+	# Packages::Routing::RoutLayer::RoutStart::RoutStart::START_RIGHTTOP
+	my $startType = shift; 
+
+	die "Rout start type is not defined" unless ( defined $startType);
 
 	my $resultItem = ItemResult->new("Identify rout start");
 
 	my @errStep = ();
-	$resultItem->{"errStartSteps"} = \@errStep;    # save information, where start was not found
+	$resultItem->{"errStartSteps"} = \@errStep;                            # save information, where start was not found
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"SRStep"}->GetStep() );
 
@@ -247,7 +254,7 @@ sub __FindStart {
 		}
 
 		# Set start feature
-		if ($idx >= 0) {
+		if ( $idx >= 0 ) {
 
 			my $startFeat = $candidates[$idx];
 

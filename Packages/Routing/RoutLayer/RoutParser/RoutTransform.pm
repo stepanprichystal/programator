@@ -25,6 +25,7 @@ use aliased 'Packages::Polygon::Enums';
 sub RotateRout {
 	my $self     = shift;
 	my $angle    = shift;
+	my $dir      = shift;            # Enums->Dir_CCW / Enums->Dir_CW
 	my @features = @{ shift(@_) };
 
 	# 1) rotate all feature points
@@ -36,8 +37,8 @@ sub RotateRout {
 			my %p1 = ( "x" => $f->{"x1"} * 1000, "y" => $f->{"y1"} * 1000 );
 			my %p2 = ( "x" => $f->{"x2"} * 1000, "y" => $f->{"y2"} * 1000 );
 
-			%p1 = PointsTransform->RotatePoint( \%p1, $angle, Enums->Dir_CCW );
-			%p2 = PointsTransform->RotatePoint( \%p2, $angle, Enums->Dir_CCW );
+			%p1 = PointsTransform->RotatePoint( \%p1, $angle, $dir );
+			%p2 = PointsTransform->RotatePoint( \%p2, $angle, $dir );
 
 			$f->{"x1"} = $p1{"x"} / 1000;
 			$f->{"y1"} = $p1{"y"} / 1000;
@@ -50,7 +51,7 @@ sub RotateRout {
 		if ( $f->{"type"} =~ /a/i ) {
 
 			my %p1 = ( "x" => $f->{"xmid"} * 1000, "y" => $f->{"ymid"} * 1000 );
-			%p1 = PointsTransform->RotatePoint( \%p1, $angle, Enums->Dir_CCW );
+			%p1 = PointsTransform->RotatePoint( \%p1, $angle, $dir );
 
 			$f->{"xmid"} = $p1{"x"} / 1000;
 			$f->{"ymid"} = $p1{"y"} / 1000;
@@ -74,6 +75,51 @@ sub RotateRout {
 			#
 			#				$f->{"envelop"}->[$i] = \%newP;
 			#			}
+		}
+	}
+}
+
+# Mirror rout around Y axis in X == 0
+# All coordinate should be in mm
+sub MirrorRoutY {
+	my $self     = shift;
+	my $anchorX  = shift;            # anchor point in x
+	my @features = @{ shift(@_) };
+
+	# 1) rotate all feature points
+	foreach my $f (@features) {
+
+		# line / arcs
+		if ( $f->{"type"} =~ /[la]/i ) {
+
+			$f->{"x1"} = 2 * $anchorX - $f->{"x1"};
+			$f->{"x2"} = 2 * $anchorX - $f->{"x2"};
+		}
+
+		# arc
+		if ( $f->{"type"} =~ /a/i ) {
+
+			$f->{"xmid"} = 2 * $anchorX - $f->{"xmid"};
+
+			# Change arc dir
+			if ( $f->{"oriDir"} eq "CW" ) {
+				$f->{"oriDir"} = "CCW";
+			}
+			if ( $f->{"oriDir"} eq "CCW" ) {
+				$f->{"oriDir"} = "CW";
+			}
+			if ( $f->{"newDir"} eq "CW" ) {
+				$f->{"newDir"} = "CCW";
+			}
+			if ( $f->{"newDir"} eq "CCW" ) {
+				$f->{"newDir"} = "CW";
+			}
+		}
+
+		# surf
+		if ( $f->{"type"} =~ /s/i ) {
+
+			die "surface rotation is not implemented\n";
 		}
 	}
 }

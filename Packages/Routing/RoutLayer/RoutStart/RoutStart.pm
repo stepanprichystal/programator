@@ -1,5 +1,8 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Helper class, which is responsible for finding suitable rout start and foot edge
+# Note: 
+# - Algorithm finds rout start always in LEFT-TOP outline area 
+# - Algorithm assume CW outline!
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::RoutStart::RoutStart;
@@ -27,9 +30,12 @@ use aliased 'Helpers::GeneralHelper';
 
 # When suitable start chain candidate is searching, some mofification can be needed
 # Modification - "break line": If it is necessery, fragment outline to more parts
+# Note: 
+# - Algorithm finds rout start always in LEFT-TOP outline area 
+# - Algorithm assume CW outline!
 sub RoutNeedModify {
 	my $self       = shift;
-	my @sorteEdges = @{ shift(@_) };
+	my @sorteEdges = @{ shift(@_) }; # CW sorted
 
 	# Result with modification
 	my %modify = ( "result" => 0 );    # mofification
@@ -187,10 +193,13 @@ sub RoutNeedModify {
 }
 
 # If modification are necessary in order find proper foot down, prcocess them
+# Note: 
+# - Algorithm finds rout start always in LEFT-TOP outline area 
+# - Algorithm assume CW outline!
 sub ProcessModify {
 	my $self       = shift;
 	my $modify     = shift;
-	my $sorteEdges = shift;
+	my $sorteEdges = shift; # CW sorted
 
 	#Do changes
 	if ( $modify->{"result"} ) {
@@ -240,9 +249,12 @@ sub ProcessModify {
 
 # Determine suitable rout edges for foot down
 # Method contain several rules for determine it
+# Note: 
+# - Algorithm finds rout start always in LEFT-TOP outline area 
+# - Algorithm assume CW outline!
 sub GetPossibleFootDowns {
 	my $self       = shift;
-	my @sorteEdges = @{ shift(@_) };
+	my @sorteEdges = @{ shift(@_) }; # CW sorted
 
 	# All edges are rout start candidates
 	my @footDowns = ();
@@ -408,9 +420,12 @@ sub GetPossibleFootDowns {
 
 # Return on specific edge, where is foot down posiible
 # If is foot down found
+# Note: 
+# - Algorithm finds rout start always in LEFT-TOP outline area 
+# - Algorithm assume CW outline!
 sub GetRoutFootDown {
 	my $self       = shift;
-	my @sorteEdges = @{ shift(@_) };
+	my @sorteEdges = @{ shift(@_) }; # CW sorted
 
 	my %result = ( "result" => 1 );
 
@@ -507,9 +522,12 @@ sub GetRoutFootDown {
 
 # Return  specific edge, where is start rout posiible
 # Start rout edge is placed as very next edge of foot down edge (direction CW)
+# Note: 
+# - Algorithm finds rout start always in LEFT-TOP outline area 
+# - Algorithm assume CW outline!
 sub GetRoutStart {
 	my $self       = shift;
-	my @sorteEdges = @{ shift(@_) };
+	my @sorteEdges = @{ shift(@_) }; # CW sorted
 
 	my %result = ( "result" => 1 );
 

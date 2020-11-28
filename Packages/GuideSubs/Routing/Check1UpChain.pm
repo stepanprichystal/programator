@@ -19,11 +19,10 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
-
-use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutRotation';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
+use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHelper';
-
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -67,19 +66,21 @@ sub OutsideChains {
 				  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str). Pravděpodobně kromě desek na patku jsou ve stepu i dps na můstky",
 				"Je to pravda?"
 			);
-			my @b = ( "Ano, step obsahuje i dps na můstky", "Ne neobsahuje, opravím to", "Ne neobsahuje, ale obsahuje pomocnou frézu za obrysem dps");
+			my @b =
+			  ( "Ano, step obsahuje i dps na můstky", "Ne neobsahuje, opravím to", "Ne neobsahuje, ale obsahuje pomocnou frézu za obrysem dps" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
-			
+
 			if ( $messMngr->Result() == 0 ) {
+
 				# set pcb is rout on bridges
 				CamAttributes->SetStepAttribute( $inCAM, $jobId, $step, "rout_on_bridges", "yes" );
-				
+
 			}
-			elsif($messMngr->Result() == 1) {
+			elsif ( $messMngr->Result() == 1 ) {
 				$result = 0;
 			}
-			elsif($messMngr->Result() == 0) {
-				
+			elsif ( $messMngr->Result() == 0 ) {
+
 			}
 
 		}
@@ -189,17 +190,15 @@ sub OnlyBridges {
 
 # Check when left rout exists
 sub LeftRoutChecks {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $step  = shift;
-	my $layer = shift;
-	my $isPool =shift;
-	my $mess  = shift;
+	my $self   = shift;
+	my $inCAM  = shift;
+	my $jobId  = shift;
+	my $step   = shift;
+	my $layer  = shift;
+	my $isPool = shift;
+	my $mess   = shift;
 
 	my $result = 1;
-
-	
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
@@ -373,12 +372,19 @@ sub TestFindStartSingle {
 
 	my @features = $left->GetFeatures();
 
-	my $rotation = RoutRotation->new( \@features );    # class responsible for rout rotaion
+	my $rotation = RoutStartAdjust->new( \@features );    # class responsible for rout rotaion
+
+	my $direction = RoutCyclic->GetRoutDirection( \@features );
 
 	# if foot down is tested on rotated pcb
-	if ( $rotateAngle > 0 ) {
-
-		$rotation->Rotate($rotateAngle);
+	if ( $rotateAngle == 90 ) {
+		$rotation->Transform(Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust::RT_CORNER);
+	}
+	elsif ( $rotateAngle == 180 ) {
+		$rotation->Transform(Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust::RB_CORNER);
+	}
+	elsif ( $rotateAngle == 270 ) {
+		$rotation->Transform(Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust::LB_CORNER);
 	}
 
 	my $startByAtt    = 0;
@@ -392,12 +398,11 @@ sub TestFindStartSingle {
 	}
 
 	if ( defined $attFootName ) {
-		
-		
+
 		my $edge = ( grep { $_->{"att"}->{$attFootName} } @features )[0];
 
 		if ( defined $edge ) {
-			$rotation->RotateBack();
+			$rotation->TransformBack();
 			$startByAtt   = 1;
 			$footDownEdge = $edge;
 		}
@@ -421,7 +426,7 @@ sub TestFindStartSingle {
 
 		# if foot down is tested on rotated pcb, rotate back before drawing
 		if ( $rotateAngle > 0 ) {
-			$rotation->RotateBack();
+			$rotation->TransformBack();
 		}
 
 		if ( $startResult{"result"} ) {
@@ -503,7 +508,7 @@ sub TestFindAndDrawStarts {
 		);
 
 		$inCAM->COM( "work_layer", name => $layer );
-		$inCAM->COM( "zoom_home");
+		$inCAM->COM("zoom_home");
 		$inCAM->PAUSE("Zkontroluj navrzene patky...");
 	}
 

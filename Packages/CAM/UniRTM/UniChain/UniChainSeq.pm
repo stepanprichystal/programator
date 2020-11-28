@@ -28,7 +28,6 @@ sub new {
 	bless $self;
 
 	$self->{"chain"} = shift;
-	
 
 	$self->{"cyclic"}    = undef;
 	$self->{"direction"} = undef;
@@ -57,8 +56,6 @@ sub new {
 
 	return $self;
 }
-
-
 
 # Helper methods -------------------------------------
 
@@ -101,21 +98,34 @@ sub HasFootDown {
 	}
 }
 
-# Chain seq is cyclic when com is left, is not inside another rout and is cyclic
+# Chain seq is outline if:
+# Type 1: Standard PCB routed with standard tools
+# - direction: CW
+# - rout comp: LEFT
+# - cyclic: Yes
+# - not inside another rout: Yes
+# Type 2: Flex PCB; Hybrid PCB routed with one-flute rout tools
+# - direction: CCW
+# - rout comp: Right
+# - cyclic: Yes
+# - not inside another rout: Yes
+# Type 3: Rout features contain .footdown attribute
 sub IsOutline {
 	my $self = shift;
 
-	if (    $self->GetChain()->GetComp() eq EnumsRout->Comp_LEFT
+	if (
+		    $self->GetCyclic()
 		 && !$self->GetIsInside()
-		 && $self->GetCyclic()
-		 && $self->GetDirection() eq EnumsRout->Dir_CW )
+		 && (    ( $self->GetChain()->GetComp() eq EnumsRout->Comp_LEFT && $self->GetDirection() eq EnumsRout->Dir_CW )
+			  || ( $self->GetChain()->GetComp() eq EnumsRout->Comp_RIGHT && $self->GetDirection() eq EnumsRout->Dir_CCW ) )
+	  )
 	{
 		# Outline recoginised based on shape and compensation
 
 		return 1;
 
 	}
-	elsif ( defined first { defined $_->{"att"}->{".foot_down"} } $self->GetFeatures() ) {
+	elsif ( defined first { defined $_->{" att "}->{" . foot_down "} } $self->GetFeatures() ) {
 
 		# outline resognized based on foot down attribute
 		return 1;
@@ -127,20 +137,42 @@ sub IsOutline {
 	}
 }
 
+# Outlines can by two types
+# Type 1: Standard PCB routed with standard tools
+# - direction: CW
+# - rout comp: LEFT
+# Type 2: Flex PCB; Hybrid PCB routed with one-flute rout tools
+# - direction: CCW
+# - rout comp: Right
+sub GetOutlineType {
+	my $self = shift;
+
+	die "Chain sequence is not outline" unless ( $self->IsOutline() );
+
+	if ( $self->GetChain()->GetComp() eq EnumsRout->Comp_LEFT && $self->GetDirection() eq EnumsRout->Dir_CW ) {
+		return Enums->OutlineType_CWLEFT;
+	}
+	elsif ( $self->GetChain()->GetComp() eq EnumsRout->Comp_RIGHT && $self->GetDirection() eq EnumsRout->Dir_CCW ) {
+		return Enums->OutlineType_CCWRIGHT;
+	}
+	else {
+		die "Unknow outline sequence type";
+	}
+}
+
 sub GetStrInfo {
 	my $self = shift;
 
-	my @features = @{ $self->{"oriFeatures"} };
-	my @ids      = map { $_->{"id"} } @features;
-	my $idStr    = join( ";", @ids );
+	my @features = @{ $self->{" oriFeatures "} };
+	my @ids = map { $_->{" id "} } @features;
+	my $idStr = join(
+		";
+", @ids );
 
-	my $str = "Chain number: \"" . $self->GetChain()->GetChainOrder() . "\" ( feature ids: \"" . $idStr . "\")";
+	my $str = " Chain number : \"" . $self->GetChain()->GetChainOrder() . "\" ( feature ids: \"" . $idStr . "\")";
 }
 
 # GET/SET Properties -------------------------------------
-
- 
-
 
 sub GetFeatures {
 	my $self = shift;

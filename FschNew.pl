@@ -1,11 +1,12 @@
 #!/usr/bin/perl
-use FindBin;						
-use lib "$FindBin::Bin/../";		
-use PackagesLib;use aliased 'Packages::InCAM::InCAM';	
-use aliased 'Packages::Routing::RoutLayer::FlattenRout::CreateFsch';
+use FindBin;
+use lib "$FindBin::Bin/../";
+use PackagesLib;
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Packages::GuideSubs::Routing::DoCreateFsch';
 
-my $inCAM = InCAM->new();
+my $inCAM   = InCAM->new();
 my $jobName = shift;
-my $fsch = CreateFsch->new( $inCAM, "$jobName");
 
-$fsch->Create();
+# Return 1 if success
+my $result = DoCreateFsch->CreateFsch( $inCAM, $jobName );
