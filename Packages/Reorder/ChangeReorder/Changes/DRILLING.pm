@@ -89,40 +89,40 @@ sub Run {
 	}
 
 	# Movesmall NPTH holes to plated layer
-#	{
-#		my $unMaskedCntRef   = 0;
-#		my $unMaskAttrValRef = "";
-#
-#		my $maxTool  = 1000;
-#		my $pltLayer = "m";
-#
-#		if ( CamHelper->LayerExists( $inCAM, $jobId, $pltLayer ) ) {
-#
-#			my @childs = CamStep->GetJobEditSteps( $inCAM, $jobId );
-#			my @nplt =
-#			  map { $_->{"gROWname"} }
-#			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
-#
-#			foreach my $s (@childs) {
-#
-#				foreach my $npltLayer (@nplt) {
-#
-#					my $checkRes = {};
-#					unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
-#
-#						my $movedHoleCntRef     = -1;
-#						my $movedHoleAttrValRef = -1;
-#						my $res = MoveDrillHoles->MoveSmallNpth2Pth( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, \$movedHoleCntRef,
-#																	 \$movedHoleAttrValRef );						 
-#						unless($res){
-#							$$mess .= "Error during move small npth holes from: $npltLayer to plated layer: $pltLayer";
-#							$result = 0;
-#						}										 
-#					}
-#				}
-#			}
-#		}
-#	}
+	{
+		my $unMaskedCntRef   = 0;
+		my $unMaskAttrValRef = "";
+
+		my $maxTool  = 1000;
+		my $pltLayer = "m";
+
+		if ( CamHelper->LayerExists( $inCAM, $jobId, $pltLayer ) ) {
+
+			my @childs = CamStep->GetJobEditSteps( $inCAM, $jobId );
+			my @nplt =
+			  map { $_->{"gROWname"} }
+			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
+
+			foreach my $s (@childs) {
+
+				foreach my $npltLayer (@nplt) {
+
+					my $checkRes = {};
+					unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
+
+						my $movedHoleCntRef     = -1;
+						my $movedHoleAttrValRef = -1;
+						my $res = MoveDrillHoles->MoveSmallNpth2Pth( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, \$movedHoleCntRef,
+																	 \$movedHoleAttrValRef );						 
+						unless($res){
+							$$mess .= "Error during move small npth holes from: $npltLayer to plated layer: $pltLayer";
+							$result = 0;
+						}										 
+					}
+				}
+			}
+		}
+	}
 	
 	return $result;
 }
