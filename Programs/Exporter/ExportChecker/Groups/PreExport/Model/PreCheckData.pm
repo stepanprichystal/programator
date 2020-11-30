@@ -367,7 +367,7 @@ sub __CheckGroupDataBasic {
 		}
 
 		# b) test if created stackup match thickness in helios +-10%
-		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick(1) / 1000;
+		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick(0) / 1000;
 
 		unless ( $pcbThickHelios * 0.90 < $stackThick && $pcbThickHelios * 1.10 > $stackThick ) {
 
