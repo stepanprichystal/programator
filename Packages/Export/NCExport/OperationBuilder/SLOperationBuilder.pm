@@ -300,13 +300,13 @@ sub __DefineNPlatedOperations {
 	# - @nplt_tapecMill
 	$opManager->AddOperationDef( "ftapec", \@nplt_tapecMill, -1 );
 
-	# 15) Operation name = ftapes - can contain layer
+	# 15) Operation name = ftps - can contain layer
 	# - @nplt_tapesMill
-	$opManager->AddOperationDef( "ftapes", \@nplt_tapesMill, -1 );
+	$opManager->AddOperationDef( "ftps", \@nplt_tapesMill, -1 );
 	
-	# 16) Operation name = ftapes - can contain layer
+	# 16) Operation name = ftpbr - can contain layer
 	# - @nplt_tapesMill
-	$opManager->AddOperationDef( "ftapebr", \@nplt_tapebrMill, -1 );
+	$opManager->AddOperationDef( "ftpbr", \@nplt_tapebrMill, -1 );
 
 }
 

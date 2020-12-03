@@ -943,10 +943,13 @@ sub OnCheckGroupData {
 	{
 
 		my @NC =
-		 map { $_->{"gROWname"} }
-		 grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_tapebrMill }
-		 grep { $_->{"gROWlayer_type"} eq "rout" } $defaultInfo->GetNCLayers();
-		
+		  map { $_->{"gROWname"} }
+		  grep {
+			     $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_tapebrMill
+			  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_cbMillTop
+			  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_cbMillBot
+		  }
+		  grep { $_->{"gROWlayer_type"} eq "rout" } $defaultInfo->GetNCLayers();
 
 		my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 
@@ -984,6 +987,33 @@ sub OnCheckGroupData {
 			}
 
 		}
+
+	}
+
+	#	Check on stiffener adhesive NC layer (must exist if stiffener exist and tapce not exist)
+	if (
+		(
+		      $defaultInfo->LayerExist( "stiffc", 1 )
+		   && !$defaultInfo->LayerExist( "tpc", 1 )
+		   && !scalar( grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop } $defaultInfo->GetNCLayers() )
+		)
+		||
+
+		(
+		      $defaultInfo->LayerExist( "stiffs", 1 )
+		   && !$defaultInfo->LayerExist( "tps", 1 )
+		   && !scalar( grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop } $defaultInfo->GetNCLayers() )
+		)
+	  )
+	{
+
+		$dataMngr->_AddErrorResult(
+			"Fréza lepidla stiffeneru",
+			"Deska obsahuje stiffener TOP/BOT, ale neexistuje hloubková fréza lepidla stiffeneru: fstiffadhsc/fstiffadhs. "
+			  . "Jedinný případ, kdy tato vrstva nemusí existovat je, "
+			  . "pokud pružná oblast bez stiffeneru má tak malou plochu, do které se pojezd hloubkové frézy již nevleze. "
+			  . "Respektive veškeré frézování stiffeneru i jeho lepidla je ve frézovací vrstvě: fstiffc/fstiffs."
+		);
 
 	}
 }

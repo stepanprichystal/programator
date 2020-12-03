@@ -1015,25 +1015,55 @@ sub __PrepareSTIFFENER {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	# 2) Copy negative of stiffener rout
+	# layers can contain also tp layer and NC layer tpbr which define stiffener area too
+	my $stiffL = ( grep { $_->{"gROWlayer_type"} eq "stiffener" } $layer->GetSingleLayers() )[0];
+
 	# 1) Create full surface by profile
 	my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
 
-	# 2) Copy negative of stiffener rout
-	my $stiffL = ( grep { $_->{"gROWlayer_type"} eq "stiffener" } $layer->GetSingleLayers() )[0];
-	my @stiffRoutLs =
-	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill ] );
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
+	return 0 unless ( defined $stiffL );
 
-	my $stiffRoutL = ( grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs )[0];
-	my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
-	CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+	my $tapeL = ( grep { $_->{"gROWname"} =~ /^tp[cs]$/ } $layer->GetSingleLayers() )[0];
+	my @stiffRoutLs =
+	  CamDrilling->GetNCLayersByTypes(
+									   $inCAM, $jobId,
+									   [
+										  EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
+										  EnumsGeneral->LAYERTYPE_nplt_tapecMill,  EnumsGeneral->LAYERTYPE_nplt_tapesMill,
+									   ]
+	  );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
+	my @stiffRoutL = grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs;
+	if ( defined $tapeL ) {
+		my @tapeRoutL = grep { $_->{"gROWdrl_start"} eq $tapeL->{"gROWname"} && $_->{"gROWdrl_end"} eq $tapeL->{"gROWname"} } @stiffRoutLs;
+		push( @stiffRoutL, @tapeRoutL ) if ( scalar(@tapeRoutL) );
+
+		my @tapeBrRoutL = grep { $_->{"gROWname"} eq "ftpbr" } $layer->GetSingleLayers();
+		push( @stiffRoutL, @tapeBrRoutL ) if ( scalar(@tapeBrRoutL) );
+	}
+
+	my $lNeg = GeneralHelper->GetGUID();
+	CamMatrix->CreateLayer( $inCAM, $jobId, $lNeg, "document", "positive", 0 );
+	foreach my $stiffRoutL (@stiffRoutL) {
+		my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
+		$inCAM->COM(
+					 "merge_layers",
+					 "source_layer" => $lTmp,
+					 "dest_layer"   => $lNeg,
+					 "invert"       => "yes"
+		);
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+	}
+
+	CamLayer->Contourize( $inCAM, $lNeg, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
 	$inCAM->COM(
 				 "merge_layers",
-				 "source_layer" => $lTmp,
+				 "source_layer" => $lNeg,
 				 "dest_layer"   => $lName,
-				 "invert"       => "yes"
+				 "invert"       => "no"
 	);
-	CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $lNeg );
 
 	$layer->SetOutputLayer($lName);
 
@@ -1070,17 +1100,17 @@ sub __PrepareTAPE {
 	);
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp1 );
 
-#	if ( CamHelper->LayerExists( $inCAM, $jobId, "ftapebr" ) ) {
-#
-#		my $lTmp2 = CamLayer->RoutCompensation( $inCAM, "ftapebr", "document" );
-#
-#		$inCAM->COM(
-#					 "merge_layers",
-#					 "source_layer" => $lTmp2,
-#					 "dest_layer"   => $routL
-#		);
-#		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp2 );
-#	}
+	#	if ( CamHelper->LayerExists( $inCAM, $jobId, "ftapebr" ) ) {
+	#
+	#		my $lTmp2 = CamLayer->RoutCompensation( $inCAM, "ftapebr", "document" );
+	#
+	#		$inCAM->COM(
+	#					 "merge_layers",
+	#					 "source_layer" => $lTmp2,
+	#					 "dest_layer"   => $routL
+	#		);
+	#		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp2 );
+	#	}
 
 	CamLayer->Contourize( $inCAM, $routL, "x_or_y", "203200" );    # 203200 = max size of empty space in InCAM which can be filled by surface
 	$inCAM->COM(
