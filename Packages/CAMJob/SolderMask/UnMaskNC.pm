@@ -147,7 +147,7 @@ sub __UnMaskThroughHoleNearPads {
 	my $step            = shift;
 	my $padAttr         = shift;
 	my $padLayers       = shift;
-	my $unMaskAttrVal   = shift; # value of .string attribute which unmasked pads will have
+	my $unMaskAttrVal   = shift;    # value of .string attribute which unmasked pads will have
 	my $resize          = shift;
 	my $minDistHole2Pad = shift;
 	my $unMaskedCnt     = shift;
@@ -158,11 +158,16 @@ sub __UnMaskThroughHoleNearPads {
 
 	my $result = 1;
 
+	# Restricted area from gold connector
+	my $goldConDist = 3000;
+
 	my @NC = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@NC );
 	@NC = map { $_->{"gROWname"} } grep { $_->{"NCSigStartOrder"} == 1 } @NC;
 
-	my @sm = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} !~ /flex/} CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	my @sm =
+	  map { $_->{"gROWname"} }
+	  grep { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} !~ /flex/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
 	die "No NC layers exist"          if ( !scalar(@NC) );
 	die "No solder mask layers exist" if ( !scalar(@sm) );
@@ -184,7 +189,7 @@ sub __UnMaskThroughHoleNearPads {
 	$f->SetFeatureTypes( "pad" => 1 );    # select only pad umnask
 	$f->SetPolarity( FiltrEnums->Polarity_POSITIVE );    # select only positive unmask
 	$f->AddIncludeAtt( ".string", $unMaskAttrVal );
- 
+
 	if ( $f->Select() ) {
 
 		$inCAM->COM('sel_delete');
@@ -199,6 +204,15 @@ sub __UnMaskThroughHoleNearPads {
 	if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, $padAttr ) ) {
 
 		CamLayer->CopySelOtherLayer( $inCAM, [$lResizedSMD], 0, 2 * $minDistHole2Pad );
+
+		# Consider gold connector. Copy negative of resized gold connector
+		my $goldConnAttr = ".gold_plating";
+		CamLayer->AffectLayers( $inCAM, $padLayers );
+		if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, $goldConnAttr ) ) {
+			
+			CamLayer->CopySelOtherLayer( $inCAM, [$lResizedSMD], 1, 2 * $goldConDist );
+			CamLayer->Contourize($inCAM, $lResizedSMD);
+		}
 
 		my $f2 = FeatureFilter->new( $inCAM, $jobId, $lNCTmp );
 
@@ -222,18 +236,18 @@ sub __UnMaskThroughHoleNearPads {
 
 			CamLayer->ClearLayers($inCAM);
 
-#			Check was removed, because after optimization features which touch unmask pads with attr $unMaskAttrVal
-# 			inehrit atribut $unMaskAttrVal
+			#			Check was removed, because after optimization features which touch unmask pads with attr $unMaskAttrVal
+			# 			inehrit atribut $unMaskAttrVal
 
-#			# Final check
-#			my $total = 0;
-#			foreach my $smL (@sm) {
-#
-#				my %attHist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, $step, $smL, 0 );
-#				$total += $attHist{".string"}->{$unMaskAttrVal};
-#			}
-#
-#			die "Error during copy negative feature to solder masks" if ( $total != ( scalar(@sm) * $$unMaskedCnt ) );
+			#			# Final check
+			#			my $total = 0;
+			#			foreach my $smL (@sm) {
+			#
+			#				my %attHist = CamHistogram->GetAttCountHistogram( $inCAM, $jobId, $step, $smL, 0 );
+			#				$total += $attHist{".string"}->{$unMaskAttrVal};
+			#			}
+			#
+			#			die "Error during copy negative feature to solder masks" if ( $total != ( scalar(@sm) * $$unMaskedCnt ) );
 
 		}
 		else {
@@ -245,7 +259,7 @@ sub __UnMaskThroughHoleNearPads {
 
 		$result = 0;
 	}
-	
+
 	CamLayer->ClearLayers($inCAM);
 
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $lNCTmp );
@@ -265,10 +279,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d272564";
+	my $jobId    = "d301316";
 	my $stepName = "o+1";
 
-	my $res = UnMaskNC->UnmaskThroughHole( $inCAM, $jobId, "o+1" );
+	my $res = UnMaskNC->UnMaskThroughHoleNearSMD( $inCAM, $jobId, "o+1" );
 
 	die;
 

@@ -123,6 +123,7 @@ sub UnMaskSMDThroughHole {
 				CamLayer->WorkLayer( $inCAM, $lTmp );
 
 				$inCAM->COM( "sel_change_sym", "symbol" => "cross1500x1500x200x200x50x50xr" );
+				
 			}
 
 			my @mess = ();
@@ -154,7 +155,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d298176";
+	my $jobId = "d298824";
 
 	my $notClose = 0;
 
