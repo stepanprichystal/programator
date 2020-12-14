@@ -46,7 +46,7 @@ sub Build {
 
 	# LAYER: Top rubber pad outside of steel plate
 	$lam->AddItem( $rubberPadYOMInf->{"ISRef"},
-				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 				   undef, undef,
 				   $rubberPadYOMInf->{"text"},
 				   $rubberPadYOMInf->{"thick"} );
@@ -57,7 +57,7 @@ sub Build {
 
 	# LAYER: Top rubber pad
 	$lam->AddItem( $rubberPadInf->{"ISRef"},
-				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 				   undef, undef,
 				   $rubberPadInf->{"text"},
 				   $rubberPadInf->{"thick"} );
@@ -98,7 +98,7 @@ sub Build {
 
 	# LAYER: Bot rubber pad
 	$lam->AddItem( $rubberPadInf->{"ISRef"},
-				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 				   undef, undef,
 				   $rubberPadInf->{"text"},
 				   $rubberPadInf->{"thick"} );
@@ -108,7 +108,7 @@ sub Build {
 	
 	# LAYER: Bot rubber pad outside of steel plate
 	$lam->AddItem( $rubberPadYOMInf->{"ISRef"},
-				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 				   undef, undef,
 				   $rubberPadYOMInf->{"text"},
 				   $rubberPadYOMInf->{"thick"} );

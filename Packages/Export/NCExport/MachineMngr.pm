@@ -364,7 +364,7 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_cDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_cDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_plt_cFillDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_cFillDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
@@ -431,13 +431,19 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
 
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop }{"ml"} = [ 0, 0, 1, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop }{"sl"} = [ 0, 0, 1, 1, 0, 0 ];
+
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop }{"ml"} = [ 0, 0, 1, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop }{"sl"} = [ 0, 0, 1, 1, 0, 0 ];
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill }{"ml"} = [ 0, 0, 1, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill }{"sl"} = [ 0, 0, 1, 1, 0, 1 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill }{"ml"} = [ 0, 0, 1, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill }{"sl"} = [ 0, 0, 1, 1, 0, 1 ];
 
@@ -446,15 +452,15 @@ sub __SetStaticPropertyTable {
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_soldsMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_soldsMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_tapecMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_tapecMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-	
+
 	$t{ EnumsGeneral->LAYERTYPE_nplt_tapesMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_tapesMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
-	
-	$t{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
+
+	$t{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill }{"ml"} = [ 0, 0, 1, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill }{"sl"} = [ 0, 0, 1, 0, 0, 1 ];
 
 }
 

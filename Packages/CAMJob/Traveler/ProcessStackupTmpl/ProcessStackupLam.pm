@@ -27,6 +27,7 @@ use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
 use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::Color';
 
 use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::LamItemBuilders::BuilderSTIFFPRODUCT';
+use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::LamItemBuilders::BuilderTAPEFLEXPRODUCT';
 use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::LamItemBuilders::BuilderCVRLBASE';
 use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::LamItemBuilders::BuilderCVRLPRODUCT';
 use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::LamItemBuilders::BuilderFLEXBASE';
@@ -82,6 +83,10 @@ sub __BuildStackupItems {
 	if ( $lam->GetLamType() eq Enums->LamType_STIFFPRODUCT ) {
 
 		$itemBldr = BuilderSTIFFPRODUCT->new( $inCAM, $jobId );
+	}
+	elsif ( $lam->GetLamType() eq Enums->LamType_TAPEPRODUCT ) {
+
+		$itemBldr = BuilderTAPEFLEXPRODUCT->new( $inCAM, $jobId );
 	}
 	elsif ( $lam->GetLamType() eq Enums->LamType_CVRLBASE ) {
 

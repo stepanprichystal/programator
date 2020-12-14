@@ -62,8 +62,8 @@ sub _ProcessStckpProduct {
 	 
 	my $item = $lam->AddItem( $itemId, $itemType, EnumsStyle->GetItemTitle($itemType), $itemId, undef, undef, $IProduct->GetThick() );
 
-	$lam->AddChildItem( $item, "top", $itemId . "productTop", Enums->$itemType, "TOP", "v".$IProduct->GetTopCopperNum(), undef, undef, undef );
-	$lam->AddChildItem( $item, "bot", $itemId . "productBot", Enums->$itemType, "BOT", "v".$IProduct->GetBotCopperNum(), undef, undef, undef );
+	$lam->AddChildItem( $item, "top", $itemId . "productTop",  $itemType, "TOP", "v".$IProduct->GetTopCopperNum(), undef, undef, undef );
+	$lam->AddChildItem( $item, "bot", $itemId . "productBot",  $itemType, "BOT", "v".$IProduct->GetBotCopperNum(), undef, undef, undef );
 	
 	 
 }

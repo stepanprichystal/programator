@@ -533,11 +533,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $jobId = "x69801"; # RigidFlex Outer + cvrl
 #	my $jobId = "d298176"; # RigidFlex Outer + flexmask
- 	my $jobId = "d294436"; 
+ 	my $jobId = "d293788"; 
 
 	my $mess = "";
 
-	my $step = "mpanel";
+	my $step = "o+1";
 	my $SR = CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step );
 
 	#my $nested = $SR;
@@ -556,7 +556,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#$control->AddInfoPreview( \$mess );
 	#$control->AddStackupPreview( \$mess );
-	$control->AddImagePreview( \$mess, 1, 0 );
+	$control->AddImagePreview( \$mess, 0, 1 );
 	#$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 

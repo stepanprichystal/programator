@@ -419,6 +419,19 @@ sub AddNCLayerType {
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
+		}elsif ( $l->{"gROWname"} =~ /^fzstiffadhc\d?/ ) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop;
+			$l->{"plated"}    = 0;
+			$l->{"technical"} = 0;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fzstiffadhs\d?/ ) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop;
+			$l->{"plated"}    = 0;
+			$l->{"technical"} = 0;
+
 		}elsif ( $l->{"gROWname"} =~ /^fzstiffc\d?/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bstiffcMill;
@@ -569,8 +582,8 @@ sub GetNPltNCLayers {
 # Add  to every hash (layer) in array new keys:
 # - {"gROWdrl_start"} - layer name where NC layer starts ( start layer type does not matter )
 # - {"gROWdrl_end"}   -  layer name where NC layer starts ( end layer type does not matter )
-# - {"NCStartOrder"}  - layer name where NC layer starts ( start layer type does not matter )
-# - {"NCEndOrder"}    - layer name where NC layer starts ( end layer type does not matter )
+# - {"NCStartOrder"}  - layer order index where NC layer starts ( start layer type does not matter )
+# - {"NCEndOrder"}    - layer order index where NC layer starts ( end layer type does not matter )
 # - {"gROWdrl_dir"}   - direction of NC layer in matrix
 # - {"NCThroughSig"} - 0/1 indicate if NC layer start/end/go through at least one signal layer
 #

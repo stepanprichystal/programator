@@ -257,7 +257,7 @@ sub __SetLayout {
 	my $mainFrm = MyWxFrame->new(
 		$parent,                       # parent window
 		-1,                            # ID -1 means any
-		"Checking export settings",    # title
+		"Checking export settings: ". $self->{"jobId"},    # title
 		&Wx::wxDefaultPosition,        # window position
 		[ 470, 250 ],                                              # size
 		&Wx::wxCAPTION | &Wx::wxCLOSE_BOX | &Wx::wxSTAY_ON_TOP |

@@ -12,6 +12,7 @@ use strict;
 use warnings;
 use File::Copy;
 use List::MoreUtils qw(uniq);
+use List::Util qw(first);
 
 #local library
 use aliased 'CamHelpers::CamLayer';
@@ -50,6 +51,7 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => 'FiltrEnums';
 use aliased 'Packages::CAMJob::Drilling::NPltDrillCheck';
+use aliased 'Packages::CAMJob::Routing::RoutStiffener';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -943,10 +945,13 @@ sub OnCheckGroupData {
 	{
 
 		my @NC =
-		 map { $_->{"gROWname"} }
-		 grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_tapebrMill }
-		 grep { $_->{"gROWlayer_type"} eq "rout" } $defaultInfo->GetNCLayers();
-		
+		  map { $_->{"gROWname"} }
+		  grep {
+			     $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_tapebrMill
+			  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_cbMillTop
+			  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_cbMillBot
+		  }
+		  grep { $_->{"gROWlayer_type"} eq "rout" } $defaultInfo->GetNCLayers();
 
 		my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 
@@ -985,6 +990,196 @@ sub OnCheckGroupData {
 
 		}
 
+	}
+
+	#	Check on top/bot depth stiffener adhesive NC layer
+	{
+		my @stiffeners = ();
+		push( @stiffeners, "top" ) if ( $defaultInfo->LayerExist( "stiffc", 1 ) );
+		push( @stiffeners, "bot" ) if ( $defaultInfo->LayerExist( "stiffs", 1 ) );
+
+		foreach my $stiffSide (@stiffeners) {
+
+			my $tapeLName     = "tp" .         ( $stiffSide eq "top" ? "c" : "s" );
+			my $stiffLName    = "stiff" .      ( $stiffSide eq "top" ? "c" : "s" );
+			my $stiffAdhLName = "fzstiffadh" . ( $stiffSide eq "top" ? "c" : "s" );
+			my $stiffAdhLType = $stiffSide eq "top" ? EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop : EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop;
+
+			my $mInf = HegMethods->GetPcbStiffenerMat( $jobId, $stiffSide );
+			my $stiffThick = $mInf->{"vyska"};
+
+			die "Stiffener $stiffSide thickness is not defined in IS" unless ( defined $stiffThick );
+			$stiffThick =~ s/,/\./;
+			$stiffThick *= 1000000;    # µm
+			my $maxStiffH = 250;       # 250µm is max stiffener height withou depth milling of adehesive stiffener
+
+			# Do checks if LAYERTYPE_nplt_bStiffcAdhMillTop exists
+			if ( scalar( grep { $_->{"type"} eq $stiffAdhLType } $defaultInfo->GetNCLayers() ) ) {
+
+				if ( $stiffThick < $maxStiffH ) {
+					$dataMngr->_AddErrorResult(
+												"Hloubková fréza lepidla stiffeneru ${stiffSide}",
+												"Deska by NEMĚLA obsahovat hloubkovou frézu lepidla stiffeneru: ${stiffAdhLName}, "
+												  . "pokud tloušťka stiffeneru bez lepidla (aktuální tl.: ${stiffThick}µm) je menší jak ${maxStiffH}µm"
+					);
+
+				}
+			}
+			else {
+				# Do checks if LAYERTYPE_nplt_bStiffcAdhMillTop not  exists
+
+				# tp[cs] layer must exist OR stiffener thickness must be less than $maxStiffH
+
+				if (   !$defaultInfo->LayerExist( $tapeLName, 1 )
+					 && $stiffThick >= $maxStiffH )
+				{
+					$dataMngr->_AddErrorResult(
+						"Hloubková fréza lepidla stiffeneru ${stiffSide}",
+						"Deska obsahuje stiffener ${stiffSide}, ale neexistuje hloubková fréza lepidla stiffeneru: ${stiffAdhLName}. "
+						  . "Jedinné tři výjimky, kdy tato vrstva nemusí existovat jsou:\n\n"
+						  . "a) Pokud tloušťka stiffeneru (bez lepidla) je menší jak ${maxStiffH}µm.\n"
+						  . "b) Pokud pružná oblast bez stiffeneru má tak malou plochu, do které se pojezd hloubkové frézy lepidla již nevleze. "
+						  . "Respektive veškeré frézování stiffeneru i jeho lepidla je ve frézovací vrstvě: $stiffLName.\n"
+						  . "c) Pokud je na straně stiffenru zároveň umístěná oboustranná páska pro zákazníka "
+						  . "a ta je použita zároveň k nalepení stiffeneru (vrstva: ${tapeLName}).\n"
+					);
+				}
+			}
+
+		}
+	}
+
+	#	Check on top/bot stiffener adhesive depth value
+	# Depth value should be always 250µm (this is enough for rout through adehsive)
+	{
+		my @adhMill =
+		  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop }
+		  $defaultInfo->GetNCLayers();
+
+		my $depth = RoutStiffener->GetStiffAdhRotuDepth( $inCAM, $jobId );    # depth value [mm], which is enopugh for mill through adhesive
+
+		my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+
+		foreach my $step (@uniqueSteps) {
+
+			foreach my $adhLayer (@adhMill) {
+
+				my $unitDTM = UniDTM->new( $inCAM, $jobId, $step->{"stepName"}, $adhLayer->{"gROWname"}, 1 );
+
+				my @tools =
+				  grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_CHAIN && $_->GetDepth() * 1000 != $depth } $unitDTM->GetUniqueTools();
+
+				if ( scalar(@tools) ) {
+
+					my $depthTxt = join( "; ", map { ( $_->GetDepth() * 1000 ) . "um" } @tools );
+
+					$dataMngr->_AddErrorResult(
+												"Hloubková fréza lepidla stiffeneru ",
+												"Ve vrstvě: "
+												  . $adhLayer->{"gROWname"}
+												  . " je špatná hodnota hloubky frézování ($depthTxt). "
+												  . "Hloubka frézování lepidla stiffeneru má být přesně ${depth}µm, což je dostatečná hloubka k profrézování lepidla stiffeneru"
+					);
+				}
+
+			}
+		}
+
+	}
+
+	# Check if exist layer ftpbr - when exist layer tp[cs] and stiff[cs] (both fro msame side)
+	{
+
+		if (
+			( $defaultInfo->LayerExist( "tpc", 1 ) && $defaultInfo->LayerExist( "stiffc", 1 ) )
+			|| (    $defaultInfo->LayerExist( "tps", 1 )
+				 && $defaultInfo->LayerExist( "stiffs", 1 ) )
+
+		  )
+		{
+
+			my $ftpbr =
+			  first { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapebrMill } $defaultInfo->GetNCLayers();
+
+			unless ( defined $ftpbr ) {
+				$dataMngr->_AddErrorResult(
+											"Fréza můstků oboustrané pásky",
+											"Pokud existuje zákaznická oboustranná páska (vrstva: tp[cs]) a "
+											  . "zároveň stiffener (vrstva: stiff[cs]) ze stejné strany DPS, "
+											  . "tak musí existovat vrstva pro fréza můstků oboustranné pásky: ftpbr (příklad D300696)"
+				);
+			}
+
+		}
+
+	}
+
+	# Check ftpbr layer - all rout tool shoud have d=1mm
+	my $ftpbr = first { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapebrMill } $defaultInfo->GetNCLayers();
+
+	if ($ftpbr) {
+
+		# bt tool 1mm (tool routs in the middle of 2mm adhesive bridges)
+		my $brTool = 1000;
+		my $unitDTM = UniDTM->new( $inCAM, $jobId, $stepName, $ftpbr->{"gROWname"}, 1 );
+		my @tools =
+		  grep { $_->GetTypeProcess() eq EnumsDrill->TypeProc_CHAIN && $_->GetDrillSize() != $brTool } $unitDTM->GetUniqueTools();
+
+		if ( scalar(@tools) ) {
+
+			my $toolsTxt = join( "; ", map { ( $_->GetDrillSize() ) . "um" } @tools );
+
+			$dataMngr->_AddErrorResult(
+										"Fréza můstků oboustranné pásky",
+										"Fréza můstků oboustranné pásky ve vrstvě: "
+										  . $ftpbr->{"gROWname"}
+										  . " by měla obsahovat vždy pozejdy pouze nástrojem: 1000µm. "
+										  . "Ve vrstvě byly nalezeny pojezdy o průměrech: $toolsTxt."
+			);
+		}
+	}
+
+	# Check if all routs in ftpbr are outside of profile
+	if ($ftpbr) {
+
+		my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+
+		foreach my $step (@uniqueSteps) {
+
+			CamHelper->SetStep( $inCAM, $step->{"stepName"} );
+
+			# Compensate rout
+			# Copy negatife profile to layer
+			# contourize
+			# This sequence is responsible for split features which are both inside and outside
+			# Than we can use filter and filter all in inside
+			my $lTMP = CamLayer->RoutCompensation( $inCAM, $ftpbr->{"gROWname"}, "document" );
+
+			my $lTMPProf = GeneralHelper->GetGUID();
+			$inCAM->COM( "profile_to_rout", "layer" => $lTMPProf, "width" => 200 );
+			CamLayer->WorkLayer( $inCAM, $lTMPProf );
+			CamLayer->CopySelOtherLayer( $inCAM, [$lTMP], 1 );
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTMPProf );
+			CamLayer->WorkLayer( $inCAM, $lTMP );
+			CamLayer->Contourize( $inCAM, $lTMP );
+
+			my $f = FeatureFilter->new( $inCAM, $jobId, $lTMP );
+
+			$f->SetProfile( FiltrEnums->ProfileMode_INSIDE );
+
+			if ( $f->Select() ) {
+				$dataMngr->_AddErrorResult(
+					"Fréza můstků oboustranné pásky",
+					"Fréza můstků oboustranné pásky ve stepu: "
+					  . $step->{"stepName"}
+					  . " zasahuje do profilu desky. "
+					  . "Tato fréza musí být vždy vně profilu desky, jinak v desce bude profrézovaný otvor skrz."
+				);
+			}
+
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTMP );
+
+		}
 	}
 }
 

@@ -92,21 +92,24 @@ sub CreateDefaultStackup {
 	# Create default xml stackup
 	StackupDefault->CreateStackup($inCAM, $masterJob, $layerCnt, \@innerCuUsage, $cuThickness, $constClass );
 
-	# Create pdf with stackup	
-	my $stackupPdf = StackupPdf->new($inCAM, $masterJob);
-
-	$stackupPdf->Create(1, 1, 1);
-	my $stackTempPath = $stackupPdf->GetStackupPath();
-
-	if ( -e $stackTempPath ) {
-		my $pdfArchive = JobHelper->GetJobArchive($masterJob) . "pdf/" . $masterJob . "-cm.pdf";
-		
-		if(-e $pdfArchive){
-			unlink($pdfArchive);
-		}
- 
-		copy( $stackTempPath, $pdfArchive ) or die "Copy failed: $!";
-	}
+#	# Create pdf with stackup	
+#	my $stackupPdf = StackupPdf->new($inCAM, $masterJob);
+# 		my $pdfPath = $control->GetOutputPath();
+#	
+#	
+#
+#	$stackupPdf->Create(1, 1, 1);
+#	my $stackTempPath = $stackupPdf->GetStackupPath();
+#
+#	if ( -e $stackTempPath ) {
+#		my $pdfArchive = JobHelper->GetJobArchive($masterJob) . "pdf/" . $masterJob . "-cm.pdf";
+#		
+#		if(-e $pdfArchive){
+#			unlink($pdfArchive);
+#		}
+# 
+#		copy( $stackTempPath, $pdfArchive ) or die "Copy failed: $!";
+#	}
 
 	return $result;
 }

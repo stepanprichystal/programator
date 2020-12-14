@@ -17,6 +17,7 @@ use Time::localtime;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::OutputData::Enums' => "EnumsOutput";
@@ -135,8 +136,8 @@ sub Output {
 	}
 
 	# Add info about extra files (stackup etc)
-	if ( $self->{"layerCnt"} > 2 ) {
-		push( @lines, $self->__CompleteLine( " - " . $self->{"jobId"} . "stackup.pdf", "Pcb stackup" ) );
+	if ( $self->{"layerCnt"} > 2 || JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+		push( @lines, $self->__CompleteLine( " - " . $self->{"jobId"} . "_stackup.pdf", "Pcb stackup" ) );
 	}
 
 	push( @lines, "" );
@@ -188,7 +189,7 @@ sub Output {
 		for ( my $i = 0 ; $i < scalar(@layerNames) ; $i++ ) {
 			$layerNames[$i] = ValueConvertor->GetNifCodeValue( $layerNames[$i] );
 		}
-		push( @lines, " - PCB contains UL logo at layers: " .  join( "; ", uniq(@layerNames) )  );
+		push( @lines, " - PCB contains UL logo at layers: " . join( "; ", uniq(@layerNames) ) );
 	}
 
 	my $path = $self->{"filesDir"} . "ReadMe.txt";

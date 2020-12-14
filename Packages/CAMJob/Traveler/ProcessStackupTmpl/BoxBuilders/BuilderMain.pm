@@ -62,10 +62,10 @@ sub Build {
 	$tbl->AddColDef( "rightOverlapPad",   EnumsStyle->BoxMainClmnWidth_PADOVRLP );
 	$tbl->AddColDef( "middleMargin",      EnumsStyle->BoxMainClmnWidth_MARGIN );
 
-	$tbl->AddColDef( "matName",           EnumsStyle->BoxMainClmnWidth_NAME );
-		$tbl->AddColDef( "matKind",           EnumsStyle->BoxMainClmnWidth_KIND );
-	$tbl->AddColDef( "matThick",          EnumsStyle->BoxMainClmnWidth_THICK );
-	$tbl->AddColDef( "rightMargin",       EnumsStyle->BoxMainClmnWidth_MARGIN );
+	$tbl->AddColDef( "matName",     EnumsStyle->BoxMainClmnWidth_NAME );
+	$tbl->AddColDef( "matKind",     EnumsStyle->BoxMainClmnWidth_KIND );
+	$tbl->AddColDef( "matThick",    EnumsStyle->BoxMainClmnWidth_THICK );
+	$tbl->AddColDef( "rightMargin", EnumsStyle->BoxMainClmnWidth_MARGIN );
 
 	# 2) Build title row
 	$self->__BuildStckpTitle();
@@ -165,9 +165,9 @@ sub __BuildStckpBody {
 						   ( !defined $botItem ? dclone($borderStyle) : undef ) );
 
 		if ( defined $botItem ) {
-			
+
 			$self->__DrawItem( $botItem, dclone($txtStckpStyle), dclone($txtStdStyle), dclone($txtStckpStyle), dclone($borderStyle) );
-			
+
 		}
 
 		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATGAP );
@@ -218,7 +218,13 @@ sub __DrawItem {
 										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 
-	if ( $itemType eq Enums->ItemType_PADRUBBER ) {
+	if ( $itemType eq Enums->ItemType_PADRUBBERPINK ) {
+
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
+										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
+	}
+	if ( $itemType eq Enums->ItemType_PADRUBBERBROWN ) {
 
 		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
 		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
@@ -248,6 +254,13 @@ sub __DrawItem {
 
 		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
 		$self->{"builderHelper"}->DrawMatStiff( $row,           $itemValType, $itemValKind,     $itemValText, $itemValThick,
+												$txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
+	}
+
+	if ( $itemType eq Enums->ItemType_MATTAPE ) {
+
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		$self->{"builderHelper"}->DrawMatTape( $row,           $itemValType, $itemValKind,     $itemValText, $itemValThick,
 												$txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 

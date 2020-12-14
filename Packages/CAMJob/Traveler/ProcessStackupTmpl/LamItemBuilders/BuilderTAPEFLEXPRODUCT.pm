@@ -1,8 +1,8 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Builder for stiffener lamination
+# Description: Builder for tape lamination on flex
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Traveler::ProcessStackupTmpl::LamItemBuilders::BuilderSTIFFPRODUCT;
+package Packages::CAMJob::Traveler::ProcessStackupTmpl::LamItemBuilders::BuilderTAPEFLEXPRODUCT;
 use base('Packages::CAMJob::Traveler::ProcessStackupTmpl::LamItemBuilders::LamItemBuilderBase');
 
 #3th party library
@@ -44,10 +44,10 @@ sub Build {
 
 	# LAYER: Top Stiffener
 
-	my $stiffTopInfo = {};
-	my $stiffTop     = $stckpMngr->GetExistStiff( "top", $stiffTopInfo );
-	my $stiffBotInfo = {};
-	my $stiffBot     = $stckpMngr->GetExistStiff( "bot", $stiffBotInfo );
+	my $tapeTopInfo = {};
+	my $tapeTop     = $stckpMngr->GetExistTapeFlex( "top", $tapeTopInfo );
+	my $tapeBotInfo = {};
+	my $tapeBot     = $stckpMngr->GetExistTapeFlex( "bot", $tapeBotInfo );
 
 	# LAYER: Top rubber pad
 	$lam->AddItem( $rubberPadInf->{"ISRef"},
@@ -57,22 +57,25 @@ sub Build {
 				   $rubberPadInf->{"text"},
 				   $rubberPadInf->{"thick"} );
 
-	if ($stiffTop) {
+	if ($tapeTop) {
 
-		my $item = $lam->AddItem( $stiffTopInfo->{"stiffISRef"},
-								  Enums->ItemType_MATSTIFFENER,
-								  EnumsStyle->GetItemTitle( Enums->ItemType_MATSTIFFENER ),
+		my $item = $lam->AddItem(
+								  $tapeTopInfo->{"tapeISRef"},
+								  Enums->ItemType_MATTAPE,
+								  EnumsStyle->GetItemTitle( Enums->ItemType_MATTAPE ),
 								  undef,
-								  $stiffTopInfo->{"stiffKind"},
-								  $stiffTopInfo->{"stiffText"},
-								  $stiffTopInfo->{"stiffThick"} );
-		$lam->AddChildItem(
-							$item,                                                        "bot",
-							$stiffTopInfo->{"adhesiveISRef"},                             Enums->ItemType_MATSTIFFADHESIVE,
-							EnumsStyle->GetItemTitle( Enums->ItemType_MATSTIFFADHESIVE ), undef,
-							$stiffTopInfo->{"adhesiveKind"},                              $stiffTopInfo->{"adhesiveText"},
-							$stiffTopInfo->{"adhesiveThick"}
+								  undef,
+								  $tapeTopInfo->{"tapeText"},
+								  $tapeTopInfo->{"tapeThick"}
 		);
+
+		#		$lam->AddChildItem(
+		#							$item,                                                        "bot",
+		#							$stiffTopInfo->{"adhesiveISRef"},                             Enums->ItemType_MATSTIFFADHESIVE,
+		#							EnumsStyle->GetItemTitle( Enums->ItemType_MATSTIFFADHESIVE ), undef,
+		#							$stiffTopInfo->{"adhesiveKind"},                              $stiffTopInfo->{"adhesiveText"},
+		#							$stiffTopInfo->{"adhesiveThick"}
+		#		);
 
 	}
 
@@ -90,33 +93,31 @@ sub Build {
 
 	# LAYER: top Stiffener adhesive
 
-	if ($stiffBot) {
+	if ($tapeBot) {
 
-		my $item = $lam->AddItem( $stiffBotInfo->{"stiffISRef"},
-								  Enums->ItemType_MATSTIFFENER,
-								  EnumsStyle->GetItemTitle( Enums->ItemType_MATSTIFFENER ),
-								  undef,
-								  $stiffBotInfo->{"stiffKind"},
-								  $stiffBotInfo->{"stiffText"},
-								  $stiffBotInfo->{"stiffThick"} );
-		$lam->AddChildItem(
-							$item,                                                        "top",
-							$stiffBotInfo->{"adhesiveISRef"},                             Enums->ItemType_MATSTIFFADHESIVE,
-							EnumsStyle->GetItemTitle( Enums->ItemType_MATSTIFFADHESIVE ), undef,
-							$stiffBotInfo->{"adhesiveKind"},                              $stiffBotInfo->{"adhesiveText"},
-							$stiffBotInfo->{"adhesiveThick"}
-		);
+		my $item = $lam->AddItem( $tapeBotInfo->{"tpISRef"},
+								  Enums->ItemType_MATTAPE, EnumsStyle->GetItemTitle( Enums->ItemType_MATTAPE ),
+								  undef, undef,
+								  $tapeBotInfo->{"tpText"},
+								  $tapeBotInfo->{"tpThick"} );
+
+		#		$lam->AddChildItem(
+		#							$item,                                                        "top",
+		#							$stiffBotInfo->{"adhesiveISRef"},                             Enums->ItemType_MATSTIFFADHESIVE,
+		#							EnumsStyle->GetItemTitle( Enums->ItemType_MATSTIFFADHESIVE ), undef,
+		#							$stiffBotInfo->{"adhesiveKind"},                              $stiffBotInfo->{"adhesiveText"},
+		#							$stiffBotInfo->{"adhesiveThick"}
+		#		);
 
 	}
 
 	# LAYER: Bot rubber pad
-	$lam->AddItem(
-		$rubberPadInf->{"ISRef"},
-		Enums->ItemType_PADRUBBERBROWN, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERBROWN ),
-		undef,                          undef,
-		$rubberPadInf->{"text"},
-		$rubberPadInf->{"thick"}
-	);
+	$lam->AddItem( $rubberPadInf->{"ISRef"},
+				   Enums->ItemType_PADRUBBERBROWN,
+				   EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERBROWN ),
+				   undef, undef,
+				   $rubberPadInf->{"text"},
+				   $rubberPadInf->{"thick"} );
 
 	# LAYER: Steel plate Bot
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );

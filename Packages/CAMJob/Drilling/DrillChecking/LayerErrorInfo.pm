@@ -164,7 +164,6 @@ sub CheckNCLayers {
 
 	return $result;
 }
-
 sub CheckIsNotEmpty {
 	my $self     = shift;
 	my @layers   = @{ shift(@_) };
@@ -389,6 +388,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
@@ -462,6 +462,7 @@ sub CheckDirBot2Top {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
@@ -530,10 +531,50 @@ sub CheckDrillStartStop {
 
 	my $result = 1;
 
+	# Check plated through layer if start in c and not end in inner layer
+	my @layersPlt = grep { $_->{"gROWname"} !~ /\d+$/ }
+	  $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_nFillDrill ] );
+
+	foreach my $l (@layersPlt) {
+
+		my $lName = $l->{"gROWname"};
+
+		if ( $l->{"NCSigStart"} ne "c" ) {
+			$result = 0;
+			$$mess .= "Plated through NC layer \"" . $lName . "\" has to start in layer \"c\"\n";
+		}
+
+		if ( $l->{"NCSigEnd"} =~ /v\d+/ ) {
+			$result = 0;
+			$$mess .= "Plated through NC layer \"" . $lName . "\" can not to end in  inner layer \"" . $l->{"NCSigEnd"} . "\"\n";
+		}
+	}
+
+	# Check plated through blind layer if start and end not in c/s layer
+	my @layersPltBlind = grep { $_->{"gROWname"} =~ /\d+$/ }
+	  $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_nFillDrill ] );
+
+	foreach my $l (@layersPltBlind) {
+
+		my $lName = $l->{"gROWname"};
+
+		if ( $l->{"NCSigStart"} eq "c" ) {
+			$result = 0;
+			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to start in layer \"c\"\n";
+		}
+
+		if ( $l->{"NCSigEnd"} eq "s" ) {
+			$result = 0;
+			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to end in layer \"s\"\n";
+		}
+	}
+
 	# 1) This helper drill shouldn't go through signal layers
 	my @t = ();
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
@@ -557,45 +598,109 @@ sub CheckDrillStartStop {
 		}
 	}
 
-	# Check plated through layer if start in c and not end in inner layer
-	my @layers3 = grep { $_->{"gROWname"} !~ /\d+$/ }
-	  $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_nFillDrill ] );
+	# Check if stiffener layer start in proper board layer
+	my @t2 = ();
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
+
+	my @layers2 = $self->__GetLayersByType( \@layers, \@t2 );
+
+	foreach my $l (@layers2) {
+
+		if ( $l->{"gROWdrl_start"} ne "stiffc" ) {
+			$result = 0;
+			$$mess .= " NC layer \"" . $l->{'gROWname'} . "\" has to start in base layer \"stiffc\"\n";
+		}
+	}
+
+	# Check if stiffener layer start in proper board layer
+	my @t3 = ();
+	push( @t3, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
+	push( @t3, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
+
+	my @layers3 = $self->__GetLayersByType( \@layers, \@t3 );
 
 	foreach my $l (@layers3) {
 
-		my $lName = $l->{"gROWname"};
-
-		if ( $l->{"NCSigStart"} ne "c" ) {
+		if ( $l->{"gROWdrl_start"} ne "stiffs" ) {
 			$result = 0;
-			$$mess .= "Plated through NC layer \"" . $lName . "\" has to start in layer \"c\"\n";
-		}
-
-		if ( $l->{"NCSigEnd"} =~ /v\d+/ ) {
-			$result = 0;
-			$$mess .= "Plated through NC layer \"" . $lName . "\" can not to end in  inner layer \"".$l->{"NCSigEnd"}."\"\n";
+			$$mess .= "Plated through NC layer \"" . $l->{'gROWname'} . "\" has to start in base layer \"stiffs\"\n";
 		}
 	}
 
+	# Check if special layers start stop in cvrlpin layer
+	my @t4 = ();
+	push( @t4, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
+	push( @t4, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
 
-	# Check plated through blind layer if start and end not in c/s layer
-	my @layers4 = grep { $_->{"gROWname"} =~ /\d+$/ }
-	  $self->__GetLayersByType( \@layers, [ EnumsGeneral->LAYERTYPE_plt_nDrill, EnumsGeneral->LAYERTYPE_plt_nFillDrill ] );
+	my @layers4 = $self->__GetLayersByType( \@layers, \@t4 );
 
 	foreach my $l (@layers4) {
 
-		my $lName = $l->{"gROWname"};
-
-		if ( $l->{"NCSigStart"} eq "c" ) {
+		if ( $l->{"gROWdrl_start"} ne "cvrlpin" ) {
 			$result = 0;
-			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to start in layer \"c\"\n";
-		}
-
-		if ( $l->{"NCSigEnd"} eq "s" ) {
-			$result = 0;
-			$$mess .= "Blind through plated NC layer \"" . $lName . "\" can not to end in layer \"s\"\n";
+			$$mess .= "NC layer \"" . $l->{'gROWname'} . "\" has to start in base layer \"cvrlpin\"\n";
 		}
 	}
 
+	# Check if coverlay layers start stop in cvrl layer
+	my @t5 = ();
+	push( @t5, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
+	push( @t5, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
+
+	my @layers5 = $self->__GetLayersByType( \@layers, \@t5 );
+
+	foreach my $l (@layers5) {
+
+		if ( $l->{"gROWdrl_start"} !~ /cvrl/ ) {
+			$result = 0;
+			$$mess .= "NC layer \"" . $l->{'gROWname'} . "\" has to start in base layer \"cvrl...\"\n";
+		}
+	}
+
+	# Check if prepreg layers start stop in bend layer
+	my @t6 = ();
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
+
+	my @layers6 = $self->__GetLayersByType( \@layers, \@t6 );
+
+	foreach my $l (@layers6) {
+
+		if ( $l->{"gROWdrl_start"} ne "bend" ) {
+			$result = 0;
+			$$mess .= "NC layer \"" . $l->{'gROWname'} . "\" has to start in base layer \"bend\"\n";
+		}
+	}
+
+	# Check if tape top layers start stop in tpc layer
+	my @t7 = ();
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
+
+	my @layers7 = $self->__GetLayersByType( \@layers, \@t7 );
+
+	foreach my $l (@layers7) {
+
+		if ( $l->{"gROWdrl_start"} =~ /^tp(stiff)?c/ ) {
+			$result = 0;
+			$$mess .= "NC layer \"" . $l->{'gROWname'} . "\" has to start in base layer \"tpc\"\n";
+		}
+	}
+
+	# Check if tape bot layers start stop in tps layer
+	my @t8 = ();
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
+
+	my @layers8 = $self->__GetLayersByType( \@layers, \@t8 );
+
+	foreach my $l (@layers8) {
+
+		if ( $l->{"gROWdrl_start"} =~ /^tp(stiff)?s/ ) {
+			$result = 0;
+			$$mess .= "NC layer \"" . $l->{'gROWname'} . "\" has to start in base layer \"tpc\"\n";
+		}
+	}
+
+	 
 	return $result;
 }
 
@@ -673,6 +778,7 @@ sub CheckContainDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 
+
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 
 	# 1) Check if layer start/stop/go through signal layer
@@ -690,6 +796,8 @@ sub CheckContainDepth {
 	# 2) Check if layers contain depth in DTM table
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
 
 	my @layers2 = $self->__GetLayersByType( \@layers, \@t );
 

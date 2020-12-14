@@ -196,39 +196,6 @@ sub GetISPcbType {
 	return HegMethods->GetTypeOfPcb( $self->{"jobId"} );
 }
 
-#
-#sub GetPlatedNC {
-#	my $self = shift;
-#
-#	my @NC = grep { $_->{"plated"} && !$_->{"technical"} } @{ $self->{"NCLayers"} };
-#
-#	my $sigLCnt = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-#
-#	my @sorted = ();
-#
-#	# Sorting normal through frilling
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill     && $_->{"NCSigStartOrder"} == 1 } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $_->{"NCSigStartOrder"} == 1 } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill     && $_->{"NCSigStartOrder"} > 1 } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill && $_->{"NCSigStartOrder"} > 1 } @NC );
-#
-#	# sorting blind drill from top (first drill which start at top layer)
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop     && $_->{"NCSigStartOrder"} == 1 } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop && $_->{"NCSigStartOrder"} == 1 } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop     && $_->{"NCSigStartOrder"} > 1 } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillTop && $_->{"NCSigStartOrder"} > 1 } @NC );
-#
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot     && $_->{"NCSigStartOrder"} == $sigLCnt } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot && $_->{"NCSigStartOrder"} == $sigLCnt } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot     && $_->{"NCSigStartOrder"} < $sigLCnt } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bFillDrillBot && $_->{"NCSigStartOrder"} < $sigLCnt } @NC );
-#
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill } @NC );
-#	push( @sorted, grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NC );
-#
-#	return @sorted;
-#}
-#
 sub GetExistStiff {
 	my $self     = shift;
 	my $side     = shift;    # top/bot
@@ -248,7 +215,7 @@ sub GetExistStiff {
 
 			$stifInfo->{"adhesiveISRef"} = $mAdhInf->{"reference_subjektu"};
 			$stifInfo->{"adhesiveKind"}  = "";
-			$stifInfo->{"adhesiveText"}  = $mAdhInf->{"nazev_subjektu"} ;
+			$stifInfo->{"adhesiveText"}  = $mAdhInf->{"nazev_subjektu"};
 			$stifInfo->{"adhesiveThick"} = $mAdhInf->{"vyska"} * 1000000;      #
 			$stifInfo->{"adhesiveTg"}    = 204;
 
@@ -260,7 +227,7 @@ sub GetExistStiff {
 			$stifInfo->{"stiffISRef"} = $mInf->{"reference_subjektu"};
 			$stifInfo->{"stiffKind"}  = $mInf->{"dps_druh"};
 			$stifInfo->{"stiffText"}  = $mInf->{"nazev_subjektu"};
-		 
+
 			my $t = $n[2];
 			$t =~ s/,/\./;
 			$t *= 1000;
@@ -286,6 +253,74 @@ sub GetExistStiff {
 
 	return $exist;
 
+}
+
+# Tape on flex
+sub GetExistTapeFlex {
+	my $self = shift;
+	my $side = shift;    # top/bot
+	my $inf  = shift;    # reference for storing info
+
+	my $l = $side eq "top" ? "tpc" : "tps";
+
+	my $exist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
+
+	if ($exist) {
+
+		if ( defined $inf ) {
+
+			my $matInfo = HegMethods->GetPcbTapeFlexMat( $self->{"jobId"}, $side );
+
+			$inf->{"tpISRef"} = $matInfo->{"reference_subjektu"};
+
+			my $thick = $matInfo->{"vyska"} * 1000000;
+
+			$inf->{"tpText"}  =  $matInfo->{"nazev_subjektu"};    # 
+			$inf->{"tpThick"} = $thick;
+
+			die "Tape material name was not found at material:" . $matInfo->{"nazev_subjektu"}
+			  unless ( defined $inf->{"tpText"} );
+			die "Tape material thick was not found at material:" . $matInfo->{"nazev_subjektu"}
+			  unless ( defined $inf->{"tpThick"} );
+
+		}
+	}
+
+	return $exist;
+}
+
+# Tape on stiffener
+sub GetExistTapeStiff {
+	my $self = shift;
+	my $side = shift;    # top/bot
+	my $inf  = shift;    # reference for storing info
+
+	my $l = $side eq "top" ? "tpstiffc" : "tpstiffs";
+
+	my $exist = defined( first { $_->{"gROWname"} eq $l } @{ $self->{"boardBaseLayers"} } ) ? 1 : 0;
+
+	if ($exist) {
+
+		if ( defined $inf ) {
+
+			my $matInfo = HegMethods->GetPcbTapeStiffMat( $self->{"jobId"}, $side );
+
+			$inf->{"tpISRef"} = $matInfo->{"reference_subjektu"};
+
+			my $thick = $matInfo->{"vyska"} * 1000000;
+
+			$inf->{"tpText"}  =  $matInfo->{"nazev_subjektu"};    #  
+			$inf->{"tpThick"} = $thick;
+
+			die "Tape material name was not found at material:" . $matInfo->{"nazev_subjektu"}
+			  unless ( defined $inf->{"tpText"} );
+			die "Tape material thick was not found at material:" . $matInfo->{"nazev_subjektu"}
+			  unless ( defined $inf->{"tpThick"} );
+
+		}
+	}
+
+	return $exist;
 }
 
 sub GetSteelPlateInfo {
@@ -334,6 +369,15 @@ sub GetPressPadFF10NInfo {
 	my $self = shift;
 
 	my $isId = "0318000018";
+	my $inf  = $self->__GetPresspadInfo($isId);
+
+	return $inf;
+}
+
+sub GetPressPadYOMFLEX200Info {
+	my $self = shift;
+
+	my $isId = "0318000023";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
