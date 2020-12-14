@@ -777,8 +777,7 @@ sub CheckContainDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
+
 
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 
@@ -797,6 +796,8 @@ sub CheckContainDepth {
 	# 2) Check if layers contain depth in DTM table
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
 
 	my @layers2 = $self->__GetLayersByType( \@layers, \@t );
 

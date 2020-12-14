@@ -1025,14 +1025,14 @@ sub __PrepareSTIFFENER {
 	return 0 unless ( defined $stiffL );
 
 	my $tapeL = ( grep { $_->{"gROWname"} =~ /^tp[cs]$/ } $layer->GetSingleLayers() )[0];
-	my @stiffRoutLs =
-	  CamDrilling->GetNCLayersByTypes(
-									   $inCAM, $jobId,
-									   [
-										  EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
-										  EnumsGeneral->LAYERTYPE_nplt_tapecMill,  EnumsGeneral->LAYERTYPE_nplt_tapesMill,
-									   ]
-	  );
+	my @stiffRoutLs = CamDrilling->GetNCLayersByTypes(
+		$inCAM, $jobId,
+		[
+		  EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop,
+		  EnumsGeneral->LAYERTYPE_nplt_stiffcMill,        EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
+		  EnumsGeneral->LAYERTYPE_nplt_tapecMill,         EnumsGeneral->LAYERTYPE_nplt_tapesMill,
+		]
+	);
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
 	my @stiffRoutL = grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs;
 	if ( defined $tapeL ) {

@@ -57,7 +57,7 @@ sub Build {
 
 	# LAYER: Top rubber pad
 	$lam->AddItem( $rubberPadInf->{"ISRef"},
-				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 				   undef, undef,
 				   $rubberPadInf->{"text"},
 				   $rubberPadInf->{"thick"} );
@@ -105,7 +105,7 @@ sub Build {
 
 	# LAYER: Top rubber pad
 	$lam->AddItem( $rubberPadInf->{"ISRef"},
-				   Enums->ItemType_PADRUBBER, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBER ),
+				   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 				   undef, undef,
 				   $rubberPadInf->{"text"},
 				   $rubberPadInf->{"thick"} );

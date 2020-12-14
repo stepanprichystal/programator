@@ -13,7 +13,7 @@ use constant {
 	Clr_BOXBORDER      => "80, 80, 80",
 	Clr_BOXBORDERLIGHT => "191, 191, 191",
 	Clr_PRODUCT        => "31, 133, 222",
-	Clr_TITLETXT      => "80, 80, 80",
+	Clr_TITLETXT       => "80, 80, 80",
 
 	Clr_COPPER    => "156, 1, 1",
 	Clr_CORERIGID => "159, 149, 19",
@@ -22,18 +22,20 @@ use constant {
 	Clr_COVERLAY  => "255, 211, 25",
 	Clr_ADHESIVE  => "189, 215, 238",
 	Clr_STIFFENER => "174, 170, 170",
+	Clr_TAPE      => "237, 199, 143",
 
-	Clr_PADPAPER     => "159, 217, 255",
-	Clr_PADRUBBER    => "255, 174, 202",
-	Clr_PADFILM      => "136, 254, 175",
-	Clr_PADALU       => "180, 180, 180",
-	Clr_PADSTEEL     => "146, 146, 146",
+	Clr_PADPAPER       => "159, 217, 255",
+	Clr_PADRUBBERPINK  => "255, 174, 202",
+	Clr_PADRUBBERBROWN => "164, 88, 22",
+	Clr_PADFILM        => "136, 254, 175",
+	Clr_PADALU         => "180, 180, 180",
+	Clr_PADSTEEL       => "146, 146, 146",
 
 };
 
 # Text size [mm]
 use constant {
-	TxtSize_SMALL => 3.0,
+	TxtSize_SMALL  => 3.0,
 	TxtSize_NORMAL => 3.5,
 	TxtSize_BIG    => 4.0,
 	TxtSize_PCBID  => 5.3,
@@ -97,28 +99,29 @@ sub GetItemTitle {
 
 	my %t = ();
 
-	$t{ Enums->ItemType_PADPAPER }     = "Papírová podl.";     # disposable paper pad
-	$t{ Enums->ItemType_PADRUBBER }    = "Gumová podl.";     # rubber pad
-	$t{ Enums->ItemType_PADFILM }      = "Plastová podl.";      # disposable plastic films
-	$t{ Enums->ItemType_PADFILMGLOSS } = "";                      # disposable plastic shine film side
-	$t{ Enums->ItemType_PADRELEASE }   = "Separ. fólie";         # disposable release films
-	$t{ Enums->ItemType_PADALU }       = "Hliníková podl.";    # aluminuim pad
-	$t{ Enums->ItemType_PADSTEEL }     = "Separ. plech";          # steel plate
+	$t{ Enums->ItemType_PADPAPER }       = "Papírová podl.";     # disposable paper pad
+	$t{ Enums->ItemType_PADRUBBERPINK }  = "Gumová podl.";        # rubber pad
+	$t{ Enums->ItemType_PADRUBBERBROWN } = "Gumová podl.";        # rubber pad
+	$t{ Enums->ItemType_PADFILM }        = "Plastová podl.";      # disposable plastic films
+	$t{ Enums->ItemType_PADFILMGLOSS }   = "";                     # disposable plastic shine film side
+	$t{ Enums->ItemType_PADRELEASE }     = "Separ. fólie";        # disposable release films
+	$t{ Enums->ItemType_PADALU }         = "Hliníková podl.";    # aluminuim pad
+	$t{ Enums->ItemType_PADSTEEL }       = "Separ. plech";         # steel plate
 
-	$t{ Enums->ItemType_MATCUFOIL }        = "Cu fólie";
-	$t{ Enums->ItemType_MATCUCORE }        = "Cu jádro";
-	$t{ Enums->ItemType_MATCORE }          = "Jádro rigid";
-	$t{ Enums->ItemType_MATFLEXCORE }      = "Jádro flex";
-	$t{ Enums->ItemType_MATPREPREG }       = "Prepreg";
-	$t{ Enums->ItemType_MATFLEXPREPREG }   = "Prepreg flex";
-	$t{ Enums->ItemType_MATCOVERLAY }      = "Coverlay";
-	$t{ Enums->ItemType_MATSTIFFENER }     = "Stiffener";
+	$t{ Enums->ItemType_MATCUFOIL }      = "Cu fólie";
+	$t{ Enums->ItemType_MATCUCORE }      = "Cu jádro";
+	$t{ Enums->ItemType_MATCORE }        = "Jádro rigid";
+	$t{ Enums->ItemType_MATFLEXCORE }    = "Jádro flex";
+	$t{ Enums->ItemType_MATPREPREG }     = "Prepreg";
+	$t{ Enums->ItemType_MATFLEXPREPREG } = "Prepreg flex";
+	$t{ Enums->ItemType_MATCOVERLAY }    = "Coverlay";
+	$t{ Enums->ItemType_MATSTIFFENER }   = "Stiffener";
+	$t{ Enums->ItemType_MATTAPE }        = "Oboustr. páska";
+
 	$t{ Enums->ItemType_MATCVRLADHESIVE }  = "Lepidlo";
 	$t{ Enums->ItemType_MATSTIFFADHESIVE } = "Lepidlo";
 	$t{ Enums->ItemType_MATPRODUCTDPS }    = "Polotovar DPS";
-	$t{ Enums->ItemType_MATPRODUCTCORE }    = "Polotovar";
-	
-	
+	$t{ Enums->ItemType_MATPRODUCTCORE }   = "Polotovar";
 
 	return $t{$type};
 
@@ -130,16 +133,16 @@ sub GetLamTitle {
 
 	my %t = ();
 
-	$t{ Enums->LamType_STIFFPRODUCT } = "Lisování Stiffeneru";
-	$t{ Enums->LamType_CVRLBASE }     = "Lisování FLEX + COVERLAY";
-	$t{ Enums->LamType_CVRLPRODUCT }  = "Lisování FLEX + COVERLAY";
-	$t{ Enums->LamType_RIGIDBASE }    = "Lisování polotovaru";
-	$t{ Enums->LamType_FLEXBASE }     = "Lisování FLEX jádra";
-	$t{ Enums->LamType_RIGIDFINAL }    = "Lisování";
-	$t{ Enums->LamType_ORIGIDFLEXFINAL }    = "Lisování";
-	$t{ Enums->LamType_IRIGIDFLEXFINAL }    = "Lisování";
- 
-	 
+	$t{ Enums->LamType_STIFFPRODUCT }     = "Lisování Stiffeneru";
+	$t{ Enums->LamType_TAPEPRODUCT }      = "Lisování pásky";
+	$t{ Enums->LamType_TAPESTIFFPRODUCT } = "Lisování pásky";
+	$t{ Enums->LamType_CVRLBASE }         = "Lisování FLEX + COVERLAY";
+	$t{ Enums->LamType_CVRLPRODUCT }      = "Lisování FLEX + COVERLAY";
+	$t{ Enums->LamType_RIGIDBASE }        = "Lisování polotovaru";
+	$t{ Enums->LamType_FLEXBASE }         = "Lisování FLEX jádra";
+	$t{ Enums->LamType_RIGIDFINAL }       = "Lisování";
+	$t{ Enums->LamType_ORIGIDFLEXFINAL }  = "Lisování";
+	$t{ Enums->LamType_IRIGIDFLEXFINAL }  = "Lisování";
 
 	return $t{$type};
 }

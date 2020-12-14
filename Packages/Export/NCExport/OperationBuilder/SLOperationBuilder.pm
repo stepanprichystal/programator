@@ -203,11 +203,15 @@ sub __DefineNPlatedOperations {
 	my @nplt_cvrlysMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };    #bot coverlay mill
 	my @nplt_stiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };    # milling for stiffener from side c
 	my @nplt_stiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };    # milling for stiffener from side s
+	my @nplt_bStiffcAdhMillTop =
+	  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop } };                 # depth milling of top stiffener adhesive from top
+	my @nplt_bStiffsAdhMillTop =
+	  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop } };                 # depth milling of bot stiffener adhesive from top
 	my @nplt_bstiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } };  # depth milling of stiffener from side c
 	my @nplt_bstiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } };  # depth milling of stiffener from side s
 	my @nplt_tapecMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapecMill } };    # milling of doublesided tape sticked from top
 	my @nplt_tapesMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapesMill } };    # milling of doublesided tape sticked from bot
-	my @nplt_tapebrMill  = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill } };   # milling of doublesided tape bridges after tape is pressed
+	my @nplt_tapebrMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill } };  # milling of doublesided tape bridges after tape is pressed
 
 	#Define operation:
 
@@ -290,11 +294,27 @@ sub __DefineNPlatedOperations {
 
 	# 12) Operation name = fstiffc - can contain layer
 	# - @nplt_stiffcMill
-	$opManager->AddOperationDef( "stiffc", \@nplt_stiffcMill, -1 );
+	# - @nplt_bStiffcAdhMillTop
+	my @stiffc = @nplt_stiffcMill;
+
+	if ( scalar(@nplt_bStiffcAdhMillTop) > 0 ) {
+
+		push( @stiffc, @nplt_bStiffcAdhMillTop );
+	}
+
+	$opManager->AddOperationDef( "stiffc", \@stiffc, -1 );
 
 	# 13) Operation name = fstiffs - can contain layer
-	# - @nplt_stiffcMill
-	$opManager->AddOperationDef( "stiffs", \@nplt_stiffsMill, -1 );
+	# - @nplt_stiffsMill
+	# - @nplt_bStiffsAdhMillTop
+	my @stiffs = @nplt_stiffsMill;
+
+	if ( scalar(@nplt_bStiffsAdhMillTop) > 0 ) {
+
+		push( @stiffs, @nplt_bStiffsAdhMillTop );
+	}
+
+	$opManager->AddOperationDef( "stiffs", \@stiffs, -1 );
 
 	# 14) Operation name = ftapec - can contain layer
 	# - @nplt_tapecMill
@@ -303,7 +323,7 @@ sub __DefineNPlatedOperations {
 	# 15) Operation name = ftps - can contain layer
 	# - @nplt_tapesMill
 	$opManager->AddOperationDef( "ftps", \@nplt_tapesMill, -1 );
-	
+
 	# 16) Operation name = ftpbr - can contain layer
 	# - @nplt_tapesMill
 	$opManager->AddOperationDef( "ftpbr", \@nplt_tapebrMill, -1 );

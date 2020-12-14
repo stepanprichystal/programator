@@ -55,7 +55,7 @@ sub _Gui {
 		
 		
 		
-		my $logo_way = GeneralHelper->Root()."\\_from_z\\drill.gif";
+		my $logo_way = GeneralHelper->Root()."\\Legacy\\_from_z\\drill.gif";
 		my $main = MainWindow->new;
 		$main->title('Vys/Vrt Job =>' . $jobId);
 		$main->minsize(qw(260 50));

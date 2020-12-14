@@ -16,11 +16,12 @@ use Time::localtime;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::OutputData::Enums' => "EnumsOutput";
 use aliased 'CamHelpers::CamJob';
-use aliased 'Packages::Pdf::TravelerPdf::StackupPdf::StackupPdf';
+use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -52,13 +53,29 @@ sub Output {
 sub __PrepareStackup {
 	my $self = shift;
 
-	if ( $self->{"layerCnt"} > 2 ) {
+	#		my $stackup      = StackupPdf->new( $self->{"inCAM"}, $self->{"jobId"} );
+	#		my $resultCreate = $stackup->Create(0,1,0);
+	#
+	#		my $path = $stackup->GetStackupPath();
+	#		move( $path, $self->{"filesDir"} . "\\" . $self->{"jobId"} . "stackup.pdf" );
 
-		my $stackup      = StackupPdf->new( $self->{"inCAM"}, $self->{"jobId"} );
-		my $resultCreate = $stackup->Create(0,1,0);
+	if ( $self->{"layerCnt"} > 2 || JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 
-		my $path = $stackup->GetStackupPath();
-		move( $path, $self->{"filesDir"} . "\\" . $self->{"jobId"} . "stackup.pdf" );
+		my $mess = "";
+		my $control = ControlPdf->new( $self->{"inCAM"}, $self->{"jobId"}, "o+1", 0, 0, "en", 1 );
+
+		$control->AddStackupPreview( \$mess );
+		my $reuslt = $control->GeneratePdf( \$mess );
+
+		if ($reuslt) {
+
+			my $path = $control->GetOutputPath();
+			move( $path, $self->{"filesDir"} . "\\" . $self->{"jobId"} . "_stackup.pdf" );
+		}
+		else {
+			die "Error during create stackup PDF. Detail: $mess";
+		}
+
 	}
 }
 

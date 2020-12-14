@@ -34,19 +34,24 @@ sub new {
 }
 
 sub GetAllLamination {
-	my $self = shift;
+	my $self    = shift;
 	my $lamType = shift;
 
-	my $cvrlTopExist = $self->GetExistCvrl( "top" );
+	my $cvrlTopExist = $self->GetExistCvrl("top");
 
-	
-	my $cvrlBotExist = $self->GetExistCvrl( "bot" );
+	my $cvrlBotExist = $self->GetExistCvrl("bot");
 
+	my $stiffTopExist = $self->GetExistStiff("top");
 
-	my $stiffTopExist = $self->GetExistStiff( "top" );
+	my $stiffBotExist = $self->GetExistStiff("bot");
 
-	
-	my $stiffBotExist = $self->GetExistStiff( "bot" );
+	my $tapeTopExist = $self->GetExistTapeFlex("top");
+
+	my $tapeBotExist = $self->GetExistTapeFlex("bot");
+
+	my $tapeStiffTopExist = $self->GetExistTapeStiff("top");
+
+	my $tapeStiffBotExist = $self->GetExistTapeStiff("bot");
 
 	my @lam = ();
 
@@ -55,8 +60,18 @@ sub GetAllLamination {
 		push( @lam, $inf );
 	}
 
+	if ( $tapeTopExist || $tapeBotExist ) {
+		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_TAPEPRODUCT, undef, "P" . ( scalar(@lam) ) );
+		push( @lam, $inf );
+	}
+
 	if ( $stiffTopExist || $stiffBotExist ) {
 		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_STIFFPRODUCT, undef, "P" . ( scalar(@lam) ) );
+		push( @lam, $inf );
+	}
+
+	if ( $tapeStiffTopExist || $tapeStiffBotExist ) {
+		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_TAPESTIFFPRODUCT, undef, "P" . ( scalar(@lam) ) );
 		push( @lam, $inf );
 	}
 
@@ -269,14 +284,18 @@ sub GetPressProgramInfo {
 		$pInfo{"name"} = "Stiffener_tape";
 
 	}
+	elsif ( $lamType eq Enums->LamType_TAPEPRODUCT || $lamType eq Enums->LamType_TAPESTIFFPRODUCT ) {
+
+		$pInfo{"name"} = "Tape";
+
+	}
 	elsif ( $lamType eq Enums->LamType_CVRLBASE ) {
 
 		$pInfo{"name"} = "Flex_coverlay";
 
 	}
-	
+
 	$pInfo{"name"} .= "_$h";
- 
 
 	# 2) Program dim
 
@@ -290,10 +309,9 @@ sub GetPressProgramInfo {
 		$pInfo{"dimX"} = $w;
 		$pInfo{"dimY"} = $h;
 	}
-	
-	die "Press program name was found for lamination type: $lamType" unless(defined $pInfo{"name"});
-	
-	 
+
+	die "Press program name was found for lamination type: $lamType" unless ( defined $pInfo{"name"} );
+
 	return %pInfo;
 }
 

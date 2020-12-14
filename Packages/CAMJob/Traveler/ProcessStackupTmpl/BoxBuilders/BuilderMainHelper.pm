@@ -71,7 +71,55 @@ sub DrawMatStiff {
 	# Mat Type
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef, substr( $matText, 0, 25 ), $txtStdStyle, undef, $borderStyle );
+				   undef, undef, substr( $matText, 0, 25 ),
+				   $txtStdStyle, undef, $borderStyle );
+
+	# Mat Thick
+	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matThick") ),
+				   $tab->GetRowDefPos($row),
+				   undef, undef, int($matThick), $txtStdStyle, undef, $borderStyle );
+
+}
+
+sub DrawMatTape {
+	my $self            = shift;
+	my $row             = shift;
+	my $matType         = shift;
+	my $matKind         = shift;
+	my $matText         = shift;
+	my $matThick        = shift;
+	my $txtStckpStyle   = shift;
+	my $txtStdStyle     = shift;
+	my $txtStdBoldStyle = shift;
+	my $borderStyle     = shift;
+
+	my $tab = $self->{"table"};
+
+	# 1) Define styles
+	$txtStckpStyle->SetColor( Color->new( 0, 0, 0 ) );
+
+	my $backgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_TAPE ) );
+
+	# Fill background
+	$self->__FillRowBackg( $row, $backgStyle, "leftOverlapMat", "rightOverlapMat" );
+
+	# Mat type ----------------
+	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matType") ),
+				   $tab->GetRowDefPos($row),
+				   undef, undef, $matType, $txtStckpStyle, $backgStyle );
+
+	# Mat Id
+
+	# Mat Kind
+	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matKind") ),
+				   $tab->GetRowDefPos($row),
+				   undef, undef, $matKind, $txtStdStyle, undef, $borderStyle );
+
+	# Mat Type
+	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
+				   $tab->GetRowDefPos($row),
+				   undef, undef, substr( $matText, 0, 25 ),
+				   $txtStdStyle, undef, $borderStyle );
 
 	# Mat Thick
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matThick") ),
@@ -129,7 +177,7 @@ sub DrawMatCvrl {
 	# Mat Thick
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matThick") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef,  int($matThick), $txtStdStyle, undef, $borderStyle );
+				   undef, undef, int($matThick), $txtStdStyle, undef, $borderStyle );
 
 }
 
@@ -170,7 +218,8 @@ sub DrawMatAdhesive {
 	# Mat Type
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef,  substr( $matText, 0, 25 ), $txtStdStyle, undef, $borderStyle );
+				   undef, undef, substr( $matText, 0, 25 ),
+				   $txtStdStyle, undef, $borderStyle );
 
 	# Mat Thick
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matThick") ),
@@ -225,7 +274,7 @@ sub DrawMatProduct {
 
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef, $matText,$txtStdStyle,undef, $borderStyle );
+				   undef, undef, $matText, $txtStdStyle, undef, $borderStyle );
 
 	# Mat Thick
 
@@ -290,7 +339,7 @@ sub DrawMatCore {
 
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef, $matText,$txtStdStyle,undef, $borderStyle );
+				   undef, undef, $matText, $txtStdStyle, undef, $borderStyle );
 
 	# Mat Thick
 
@@ -348,7 +397,7 @@ sub DrawMatPrpg {
 
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef, $matText,$txtStdStyle,undef, $borderStyle );
+				   undef, undef, $matText, $txtStdStyle, undef, $borderStyle );
 
 	# Mat Thick
 
@@ -406,7 +455,7 @@ sub DrawMatCu {
 
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef, $matText,$txtStdStyle,undef, $borderStyle );
+				   undef, undef, $matText, $txtStdStyle, undef, $borderStyle );
 
 	# Mat Thick
 
@@ -432,50 +481,55 @@ sub DrawPad {
 	my $tab = $self->{"table"};
 
 	# 1) Define styles
-	
 
 	my $clr         = undef;
-	my $clrText = undef;
+	my $clrText     = undef;
 	my $padTypeName = undef;
 	if ( $itemType eq Enums->ItemType_PADPAPER ) {
 
-		$clr = EnumsStyle->Clr_PADPAPER;
+		$clr     = EnumsStyle->Clr_PADPAPER;
 		$clrText = "0, 0, 0";
 
 	}
-	elsif ( $itemType eq Enums->ItemType_PADRUBBER ) {
+	elsif ( $itemType eq Enums->ItemType_PADRUBBERPINK ) {
 
-		$clr = EnumsStyle->Clr_PADRUBBER;
+		$clr     = EnumsStyle->Clr_PADRUBBERPINK;
 		$clrText = "0, 0, 0";
 
 	}
-	elsif ( $itemType eq Enums->ItemType_PADFILMGLOSS ||  $itemType eq Enums->ItemType_PADFILMMATT ) {
+	elsif ( $itemType eq Enums->ItemType_PADRUBBERBROWN ) {
 
-		$clr = EnumsStyle->Clr_PADFILM;
+		$clr     = EnumsStyle->Clr_PADRUBBERBROWN;
+		$clrText = "255, 255, 255";
+
+	}
+	elsif ( $itemType eq Enums->ItemType_PADFILMGLOSS || $itemType eq Enums->ItemType_PADFILMMATT ) {
+
+		$clr     = EnumsStyle->Clr_PADFILM;
 		$clrText = "0, 0, 0";
 
 	}
 	elsif ( $itemType eq Enums->ItemType_PADFILM || $itemType eq Enums->ItemType_PADRELEASE ) {
 
-		$clr = EnumsStyle->Clr_PADFILM;
+		$clr     = EnumsStyle->Clr_PADFILM;
 		$clrText = "0, 0, 0";
 
 	}
 	elsif ( $itemType eq Enums->ItemType_PADALU ) {
 
-		$clr = EnumsStyle->Clr_PADALU;
+		$clr     = EnumsStyle->Clr_PADALU;
 		$clrText = "0, 0, 0";
 
 	}
 	elsif ( $itemType eq Enums->ItemType_PADSTEEL ) {
 
-		$clr = EnumsStyle->Clr_PADSTEEL;
+		$clr     = EnumsStyle->Clr_PADSTEEL;
 		$clrText = "0, 0, 0";
 
 	}
 
 	my $backgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new($clr) );
-	$txtStckpStyle->SetColor( Color->new($clrText)  ) if ( defined $txtStckpStyle );
+	$txtStckpStyle->SetColor( Color->new($clrText) ) if ( defined $txtStckpStyle );
 
 	# Fill background
 	$self->__FillRowBackg( $row, $backgStyle, "leftOverlapPad", "rightOverlapPad" );
@@ -494,10 +548,11 @@ sub DrawPad {
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matKind") ), $tab->GetRowDefPos($row), undef, undef, undef, undef, undef, $borderStyle );
 
 	# Mat Text
-	$padText = $padText//"";
+	$padText = $padText // "";
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matName") ),
 				   $tab->GetRowDefPos($row),
-				   undef, undef, substr( $padText, 0, 28 ),$txtStdStyle,undef, $borderStyle );
+				   undef, undef, substr( $padText, 0, 28 ),
+				   $txtStdStyle, undef, $borderStyle );
 
 	# Mat Thick
 	$tab->AddCell( $tab->GetCollDefPos( $tab->GetCollByKey("matThick") ),

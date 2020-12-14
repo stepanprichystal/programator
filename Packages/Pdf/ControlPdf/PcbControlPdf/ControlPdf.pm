@@ -533,7 +533,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $jobId = "x69801"; # RigidFlex Outer + cvrl
 #	my $jobId = "d298176"; # RigidFlex Outer + flexmask
- 	my $jobId = "d300696"; 
+ 	my $jobId = "d293788"; 
 
 	my $mess = "";
 
