@@ -98,7 +98,7 @@ sub Build {
 	push(@req, "ul_logo");
 	push(@req, "2814075"); #maska 0,1mm
 	push(@req, "19031137"); # BGA
-	push(@req, "merit_presfitt");
+	push(@req, "mereni_presfittu");
 	push(@req, "mereni_tolerance_vrtani");
 	push(@req, "prerusovana_drazka");
 	push(@req, "srazeni_hran");

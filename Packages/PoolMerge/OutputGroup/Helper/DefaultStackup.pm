@@ -20,7 +20,6 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'Packages::CAMJob::Stackup::StackupDefault';
-use aliased 'Packages::Pdf::TravelerPdf::StackupPdf::StackupPdf';
 use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#

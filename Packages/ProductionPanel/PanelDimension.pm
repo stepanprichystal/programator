@@ -71,6 +71,14 @@ sub GetDimensionPanel {
 		$dimsPanel{'BorderRight'} = 15;
 		$dimsPanel{'BorderTop'}   = 15;
 		$dimsPanel{'BorderBot'}   = 15;
+	
+	}elsif ( $panelSizeName eq EnumsProducPanel->SIZE_FLEX ) {
+		$dimsPanel{'PanelSizeX'}  = 305;
+		$dimsPanel{'PanelSizeY'}  = 458;
+		$dimsPanel{'BorderLeft'}  = 18;
+		$dimsPanel{'BorderRight'} = 18;
+		$dimsPanel{'BorderTop'}   = 18;
+		$dimsPanel{'BorderBot'}   = 18;
 	}
 	else {
 		return (0);

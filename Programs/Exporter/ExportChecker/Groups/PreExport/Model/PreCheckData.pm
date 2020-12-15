@@ -39,6 +39,7 @@ use aliased 'Packages::CAMJob::Matrix::LayerNamesCheck';
 use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
 use aliased 'Packages::ProductionPanel::StandardPanel::Enums' => 'StdPnlEnums';
+use aliased 'Packages::ProductionPanel::PanelDimension';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -65,7 +66,8 @@ sub OnCheckGroupData {
 
 }
 
-# Basic control
+# Basic control (export offers use this control)
+# Based rather on matrix layer presence than on PCB data
 sub __CheckGroupDataBasic {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
@@ -384,25 +386,37 @@ sub __CheckGroupDataBasic {
 		else {
 			# Stricter check than +-10%, but only warning
 			# Test if created stackup match thickness in helios +-7%
+			# Only special PCB
+			# - RigidFlex; Multilayer > 8; Sequential lamination; Inner plated layers;
 
-			unless ( $pcbThickHelios * 0.93 < $stackThick && $pcbThickHelios * 1.07 > $stackThick ) {
+			if ( $defaultInfo->GetLayerCnt() > 2 ) {
 
-				$stackThick     = sprintf( "%.2f", $stackThick );
-				$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
+				my $stckp = $defaultInfo->GetStackup();
+				if (    $defaultInfo->GetIsFlex()
+					 || $defaultInfo->GetLayerCnt() > 8
+					 || $stckp->GetSequentialLam()
+					 || scalar( grep { $_->GetIsPlated() } $stckp->GetInputProducts() ) > 0 )
+				{
 
-				$dataMngr->_AddWarningResult(
-					"Tloušťka složení +-7% (přísnější varianta kontroly +-10%)",
-					"Odhad výsledné tloušťky složení včetně nakovení (${stackThick}mm)"
-					  . " se nerovná požadované tloušťce zákazníka v HEG (${pcbThickHelios}mm) +-7% "
-					  . "(pozor, podmínka +-10% je splněna, jedná se však vždy pouze o předpokládanou tloušťku po vyrobení DPS!)."
-				);
+					unless ( $pcbThickHelios * 0.93 < $stackThick && $pcbThickHelios * 1.07 > $stackThick ) {
+
+						$stackThick     = sprintf( "%.2f", $stackThick );
+						$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
+
+						$dataMngr->_AddWarningResult(
+													  "Tloušťka složení +-7% (přísnější varianta kontroly +-10% pro složité DPS)",
+													  "Odhad výsledné tloušťky složení včetně nakovení (${stackThick}mm)"
+														. " se nerovná požadované tloušťce zákazníka v HEG (${pcbThickHelios}mm) +-7% "
+														. "(pozor, podmínka +-10% je splněna, jedná se však vždy pouze o předpokládanou tloušťku po vyrobení DPS!)."
+						);
+
+					}
+				}
 
 			}
 		}
-
 	}
-
-	# 7) Check if contain negative layers, if powerground type is set and vice versa
+	     # 7) Check if contain negative layers, if powerground type is set and vice versa
 
 	my @sigLayers = $defaultInfo->GetSignalLayers();
 
@@ -723,9 +737,33 @@ sub __CheckGroupDataBasic {
 		}
 	}
 
+	# Check Flex / RigidFlex dimensions
+	# Only one possible dimension of flex/rigidflex PCB is 305x458mm
+	# Another dimension (bigger/smaller) is not possible
+	if ( $defaultInfo->GetIsFlex() || scalar( grep { $_->{"gROWlayer_type"} eq "coverlay" } $defaultInfo->GetBoardBaseLayers() ) ) {
+
+		my %dim = PanelDimension->GetDimensionPanel( $inCAM, EnumsProducPanel->SIZE_FLEX );
+
+		my %lim = $defaultInfo->GetProfileLimits();
+		my $w   = abs( $lim{"xMax"} - $lim{"xMin"} );
+		my $h   = abs( $lim{"yMax"} - $lim{"yMin"} );
+
+		if ( $dim{"PanelSizeX"} != $w || $dim{"PanelSizeY"} != $h ) {
+
+			$dataMngr->_AddErrorResult(
+										"Špatný rozměr přířezu",
+										"Pokud je DPS typu Flex/RigidFlex nebo DPS obsahuje coverlay, přířez musí mít rozměry přesně: "
+										  . $dim{"PanelSizeX"} . "mm x "
+										  . $dim{"PanelSizeY"} . "mm. "
+										  . "Nelze vyrobit větší/menší přířez z důvodu přizpůsobení výroby na tento jedinný rozměr."
+			);
+		}
+	}
+
 }
 
 # Extended control
+# Based rather on PCB data
 sub __CheckGroupDataExtend {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
@@ -1198,6 +1236,5 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#print $test;
 
 }
-
 1;
 

@@ -49,9 +49,9 @@ sub Run {
 	if ($revize) {
 
 		$self->_AddChange(
-						   "Deska má nastaveno v IS stav \"revize\", uprav data jobu. Pokud: \n "
-							 . "a) opakovaná pøišla z OÚ najdi papír se zmìnou v kastlíku nebo kontaktuj OÚ\n "
-							 . "b) se jedná o poadavek z vıroby, informuj se o zmìnách u autora opakované vıroby",
+						   "Deska mÃ¡ nastaveno v IS stav \"revize\", uprav data jobu. Pokud: \n "
+							 . "a) opakovanÃ¡ pÅ™iÅ¡la z OÃš najdi papÃ­r se zmÄ›nou v kastlÃ­ku nebo kontaktuj OÃš\n "
+							 . "b) se jednÃ¡ o poÅ¾adavek z vÃ½roby, informuj se o zmÄ›nÃ¡ch u autora opakovanÃ© vÃ½roby",
 						   0
 		);
 
@@ -62,8 +62,8 @@ sub Run {
 	if ( $difFile->TifFileExist() && $difFile->GetRevisionIsActive() ) {
 
 		$self->_AddChange(
-						   "V DIF osuboru byla dohledána aktivní revize na základì poadavku TPV. "
-							 . "Proveï instrukce v revizi a deaktivuj (sma) ji (RevisionScript.pl)"
+						   "V DIF osuboru byla dohledÃ¡na aktivnÃ­ revize na zÃ¡kladÄ› poÅ¾adavku TPV. "
+							 . "ProveÄ instrukce v revizi a deaktivuj (smaÅ¾) ji (RevisionScript.pl)"
 							 . "\nText revize:\n"
 							 . $difFile->GetRevisionText(),
 						   1
@@ -74,7 +74,7 @@ sub Run {
 	# 2) All flexible PCB must go through TPV
 	if ( JobHelper->GetIsFlex($jobId) ) {
 		$self->_AddChange(
-				"Flexibilni DPS jde do vıroby, je tøeba zkontrolovat, jestli nedošlo k zásadním zmìnám na pøípravì.\n ",
+				"Flexibilni DPS jde do vÃ½roby, je tÅ™eba zkontrolovat, jestli nedoÅ¡lo k zÃ¡sadnÃ­m zmÄ›nÃ¡m na pÅ™Ã­pravÄ›.\n ",
 				0 );
 	}
 

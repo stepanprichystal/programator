@@ -853,7 +853,6 @@ sub OnCheckGroupData {
 		my @affectOrder = ();
 		push( @affectOrder, HegMethods->GetOrdersByState( $jobId, 4 ) );    # Orders on Predvzrobni priprava = 2
 		@affectOrder = map { $_->{"reference_subjektu"} } grep { $_->{"reference_subjektu"} !~ /-01/ } @affectOrder;
-		 
 
 		if ( scalar(@affectOrder) ) {
 
@@ -867,6 +866,34 @@ sub OnCheckGroupData {
 										  . $difFile->GetRevisionText()
 			);
 		}
+	}
+
+	# X) Test is PCB is flex and only one side soldermask exist
+	if ( $defaultInfo->GetIsFlex() && $defaultInfo->GetLayerCnt() <= 2 ) {
+
+		# Test on name, there can bz fake layer MSOLEC
+		my @sm = grep { $_->{"gROWname"} =~ /^m([cs]\d*$)/ } $defaultInfo->GetBoardBaseLayers();
+
+		if ( scalar(@sm) == 1 ) {
+
+			# test if there is coverly from another side
+			my $smSide  = ( $sm[0]->{"gROWname"} =~ /^m([cs]\d*$)/ )[0];
+			my $cvrlTop = defined( first { $_->{"gROWname"} eq "cvrlc" } $defaultInfo->GetBoardBaseLayers() ) ? 1 : 0;
+			my $cvrlBot = defined( first { $_->{"gROWname"} eq "cvrls" } $defaultInfo->GetBoardBaseLayers() ) ? 1 : 0;
+
+			if ( ( $smSide eq "c" && !$cvrlBot ) || ( $smSide eq "s" && !$cvrlTop ) ) {
+
+				$dataMngr->_AddErrorResult(
+											"Jednostranná maska",
+											"Nelze vyrobit flexi DPS s jednostrannou maskou. DPS by se po vytvrzení masky neúmerně kroutila "
+											  . "a nešlo by ji v vyrobit. "
+											  . "Řešením je aplikovat na drouhou stranu masku nebo coverlay"
+				);
+
+			}
+
+		}
+
 	}
 
 }

@@ -120,16 +120,16 @@ sub Build {
 		$section->AddRow( "rel(22305,L)", $templ );
 	}
 
-	#merit_presfitt
-	if ( $self->_IsRequire("merit_presfitt") ) {
+	#mereni_presfittu
+	if ( $self->_IsRequire("mereni_presfittu") ) {
 
 		my $pressfit = "N";
 
-		if ( $nifData{"merit_presfitt"} ) {
+		if ( $nifData{"mereni_presfittu"} ) {
 			$pressfit = "A";
 		}
 
-		$section->AddRow( "merit_presfitt", $pressfit );
+		$section->AddRow( "mereni_presfittu", $pressfit );
 	}
 
 	#mereni_tolerance_vrtani

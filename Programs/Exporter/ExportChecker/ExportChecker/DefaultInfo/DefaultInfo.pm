@@ -30,7 +30,6 @@ use aliased 'Packages::Other::CustomerNote';
 use aliased 'Packages::Tooling::PressfitOperation';
 use aliased 'Packages::Tooling::TolHoleOperation';
 use aliased 'Packages::Stackup::StackupOperation';
-use aliased 'Packages::ProductionPanel::PanelDimension';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Technology::DataComp::SigLayerComp';
 use aliased 'Packages::Technology::DataComp::NCLayerComp';
