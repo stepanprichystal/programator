@@ -205,7 +205,7 @@ sub __ExportXml {
 		my $clr = $mask{ ( $layerName =~ /c/ ? "top" : "bot" ) };
 
 		if ( $clr =~ /Z/i ) {
-			$power = 250;    # green #POZOR dle MH jiz nikdy nemenit hodnotu 250!
+			$power = 90;    # green #POZOR dle MH jiz nikdy nemenit hodnotu 250!
 		}
 		elsif ( $clr =~ /B/i ) {
 			$power = 240;    # black
