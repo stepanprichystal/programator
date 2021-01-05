@@ -133,7 +133,7 @@ sub __GetCoreMaterialKind {
 	$mKind = "IS400"    if ( $mTxt =~ /IS.*400/i );
 	$mKind = "PCL370HR" if ( $mTxt =~ /PCL.*370.*HR/i );
 
-	$mKind = HegMethods->GetMaterialKind($self->{"jobId"}) if ( !defined $mKind );    # Take defaul material from IS
+	$mKind = $mTxt if ( !defined $mKind );    # 
 
  
 	return $mKind;

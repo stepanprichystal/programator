@@ -59,6 +59,7 @@ sub GetPltNCLayerInfo {
 	my @bFillDrillBot = ();    #filled blind holes bot
 	my @fDrill        = ();    #frame drilling
 	my @fcDrill       = ();    #core frame drilling
+	my @fcPressDrill  = ();    #core frame drilling of press holes
 	my @nMill         = ();    #normall mill slits
 	my @bMillTop      = ();    #z-axis top mill slits
 	my @bMillBot      = ();    #z-axis bot mill slits
@@ -123,6 +124,10 @@ sub GetPltNCLayerInfo {
 			push( @fcDrill, $l );
 
 		}
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcPressDrill ) {
+			push( @fcPressDrill, $l );
+
+		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_dcDrill ) {
 			push( @dcDrill, $l );
 		}
@@ -138,6 +143,7 @@ sub GetPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } = \@bFillDrillBot;
 	$info{ EnumsGeneral->LAYERTYPE_plt_fDrill }        = \@fDrill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_fcDrill }       = \@fcDrill;
+	$info{ EnumsGeneral->LAYERTYPE_plt_fcPressDrill }  = \@fcPressDrill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_nMill }         = \@nMill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bMillTop }      = \@bMillTop;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bMillBot }      = \@bMillBot;
