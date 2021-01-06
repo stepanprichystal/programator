@@ -13,6 +13,8 @@
       <magazine material="P96">I11</magazine>
       <magazine material="PCL370HR">I11</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">I11</magazine>
+      <magazine material="RO3">I11</magazine>
+      <magazine material="RO4">I11</magazine>
    </tool>
    <tool name="d6.0a120" code="850" diameter="6.0" angle="120">
       <magazine material="FR4">I12</magazine>
@@ -21,6 +23,8 @@
       <magazine material="P96">I12</magazine>
       <magazine material="PCL370HR">I12</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">I12</magazine>
+      <magazine material="RO3">I12</magazine>
+      <magazine material="RO4">I12</magazine>
    </tool>
    <tool name="d6.0a140" code="850" diameter="6.0" angle="140">
       <magazine material="FR4">I13</magazine>
@@ -29,6 +33,8 @@
       <magazine material="P96">I13</magazine>
       <magazine material="PCL370HR">I13</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">I13</magazine>
+      <magazine material="RO3">I13</magazine>
+      <magazine material="RO4">I13</magazine>
    </tool>
    <tool name="d2.0a30" code="803" diameter="2.0" angle="30">
       <magazine material="FR4">I14</magazine>
@@ -37,5 +43,7 @@
       <magazine material="P96">I14</magazine>
       <magazine material="PCL370HR">I14</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">I14</magazine>
+      <magazine material="RO3">I14</magazine>
+      <magazine material="RO4">I14</magazine>
    </tool> 
 </tools>
