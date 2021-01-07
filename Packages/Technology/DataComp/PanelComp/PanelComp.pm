@@ -29,14 +29,14 @@ sub new {
 
 	my $inCAM   = shift;
 	my $jobId   = shift;
-	my $step   = shift;
+	my $step    = shift;
 	my $stackup = shift;
 
 	# PROPERTY
 
 	$self->{"inCAM"}   = $inCAM;
 	$self->{"jobId"}   = $jobId;
-	$self->{"step"}   = $step;
+	$self->{"step"}    = $step;
 	$self->{"stackup"} = $stackup; # only for multilayer pcb
 	                               #$self->{"delayCuAreaCalc"} = $delayCuArea;    # if 1, cu area at 2v pcb is calculated during call "MatComp" method
 
@@ -133,9 +133,8 @@ sub __GetCoreMaterialKind {
 	$mKind = "IS400"    if ( $mTxt =~ /IS.*400/i );
 	$mKind = "PCL370HR" if ( $mTxt =~ /PCL.*370.*HR/i );
 
-	$mKind = HegMethods->GetMaterialKind($self->{"jobId"}) if ( !defined $mKind );    # Take defaul material from IS
+	$mKind = $mTxt if ( !defined $mKind );    #
 
- 
 	return $mKind;
 }
 
@@ -152,12 +151,7 @@ sub __GetPanelXYScale {
 	my ( $xPer, $Yper ) = ( 0, 0 );
 
 	# Decide which material and PCB type compensate
-	if (    $self->{"pcbType"} eq EnumsGeneral->PcbType_1VFLEX
-		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_2VFLEX
-		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_MULTIFLEX
-		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXO
-		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI )
-	{
+	if ( $self->__ScalingRequired( $matKind, $matThick, $cuThick, $cuUsage ) ) {
 
 		my ( $xPPM, $YPPM ) = $self->{"matStability"}->GetMatStability( $matKind, $matThick, $cuThick, $cuUsage );
 
@@ -169,12 +163,49 @@ sub __GetPanelXYScale {
 	return ( $xPer, $Yper );
 }
 
+# Decide if scale
+# depands on PCB type, material thicnkess etc..
+sub __ScalingRequired {
+	my $self     = shift;
+	my $matKind  = shift;
+	my $matThick = shift;
+	my $cuThick  = shift;
+	my $cuUsage  = shift;
+
+	my $scale = 0;
+
+	# Decide which material and PCB type compensate
+	if (    $self->{"pcbType"} eq EnumsGeneral->PcbType_1VFLEX
+		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_2VFLEX
+		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_MULTIFLEX
+		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXO
+		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI )
+	{
+
+		$scale = 1;
+
+	}
+	else {
+
+		# Temporary solution, scaling depnads on InCAM attr. If there is string kompenzace-1 scale
+		use aliased 'CamHelpers::CamAttributes';
+		my $note = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, ".comment" );
+
+		if ( $note =~ /kompenzace-1/i ) {
+			$scale = 1;
+		}
+
+	}
+
+	return $scale;
+}
+
 sub __Get2vCuUsage {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	my $step =  $self->{"step"};
+	my $step  = $self->{"step"};
 
 	my $u = 0;
 

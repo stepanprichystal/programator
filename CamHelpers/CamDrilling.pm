@@ -285,6 +285,13 @@ sub AddNCLayerType {
 			$l->{"technical"} = 1;
 
 		}
+		elsif ( $l->{"gROWname"} =~ /^v1p\d+$/ ) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_fcPressDrill;
+			$l->{"plated"}    = 1;
+			$l->{"technical"} = 1;
+		
+		}
 		elsif ( $l->{"gROWname"} =~ /^dc$/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_dcDrill;
@@ -419,7 +426,8 @@ sub AddNCLayerType {
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
-		}elsif ( $l->{"gROWname"} =~ /^fzstiffadhc\d?/ ) {
+		}
+		elsif ( $l->{"gROWname"} =~ /^fzstiffadhc\d?/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop;
 			$l->{"plated"}    = 0;
@@ -432,7 +440,8 @@ sub AddNCLayerType {
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
-		}elsif ( $l->{"gROWname"} =~ /^fzstiffc\d?/ ) {
+		}
+		elsif ( $l->{"gROWname"} =~ /^fzstiffc\d?/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bstiffcMill;
 			$l->{"plated"}    = 0;
@@ -458,20 +467,23 @@ sub AddNCLayerType {
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_soldsMill;
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
-		
-		}elsif ( $l->{"gROWname"} =~ /^ftpc$/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^ftpc$/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_tapecMill;
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
-		
-		}elsif ( $l->{"gROWname"} =~ /^ftps$/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^ftps$/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_tapesMill;
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
-		
-		}elsif ( $l->{"gROWname"} =~ /^ftpbr$/ ) {
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^ftpbr$/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_tapebrMill;
 			$l->{"plated"}    = 0;
@@ -826,24 +838,23 @@ sub GetViaFillExists {
 												 EnumsGeneral->LAYERTYPE_plt_bFillDrillBot, EnumsGeneral->LAYERTYPE_plt_cFillDrill
 											  ]
 	);
-	
-	$self->AddLayerStartStop($inCAM, $jobId, \@ncLayers);
+
+	$self->AddLayerStartStop( $inCAM, $jobId, \@ncLayers );
 
 	if ( defined $fillType ) {
- 
-		my $sigLayerCnt = CamJob->GetSignalLayerCnt($inCAM, $jobId);
+
+		my $sigLayerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 		if ( $fillType eq EnumsDrill->ViaFill_OUTER ) {
 
-			@ncLayers = grep { $_->{"NCSigStartOrder"} == 1 || $_->{"NCSigStartOrder"} ==  $sigLayerCnt} @ncLayers;
+			@ncLayers = grep { $_->{"NCSigStartOrder"} == 1 || $_->{"NCSigStartOrder"} == $sigLayerCnt } @ncLayers;
 		}
 		elsif ( $fillType eq EnumsDrill->ViaFill_INNER ) {
 
-			@ncLayers = grep { $_->{"NCSigStartOrder"} > 1 && $_->{"NCSigStartOrder"} < $sigLayerCnt} @ncLayers;
+			@ncLayers = grep { $_->{"NCSigStartOrder"} > 1 && $_->{"NCSigStartOrder"} < $sigLayerCnt } @ncLayers;
 		}
 	}
-	
-	
+
 	return scalar(@ncLayers) ? 1 : 0;
 }
 
@@ -932,7 +943,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $layerName = "fstiffs";
 
- 
 	my $res = CamDrilling->GetViaFillExists( $inCAM, $jobId, EnumsDrill->ViaFill_OUTER );
 
 	die;

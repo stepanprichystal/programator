@@ -216,6 +216,7 @@ sub __DefinePlatedOperations {
 	my @plt_bFillDrillBot = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot } };    # filled blind holes bot
 	my @plt_fDrill        = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fDrill } };           #frame drilling
 	my @plt_fcDrill       = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fcDrill } };          # coreframe drilling
+	my @plt_fcPressDrill  = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_fcPressDrill } };     # coreframe drilling of press holes
 	my @plt_nMill         = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nMill } };            #normall mill slits
 	my @plt_bMillTop      = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillTop } };         #z-axis top mill slits
 	my @plt_bMillBot      = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillBot } };         #z-axis bot mill slits
@@ -344,7 +345,6 @@ sub __DefinePlatedOperations {
 		# blind drilling start from top in layer <$drillStartTop>
 		my @blindTop = grep { $_->{"NCSigStartOrder"} == $startTop } @plt_bDrillTop;
 		push( @layers, @blindTop );
- 
 
 		if ( $pressOrder == $stackup->GetPressCount() && !$viaFillOuter ) {
 
@@ -504,12 +504,12 @@ sub __DefinePlatedOperations {
 
 		# start/stop plated NC layers in core
 		my @ncLayers = ();
-		if (!$coreNC->ExistNCLayers( undef, undef, undef, 1 ) ) {
+		if ( !$coreNC->ExistNCLayers( undef, undef, undef, 1 ) ) {
 
 			# Get core frame drilling for this specific core
 			my $vCore = first { $_->{"gROWname"} eq "v1j$coreNum" } @plt_fcDrill;
 
-			$opManager->AddOperationDef( "j$coreNum", [$vCore], $stackup->GetPressCount() ) if(defined $vCore);
+			$opManager->AddOperationDef( "j$coreNum", [$vCore], $stackup->GetPressCount() ) if ( defined $vCore );
 		}
 	}
 
@@ -519,6 +519,14 @@ sub __DefinePlatedOperations {
 		my $v1 = first { $_->{"gROWname"} eq "v1" } @plt_fcDrill;
 
 		$opManager->AddOperationDef( "v1", [$v1], $stackup->GetPressCount() );
+	}
+	
+	
+	# 12) Operation name = v1p<\d> - can contain layer
+	# - @plt_fcPressDrill
+	foreach my $l (@plt_fcPressDrill) {
+ 
+		$opManager->AddOperationDef( $l->{"gROWname"}, [$l], -1 );
 	}
 
 }

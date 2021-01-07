@@ -138,13 +138,16 @@ sub __SetLayout {
 	my %note3 =
 	  ( "id" => 3, "title" => "Drážkování, Prokovy/vodiče blízko drážky", "text" => "Drážkování, Prokovy/vodiče blízko drážky." );
 	my %note4 =
-	  ( "id" => 4, "title" => "Frézování, Prokovy/vodiče blízko frézování", "text" => "Frézování, Prokovy/vodiče blízko frézování" )
-	  ;
+	  ( "id" => 4, "title" => "Frézování, Prokovy/vodiče blízko frézování", "text" => "Frézování, Prokovy/vodiče blízko frézování" );
 	my %note5 =
 	  ( "id" => 5, "title" => "Frézování, Časově náročné frézování", "text" => "Frézování, Časově náročné frézování." );
-	my %note6 = ( "id" => 6, "title" => "Dps rozlámat a zabrousit můstky", "text" => "Dps rozlámat a zabrousit můstky." );
-	my %note7 = ( "id" => 7, "title" => "Dps rozlomit na rozměr",           "text" => "Dps rozlomit na rozměr." );
-	my %note8 = ( "id" => 8, "title" => "Dps ponechat v panelu",             "text" => "Dps ponechat v panelu." );
+	my %note6  = ( "id" => 6, "title" => "Dps rozlámat a zabrousit můstky", "text" => "Dps rozlámat a zabrousit můstky." );
+	my %note7  = ( "id" => 7, "title" => "Dps rozlomit na rozměr",           "text" => "Dps rozlomit na rozměr." );
+	my %note8  = ( "id" => 8, "title" => "Dps ponechat v panelu",             "text" => "Dps ponechat v panelu." );
+	
+	# Temporary solutuion - we do not have attribuites in IS yet
+	my %note9  = ( "id" => 9, "title" => "Pro TPV: kompenzace-1",                      "text" => "Pro TPV: kompenzace-1" );
+	my %note10 = ( "id" => 10, "title" => "Pro TPV: lispolotovaru-1",                      "text" => "Pro TPV: lispolotovaru-1" );
 
 	push( @notes, \%note1 );
 	push( @notes, \%note2 );
@@ -154,6 +157,8 @@ sub __SetLayout {
 	push( @notes, \%note6 );
 	push( @notes, \%note7 );
 	push( @notes, \%note8 );
+	push( @notes, \%note9 );
+	push( @notes, \%note10 );
 
 	foreach my $n (@notes) {
 

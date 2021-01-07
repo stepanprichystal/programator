@@ -637,9 +637,9 @@ sub CheckDrillStartStop {
 
 	foreach my $l (@layers4) {
 
-		if ( $l->{"gROWdrl_start"} ne "cvrlpin" ) {
+		if ( $l->{"gROWdrl_start"} ne "cvrlpins" ) {
 			$result = 0;
-			$$mess .= "NC layer \"" . $l->{'gROWname'} . "\" has to start in base layer \"cvrlpin\"\n";
+			$$mess .= "NC layer \"" . $l->{'gROWname'} . "\" has to start in base layer \"cvrlpins\"\n";
 		}
 	}
 

@@ -400,6 +400,19 @@ sub __CreateFakeOuterCoreLayers {
 				}
 			}
 
+			# Put press marks
+			{
+				my $f = Features->new();
+				$f->Parse( $inCAM, $jobId, $step, "v2" );    # layer v2 should already exist in multilayer pcb
+
+				my @cross = grep { defined $_->{"symbol"} && $_->{"symbol"} =~ /^in_315/i } $f->GetFeatures();
+ 
+				foreach my $c (@cross) {
+ 
+					CamSymbol->AddPad( $inCAM, "in_315", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
+				}
+			}
+
 			# Put OLEC crosses
 
 			my $olecSym = undef;
@@ -539,7 +552,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d269528";
+	my $jobId    = "d290377";
 	my $stepName = "panel";
 
 	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
