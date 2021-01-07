@@ -70,6 +70,8 @@ my $customer = getValueNoris($jobName, 'customer');
 		$znacky = "ELMATICA";
 }elsif ($customer =~ /WB\s*Electronics/i) {
 		$znacky = "WBELECTRONICS";
+}elsif ($customer =~ /vitave/i) {
+		$znacky = "VITAVE";
 }
 
 
@@ -303,6 +305,8 @@ elsif ($okoli == 10) {
 			$fid_schema = 'cust_safiral_10';
 	} elsif ($znacky eq "WBELECTRONICS_10") {
 			$fid_schema = 'cust_wb_10';
+	} elsif ($znacky eq "VITAVE") {
+			$fid_schema = 'cust_vitave_10 ';
 	} else {
 		$fid_schema = 0;
 	}
@@ -468,7 +472,7 @@ unless ($znacky eq 'ATM' or $znacky eq 'RACOM') {
 ##########################################################################################################
 sub fill_znacky {
     $construct_znacky->delete(0,'end');
-    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA ELMATICA_bez_otvoru PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA TRANSCON BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL WBELECTRONICS_10); 
+    my @customerList = qw (GATEMA GATEMA_OLD_5mm BMR C.SAM_7 BEZ_FIDUCIALU ATM AZITECH_10 RACOM LAMBERT_10 WENDEL ELMATICA ELMATICA_bez_otvoru PRINCITEC_5x8 APPLIED DICOM_12mm TOROLA TRANSCON BETACONTROL_10mm DVORSKY_12mm SMT_10mm_12mm PIERONKIEWICZ_10 BARDAS_10 CST_12mm KVARK_10 SAFIRAL WBELECTRONICS_10 Vitave_10); 
     foreach my $className (sort @customerList) {
         $construct_znacky->insert('end',"$className");
     }
