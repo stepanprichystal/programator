@@ -224,7 +224,7 @@ sub __BuildMatListBody {
 						   5, undef, $titleTxt, $txtBoldStyle, undef, $borderTitStyle );
 		}
 
-		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATLISTROW );
 
 		# Mat type
 		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("matType") ),

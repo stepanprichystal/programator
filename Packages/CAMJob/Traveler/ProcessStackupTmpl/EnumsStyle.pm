@@ -81,7 +81,9 @@ use constant {
 	BoxMainRowHeight_TITLE       => 6,
 	BoxMainRowHeight_TITLEGAP    => 6,
 	BoxMainRowHeight_MATGAP      => 0.7,
-	BoxMainRowHeight_MATROW      => 6,
+	BoxMainRowHeight_MATROW      => 4.5,
+	BoxMainRowHeight_PADSROW      => 6,
+	BoxMainRowHeight_MATLISTROW => 6,
 	BoxMainRowHeight_STEELPADROW => 2,
 
 };

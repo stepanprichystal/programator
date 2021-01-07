@@ -127,7 +127,7 @@ sub __BuildStckpBody {
 
 	# 2) Define styles
 	my $txtStckpStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
-										EnumsStyle->TxtSize_NORMAL,
+										EnumsStyle->TxtSize_SMALL,
 										Color->new( 255, 255, 255 ),
 										undef, undef,
 										TblDrawEnums->TextHAlign_LEFT,
@@ -206,34 +206,34 @@ sub __DrawItem {
 
 	if ( $itemType eq Enums->ItemType_PADALU ) {
 
-		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_PADSROW );
 		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
 										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 
 	if ( $itemType eq Enums->ItemType_PADPAPER ) {
 
-		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_PADSROW );
 		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
 										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 
 	if ( $itemType eq Enums->ItemType_PADRUBBERPINK ) {
 
-		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_PADSROW );
 		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
 										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 	if ( $itemType eq Enums->ItemType_PADRUBBERBROWN ) {
 
-		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_PADSROW );
 		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
 										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
 
 	if ( $itemType eq Enums->ItemType_PADRELEASE ) {
 
-		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_PADSROW );
 		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
 										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}
@@ -243,7 +243,7 @@ sub __DrawItem {
 		 || $itemType eq Enums->ItemType_PADFILMMATT )
 	{
 
-		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_MATROW );
+		my $row = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxMainRowHeight_PADSROW );
 		$self->{"builderHelper"}->DrawPad( $row,          $itemType,      $itemValType, $itemValExtraId,  $itemValText,
 										   $itemValThick, $txtStckpStyle, $txtStdStyle, $txtStdBoldStyle, $borderStyle );
 	}

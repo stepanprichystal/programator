@@ -85,7 +85,7 @@ sub GetJobLayerTitle {
 	}
 
 	# inner layer
-	elsif ( $l->{"gROWname"} =~ /^v(\d)$/i ) {
+	elsif ( $l->{"gROWname"} =~ /^v(\d+)$/i ) {
 
 		my $lNum = $1;
 		$title = "Inner layer number: $lNum.";
