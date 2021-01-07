@@ -406,9 +406,9 @@ sub __CreateFakeOuterCoreLayers {
 				$f->Parse( $inCAM, $jobId, $step, "v2" );    # layer v2 should already exist in multilayer pcb
 
 				my @cross = grep { defined $_->{"symbol"} && $_->{"symbol"} =~ /^in_315/i } $f->GetFeatures();
- 
+
 				foreach my $c (@cross) {
- 
+
 					CamSymbol->AddPad( $inCAM, "in_315", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
 				}
 			}
@@ -474,28 +474,37 @@ sub __CreateCoreDrillLayers {
 
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
-	return @fakeLayers if ( $layerCnt <= 2 || !JobHelper->GetIsFlex($jobId) );
+	my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
+	
+	# Only multilayer and flex or Jobs which 
+	if (
+		 $layerCnt >= 2
+		 && ( JobHelper->GetIsFlex($jobId)
+			  || $note =~ /kompenzace-1/i )
+	  )
+	{
 
-	my $stackup = Stackup->new( $inCAM, $jobId );
+		my $stackup = Stackup->new( $inCAM, $jobId );
 
-	my @products = $stackup->GetInputChildProducts();
+		my @products = $stackup->GetInputChildProducts();
 
-	foreach my $coreProdut ( sort { $b->GetCoreNumber() <=> $a->GetCoreNumber() } @products ) {
+		foreach my $coreProdut ( sort { $b->GetCoreNumber() <=> $a->GetCoreNumber() } @products ) {
 
-		my $lName = "v1j" . $coreProdut->GetCoreNumber();
+			my $lName = "v1j" . $coreProdut->GetCoreNumber();
 
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
-		CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "drill", "positive", 1, "v1", "after" );
-		CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $lName, $coreProdut->GetTopCopperLayer(), $coreProdut->GetBotCopperLayer() );
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
+			CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "drill", "positive", 1, "v1", "after" );
+			CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $lName, $coreProdut->GetTopCopperLayer(), $coreProdut->GetBotCopperLayer() );
 
-		push( @fakeLayers, $lName );
+			push( @fakeLayers, $lName );
+		}
+
+		CamHelper->SetStep( $inCAM, $step );
+
+		CamLayer->WorkLayer( $inCAM, "v1" );
+		CamLayer->CopySelOtherLayer( $inCAM, \@fakeLayers );
+		CamLayer->ClearLayers($inCAM);
 	}
-
-	CamHelper->SetStep( $inCAM, $step );
-
-	CamLayer->WorkLayer( $inCAM, "v1" );
-	CamLayer->CopySelOtherLayer( $inCAM, \@fakeLayers );
-	CamLayer->ClearLayers($inCAM);
 
 	return @fakeLayers;
 }
@@ -552,7 +561,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d290377";
+	my $jobId    = "d302535";
 	my $stepName = "panel";
 
 	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );
