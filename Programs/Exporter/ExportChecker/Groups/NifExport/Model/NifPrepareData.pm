@@ -27,6 +27,7 @@ use aliased 'Packages::NifFile::NifFile';
 use aliased 'Packages::CAMJob::Marking::MarkingDataCode';
 use aliased 'Packages::CAMJob::Marking::MarkingULLogo';
 use aliased 'CamHelpers::CamStepRepeatPnl';
+use aliased 'Packages::Technology::DataComp::PanelComp::PanelComp';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -111,6 +112,33 @@ sub OnPrepareGroupData {
 		}
 		last if ($bgaExist);
 	}
+
+	 
+	# Temporary solutuion - we do not have attribuites in IS yet
+	
+	# Store stretch indicator
+	my $stretch = 0;
+
+	my $panelComp = PanelComp->new( $inCAM, $jobId, "panel", $defaultInfo->GetStackup() );
+
+	foreach my $c ( $defaultInfo->GetStackup()->GetAllCores() ) {
+
+		my $coreNum     = $c->GetCoreNumber();
+		my $coreMatKind = $c->GetTextType();
+		my %comp = $panelComp->GetCoreMatComp( $coreNum, $coreMatKind );
+
+		if ( $comp{"x"} != 0 || $comp{"y"} != 0 ) {
+			$stretch = 1;
+			last;
+		}
+	}
+	
+	push( @quickNotes, { "id" => 9, "selected" => 1 } ) if($stretch);
+	
+	# Store semi-products indicator
+	my @p = grep { scalar( $_->GetLayers() > 1 ) } $defaultInfo->GetStackup()->GetInputProducts();
+	
+	push( @quickNotes, { "id" => 10, "selected" => 1 } ) if(scalar(@p));
 
 	$groupData->SetQuickNotes( \@quickNotes );
 
