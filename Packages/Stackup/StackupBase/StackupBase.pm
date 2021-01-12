@@ -183,12 +183,12 @@ sub GetStackupType {
 # Material names are without space
 sub GetStackupHybridTypes {
 	my $self = shift;
- 
+
 	my @types = uniq(
 					  map( $_->GetTextType(),
 						   grep { $_->GetType() eq Enums->MaterialType_CORE || $_->GetType() eq Enums->MaterialType_PREPREG } $self->GetAllLayers() )
 	);
-	
+
 	for ( my $i = 0 ; $i < scalar(@types) ; $i++ ) {
 
 		$types[$i] =~ s/\s*//g;
@@ -304,44 +304,32 @@ sub __SetStackupLayers {
 
 			if ( $parsedLayers[$i]->GetIsNoFlow() ) {
 				$noFlowType = Enums->NoFlowPrepreg_P2;    # Default type is type P2
-
-				# find preview core
-				#				my $corePrevInfo = ( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers[ ( $i - 2 ) .. ( $i - 1 ) ] )[-1];
-				#
-				#				# find next core
-				#				my $coreNextInfo = ( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers[ ( $i + 1 ) .. ( $i + 2 ) ] )[0];
-
-				# Type of noflow prepreg will be set according coverlay present
-				#				if (
-				#					 (
-				#					      defined $corePrevInfo
-				#					   && $corePrevInfo->GetType() eq Enums->MaterialType_CORE
-				#					   && $corePrevInfo->GetCoreRigidType() eq Enums->CoreType_FLEX
-				#					 )
-				#					 || (    defined $coreNextInfo
-				#						  && $coreNextInfo->GetType() eq Enums->MaterialType_CORE
-				#						  && $coreNextInfo->GetCoreRigidType() eq Enums->CoreType_FLEX )
-				#				  )
-				#				{
-				#
-				#					$noFlowType = Enums->NoFlowPrepreg_P1;
-				#				}
-
+ 
 			}
 
 			# 2) Determine if no flow prepreg is laminated on flex core
+			# Only if next NoFlow is FlexCore, which contain "not entirely etched out copper"
+			# Thus if copper has ussage > 0% (this has impact on PCB pressing amount)
 			my $flexPress = 0;
+
+			# Flex above prepreg
 			$flexPress = 1
 			  if (    defined $parsedLayers[ $i - 2 ]
 				   && $parsedLayers[ $i - 2 ]->GetType() eq Enums->MaterialType_CORE
-				   && $parsedLayers[ $i - 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX );
+				   && $parsedLayers[ $i - 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
+				   && defined $parsedLayers[ $i - 1 ]
+				   && $parsedLayers[ $i - 1 ]->GetType() eq Enums->MaterialType_COPPER
+				   && $parsedLayers[ $i - 1 ]->GetUssage() > 0 );
 
-			# check if prepreg  above flex core
+			# Flex below prepreg
 			$flexPress = 1
 			  if (    defined $parsedLayers[ $i + 2 ]
 				   && $parsedLayers[ $i + 2 ]->GetType() eq Enums->MaterialType_CORE
-				   && $parsedLayers[ $i + 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX );
-
+				   && $parsedLayers[ $i + 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
+				   && defined $parsedLayers[ $i + 1 ]
+				   && $parsedLayers[ $i + 1 ]->GetType() eq Enums->MaterialType_COPPER
+				   && $parsedLayers[ $i + 1 ]->GetUssage() > 0 );
+				   
 			# 3) Decide if create new prepreg parent
 			my $newParent = 0;
 
@@ -445,8 +433,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Stackup::StackupBase::StackupBase';
 
-	my $jobId   = "X65217";
+	my $jobId   = "d303089";
 	my $stackup = StackupBase->new($jobId);
+
+	
 
 	die;
 

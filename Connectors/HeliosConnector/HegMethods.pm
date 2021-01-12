@@ -1269,6 +1269,34 @@ sub UpdateNCInfo {
 
 }
 
+# Update note in deska
+# It works for all kind of "semiproducts" Dxxxxxx; Dxxxxxx-Jx; ...
+sub UpdateNote {
+	my $self        = shift;
+	my $pcbId       = shift;
+	my $note      = shift;
+	my $childThread = shift;
+
+	if ($childThread) {
+
+		my $result = $self->__SystemCall( "UpdateNote", $pcbId, $note );
+
+		return $result;
+	}
+	else {
+
+		#use Connectors::HeliosConnector::HelperWriter;
+		require Connectors::HeliosConnector::HelperWriter;
+
+		my $res = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $note, "poznamka" );
+
+		return $res;
+	}
+
+}
+
+ 
+
 sub UpdateMaterialKind {
 	my $self        = shift;
 	my $pcbId       = shift;
@@ -2696,7 +2724,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->GetContactNumberByMail('bortelr@fel.cvut.cz');
+	my $mat = HegMethods->UpdateNote( "D290377-J2", "test");
 
 	dump($mat);
 	die;

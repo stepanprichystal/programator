@@ -416,7 +416,8 @@ sub __CheckGroupDataBasic {
 			}
 		}
 	}
-	     # 7) Check if contain negative layers, if powerground type is set and vice versa
+
+	# 7) Check if contain negative layers, if powerground type is set and vice versa
 
 	my @sigLayers = $defaultInfo->GetSignalLayers();
 
@@ -774,6 +775,38 @@ sub __CheckGroupDataExtend {
 	my $stepName  = "panel";
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
+
+	# Check if stackup inner layer or job inner layer are both empty or both not epmty
+	{
+		if ( $defaultInfo->GetLayerCnt() > 2 ) {
+
+			my $stckpCode = $defaultInfo->GetStackupCode();
+			my $stackup   = $defaultInfo->GetStackup();
+
+			my @inner = grep { $_->{"gROWname"} =~ /^v\d$/ } $defaultInfo->GetSignalLayers();
+
+			foreach my $inL ( map { $_->{"gROWname"} } @inner ) {
+
+				my $emptyInLayer = $stckpCode->GetIsLayerEmpty($inL);
+				my $emptyInStckp = $stackup->GetCuLayer($inL)->GetUssage() > 0 ? 0 : 1;
+
+				if ( $emptyInLayer != $emptyInStckp ) {
+
+					$dataMngr->_AddErrorResult(
+						"Prázdné vnitřní vrstvy",
+						"U vnitřní signálové vrstvy: $inL nesedí využití Cu ve stackupu ("
+						  . ( $stackup->GetCuLayer($inL)->GetUssage() * 100 )
+						  . "%) s daty ve vrstvě InCAM jobu (vrstva "
+						  . ( $emptyInLayer ? "je" : "není" )
+						  . " prázdná). "
+						  . "Pokud je vrstva v InCAM jobu prázdná (okolí v panelu se nepočítá), "
+						  . "tak musí být využití mědi ve stackupu nastaveno na 0% a naopak"
+					);
+				}
+
+			}
+		}
+	}
 
 	my @sig      = $defaultInfo->GetSignalLayers();
 	my $layerCnt = $defaultInfo->GetLayerCnt();

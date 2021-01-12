@@ -57,6 +57,14 @@ sub SetColor {
 	$self->{"color"} = shift;
 }
 
+
+sub SetFont {
+	my $self = shift;
+
+	 $self->{"font"} = shift;
+
+}
+
 sub GetTextType {
 	my $self = shift;
 

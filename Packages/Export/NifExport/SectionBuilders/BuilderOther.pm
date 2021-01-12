@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::CAMJob::Stackup::StackupCode';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -187,6 +188,36 @@ sub Build {
 		}
 
 		$section->AddRow( "rizena_impedance", $imp );
+	}
+
+	my $stckpCode = StackupCode->new( $inCAM, $jobId );
+	my %code = $stckpCode->GetStackupCodeParsed();
+
+	if (    $self->_IsRequire("xri")
+		 || $self->_IsRequire("yf")
+		 || $self->_IsRequire("zri") )
+	{
+
+		$section->AddComment("Kod slozeni");
+
+	}
+
+	# xri
+	if ( $self->_IsRequire("xri") && defined $code{"xRi"} ) {
+
+		$section->AddRow( "xri", $code{"xRi"} );
+	}
+
+	# yf
+	if ( $self->_IsRequire("yf") && defined $code{"yF"} ) {
+
+		$section->AddRow( "yf", $code{"yF"} );
+	}
+
+	# zri
+	if ( $self->_IsRequire("zri") && defined $code{"zRi"} ) {
+
+		$section->AddRow( "zri", $code{"zRi"} );
 	}
 
 }

@@ -272,10 +272,8 @@ sub __BuildPaketInfo {
 
 	if (
 		$lamType eq Enums->LamType_FLEXBASE
-		|| (
-			$lamType eq Enums->LamType_RIGIDBASE
-			&& scalar( $lamData->GetLayers( StackEnums->ProductL_PRODUCT ) ) > 1
-		)
+		|| ( $lamType eq Enums->LamType_RIGIDBASE
+			 && scalar( $lamData->GetLayers( StackEnums->ProductL_PRODUCT ) ) > 1 )
 		|| $lamType eq Enums->LamType_ORIGIDFLEXFINAL
 		|| $lamType eq Enums->LamType_IRIGIDFLEXFINAL
 		|| ( $lamType eq Enums->LamType_RIGIDFINAL
@@ -385,13 +383,26 @@ sub __BuildOperInfo {
 	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $strOrder,     $txtRCollStyle );
 
 	# 3) Define semi product, created bz pressing
+	# Only if lamination is not last
+	if ( ( $lam->GetLamOrder() + 1 ) < scalar(@allLam) ) {
+		my $rowProduc = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
 
-	#$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),
+					   $tbl->GetRowCnt() - 1,
+					   undef, undef, "Vznikne polotovar:",
+					   $txtLCollStyle );
 
-	my $rowProduc = $tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->RowHeight_STD );
+		my $backgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_PRODUCT ) );
 
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ),  $tbl->GetRowCnt() - 1, undef, undef, "Vznikne polotovar:", $txtLCollStyle );
-	$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ), $tbl->GetRowCnt() - 1, undef, undef, $lam->GetProductId(), $txtRCollStyle );
+		my $txtStyle = dclone($txtRCollStyle);
+		$txtStyle->SetColor( Color->new( 255, 255, 255 ) );
+		$txtStyle->SetFont( TblDrawEnums->Font_BOLD );
+
+		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("rightCol") ),
+					   $tbl->GetRowCnt() - 1,
+					   undef, undef, $lam->GetProductId(), $txtStyle, $backgStyle );
+
+	}
 
 }
 
@@ -479,21 +490,21 @@ sub __BuildNoteInfo {
 
 	if ( $stckpMngr->GetIsFlex() ) {
 
-#		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
-#
-#		$tbl->AddRowDef( $tbl->GetRowCnt(), 5 * EnumsStyle->RowHeight_STD );
-#
-#		my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_PARAGRAPH,
-#									   EnumsStyle->TxtSize_NORMAL,
-#									   Color->new( 255, 0, 0 ),
-#									   TblDrawEnums->Font_NORMAL, undef,
-#									   TblDrawEnums->TextHAlign_LEFT,
-#									   TblDrawEnums->TextVAlign_CENTER, 1 );
-#
-#		my $str = "Pozor, nezapomen, vyplnit: pocet pater + pocet paketu na plotne (";
-#		$str .= "Quant. of act. openings + Amount of press package)";
-#
-#		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, 2, undef, $str, $txtStyle );
+		#		$tbl->AddRowDef( $tbl->GetRowCnt(), EnumsStyle->BoxHFRowHeight_TITLE );
+		#
+		#		$tbl->AddRowDef( $tbl->GetRowCnt(), 5 * EnumsStyle->RowHeight_STD );
+		#
+		#		my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_PARAGRAPH,
+		#									   EnumsStyle->TxtSize_NORMAL,
+		#									   Color->new( 255, 0, 0 ),
+		#									   TblDrawEnums->Font_NORMAL, undef,
+		#									   TblDrawEnums->TextHAlign_LEFT,
+		#									   TblDrawEnums->TextVAlign_CENTER, 1 );
+		#
+		#		my $str = "Pozor, nezapomen, vyplnit: pocet pater + pocet paketu na plotne (";
+		#		$str .= "Quant. of act. openings + Amount of press package)";
+		#
+		#		$tbl->AddCell( $tbl->GetCollDefPos( $tbl->GetCollByKey("leftCol") ), $tbl->GetRowCnt() - 1, 2, undef, $str, $txtStyle );
 	}
 
 }

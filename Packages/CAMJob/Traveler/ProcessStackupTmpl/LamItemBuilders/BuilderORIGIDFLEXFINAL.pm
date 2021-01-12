@@ -56,11 +56,12 @@ sub Build {
 	my $rubberThickPadInf = $stckpMngr->GetPressPadTB317KInfo();
 	my $rubberThinPadInf  = $stckpMngr->GetPressPad01FGKInfo();
 	my $aluPadInf         = $stckpMngr->GetAluPlateInfo();
-	my $rubberPadYOMInf  = $stckpMngr->GetPressPad01FGKInfo();
+	my $rubberPadYOMInf   = $stckpMngr->GetPressPad01FGKInfo();
 
 	# LAYER: Top rubber pad outside of steel plate
 	$lam->AddItem( $rubberPadYOMInf->{"ISRef"},
-				   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
+				   Enums->ItemType_PADRUBBERPINK,
+				   EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 				   undef, undef,
 				   $rubberPadYOMInf->{"text"},
 				   $rubberPadYOMInf->{"thick"} );
@@ -74,7 +75,8 @@ sub Build {
 	{
 		# LAYER: Top rubber pad
 		$lam->AddItem( $rubberThinPadInf->{"ISRef"},
-					   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
+					   Enums->ItemType_PADRUBBERPINK,
+					   EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 					   undef, undef,
 					   $rubberThinPadInf->{"text"},
 					   $rubberThinPadInf->{"thick"} );
@@ -86,7 +88,8 @@ sub Build {
 	else {
 		# LAYER: Top rubber pad
 		$lam->AddItem( $rubberThickPadInf->{"ISRef"},
-					   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
+					   Enums->ItemType_PADRUBBERPINK,
+					   EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 					   undef, undef,
 					   $rubberThickPadInf->{"text"},
 					   $rubberThickPadInf->{"thick"} );
@@ -108,11 +111,10 @@ sub Build {
 			if ( $IProduct->GetProductType() eq StackEnums->Product_INPUT && !@matL ) {
 
 				# Process core (there should be only one core, else INPUT would be press )
+				my @layers = map { $_->GetData() } ( $IProduct->GetChildProducts() )[0]->GetData()->GetLayers();
+				my $coreL = first { $_->GetType() eq StackEnums->MaterialType_CORE } @layers;
 
-				foreach my $pChildL ( ( $IProduct->GetChildProducts() )[0]->GetData()->GetLayers() ) {
-
-					$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $pChildL->GetData() );
-				}
+				$self->_ProcessStckpMatLayer( $lam, $stckpMngr, $coreL );
 
 			}
 			else {
@@ -134,7 +136,8 @@ sub Build {
 
 		# LAYER: Bot rubber pad
 		$lam->AddItem( $rubberThinPadInf->{"ISRef"},
-					   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
+					   Enums->ItemType_PADRUBBERPINK,
+					   EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 					   undef, undef,
 					   $rubberThinPadInf->{"text"},
 					   $rubberThinPadInf->{"thick"} );
@@ -144,7 +147,8 @@ sub Build {
 
 		# LAYER: Top rubber pad
 		$lam->AddItem( $rubberThickPadInf->{"ISRef"},
-					   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
+					   Enums->ItemType_PADRUBBERPINK,
+					   EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 					   undef, undef,
 					   $rubberThickPadInf->{"text"},
 					   $rubberThickPadInf->{"thick"} );
@@ -152,10 +156,11 @@ sub Build {
 
 	# LAYER: Steel plate Bot
 	$lam->AddItem( "steelPlate", Enums->ItemType_PADSTEEL, undef, undef, undef, undef, $steelPlateInf->{"thick"} );
-	
+
 	# LAYER: Bot rubber pad outside of steel plate
 	$lam->AddItem( $rubberPadYOMInf->{"ISRef"},
-				   Enums->ItemType_PADRUBBERPINK, EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
+				   Enums->ItemType_PADRUBBERPINK,
+				   EnumsStyle->GetItemTitle( Enums->ItemType_PADRUBBERPINK ),
 				   undef, undef,
 				   $rubberPadYOMInf->{"text"},
 				   $rubberPadYOMInf->{"thick"} );

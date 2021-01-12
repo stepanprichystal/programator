@@ -106,6 +106,42 @@ sub GetStackupCode {
 	return $code;
 }
 
+# Return hash with stackup code.
+# Hash contains three keys:
+#	xRi
+#	yF
+#	zRi
+
+sub GetStackupCodeParsed {
+	my $self = shift;
+
+	my %c = ( "xRi" => undef, "yF" => undef, "zRi" => undef );
+
+	my $code = $self->GetStackupCode();
+
+	if ( $code =~ /^(\d+)Ri$/i ) {
+		$c{"xRi"} = $1;
+	}
+	elsif ( $code =~ /^(\d+)F$/i ) {
+		$c{"yF"} = $1;
+	}
+	elsif ( $code =~ /^(\d+)Ri-(\d+)F$/i ) {
+		$c{"xRi"} = $1;
+		$c{"yF"}  = $2;
+	}
+	elsif ( $code =~ /^(\d+)Ri-(\d+)F-(\d+)Ri$/i ) {
+		$c{"xRi"} = $1;
+		$c{"yF"}  = $2;
+		$c{"zRi"} = $3;
+	}
+	else {
+
+		die "Unexpected code value $code";
+	}
+
+	return %c;
+}
+
 # Return number of used (not empty) rigid layer
 sub GetUsedRigidLayerCnt {
 	my $self  = shift;
@@ -354,14 +390,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d288054";
+	my $jobId = "d303089";
 
 	my $stckpCode = StackupCode->new( $inCAM, $jobId );
-	my $c = $stckpCode->GetUsedRigidLayerCnt( 0, 1 );
-	my $c2 = $stckpCode->GetUsedFlexLayerCnt( 1, 0 );
-
-	print "Rigid: " . $c . "\n";
-	print "Flex: " . $c2 . "\n";
+	my %c = $stckpCode->GetStackupCodeParsed(  );
+	 
+	die ;
 
 }
 

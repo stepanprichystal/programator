@@ -104,7 +104,7 @@ sub GetAllLamination {
 			$lamType = Enums->LamType_ORIGIDFLEXFINAL;
 		}
 
-		my $lam = StackupLam->new( $lamOrder, $lamType, $pressP->GetId() . "xLis", $pressP );
+		my $lam = StackupLam->new( $lamOrder, $lamType,"DPS". $pressP->GetId(), $pressP );
 		push( @lamintaions, $lam );
 
 		$lamOrder++;
@@ -112,7 +112,7 @@ sub GetAllLamination {
 		# Check if press contain extra lamination
 		if ( $pressP->GetExistExtraPress() ) {
 
-			my $lam = StackupLam->new( $lamOrder, Enums->LamType_CVRLPRODUCT, $pressP->GetId() . "xLis", $pressP );
+			my $lam = StackupLam->new( $lamOrder, Enums->LamType_CVRLPRODUCT,  "DPS".$pressP->GetId() , $pressP );
 			push( @lamintaions, $lam );
 
 			$lamOrder++;

@@ -55,7 +55,7 @@ sub _ProcessStckpProduct {
 	elsif ( $IProduct->GetProductType() eq StackEnums->Product_PRESS ) {
 
 		$itemType = Enums->ItemType_MATPRODUCTDPS;
-		$itemId   = $IProduct->GetId() . "xLis";
+		$itemId   =  "DPS".$IProduct->GetId();
 	}
 
 	# LAYER: product

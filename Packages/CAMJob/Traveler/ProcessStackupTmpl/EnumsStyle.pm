@@ -122,7 +122,7 @@ sub GetItemTitle {
 
 	$t{ Enums->ItemType_MATCVRLADHESIVE }  = "Lepidlo";
 	$t{ Enums->ItemType_MATSTIFFADHESIVE } = "Lepidlo";
-	$t{ Enums->ItemType_MATPRODUCTDPS }    = "Polotovar DPS";
+	$t{ Enums->ItemType_MATPRODUCTDPS }    = "Polotovar";
 	$t{ Enums->ItemType_MATPRODUCTCORE }   = "Polotovar";
 
 	return $t{$type};

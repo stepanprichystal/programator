@@ -263,11 +263,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d298452";
+	my $jobId = "d290377";
 
 	my $stackup = Stackup->new( $inCAM, $jobId );
 
  
+ 	StackupTester->PrintStackupTree($stackup);
+ 	
 	die;
 
 }

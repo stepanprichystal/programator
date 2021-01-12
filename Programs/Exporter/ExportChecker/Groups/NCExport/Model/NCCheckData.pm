@@ -950,6 +950,8 @@ sub OnCheckGroupData {
 			     $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_tapebrMill
 			  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_cbMillTop
 			  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_cbMillBot
+			  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_soldcMill
+			  && $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_soldsMill
 		  }
 		  grep { $_->{"gROWlayer_type"} eq "rout" } $defaultInfo->GetNCLayers();
 

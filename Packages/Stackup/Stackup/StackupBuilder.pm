@@ -151,7 +151,15 @@ sub __AddCoverlayLayers {
 
 	for ( my $i = 0 ; $i < scalar(@cvrL) ; $i++ ) {
 
-		my $sigL    = ( $cvrL[$i] =~ /^\w+([csv]\d*)$/ )[0];
+		my $sigL = ( $cvrL[$i] =~ /^\w+([csv]\d*)$/ )[0];
+
+		# Do check, if coverlay cover Cu with usage > 0%
+		# If not, there is no reason to laminate coverlay, co reise error
+		if ( $stackup->GetCuLayer($sigL)->GetUssage() <= 0 ) {
+
+			die "Signal layer ($sigL) covered by coverlay ($cvrL[$i]) has 0% copper usage. Set copper usage > 0% or remove coverlay $cvrL[$i].";
+		}
+
 		my $cvrlPos = undef;
 
 		if ( $sigL eq "c" ) {
@@ -423,7 +431,7 @@ sub __BuildProductInput {
 }
 
 # Return extra layer count which will be added to core and create final input product
-# Consider input polotovars and its drilling on both side of flexible core (if Rigid flex)
+# Consider input semiproducts and its drilling on both side of flexible core (if Rigid flex)
 sub __IdentifyRigidFlexSemiProduct {
 	my $self     = shift;
 	my $pars     = shift;
@@ -708,35 +716,61 @@ sub __IdentifyFlexCoreProduct {
 		if ( $pars->[$i]->{"l"}->GetCoreRigidType() eq Enums->CoreType_FLEX ) {
 
 			# - Flex Core with extra prepregs P1 from both side (or coverlay from one side and prepreg from other side)
-			my $P1Top = $i - 2 >= 0 ? $pars->[ $i - 2 ] : undef;
-			my $P1Bot = $i + 2 < scalar( @{$pars} ) ? $pars->[ $i + 2 ] : undef;
+			my $prpgP1Top = $i - 2 >= 0 ? $pars->[ $i - 2 ] : undef;
+			my $prpgP1Bot = $i + 2 < scalar( @{$pars} ) ? $pars->[ $i + 2 ] : undef;
 
 			if (
-				 defined $P1Top
-				 && ( $P1Top->{"l"}->GetType() ne Enums->MaterialType_PREPREG
-					  || !$P1Top->{"l"}->GetIsNoFlow() )
-				 && $P1Top->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
+				 defined $prpgP1Top
+				 && ( $prpgP1Top->{"l"}->GetType() ne Enums->MaterialType_PREPREG
+					  || !$prpgP1Top->{"l"}->GetIsNoFlow() )
+				 && $prpgP1Top->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
 			  )
 			{
-				die "Top layer is not NoFlow P1";
+				die "Top layer is not NoFlow P1 or Coverlay";
 			}
 			if (
-				 defined $P1Bot
-				 && ( $P1Bot->{"l"}->GetType() ne Enums->MaterialType_PREPREG
-					  || !$P1Bot->{"l"}->GetIsNoFlow() )
-				 && $P1Bot->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
+				 defined $prpgP1Bot
+				 && ( $prpgP1Bot->{"l"}->GetType() ne Enums->MaterialType_PREPREG
+					  || !$prpgP1Bot->{"l"}->GetIsNoFlow() )
+				 && $prpgP1Bot->{"l"}->GetType() ne Enums->MaterialType_COVERLAY
 			  )
 			{
-				die "Bot layer is not NoFlow P1";
+				die "Bot layer is not NoFlow P1 or Coverlay";
 			}
-			$P1Top->{"pId"} = $$currPId if ( defined $P1Top );    # prepreg can missing when Outer RigidFlex (if flex core is placed top)
 
-			$pars->[ $i - 1 ]->{"pId"} = $$currPId;               # copper
-			$pars->[$i]->{"pId"}       = $$currPId;               # core
-			$pars->[ $i + 1 ]->{"pId"} = $$currPId;               # copper
-			$P1Bot->{"pId"} = $$currPId if ( defined $P1Bot );    # prepreg is missing when Outer RigidFlex (if flex core is placed bottom);
+			# Add coverlay to product if is defined OR
+			# Add prepreg to product if is defined and copper usage > 0
+			# (prepreg can missing when Outer RigidFlex if flex core is placed top)
+			if (
+				( defined $prpgP1Top && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_COVERLAY )
+				|| (    defined $prpgP1Top
+					 && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_PREPREG
+					 && $pars->[ $i - 1 ]->{"l"}->GetUssage() > 0 )
 
-			$$currPId++;                                          # increment product id
+			  )
+			{
+				$prpgP1Top->{"pId"} = $$currPId;
+			}
+
+			$pars->[ $i - 1 ]->{"pId"} = $$currPId;    # copper
+			$pars->[$i]->{"pId"}       = $$currPId;    # core
+			$pars->[ $i + 1 ]->{"pId"} = $$currPId;    # copper
+
+			# Add coverlay to product if is defined OR
+			# Add prepreg to product if is defined and copper usage > 0
+			# (prepreg can missing when Outer RigidFlex if flex core is placed bottom)
+			if (
+				( defined $prpgP1Bot && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_COVERLAY )
+				|| (    defined $prpgP1Bot
+					 && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_PREPREG
+					 && $pars->[ $i + 1 ]->{"l"}->GetUssage() > 0 )
+
+			  )
+			{
+				$prpgP1Bot->{"pId"} = $$currPId;
+			}
+
+			$$currPId++;    # increment product id
 		}
 	}
 

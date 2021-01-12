@@ -395,6 +395,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
 
+
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 
 	foreach my $l (@layers1) {
@@ -580,8 +581,6 @@ sub CheckDrillStartStop {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
 
