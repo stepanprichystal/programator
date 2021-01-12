@@ -456,14 +456,7 @@ sub GetJobLayerInfo {
 				$info = "Frézování je Používáno pro dosažení vysoké kvality opracování.";
 			}
 		}
-
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_nMill ) {
-			$info = "Layer can contains extra \"pilot-holes\".";
-			if ($cz) {
-				$info = "Vrstva může obsahovat pomocné \"pilot-holes\".";
-			}
-
-		}
+ 
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_kMill ) {
 			$info = "Milling is used before electrical testing";
 			if ($cz) {
