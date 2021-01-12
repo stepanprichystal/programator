@@ -793,14 +793,14 @@ sub __CheckGroupDataExtend {
 				if ( $emptyInLayer != $emptyInStckp ) {
 
 					$dataMngr->_AddErrorResult(
-						"Prázdné vnitřní vrstvy",
-						"U vnitřní signálové vrstvy: $inL nesedí využití Cu ve stackupu ("
-						  . ( $stackup->GetCuLayer($inL)->GetUssage() * 100 )
-						  . "%) s daty ve vrstvě InCAM jobu (vrstva "
-						  . ( $emptyInLayer ? "je" : "není" )
-						  . " prázdná). "
-						  . "Pokud je vrstva v InCAM jobu prázdná (okolí v panelu se nepočítá), "
-						  . "tak musí být využití mědi ve stackupu nastaveno na 0% a naopak"
+												"Prázdné vnitřní vrstvy",
+												"U vnitřní signálové vrstvy: $inL nesedí využití Cu ve stackupu ("
+												  . ( $stackup->GetCuLayer($inL)->GetUssage() * 100 )
+												  . "%) s daty ve vrstvě InCAM jobu (vrstva "
+												  . ( $emptyInLayer ? "je" : "není" )
+												  . " prázdná). "
+												  . "Pokud je vrstva v InCAM jobu prázdná (okolí v panelu se nepočítá), "
+												  . "tak musí být využití mědi ve stackupu nastaveno na 0% a naopak"
 					);
 				}
 
@@ -1244,6 +1244,29 @@ sub __CheckGroupDataExtend {
 				"Výška aktivní plochy neodpovídá střihu. Zkontroluj, jestli kusy nejsou panelizované za hranicí střihu panelu."
 
 			);
+		}
+	}
+
+	# Grafit panelise to smaller panel due to screenprinting problems
+	{
+		my @grafitL = grep { $_->{"gROWname"} =~ /^g[cs]$/i } $defaultInfo->GetBoardBaseLayers();
+
+		if ( scalar(@grafitL) ) {
+
+			my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+
+			my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+
+			my $maxPnlH = 420;    # 420mm
+			if ( $h > $maxPnlH ) {
+
+				$dataMngr->_AddErrorResult(
+					"Panel dimension",
+					"Příliš velký panel. \nPokud job obsahuje grafit panel (po ofrézování pokud vv DPS)"
+					  . " musí mýt vysoký maximálně ${maxPnlH}mm."
+					  . "Důvodem jsou problémy se sítotiskovým stolem a dlouhou DPS"
+				);
+			}
 		}
 	}
 

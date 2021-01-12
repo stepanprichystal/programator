@@ -72,6 +72,7 @@ sub Run {
 		# 3) delete app logs, where are stored logs from failed app
 		$self->__DeleteAppLogs();
 
+
 		# 3) cleanup InCAM databases
 		#$self->__RunDBUtil();
 
@@ -237,8 +238,6 @@ sub __GetJob2Archive {
 
 	# limit if more than 30jobs, in order don't block  another service apps
 	$logger->info( "Number of jobs to archive edited before more than " . $self->{"notEditedDays"} . "  days: " . scalar(@job2Archive) . "\n" );
-
-	
 
 	return @job2Archive;
 }
@@ -509,6 +508,8 @@ sub __DeleteAppLogs {
 
 	close(DIR);
 }
+
+
 
 #sub __RunDBUtil {
 #	my $self = shift;

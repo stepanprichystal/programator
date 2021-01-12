@@ -35,7 +35,7 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::ChangeFile';
 use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
 use aliased 'Packages::Reorder::CheckReorder::CheckReorder';
-use aliased 'Packages::Reorder::Enums' => 'ReorderEnums';
+use aliased 'Packages::Reorder::Enums'  => 'ReorderEnums';
 use aliased 'Packages::Reorder::Helper' => 'ReorderHelper';
 
 #-------------------------------------------------------------------------------------------#
@@ -76,6 +76,10 @@ sub Run {
 
 		$self->{"logger"}->debug("In eval");
 
+		# 1) Check all reorders which has error status
+		# If there is  "joblist.xml" error, set empty status in order pcb reorder service run another attempt
+		$self->__CheckStuckedJobs();
+
 		# 2) Load Reorder pcb
 		my @reorders = $self->__GetReorders();
 
@@ -103,8 +107,8 @@ sub Run {
 			}
 		}
 
-	};
-	if ($@) {
+	  };
+	  if ($@) {
 
 		my $err = "Aplication: " . $self->GetAppName() . " exited with error: \n$@";
 		$self->{"logger"}->error($err);
@@ -184,7 +188,7 @@ sub __ProcessJob {
 
 		my $errText = "Nepodařil se dohledat nebo naimportovat zarchivovaný TGZ soubor pro opakovanopu objednávku.";
 		$errText .= "Detail chyby: $errMess";
- 
+
 		push( @tasks, { "text" => $errText, "critical" => 1 } );
 	}
 	else {
@@ -195,8 +199,8 @@ sub __ProcessJob {
 
 		my $isPool      = HegMethods->GetPcbIsPool($jobId);
 		my $pnlExist    = CamHelper->StepExists( $inCAM, $jobId, "panel" );
-		my $reorderType = ReorderHelper->GetReorderType($inCAM, $orderId);
-  
+		my $reorderType = ReorderHelper->GetReorderType( $inCAM, $orderId );
+
 		die "Reorder type was not found for order id: $orderId" unless ( defined $reorderType );
 
 		# 3) Check if job is former pool and now is standard
@@ -308,6 +312,42 @@ sub __GetReorders {
 	@reorders = grep { !defined $_->{"aktualni_krok"} || $_->{"aktualni_krok"} eq "" } @reorders;
 
 	return @reorders;
+}
+
+# Check all reorders which has error status
+# If there is  "joblist.xml" error, set empty status in order pcb reorder service run another attempt
+sub __CheckStuckedJobs {
+	my $self = shift;
+
+	my @reorders = ();
+
+	push( @reorders, HegMethods->GetReorders() );
+
+	# olny zpracovani-auto
+	@reorders = grep {
+		defined $_->{"aktualni_krok"}
+		  && (    $_->{"aktualni_krok"} eq EnumsIS->CurStep_PROCESSREORDERERR
+			   || $_->{"aktualni_krok"} eq EnumsIS->CurStep_CHECKREORDERERROR )
+	} @reorders;
+
+	foreach my $reorder (@reorders) {
+
+		my $jobId = ( $reorder->{"reference_subjektu"} =~ /^(\w\d+)/ )[0];
+
+		if ( AutoProcLog->Exist($jobId) ) {
+
+			my @lines = AutoProcLog->Load($jobId);
+
+			my $jobListErr = scalar( grep { $_ =~ /InCAM error, unable to read database jobs from joblist.xml/i } @lines ) > 0 ? 1 : 0;
+
+			# Try to empty status
+			if ($jobListErr) {
+
+				HegMethods->UpdatePcbOrderState(  $reorder->{"reference_subjektu"}, EnumsIS->CurStep_EMPTY );
+			}
+		}
+
+	}
 }
 
 sub __ProcessJobResult {
