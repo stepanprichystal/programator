@@ -53,14 +53,15 @@ sub new {
 	$self->{"step"}       = shift;
 	$self->{"layerList"}  = shift;
 	$self->{"profileLim"} = shift;
-	
-	 $self->{"outputNClayer"} = OutputParserNC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
-	
+
+	$self->{"outputNClayer"} = OutputParserNC->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
 	$self->{"prepareNCStandard"} =
-	  PrepareNCStandard->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layerList"}, $self->{"profileLim"}, $self->{"outputNClayer"} );
+	  PrepareNCStandard->new( $self->{"inCAM"},     $self->{"jobId"},      $self->{"step"},
+							  $self->{"layerList"}, $self->{"profileLim"}, $self->{"outputNClayer"} );
 	$self->{"prepareNCDrawing"} =
-	  PrepareNCDrawing->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $self->{"layerList"}, $self->{"profileLim"}, $self->{"outputNClayer"} );
+	  PrepareNCDrawing->new( $self->{"inCAM"},     $self->{"jobId"},      $self->{"step"},
+							 $self->{"layerList"}, $self->{"profileLim"}, $self->{"outputNClayer"} );
 
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 
@@ -102,8 +103,7 @@ sub Prepare {
 
 	# 1) Check if all parameters are ok. Such as vysledne/vrtane, one surfae depth per layer, etc..
 	$self->__CheckNCLayers( \@layers );
- 
-	
+
 	# 2) Load histograms about layer features and their attribues
 	foreach my $l (@layers) {
 
@@ -123,8 +123,22 @@ sub Prepare {
 		}
 		$sHist{"lines_arcs"} = \%line_arcs;
 		$l->{"symHist"} = \%sHist;
-  
 
+	}
+
+	# 2) Remove internal helper pilot holes
+	foreach my $l (@layers) {
+
+		# Remove all internal pilot holes
+		my $f = FeatureFilter->new( $inCAM, $jobId, $l->{"gROWname"} );
+		$f->AddIncludeAtt(".pilot_hole");
+		$f->SetFeatureTypes( "pad" => 1 );
+
+		if ( $f->Select() ) {
+			CamLayer->DeleteFeatures($inCAM);
+		}
+
+		CamLayer->ClearLayers($inCAM);
 	}
 
 	# 5) Create layer data for NC layers
@@ -133,10 +147,10 @@ sub Prepare {
 
 }
 
-sub Clear{
-	my $self   = shift;
-	
-	$self->{"outputNClayer"}->Clear();	
+sub Clear {
+	my $self = shift;
+
+	$self->{"outputNClayer"}->Clear();
 }
 
 sub __CheckNCLayers {
@@ -177,8 +191,6 @@ sub __CheckNCLayers {
 
 }
 
- 
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

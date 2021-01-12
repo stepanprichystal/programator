@@ -23,11 +23,10 @@ use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamSymbol';
-use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::Enums' => 'OutEnums';
 use aliased 'Packages::CAMJob::OutputData::Helper';
-
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 #use aliased 'Packages::SystemCall::SystemCall';
 
 #-------------------------------------------------------------------------------------------#
@@ -137,9 +136,7 @@ sub __PrepareNCMILL {
 
 	# Scoring + plated mill
 	my @layersSingle =
-	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill 
-	  	|| $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score
-	   } @layers;
+	  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score } @layers;
 
 	foreach my $l (@layersSingle) {
 
@@ -175,12 +172,16 @@ sub __PrepareNCSingleLayer {
 
 	my $enTit = Helper->GetJobLayerTitle( $l, $type );
 	my $czTit = Helper->GetJobLayerTitle( $l, $type, 1 );
-	my $enInf = Helper->GetJobLayerInfo( $l );
+	my $enInf = Helper->GetJobLayerInfo($l);
 	my $czInf = Helper->GetJobLayerInfo( $l, 1 );
+
+
 
 	my $result = $self->{"outputNClayer"}->Prepare($l);
 
 	my $lName = $result->MergeLayers();    # merge DRILLBase and ROUTBase result layer
+
+ 
 
 	my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
 
@@ -221,6 +222,10 @@ sub __PrepareNCMergedLayers {
 
 	# Merge all layers
 	foreach my $l (@layers) {
+
+
+
+		CamLayer->ClearLayers($inCAM);
 
 		my $result = $self->{"outputNClayer"}->Prepare($l);
 
@@ -350,7 +355,7 @@ sub __CreateDrillMaps {
 
 	my $lDataMap = LayerData->new( $type, $oriLayer,
 								   "Drill map: " . $enTit,
-								   "Mapa vrtání: " . $czTit,
+								   "Mapa vrtï¿½nï¿½: " . $czTit,
 								   "Units [mm] " . $enInf,
 								   "Jednotky [mm] " . $czInf, $lNameMap );
 

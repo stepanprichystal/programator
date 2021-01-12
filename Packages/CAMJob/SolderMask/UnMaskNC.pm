@@ -26,7 +26,10 @@ use aliased 'CamHelpers::CamHistogram';
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
-#
+
+
+
+
 # If uncover solder mask on the rout path missing, then will be copy.
 sub UnMaskNpltRout {
 	my $self       = shift;
@@ -66,6 +69,7 @@ sub UnMaskNpltRout {
 }
 
 # Unmask through hole near BGA
+our $unMaskBGAAttrVal = "unmask_through_hole_bga";  # make var accesible out of package
 sub UnMaskThroughHoleNearBGA {
 	my $self             = shift;
 	my $inCAM            = shift;
@@ -89,21 +93,20 @@ sub UnMaskThroughHoleNearBGA {
 		$result = 0;
 		return $result;
 	}
-
-	my $unMaskAttrVal = "unmask_through_hole_bga";
-
+ 
 	my $unMasked;
 
-	$result = $self->__UnMaskThroughHoleNearPads( $inCAM, $jobId, $step, ".bga", \@sigLayers, $unMaskAttrVal, $resize, $minDistHole2Pad, \$unMasked );
+	$result = $self->__UnMaskThroughHoleNearPads( $inCAM, $jobId, $step, ".bga", \@sigLayers, $unMaskBGAAttrVal, $resize, $minDistHole2Pad, \$unMasked );
 
 	$$unMaskedCntRef   = $unMasked      if ( defined $unMaskedCntRef );
-	$$unMaskAttrValRef = $unMaskAttrVal if ( defined $unMaskAttrValRef );
+	$$unMaskAttrValRef = $unMaskBGAAttrVal if ( defined $unMaskAttrValRef );
 
 	return $result;
 
 }
 
 # UnMask through hole near SMD
+our $unMaskSMDAttrVal = "unmask_through_hole_smd"; # make var accesible out of package
 sub UnMaskThroughHoleNearSMD {
 	my $self             = shift;
 	my $inCAM            = shift;
@@ -126,15 +129,13 @@ sub UnMaskThroughHoleNearSMD {
 		$result = 0;
 		return $result;
 	}
-
-	my $unMaskAttrVal = "unmask_through_hole_smd";
-
+ 
 	my $unMasked;
 
-	$result = $self->__UnMaskThroughHoleNearPads( $inCAM, $jobId, $step, ".smd", \@sigLayers, $unMaskAttrVal, $resize, $minDistHole2Pad, \$unMasked );
+	$result = $self->__UnMaskThroughHoleNearPads( $inCAM, $jobId, $step, ".smd", \@sigLayers, $unMaskSMDAttrVal, $resize, $minDistHole2Pad, \$unMasked );
 
 	$$unMaskedCntRef   = $unMasked      if ( defined $unMaskedCntRef );
-	$$unMaskAttrValRef = $unMaskAttrVal if ( defined $unMaskAttrValRef );
+	$$unMaskAttrValRef = $unMaskSMDAttrVal if ( defined $unMaskAttrValRef );
 
 	return $result;
 

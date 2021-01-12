@@ -26,6 +26,8 @@ use aliased 'Packages::CAMJob::OutputData::LayerData::LayerData';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAMJob::OutputData::Enums';
 use aliased 'Packages::CAMJob::OutputData::Helper';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => "FilterEnums";
 use aliased 'Packages::CAMJob::OutputParser::OutputParserNC::OutputParserNC';
 
 #-------------------------------------------------------------------------------------------#
@@ -79,6 +81,7 @@ sub __PrepareBASEBOARD {
 	my $type   = shift;
 
 	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	@layers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} ne "drill" && $_->{"gROWlayer_type"} ne "rout" } @layers;
 	@layers = grep { $_->{"gROWname"} !~ /^(plg|[lg]|gold)[cs]$/i } @layers;         # special surfaces (goldc, gc, lc, plgc,  etc)
@@ -94,6 +97,23 @@ sub __PrepareBASEBOARD {
 		my $czInf = Helper->GetJobLayerInfo( $l, 1 );
 
 		$inCAM->COM( "merge_layers", "source_layer" => $l->{"gROWname"}, "dest_layer" => $lName );
+
+		# Edit layers if necessaray
+
+		# Solder mask may contain inhouse unmask of via - delete it
+		if ( $l->{"gROWlayer_type"} eq "solder_mask" ) {
+			my $f = FeatureFilter->new( $inCAM, $jobId, $lName );
+			$f->AddIncludeAtt( ".string", $Packages::CAMJob::SolderMask::UnMaskNC::unMaskSMDAttrVal );
+			$f->AddIncludeAtt( ".string", $Packages::CAMJob::SolderMask::UnMaskNC::unMaskBGAAttrVal );
+			$f->SetIncludeAttrCond( FilterEnums->Logic_OR );
+			$f->SetFeatureTypes( "pad" => 1 );
+
+			if ( $f->Select() ) {
+				CamLayer->DeleteFeatures($inCAM);
+			}
+
+			CamLayer->ClearLayers($inCAM);
+		}
 
 		my $lData = LayerData->new( $type, $l, $enTit, $czTit, $enInf, $czInf, $lName );
 
@@ -308,7 +328,7 @@ sub __PrepareFLEXLAYERS {
 
 		# 1) Create full surface by profile
 		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 1000, $self->{"profileLim"} );
-		CamLayer->ClipAreaByProf( $inCAM, $lName, 0, 0,1 );   
+		CamLayer->ClipAreaByProf( $inCAM, $lName, 0, 0, 1 );
 		CamLayer->WorkLayer( $inCAM, $lName );
 
 		# 2) Copy coverlay milling
@@ -361,7 +381,7 @@ sub __PrepareFLEXLAYERS {
 
 		# 1) Create full surface by profile
 		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 1000, $self->{"profileLim"} );
-		CamLayer->ClipAreaByProf( $inCAM, $lName, 0, 0,1 );   
+		CamLayer->ClipAreaByProf( $inCAM, $lName, 0, 0, 1 );
 		CamLayer->WorkLayer( $inCAM, $lName );
 
 		# 2) Copy negative of stiffener rout
