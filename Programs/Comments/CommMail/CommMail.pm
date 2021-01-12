@@ -133,11 +133,13 @@ sub Sent {
 	my %employyInf = ();
 
 	my $from = 'tpvserver@gatema.cz';
+	my $userEmail = 0;
 	if ( defined $name && $name ne "" ) {
 		my $userInfo = HegMethods->GetEmployyInfo($name);
 		if ( defined $userInfo && defined $userInfo->{"e_mail"} =~ /^[a-z0-9.]+\@[a-z0-9.-]+$/i ) {
 
 			$from = $userInfo->{"e_mail"};
+			$userEmail = 1;
 		}
 	}
 
@@ -148,11 +150,14 @@ sub Sent {
 	$body .= $self->__GetBody( $addOfferInf, $addOfferStckp );
 	$body .= $self->__GetFooter() if ($addFooter);
 
+	my $bcc = $userEmail ? $from : ""; # Send copy of email to user
+
 	my $msg = MIME::Lite->new(
 		From => $from,
 		To   => join( ", ", @{$to} ),
 		Cc   => join( ", ", @{$cc} ),
-		#Bcc  => 'stepan.prichystal@gatema.cz',    # TODO temporary for testing
+ 
+		Bcc  => $bcc,
 
 		Subject => encode( "UTF-8", $subject ),   # Encode must by use if subject with diacritics
 

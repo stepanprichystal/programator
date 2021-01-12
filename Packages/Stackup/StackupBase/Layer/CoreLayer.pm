@@ -54,7 +54,7 @@ sub GetBotCopperLayer{
 	return $self->{"botCopperLayer"};
 }
 
-
+# Start with 1
 sub GetCoreNumber{
 	my $self = shift;
 	return $self->{"coreNumber"};

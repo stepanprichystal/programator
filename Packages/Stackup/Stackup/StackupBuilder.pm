@@ -770,7 +770,18 @@ sub __IdentifyFlexCoreProduct {
 				$prpgP1Bot->{"pId"} = $$currPId;
 			}
 
-			$$currPId++;    # increment product id
+			# Do check, if flex core is inner, prepreg souhld be from both side of flex core
+			# (even if Copper ussage is 0%)
+			if (    $pars->[$i]->{"l"}->GetCoreNumber() > 1
+				 && $pars->[$i]->{"l"}->GetCoreNumber() < scalar( $self->{"stackup"}->GetAllCores() ) )
+			{
+
+				$prpgP1Top->{"pId"} = $$currPId;
+				$prpgP1Bot->{"pId"} = $$currPId;
+
+			}
+
+			$$currPId++;                            # increment product id
 		}
 	}
 

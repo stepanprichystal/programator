@@ -304,7 +304,7 @@ sub __SetStackupLayers {
 
 			if ( $parsedLayers[$i]->GetIsNoFlow() ) {
 				$noFlowType = Enums->NoFlowPrepreg_P2;    # Default type is type P2
- 
+
 			}
 
 			# 2) Determine if no flow prepreg is laminated on flex core
@@ -329,7 +329,24 @@ sub __SetStackupLayers {
 				   && defined $parsedLayers[ $i + 1 ]
 				   && $parsedLayers[ $i + 1 ]->GetType() eq Enums->MaterialType_COPPER
 				   && $parsedLayers[ $i + 1 ]->GetUssage() > 0 );
-				   
+
+			# If flex core is inside stackup
+			$flexPress = 1
+			  if (
+				   (
+					    defined $parsedLayers[ $i - 2 ]
+					 && $parsedLayers[ $i - 2 ]->GetType() eq Enums->MaterialType_CORE
+					 && $parsedLayers[ $i - 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
+					 && $parsedLayers[ $i - 2 ]->GetCoreNumber() > 1
+					 && $parsedLayers[ $i - 2 ]->GetCoreNumber() < scalar( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers )
+				   )
+				   || (    defined $parsedLayers[ $i + 2 ]
+						&& $parsedLayers[ $i + 2 ]->GetType() eq Enums->MaterialType_CORE
+						&& $parsedLayers[ $i + 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
+						&& $parsedLayers[ $i + 2 ]->GetCoreNumber() > 1
+						&& $parsedLayers[ $i + 2 ]->GetCoreNumber() < scalar( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers ) )
+			  );
+
 			# 3) Decide if create new prepreg parent
 			my $newParent = 0;
 
@@ -435,8 +452,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $jobId   = "d303089";
 	my $stackup = StackupBase->new($jobId);
-
-	
 
 	die;
 
