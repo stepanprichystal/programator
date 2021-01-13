@@ -190,34 +190,34 @@ sub Build {
 		$section->AddRow( "rizena_impedance", $imp );
 	}
 
-	my $stckpCode = StackupCode->new( $inCAM, $jobId );
-	my %code = $stckpCode->GetStackupCodeParsed();
-
 	if (    $self->_IsRequire("xri")
 		 || $self->_IsRequire("yf")
 		 || $self->_IsRequire("zri") )
 	{
 
+		my $stckpCode = StackupCode->new( $inCAM, $jobId );
+		my %code = $stckpCode->GetStackupCodeParsed();
+
 		$section->AddComment("Kod slozeni");
 
-	}
+		# xri
+		if ( $self->_IsRequire("xri") && defined $code{"xRi"} ) {
 
-	# xri
-	if ( $self->_IsRequire("xri") && defined $code{"xRi"} ) {
+			$section->AddRow( "xri", $code{"xRi"} );
+		}
 
-		$section->AddRow( "xri", $code{"xRi"} );
-	}
+		# yf
+		if ( $self->_IsRequire("yf") && defined $code{"yF"} ) {
 
-	# yf
-	if ( $self->_IsRequire("yf") && defined $code{"yF"} ) {
+			$section->AddRow( "yf", $code{"yF"} );
+		}
 
-		$section->AddRow( "yf", $code{"yF"} );
-	}
+		# zri
+		if ( $self->_IsRequire("zri") && defined $code{"zRi"} ) {
 
-	# zri
-	if ( $self->_IsRequire("zri") && defined $code{"zRi"} ) {
+			$section->AddRow( "zri", $code{"zRi"} );
+		}
 
-		$section->AddRow( "zri", $code{"zRi"} );
 	}
 
 }
