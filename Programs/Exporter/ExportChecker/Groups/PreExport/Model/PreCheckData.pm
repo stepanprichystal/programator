@@ -979,6 +979,25 @@ sub __CheckGroupDataExtend {
 		}
 	}
 
+	# X) Check if gold finger exist and base cu is => 70µm, peelable mask must be prepared in order cover goldfinger during
+	# final surface operation
+	if ( $goldFinger && $defaultInfo->GetBaseCuThick("c") >= 70 ) {
+
+		my @peelMaskL = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_lsMill }
+		  $defaultInfo->GetNCLayers();
+
+		unless ( scalar(@peelMaskL) ) {
+
+			$dataMngr->_AddWarningResult(
+										  "Chybějící vrstvy snímacího laku",
+										  "Pokud je na desce zlacený konektor a zároveň základní Cu >= 70µm, "
+											. "tak je třeba nachystat frézovací vrstvy pro snímací lak"
+			);
+
+		}
+
+	}
+
 	# 19) Check attribu "custom_year" if contains current year plus 1 (only SICURIT customer, id: 07418)
 	if ( $defaultInfo->GetCustomerISInfo()->{"reference_subjektu"} eq "07418" ) {
 		my %allAttr = CamAttributes->GetJobAttr( $inCAM, $jobId );
@@ -1252,19 +1271,18 @@ sub __CheckGroupDataExtend {
 		my @grafitL = grep { $_->{"gROWname"} =~ /^g[cs]$/i } $defaultInfo->GetBoardBaseLayers();
 
 		if ( scalar(@grafitL) ) {
+			my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, "panel" );
 
-			my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+			my $h = abs( $limActive{"yMax"} - $limActive{"yMin"} );
 
-			my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
-
-			my $maxPnlH = 420;    # 420mm
+			my $maxPnlH = 400;    # 400mm
 			if ( $h > $maxPnlH ) {
 
 				$dataMngr->_AddErrorResult(
-					"Panel dimension",
-					"Příliš velký panel. \nPokud job obsahuje grafit panel (po ofrézování pokud vv DPS)"
-					  . " musí mýt vysoký maximálně ${maxPnlH}mm."
-					  . "Důvodem jsou problémy se sítotiskovým stolem a dlouhou DPS"
+											"Panel dimension",
+											"Příliš velká aktivní oblast (${h}mm).  Pokud job obsahuje grafit aktivní oblast"
+											  . " musí mýt vysoká maximálně ${maxPnlH}mm."
+											  . " Důvodem jsou problémy se sítotiskovým stolem a dlouhými přířezy"
 				);
 			}
 		}

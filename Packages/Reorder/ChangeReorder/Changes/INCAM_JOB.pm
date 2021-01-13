@@ -29,6 +29,7 @@ use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Reorder::Enums';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -101,6 +102,16 @@ sub Run {
 		$inCAM->COM( "show_component", "component" => "Action_Area", "show" => "no" );    # hide DTM
 		CamLayer->ClearLayers($inCAM);
 
+	}
+	
+	# 4) Check if exist old stackup pdf and delete it
+	# (new stackup name has differnet name format)
+	if(CamJob->GetSignalLayerCnt($inCAM, $jobId)){
+		
+		my $oldStackupPdf = JobHelper->GetJobArchive($jobId)."pdf\\${jobId}-cm.pdf";
+	
+		unlink($oldStackupPdf) if(-e $oldStackupPdf);
+	
 	}
 
 	return $result;
@@ -230,7 +241,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d152457";
+	my $jobId = "d238221";
 
 	my $check = Change->new( "key", $inCAM, $jobId );
 

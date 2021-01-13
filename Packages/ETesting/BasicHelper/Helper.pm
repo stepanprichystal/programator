@@ -34,7 +34,7 @@ sub KeepProfilesAllowed {
 
 	$$mess = "If keep profile step is required, ";
 
-	my @couponSteps = ( EnumsGeneral->Coupon_IMPEDANCE );    # coupon steps which are consider during chcecks
+	my @couponSteps = ( EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN );    # coupon steps which are consider during chcecks
 
 	# 1. RULE
 	my @repeats = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $stepToTest );

@@ -343,7 +343,11 @@ sub __CreateEtStep {
 					   $aPnl->BorderT(), $aPnl->BorderB(), $aPnl->BorderL(), $aPnl->BorderR(), { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );
 
 		# Prepare nested step
-		my $endStepName = "et_" . $stepToTest . "_" . $endSteps[0]->{"stepName"};
+		# do control if there is only one name of nested step
+		die "Only one kind of nested step is allowed when keep SR profiles in IPC"
+		  if ( scalar( uniq( map { $_->{"stepName"} } @endSteps ) ) > 1 );
+		  
+		my $endStepName = "et_" . $stepToTest . "_" . $endSteps[0]->{"stepName"};    # take first in row (all nested step should be same)
 
 		CamStep->DeleteStep( $inCAM, $jobId, $endStepName );
 		CamStep->CopyStep( $inCAM, $jobId, $endSteps[0]->{"stepName"}, $jobId, $endStepName );
@@ -656,13 +660,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d269726";
+	my $jobId = "d301431";
 	my $inCAM = InCAM->new();
 
 	my $step = "panel";
 
 	my $max = ExportIPC->new( $inCAM, $jobId, $step, 1, );
-	$max->Export( undef, 1 );
+	
+	my $keepProfiles = Helper->KeepProfilesAllowed( $inCAM, $jobId, $step);
+	
+	
+	$max->Export( undef, $keepProfiles );
 
 	print "area exceeded=" . $max . "---\n";
 
