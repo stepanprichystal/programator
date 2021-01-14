@@ -597,6 +597,24 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# 20) Check if there are some wrongly put plated tools in non plated layers
+	foreach my $l ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] ) ) {
+
+		# check non pressfit tools, if tolerances are not set
+		my @plated =
+		  grep { $_->{"gTOOLtype"} eq "plated" } CamDTM->GetDTMTools( $inCAM, $jobId, "panel", $l->{"gROWname"}, 1 );
+
+		foreach my $t (@plated) {
+
+			$dataMngr->_AddErrorResult(
+				"Prokovené otvory",
+				"Ve vrstvě NEprokoveného vrtání/frézování (".$l->{"gROWname"}.") byl nalezen prokovený nástroj: "
+				  . $t->{"gTOOLdrill_size"}
+				  . "µm. Přesuň tento nástroj do vrstvy prokoveného vrtání/frézování nebo nastav jako \"non plated\""
+			);
+		}
+	}
+
 	# 21) Check if pcb pcb class less than 8 and plated drill exist
 	# If so, warn user to small diameter
 	if ( $defaultInfo->GetPcbClass() < 8 ) {
@@ -1171,11 +1189,11 @@ sub OnCheckGroupData {
 
 			if ( $f->Select() ) {
 				$dataMngr->_AddErrorResult(
-					"Fréza můstků oboustranné pásky",
-					"Fréza můstků oboustranné pásky ve stepu: "
-					  . $step->{"stepName"}
-					  . " zasahuje do profilu desky. "
-					  . "Tato fréza musí být vždy vně profilu desky, jinak v desce bude profrézovaný otvor skrz."
+											"Fréza můstků oboustranné pásky",
+											"Fréza můstků oboustranné pásky ve stepu: "
+											  . $step->{"stepName"}
+											  . " zasahuje do profilu desky. "
+											  . "Tato fréza musí být vždy vně profilu desky, jinak v desce bude profrézovaný otvor skrz."
 				);
 			}
 

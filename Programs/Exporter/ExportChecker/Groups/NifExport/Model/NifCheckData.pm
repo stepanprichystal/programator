@@ -42,6 +42,8 @@ use aliased 'Packages::CAMJob::PCBConnector::PCBConnectorCheck';
 use aliased 'Packages::CAMJob::Checklist::PCBClassCheck';
 use aliased 'Packages::TifFile::TifRevision';
 use aliased 'Enums::EnumsChecklist';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => "FiltrEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -894,6 +896,62 @@ sub OnCheckGroupData {
 
 		}
 
+	}
+
+	# Check if pcbclass is 8 and surface HAL if there is soldermask
+	# If soldermask is missing or whole signal layer is unmasked, PCB is not able produce
+	# (HAL surface will coin tracks with small isolation)
+	if ( $defaultInfo->GetPcbClass() >= 8 && $defaultInfo->GetPcbSurface() =~ /^[AB]$/i ) {
+
+		my @sigLayers = ();
+
+		push( @sigLayers, "c" ) if ( $defaultInfo->LayerExist("c") );
+		push( @sigLayers, "s" ) if ( $defaultInfo->LayerExist("s") );
+		foreach my $l (@sigLayers) {
+
+			if ( !$defaultInfo->LayerExist("m${l}") ) {
+
+				$dataMngr->_AddErrorResult(
+											"HAL + 8KT",
+											"DPS je v 8. třídě s povrchovou úpravou HAL, ale neobsahuje vrstvu masky: m${l}. "
+											  . "Přidej vrstvu masky nebo zmněň povrchovou úpravu, jinak HAL pravděpodobně zkratuje vodiče blízko u sebe."
+				);
+			}
+			else {
+
+				# Check if whole signal are is not unmasked
+
+				my @steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
+
+				foreach my $step (@steps) {
+
+					CamHelper->SetStep( $inCAM, $step );
+
+					my $f = FeatureFilter->new( $inCAM, $jobId, $l );
+					$f->SetRefLayer("m${l}");
+					$f->SetReferenceMode( FiltrEnums->RefMode_DISJOINT );
+					$f->SetProfile( FiltrEnums->ProfileMode_INSIDE );
+
+					if ( $f->Select() == 0 ) {
+
+						# Perhaps all signal layer features are unmasked
+						# It is not for sure, so only warning
+						$dataMngr->_AddWarningResult(
+													  "HAL + 8KT",
+													  "DPS je v 8. třídě s povrchovou úpravou HAL. Ve stepu: $step"
+														. " je vrstva: ${l} pravděpodobně celá odmaskovaná. "
+														. "Uprav vrstvu masky nebo zmněň povrchovou úpravu, "
+														. "jinak HAL pravděpodobně zkratuje odmaskované vodiče blízko u sebe."
+						);
+
+						CamLayer->ClearLayers($inCAM);
+
+					}
+
+				}
+
+			}
+		}
 	}
 
 }

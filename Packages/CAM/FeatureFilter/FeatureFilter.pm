@@ -395,7 +395,8 @@ sub SetIncludeAttrCondRef {
 # Mode of reference selection
 # - Enums->RefMode_TOUCH - take all features touch reference features
 # - Enums->RefMode_DISJOINT - take all features not touching any reference features
-# - Enums->RefMode_COVER - take all features fully covered by at least one reference feature
+# - Enums->RefMode_COVER - take all features fully covered by atleast one single reference feature
+# - Enums->RefMode_MULTICOVER - take all features fully covered by at least one reference feature
 # - Enums->RefMode_INCLUDE - take all features that fully include at least one reference feature
 # - Enums->RefMode_SAMECENTER - take all features that fully include at least one reference feature
 sub SetReferenceMode {
