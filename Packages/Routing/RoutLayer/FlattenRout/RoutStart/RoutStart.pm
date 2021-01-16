@@ -16,18 +16,19 @@ use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
+use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::Polygon::PointsTransform';
+use aliased 'Packages::Routing::RoutOutline' => "Outline";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
-
-
 
 sub new {
 
@@ -43,17 +44,18 @@ sub new {
 }
 
 sub FindStart {
-	my $self      = shift;
-	# Packages::Routing::RoutLayer::RoutStart::RoutStart::START_LEFTTOP
-	# Packages::Routing::RoutLayer::RoutStart::RoutStart::START_RIGHTTOP
-	my $startType = shift; 
+	my $self = shift;
 
-	die "Rout start type is not defined" unless ( defined $startType);
+	# EnumsRout::START_LEFTTOP
+	# EnumsRout::START_RIGHTTOP
+	my $startType = shift;
+
+	die "Rout start type is not defined" unless ( defined $startType );
 
 	my $resultItem = ItemResult->new("Identify rout start");
 
 	my @errStep = ();
-	$resultItem->{"errStartSteps"} = \@errStep;                            # save information, where start was not found
+	$resultItem->{"errStartSteps"} = \@errStep;    # save information, where start was not found
 
 	CamHelper->SetStep( $self->{"inCAM"}, $self->{"SRStep"}->GetStep() );
 
@@ -61,7 +63,7 @@ sub FindStart {
 
 		$self->__RemoveFootAttr($s);
 
-		$self->__FindStart( $s, $resultItem );
+		$self->__FindStart( $s, $startType, $resultItem );
 
 	}
 
@@ -69,9 +71,10 @@ sub FindStart {
 }
 
 sub __FindStart {
-	my $self    = shift;
-	my $stepRot = shift;
-	my $resItem = shift;
+	my $self      = shift;
+	my $stepRot   = shift;
+	my $startType = shift;
+	my $resItem   = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -115,16 +118,73 @@ sub __FindStart {
 		# 2) Find start of chain by script, if is not already found
 		if ( !$startByAtt ) {
 
-			my %modify = RoutStart->RoutNeedModify( \@features );
+			#   Transform outline to default position in order to find rout start
+			# (assume features are sorted, because alreadz contain )
+			my $routAdjust = RoutStartAdjust->new( \@features );
 
+			my $angle = 0; # Outline  @features is already rotated
+
+			$routAdjust->Transform( $startType, $angle );
+
+#			# ============================================================
+#
+#			#	if( $stepRot->GetAngle() == 180){
+#
+#			CamMatrix->DeleteLayer( $inCAM, $jobId, "adjust" . $stepRot->GetAngle() );
+#			CamMatrix->CreateLayer( $inCAM, $jobId, "adjust" . $stepRot->GetAngle(), "rout", "positive", 0 );
+#			my $draw = RoutDrawing->new( $inCAM, $jobId, "panel", "adjust" . $stepRot->GetAngle() );
+#
+#			my $startEdge = $features[0];
+#
+#			$startEdge = $features[0];
+#
+#			# 1) Draw new rout
+#				$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_RIGHT, $startEdge );    # draw new
+#
+#			#			CamMatrix->DeleteLayer( $inCAM, $jobId, "adjust" . $stepRot->GetAngle() . "back" );
+#			#			CamMatrix->CreateLayer( $inCAM, $jobId, "adjust" . $stepRot->GetAngle() . "back", "rout", "positive", 0 );
+#			#			my $drawBakc = RoutDrawing->new( $inCAM, $jobId, $stepName, "adjust" . $stepRot->GetAngle() . "back" );
+#			#			$drawBakc->DrawRoute( \@features, 2000, $defRoutComp, $startEdge );    # draw new
+#			#die;
+#			#	}
+#			# ============================================================
+
+			#  Check if rout need modify in order find rout start
+			my %modify = RoutStart->RoutNeedModify( \@features );
 			if ( $modify{"result"} ) {
 
 				$routModify = 1;
 				RoutStart->ProcessModify( \%modify, \@features );
+				
 			}
 
+			# Try to get rout start edge
+
 			my %startResult = RoutStart->GetRoutStart( \@features );
-			my %footResult  = RoutStart->GetRoutFootDown( \@features );
+
+#			# ============================================================
+#
+#			#	if( $stepRot->GetAngle() == 180){
+#
+#			CamMatrix->DeleteLayer( $inCAM, $jobId, "adjust_mod" . $stepRot->GetAngle() );
+#			CamMatrix->CreateLayer( $inCAM, $jobId, "adjust_mod" . $stepRot->GetAngle(), "rout", "positive", 0 );
+#			my $draw = RoutDrawing->new( $inCAM, $jobId, "panel", "adjust_mod" . $stepRot->GetAngle() );
+#
+#			my $startEdge = $features[0];
+#
+#			if ( $startResult{"result"} ) {
+#				$startEdge = $startResult{"edge"};
+#
+#			}
+#
+#			# 1) Draw new rout
+#			$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_RIGHT, $startEdge );    # draw new
+#
+#			#	}
+#			# ============================================================
+
+			#  Transform outline rout back to original shape
+			$routAdjust->TransformBack();
 
 			if ( $startResult{"result"} ) {
 
@@ -141,7 +201,9 @@ sub __FindStart {
 
 					$draw->DeleteRoute( [ $outline->GetOriFeatures() ] );    # dlete ori features
 
-					$draw->DrawRoute( \@features, 2000, EnumsRout->Comp_LEFT, $startResult{"edge"}, 1 );    # draw new
+					my $defRoutComp  = Outline->GetDefRoutComp($jobId);
+
+					$draw->DrawRoute( \@features, 2000, $defRoutComp, $startResult{"edge"}, 1 );    # draw new
 
 				}
 				else {

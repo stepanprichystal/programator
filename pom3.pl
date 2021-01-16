@@ -46,7 +46,7 @@ use aliased 'CamHelpers::CamMatrix';
 #-------------------------------------------------------------------------------------------#
 
 my $inCAM    = InCAM->new();
-my $jobId    = "d300527";
+my $jobId    = "d293788";
 my $stepName = "o+1";
 my $messMngr = MessageMngr->new($jobId);
 
@@ -155,28 +155,31 @@ sub __DoChain {
 
 	RoutCyclic->SetRoutDirection( \@sorteEdges, $defRoutDir );
 
-	TestNarrowPlaces( \@sorteEdges );
+	#	TestNarrowPlaces( \@sorteEdges );
+	#
+	#	my %radiusResult = TestSmallRadius( \@sorteEdges );
 
-	my %radiusResult = TestSmallRadius( \@sorteEdges );
+	my %radiusResult = ();
 
 	my %footResult = FindRoutStart( \@sorteEdges );
 
 	DrawNewRout( \@sorteEdges, \%radiusResult, \%footResult );
+ 
 
 	# Show information message
 
 	my @m = ();
 
 	#	if ( $radiusResult{"radiusRepaired"} ) {
-	#		push( @m, "V obrysové fréze byly eliminovány nìkteré arky. Zkontroluj to." );
+	#		push( @m, "V obrysovÃ© frÃ©ze byly eliminovÃ¡ny nÄ›kterÃ© arky. Zkontroluj to." );
 	#	}
 
 	if ( $radiusResult{"newDrillHole"} ) {
-		push( @m, "Do obrysové frézy byly pøidány otvory, které nahradily nìkteré arky. Zkontrolu správnost." );
+		push( @m, "Do obrysovÃ© frÃ©zy byly pÅ™idÃ¡ny otvory, kterÃ© nahradily nÄ›kterÃ© arky. Zkontrolu sprÃ¡vnost." );
 	}
 
 	unless ( $footResult{"result"} ) {
-		push( @m, "Nebyl nalezen vhodný poèátek frézy. Poèátek byl nastaven náhodnì. Zkontroluj to." );
+		push( @m, "Nebyl nalezen vhodnÃ½ poÄÃ¡tek frÃ©zy. PoÄÃ¡tek byl nastaven nÃ¡hodnÄ›. Zkontroluj to." );
 	}
 
 	if ( scalar(@m) ) {
@@ -286,7 +289,7 @@ sub TestOpenRout {
 
 	unless ($resultSorting) {
 
-		my @m = ("Obrysová fréza je otevøená. Obrys musí být cyklický, oprav to.");
+		my @m = ("ObrysovÃ¡ frÃ©za je otevÅ™enÃ¡. Obrys musÃ­ bÃ½t cyklickÃ½, oprav to.");
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );
 
 		my $lName = 'open_route_' . $jobId;
@@ -332,7 +335,7 @@ sub TestNarrowPlaces {
 
 	unless ( $resultNP{"result"} ) {
 
-		my @m = ("Obrysová fréza obsahuje pøíliš úzká místa pro nástroj obrysové frézy 2mm. Zpracuj frézu ruènì.");
+		my @m = ("ObrysovÃ¡ frÃ©za obsahuje pÅ™Ã­liÅ¡ ÃºzkÃ¡ mÃ­sta pro nÃ¡stroj obrysovÃ© frÃ©zy 2mm. Zpracuj frÃ©zu ruÄnÄ›.");
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );
 
 		my $lName = 'narrow_places_' . $jobId;
@@ -397,7 +400,7 @@ sub TestSmallRadius {
 	unless ( RoutOutline->CheckSmallRadius($sorteEdges) ) {
 
 		my @btns = ( "Ano opravit + kontrola", "Ano opravit", "Neopravovat" );
-		my @m = ("V obrysové fréze jsou arky s rádiusem menším jak 2mm. Chceš tyto arky eliminovat?");
+		my @m = ("V obrysovÃ© frÃ©ze jsou arky s rÃ¡diusem menÅ¡Ã­m jak 2mm. ChceÅ¡ tyto arky eliminovat?");
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m, \@btns );
 
 		my $messRes = $messMngr->Result();
@@ -409,7 +412,7 @@ sub TestSmallRadius {
 			# 1) Test on bounded arcs
 			if ( $resultRepair{"boundArc"} ) {
 
-				@m = ("V obrysové fréze jsou arky, které neumím ellimenivat (ark spojený/vytvoøený z více arkù)");
+				@m = ("V obrysovÃ© frÃ©ze jsou arky, kterÃ© neumÃ­m ellimenivat (ark spojenÃ½/vytvoÅ™enÃ½ z vÃ­ce arkÅ¯)");
 				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );
 
 				my $lName = 'bounded_arcs_' . $jobId;
@@ -471,61 +474,69 @@ sub TestSmallRadius {
 	}
 
 	return %result;
-
 }
 
 sub FindRoutStart {
 	my $sorteEdges = shift;
 
-	# Find possinle start for rotation 90°; 270° if STD pcb
-
-	my %modify = RoutStart->RoutNeedModify($sorteEdges);
-
-	if ( $modify{"result"} ) {
-
-		RoutStart->ProcessModify( \%modify, $sorteEdges );
-	}
-
 	my %startResult = ();
 
-	foreach my $angle ( ( 90, 270 ) ) {
+	my $defRoutComp  = Outline->GetDefRoutComp($jobId);
+	my $defRoutStart = Outline->GetDefRoutStart($jobId);
 
-		if ( $angle == 90 ) {
-			my %startResAngle = RoutStart->GetRoutStart($sorteEdges);
+	my $defRoutDir = Outline->GetDefRoutDirection($jobId);
 
-		}
-		elsif ( $angle == 270 ) {
+	# Try to find rout start for followinf PCB rotation in panel
+	my @PCBrotation = ( 0, 270 );
+	if ( $defRoutDir eq EnumsRout->Dir_CCW && $defRoutComp eq EnumsRout->Comp_RIGHT ) {
+		@PCBrotation = ( 0, 90, 180, 270 );
+	}
 
-			my $routAdjust = RoutStartAdjust->new($sorteEdges);
+	foreach my $angle (@PCBrotation) {
 
-			$routAdjust->Transform(Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust::LB_CORNER);
-			my %startResAngle = RoutStart->GetRoutStart($sorteEdges);
+		# 1) Transform outline to default position in order to find rout start
+		my $routAdjust = RoutStartAdjust->new($sorteEdges);
 
-			CamMatrix->DeleteLayer( $inCAM, $jobId, "adjust270" );
-			my $draw = RoutDrawing->new( $inCAM, $jobId, $stepName, "adjust270" );
+		$routAdjust->Transform( RoutStartAdjust->GetCorner2Transform( $defRoutStart, $defRoutDir, $angle ) );
 
-			my $startEdge = undef;
+		# 2) Check if rout need modify in order find rout start
+		my %modify = RoutStart->RoutNeedModify($sorteEdges);
+		if ( $modify{"result"} ) {
 
-			if ( $startResAngle{"result"} ) {
-				$startEdge = $startResAngle{"edge"};
-
-			}
-			else {
-				#take arbitrary
-				$startEdge = $sorteEdges->[0];
-			}
-
-			# 1) Draw new rout
-			$draw->DrawRoute( $sorteEdges, 2000, EnumsRout->Comp_LEFT, $startEdge );    # draw new
-
-			$routAdjust->TransformBack();
-
-			CamMatrix->DeleteLayer( $inCAM, $jobId, "adjust270Back" );
-			my $drawBakc = RoutDrawing->new( $inCAM, $jobId, $stepName, "adjust270Back" );
-			$drawBakc->DrawRoute( $sorteEdges, 2000, EnumsRout->Comp_LEFT, $startEdge );    # draw new
-
+			RoutStart->ProcessModify( \%modify, $sorteEdges );
 		}
 
+		# 3) Try to get rout start edge
+		my %startResAngle = RoutStart->GetRoutStart($sorteEdges);
+		$startResult{$angle} = \%startResAngle;
+
+		# 4) Transform outline rout back to original shape
+		$routAdjust->TransformBack();
+
+		#		CamMatrix->DeleteLayer( $inCAM, $jobId, "adjust${angle}" );
+		#		CamMatrix->CreateLayer( $inCAM, $jobId, "adjust${angle}", "rout", "positive", 0 );
+		#		my $draw = RoutDrawing->new( $inCAM, $jobId, $stepName, "adjust${angle}" );
+		#
+		#		my $startEdge = $sorteEdges->[0];
+
+		#			if ( $startResAngle{"result"} ) {
+		#				$startEdge = $startResAngle{"edge"};
+		#
+		#			}
+		#			else {
+		#				#take arbitrary
+		#				$startEdge = $sorteEdges->[0];
+		#			}
+
+		#		# 1) Draw new rout
+		#		$draw->DrawRoute( $sorteEdges, 2000, $defRoutComp, $startEdge );    # draw new
+		#
+		#
+		#
+		#		CamMatrix->DeleteLayer( $inCAM, $jobId, "adjust${angle}back" );
+		#		CamMatrix->CreateLayer( $inCAM, $jobId, "adjust${angle}back", "rout", "positive", 0 );
+		#		my $drawBakc = RoutDrawing->new( $inCAM, $jobId, $stepName, "adjust${angle}back" );
+		#		$drawBakc->DrawRoute( $sorteEdges, 2000, $defRoutComp, $startEdge );    # draw new
 	}
 
 	return %startResult;

@@ -22,21 +22,21 @@ use aliased 'Enums::EnumsRout';
 #-------------------------------------------------------------------------------------------#
 
 # Get PCB outline rout start corner according PCB type and stackup
-# - EnumsRout->OUTLINESTART_LEFTTOP
-# - EnumsRout->OUTLINESTART_RIGHTTOP
+# - EnumsRout->OutlineStart_LEFTTOP
+# - EnumsRout->OutlineStart_RIGHTTOP
 sub GetDefRoutStart {
 	my $self  = shift;
 	my $jobId = shift;
 
 	# Default is LEFT-TOP corner
 
-	my $outlRoutStart = EnumsRout->OUTLINESTART_LEFTTOP;
+	my $outlRoutStart = EnumsRout->OutlineStart_LEFTTOP;
 
 	if ( JobHelper->GetIsFlex($jobId) ) {
 
 		# Flex PCB
 
-		$outlRoutStart = EnumsRout->OUTLINESTART_RIGHTTOP;
+		$outlRoutStart = EnumsRout->OutlineStart_RIGHTTOP;
 
 	}
 	else {
@@ -47,7 +47,7 @@ sub GetDefRoutStart {
 		my $isHybrid = JobHelper->GetIsHybridMat( $jobId, undef, [], \$isSemiHybrid );
 
 		if ($isSemiHybrid) {
-			$outlRoutStart = EnumsRout->OUTLINESTART_RIGHTTOP;
+			$outlRoutStart = EnumsRout->OutlineStart_RIGHTTOP;
 		}
 	}
 

@@ -2,6 +2,7 @@
 # Description:
 # Source fetures can have either CW direction or CCW direction
 # All rout start searching algorithm search rout start in Left-Top corner of CW oriented cyclic rout
+# Of default non rotated outline
 # If we want to search rout start in another corner, outline rout should be modified first.
 # In other word wee need to transform "desired rout start sorner" to LT_CW position
 # Example 1:
@@ -84,42 +85,38 @@ sub new {
 }
 
 sub Transform {
-	my $self   = shift;
-	my $corner = shift;    # target corner will be moved to LeftTop corner (CW direction is set)
+	my $self               = shift;
+	my $reqRoutStartCorner = shift;    # Requested outline rout start corner
+	my $finalPCBangle      = shift;    # final PCB rotation on panel
+	 
 
-	my $direction = RoutCyclic->GetRoutDirection( $self->{"features"} );    # EnumsRout->Dir_CW/EnumsRout->Dir_CCW
-	my $angle     = shift;                                                  # rotate counter clockwise
+	my $outlDir = RoutCyclic->GetRoutDirection( $self->{"features"} );    # EnumsRout->Dir_CW/EnumsRout->Dir_CCW
 
-	die "Corner is not set" unless ( defined $corner );
+	# target corner will be moved to LeftTop corner (CW direction is set)
+	my $oriCornerNoAngle = $self->__GetCorner2Transform( $reqRoutStartCorner, $finalPCBangle, $outlDir );
+
+	die "Corner is not set" unless ( defined $oriCornerNoAngle );
 
 	# Pcb widtt /height
 	my $width  = abs( $self->{"lim"}->{"xMax"} - $self->{"lim"}->{"xMin"} );
 	my $height = abs( $self->{"lim"}->{"yMax"} - $self->{"lim"}->{"yMin"} );
 
+	# 1) Build transformations
 	$self->{"trans"} = [];
 
-	# 1) test if features are in zero
+	if ( $outlDir eq EnumsRout->Dir_CW ) {
 
-	if ( $self->{"lim"}->{"xMin"} != 0 || $self->{"lim"}->{"yMin"} != 0 ) {
-
-		push( @{ $self->{"trans"} }, [ "moveX", $self->{"lim"}->{"xMin"} ] );
-		push( @{ $self->{"trans"} }, [ "moveY", $self->{"lim"}->{"yMin"} ] );
-
-	}
-
-	if ( $direction eq EnumsRout->Dir_CW ) {
-
-		if ( $corner eq LT_CORNER ) {
+		if ( $oriCornerNoAngle eq LT_CORNER ) {
 
 			# no rotation
 			# no move
 		}
-		elsif ( $corner eq RT_CORNER ) {
+		elsif ( $oriCornerNoAngle eq RT_CORNER ) {
 
 			push( @{ $self->{"trans"} }, [ "rotationCCW", 90 ] );
 			push( @{ $self->{"trans"} }, [ "moveX",       $height ] );
 		}
-		elsif ( $corner eq RB_CORNER ) {
+		elsif ( $oriCornerNoAngle eq RB_CORNER ) {
 
 			push( @{ $self->{"trans"} }, [ "rotationCCW", 90 ] );
 			push( @{ $self->{"trans"} }, [ "moveX",       $height ] );
@@ -127,7 +124,7 @@ sub Transform {
 			push( @{ $self->{"trans"} }, [ "moveX",       $width ] );
 
 		}
-		elsif ( $corner eq LB_CORNER ) {
+		elsif ( $oriCornerNoAngle eq LB_CORNER ) {
 
 			push( @{ $self->{"trans"} }, [ "rotationCCW", 90 ] );
 			push( @{ $self->{"trans"} }, [ "moveX",       $height ] );
@@ -138,29 +135,32 @@ sub Transform {
 		}
 
 	}
-	elsif ( $direction eq EnumsRout->Dir_CCW ) {
+	elsif ( $outlDir eq EnumsRout->Dir_CCW ) {
 
-		if ( $corner eq RT_CORNER ) {
+		if ( $oriCornerNoAngle eq RT_CORNER ) {
 
 			push( @{ $self->{"trans"} }, [ "mirrorY", 0 ] );
+			push( @{ $self->{"trans"} }, [ "moveX",   $width ] );
 		}
-		elsif ( $corner eq RB_CORNER ) {
+		elsif ( $oriCornerNoAngle eq RB_CORNER ) {
 
 			push( @{ $self->{"trans"} }, [ "rotationCCW", 90 ] );
 			push( @{ $self->{"trans"} }, [ "moveX",       $height ] );
 			push( @{ $self->{"trans"} }, [ "mirrorY",     0 ] );
+			push( @{ $self->{"trans"} }, [ "moveX",       $height ] );
 
 		}
-		elsif ( $corner eq LB_CORNER ) {
+		elsif ( $oriCornerNoAngle eq LB_CORNER ) {
 
 			push( @{ $self->{"trans"} }, [ "rotationCCW", 90 ] );
 			push( @{ $self->{"trans"} }, [ "moveX",       $height ] );
 			push( @{ $self->{"trans"} }, [ "rotationCCW", 90 ] );
 			push( @{ $self->{"trans"} }, [ "moveX",       $width ] );
 			push( @{ $self->{"trans"} }, [ "mirrorY",     0 ] );
+			push( @{ $self->{"trans"} }, [ "moveX",       $width ] );
 
 		}
-		elsif ( $corner eq LT_CORNER ) {
+		elsif ( $oriCornerNoAngle eq LT_CORNER ) {
 
 			push( @{ $self->{"trans"} }, [ "rotationCCW", 90 ] );
 			push( @{ $self->{"trans"} }, [ "moveX",       $height ] );
@@ -169,11 +169,23 @@ sub Transform {
 			push( @{ $self->{"trans"} }, [ "rotationCCW", 90 ] );
 			push( @{ $self->{"trans"} }, [ "moveX",       $height ] );
 			push( @{ $self->{"trans"} }, [ "mirrorY",     0 ] );
+			push( @{ $self->{"trans"} }, [ "moveX",       $height ] );
 		}
 
 	}
 
-	# 2) transform
+	# Push tranformation which register pcb to 0,0 coordination
+	if ( scalar( @{ $self->{"trans"} } ) ) {
+
+		# 1) test if features are in zero
+		if ( $self->{"lim"}->{"xMin"} != 0 || $self->{"lim"}->{"yMin"} != 0 ) {
+
+			unshift( @{ $self->{"trans"} }, [ "moveX", $self->{"lim"}->{"xMin"} ] );
+			unshift( @{ $self->{"trans"} }, [ "moveY", $self->{"lim"}->{"yMin"} ] );
+		}
+	}
+
+	# 2) Transform
 
 	foreach my $t ( @{ $self->{"trans"} } ) {
 
@@ -205,7 +217,7 @@ sub Transform {
 sub TransformBack {
 	my $self = shift;
 
-	# 2) transform
+	# 1) transform back (do reverse operation)
 
 	foreach my $t ( reverse( @{ $self->{"trans"} } ) ) {
 
@@ -233,13 +245,64 @@ sub TransformBack {
 		}
 	}
 
-}
-
-sub __Init {
-	my $self = shift;
-
 	$self->{"trans"} = []
 
+}
+
+# Return specific corner which sohould be transform to defualt LeftTop corner 
+# (corner position of original non rotated outline)
+# In order to find rout start
+# Note: Class method
+sub __GetCorner2Transform {
+	my $self               = shift;
+	my $reqRoutStartCorner = shift;    # Requested outline rout start corner
+	my $finalPCBangle      = shift;    # final PCB rotation on panel
+	my $routDirection      = shift;
+
+	my $corner = undef;
+
+	if ( $reqRoutStartCorner eq EnumsRout->OutlineStart_LEFTTOP ) {
+
+		if ( $routDirection eq EnumsRout->Dir_CW ) {
+
+			if ( $finalPCBangle == 0 ) {
+
+				$corner = LT_CORNER;
+			}
+			elsif ( $finalPCBangle == 90 ) {
+				$corner = RT_CORNER;
+			}
+			elsif ( $finalPCBangle == 180 ) {
+				$corner = RB_CORNER;
+			}
+			elsif ( $finalPCBangle == 270 ) {
+				$corner = LB_CORNER;
+			}
+		}
+	}
+	elsif ( $reqRoutStartCorner eq EnumsRout->OutlineStart_RIGHTTOP ) {
+		if ( $routDirection eq EnumsRout->Dir_CCW ) {
+
+			if ( $finalPCBangle == 0 ) {
+
+				$corner = RT_CORNER;
+			}
+			elsif ( $finalPCBangle == 90 ) {
+				$corner = RB_CORNER;
+			}
+			elsif ( $finalPCBangle == 180 ) {
+				$corner = LB_CORNER;
+			}
+			elsif ( $finalPCBangle == 270 ) {
+				$corner = LT_CORNER;
+			}
+		}
+	}
+
+	die "No translation for corner: $reqRoutStartCorner; rout dir: $routDirection; pcb angle: $finalPCBangle"
+	  unless ( defined $corner );
+
+	return $corner;
 }
 
 #-------------------------------------------------------------------------------------------#

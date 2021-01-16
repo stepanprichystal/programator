@@ -101,17 +101,20 @@ sub MirrorRoutY {
 
 			$f->{"xmid"} = 2 * $anchorX - $f->{"xmid"};
 
-			# Change arc dir
+			# Switch arc ori dir
 			if ( $f->{"oriDir"} eq "CW" ) {
 				$f->{"oriDir"} = "CCW";
+
 			}
-			if ( $f->{"oriDir"} eq "CCW" ) {
+			elsif ( $f->{"oriDir"} eq "CCW" ) {
 				$f->{"oriDir"} = "CW";
 			}
+			
+			# Switch arc new dir
 			if ( $f->{"newDir"} eq "CW" ) {
 				$f->{"newDir"} = "CCW";
 			}
-			if ( $f->{"newDir"} eq "CCW" ) {
+			elsif ( $f->{"newDir"} eq "CCW" ) {
 				$f->{"newDir"} = "CW";
 			}
 		}

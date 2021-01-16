@@ -46,7 +46,7 @@ sub DrawRoute {
 	my $self        = shift;
 	my @sorteEdges  = @{ shift(@_) };
 	my $toolSize    = shift;
-	my $comp        = shift;
+	my $routComp    = shift;
 	my $routStart   = shift;
 	my $setFootAtt  = shift;            # if set foot down attribute
 	my $keepFeatAtt = shift;            # Array of feature attribut name, which will be keepd in new created rout
@@ -193,7 +193,7 @@ sub DrawRoute {
 			"layer"          => $layer,
 			"chain"          => $newChainNum,
 			"size"           => $toolSize / 1000,
-			"comp"           => $comp,
+			"comp"           => $routComp,
 			"first"          => $feats[0]->{"id"} - 1,    # id of edge, which should route start - 1 (-1 is necessary)
 			"chng_direction" => 0
 		);

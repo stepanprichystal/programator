@@ -92,16 +92,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d252332+1";
+	my $jobId = "d297280";
+	
+	CreateFsch
 
-	my $typDTM = EnumsDrill->DTM_VRTANE;    # EnumsDrill->DTM_VRTANE/ EnumsDrill->DTM_VYSLEDNE
-
-	# Uprava velkych otvoru pro f vrstvu
-	my $res = DoSetDTM->MoveHoles2RoutBeforeDTMRecalc( $inCAM, $jobId, "o+1", "f", "f", $typDTM );
-
-	# Uprava velkzch otvoru pro m
-
-	my $res2 = DoSetDTM->MoveHoles2RoutBeforeDTMRecalc( $inCAM, $jobId, "o+1", "m", "r", $typDTM );
+ 
 
 }
 

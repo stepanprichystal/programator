@@ -10,6 +10,7 @@ use utf8;
 use strict;
 use warnings;
 use Time::HiRes qw (sleep);
+use Try::Tiny;
 
 #local library
 
@@ -37,7 +38,8 @@ use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
-use aliased 'Packages::Routing::RoutOutline';
+use aliased 'Packages::Routing::RoutOutline' => "Outline";
+use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust';
 
 #-------------------------------------------------------------------------------------------#
 #  Script methods
@@ -59,7 +61,64 @@ $inCAM->COM('get_work_layer');
 my $workLayer = "$inCAM->{COMANS}";    # layer where rout is original rout
 my $pomLayer  = 'f_' . $jobId;         # layer where is created new rout / help layer
 
-# Check if final rout is selected
+# Check if outline rout is selected by user
+
+$inCAM->COM('get_select_count');
+my $selectedUsr = $inCAM->GetReply();
+if ( $selectedUsr == 0 ) {
+
+	# Try Select random line near around apoint [0,0]
+
+	my $f = Features->new();
+	$f->Parse( $inCAM, $jobId, $stepName, $workLayer, 0, 0 );
+	my @randFeat = grep { $_->{"type"} =~ /[AL]$/i } $f->GetFeatures();
+
+	if ( scalar(@randFeat) ) {
+
+		# Try to find line/arc around [0,0], assmume it is outline
+
+		my $x1Feat = ( sort { $a->{"x1"} <=> $b->{"x1"} } @randFeat )[0];
+		my $x2Feat = ( sort { $a->{"x2"} <=> $b->{"x2"} } @randFeat )[0];
+
+		my $feat = { "x" => $x1Feat->{"x1"}, "y" => $x1Feat->{"y1"} };
+		if ( $x1Feat->{"x1"} > $x2Feat->{"x2"} ) {
+			$feat = { "x" => $x2Feat->{"x1"}, "y" => $x2Feat->{"y1"} };
+		}
+
+		try {
+			$inCAM->SupressToolkitException(1);
+			$inCAM->COM( "sel_polyline_feat", "operation" => "select", "x" => $feat->{"x"}, "y" => $feat->{"y"}, "tol" => 100 );
+		}
+		catch {
+			print STDERR "Perhaps selected feature is not line or arc: " . $_;
+		}
+		finally {
+			$inCAM->SupressToolkitException(0);
+		};
+
+		$inCAM->COM('get_select_count');
+		my $selectedRand = $inCAM->GetReply();
+
+		if ($selectedRand) {
+			my @m = ("Jsou označené features obrys DPS?");
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@m, [ "Ne, vyberu obrys ručně", "Ano, pokračovat" ] );
+			my $res = $messMngr->Result();
+			if ( $res == 0 ) {
+				$inCAM->COM("sel_clear_feat");
+				$inCAM->PAUSE("Oznac lajnu tvorici obrys DPS");
+			}
+		}
+		else {
+			my @m = ("Nepodařilo se automaticky detekovat a označit obrys frézy. Označ obrys ručně");
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@m );
+			$inCAM->COM("sel_clear_feat");
+			$inCAM->PAUSE("Oznac lajnu tvorici obrys DPS");
+		}
+
+	}
+}
+
 my $f = Features->new();
 $f->Parse( $inCAM, $jobId, $stepName, $workLayer, 0, 1 );
 my @chainFeatures = $f->GetFeatures();
@@ -81,8 +140,46 @@ if ( scalar(@chainFeatures) ) {
 		# errror
 		my @m =
 		  ( "Obrysová fréza je příliš tenká: " . $chainFeatures[0]->{"thick"} . "µm. Minimální tloušťka musí být alespoň 200µm." );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );
-		exit(0);
+
+		push( @m, "Cheš zvětšit tloušťku označeného obrysu?" );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@m, [ "Ne", "Ano, zvětšit" ] );
+		my $res = $messMngr->Result();
+		if ( $res == 0 ) {
+			exit(0);
+		}
+		elsif ( $res == 1 ) {
+
+			$inCAM->COM(
+						 "sel_polyline_feat",
+						 "operation" => "select",
+						 "x"         => $chainFeatures[0]->{"x1"},
+						 "y"         => $chainFeatures[0]->{"y1"},
+						 "tol"       => 10
+			);
+			$inCAM->COM('get_select_count');
+			if ( $inCAM->GetReply() ) {
+				
+				# Resize and select features again
+				$inCAM->COM( "sel_change_sym", "symbol" => "r200" );
+
+				$inCAM->COM(
+							 "sel_polyline_feat",
+							 "operation" => "select",
+							 "x"         => $chainFeatures[0]->{"x1"},
+							 "y"         => $chainFeatures[0]->{"y1"},
+							 "tol"       => 10
+				);
+				$inCAM->COM('get_select_count');
+				if ( $inCAM->GetReply() ) {
+					
+					# Do chain if selected
+					
+					__DoChain();
+				}
+			}
+
+		}
+
 	}
 }
 else {
@@ -100,6 +197,11 @@ sub __DoChain {
 	__DeletePomLayers();
 
 	my %errors = ( "errors" => undef, "warrings" => undef );
+
+	# Default rout outline parameters based on PCB type
+	my $defRoutComp  = Outline->GetDefRoutComp($jobId);
+	my $defRoutStart = Outline->GetDefRoutStart($jobId);
+	my $defRoutDir   = Outline->GetDefRoutDirection($jobId);
 
 	my @drillHoles = ();
 
@@ -177,17 +279,22 @@ sub __DoChain {
 
 	my @sorteEdges = @{ $sortResult{"edges"} };
 
-	my $defRoutDir = RoutOutline->GetDefRoutDirection($jobId);
-
 	RoutCyclic->SetRoutDirection( \@sorteEdges, $defRoutDir );
+	my $dir = RoutCyclic->GetRoutDirection( \@sorteEdges );
 
 	TestNarrowPlaces( \@sorteEdges );
 
 	my %radiusResult = TestSmallRadius( \@sorteEdges );
 
-	my %footResult = FindRoutStart( \@sorteEdges );
+	#my %radiusResult;
 
-	DrawNewRout( \@sorteEdges, \%radiusResult, \%footResult );
+	my %footResult = FindRoutStart( \@sorteEdges, $defRoutComp, $defRoutStart, $defRoutDir );
+
+	# Only result of default PCB postition - rotation 0° is needed
+	# (other results of rout start search  90deg, 180deg, 270deg are important in the next phase of PCB CAM processing)
+	%footResult = %{ $footResult{0} };
+
+	DrawNewRout( \@sorteEdges, \%radiusResult, \%footResult, $defRoutComp, $defRoutStart, $defRoutDir );
 
 	# Show information message
 
@@ -215,6 +322,9 @@ sub DrawNewRout {
 	my @sorteEdges   = @{ shift(@_) };
 	my $radiusResult = shift;
 	my $footResult   = shift;
+	my $defRoutComp  = shift;
+	my $defRoutStart = shift;
+	my $defRoutDir   = shift;
 
 	$inCAM->COM('sel_delete');
 	$inCAM->COM('sel_clear_feat');
@@ -233,7 +343,8 @@ sub DrawNewRout {
 	}
 
 	# 1) Draw new rout
-	$draw->DrawRoute( \@sorteEdges, 2000, EnumsRout->Comp_LEFT, $startEdge );    # draw new
+
+	$draw->DrawRoute( \@sorteEdges, 2000, $defRoutComp, $startEdge );    # draw new
 
 	# 2) Add new rout hole
 	if ( $radiusResult->{"newDrillHole"} ) {
@@ -501,30 +612,64 @@ sub TestSmallRadius {
 }
 
 sub FindRoutStart {
-	my $sorteEdges = shift;
-
-	# Find possinle start for rotation 90°; 270° if STD pcb
-
-	my %modify = RoutStart->RoutNeedModify($sorteEdges);
-
-	if ( $modify{"result"} ) {
-
-		RoutStart->ProcessModify( \%modify, $sorteEdges );
-	}
+	my $sorteEdges   = shift;
+	my $defRoutComp  = shift;
+	my $defRoutStart = shift;
+	my $defRoutDir   = shift;
 
 	my %startResult = ();
 
-	foreach my $angle ( ( 90, 270 ) ) {
+	# Try to find rout start for followinf PCB rotation in panel
+	my @PCBrotation = ( 0, 270 );
+	if ( $defRoutDir eq EnumsRout->Dir_CCW && $defRoutComp eq EnumsRout->Comp_RIGHT ) {
+		@PCBrotation = ( 0, 90, 180, 270 );
+	}
 
-		if ( $angle == 90 ) {
-			my %startResAngle = RoutStart->GetRoutStart($sorteEdges);
+	foreach my $angle (@PCBrotation) {
 
+		# 1) Transform outline to default position in order to find rout start
+		my $routAdjust = RoutStartAdjust->new($sorteEdges);
+
+		$routAdjust->Transform( $defRoutStart, $angle );
+
+		# 2) Check if rout need modify in order find rout start
+		my %modify = RoutStart->RoutNeedModify($sorteEdges);
+		if ( $modify{"result"} ) {
+
+			RoutStart->ProcessModify( \%modify, $sorteEdges );
 		}
-		elsif ( $angle == 270 ) {
-			die;
-			 
-		}
 
+		# 3) Try to get rout start edge
+		my %startResAngle = RoutStart->GetRoutStart($sorteEdges);
+		$startResult{$angle} = \%startResAngle;
+
+		# 4) Transform outline rout back to original shape
+		$routAdjust->TransformBack();
+
+		#		CamMatrix->DeleteLayer( $inCAM, $jobId, "adjust${angle}" );
+		#		CamMatrix->CreateLayer( $inCAM, $jobId, "adjust${angle}", "rout", "positive", 0 );
+		#		my $draw = RoutDrawing->new( $inCAM, $jobId, $stepName, "adjust${angle}" );
+		#
+		#		my $startEdge = $sorteEdges->[0];
+
+		#			if ( $startResAngle{"result"} ) {
+		#				$startEdge = $startResAngle{"edge"};
+		#
+		#			}
+		#			else {
+		#				#take arbitrary
+		#				$startEdge = $sorteEdges->[0];
+		#			}
+
+		#		# 1) Draw new rout
+		#		$draw->DrawRoute( $sorteEdges, 2000, $defRoutComp, $startEdge );    # draw new
+		#
+		#
+		#
+		#		CamMatrix->DeleteLayer( $inCAM, $jobId, "adjust${angle}back" );
+		#		CamMatrix->CreateLayer( $inCAM, $jobId, "adjust${angle}back", "rout", "positive", 0 );
+		#		my $drawBakc = RoutDrawing->new( $inCAM, $jobId, $stepName, "adjust${angle}back" );
+		#		$drawBakc->DrawRoute( $sorteEdges, 2000, $defRoutComp, $startEdge );    # draw new
 	}
 
 	return %startResult;

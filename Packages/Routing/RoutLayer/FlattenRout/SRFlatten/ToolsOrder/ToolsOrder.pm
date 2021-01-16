@@ -28,10 +28,7 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-# type of rout sequence
-use constant SEQUENCE_BTRL => 'routSequence_BTRL';    # From BOT -> TOP -> RIGHT -> LEFT
-use constant SEQUENCE_BTLR => 'routSequence_BTLR';    # From BOT -> TOP -> LEFT -> RIGHT
-
+ 
 sub new {
 	my $class = shift;
 	my $self  = {};
@@ -98,7 +95,8 @@ sub SetInnerOrder {
 
 # Sourt outer routs by physic PCB placement on panel
 # More types of sorting:
-#
+# BTRL -  from BOT -> TOP -> RIGHT -> LEFT
+# BTRL -  from BOT -> TOP -> LEFT -> RIGHT
 sub SetOutlineOrder {
 	my $self = shift;
 	my $seqType = shift; # SEQUENCE_BTRL / SEQUENCE_BTLR
@@ -156,7 +154,7 @@ sub SetOutlineOrder {
 		}
 	}
 
-	my @finalOrder = SortTools->SortOutlineTools( \@outlineChains );
+	my @finalOrder = SortTools->SortOutlineTools( \@outlineChains, $seqType);
 
 	# renumber chains
 

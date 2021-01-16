@@ -41,15 +41,15 @@ sub OutsideChains {
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
-	my @lefts = $unitRTM->GetOutlineChainSeqs();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	# If exist outline rout, check if other chains are inside
-	if ( scalar(@lefts) ) {
+	if ( scalar(@outlines) ) {
 
 		my @seq = $unitRTM->GetChainSequences();
 
 		my %tmp;
-		@tmp{ map { $_ } @lefts } = ();
+		@tmp{ map { $_ } @outlines } = ();
 
 		my @otherLayers = grep { !exists $tmp{$_} } @seq;
 
@@ -89,7 +89,7 @@ sub OutsideChains {
 	return $result;
 }
 
-# Check if there is noly bridges rout
+# Check if there is only bridges rout
 # if so, save this information to job attribute "rout_on_bridges"
 sub OnlyBridges {
 	my $self     = shift;
@@ -108,12 +108,12 @@ sub OnlyBridges {
 
 	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
-	my @chains = $unitRTM->GetChains();
-	my @lefts  = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chains;
-	my @none   = grep { $_->GetComp() eq EnumsRout->Comp_NONE } @chains;
-
 	# If not exist outline rout, check if pcb is on bridges
 	unless ( scalar(@outlines) ) {
+
+		my @chains = $unitRTM->GetChains();
+		my @lefts  = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chains;
+		my @none   = grep { $_->GetComp() eq EnumsRout->Comp_NONE } @chains;
 
 		# no chains at layer
 		if ( scalar(@chains) == 0 ) {
@@ -189,41 +189,53 @@ sub OnlyBridges {
 }
 
 # Check when left rout exists
-sub LeftRoutChecks {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
-	my $step   = shift;
-	my $layer  = shift;
-	my $isPool = shift;
-	my $mess   = shift;
+sub OutlinePoolRoutChecks {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+	my $layer = shift;
+	my $mess  = shift;
 
 	my $result = 1;
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
 	# 1) test if tehere are left no cyclic rout, which has foot down
+	my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
+	my @leftSeq = map  { $_->GetChainSequences() } @lefts;
+	@leftSeq = grep { $_->HasFootDown() } @leftSeq;
 
-	if ($isPool) {
-		my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
-		my @leftSeq = map  { $_->GetChainSequences() } @lefts;
-		@leftSeq = grep { $_->HasFootDown() } @leftSeq;
+	if ( scalar(@leftSeq) ) {
 
-		if ( scalar(@leftSeq) ) {
+		$result = 0;
 
-			$result = 0;
+		my @info = map { $_->GetStrInfo() } @leftSeq;
+		my $str = join( "; ", @info );
+		my $m =
+		    "Ve stepu: \""
+		  . $step
+		  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací­ left, které mají­ nastavenou patku (.foot_down attribut) ($str)";
 
-			my @info = map { $_->GetStrInfo() } @leftSeq;
-			my $str = join( "; ", @info );
-			my $m =
-			    "Ve stepu: \""
-			  . $step
-			  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací­ left, které mají­ nastavenou patku (.foot_down attribut) ($str)";
+		$$mess .= $m;
 
-			$$mess .= $m;
-
-		}
 	}
+
+	return $result;
+}
+
+# Check when left rout exists
+sub OutlineRoutChecks {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+	my $layer = shift;
+	my $mess  = shift;
+
+	my $result = 1;
+
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
 	# 2) Test if outline orut has only one attribute "foot_down_<angle>deg" of specific kind
 	my @outlines = $unitRTM->GetOutlineChainSeqs();
@@ -232,38 +244,28 @@ sub LeftRoutChecks {
 
 		my $m = "";
 
-		my @foot_down_0deg = grep { defined $_->{"att"}->{"foot_down_0deg"} } $oSeq->GetFeatures();
+		my @rotation = [ 0, 90, 180, 270 ];
+		foreach my $angle (@rotation) {
 
-		if ( scalar(@foot_down_0deg) > 1 ) {
+			my @foot_down_att = grep { defined $_->{"att"}->{"foot_down_${$angle}deg"} } $oSeq->GetFeatures();
 
-			$result = 0;
+			if ( scalar(@foot_down_att) > 1 ) {
 
-			my $m =
-			    "Ve stepu: \""
-			  . $step
-			  . "\", ve vrstvě: \"$layer\" je \"feature\": "
-			  . $oSeq->GetStrInfo()
-			  . ", která má více attributů \"foot_down_<uhel>deg\". Oprav to.\n";
+				$result = 0;
 
-			$$mess .= $m;
-		}
+				my $m =
+				    "Ve stepu: \""
+				  . $step
+				  . "\", ve vrstvě: \"$layer\" je více \"features\": "
+				  . $oSeq->GetStrInfo()
+				  . ", které mají attribut: \"foot_down_${$angle}deg\". Oprav to.\n";
 
-		my @foot_down_270deg = grep { defined $_->{"att"}->{"foot_down_270deg"} } $oSeq->GetFeatures();
-
-		if ( scalar(@foot_down_270deg) > 1 ) {
-
-			my $m =
-			    "Ve stepu: \""
-			  . $step
-			  . "\", ve vrstvě: \"$layer\" je fréza: "
-			  . $oSeq->GetStrInfo()
-			  . ", která má více atributů \"foot_down_270deg\". Oprav to.\n";
-
-			$$mess .= $m;
+				$$mess .= $m;
+			}
 		}
 	}
 
-	# 3) Outline rout. Test if one feature doesn\t have more attributes "foot_down" eg: foot_down_0deg + foot_down_90deg
+	# 3) Outline rout. Test if one feature doesn\t have more attributes "foot_down" eg: foot_down_0deg + foot_down_90deg + ...
 
 	foreach my $oSeq (@outlines) {
 
@@ -279,14 +281,15 @@ sub LeftRoutChecks {
 				  . $step
 				  . "\", ve vrstvě: \"$layer\" je \"feature\" ("
 				  . $f->{"id"}
-				  . "), které má­ zároveň atribut \"foot_down_0deg\" i \"foot_down_270deg\". Oprav to.\n";
+				  . "), které má více atributů \"foot_down_<uhel>deg\" s různým úhlem, "
+				  . "které označují místo patky pro konkrétní rotaci kusu na panelu. Oprav to.\n";
 
 				$$mess .= $m;
 			}
 		}
 	}
 
-	# 4) If some chain tool containoutline, all another chain must by outline
+	# 4) If some chain tool containo utline, all another chain must by outline
 	my @chains = $unitRTM->GetChains();
 
 	foreach my $ch (@chains) {
@@ -540,7 +543,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d233511";
+	my $jobId = "d300696";
 	my $step  = "o+1";
 
 	# Get work layer
@@ -552,7 +555,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $res = Check1UpChain->OutsideChains( $inCAM, $jobId, $step, $layer, 1, 1, $messMngr );
 
-	my $res = Check1UpChain->OutsideChains( $inCAM, $jobId, $step, $layer, $messMngr );
+	my $res = Check1UpChain->OutlineRoutChecks( $inCAM, $jobId, $step, $layer, $messMngr );
 
 }
 

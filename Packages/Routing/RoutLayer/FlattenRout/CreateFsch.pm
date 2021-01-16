@@ -15,6 +15,7 @@ use warnings;
 
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::FlattenPanel::FlattenPanel';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsRout';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Routing::RoutOutline';
@@ -54,7 +55,6 @@ sub Create {
 
 	my $result = $flatten->Run( $srcLayer, $dstLayer, $notDrawSucc, $outlRoutStart, $outlPnlSequence );
 
-	
 	return $result;
 }
 
@@ -66,14 +66,14 @@ sub __GetDefRoutSequence {
 
 	my $outlPnlSequence = undef;  # Panel routing sequence direction
 
-	if ( $outlRoutStart eq Packages::Routing::RoutLayer::RoutStart::RoutStart::START_LEFTTOP ) {
+	if ( $outlRoutStart eq EnumsRout->OutlineStart_LEFTTOP ) {
 
-		$outlPnlSequence = Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::ToolsOrder::SEQUENCE_BTRL;
+		$outlPnlSequence = EnumsRout->SEQUENCE_BTRL;
 
 	}
-	elsif ( $outlRoutStart eq Packages::Routing::RoutLayer::RoutStart::RoutStart::START_RIGHTTOP ) {
+	elsif ( $outlRoutStart eq EnumsRout->OutlineStart_RIGHTTOP ) {
 
-		$outlPnlSequence = Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::ToolsOrder::SEQUENCE_BTLR;
+		$outlPnlSequence = EnumsRout->SEQUENCE_BTLR;
 
 	}
 	else {
@@ -95,7 +95,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d293788";
+	my $jobId = "d297280";
 
 	my $fsch = CreateFsch->new( $inCAM, $jobId );
 	print $fsch->Create();

@@ -151,14 +151,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $mess = "";
 
-	#my $res = Check1UpChainTool->ToolsAreOrdered( $inCAM, $jobId, $step, $layer, $messMngr );
-	
-	my $res = Check1UpChainTool->OutlineToolIsLast( $inCAM, $jobId, $step, $layer, \$mess );
-
-	print $mess;
-
-	print STDERR "\nReult is $res \n";
-
+ 
 }
 
 1;

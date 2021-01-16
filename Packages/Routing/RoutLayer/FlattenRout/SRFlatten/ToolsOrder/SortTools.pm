@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:  
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::SortTools;
@@ -26,11 +26,16 @@ use aliased 'Enums::EnumsRout';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
+# More types of sorting:
+# BTRL -  from BOT -> TOP -> RIGHT -> LEFT
+# BTRL -  from BOT -> TOP -> LEFT -> RIGHT
 sub SortOutlineTools {
 	my $self          = shift;
 	my $outlineChains = shift;
+	my $seqType       = shift;    # SEQUENCE_BTRL / SEQUENCE_BTLR
 
-	my @sortedChains = $self->__SortByStartPoint( $outlineChains, 10 );
+	my $tol = 10;                 # pcb are split to  columns. Column contain outlines, which has footdown in this column
+	my @sortedChains = $self->__SortByStartPoint( $outlineChains, $tol, $seqType );
 
 	my @final = ();
 
@@ -42,60 +47,101 @@ sub SortOutlineTools {
 	return @final;
 }
 
+# More types of sorting:
+# BTRL -  from BOT -> TOP -> RIGHT -> LEFT
+# BTRL -  from BOT -> TOP -> LEFT -> RIGHT
 sub __SortByStartPoint {
-
 	my $self       = shift;
 	my @unsortedCh = @{ shift(@_) };    #array of hashes with starting point of chain
 	my $tol        = shift;             #tolerance for chains in same column in mm
+	my $seqType    = shift;             # SEQUENCE_BTRL / SEQUENCE_BTLR
 
 	my @sortedCh = ();                  #final sorted array
 	my $isSorted = 0;
 
-	#sort by X value - descending
-	@unsortedCh = sort { $a->{coord}->{x} <=> $b->{coord}->{x} } @unsortedCh;
 	my @columnByX = ();
 
-	while ( !$isSorted ) {
+	@unsortedCh = sort { $a->{coord}->{x} <=> $b->{coord}->{x} } @unsortedCh;
 
-		#take last one largest X point value
-		my $largestX = $unsortedCh[$#unsortedCh]->{coord}->{x};
+	#$seqType = EnumsRout->SEQUENCE_BTRL;
 
-		#test if more chain has same X coordinate
-		my $idxOfMaxY = -1;
-		my $max       = -1;
+	#sort by X value
+	if ( $seqType eq EnumsRout->SEQUENCE_BTRL ) {
 
-		for ( my $i = 0 ; $i < scalar(@unsortedCh) ; $i++ ) {
-			if ( $unsortedCh[$i]->{coord}->{x} == $largestX && $unsortedCh[$i]->{coord}->{y} > $max ) {
+		while ( !$isSorted ) {
 
-				$max       = $unsortedCh[$i]->{coord}->{y};
-				$idxOfMaxY = $i;
+			#take last one largest X point value
+			my $largestX = $unsortedCh[$#unsortedCh]->{coord}->{x};
+
+			#test if more chain has same X coordinate
+			my $idxOfMaxY = -1;
+			my $max       = -1;
+
+			for ( my $i = 0 ; $i < scalar(@unsortedCh) ; $i++ ) {
+				if ( $unsortedCh[$i]->{coord}->{x} == $largestX && $unsortedCh[$i]->{coord}->{y} > $max ) {
+
+					$max       = $unsortedCh[$i]->{coord}->{y};
+					$idxOfMaxY = $i;
+				}
 			}
+
+			#get Y value of most right point
+			my $yOflargestX = $unsortedCh[$idxOfMaxY]->{coord}->{y};
+
+			#get points, which X coordinate is larger then ($largestX - $tol)
+			@columnByX = grep { $_->{coord}->{x} >= $largestX - $tol } @unsortedCh;
+
+			#remove selected points from @unsortedCh array
+			@unsortedCh = @unsortedCh[ 0 .. $#unsortedCh - $#columnByX - 1 ];
+
+			#sort selected points by their Y coordinate. Ascending
+			@columnByX = sort { $a->{coord}->{y} <=> $b->{coord}->{y} } @columnByX;
+
+			#sort selected point by Y coordinate (ascending) and push to @sortedCh array
+			push @sortedCh, ( map { $_ } @columnByX );
+
+			$isSorted = 1 if ( scalar(@unsortedCh) == 0 );
+
 		}
 
-		#get Y value of most right point
-		my $yOflargestX = $unsortedCh[$idxOfMaxY]->{coord}->{y};
+	}
+	elsif ( $seqType eq EnumsRout->SEQUENCE_BTLR ) {
 
-		#get points, which X coordinate is larger then ($largestX - $tol)
-		@columnByX = grep {
-			( $_->{coord}->{x} >= $largestX - $tol )
+		while ( !$isSorted ) {
 
-			  #&&
-			  #($_->{coord}->{y} <= $yOflargestX)
-		} @unsortedCh;
+			#take last first smaller X point value
+			my $smallestX = $unsortedCh[0]->{coord}->{x};
 
-		#remove chose points from @unsortedCh array
-		@unsortedCh = @unsortedCh[ 0 .. $#unsortedCh - $#columnByX - 1 ];
+			#test if more chain has same X coordinate
+			my $idxOfMaxY = -1;
+			my $max       = -1;
 
-		#sort chose points by their Y coordinate. Ascending
-		@columnByX = sort { $a->{coord}->{y} <=> $b->{coord}->{y} } @columnByX;
+			for ( my $i = 0 ; $i < scalar(@unsortedCh) ; $i++ ) {
+				if ( $unsortedCh[$i]->{coord}->{x} == $smallestX && $unsortedCh[$i]->{coord}->{y} > $max ) {
 
-		#sort chose point by Y coordinate (ascending) and push to @sortedCh array
-		push @sortedCh, ( map { $_ } @columnByX );
+					$max       = $unsortedCh[$i]->{coord}->{y};
+					$idxOfMaxY = $i;
+				}
+			}
 
-		if ( scalar(@unsortedCh) == 0 ) {
-			$isSorted = 1;
+			#get Y value of most right point
+			my $yOflargestX = $unsortedCh[$idxOfMaxY]->{coord}->{y};
+
+			#get points, which X coordinate is larger then ($largestX + $tol)
+			@columnByX = grep { $_->{coord}->{x} < $smallestX + $tol } @unsortedCh;
+
+			#remove selected points from @unsortedCh array
+			@unsortedCh = @unsortedCh[ $#columnByX + 1 .. $#unsortedCh];
+			
+			#sort selected points by their Y coordinate. Ascending
+			@columnByX = sort { $a->{coord}->{y} <=> $b->{coord}->{y} } @columnByX;
+
+			#sort selected point by Y coordinate (ascending) and push to @sortedCh array
+			push @sortedCh, ( map { $_ } @columnByX );
+
+			$isSorted = 1 if ( scalar(@unsortedCh) == 0 );
+
 		}
-
 	}
 
 	return @sortedCh;
@@ -106,9 +152,9 @@ sub __SortByStartPoint {
 # Return sorted array of items, by alghorithm
 # "item" is array og cstep chain group represent as hash, where key is step id and value is  object type of UniChainTool
 sub SortNotOutlineTools {
-	my $self       = shift;
-	my $toolQueues = shift;
-	my $outlineTool = shift; # if defined, consider outline tool during sorting
+	my $self        = shift;
+	my $toolQueues  = shift;
+	my $outlineTool = shift;    # if defined, consider outline tool during sorting
 
 	my @finalQueue = ();
 	my @uniTools   = $self->__GetUniqTools($toolQueues);
@@ -163,14 +209,14 @@ sub __PutToFinalQueue {
 }
 
 sub __ChooseNextTool {
-	my $self       = shift;
-	my @uniTools   = @{ shift(@_) };
-	my $toolQueues = shift;
-	my $outlineTool = shift; # if defined, consider outline tool during sorting
+	my $self        = shift;
+	my @uniTools    = @{ shift(@_) };
+	my $toolQueues  = shift;
+	my $outlineTool = shift;            # if defined, consider outline tool during sorting
 
 	my $next = undef;
 
-	my @nextCandidates = ();    # tools, which are candidates on current tool
+	my @nextCandidates = ();            # tools, which are candidates on current tool
 
 	# Find "unique tool" on top of queues. ("unique tool" one by one)
 
@@ -184,19 +230,19 @@ sub __ChooseNextTool {
 
 				# 1) Test if top of queue is wanted tool
 				if ( $actQueue[0]->GetChainSize() == $uniTools[$i] ) {
- 
+
 					# This is candidate on wanted tool
 					# Test if same tool is contained in some queues on another position
 					# If so, this is not tool what we want, but it is a possible candidate
 
 					# all tools from all queues (except tools on top of queuq)
-					my @buffTools = map  { @{ $toolQueues->{$_} }[ -( scalar( @{ $toolQueues->{$_} } ) - 1 ) .. -1 ] } keys $toolQueues;
-					
+					my @buffTools = map { @{ $toolQueues->{$_} }[ -( scalar( @{ $toolQueues->{$_} } ) - 1 ) .. -1 ] } keys $toolQueues;
+
 					# consider here "outline tools" (can have same diameter too)
-					if(defined $outlineTool ){
-						push(@buffTools, $outlineTool);
+					if ( defined $outlineTool ) {
+						push( @buffTools, $outlineTool );
 					}
-					
+
 					my @sameTools = grep { $_->GetChainSize() == $uniTools[$i] } @buffTools;
 
 					if ( scalar(@sameTools) == 0 ) {
@@ -216,13 +262,13 @@ sub __ChooseNextTool {
 		}
 
 	}
-	
+
 	# Choose "next" tool, which is not contained in some queues on another position
 	# If there is not such a tool, take smaller tool diameter from candidates (tools are sorted ASC)
-	if(!defined $next && scalar(@nextCandidates)){
-		
+	if ( !defined $next && scalar(@nextCandidates) ) {
+
 		$next = $nextCandidates[0];
-		
+
 	}
 
 	return $next;

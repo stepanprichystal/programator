@@ -55,6 +55,7 @@ sub Check {
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
 
+	# All PCB
 	my $resRoutChainAtt = 0;
 	while ( !$resRoutChainAtt ) {
 
@@ -72,6 +73,7 @@ sub Check {
 		}
 	}
 
+	# Pool PCB only
 	if ( $self->{"isPool"} ) {
 
 		my $resOnlyBridges = 0;
@@ -85,6 +87,7 @@ sub Check {
 		}
 	}
 
+	# Pool PCB only
 	if ( $self->{"isPool"} ) {
 		my $resOutsideChains = 0;
 		while ( !$resOutsideChains ) {
@@ -98,14 +101,36 @@ sub Check {
 		}
 	}
 
-	my $resLeftRout = 0;
-	while ( !$resLeftRout ) {
+	# Pool PCB only
+	if ( $self->{"isPool"} ) {
+		my $resOutlinePoolRout = 0;
+		while ( !$resOutlinePoolRout ) {
+
+			my $mess = "";
+
+			$resOutlinePoolRout = Check1UpChain->OutlinePoolRoutChecks( $inCAM, $jobId, $step, $layer, \$mess );
+
+			unless ($resOutlinePoolRout) {
+
+				my @m = ($mess);
+
+				$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );    #  Script se zastavi
+
+				$inCAM->PAUSE("Oprav chybu a pokracuj...");
+			}
+
+		}
+	}
+
+	# All PCB
+	my $resOutlineRout = 0;
+	while ( !$resOutlineRout ) {
 
 		my $mess = "";
 
-		$resLeftRout = Check1UpChain->LeftRoutChecks( $inCAM, $jobId, $step, $layer, $self->{"isPool"}, \$mess );
+		$resOutlineRout = Check1UpChain->OutlineRoutChecks( $inCAM, $jobId, $step, $layer, \$mess );
 
-		unless ($resLeftRout) {
+		unless ($resOutlineRout) {
 
 			my @m = ($mess);
 
@@ -116,6 +141,7 @@ sub Check {
 
 	}
 
+	# Pool PCB only
 	if ( $self->{"isPool"} ) {
 		my $resTestFindAndDrawStarts = 0;
 		while ( !$resTestFindAndDrawStarts ) {
@@ -129,6 +155,7 @@ sub Check {
 		}
 	}
 
+	# All PCB
 	my $resToolsAreOrdered = 0;
 	while ( !$resToolsAreOrdered ) {
 
@@ -142,6 +169,7 @@ sub Check {
 
 	}
 
+	# All PCB
 	my $resOutlineToolIsLast = 0;
 	while ( !$resOutlineToolIsLast ) {
 
