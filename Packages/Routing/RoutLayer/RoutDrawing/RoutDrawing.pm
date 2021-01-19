@@ -7,13 +7,16 @@ package Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing;
 #3th party library
 use strict;
 use warnings;
+use Math::Trig;
 
 #local library
 use aliased 'Packages::CAM::SymbolDrawing::SymbolDrawing';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
-
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamJob';
+use aliased 'Enums::EnumsRout';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveLine';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitiveArcSCE';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::PrimitivePad';
@@ -352,11 +355,212 @@ sub DrawFootRoutResult {
 
 }
 
+# Draw schema of footdown placement
+# Footdwon placemetn depand on rout dir + rout start corner
+sub DrawFootScheme {
+	my $self      = shift;
+	my @footDowns = @{ shift(@_) };
+	my $routDir   = shift // EnumsRout->Comp_CW;
+	my $routStart = shift // EnumsRout->OutlineStart_LEFTTOP;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->{"step"};
+	my $lName = $self->{"layer"};
+
+	CamHelper->SetStep( $inCAM, $step );
+	CamLayer->WorkLayer( $inCAM, $lName );
+
+	my %profLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
+
+	my $zero = Point->new( abs( $profLim{"xMax"} - $profLim{"xMin"} ) / 2, abs( $profLim{"yMax"} - $profLim{"yMin"} ) + 30 );
+
+	my $drawRect = SymbolDrawing->new( $inCAM, $self->{"jobId"}, $zero );
+
+	# 1) Draw rectangle (shape of pcb)
+	my $width   = 50;       # 50 mm
+	my $height  = 30;       # 30 mm
+	my $rectSym = "r500";
+
+	# Left
+	$drawRect->AddPrimitive( PrimitiveLine->new( Point->new( 0, 0 ), Point->new( 0, 0 + $height ), $rectSym ) );
+
+	# Top
+	$drawRect->AddPrimitive( PrimitiveLine->new( Point->new( 0, 0 + $height ), Point->new( 0 + $width, 0 + $height ), $rectSym ) );
+
+	# Right
+	$drawRect->AddPrimitive( PrimitiveLine->new( Point->new( 0 + $width, 0 + $height ), Point->new( 0 + $width, 0 ), $rectSym ) );
+
+	# Bot
+	$drawRect->AddPrimitive( PrimitiveLine->new( Point->new( 0 + $width, 0 ), Point->new( 0, 0 ), $rectSym ) );
+
+	$drawRect->AddPrimitive( PrimitiveText->new( "Footdown",  Point->new( 0 - 50, $height / 1.5 ),     4, undef, 1.5 ) );
+	$drawRect->AddPrimitive( PrimitiveText->new( "placement", Point->new( 0 - 50, $height / 1.5 - 6 ), 4, undef, 1.5 ) );
+	$drawRect->AddPrimitive( PrimitiveText->new( "rules", Point->new( 0 - 50, $height / 1.5 - 12 ), 4, undef, 1.5 ) );
+
+	$drawRect->Draw();
+
+	# 2) Draw rout direction
+	my $dirZero = Point->new( $zero->X() + $width / 2, $zero->Y() + $height / 2 );
+	my $drawDir = SymbolDrawing->new( $inCAM, $self->{"jobId"}, $dirZero );
+	my $dirSym = "r300";
+
+	#rad2deg(
+	my $r      = 8;     # radius 20 mm
+	my $sector = 40;    # 40deg
+
+	#	my $startX = sin( deg2rad( $sector / 2 ) ) * $r + $width / 2;
+	#	my $startY = cos( deg2rad( $sector / 2 ) ) * $r + $height / 2;
+	my $startX = sin( deg2rad( $sector / 2 ) ) * $r;
+	my $startY = cos( deg2rad( $sector / 2 ) ) * $r;
+
+	$drawDir->AddPrimitive(
+		 PrimitiveArcSCE->new( Point->new( -$startX, -$startY ), Point->new( 0, 0 ), Point->new( $startX, -$startY ), EnumsRout->Comp_CW, $dirSym ) );
+
+	# arrows 1. line
+	$drawDir->AddPrimitive( PrimitiveLine->new( Point->new( $startX, -$startY ), Point->new( $startX + 1, -$startY + 4 ), $dirSym ) );
+
+	# arrows 2. line
+	$drawDir->AddPrimitive( PrimitiveLine->new( Point->new( $startX, -$startY ), Point->new( $startX + 4, -$startY - 1 ), $dirSym ) );
+
+	$drawDir->SetMirrorX($dirZero) if ( $routDir eq EnumsRout->Dir_CCW );
+
+	$drawDir->Draw();
+
+	# 3) Draw foots
+	my $drawFoot = SymbolDrawing->new( $inCAM, $self->{"jobId"}, $zero );
+	my $footLen  = 15;
+	my $footSym  = "r3000";
+	my $footEnd  = "r5000";
+	foreach my $foot (@footDowns) {
+
+		if ( $routDir eq EnumsRout->Dir_CW && $routStart eq EnumsRout->OutlineStart_LEFTTOP ) {
+
+			if ( $foot == 0 ) {
+
+				$drawFoot->AddPrimitive( PrimitiveLine->new( Point->new( 0, 0 + $height ), Point->new( 0, 0 + $height - $footLen ), $footSym ) );
+				$drawFoot->AddPrimitive(
+					PrimitivePad->new(
+						$footEnd,
+						Point->new( 0, 0 + $height )
+
+					)
+				);
+
+				$drawFoot->AddPrimitive( PrimitiveText->new( $foot . " deg", Point->new( 0 - $footLen / 2, 0 + 5 + $height ), 2.2, undef, 1.2 ) );
+
+			}
+
+			if ( $foot == 90 ) {
+
+				$drawFoot->AddPrimitive(
+							PrimitiveLine->new( Point->new( 0 + $width, 0 + $height ), Point->new( 0 + $width - $footLen, 0 + $height ), $footSym ) );
+				$drawFoot->AddPrimitive( PrimitivePad->new( $footEnd, Point->new( 0 + $width, 0 + $height ) ) );
+
+				$drawFoot->AddPrimitive(
+									PrimitiveText->new( $foot . " deg", Point->new( 0 - $footLen / 2 + $width, 0 + $height + 5 ), 2.2, undef, 1.2 ) );
+
+			}
+
+			if ( $foot == 180 ) {
+
+				$drawFoot->AddPrimitive( PrimitiveLine->new( Point->new( 0 + $width, 0 ), Point->new( 0 + $width, 0 + $footLen ), $footSym ) );
+				$drawFoot->AddPrimitive( PrimitivePad->new( $footEnd, Point->new( 0 + $width, 0 ) ) );
+
+				$drawFoot->AddPrimitive( PrimitiveText->new( $foot . " deg", Point->new( 0 + -$footLen / 2 + $width, 0 - 7 ), 2.2, undef, 1.2 ) );
+
+			}
+
+			if ( $foot == 270 ) {
+
+				$drawFoot->AddPrimitive( PrimitiveLine->new( Point->new( 0, 0 ), Point->new( 0 + $footLen, 0 ), $footSym ) );
+				$drawFoot->AddPrimitive( PrimitivePad->new( $footEnd, Point->new( 0, 0 ) ) );
+
+				$drawFoot->AddPrimitive( PrimitiveText->new( $foot . " deg", Point->new( 0 - $footLen / 2, 0 - 7 ), 2.2, undef, 1.2 ) );
+
+				#	}
+			}
+		}
+		elsif ( $routDir eq EnumsRout->Dir_CCW && $routStart eq EnumsRout->OutlineStart_RIGHTTOP ) {
+
+			if ( $foot == 0 ) {
+
+				$drawFoot->AddPrimitive(
+							PrimitiveLine->new( Point->new( 0 + $width, 0 + $height ), Point->new( 0 + $width, 0 + $height - $footLen ), $footSym ) );
+				$drawFoot->AddPrimitive( PrimitivePad->new( $footEnd, Point->new( 0 + $width, 0 + $height ) ) );
+
+				$drawFoot->AddPrimitive(
+									PrimitiveText->new( $foot . " deg", Point->new( 0 - $footLen / 2 + $width, 0 + $height + 5 ), 2.2, undef, 1.2 ) );
+
+			}
+
+			if ( $foot == 90 ) {
+
+				$drawFoot->AddPrimitive( PrimitiveLine->new( Point->new( 0 + $width, 0 ), Point->new( 0 + $width - $footLen, 0 ), $footSym ) );
+				$drawFoot->AddPrimitive( PrimitivePad->new( $footEnd, Point->new( 0 + $width, 0 ) ) );
+
+				$drawFoot->AddPrimitive( PrimitiveText->new( $foot . " deg", Point->new( 0 + -$footLen / 2 + $width, 0 - 7 ), 2.2, undef, 1.2 ) );
+
+			}
+
+			if ( $foot == 180 ) {
+
+				$drawFoot->AddPrimitive( PrimitiveLine->new( Point->new( 0, 0 ), Point->new( 0, 0 + $footLen ), $footSym ) );
+				$drawFoot->AddPrimitive( PrimitivePad->new( $footEnd, Point->new( 0, 0 ) ) );
+
+				$drawFoot->AddPrimitive( PrimitiveText->new( $foot . " deg", Point->new( 0 - $footLen / 2, 0 - 7 ), 2.2, undef, 1.2 ) );
+
+				#	}
+			}
+
+			if ( $foot == 270 ) {
+
+				$drawFoot->AddPrimitive( PrimitiveLine->new( Point->new( 0, 0 + $height ), Point->new( 0 + $footLen, 0 + $height ), $footSym ) );
+				$drawFoot->AddPrimitive(
+					PrimitivePad->new(
+						$footEnd,
+						Point->new( 0, 0 + $height )
+
+					)
+				);
+
+				$drawFoot->AddPrimitive( PrimitiveText->new( $foot . " deg", Point->new( 0 - $footLen / 2, 0 + 5 + $height ), 2.2, undef, 1.2 ) );
+
+			}
+
+		}
+	}
+
+	#$draw->SetMirrorX($dirZero) if ( $routDir eq EnumsRout->Comp_CCW );
+
+	$drawFoot->Draw();
+
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+	use aliased 'Packages::InCAM::InCAM';
+
+	use aliased 'CamHelpers::CamLayer';
+	use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "d297280";
+	my $step  = "o+1";
+
+	CamHelper->SetStep( $inCAM, "o+1" );
+	CamLayer->WorkLayer( $inCAM, "new_layer1" );
+	$inCAM->COM("sel_delete");
+
+	my $d = RoutDrawing->new( $inCAM, $jobId, $step, "new_layer1" );
+	$d->DrawFootScheme( [ 0, 90, 180, 270 ], EnumsRout->Comp_CCW, EnumsRout->OutlineStart_RIGHTTOP );
+
+	# Get work layer
 
 }
 

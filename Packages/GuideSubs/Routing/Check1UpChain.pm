@@ -15,7 +15,7 @@ use Clone qw(clone);
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamAttributes';
-
+use aliased 'Packages::Routing::RoutOutline';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
@@ -23,6 +23,8 @@ use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -247,7 +249,7 @@ sub OutlineRoutChecks {
 		my @rotation = [ 0, 90, 180, 270 ];
 		foreach my $angle (@rotation) {
 
-			my @foot_down_att = grep { defined $_->{"att"}->{"foot_down_${$angle}deg"} } $oSeq->GetFeatures();
+			my @foot_down_att = grep { defined $_->{"att"}->{"foot_down_${angle}deg"} } $oSeq->GetFeatures();
 
 			if ( scalar(@foot_down_att) > 1 ) {
 
@@ -345,8 +347,6 @@ sub TestFindStart {
 	my $rotateAngle = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
 	my $messMngr    = shift;
 
-	my %result = ( "result" => 1, "footEdge" => undef );
-
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
 	my @lefts = $unitRTM->GetOutlineChainSeqs();
@@ -371,24 +371,11 @@ sub TestFindStartSingle {
 	my $left        = shift;
 	my $messMngr    = shift;
 
-	my %result = ( "result" => 1, "footEdge" => undef, "angle" => $rotateAngle );
+	my %result = ( "result" => 1, "footEdge" => undef, "angle" => $rotateAngle, "outlInfo" => $left->GetStrInfo() );
 
 	my @features = $left->GetFeatures();
 
 	my $rotation = RoutStartAdjust->new( \@features );    # class responsible for rout rotaion
-
-	my $direction = RoutCyclic->GetRoutDirection( \@features );
-
-	# if foot down is tested on rotated pcb
-	if ( $rotateAngle == 90 ) {
-		$rotation->Transform(Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust::RT_CORNER);
-	}
-	elsif ( $rotateAngle == 180 ) {
-		$rotation->Transform(Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust::RB_CORNER);
-	}
-	elsif ( $rotateAngle == 270 ) {
-		$rotation->Transform(Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust::LB_CORNER);
-	}
 
 	my $startByAtt    = 0;
 	my $startByScript = 0;
@@ -405,7 +392,7 @@ sub TestFindStartSingle {
 		my $edge = ( grep { $_->{"att"}->{$attFootName} } @features )[0];
 
 		if ( defined $edge ) {
-			$rotation->TransformBack();
+
 			$startByAtt   = 1;
 			$footDownEdge = $edge;
 		}
@@ -413,6 +400,8 @@ sub TestFindStartSingle {
 
 	# 2) Find start of chain by script, if is not already found
 	if ( !$startByAtt ) {
+
+		$rotation->Transform( RoutOutline->GetDefRoutStart($jobId), $rotateAngle );
 
 		my %modify = RoutStart->RoutNeedModify( \@features );
 
@@ -428,9 +417,7 @@ sub TestFindStartSingle {
 		my %footResult  = RoutStart->GetRoutFootDown( \@features );
 
 		# if foot down is tested on rotated pcb, rotate back before drawing
-		if ( $rotateAngle > 0 ) {
-			$rotation->TransformBack();
-		}
+		$rotation->TransformBack();
 
 		if ( $startResult{"result"} ) {
 
@@ -457,51 +444,78 @@ sub TestFindStartSingle {
 		$result{"footEdge"} = $startCopy;
 	}
 	else {
-		my @m = ( "Začátek frézy pro dps : " . $left->GetStrInfo() . " při rotaci dps: $rotateAngle° nebyl nalezen" );
-
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );    #  Script se zastavi
 		$result{"result"} = 0;
 	}
+
+	#	else {
+	#		my @m = ( "Začátek frézy pro dps : " . $left->GetStrInfo() . " při rotaci dps: $rotateAngle° nebyl nalezen" );
+	#
+	#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );    #  Script se zastavi
+	#		$result{"result"} = 0;
+	#	}
 
 	return %result;
 }
 
 sub TestFindAndDrawStarts {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $step     = shift;
-	my $layer    = shift;
-	my $angle0   = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
-	my $angle270 = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $layer     = shift;
+	my $angle0    = shift;         # if foot down is tested on rotated pcb. Rotation is CCW
+	my $angle90   = shift;         # if foot down is tested on rotated pcb. Rotation is CCW
+	my $angle180  = shift;         # if foot down is tested on rotated pcb. Rotation is CCW
+	my $angle270  = shift;         # if foot down is tested on rotated pcb. Rotation is CCW
+	my $mandatory = shift // 0;    # if 1, it means, all required footdown must by solved
 	my $messMngr = shift;
 
 	my @footResults = ();
-
-	if ($angle270) {
-		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 270, $messMngr );
-		push( @footResults, @res );
-	}
 
 	if ($angle0) {
 		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 0, $messMngr );
 		push( @footResults, @res );
 	}
 
+	if ($angle90) {
+		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 90, $messMngr );
+		push( @footResults, @res );
+	}
+
+	if ($angle180) {
+		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 180, $messMngr );
+		push( @footResults, @res );
+	}
+
+	if ($angle270) {
+		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 270, $messMngr );
+		push( @footResults, @res );
+	}
+
 	# Draw foots
 	if ( scalar(@footResults) ) {
 
-		my $lName = "footdown_" . $jobId;
+		# a) Draw founds foot down
+		my $lFootRes = "footdown_" . $jobId;
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lFootRes );
+		CamMatrix->CreateLayer( $inCAM, $jobId, $lFootRes, "document", "positive", 0 );
+		my $drawFoorRes = RoutDrawing->new( $inCAM, $jobId, $step, $lFootRes );
+		$drawFoorRes->DrawFootRoutResult( \@footResults, 1, 1 );
 
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
-			$inCAM->COM( "delete_layer", "layer" => $lName );
-		}
+		# b) # Draw helper scheme which clarify where should be placed woot downs
 
-		$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+		my $drawFootSch = RoutDrawing->new( $inCAM, $jobId, $step, $lFootRes );
 
-		my $drawView = RoutDrawing->new( $inCAM, $jobId, $step, $lName );
+		my @foots = ();
+		push( @foots, 0 )   if ($angle0);
+		push( @foots, 90 )  if ($angle90);
+		push( @foots, 180 ) if ($angle180);
+		push( @foots, 270 ) if ($angle270);
 
-		$drawView->DrawFootRoutResult( \@footResults, 1, 1 );
+		my $defDir   = RoutOutline->GetDefRoutDirection($jobId);
+		my $defStart = RoutOutline->GetDefRoutStart($jobId);
+
+		$drawFootSch->DrawFootScheme( \@foots, $defDir, $defStart );
 
 		$inCAM->COM(
 					 "display_layer",
@@ -512,7 +526,31 @@ sub TestFindAndDrawStarts {
 
 		$inCAM->COM( "work_layer", name => $layer );
 		$inCAM->COM("zoom_home");
-		$inCAM->PAUSE("Zkontroluj navrzene patky...");
+
+		# Show error, if find footdown fail and footdwon are mandatory
+
+		#		$result{"result"} = 0;
+
+		my @notFound = grep { !$_->{"result"} } @footResults;
+
+		if ( scalar(@notFound) && $mandatory ) {
+
+			my @m = ();
+			foreach my $notFound (@notFound) {
+				push( @m,
+					  "Začátek frézy pro dps : " . $notFound->{"outlInfo"} . " při rotaci dps: " . $notFound->{"angle"} . "° nebyl nalezen." );
+				push( @m, "Nastav patku přes atribut: \"foot_down_" . $notFound->{"angle"} . "deg\"\n" );
+			}
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );    #  Script se zastavi
+
+		}
+
+		$inCAM->PAUSE("Zkontroluj popripade uprav navrzene patky, ktere se pouziji pri tvorbe vrstvy FSCH...");
+		
+		CamLayer->WorkLayer( $inCAM,$layer );
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lFootRes );
+		
 	}
 
 	# Show info, if foot down was not found

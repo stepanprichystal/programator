@@ -146,13 +146,35 @@ sub Check {
 		my $resTestFindAndDrawStarts = 0;
 		while ( !$resTestFindAndDrawStarts ) {
 
-			$resTestFindAndDrawStarts = Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, 1, 1, $self->{"messMngr"} );
+			# test theses PCB rotations
+			my $test0   = 1;
+			my $test90  = 0;
+			my $test180 = 0;
+			my $test270 = 1;
+
+			$resTestFindAndDrawStarts =
+			  Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, $test0, $test90, $test180, $test270, 1, $self->{"messMngr"} );
 
 			unless ($resTestFindAndDrawStarts) {
+
 				$inCAM->PAUSE("Oprav chybu a pokracuj...");
 			}
 
 		}
+	}
+
+	# Not pool only
+	if ( !$self->{"isPool"} ) {
+		
+		# test theses PCB rotations
+		my $test0   = 1;
+		my $test90  = 1;
+		my $test180 = 1;
+		my $test270 = 1;
+
+		# continue also if result is not success (we need specify footdowns only if FSCH will be created)
+		my $resTestFindAndDrawStarts =
+		  Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, $test0, $test90, $test180, $test270, 0, $self->{"messMngr"} );
 	}
 
 	# All PCB
@@ -200,7 +222,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d233511";
+	my $jobId = "d297280";
 
 	my $check = CheckRout->new( $inCAM, $jobId, "o+1", "f" );
 	$check->Check();

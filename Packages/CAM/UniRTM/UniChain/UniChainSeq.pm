@@ -163,13 +163,11 @@ sub GetOutlineType {
 sub GetStrInfo {
 	my $self = shift;
 
-	my @features = @{ $self->{" oriFeatures "} };
-	my @ids = map { $_->{" id "} } @features;
-	my $idStr = join(
-		";
-", @ids );
+	my @features = @{ $self->{"oriFeatures"} };
+	my @ids = map { $_->{"id"} } @features;
+	my $idStr = join("; ", @ids );
 
-	my $str = " Chain number : \"" . $self->GetChain()->GetChainOrder() . "\" ( feature ids: \"" . $idStr . "\")";
+	my $str = " Chain number: \"" . $self->GetChain()->GetChainOrder() . "\" ( feature ids: \"" . $idStr . "\")";
 }
 
 # GET/SET Properties -------------------------------------
