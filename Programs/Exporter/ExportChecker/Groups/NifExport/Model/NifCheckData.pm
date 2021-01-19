@@ -21,9 +21,11 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Helpers::ValueConvertor';
 use aliased 'Helpers::JobHelper';
+use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamGoldArea';
@@ -923,34 +925,51 @@ sub OnCheckGroupData {
 
 				my @steps = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
 
+				my $tmpL = GeneralHelper->GetGUID();
+
 				foreach my $step (@steps) {
 
 					CamHelper->SetStep( $inCAM, $step );
 
 					my $f = FeatureFilter->new( $inCAM, $jobId, $l );
-					$f->SetRefLayer("m${l}");
-					$f->SetReferenceMode( FiltrEnums->RefMode_DISJOINT );
-					$f->SetProfile( FiltrEnums->ProfileMode_INSIDE );
+					$f->SetProfile( FiltrEnums->ProfileMode_INSIDE );    # There may be features behind profile (lines texts)
 
-					if ( $f->Select() == 0 ) {
+					if ( $f->Select() ) {
+						CamLayer->CopySelOtherLayer( $inCAM, [$tmpL] );
+						my $f2 = FeatureFilter->new( $inCAM, $jobId, $tmpL );
+						$f2->SetRefLayer("m${l}");
+						$f2->SetReferenceMode( FiltrEnums->RefMode_MULTICOVER );
 
-						# Perhaps all signal layer features are unmasked
-						# It is not for sure, so only warning
-						$dataMngr->_AddWarningResult(
-													  "HAL + 8KT",
-													  "DPS je v 8. třídě s povrchovou úpravou HAL. Ve stepu: $step"
-														. " je vrstva: ${l} pravděpodobně celá odmaskovaná. "
-														. "Uprav vrstvu masky nebo zmněň povrchovou úpravu, "
-														. "jinak HAL pravděpodobně zkratuje odmaskované vodiče blízko u sebe."
-						);
+						# Select all complete unmasked features
+						$f2->Select();
 
-						CamLayer->ClearLayers($inCAM);
+						# Reverse to see, if there are some masekd feature
+						$inCAM->COM("sel_reverse");
+						my $coveredFeats = CamLayer->GetSelFeaturesCnt($inCAM);
 
+						my $allUnmasked = 0;
+						if ( $coveredFeats == 0 ) {
+
+							# Perhaps all signal layer features are unmasked
+							# It is not for sure, so only warning
+							$dataMngr->_AddWarningResult(
+														  "HAL + 8KT",
+														  "DPS je v 8. třídě s povrchovou úpravou HAL. Ve stepu: $step"
+															. " je vrstva: ${l} pravděpodobně celá odmaskovaná. "
+															. "Uprav vrstvu masky nebo zmněň povrchovou úpravu, "
+															. "jinak HAL pravděpodobně zkratuje odmaskované vodiče blízko u sebe."
+							);
+						}
 					}
 
+					CamLayer->ClearLayers($inCAM);
+
 				}
+				
+				CamMatrix->DeleteLayer($inCAM, $jobId, $tmpL);
 
 			}
+
 		}
 	}
 
