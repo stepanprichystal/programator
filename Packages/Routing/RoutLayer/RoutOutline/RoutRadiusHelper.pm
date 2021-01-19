@@ -1,5 +1,7 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Helper for automatic radius repairs
+# Note:
+# - Algorithm assume CW outline! If Outline is not CW, rout is mirrored in Y and than back
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::RoutOutline::RoutRadiusHelper;
@@ -19,11 +21,17 @@ use POSIX 'floor';
 use aliased 'Packages::Routing::RoutLayer::RoutMath::RoutMath';
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutParser';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutTransform';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
+use aliased 'Enums::EnumsRout';
+
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
 
 #Remove small radiuses and replace them by lines, if it is possible
+# Note:
+# - Algorithm assume CW outline! If Outline is not CW, rout is mirrored in Y and than back
 sub RemoveRadiuses {
 	my $self       = shift;
 	my $sorteEdges = shift;
@@ -33,9 +41,17 @@ sub RemoveRadiuses {
 		return -1;
 	}
 
+	# Mirror if Outline eq CCW
+	my $mirror  = 0;
+	my $outlDir = RoutCyclic->GetRoutDirection($sorteEdges);    # EnumsRout->Dir_CW/EnumsRout->Dir_CCW
+	if ( $outlDir eq EnumsRout->Dir_CCW ) {
+		RoutTransform->MirrorRoutY( 0, $sorteEdges );
+		$mirror = 1;
+	}
+
 	#
 	my %result = ();
-	$result{"result"}          = 1;       # if no error, result 1
+	$result{"result"}          = 1;                             # if no error, result 1
 	$result{"boundArc"}        = 0;
 	$result{"boundArcVal"}     = undef;
 	$result{"newDrillHole"}    = 0;
@@ -86,6 +102,11 @@ sub RemoveRadiuses {
 			}
 			$result{"boundArc"}    = 1;
 			$result{"boundArcVal"} = \%val;
+
+			# Mirror result
+			if ($mirror) {
+				$val{"x"} *= -1;
+			}
 
 			return %result;
 		}
@@ -327,7 +348,7 @@ sub RemoveRadiuses {
 
 		my ($idx) = grep { $sorteEdges->[$_]{"id"} eq $arcId } 0 .. $#$sorteEdges;
 
-		splice @{$sorteEdges}, $idx, 1;                                              #remove arc
+		splice @{$sorteEdges}, $idx, 1;    #remove arc
 
 	}
 
@@ -336,6 +357,16 @@ sub RemoveRadiuses {
 		$result{"newDrillHole"}    = 1;
 		$result{"newDrillHoleVal"} = \@drillPoints;
 
+		# Mirror result
+		if ($mirror) {
+			$_->{"x"} *= -1 foreach (@drillPoints);
+		}
+
+	}
+
+	# Mirror back
+	if ($mirror) {
+		RoutTransform->MirrorRoutY( 0, $sorteEdges );
 	}
 
 	return %result;

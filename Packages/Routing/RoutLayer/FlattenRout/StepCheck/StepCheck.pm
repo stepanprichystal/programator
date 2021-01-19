@@ -17,7 +17,6 @@ use aliased 'Enums::EnumsRout';
 use aliased 'Packages::Polygon::PointsTransform';
 use aliased 'Packages::Polygon::Enums' => "PolyEnums";
 use aliased 'Packages::Polygon::Polygon::PolygonPoints';
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -62,15 +61,20 @@ sub OutsideChains {
 	return $resultItem;
 }
 
-sub LeftRoutChecks {
+sub OutlineRoutChecks {
 	my $self = shift;
 
-	my $resultItem = ItemResult->new("Check left comp. rout");
+	my $resultItem = ItemResult->new("Check outline rout");
+
+	# 1) Do checks on nested step level
 
 	foreach my $s ( $self->{"SRStep"}->GetNestedSteps() ) {
 
-		$self->__LeftRoutChecks( $s, "f", $resultItem );
+		$self->__OutlineRoutChecks( $s, "f", $resultItem );
 	}
+
+	# 2) Do check on panel step level
+	$self->__OutlineTypeCheck( "f", $resultItem );
 
 	return $resultItem;
 }
@@ -159,10 +163,10 @@ sub __OutsideChains {
 			# Limits are limits of outline sequence resyed by 6mm on all sides
 			# (6, because steps on panel has minimal spacing 6 mm)
 
-			for(my $i= scalar(@notInside) -1; $i >= 0 ; $i--){
-				 
+			for ( my $i = scalar(@notInside) - 1 ; $i >= 0 ; $i-- ) {
+
 				my $outside = $notInside[$i];
-		 
+
 				my @outsidePoint = $outside->GetShapePoints();
 
 				foreach my $outline (@lefts) {
@@ -180,8 +184,8 @@ sub __OutsideChains {
 					push( @resizedOutline, [ $lim{"xMax"}, $lim{"yMin"} ] );
 
 					if ( PolygonPoints->GetPoints2PolygonPosition( \@outsidePoint, \@resizedOutline ) eq PolyEnums->Pos_INSIDE ) {
-						 splice @notInside, $i, 1;
-						 last; 
+						splice @notInside, $i, 1;
+						last;
 					}
 				}
 			}
@@ -206,7 +210,7 @@ sub __OutsideChains {
 }
 
 # Check when left rout exists
-sub __LeftRoutChecks {
+sub __OutlineRoutChecks {
 	my $self       = shift;
 	my $nestedStep = shift;
 	my $layer      = shift;
@@ -216,23 +220,6 @@ sub __LeftRoutChecks {
 	my $jobId = $self->{"jobId"};
 
 	my $unitRTM = $nestedStep->GetUniRTM();
-
-#	# 1) test if tehere are left no cyclic rout, which has foot down
-#	my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
-#	my @leftSeq = map  { $_->GetChainSequences() } @lefts;
-#	@leftSeq = grep { $_->HasFootDown() } @leftSeq;
-#
-#	if ( scalar(@leftSeq) ) {
-#
-#		my @info = map { $_->GetStrInfo() } @leftSeq;
-#		my $str = join( "; ", @info );
-#		my $m =
-#		    "Ve zdrojovém stepu: \""
-#		  . $nestedStep->GetStepName()
-#		  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací left, které mají nastavenou patku (.foot_down attribut) ($str). Patka však nijak neovlivní flattenovanou vrstvu.";
-#
-#		$resItem->AddWarning($m);
-#	}
 
 	# 2) Test if outline orut has only one attribute "foot_down_<angle>deg" of specific kind
 	my @outlines = $unitRTM->GetOutlineChainSeqs();
@@ -334,6 +321,93 @@ sub __LeftRoutChecks {
 
 	}
 
+}
+
+# 6) Check if outline routs are all in same type (type = direction + compensation)
+# take first outline and comepare to others
+sub __OutlineTypeCheck {
+	my $self    = shift;
+	my $layer   = shift;
+	my $resItem = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @nestedSteps = $self->{"SRStep"}->GetNestedSteps();
+
+	# Get random step outline rout
+	my $typeRandom = undef;
+	foreach my $nestedStep ( $self->{"SRStep"}->GetNestedSteps() ) {
+
+		my @outlines = $nestedStep->GetUniRTM()->GetOutlineChainSeqs();
+
+		if (@outlines) {
+			$typeRandom = $outlines[0]->GetOutlineType();
+			last;
+		}
+	}
+
+	return 0 if ( !defined $typeRandom );
+
+	my $outlineEq = 1;
+
+	foreach my $nestedStep ( $self->{"SRStep"}->GetNestedSteps() ) {
+
+		foreach my $o ( $nestedStep->GetUniRTM()->GetOutlineChainSeqs() ) {
+
+			my $typeCur = $o->GetOutlineType();
+
+			if ( $typeCur ne $typeRandom ) {
+				$outlineEq = 0;
+				last;
+			}
+		}
+
+		last unless ($outlineEq);
+	}
+
+	# Form error message if all outline are not same tape
+	unless ($outlineEq) {
+
+		my $m =
+		    "Všechny obrysové frézy musí být stejného typu."
+		  . "Typ obrysové frézy je dán jednoznačne pomocí: směru frézování (CW/CCW) + kompenzace pojezdu(right/left)."
+		  . "\nSeznam obrysových fréz:\n";
+
+		my @otput = ();
+
+		foreach my $nestedStep ( $self->{"SRStep"}->GetNestedSteps() ) {
+
+			foreach my $o ( $nestedStep->GetUniRTM()->GetOutlineChainSeqs() ) {
+
+				push(
+					  @otput,
+					  {
+						 "step"     => $nestedStep->GetStepName(),
+						 "outlDir"  => $o->GetDirection(),
+						 "outlComp" => $o->GetChain()->GetComp(),
+						 "chainNum" => $o->GetChain()->GetChainOrder()
+					  }
+				);
+			}
+		}
+
+		$m .= join(
+			"\n",
+			map {
+				    "- step:"
+				  . $_->{"step"}
+				  . "; chain number:"
+				  . $_->{"chainNum"}
+				  . "; chain direction:"
+				  . $_->{"outlDir"}
+				  . "; chain compensation:"
+				  . $_->{"outlComp"}
+			} @otput
+		);
+
+		$resItem->AddError($m);
+	}
 }
 
 # Check if tool sizes are sorted ASC

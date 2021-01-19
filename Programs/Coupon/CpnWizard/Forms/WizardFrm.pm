@@ -39,7 +39,7 @@ sub new {
 	my $jobId  = shift;
 
 	my @dimension = ( 1200, 680 );
-	my $self = $class->SUPER::new( $parent, "Impedance coupon generator",
+	my $self = $class->SUPER::new( $parent, "Impedance coupon generator - $jobId",
 						 \@dimension,
 						 &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxCLIP_CHILDREN | &Wx::wxRESIZE_BORDER | &Wx::wxMINIMIZE_BOX | &Wx::wxCLOSE_BOX );
 

@@ -55,7 +55,7 @@ use aliased 'Packages::ProductionPanel::PoolStepPlacement';
 use aliased 'Packages::ProductionPanel::CheckPanel';
 use aliased 'Packages::ProductionPanel::CounterPoolPcb';
 
-use aliased 'Packages::Routing::RoutLayer::FlattenRout::CreateFsch';
+use aliased 'Packages::GuideSubs::Routing::DoCreateFsch';
 
 use aliased 'Packages::Routing::PilotHole';
 use aliased 'Packages::Routing::PlatedRoutAtt';
@@ -1306,15 +1306,15 @@ sub _Panelize {
 			
 			
 			if($runCSV eq 'csv') {
-					my $fsch = CreateFsch->new( $inCAM, $jobName);
-					   $fsch->Create();
+					my $fsch = DoCreateFsch->CreateFsch( $inCAM, $jobName);
+					    
 			}else{
 			
 				# If panel contain more drifrent step, the fsch create
 				my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobName, 1, [EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_IPC3MAIN]);
 				if ( scalar(@uniqueSteps) > 1 ){
-							my $fsch = CreateFsch->new( $inCAM, $jobName);
-							   $fsch->Create();
+							my $fsch = DoCreateFsch->CreateFsch( $inCAM, $jobName);
+							    
 				}
 
 				# Check if contain only one kind of nested step but with various rotation
@@ -1326,8 +1326,8 @@ sub _Panelize {
 	  					my @diffAngle = grep { $_->{"angle"} != $angle } @repeatsSR;
       	
 				  		if ( scalar(@diffAngle)) {
-	  						 		my $fsch = CreateFsch->new( $inCAM, $jobName);
-									   $fsch->Create();
+	  						 		my $fsch = DoCreateFsch->CreateFsch( $inCAM, $jobName);
+									   
 	  					}
 				}
 				
@@ -1335,8 +1335,8 @@ sub _Panelize {
 				$inCAM->INFO(entity_type=>'layer',entity_path=>"$jobName/panel/fsch",data_type=>'exists');
 					if ($inCAM->{doinfo}{gEXISTS} eq "no") {
 								if ($panelSet eq 'sadaPanel') {
-										my $fsch = CreateFsch->new( $inCAM, $jobName);
-									   	   $fsch->Create();
+										my $fsch = DoCreateFsch->CreateFsch( $inCAM, $jobName);
+									   	    
 								}
 					}
 			}

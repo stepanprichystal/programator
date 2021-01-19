@@ -222,6 +222,7 @@ sub __SetLayoutDrawings {
 	my $exportNCChb         = Wx::CheckBox->new( $statBox, -1, "NC countersing",    &Wx::wxDefaultPosition );
 	my $exportDrillIPC3Chb  = Wx::CheckBox->new( $statBox, -1, "Customer IPC3 cpn", &Wx::wxDefaultPosition );
 	my $exportCustIPC3Chb   = Wx::CheckBox->new( $statBox, -1, "Internal IPC3 cpn", &Wx::wxDefaultPosition );
+	my $exportStiffThickChb = Wx::CheckBox->new( $statBox, -1, "Stiffener thick.",  &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 
@@ -232,6 +233,7 @@ sub __SetLayoutDrawings {
 	$szStatBox->Add( $exportNCChb,         1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $exportDrillIPC3Chb,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $exportCustIPC3Chb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportStiffThickChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 	$self->{"exportPressfitChb"}   = $exportPressfitChb;
@@ -239,6 +241,7 @@ sub __SetLayoutDrawings {
 	$self->{"exportNCSpecialChb"}  = $exportNCChb;
 	$self->{"exportDrillIPC3Chb"}  = $exportDrillIPC3Chb;
 	$self->{"exportCustIPC3Chb"}   = $exportCustIPC3Chb;
+	$self->{"exportStiffThickChb"} = $exportStiffThickChb;
 
 	return $szStatBox;
 }
@@ -365,6 +368,23 @@ sub DisableControls {
 	else {
 
 		$self->{"exportPeelStencChb"}->Disable();
+	}
+
+	my @NCStiff =
+	  grep {
+		     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+	  } $self->{"defaultInfo"}->GetNCLayers();
+
+	if ( scalar(@NCStiff) ) {
+
+		$self->{"exportStiffThickChb"}->Enable();
+	}
+	else {
+
+		$self->{"exportStiffThickChb"}->Disable();
 	}
 
 }
@@ -564,6 +584,25 @@ sub GetExportDrillCpnIPC3Map {
 	my $self = shift;
 
 	if ( $self->{"exportDrillIPC3Chb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub SetExportStiffThick {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"exportStiffThickChb"}->SetValue($val);
+}
+
+sub GetExportStiffThick {
+	my $self = shift;
+
+	if ( $self->{"exportStiffThickChb"}->IsChecked() ) {
 
 		return 1;
 	}

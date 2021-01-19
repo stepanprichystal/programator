@@ -1,9 +1,11 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Manager responsible for NIF creation
+# Description: Create flatten rout layer
+# Class contain error events, which can occure during layer creation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::FlattenRout::CreateFsch;
+use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
 use strict;
@@ -12,74 +14,73 @@ use warnings;
 #local library
 
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::FlattenPanel::FlattenPanel';
-use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsRout';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Helpers::JobHelper';
+use aliased 'Packages::Routing::RoutOutline';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
-	$self = {};
+	my $class = shift;
+	my $self  = $class->SUPER::new();
 	bless $self;
 
-	$self->{"inCAM"}      = shift;
-	$self->{"jobId"}      = shift;
-	$self->{"resultItem"} = ItemResult->new("Final result");
-	
+	$self->{"inCAM"} = shift;
+	$self->{"jobId"} = shift;
+
 	return $self;
 
 }
 
+# Return 1 if succes, 0 if fail
+# Error details can by handled by  "onItemResult" event in base class
 sub Create {
 	my $self = shift;
 
 	my @excludeSteps = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE } JobHelper->GetCouponStepNames();
-	my $flatten = FlattenPanel->new( $self->{"inCAM"}, $self->{"jobId"}, "panel", "f", "fsch", 0,  \@excludeSteps  );
+	my $flatten = FlattenPanel->new( $self->{"inCAM"}, $self->{"jobId"}, "panel", \@excludeSteps );
 
-	$flatten->{"onItemResult"}->Add( sub { $self->__ProcesResult(@_) } );
+	$flatten->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
-	my $result = $flatten->Run();
+	# Flatten algorithm settings
+	my $srcLayer        = "f";
+	my $dstLayer        = "fsch";
+	my $notDrawSucc     = 0;
+	my $outlRoutStart   = RoutOutline->GetDefRoutStart( $self->{"jobId"} );
+	my $outlPnlSequence = $self->__GetDefRoutSequence($outlRoutStart);
 
-	# process errors warnings
-
-	my $messMngr = MessageMngr->new( $self->{"jobId"} );
-
-	if ( $self->{"resultItem"}->GetErrorCount() ) {
-
-		my @mess = $self->{"resultItem"}->GetErrors();
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );    #  Script se zastavi
-
-	}
-
-	if ( $self->{"resultItem"}->GetWarningCount() ) {
-
-		my @mess = $self->{"resultItem"}->GetWarnings();
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess );    #  Script se zastavi
-
-	}
+	my $result = $flatten->Run( $srcLayer, $dstLayer, $notDrawSucc, $outlRoutStart, $outlPnlSequence );
 
 	return $result;
 }
 
-sub __ProcesResult {
-	my $self = shift;
-	my $res  = shift;
+# Return default rout sequence based on PCB rout start sorner
+# (But it can be based on CNC machine, PCB type and anything)
+sub __GetDefRoutSequence {
+	my $self          = shift;
+	my $outlRoutStart = shift;    # PCB outline rout start corner
 
-	foreach my $e ( $res->GetErrors() ) {
+	my $outlPnlSequence = undef;  # Panel routing sequence direction
 
-		$self->{"resultItem"}->AddError($e);
+	if ( $outlRoutStart eq EnumsRout->OutlineStart_LEFTTOP ) {
 
-	}
-
-	foreach my $w ( $res->GetWarnings() ) {
-
-		$self->{"resultItem"}->AddWarning($w);
+		$outlPnlSequence = EnumsRout->SEQUENCE_BTRL;
 
 	}
+	elsif ( $outlRoutStart eq EnumsRout->OutlineStart_RIGHTTOP ) {
+
+		$outlPnlSequence = EnumsRout->SEQUENCE_BTLR;
+
+	}
+	else {
+		die "Panel rout sequence is not recognized";
+	}
+
+	return $outlPnlSequence;
 
 }
 
@@ -94,10 +95,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d283565";
-  
+	my $jobId = "d297280";
 
-	my $fsch = CreateFsch->new( $inCAM, $jobId);
+	my $fsch = CreateFsch->new( $inCAM, $jobId );
 	print $fsch->Create();
 
 }

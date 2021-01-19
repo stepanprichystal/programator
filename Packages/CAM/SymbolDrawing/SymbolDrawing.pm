@@ -268,7 +268,7 @@ sub __DrawPad {
 	if ( $self->{"mirrorX"} ) {
 
 		$p->MirrorX( $self->{"mirrorXPoint"} );
-		$p->Move( 0, -$t->GetHeight() );
+		#$p->Move( 0, -$t->GetHeight() );
 
 		if ( $mirror == 1 ) {
 			$mirror = 0;

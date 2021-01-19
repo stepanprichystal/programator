@@ -15,15 +15,16 @@ use Clone qw(clone);
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 use aliased 'CamHelpers::CamAttributes';
-
+use aliased 'Packages::Routing::RoutOutline';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Routing::RoutLayer::RoutDrawing::RoutDrawing';
 use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStart';
-
-use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutRotation';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
+use aliased 'Packages::Routing::RoutLayer::RoutStart::RoutStartAdjust';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHelper';
-
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -42,15 +43,15 @@ sub OutsideChains {
 
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
-	my @lefts = $unitRTM->GetOutlineChainSeqs();
+	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
 	# If exist outline rout, check if other chains are inside
-	if ( scalar(@lefts) ) {
+	if ( scalar(@outlines) ) {
 
 		my @seq = $unitRTM->GetChainSequences();
 
 		my %tmp;
-		@tmp{ map { $_ } @lefts } = ();
+		@tmp{ map { $_ } @outlines } = ();
 
 		my @otherLayers = grep { !exists $tmp{$_} } @seq;
 
@@ -67,19 +68,21 @@ sub OutsideChains {
 				  . "\" jsou frézy, které by měly být uvnitř obrysové frézy, ale nejsou ($str). Pravděpodobně kromě desek na patku jsou ve stepu i dps na můstky",
 				"Je to pravda?"
 			);
-			my @b = ( "Ano, step obsahuje i dps na můstky", "Ne neobsahuje, opravím to", "Ne neobsahuje, ale obsahuje pomocnou frézu za obrysem dps");
+			my @b =
+			  ( "Ano, step obsahuje i dps na můstky", "Ne neobsahuje, opravím to", "Ne neobsahuje, ale obsahuje pomocnou frézu za obrysem dps" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m, \@b );    #  Script se zastavi
-			
+
 			if ( $messMngr->Result() == 0 ) {
+
 				# set pcb is rout on bridges
 				CamAttributes->SetStepAttribute( $inCAM, $jobId, $step, "rout_on_bridges", "yes" );
-				
+
 			}
-			elsif($messMngr->Result() == 1) {
+			elsif ( $messMngr->Result() == 1 ) {
 				$result = 0;
 			}
-			elsif($messMngr->Result() == 0) {
-				
+			elsif ( $messMngr->Result() == 0 ) {
+
 			}
 
 		}
@@ -88,7 +91,7 @@ sub OutsideChains {
 	return $result;
 }
 
-# Check if there is noly bridges rout
+# Check if there is only bridges rout
 # if so, save this information to job attribute "rout_on_bridges"
 sub OnlyBridges {
 	my $self     = shift;
@@ -107,12 +110,12 @@ sub OnlyBridges {
 
 	my @outlines = $unitRTM->GetOutlineChainSeqs();
 
-	my @chains = $unitRTM->GetChains();
-	my @lefts  = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chains;
-	my @none   = grep { $_->GetComp() eq EnumsRout->Comp_NONE } @chains;
-
 	# If not exist outline rout, check if pcb is on bridges
 	unless ( scalar(@outlines) ) {
+
+		my @chains = $unitRTM->GetChains();
+		my @lefts  = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } @chains;
+		my @none   = grep { $_->GetComp() eq EnumsRout->Comp_NONE } @chains;
 
 		# no chains at layer
 		if ( scalar(@chains) == 0 ) {
@@ -188,43 +191,53 @@ sub OnlyBridges {
 }
 
 # Check when left rout exists
-sub LeftRoutChecks {
+sub OutlinePoolRoutChecks {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
 	my $step  = shift;
 	my $layer = shift;
-	my $isPool =shift;
 	my $mess  = shift;
 
 	my $result = 1;
 
-	
-
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
 	# 1) test if tehere are left no cyclic rout, which has foot down
+	my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
+	my @leftSeq = map  { $_->GetChainSequences() } @lefts;
+	@leftSeq = grep { $_->HasFootDown() } @leftSeq;
 
-	if ($isPool) {
-		my @lefts   = grep { $_->GetComp() eq EnumsRout->Comp_LEFT } $unitRTM->GetChains();
-		my @leftSeq = map  { $_->GetChainSequences() } @lefts;
-		@leftSeq = grep { $_->HasFootDown() } @leftSeq;
+	if ( scalar(@leftSeq) ) {
 
-		if ( scalar(@leftSeq) ) {
+		$result = 0;
 
-			$result = 0;
+		my @info = map { $_->GetStrInfo() } @leftSeq;
+		my $str = join( "; ", @info );
+		my $m =
+		    "Ve stepu: \""
+		  . $step
+		  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací­ left, které mají­ nastavenou patku (.foot_down attribut) ($str)";
 
-			my @info = map { $_->GetStrInfo() } @leftSeq;
-			my $str = join( "; ", @info );
-			my $m =
-			    "Ve stepu: \""
-			  . $step
-			  . "\", ve vrstvě: \"$layer\" jsou frézy s kompenzací­ left, které mají­ nastavenou patku (.foot_down attribut) ($str)";
+		$$mess .= $m;
 
-			$$mess .= $m;
-
-		}
 	}
+
+	return $result;
+}
+
+# Check when left rout exists
+sub OutlineRoutChecks {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $step  = shift;
+	my $layer = shift;
+	my $mess  = shift;
+
+	my $result = 1;
+
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
 	# 2) Test if outline orut has only one attribute "foot_down_<angle>deg" of specific kind
 	my @outlines = $unitRTM->GetOutlineChainSeqs();
@@ -233,38 +246,28 @@ sub LeftRoutChecks {
 
 		my $m = "";
 
-		my @foot_down_0deg = grep { defined $_->{"att"}->{"foot_down_0deg"} } $oSeq->GetFeatures();
+		my @rotation = [ 0, 90, 180, 270 ];
+		foreach my $angle (@rotation) {
 
-		if ( scalar(@foot_down_0deg) > 1 ) {
+			my @foot_down_att = grep { defined $_->{"att"}->{"foot_down_${angle}deg"} } $oSeq->GetFeatures();
 
-			$result = 0;
+			if ( scalar(@foot_down_att) > 1 ) {
 
-			my $m =
-			    "Ve stepu: \""
-			  . $step
-			  . "\", ve vrstvě: \"$layer\" je \"feature\": "
-			  . $oSeq->GetStrInfo()
-			  . ", která má více attributů \"foot_down_<uhel>deg\". Oprav to.\n";
+				$result = 0;
 
-			$$mess .= $m;
-		}
+				my $m =
+				    "Ve stepu: \""
+				  . $step
+				  . "\", ve vrstvě: \"$layer\" je více \"features\": "
+				  . $oSeq->GetStrInfo()
+				  . ", které mají attribut: \"foot_down_${$angle}deg\". Oprav to.\n";
 
-		my @foot_down_270deg = grep { defined $_->{"att"}->{"foot_down_270deg"} } $oSeq->GetFeatures();
-
-		if ( scalar(@foot_down_270deg) > 1 ) {
-
-			my $m =
-			    "Ve stepu: \""
-			  . $step
-			  . "\", ve vrstvě: \"$layer\" je fréza: "
-			  . $oSeq->GetStrInfo()
-			  . ", která má více atributů \"foot_down_270deg\". Oprav to.\n";
-
-			$$mess .= $m;
+				$$mess .= $m;
+			}
 		}
 	}
 
-	# 3) Outline rout. Test if one feature doesn\t have more attributes "foot_down" eg: foot_down_0deg + foot_down_90deg
+	# 3) Outline rout. Test if one feature doesn\t have more attributes "foot_down" eg: foot_down_0deg + foot_down_90deg + ...
 
 	foreach my $oSeq (@outlines) {
 
@@ -280,14 +283,15 @@ sub LeftRoutChecks {
 				  . $step
 				  . "\", ve vrstvě: \"$layer\" je \"feature\" ("
 				  . $f->{"id"}
-				  . "), které má­ zároveň atribut \"foot_down_0deg\" i \"foot_down_270deg\". Oprav to.\n";
+				  . "), které má více atributů \"foot_down_<uhel>deg\" s různým úhlem, "
+				  . "které označují místo patky pro konkrétní rotaci kusu na panelu. Oprav to.\n";
 
 				$$mess .= $m;
 			}
 		}
 	}
 
-	# 4) If some chain tool containoutline, all another chain must by outline
+	# 4) If some chain tool containo utline, all another chain must by outline
 	my @chains = $unitRTM->GetChains();
 
 	foreach my $ch (@chains) {
@@ -343,8 +347,6 @@ sub TestFindStart {
 	my $rotateAngle = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
 	my $messMngr    = shift;
 
-	my %result = ( "result" => 1, "footEdge" => undef );
-
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 
 	my @lefts = $unitRTM->GetOutlineChainSeqs();
@@ -369,17 +371,11 @@ sub TestFindStartSingle {
 	my $left        = shift;
 	my $messMngr    = shift;
 
-	my %result = ( "result" => 1, "footEdge" => undef, "angle" => $rotateAngle );
+	my %result = ( "result" => 1, "footEdge" => undef, "angle" => $rotateAngle, "outlInfo" => $left->GetStrInfo() );
 
 	my @features = $left->GetFeatures();
 
-	my $rotation = RoutRotation->new( \@features );    # class responsible for rout rotaion
-
-	# if foot down is tested on rotated pcb
-	if ( $rotateAngle > 0 ) {
-
-		$rotation->Rotate($rotateAngle);
-	}
+	my $rotation = RoutStartAdjust->new( \@features );    # class responsible for rout rotaion
 
 	my $startByAtt    = 0;
 	my $startByScript = 0;
@@ -392,12 +388,11 @@ sub TestFindStartSingle {
 	}
 
 	if ( defined $attFootName ) {
-		
-		
+
 		my $edge = ( grep { $_->{"att"}->{$attFootName} } @features )[0];
 
 		if ( defined $edge ) {
-			$rotation->RotateBack();
+
 			$startByAtt   = 1;
 			$footDownEdge = $edge;
 		}
@@ -405,6 +400,8 @@ sub TestFindStartSingle {
 
 	# 2) Find start of chain by script, if is not already found
 	if ( !$startByAtt ) {
+
+		$rotation->Transform( RoutOutline->GetDefRoutStart($jobId), $rotateAngle );
 
 		my %modify = RoutStart->RoutNeedModify( \@features );
 
@@ -420,9 +417,7 @@ sub TestFindStartSingle {
 		my %footResult  = RoutStart->GetRoutFootDown( \@features );
 
 		# if foot down is tested on rotated pcb, rotate back before drawing
-		if ( $rotateAngle > 0 ) {
-			$rotation->RotateBack();
-		}
+		$rotation->TransformBack();
 
 		if ( $startResult{"result"} ) {
 
@@ -449,51 +444,78 @@ sub TestFindStartSingle {
 		$result{"footEdge"} = $startCopy;
 	}
 	else {
-		my @m = ( "Začátek frézy pro dps : " . $left->GetStrInfo() . " při rotaci dps: $rotateAngle° nebyl nalezen" );
-
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );    #  Script se zastavi
 		$result{"result"} = 0;
 	}
+
+	#	else {
+	#		my @m = ( "Začátek frézy pro dps : " . $left->GetStrInfo() . " při rotaci dps: $rotateAngle° nebyl nalezen" );
+	#
+	#		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );    #  Script se zastavi
+	#		$result{"result"} = 0;
+	#	}
 
 	return %result;
 }
 
 sub TestFindAndDrawStarts {
-	my $self     = shift;
-	my $inCAM    = shift;
-	my $jobId    = shift;
-	my $step     = shift;
-	my $layer    = shift;
-	my $angle0   = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
-	my $angle270 = shift;    # if foot down is tested on rotated pcb. Rotation is CCW
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $layer     = shift;
+	my $angle0    = shift;         # if foot down is tested on rotated pcb. Rotation is CCW
+	my $angle90   = shift;         # if foot down is tested on rotated pcb. Rotation is CCW
+	my $angle180  = shift;         # if foot down is tested on rotated pcb. Rotation is CCW
+	my $angle270  = shift;         # if foot down is tested on rotated pcb. Rotation is CCW
+	my $mandatory = shift // 0;    # if 1, it means, all required footdown must by solved
 	my $messMngr = shift;
 
 	my @footResults = ();
-
-	if ($angle270) {
-		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 270, $messMngr );
-		push( @footResults, @res );
-	}
 
 	if ($angle0) {
 		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 0, $messMngr );
 		push( @footResults, @res );
 	}
 
+	if ($angle90) {
+		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 90, $messMngr );
+		push( @footResults, @res );
+	}
+
+	if ($angle180) {
+		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 180, $messMngr );
+		push( @footResults, @res );
+	}
+
+	if ($angle270) {
+		my @res = $self->TestFindStart( $inCAM, $jobId, $step, $layer, 270, $messMngr );
+		push( @footResults, @res );
+	}
+
 	# Draw foots
 	if ( scalar(@footResults) ) {
 
-		my $lName = "footdown_" . $jobId;
+		# a) Draw founds foot down
+		my $lFootRes = "footdown_" . $jobId;
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lFootRes );
+		CamMatrix->CreateLayer( $inCAM, $jobId, $lFootRes, "document", "positive", 0 );
+		my $drawFoorRes = RoutDrawing->new( $inCAM, $jobId, $step, $lFootRes );
+		$drawFoorRes->DrawFootRoutResult( \@footResults, 1, 1 );
 
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
-			$inCAM->COM( "delete_layer", "layer" => $lName );
-		}
+		# b) # Draw helper scheme which clarify where should be placed woot downs
 
-		$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
+		my $drawFootSch = RoutDrawing->new( $inCAM, $jobId, $step, $lFootRes );
 
-		my $drawView = RoutDrawing->new( $inCAM, $jobId, $step, $lName );
+		my @foots = ();
+		push( @foots, 0 )   if ($angle0);
+		push( @foots, 90 )  if ($angle90);
+		push( @foots, 180 ) if ($angle180);
+		push( @foots, 270 ) if ($angle270);
 
-		$drawView->DrawFootRoutResult( \@footResults, 1, 1 );
+		my $defDir   = RoutOutline->GetDefRoutDirection($jobId);
+		my $defStart = RoutOutline->GetDefRoutStart($jobId);
+
+		$drawFootSch->DrawFootScheme( \@foots, $defDir, $defStart );
 
 		$inCAM->COM(
 					 "display_layer",
@@ -503,8 +525,32 @@ sub TestFindAndDrawStarts {
 		);
 
 		$inCAM->COM( "work_layer", name => $layer );
-		$inCAM->COM( "zoom_home");
-		$inCAM->PAUSE("Zkontroluj navrzene patky...");
+		$inCAM->COM("zoom_home");
+
+		# Show error, if find footdown fail and footdwon are mandatory
+
+		#		$result{"result"} = 0;
+
+		my @notFound = grep { !$_->{"result"} } @footResults;
+
+		if ( scalar(@notFound) && $mandatory ) {
+
+			my @m = ();
+			foreach my $notFound (@notFound) {
+				push( @m,
+					  "Začátek frézy pro dps : " . $notFound->{"outlInfo"} . " při rotaci dps: " . $notFound->{"angle"} . "° nebyl nalezen." );
+				push( @m, "Nastav patku přes atribut: \"foot_down_" . $notFound->{"angle"} . "deg\"\n" );
+			}
+
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@m );    #  Script se zastavi
+
+		}
+
+		$inCAM->PAUSE("Zkontroluj popripade uprav navrzene patky, ktere se pouziji pri tvorbe vrstvy FSCH...");
+		
+		CamLayer->WorkLayer( $inCAM,$layer );
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lFootRes );
+		
 	}
 
 	# Show info, if foot down was not found
@@ -535,7 +581,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d233511";
+	my $jobId = "d300696";
 	my $step  = "o+1";
 
 	# Get work layer
@@ -547,7 +593,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $res = Check1UpChain->OutsideChains( $inCAM, $jobId, $step, $layer, 1, 1, $messMngr );
 
-	my $res = Check1UpChain->OutsideChains( $inCAM, $jobId, $step, $layer, $messMngr );
+	my $res = Check1UpChain->OutlineRoutChecks( $inCAM, $jobId, $step, $layer, $messMngr );
 
 }
 

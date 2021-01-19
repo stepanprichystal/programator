@@ -16,7 +16,7 @@ use DateTime;
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Routing::RoutLayer::FlattenRout::FlattenPanel::FlattenPanel';
+use aliased 'Packages::Routing::RoutLayer::FlattenRout::CreateFsch';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 
@@ -36,24 +36,22 @@ sub new {
 }
 
 sub CreateFsch {
-	my $self = shift;
+	my $self      = shift;
 	my $masterJob = shift;
-	my $mess = shift;
+	my $mess      = shift;
 
 	my $result = 1;
 
 	my $inCAM = $self->{"inCAM"};
-	
-	my @excludeSteps = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE } JobHelper->GetCouponStepNames();
-	my $flatten = FlattenPanel->new( $inCAM, $masterJob, "panel", "f", "fsch", 1, \@excludeSteps );
 
-	$flatten->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
+	my $fsch = CreateFsch->new( $inCAM, $masterJob, );
+	$fsch->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
-	$result = $flatten->Run();
- 
+	$result = $fsch->Create();
+
+	return $result;
+
 }
-
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

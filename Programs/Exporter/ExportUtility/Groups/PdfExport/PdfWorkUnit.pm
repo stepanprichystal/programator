@@ -43,24 +43,25 @@ sub Init {
 	$self->{"inCAM"} = $inCAM;
 	$self->{"jobId"} = $jobId;
 
-	my $exportControl       = $taskData->GetExportControl();
-	my $controlStep         = $taskData->GetControlStep();
-	my $controlLang         = $taskData->GetControlLang();
-	my $infoToPdf           = $taskData->GetInfoToPdf();
-	my $inclNestedStep      = $taskData->GetControlInclNested();
-	my $exportStackup       = $taskData->GetExportStackup();
-	my $exportPressfit      = $taskData->GetExportPressfit();
-	my $exportToleranceHole = $taskData->GetExportToleranceHole();
-	my $exportNCSpecial     = $taskData->GetExportNCSpecial();
+	my $exportControl         = $taskData->GetExportControl();
+	my $controlStep           = $taskData->GetControlStep();
+	my $controlLang           = $taskData->GetControlLang();
+	my $infoToPdf             = $taskData->GetInfoToPdf();
+	my $inclNestedStep        = $taskData->GetControlInclNested();
+	my $exportStackup         = $taskData->GetExportStackup();
+	my $exportPressfit        = $taskData->GetExportPressfit();
+	my $exportToleranceHole   = $taskData->GetExportToleranceHole();
+	my $exportNCSpecial       = $taskData->GetExportNCSpecial();
 	my $exportCustCpnIPC3Map  = $taskData->GetExportCustCpnIPC3Map();
 	my $exportDrillCpnIPC3Map = $taskData->GetExportDrillCpnIPC3Map();
-	my $exportCvrlStencil = $taskData->GetExportCvrlStencil();
-	my $exportPeelStencil = $taskData->GetExportPeelStencil();
+	my $exportStiffThick      = $taskData->GetExportStiffThick();
+	my $exportCvrlStencil     = $taskData->GetExportCvrlStencil();
+	my $exportPeelStencil     = $taskData->GetExportPeelStencil();
 
 	my $mngr = PdfMngr->new(
-							 $inCAM,           $jobId,             $exportControl, $controlStep,    $controlLang,
-							 $infoToPdf,       $inclNestedStep,    $exportStackup, $exportPressfit, $exportToleranceHole,
-							 $exportNCSpecial, $exportCustCpnIPC3Map, $exportDrillCpnIPC3Map, $exportCvrlStencil, $exportPeelStencil
+		$inCAM,     $jobId,          $exportControl, $controlStep,    $controlLang,
+		$infoToPdf, $inclNestedStep, $exportStackup, $exportPressfit, $exportToleranceHole,
+		$exportNCSpecial, $exportCustCpnIPC3Map, $exportDrillCpnIPC3Map, $exportStiffThick, $exportCvrlStencil, $exportPeelStencil
 	);
 
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );

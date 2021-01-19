@@ -55,6 +55,7 @@ sub Check {
 	CamHelper->SetStep( $inCAM, $step );
 	CamLayer->WorkLayer( $inCAM, $layer );
 
+	# All PCB
 	my $resRoutChainAtt = 0;
 	while ( !$resRoutChainAtt ) {
 
@@ -72,6 +73,7 @@ sub Check {
 		}
 	}
 
+	# Pool PCB only
 	if ( $self->{"isPool"} ) {
 
 		my $resOnlyBridges = 0;
@@ -85,6 +87,7 @@ sub Check {
 		}
 	}
 
+	# Pool PCB only
 	if ( $self->{"isPool"} ) {
 		my $resOutsideChains = 0;
 		while ( !$resOutsideChains ) {
@@ -98,14 +101,36 @@ sub Check {
 		}
 	}
 
-	my $resLeftRout = 0;
-	while ( !$resLeftRout ) {
+	# Pool PCB only
+	if ( $self->{"isPool"} ) {
+		my $resOutlinePoolRout = 0;
+		while ( !$resOutlinePoolRout ) {
+
+			my $mess = "";
+
+			$resOutlinePoolRout = Check1UpChain->OutlinePoolRoutChecks( $inCAM, $jobId, $step, $layer, \$mess );
+
+			unless ($resOutlinePoolRout) {
+
+				my @m = ($mess);
+
+				$self->{"messMngr"}->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@m );    #  Script se zastavi
+
+				$inCAM->PAUSE("Oprav chybu a pokracuj...");
+			}
+
+		}
+	}
+
+	# All PCB
+	my $resOutlineRout = 0;
+	while ( !$resOutlineRout ) {
 
 		my $mess = "";
 
-		$resLeftRout = Check1UpChain->LeftRoutChecks( $inCAM, $jobId, $step, $layer, $self->{"isPool"}, \$mess );
+		$resOutlineRout = Check1UpChain->OutlineRoutChecks( $inCAM, $jobId, $step, $layer, \$mess );
 
-		unless ($resLeftRout) {
+		unless ($resOutlineRout) {
 
 			my @m = ($mess);
 
@@ -116,19 +141,43 @@ sub Check {
 
 	}
 
+	# Pool PCB only
 	if ( $self->{"isPool"} ) {
 		my $resTestFindAndDrawStarts = 0;
 		while ( !$resTestFindAndDrawStarts ) {
 
-			$resTestFindAndDrawStarts = Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, 1, 1, $self->{"messMngr"} );
+			# test theses PCB rotations
+			my $test0   = 1;
+			my $test90  = 0;
+			my $test180 = 0;
+			my $test270 = 1;
+
+			$resTestFindAndDrawStarts =
+			  Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, $test0, $test90, $test180, $test270, 1, $self->{"messMngr"} );
 
 			unless ($resTestFindAndDrawStarts) {
+
 				$inCAM->PAUSE("Oprav chybu a pokracuj...");
 			}
 
 		}
 	}
 
+	# Not pool only
+	if ( !$self->{"isPool"} ) {
+		
+		# test theses PCB rotations
+		my $test0   = 1;
+		my $test90  = 1;
+		my $test180 = 1;
+		my $test270 = 1;
+
+		# continue also if result is not success (we need specify footdowns only if FSCH will be created)
+		my $resTestFindAndDrawStarts =
+		  Check1UpChain->TestFindAndDrawStarts( $inCAM, $jobId, $step, $layer, $test0, $test90, $test180, $test270, 0, $self->{"messMngr"} );
+	}
+
+	# All PCB
 	my $resToolsAreOrdered = 0;
 	while ( !$resToolsAreOrdered ) {
 
@@ -142,6 +191,7 @@ sub Check {
 
 	}
 
+	# All PCB
 	my $resOutlineToolIsLast = 0;
 	while ( !$resOutlineToolIsLast ) {
 
@@ -172,7 +222,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d233511";
+	my $jobId = "d297280";
 
 	my $check = CheckRout->new( $inCAM, $jobId, "o+1", "f" );
 	$check->Check();

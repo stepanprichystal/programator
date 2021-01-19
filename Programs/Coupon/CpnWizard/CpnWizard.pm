@@ -5,6 +5,9 @@
 #-------------------------------------------------------------------------------------------#
 package Programs::Coupon::CpnWizard::CpnWizard;
 
+use Class::Interface;
+&implements('Packages::InCAMHelpers::AppLauncher::IAppLauncher');
+
 #3th party library
 use threads;
 use threads::shared;

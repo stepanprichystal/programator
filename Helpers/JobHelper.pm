@@ -503,53 +503,53 @@ sub GetHybridMatCode {
 	return $matCode;
 }
 
-# Material codes for semi-hybrid materials
-# Hybrid DPS are DPS which has IS material kind not equal to Hybrid but contains additional special layers (eg. coverlay)
-# This code clearly describes which materials are combined together
-sub GetSemiHybridMatCode {
-	my $self  = shift;
-	my $jobId = shift;
-
-	my $matCode = undef;
-
-	my $matKind = HegMethods->GetMaterialKind($jobId);
-
-	die "Material kind is not defined in IS" if ( !defined $matKind || $matKind eq "" );
-	die "Material kind is Hybrid. This is not semi-hybrid" if ( $matKind =~ /hybrid/i );
-
-	my @types = ($matKind);
-
-	my %cvrl = HegMethods->GetCoverlayType($jobId);
-
-	if ( defined $cvrl{"top"} && $cvrl{"top"} ) {
-
-		my $matInfo = HegMethods->GetPcbCoverlayMat( $jobId, "top" );
-		if ( defined $matInfo->{"dps_druh"} && $matInfo->{"dps_druh"} ne "" ) {
-
-			push( @types, $matInfo->{"dps_druh"} );
-		}
-	}
-	if ( defined $cvrl{"bot"} && $cvrl{"bot"} ) {
-
-		my $matInfo = HegMethods->GetPcbCoverlayMat( $jobId, "bot" );
-		if ( defined $matInfo->{"dps_druh"} && $matInfo->{"dps_druh"} ne "" ) {
-
-			push( @types, $matInfo->{"dps_druh"} );
-		}
-	}
-
-	if (    scalar( grep { $_ =~ /(PYRALUX)/i } @types )
-		 && scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
-	{
-		$matCode = EnumsDrill->HYBRID_PYRALUX__FR4;
-	}
-	else {
-
-		die "Hybrid material code was not found for material types: " . join( ";", @types );
-	}
-
-	return $matCode;
-}
+## Material codes for semi-hybrid materials
+## Hybrid DPS are DPS which has IS material kind not equal to Hybrid but contains additional special layers (eg. coverlay)
+## This code clearly describes which materials are combined together
+#sub GetSemiHybridMatCode {
+#	my $self  = shift;
+#	my $jobId = shift;
+#
+#	my $matCode = undef;
+#
+#	my $matKind = HegMethods->GetMaterialKind($jobId);
+#
+#	die "Material kind is not defined in IS" if ( !defined $matKind || $matKind eq "" );
+#	die "Material kind is Hybrid. This is not semi-hybrid" if ( $matKind =~ /hybrid/i );
+#
+#	my @types = ($matKind);
+#
+#	my %cvrl = HegMethods->GetCoverlayType($jobId);
+#
+#	if ( defined $cvrl{"top"} && $cvrl{"top"} ) {
+#
+#		my $matInfo = HegMethods->GetPcbCoverlayMat( $jobId, "top" );
+#		if ( defined $matInfo->{"dps_druh"} && $matInfo->{"dps_druh"} ne "" ) {
+#
+#			push( @types, $matInfo->{"dps_druh"} );
+#		}
+#	}
+#	if ( defined $cvrl{"bot"} && $cvrl{"bot"} ) {
+#
+#		my $matInfo = HegMethods->GetPcbCoverlayMat( $jobId, "bot" );
+#		if ( defined $matInfo->{"dps_druh"} && $matInfo->{"dps_druh"} ne "" ) {
+#
+#			push( @types, $matInfo->{"dps_druh"} );
+#		}
+#	}
+#
+#	if (    scalar( grep { $_ =~ /(PYRALUX)/i } @types )
+#		 && scalar( grep { $_ =~ /(IS400)|(DE104)|(PCL370)/i } @types ) )
+#	{
+#		$matCode = EnumsDrill->HYBRID_PYRALUX__FR4;
+#	}
+#	else {
+#
+#		die "Hybrid material code was not found for material types: " . join( ";", @types );
+#	}
+#
+#	return $matCode;
+#}
 
 sub GetIsolationByClass {
 	my $self  = shift;

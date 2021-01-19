@@ -40,6 +40,7 @@ sub new {
 	$self->{"flatLayer"}        = shift;    # name of result flatened layer
 	$self->{"considerStepRout"} = shift;    # if yes, also rout contained in "flatenned step" will by faltenned
 	$self->{"delFlatLayer"}     = shift;    # delete flat layer if exist
+	$self->{"outlPnlSequence"}  = shift;    #Panel routing sequence direction
 
 	return $self;
 }
@@ -95,7 +96,7 @@ sub CreateFromSRStep {
 	my $toolOrder = ToolsOrder->new( $inCAM, $jobId, \@groupChains, \%convTable, $srStep->GetStep(), $self->{"flatLayer"}, $itemResult );
 
 	$toolOrder->SetInnerOrder();
-	$toolOrder->SetOutlineOrder();
+	$toolOrder->SetOutlineOrder( $self->{"outlPnlSequence"} );
 
 	# 4) Check if sortin result is what we expected
 
@@ -166,8 +167,7 @@ sub __GetGroupChains {
 		my $gCh = GroupChain->new( GeneralHelper->GetGUID(),
 								   $srStep->GetStep(), $srStep->GetSourceLayer(),
 								   0, 0, $unitRTM,
-								   CamAttributes->GetStepAttrByName( $inCAM, $jobId, $srStep->GetStep(), "rout_on_bridges" ) =~ /^yes$/i )
-		  ;
+								   CamAttributes->GetStepAttrByName( $inCAM, $jobId, $srStep->GetStep(), "rout_on_bridges" ) =~ /^yes$/i );
 
 		push( @groupChains, $gCh );
 

@@ -1,5 +1,7 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Do checks of outline rout
+# Note:
+# - Algorithm assume CW outline! If Outline is not CW, rout is mirrored in Y and than back
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Routing::RoutLayer::RoutOutline::RoutOutline;
@@ -15,15 +17,28 @@ use List::Util qw( min max );
 
 #local library
 use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutArc';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutCyclic';
+use aliased 'Packages::Routing::RoutLayer::RoutParser::RoutTransform';
+use aliased 'Enums::EnumsRout';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
 #-------------------------------------------------------------------------------------------#
 
 #Detecting of small inner radiuses
+# Note:
+# - Algorithm assume CW outline! If Outline is not CW, rout is mirrored in Y and than back
 sub CheckSmallRadius {
 	my $self       = shift;
 	my @sorteEdges = @{ shift(@_) };
+
+	# Mirror if Outline eq CCW
+	my $mirror  = 0;
+	my $outlDir = RoutCyclic->GetRoutDirection( \@sorteEdges );    # EnumsRout->Dir_CW/EnumsRout->Dir_CCW
+	if ( $outlDir eq EnumsRout->Dir_CCW ) {
+		RoutTransform->MirrorRoutY( 0, \@sorteEdges );
+		$mirror = 1;
+	}
 
 	my $result = 1;
 
@@ -36,12 +51,28 @@ sub CheckSmallRadius {
 		}
 	}
 
+	# Mirror back
+	if ($mirror) {
+		RoutTransform->MirrorRoutY( 0, \@sorteEdges );
+	}
+
 	return $result;
 }
 
+# Check narrow places, narrowed than 2mm
+# Note:
+# - Algorithm assume CW outline! If Outline is not CW, rout is mirrored in Y and than back
 sub CheckNarrowPlaces {
 	my $self       = shift;
 	my @sorteEdges = @{ shift(@_) };
+
+	# Mirror if Outline eq CCW
+	my $mirror  = 0;
+	my $outlDir = RoutCyclic->GetRoutDirection( \@sorteEdges );    # EnumsRout->Dir_CW/EnumsRout->Dir_CCW
+	if ( $outlDir eq EnumsRout->Dir_CCW ) {
+		RoutTransform->MirrorRoutY( 0, \@sorteEdges );
+		$mirror = 1;
+	}
 
 	my %result = ();
 	$result{"result"} = 1;
@@ -130,6 +161,19 @@ sub CheckNarrowPlaces {
 
 		$result{"result"} = 0;
 		$result{"places"} = \@lines;
+		
+		# Mirror result
+		if ($mirror) {
+			foreach my $l  (@lines){
+				$l->[0]->[0] *=-1;
+				$l->[1]->[0] *=-1;
+			}
+		}
+	}
+
+	# Mirror back
+	if ($mirror) {
+		RoutTransform->MirrorRoutY( 0, \@sorteEdges );
 	}
 
 	return %result;

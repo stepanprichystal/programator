@@ -20,7 +20,8 @@ use constant {
 
 use constant {
 			   BackgStyle_NONE     => "BackgStyle_none",        # none color
-			   BackgStyle_SOLIDCLR => "BackgStyle_solidclr",    # stroke line
+			   BackgStyle_SOLIDCLR => "BackgStyle_solidclr",    # solid color
+			   BackgStyle_PATTERN  => "BackgStyle_pattern",     # pattern (lines; corss; ...)
 };
 
 use constant {
@@ -30,9 +31,9 @@ use constant {
 };
 
 use constant {
-			   FontFamily_ARIAL => "FontFamily_Arial",          # Arial
-			   FontFamily_TIMES => "FontFamily_Times",          # Times
-			   FontFamily_STANDARD => "FontFamily_Standard",          # Standard (InCAM font)
+			   FontFamily_ARIAL    => "FontFamily_Arial",       # Arial
+			   FontFamily_TIMES    => "FontFamily_Times",       # Times
+			   FontFamily_STANDARD => "FontFamily_Standard",    # Standard (InCAM font)
 };
 
 use constant {
