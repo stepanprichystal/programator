@@ -31,8 +31,9 @@ sub new {
 
 	# Property of standard filter
 
-	my $layer  = shift;
-	my $layers = shift;    # array of layer names, in case of more layers we want to filter
+	my $layer   = shift;
+	my $layers  = shift;         # array of layer names, in case of more layers we want to filter
+	
 
 	$self->{"layers"} = [];
 
@@ -43,6 +44,7 @@ sub new {
 
 	$self->{"stdFilter"} = FilterPropStd->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"layers"} );
 	$self->{"refFilter"} = FilterPropRef->new( $self->{"inCAM"}, $self->{"jobId"} );
+
 
 	$self->{"inCAM"}->COM('adv_filter_reset');
 	$self->{"inCAM"}->COM( 'filter_reset', filter_name => 'popup' );
@@ -229,9 +231,9 @@ sub AddIncludeAtt {
 
 # Exclude attribute and att value to filter
 sub AddExcludeAtt {
-	my $self      = shift;
-	my $attName   = shift;    # attribute name
-	my $attValue  = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
+	my $self     = shift;
+	my $attName  = shift;    # attribute name
+	my $attValue = shift;    # attribut value. Type according InCAM attribute type, undef is allowed
 
 	$self->{"stdFilter"}->AddExcludeAtt( $attName, $attValue );
 }
@@ -424,19 +426,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $layer = "m";
 
-	
+	my $f = FeatureFilter->new( $inCAM, $jobId, $layer );
+	$f->SetFeatureTypes( "pads" => 1 );
 
+	unless ( $f->Select() ) {
 
-	my $f = FeatureFilter->new( $inCAM, $jobId, $layer);
-	$f->SetFeatureTypes("pads" => 1);
- 
-	unless($f->Select()){
-		
-		
 		die "No positive features..";
 	}
-
- 
 
 }
 
