@@ -20,6 +20,7 @@ use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutLayer';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -163,8 +164,8 @@ sub Check {
 		}
 	}
 
-	# Not pool only
-	if ( !$self->{"isPool"} ) {
+	# Only flex (non standard rout dir + comp + riout start)
+	if ( JobHelper->GetIsFlex($jobId)  ) {
 		
 		# test theses PCB rotations
 		my $test0   = 1;

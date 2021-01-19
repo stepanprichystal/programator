@@ -59,10 +59,10 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $workLayer = $srcLayer;
+	my $workLayer = $srcLayer; # Work layer is standard source layer, except nested steps contains SR
 
 	# 1) Check if step contain only not SR steps. If Nested steps contain SR, flatten them and sort tool
-	$self->__ProcessResult( $self->__FlattenNestedSteps( $srcLayer, $workLayer, $outlPnlSequence ) );
+	$self->__ProcessResult( $self->__FlattenNestedSteps( $srcLayer, \$workLayer, $outlPnlSequence ) );
 
 	# 2) Init structure suitable for, flatten step, rout checking and rout start finding
 	my $SRStep = SRStep->new( $inCAM, $jobId, $self->{"stepName"}, $workLayer, $self->{"excludeSteps"} );
@@ -123,6 +123,7 @@ sub Run {
 	return $self->{"result"};
 }
 
+# Warning, worklayer can be changed, id nested steps contains SR
 sub __FlattenNestedSteps {
 	my $self            = shift;
 	my $srcLayer        = shift;
@@ -165,7 +166,8 @@ sub __FlattenNestedSteps {
 		}
 	}
 
-	$workLayer = GeneralHelper->GetGUID();
+	# Change work layer - create new
+	$$workLayer = GeneralHelper->GetGUID();
 
 	# 3) Flatten all nested steps which have S&R
 
@@ -185,7 +187,7 @@ sub __FlattenNestedSteps {
 
 	foreach my $step (@SRsteps) {
 
-		my $flat = FlattenRout->new( $inCAM, $jobId, $workLayer, 1, 0, $outlPnlSequence );
+		my $flat = FlattenRout->new( $inCAM, $jobId, $$workLayer, 1, 0, $outlPnlSequence );
 		my $resItem = $flat->CreateFromStepName( $step->{"stepName"}, $srcLayer, $resultItem );
 
 	}
@@ -202,7 +204,7 @@ sub __FlattenNestedSteps {
 					 "source_step"  => $step->{"stepName"},
 					 "source_layer" => $srcLayer,
 					 "dest"         => 'layer_name',
-					 "dest_layer"   => $workLayer,
+					 "dest_layer"   => $$workLayer,
 					 "mode"         => 'replace',
 					 "invert"       => 'no'
 		);

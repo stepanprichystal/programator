@@ -932,6 +932,7 @@ sub OnCheckGroupData {
 					$f->SetReferenceMode( FiltrEnums->RefMode_DISJOINT );
 					$f->SetProfile( FiltrEnums->ProfileMode_INSIDE );
 
+					 
 					if ( $f->Select() == 0 ) {
 
 						# Perhaps all signal layer features are unmasked
