@@ -182,6 +182,26 @@ sub GetStandards {
 			"bb"     => 15
 		)
 	);
+	
+	# ======== Standard RigidFlex  ========
+
+	push(
+		@l,
+		Standard->new(
+			"name"    => Enums->Standard_305x458,
+			"pcbType" => Enums->PcbType_MULTI,
+			"pcbMat"  => Enums->PcbMat_STDLAM,
+
+			# Properties
+			"active" => 1,
+			"w"      => 305,
+			"h"      => 458,
+			"bl"     => 21,
+			"br"     => 21,
+			"bt"     => 36.5,
+			"bb"     => 36.5,
+		)
+	);
 
 	# ======== Standard Single layer "Small" + ALU ========
 

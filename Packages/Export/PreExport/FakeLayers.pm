@@ -477,10 +477,10 @@ sub __CreateCoreDrillLayers {
 	my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
 	
 	# Only multilayer and flex or Jobs which 
-	if (
-		 $layerCnt >= 2
+	if ($layerCnt > 2
+		
 		 && ( JobHelper->GetIsFlex($jobId)
-			  || $note =~ /kompenzace-1/i )
+			  || $note =~ /tpv-kompenzace/i )
 	  )
 	{
 

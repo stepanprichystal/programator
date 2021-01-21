@@ -191,7 +191,7 @@ sub __ScalingRequired {
 		use aliased 'CamHelpers::CamAttributes';
 		my $note = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, ".comment" );
 
-		if ( $note =~ /kompenzace-1/i ) {
+		if ( $note =~ /tpv-kompenzace/i ) {
 			$scale = 1;
 		}
 

@@ -39,7 +39,7 @@ sub GetCompensation {
 			return 15;
 		}
 
-		if ( !$isPlated && $cuThickness <= 9 ) {
+		if ( !$isPlated && $cuThickness == 18 ) {
 			return 20;
 		}
 
