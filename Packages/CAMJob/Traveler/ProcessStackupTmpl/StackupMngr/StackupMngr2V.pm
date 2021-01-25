@@ -219,7 +219,7 @@ sub GetExistCvrl {
 
 			$inf->{"adhesiveText"}  = "";
 			$inf->{"adhesiveThick"} = $thickAdh;
-			$inf->{"cvrlText"}      = ( $matInfo->{"nazev_subjektu"} =~ /(LF\s\d+)/ )[0];    # ? is not store
+			$inf->{"cvrlText"}      = ( $matInfo->{"nazev_subjektu"} =~ /^(\w+\s*\w+)\s+/ )[0];    # ? is not store
 			$inf->{"cvrlThick"}     = $thick - $thickAdh;
 			$inf->{"selective"}     = 0;                                                     # Selective coverlay can bz onlz at RigidFLex pcb
 

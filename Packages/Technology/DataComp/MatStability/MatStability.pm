@@ -72,13 +72,17 @@ sub GetMatStability {
 	die "Dim stability for: $matKind; thickness: $selMatThick µm; Cu thickness: $cuThick µm is not defined at: $p"
 	  unless ( defined $self->{"tables"}->{$matKind}->{$selMatThick}->{$cuThick} );
 
-	die "Dim stability of 'X' dir for: $matKind; thickness: $selMatThick µm; Cu thickness: $cuThick µm is not defined at: $p"
-	  unless ( defined $self->{"tables"}->{$matKind}->{$selMatThick}->{$cuThick}->{$cuUsageCat}->{"x"} );
-
-	die "Dim stability of 'Y' dir for: $matKind; thickness: $selMatThick µm; Cu thickness: $cuThick µm is not defined at: $p"
-	  unless ( defined $self->{"tables"}->{$matKind}->{$selMatThick}->{$cuThick}->{$cuUsageCat}->{"y"} );
 
 	my $vals = $self->{"tables"}->{$matKind}->{$selMatThick}->{$cuThick}->{$cuUsageCat};
+
+
+	die "Dim stability of 'X' dir for: $matKind; thickness: $selMatThick µm; Cu thickness: $cuThick µm is not defined at: $p"
+	  if ( !defined $vals->{"x"} || $vals->{"x"} eq "");
+
+	die "Dim stability of 'Y' dir for: $matKind; thickness: $selMatThick µm; Cu thickness: $cuThick µm is not defined at: $p"
+	   if ( !defined $vals->{"y"} || $vals->{"y"} eq "");
+
+	
 
 	my $x = $ori eq "transverse" ? $vals->{"y"} : $vals->{"x"};
 	my $y = $ori eq "transverse" ? $vals->{"x"} : $vals->{"y"};

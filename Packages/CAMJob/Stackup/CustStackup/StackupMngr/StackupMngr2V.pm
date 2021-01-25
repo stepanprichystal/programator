@@ -94,8 +94,10 @@ sub GetBaseMatInfo {
 
 		for ( my $i = 0 ; $i < scalar(@parsedMat) ; $i++ ) {
 
+			$parsedMat[$i] =~ s/\s//g;
+
 			# if item is not CU text, add it to name
-			last if ( $parsedMat[$i] =~ m/^(\d+\/\d+)$/ );
+			last if ( $parsedMat[$i] =~ m/^(\d+\/\d+)/ );
 
 			$inf{"matText"} .= $parsedMat[$i] . " ";
 		}
@@ -155,7 +157,7 @@ sub GetExistCvrl {
 
 			$inf->{"adhesiveText"}  = "";
 			$inf->{"adhesiveThick"} = $thickAdh;
-			$inf->{"cvrlText"}      = ( $matInfo->{"nazev_subjektu"} =~ /(LF\s\d+)/ )[0];    # ? is not store
+			$inf->{"cvrlText"}      = ( $matInfo->{"nazev_subjektu"} =~ /^(\w+\s*\w+)\s+/ )[0];    # ? is not store
 			$inf->{"cvrlThick"}     = $thick - $thickAdh;
 			$inf->{"selective"}     = 0;                                                     # Selective coverlay can bz onlz at RigidFLex pcb
 
