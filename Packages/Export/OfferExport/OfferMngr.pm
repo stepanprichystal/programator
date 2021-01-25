@@ -82,7 +82,7 @@ sub Run {
 		push( @jobPar, [ "kus_x", $dim{"single_x"} ] );
 		push( @jobPar, [ "kus_y", $dim{"single_y"} ] );
 
-		if ( CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) ) {
+		if ( defined $dim{"nasobnost_panelu"} && $dim{"nasobnost_panelu"} > 0 ) {
 
 			push( @jobPar, [ "panel_x",          $dim{"panel_x"} ] );
 			push( @jobPar, [ "panel_y",          $dim{"panel_y"} ] );

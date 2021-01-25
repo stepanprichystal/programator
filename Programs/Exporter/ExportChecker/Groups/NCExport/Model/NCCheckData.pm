@@ -25,10 +25,11 @@ use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamStep';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::Presenter::NifHelper';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerErrorInfo';
 use aliased 'Packages::CAMJob::Drilling::DrillChecking::LayerWarnInfo';
-use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools';
+use aliased 'Packages::CAMJob::Routing::RoutToolsCheck';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Helpers::GeneralHelper';
@@ -171,13 +172,22 @@ sub OnCheckGroupData {
 			@checkSteps = map { $_->{"stepName"} } @uniqNestSteps;
 		}
 
-		foreach my $s (@checkSteps) {
+		# Do not check if layer is fsch and contain impedance coupon
+		# Impedance soupon are routed in sequence with standard outline, so they can by
+		# routed after outline rout
+		my @coupons =
+		  grep { $_ eq EnumsGeneral->Coupon_IMPEDANCE || $_ eq EnumsGeneral->Coupon_IPC3MAIN } CamStep->GetAllStepNames( $inCAM, $jobId );
 
-			my $messOutline = "";
-			unless ( RoutCheckTools->OutlineToolIsLast( $inCAM, $jobId, $s, $checkLayer, \$messOutline ) ) {
-				$dataMngr->_AddErrorResult( "Checking NC layer - outlines", $messOutline );
+		if ( !( $checkLayer eq "fsch" && scalar(@coupons) ) ) {
+
+			foreach my $s (@checkSteps) {
+
+				my $messOutline = "";
+				unless ( RoutToolsCheck->OutlineToolIsLast( $inCAM, $jobId, $s, $checkLayer, \$messOutline ) ) {
+					$dataMngr->_AddErrorResult( "Checking NC layer - outlines", $messOutline );
+				}
+
 			}
-
 		}
 	}
 
@@ -607,10 +617,12 @@ sub OnCheckGroupData {
 		foreach my $t (@plated) {
 
 			$dataMngr->_AddErrorResult(
-				"Prokovené otvory",
-				"Ve vrstvě NEprokoveného vrtání/frézování (".$l->{"gROWname"}.") byl nalezen prokovený nástroj: "
-				  . $t->{"gTOOLdrill_size"}
-				  . "µm. Přesuň tento nástroj do vrstvy prokoveného vrtání/frézování nebo nastav jako \"non plated\""
+										"Prokovené otvory",
+										"Ve vrstvě NEprokoveného vrtání/frézování ("
+										  . $l->{"gROWname"}
+										  . ") byl nalezen prokovený nástroj: "
+										  . $t->{"gTOOLdrill_size"}
+										  . "µm. Přesuň tento nástroj do vrstvy prokoveného vrtání/frézování nebo nastav jako \"non plated\""
 			);
 		}
 	}

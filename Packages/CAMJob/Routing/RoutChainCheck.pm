@@ -2,7 +2,7 @@
 # Description: Helper class contain controls for rout layer
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Routing::RoutLayer::RoutChecks::RoutLayer;
+package Packages::CAMJob::Routing::RoutChainCheck;
 
 #3th party library
 use utf8;

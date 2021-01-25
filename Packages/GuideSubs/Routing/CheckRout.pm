@@ -17,7 +17,7 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::ItemResult::ItemResult';
-use aliased 'Packages::Routing::RoutLayer::RoutChecks::RoutLayer';
+use aliased 'Packages::CAMJob::Routing::RoutChainCheck';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
@@ -62,7 +62,7 @@ sub Check {
 
 		my $mess = "";
 
-		$resRoutChainAtt = RoutLayer->RoutChainAttOk( $inCAM, $jobId, $step, $layer, \$mess );
+		$resRoutChainAtt = RoutChainCheck->RoutChainAttOk( $inCAM, $jobId, $step, $layer, \$mess );
 
 		unless ($resRoutChainAtt) {
 

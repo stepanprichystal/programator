@@ -2,7 +2,7 @@
 # Description: Helper class contain controls for rout chains
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Routing::RoutLayer::RoutChecks::RoutCheckTools;
+package Packages::CAMJob::Routing::RoutToolsCheck;
 
 #3th party library
 use utf8;
@@ -26,9 +26,7 @@ sub OutlineToolIsLast {
 	my $mess  = shift;
 
 	my $result = 1;
-	
  
-
 	my $unitRTM = UniRTM->new( $inCAM, $jobId, $step, $layer );
 	my @chains = $unitRTM->GetChains();
 
@@ -75,6 +73,20 @@ sub OutlineToolIsLast {
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+
+	use aliased 'Packages::CAMJob::Routing::RoutToolsCheck';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+	my $jobId = "d304124";
+	my $step  = "o+1";
+
+	my $mess = "";
+	my $res = RoutToolsCheck->OutlineToolIsLast( $inCAM, $jobId, "panel", "fsch", \$mess );
+
+	print "$res - $mess";
+
 
 }
 

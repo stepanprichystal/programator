@@ -54,6 +54,39 @@ sub GetDefRoutStart {
 	return $outlRoutStart;
 }
 
+# Get PCB outline rout sequence for routing PCB in production panel/mpanel
+# - EnumsRout->SEQUENCE_BTRL
+# - EnumsRout->SEQUENCE_BTLR
+sub GetDefRoutSeq {
+	my $self  = shift;
+	my $jobId = shift;
+
+	# Default is BTRL
+
+	my $outlSeq = EnumsRout->SEQUENCE_BTRL;
+
+	if ( JobHelper->GetIsFlex($jobId) ) {
+
+		# Flex PCB
+
+		$outlSeq = EnumsRout->SEQUENCE_BTLR;
+
+	}
+	else {
+
+		# Semi-hybrid PCB
+
+		my $isSemiHybrid = 0;
+		my $isHybrid = JobHelper->GetIsHybridMat( $jobId, undef, [], \$isSemiHybrid );
+
+		if ($isSemiHybrid) {
+			$outlSeq = EnumsRout->SEQUENCE_BTLR;
+		}
+	}
+
+	return $outlSeq;
+}
+
 # Get PCB outline rout direction
 # - EnumsRout->Dir_CW
 # - EnumsRout->Dir_CCW

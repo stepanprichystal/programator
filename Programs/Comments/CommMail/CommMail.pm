@@ -132,13 +132,13 @@ sub Sent {
 	my $name       = getlogin();
 	my %employyInf = ();
 
-	my $from = 'tpvserver@gatema.cz';
+	my $from      = 'tpvserver@gatema.cz';
 	my $userEmail = 0;
 	if ( defined $name && $name ne "" ) {
 		my $userInfo = HegMethods->GetEmployyInfo($name);
 		if ( defined $userInfo && defined $userInfo->{"e_mail"} =~ /^[a-z0-9.]+\@[a-z0-9.-]+$/i ) {
 
-			$from = $userInfo->{"e_mail"};
+			$from      = $userInfo->{"e_mail"};
 			$userEmail = 1;
 		}
 	}
@@ -150,16 +150,16 @@ sub Sent {
 	$body .= $self->__GetBody( $addOfferInf, $addOfferStckp );
 	$body .= $self->__GetFooter() if ($addFooter);
 
-	my $bcc = $userEmail ? $from : ""; # Send copy of email to user
+	my $bcc = $userEmail ? $from : "";    # Send copy of email to user
 
 	my $msg = MIME::Lite->new(
 		From => $from,
 		To   => join( ", ", @{$to} ),
 		Cc   => join( ", ", @{$cc} ),
- 
-		Bcc  => $bcc,
 
-		Subject => encode( "UTF-8", $subject ),   # Encode must by use if subject with diacritics
+		Bcc => $bcc,
+
+		Subject => encode( "UTF-8", $subject ),    # Encode must by use if subject with diacritics
 
 		Type => 'multipart/mixed'
 	);
@@ -299,7 +299,7 @@ sub GetDefaultIntro {
 
 		}
 	}
-	
+
 	return $intro;
 
 }
@@ -573,7 +573,7 @@ sub __GetInquiryInf {
 
 	push( @text, "- Rozměr kusu: " . $dim{"single_x"} . "x" . $dim{"single_y"} . "mm" );
 
-	if ( CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) ) {
+	if ( defined $dim{"nasobnost_panelu"} && $dim{"nasobnost_panelu"} > 0 ) {
 		push( @text, "- Rozměr panelu: " . $dim{"panel_x"} . "x" . $dim{"panel_y"} . "mm" );
 		push( @text, "- Násobnost panelu: " . $dim{"nasobnost_panelu"} );
 	}

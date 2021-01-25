@@ -15,11 +15,13 @@ use Log::Log4perl qw(get_logger :levels);
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsRout';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Packages::Routing::RoutOutline';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,6 +40,9 @@ sub new {
 	$self->{"exportSingle"} = shift;
 	$self->{"resBuilder"}   = shift;
 
+	# Helper properties
+	$self->{"routSeq"} = RoutOutline->GetDefRoutSeq( $self->{"jobId"} );
+
 	return $self;
 }
 
@@ -55,7 +60,6 @@ sub ExportFiles {
 
 	my @exportFiles = $self->__GetExportCombination($opManager);
 
- 
 	foreach my $c (@exportFiles) {
 
 		my $result = ItemResult->new( $c->{"layer"}, undef, "Layers" );
@@ -67,7 +71,6 @@ sub ExportFiles {
 
 		$self->__ResultExportLayer( $c->{"layer"}, $result );
 	}
- 
 
 }
 
@@ -129,10 +132,19 @@ sub __ExportNcSet {
 
 		if ( $layerName ne "fsch" ) {
 
+			my $seq = undef;
+
+			if ( $self->{"routSeq"} eq EnumsRout->SEQUENCE_BTRL ) {
+				$seq = "btrl";
+			}
+			elsif ( $self->{"routSeq"} eq EnumsRout->SEQUENCE_BTLR ) {
+				$seq = "btlr";
+			}
+
 			my @sr = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $stepName );
 
 			#check if panel contain name "mapanel" step
-			if (CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName, "mpanel" )) {
+			if ( CamStepRepeat->ExistStepAndRepeat( $inCAM, $jobId, $stepName, "mpanel" ) ) {
 
 				# find line number with first occurence of mpanel in SR table
 				my $lNum = undef;
@@ -153,7 +165,7 @@ sub __ExportNcSet {
 							 "sr_line" => $lNum,
 							 "sr_nx"   => "1",
 							 "sr_ny"   => "1",
-							 "mode"    => "btrl",
+							 "mode"    => $seq,
 							 "snake"   => "no",
 							 "scope"   => "parent"
 				);
@@ -166,7 +178,7 @@ sub __ExportNcSet {
 							 "sr_line" => "$lNum\;1",
 							 "sr_nx"   => "1\;1",
 							 "sr_ny"   => "1\;1",
-							 "mode"    => "btrl",
+							 "mode"    => $seq,
 							 "snake"   => "no",
 							 "scope"   => "parent"
 				);
@@ -176,9 +188,9 @@ sub __ExportNcSet {
 
 			}
 			else {
-				
+
 				# there can by more steps in panel (coupons). Look line number in S&R of o+1 step
-				 my $lNum = undef;
+				my $lNum = undef;
 
 				for ( my $i = 0 ; $i < scalar(@sr) ; $i++ ) {
 
@@ -195,7 +207,7 @@ sub __ExportNcSet {
 							 "sr_line" => $lNum,
 							 "sr_nx"   => "1",
 							 "sr_ny"   => "1",
-							 "mode"    => "btrl",
+							 "mode"    => $seq,
 							 "snake"   => "no",
 							 "scope"   => "full"
 				);
@@ -216,8 +228,6 @@ sub __ExportNcSet {
 	$inCAM->HandleException(1);
 
 	$inCAM->COM( "nc_cre_output", "layer" => $layerName, "ncset" => $setName );
-	
- 
 
 	# STOP HANDLE EXCEPTION IN INCAM
 	$inCAM->HandleException(0);
@@ -374,9 +384,6 @@ sub __DeleteLogs {
 	}
 
 }
- 
- 
-
 
 sub __ResultExportLayer {
 	my $self       = shift;
