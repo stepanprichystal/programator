@@ -1213,6 +1213,33 @@ sub OnCheckGroupData {
 
 		}
 	}
+
+	# Check if there are surface rout in mpanel, if fsch exists
+	# If not, surface rout are processed after mpanel nested step rout
+	# It can cause blockage of material exhaustion, because potential material residues
+	# (surfaces) should me routed first
+	if ( $defaultInfo->LayerExist("f") ) {
+
+		if ( $defaultInfo->StepExist("mpanel") && !$defaultInfo->LayerExist("fsch") ) {
+
+			my $unitDTM = UniDTM->new( $inCAM, $jobId, "mpanel", "f" );
+			my @surf = grep { $_->GetSource() eq DTMEnums->Source_DTMSURF } $unitDTM->GetTools();
+
+			if ( scalar(@surf) ) {
+
+				$dataMngr->_AddWarningResult(
+					"Rozfrézování v mpanelu",
+					"Ve stepu mpanel byly nalezeny pojezdy frézou pomocí typu surface. "
+					  . "Pokud nebude vytvořená vrstva: fsch, tyto pojezdy budou vyfrézovány "
+					  . "až po vyfrézování všech vnořených stepů (o+1; ...) v mpanelu. "
+					  . "Je to správně? Pokud ne, vytvoř fsch, která zajistí správné pořadí."
+				);
+
+			}
+
+		}
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

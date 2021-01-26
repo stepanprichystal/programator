@@ -95,10 +95,21 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d304098";
+	my $jobId = "d304937";
 
 	my $fsch = CreateFsch->new( $inCAM, $jobId );
+
+	$fsch->{"onItemResult"}->Add( sub { __ProcesResults(@_) } );
+
 	print $fsch->Create();
+
+}
+
+sub __ProcesResults {
+
+	my $res = shift;
+
+	print STDERR $res->GetErrorStr();
 
 }
 

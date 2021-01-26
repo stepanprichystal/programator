@@ -101,6 +101,11 @@ sub CreateFromSRStep {
 	# 4) Check if sortin result is what we expected
 
 	$toolOrder->ToolRenumberCheck();
+	
+	# 5) Merge tool
+	$toolOrder->MergeToolChains();
+	
+	
 
 	return $itemResult;
 

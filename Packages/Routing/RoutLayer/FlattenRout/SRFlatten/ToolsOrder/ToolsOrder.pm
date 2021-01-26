@@ -18,6 +18,7 @@ use List::Util qw(first);
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'CamHelpers::CamLayer';
@@ -28,7 +29,6 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
- 
 sub new {
 	my $class = shift;
 	my $self  = {};
@@ -55,37 +55,31 @@ sub SetInnerOrder {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
-	# create tool queue
-	my %toolQueues = ();
-
-	foreach my $chGroup ( @{ $self->{"chainGroups"} } ) {
-
-		# get not outline chain tool list
-		my @chainList = $chGroup->GetGroupUniRTM()->GetChainListByOutline(0);
-
-		if ( $chGroup->GetOnBridges() ) {
-
-			# remove potentional rout on bridges UniChanTool
-			my @chainListOnBridges = $chGroup->GetGroupUniRTM()->GetChainListByOutlineOnBridges();
-
-			for ( my $i = scalar(@chainList) - 1 ; $i >= 0 ; $i-- ) {
-
-				if ( scalar( grep { $_->GetChainOrder() == $chainList[$i]->GetChainOrder() } @chainListOnBridges ) ) {
-					splice @chainList, $i, 1;
-				}
-			}
-		}
-
-		$toolQueues{ $chGroup->GetGroupId() } = \@chainList;
-
+	# Sort separatelly parent step tool (e.g. mpanel)
+	# and nested "leaf" steps. Parent inner rout should be routed before nested inner routs
+	my @chGroupsPrnt = ();
+	foreach my $chGr ( @{ $self->{"chainGroups"} } ) {
+		push( @chGroupsPrnt, $chGr ) if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $chGr->GetSourceStep() ) );
 	}
 
-	# check if outline tools are same diameter,
-	# if so consider this tool in  NO outline tool sorting
-	my $outlineTool = $self->__GetOutlineTool();
+	my @chGroupsChld = ();
+	foreach my $chGr ( @{ $self->{"chainGroups"} } ) {
+		push( @chGroupsChld, $chGr ) if ( !CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $chGr->GetSourceStep() ) );
+	}
 
-	my @finalOrder = SortTools->SortNotOutlineTools( \%toolQueues, $outlineTool );
+	my @finalOrder = ();
+
+	# Get sorted tool of parent steps
+	if ( scalar(@chGroupsPrnt) ) {
+		push( @finalOrder, $self->__GetInnerOrder( \@chGroupsPrnt ) );
+	}
+
+	# Get sorted tool of child steps
+	if ( scalar(@chGroupsChld) ) {
+		push( @finalOrder, $self->__GetInnerOrder( \@chGroupsChld ) );
+	}
 
 	# renumber chains
 
@@ -98,10 +92,10 @@ sub SetInnerOrder {
 # BTRL -  from BOT -> TOP -> RIGHT -> LEFT
 # BTRL -  from BOT -> TOP -> LEFT -> RIGHT
 sub SetOutlineOrder {
-	my $self = shift;
-	my $seqType = shift; # SEQUENCE_BTRL / SEQUENCE_BTLR
-	
-	die "Sequence type is not defined" unless(defined $seqType);
+	my $self    = shift;
+	my $seqType = shift;    # SEQUENCE_BTRL / SEQUENCE_BTLR
+
+	die "Sequence type is not defined" unless ( defined $seqType );
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -154,7 +148,7 @@ sub SetOutlineOrder {
 		}
 	}
 
-	my @finalOrder = SortTools->SortOutlineTools( \@outlineChains, $seqType);
+	my @finalOrder = SortTools->SortOutlineTools( \@outlineChains, $seqType );
 
 	# renumber chains
 
@@ -170,6 +164,66 @@ sub SetOutlineOrder {
 	}
 
 	$self->{"resultItem"}->{"chainOrderIds"} = \@chainIds;
+
+}
+
+# Merge tool chain
+sub MergeToolChains {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $unitRTM = UniRTM->new( $inCAM, $jobId, $self->{"step"}, $self->{"flatLayer"} );
+
+	my @chainList = $unitRTM->GetChainList();
+
+	# merge all Chains except last (assume last chains are outline)
+
+	my $merged = 0;
+
+	my @same    = ();
+	my $curSize = undef;
+	my $curComp = undef;
+	for ( my $i = 0 ; $i < scalar(@chainList) ; $i++ ) {
+
+		$curSize = $chainList[$i]->GetChainSize();
+		$curComp = $chainList[$i]->GetComp();
+
+		if (
+			 !scalar(@same)
+			 || (    $same[0]->GetChainSize() == $curSize
+				  && $same[0]->GetComp() eq $curComp )
+		  )
+		{
+
+			push( @same, $chainList[$i] );
+
+		}
+		else {
+
+			# Merge
+			if ( scalar(@same) > 1 ) {
+
+				$inCAM->COM("chain_list_reset");
+				$inCAM->COM( "chain_list_add", "chain" => join( "\;", map { $_->GetChainOrder() } @same ) );
+				$inCAM->COM( "chain_merge", "layer" => $self->{"flatLayer"} );
+
+			}
+
+			@same = ();
+			push( @same, $chainList[$i] );
+		}
+	}
+
+	# Renumber chains
+	$inCAM->COM(
+				 'chain_change_num',
+				 "layer"                 => $self->{"flatLayer"},
+				 "chain"                 => "1",
+				 "new_chain"             => "1",
+				 "renumber_sequentially" => "yes"
+	);
 
 }
 
@@ -258,6 +312,44 @@ sub ToolRenumberCheck {
 
 }
 
+sub __GetInnerOrder {
+	my $self        = shift;
+	my @chainGroups = @{ shift(@_) };
+
+	# create tool queue
+	my %toolQueues = ();
+
+	foreach my $chGroup (@chainGroups) {
+
+		# get not outline chain tool list
+		my @chainList = $chGroup->GetGroupUniRTM()->GetChainListByOutline(0);
+
+		if ( $chGroup->GetOnBridges() ) {
+
+			# remove potentional rout on bridges UniChanTool
+			my @chainListOnBridges = $chGroup->GetGroupUniRTM()->GetChainListByOutlineOnBridges();
+
+			for ( my $i = scalar(@chainList) - 1 ; $i >= 0 ; $i-- ) {
+
+				if ( scalar( grep { $_->GetChainOrder() == $chainList[$i]->GetChainOrder() } @chainListOnBridges ) ) {
+					splice @chainList, $i, 1;
+				}
+			}
+		}
+
+		$toolQueues{ $chGroup->GetGroupId() } = \@chainList;
+
+	}
+
+	# check if outline tools are same diameter,
+	# if so consider this tool in  NO outline tool sorting
+	my $outlineTool = $self->__GetOutlineTool( \@chainGroups );
+
+	my @finalOrder = SortTools->SortNotOutlineTools( \%toolQueues, $outlineTool );
+
+	return @finalOrder;
+}
+
 # Renumber tool chain order in flatenned layer by newlz acquired order
 sub __RenumberTools {
 	my $self       = shift;
@@ -296,14 +388,15 @@ sub __RenumberTools {
 
 # If all groups has same outline tool, return tool diameter
 sub __GetOutlineTool {
-	my $self = shift;
+	my $self        = shift;
+	my @chainGroups = @{ shift(@_) };
 
 	my $tool = undef;
 
 	# outline chains
 	my @outlineTools = ();
 
-	foreach my $chGroup ( @{ $self->{"chainGroups"} } ) {
+	foreach my $chGroup (@chainGroups) {
 
 		# check if outline tools are same diameter,
 		# if so consider this tool in  NO outline tool sorting
@@ -329,9 +422,15 @@ sub __GetOutlineTool {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::Export::NCExport::NCExportGroup';
+	use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::ToolsOrder';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#print $test;
+	my $inCAM = InCAM->new();
+
+	my $jobId = "d300451";
+
+	my $order = ToolsOrder->new( $inCAM, $jobId, undef, undef, "panel", "fsch" );
+	$order->MergeToolChains();
 
 }
 
