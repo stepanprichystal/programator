@@ -24,6 +24,7 @@ use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Packages::Routing::RoutLayer::FlattenRout::SRFlatten::ToolsOrder::SortTools';
 use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::Routing::PilotHole';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -216,6 +217,14 @@ sub MergeToolChains {
 		}
 	}
 
+	if ( scalar(@same) > 1 ) {
+
+		$inCAM->COM("chain_list_reset");
+		$inCAM->COM( "chain_list_add", "chain" => join( "\;", map { $_->GetChainOrder() } @same ) );
+		$inCAM->COM( "chain_merge", "layer" => $self->{"flatLayer"} );
+
+	}
+
 	# Renumber chains
 	$inCAM->COM(
 				 'chain_change_num',
@@ -224,6 +233,11 @@ sub MergeToolChains {
 				 "new_chain"             => "1",
 				 "renumber_sequentially" => "yes"
 	);
+
+	# Add pilot holes (read)
+	# Impact of sorting tools by directly set chain atribut in future are wrongly set pilot holes
+	# somewhere in job. So set pilot holes again
+	PilotHole->AddPilotHole( $inCAM, $jobId, $self->{"step"}, $self->{"flatLayer"} );
 
 }
 

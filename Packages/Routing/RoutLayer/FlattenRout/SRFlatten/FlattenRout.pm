@@ -102,10 +102,11 @@ sub CreateFromSRStep {
 
 	$toolOrder->ToolRenumberCheck();
 	
-	# 5) Merge tool
-	$toolOrder->MergeToolChains();
-	
-	
+    # 5) Merge tools
+    # Function was removed, because merging cause wronglz inserted pilotholes
+    # It was caused by sorting chain order by directly set "Chain"featrue atribute to features
+	#$toolOrder->ToolRenumberCheck();
+
 
 	return $itemResult;
 

@@ -93,6 +93,9 @@ sub Run {
 	my $resFlattenRout = $flatt->CreateFromSRStep($SRStep);
 
 	$self->__ProcessResult($resFlattenRout);
+	
+	# 6) Merge tools in work layer
+	
 
 	# 6) Draw start chain and foots to new layer (if drawing is not switched off)
 
@@ -212,6 +215,9 @@ sub __FlattenNestedSteps {
 
 	return $resultItem;
 }
+
+
+
 
 sub __ProcessResult {
 	my $self = shift;
