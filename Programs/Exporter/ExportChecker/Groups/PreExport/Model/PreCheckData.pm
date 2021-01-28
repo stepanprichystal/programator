@@ -326,7 +326,7 @@ sub __CheckGroupDataBasic {
 		# single layer + double layer flex PCB
 		# Only PYRALUX material is possible
 
-		my @flexMats = ("PYRALUX");
+		my @flexMats = ("PYRALUX", "THINFLEX");
 
 		unless ( grep { $_ =~ /$materialKindIS/i } @flexMats ) {
 

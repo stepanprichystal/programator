@@ -103,6 +103,7 @@ sub __GetPanelOrientation {
 
 	my %pnlOrient = ();
 	$pnlOrient{"PYRALUX"} = "transverse";
+	$pnlOrient{"THINFLEX"} = "transverse";
 
 	my $ori = $pnlOrient{$matKind};
 	$ori = "machine" unless ( defined $ori );

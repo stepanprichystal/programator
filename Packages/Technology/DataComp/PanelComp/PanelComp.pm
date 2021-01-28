@@ -130,6 +130,7 @@ sub __GetCoreMaterialKind {
 
 	my $mKind = undef;
 	$mKind = "PYRALUX"  if ( $mTxt =~ /pyralux/i );
+	$mKind = "THINFLEX"  if ( $mTxt =~ /thinflex/i );
 	$mKind = "IS400"    if ( $mTxt =~ /IS.*400/i );
 	$mKind = "PCL370HR" if ( $mTxt =~ /PCL.*370.*HR/i );
 

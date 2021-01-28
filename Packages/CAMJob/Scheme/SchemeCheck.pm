@@ -12,6 +12,7 @@ use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamJob';
@@ -68,7 +69,7 @@ sub ProducPanelSchemeOk {
 	# 1) Check used schema from number of sig layers point of view
 	if ( $sigLCnt <= 2 ) {
 
-		if ( ! ($schLCnt > 1 &&  $schLCnt <=2)) {
+		if ( !( $schLCnt > 1 && $schLCnt <= 2 ) ) {
 			$result = 0;
 		}
 	}
@@ -97,6 +98,13 @@ sub ProducPanelSchemeOk {
 
 	}
 
+	# 3) Check if flex schema is used when flex pcb
+	if ( JobHelper->GetIsFlex($jobId) && $$usedSchema !~ /flex/i ) {
+
+		$result = 0;
+
+	}
+
 	return $result;
 }
 
@@ -109,19 +117,19 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#use Data::Dump qw(dump);
 	#
-		use aliased 'Packages::CAMJob::Scheme::SchemeCheck';
-		use aliased 'Packages::InCAM::InCAM';
-	
-		my $inCAM = InCAM->new();
-		my $jobId = "d276231";
-	
-		my $mess = "";
-	
-		my $usedSch = "";
-	
-		my $result = SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedSch );
-	
-		print STDERR "Result is: $result, schema is: $usedSch\n";
+	use aliased 'Packages::CAMJob::Scheme::SchemeCheck';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+	my $jobId = "d276231";
+
+	my $mess = "";
+
+	my $usedSch = "";
+
+	my $result = SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedSch );
+
+	print STDERR "Result is: $result, schema is: $usedSch\n";
 
 }
 

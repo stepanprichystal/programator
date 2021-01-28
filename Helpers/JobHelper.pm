@@ -405,7 +405,10 @@ sub GetIsHybridMat {
 		push( @{$matKinds}, @types );
 
 	}
-	else {
+	elsif ( !$self->GetIsFlex($jobId) ) {
+		
+		# whole flexible PCB do not consider as hybrid even 
+		# if there is more tzpes of material (PYRALUX, THINFLEX,..)
 
 		push( @{$matKinds}, $matKind );
 
@@ -447,8 +450,9 @@ sub GetIsHybridMat {
 
 		@{$matKinds} = uniq( @{$matKinds} );
 
-		$isHybrid      = 0 if ( scalar( @{$matKinds} ) == 1 );
+		$isHybrid      = 0 if ( scalar( @{$matKinds} ) == 1 );    # only one type of material
 		$$isSemiHybrid = 0 if ( scalar( @{$matKinds} ) == 1 );
+
 	}
 
 	return $isHybrid;
@@ -472,6 +476,11 @@ sub GetHybridMatCode {
 		 && scalar( grep { $_ =~ /(FR4)|(IS400)|(PCL370)/i } @{$matKinds} ) )
 	{
 		$matCode = EnumsDrill->HYBRID_PYRALUX__FR4;
+	}
+	elsif (    scalar( grep { $_ =~ /(THINFLEX)/i } @{$matKinds} )
+			&& scalar( grep { $_ =~ /(FR4)|(IS400)|(PCL370)/i } @{$matKinds} ) )
+	{
+		$matCode = EnumsDrill->HYBRID_THINFLEX__FR4;
 	}
 	elsif (    scalar( grep { $_ =~ /(RO3)/i } @{$matKinds} )
 			&& scalar( grep { $_ =~ /(FR4)|(IS400)|(PCL370)/i } @{$matKinds} ) )
@@ -585,8 +594,9 @@ sub GetIsolationByClass {
 	elsif ( $class <= 8 ) {
 
 		$isolation = 100;
-	
-	}elsif ( $class <= 9 ) {
+
+	}
+	elsif ( $class <= 9 ) {
 
 		$isolation = 75;
 	}
