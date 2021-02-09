@@ -648,7 +648,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Helpers::JobHelper';
 
-	print STDERR JobHelper->GetSemiHybridMatCode("d293099");
+	print STDERR JobHelper->GetIsHybridMat("d305989");
 
 }
 

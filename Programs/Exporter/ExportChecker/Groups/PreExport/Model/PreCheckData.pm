@@ -536,10 +536,10 @@ sub __CheckGroupDataBasic {
 								  "Minimální vyrobitelná tloušťka RigidFlex Outer je : 800µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
 	}
 
-	if ( $pcbThick < 1200 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
+	if ( $pcbThick < 1000 && $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_RIGIDFLEXI ) {
 
 		$dataMngr->_AddErrorResult( "Minimální tloušťka RigidFlex",
-								  "Minimální vyrobitelná tlošťka RigidFlex Inner je : 1200µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
+								  "Minimální vyrobitelná tlošťka RigidFlex Inner je : 1000µm. Aktuální tloušťka je: " . $pcbThick . "µm" );
 	}
 
 	# X) Check if bend area layer is not missng

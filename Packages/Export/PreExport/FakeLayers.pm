@@ -475,12 +475,13 @@ sub __CreateCoreDrillLayers {
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
-	
-	# Only multilayer and flex or Jobs which 
-	if ($layerCnt > 2
-		
-		 && ( JobHelper->GetIsFlex($jobId)
-			  || $note =~ /tpv-kompenzace/i )
+
+	# Only multilayer and flex or Jobs which
+	if (
+		$layerCnt > 2
+
+		&& ( JobHelper->GetIsFlex($jobId)
+			 || $note =~ /tpv-kompenzace/i )
 	  )
 	{
 
@@ -504,6 +505,25 @@ sub __CreateCoreDrillLayers {
 		CamLayer->WorkLayer( $inCAM, "v1" );
 		CamLayer->CopySelOtherLayer( $inCAM, \@fakeLayers );
 		CamLayer->ClearLayers($inCAM);
+
+		# Copy second press layer to fake core drill layer
+		# Only to layer which are not pressed as semi product
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "v1p2" ) ) {
+
+			my @p        = grep { scalar( $_->GetLayers() ) == 1 } $stackup->GetInputProducts();
+			my @products = map { $_->GetData() } map  { $_->GetChildProducts() } @p;
+
+			my @notPressLayers = ();
+			foreach my $coreProdut (@products) {
+
+				my $lName = "v1j" . $coreProdut->GetCoreNumber();
+				push( @notPressLayers, $lName );
+			}
+
+			CamLayer->WorkLayer( $inCAM, "v1p2" );
+			CamLayer->CopySelOtherLayer( $inCAM, \@notPressLayers );
+			CamLayer->ClearLayers($inCAM);
+		}
 	}
 
 	return @fakeLayers;
@@ -561,7 +581,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d302535";
+	my $jobId    = "d306663";
 	my $stepName = "panel";
 
 	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );

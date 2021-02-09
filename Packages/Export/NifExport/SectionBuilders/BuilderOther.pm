@@ -24,6 +24,8 @@ use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Stackup::StackupCode';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Stackup::Enums' => "StackEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,13 +56,116 @@ sub Build {
 		$section->AddRow( "poznamka", $self->__PrepareNote() );
 	}
 
+	#poznamka jadra
+	# Temporary solution, wait for analzsis of HEG production module in Kubatronik
+	if (1) {
+
+		# add quick notes too
+
+		if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
+
+			my $stackup = Stackup->new( $inCAM, $jobId );
+
+			# Check if exist semiproduct (resp semiproducts which is pressed before final press)
+			my @semiProd = map { $_->GetData() } $stackup->GetLastPress()->GetLayers( StackEnums->ProductL_PRODUCT );
+
+			# Stackup contains  semiproducts with pressing
+			if ( scalar( grep { scalar( $_->GetLayers() ) > 1 } @semiProd ) ) {
+
+				# Flag description
+
+				# Flag contain core, which is pressed in semiproducts togehter with "main core"
+				my $semiproduct_core = "semiproduct_core";
+
+				# Flag contain core, which is in stackup semiproduct (core can be alone in semiproduct or togehter with another semiproduct_core)
+				# but this core is main and  keep follow operations on technical procedure
+				my $semiproduct_maincore = "semiproduct_maincore";
+
+				# Flag contain core, which is "semiproduct_maincore" and should be drilled before final PCB pressing
+				my $semiproduct_press = "semiproduct_press";
+
+				# 1) Init note for each core
+				my %noteCores = ();
+
+				foreach my $c ( $stackup->GetAllCores() ) {
+
+					$noteCores{ $c->GetCoreNumber() } = [];
+				}
+
+				foreach my $p (@semiProd) {
+
+					my @layers = map { $_->GetData() } $p->GetLayers();
+					my @cores  = map { $_->GetData() } $p->GetLayers( StackEnums->ProductL_PRODUCT );
+
+					# a) If semiproduct contains more cores, set flag "main core" to specify core
+					if ( scalar(@layers) == 1 ) {
+						push( @{ $noteCores{ $cores[0]->GetCoreNumber() } }, $semiproduct_maincore );
+					}
+
+					# b) If semiproducts contain pressing, set flag pressing to all cores
+					if ( scalar(@layers) > 1 ) {
+
+						if ( scalar(@cores) == 1 ) {
+
+							# Case when 1 flex core  + coverlay/prepreg OR 1 rigid core  +  prepreg
+
+							push( @{ $noteCores{ $cores[0]->GetCoreNumber() } }, $semiproduct_maincore );
+							push( @{ $noteCores{ $cores[0]->GetCoreNumber() } }, $semiproduct_press );
+						}
+						else {
+
+							# Case when more rigid cores
+
+							# Core depth milling determines "semiproduct_maincore"
+							my @coreDepth = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId,
+																 [ EnumsGeneral->LAYERTYPE_nplt_cbMillTop, EnumsGeneral->LAYERTYPE_nplt_cbMillBot ] );
+							CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@coreDepth );
+
+							foreach my $c (@cores) {
+
+								my @coreDepthStart = grep {
+									     $_->{"gROWdrl_start"} eq $c->GetTopCopperLayer()
+									  || $_->{"gROWdrl_start"} eq $c->GetBotCopperLayer()
+								} @coreDepth;
+
+								if ( scalar(@coreDepthStart) ) {
+
+									push( @{ $noteCores{ $c->GetCoreNumber() } }, $semiproduct_maincore );
+									push( @{ $noteCores{ $c->GetCoreNumber() } }, $semiproduct_press );
+								}
+								else {
+									push( @{ $noteCores{ $c->GetCoreNumber() } }, $semiproduct_core );
+								}
+
+							}
+						}
+
+					}
+				}
+
+				foreach my $note ( keys %noteCores ) {
+
+					my @notes = @{ $noteCores{$note} };
+
+					if ( scalar(@notes) ) {
+
+						$section->AddRow( "poznamka_${note}", join( "/", @notes ) );
+
+					}
+
+				}
+
+			}
+		}
+	}
+
 	# datacode
 	if ( $self->_IsRequire("datacode") ) {
 
 		$section->AddRow( "datacode", $nifData{"datacode"} );
 	}
 
-	#poznamka
+	#ul_logo
 	if ( $self->_IsRequire("ul_logo") ) {
 
 		$section->AddRow( "ul_logo", $nifData{"ul_logo"} );

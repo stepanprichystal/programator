@@ -216,8 +216,6 @@ sub PrepareFlexMask {
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $layer );
 	CamMatrix->CreateLayer( $inCAM, $jobId, $layer, "solder_mask", "positive", 1, $signalL, ( $signalL eq "c" ? "before" : "after" ) );
 
-	
-
 	#	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 	#	my @pointsLim = ();
 
@@ -234,14 +232,15 @@ sub PrepareFlexMask {
 	#	CamLayer->WorkLayer( $inCAM, $layer );
 
 	foreach my $bendArea (@bendAreas) {
-		
+
 		CamLayer->WorkLayer( $inCAM, $layer );
 
 		my @pointsSurf = $bendArea->GetPoints();
 
 		CamSymbolSurf->AddSurfacePolyline( $inCAM, \@pointsSurf, 1, "positive" );
 		CamLayer->WorkLayer( $inCAM, $layer );
-		                                          # Round corners
+
+		# Round corners
 		$inCAM->COM(
 					 "sel_feat2outline",
 					 "width"         => $overlap,
@@ -595,8 +594,8 @@ sub PrepareRoutTransitionZone {
 	my $recreate          = shift // 1;       # recreate rout layer with used name
 	my $roolOverlap       = shift // 0.25;    # 0,25mm # define depth  overlap of rout tool in transition zone
 	my $extendZone        = shift // 1.0;     # 1.0mm transition rout slots will be exteneded on both ends
-	my $defDepthRoutPart1 = shift // 0.23;    # Default depth for first routing (part 1). If package is to thin, rout to half of package
-	my $minMatRest        = shift // 0.15;    # 150µm is minimal material thickness after routing
+	my $defDepthRoutPart1 = shift // 0.23;    # Default depth for first routing (part 1) Rout overlap is not considered
+	my $minMatRest        = shift // 0.17;    # 170µm is minimal material thickness after routing
 
 	die "Rout part is not defined" if ( $routPart != 1 && $routPart != 2 );
 
@@ -604,6 +603,7 @@ sub PrepareRoutTransitionZone {
 	my $errMess = "";
 	die $errMess unless ( $parser->CheckBendArea( \$errMess ) );
 
+	my %result = ( "result" => 1, "routLayers" => [], "errMess" => "" );
 	my @routLayers = ();
 
 	# Rout tool info
@@ -766,42 +766,63 @@ sub PrepareRoutTransitionZone {
 		# Set tool magazine info
 		my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, $step, $routName );
 
-		my $depth = ( $packageThick / 2 ) / 1000 + $roolOverlap / 2;    # default depth is to half of package thickness + overlap
+		my $depth = 0;
+		if ( $routPart == 1 ) {
 
-		# if half of packkage thickness is thicker than default rout from bot + overlap/2, ude default rout depth
-		# - rout part 1: 0.35mm (including overlap)
-		# - rout part 2: package thickness - 0.35mm
-		if ( $defDepthRoutPart1 < $packageThick / 1000 / 2 ) {
+			$depth = $defDepthRoutPart1 + $roolOverlap / 2;
+		}
+		elsif ( $routPart == 2 ) {
+			$depth = $packageThick / 1000 - $defDepthRoutPart1 + $roolOverlap / 2;
+		}
 
-			if ( $routPart == 1 ) {
+		if ( $routPart == 1 ) {
 
-				$depth = $defDepthRoutPart1 + $roolOverlap / 2;
+			# Check material rest
+			if ( ( $packageThick / 1000 - $depth ) < $minMatRest ) {
+
+				my $matRest = sprintf( "%.2f", $packageThick / 1000 - $depth );
+				my $computed = $packageThick / 1000 - $minMatRest - $roolOverlap / 2;
+
+				$result{"result"} = 0;
+				$result{"errMess"} =
+				    "Too large rout depth ("
+				  . sprintf( "%.2f", $depth ) . "mm). "
+				  . "Rest of material thickness after routing would be: $matRest mm. Minimal allowed material rest is: ${minMatRest}mm. "
+				  . "Maximal default depth should be: ${computed}mm (now is: ${defDepthRoutPart1}mm).";
 			}
-			elsif ( $routPart == 2 ) {
-				$depth = $packageThick / 1000 - $defDepthRoutPart1 + $roolOverlap / 2;
+
+			# Check minimal depth
+			if ( $depth < $roolOverlap / 2 ) {
+
+				$result{"result"} = 0;
+				$result{"errMess"} =
+				  "Too small rout depth: ${depth}mm. Routed material thickness is too thin (" . sprintf( "%.2f", $packageThick / 1000 ) . "mm)";
 			}
 		}
 
-		$depth = sprintf( "%.2f", $depth );
+		if ( $routPart == 2 ) {
 
-		if ( $depth > $packageThick - $minMatRest ) {
+			# Check too large depth
+			if ( $depth > $packageThick / 1000 ) {
 
-			my $matRest = $packageThick - $depth;
-
-			die "Too large routh depth ($depth mm). "
-			  . "Rest of material thickness after routing would be: $matRest mm. Minimal allowed material rest is: $minMatRest mm.";
+				$result{"result"} = 0;
+				$result{"errMess"} =
+				    "Too deep rout depth. Routed material thickness is thinnner ("
+				  . sprintf( "%.2f", $packageThick / 1000 )
+				  . "mm) than rout depth (${depth}mm)";
+			}
 
 		}
 
-		$DTMTools[0]->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = $depth;
+		$DTMTools[0]->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = sprintf( "%.2f", $depth );
 		$DTMTools[0]->{"userColumns"}->{ EnumsDrill->DTMclmn_MAGINFO } = $toolMagazineInfo if ( defined $toolMagazineInfo );
 
 		CamDTM->SetDTMTools( $inCAM, $jobId, $step, $routName, \@DTMTools );
 
-		push( @routLayers, $routName );
+		push( @{ $result{"routLayers"} }, $routName );
 	}
 
-	return @routLayers;
+	return %result;
 
 }
 

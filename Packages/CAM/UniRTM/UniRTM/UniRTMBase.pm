@@ -109,6 +109,9 @@ sub __InitUniRTM {
 	# If chain is inside another chain, save this information
 
 	my @seqs = map { $_->GetChainSequences() } @chains;    # all chain sequences
+	
+	# Desiding if cyclic rout is inside or outside another chain maz take long time
+	print STDERR "Too much rout sequence (".scalar(@seqs)."), takes time" if(scalar(@seqs) > 1000);
 
 	for ( my $i = 0 ; $i < scalar(@seqs) ; $i++ ) {
 

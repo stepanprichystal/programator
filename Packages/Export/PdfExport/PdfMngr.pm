@@ -81,14 +81,6 @@ sub Run {
 
 	if ( $self->{"exportStackup"} ) {
 		$self->__ExportStackup();
-#
-#		if ( !JobHelper->GetIsFlex($jobId) ) {
-#
-#			if ( CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} ) > 2 ) {
-#				$self->__ExportStackupOld();
-#			}
-#		}
-
 	}
 
 	if ( $self->{"exportPressfit"} ) {
@@ -118,6 +110,7 @@ sub Run {
 	if ( $self->{"exportPeelStencil"} ) {
 		$self->__ExportPeelStencil();
 	}
+ 
 
 }
 

@@ -259,8 +259,8 @@ sub __GetTapeInfo {
 	my $side     = shift;    # top/bot
 	my $tapeInfo = shift;    # reference for storing info
 
-	my $mAdhInf = HegMethods->GetPcbStiffenerAdhMat( $self->{"jobId"}, "top" );
-	$mAdhInf = HegMethods->GetPcbStiffenerAdhMat( $self->{"jobId"}, "bot" ) if ( !defined $mAdhInf );
+	my $mAdhInf = HegMethods->GetPcbTapeFlexMat( $self->{"jobId"}, $side );
+	 
 
 	die "Neni lepidlo!!!!!!!!!!!!! V HEGU" unless ( defined $mAdhInf );
 	my @nAdh = split( /\s/, $mAdhInf->{"nazev_subjektu"} );

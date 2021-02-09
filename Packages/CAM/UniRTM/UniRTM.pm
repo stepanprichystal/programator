@@ -212,13 +212,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d293788";
-	my $step  = "o+1";
-	my $layer = 'f';
+	my $jobId = "d306496";
+	my $step  = "panel";
+	my $layer = 'test';
 
-	my $dtm = UniDTM->new( $inCAM, $jobId, $step, $layer, 1 );
+	#my $dtm = UniDTM->new( $inCAM, $jobId, $step, $layer, 1 );
 
-	my $rtm = UniRTM->new( $inCAM, $jobId, $step, $layer, 1, $dtm );
+	my $rtm = UniRTM->new( $inCAM, $jobId, $step, $layer, 1 );
 
 	my $chanSeqCnt = scalar($rtm->GetChainSequences());
 

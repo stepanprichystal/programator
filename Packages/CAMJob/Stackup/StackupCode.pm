@@ -355,10 +355,11 @@ sub __IsLayerEmpty {
 
 		$f->Parse( $self->{"inCAM"}, $self->{"jobId"}, $step, $lName, 0, 0 );
 
-		my @pFeats      = grep { $_->{"polarity"} eq "P" } $f->GetFeatures();
-		my @stringFeats = grep { defined $_->{"attr"}->{".string"} } @pFeats;
+		my @allFeats = $f->GetFeatures();
+		my @stringFeats = grep { defined $_->{"att"}->{".string"} } @allFeats;
 
-		if ( scalar(@pFeats) && scalar(@pFeats) > scalar(@stringFeats) ) {
+		# Features with attribute .string should be helper features, not customer data
+		if (  scalar(@allFeats) && scalar(@allFeats) > scalar(@stringFeats) )   {
 			$isEmpty = 0;
 			last;
 		}
@@ -390,12 +391,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d303089";
+	my $jobId = "d306663";
 
 	my $stckpCode = StackupCode->new( $inCAM, $jobId );
-	my %c = $stckpCode->GetStackupCodeParsed(  );
-	 
-	die ;
+
+	die;
 
 }
 

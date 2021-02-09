@@ -942,6 +942,7 @@ sub OnCheckGroupData {
 
 						# Select all complete unmasked features
 						$f2->Select();
+						my $uncoveredFeats = CamLayer->GetSelFeaturesCnt($inCAM);
 
 						# Reverse to see, if there are some masekd feature
 						$inCAM->COM("sel_reverse");
@@ -950,15 +951,22 @@ sub OnCheckGroupData {
 						my $allUnmasked = 0;
 						if ( $coveredFeats == 0 ) {
 
-							# Perhaps all signal layer features are unmasked
-							# It is not for sure, so only warning
-							$dataMngr->_AddWarningResult(
-														  "HAL + 8KT",
-														  "DPS je v 8. třídě s povrchovou úpravou HAL. Ve stepu: $step"
-															. " je vrstva: ${l} pravděpodobně celá odmaskovaná. "
-															. "Uprav vrstvu masky nebo zmněň povrchovou úpravu, "
-															. "jinak HAL pravděpodobně zkratuje odmaskované vodiče blízko u sebe."
-							);
+							# chech if therea are actully some covered feats 
+							# (some PCB may have all feats unmasked, but rest of material without Cu is covered)
+							my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l, 0 );
+
+							if ( $uncoveredFeats != $hist{"total"} ) {
+
+								# Perhaps all signal layer features are unmasked
+								# It is not for sure, so only warning
+								$dataMngr->_AddWarningResult(
+															  "HAL + 8KT",
+															  "DPS je v 8. třídě s povrchovou úpravou HAL. Ve stepu: $step"
+																. " je vrstva: ${l} pravděpodobně celá odmaskovaná. "
+																. "Uprav vrstvu masky nebo zmněň povrchovou úpravu, "
+																. "jinak HAL pravděpodobně zkratuje odmaskované vodiče blízko u sebe."
+								);
+							}
 						}
 					}
 

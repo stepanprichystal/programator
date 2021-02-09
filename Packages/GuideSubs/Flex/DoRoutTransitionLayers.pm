@@ -43,8 +43,9 @@ push( @messHead, "<g>==========================================================<
 push( @messHead, "<g>Průvodce vytvořením vrstev pro zahloubení v tranzitní zóně</g>" );
 push( @messHead, "<g>==========================================================</g>\n" );
 
-my $ROUTOVERLAP    = 0.2;    # 0.2mm Overlap of routs whcich go from top and from bot during routing PCB flexible part
-my $EXTENDTRANZONE = 1.5;    # 1.5mm transition rout slots will be exteneded on both ends
+my $ROUTOVERLAP       = 0.2;     # 0.2mm Overlap of routs whcich go from top and from bot during routing PCB flexible part
+my $EXTENDTRANZONE    = 1.5;     # 1.5mm transition rout slots will be exteneded on both ends
+my $DEFROUTPART1DEPTH = 0.23;    #  0.23mm Default depth for first routing (part 1) Rout overlap is not considered
 
 # Set impedance lines
 sub PrepareRoutLayers {
@@ -146,28 +147,49 @@ sub __CreateRoutTransitionPart1 {
 		push( @mess, "----------------------------------------------------\n" );
 		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
 
-		my $parTool   = $messMngr->GetTextParameter( "Velikost frézovacího nástroje [mm]",          2 );                 #2mm
+		my $parTool   = $messMngr->GetTextParameter( "Velikost frézovacího nástroje [mm]",          2 );                    #2mm
 		my $parExtend = $messMngr->GetTextParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
+		my $parDepth  = $messMngr->GetTextParameter( "Základ pro výpočet hloubky nástroje  [mm]",  $DEFROUTPART1DEPTH );
 
-		my @params = ( $parTool, $parExtend );
+		my @params = ( $parTool, $parExtend, $parDepth );
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
 
-		@newRoutLayers = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 1, $parTool->GetResultValue(1),
-																   $toolMagazineInfo, $toolComp, $recreate, $ROUTOVERLAP,
-																   $parExtend->GetResultValue(1) );
+		my %resPrepare = FlexiBendArea->PrepareRoutTransitionZone(
+																   $inCAM,                      $jobId,
+																   $step,                       1,
+																   $parTool->GetResultValue(1), $toolMagazineInfo,
+																   $toolComp,                   $recreate,
+																   $ROUTOVERLAP,                $parExtend->GetResultValue(1),
+																   $parDepth->GetResultValue(1)
+		);
 
-		CamLayer->DisplayLayers( $inCAM, \@newRoutLayers );
-		$inCAM->PAUSE("Zkontroluj pripravene frezovaci vrstvy a uprav co je treba.");
+		if ( $resPrepare{"result"} ) {
+			@newRoutLayers = @{ $resPrepare{"routLayers"} };
 
-		@mess = (@messHead);
-		push( @mess, "Vytvoření první hloubkové frézy (" . join( "; ", @newRoutLayers ) . ") tranzitní zóny" );
-		push( @mess, "----------------------------------------------------\n" );
-		push( @mess, "\nJsou frézovací vrstvy ok?" );
+			CamLayer->DisplayLayers( $inCAM, \@newRoutLayers );
+			$inCAM->PAUSE("Zkontroluj pripravene frezovaci vrstvy a uprav co je treba.");
 
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit znovu", "Ok" ] );
+			@mess = (@messHead);
+			push( @mess, "Vytvoření první hloubkové frézy (" . join( "; ", @newRoutLayers ) . ") tranzitní zóny" );
+			push( @mess, "----------------------------------------------------\n" );
+			push( @mess, "\nJsou frézovací vrstvy ok?" );
 
-		$routLayerOk = 1 if ( $messMngr->Result() == 1 );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit znovu", "Ok" ] );
+
+			# Change used routh depth part 1 for creating rout depth part 2 (which depands on this value)
+			$DEFROUTPART1DEPTH =  $parDepth->GetResultValue(1);
+
+			$routLayerOk = 1 if ( $messMngr->Result() == 1 );
+		}
+		else {
+			my @mess = (@messHead);
+			push( @mess, "Chyba při vytvoření první hloubkové frézy tranzitní zóny" );
+			push( @mess, "----------------------------------------------------\n" );
+			push( @mess, "\nDetail chyby:" );
+			push( @mess, "\n\n" . $resPrepare{"errMess"} );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+		}
 
 	}
 
@@ -244,21 +266,32 @@ sub __CreateRoutTransitionPart2 {
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
 
-		@newRoutLayers = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 2, $parTool->GetResultValue(1),
+		my %resPrepare = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 2, $parTool->GetResultValue(1),
 																   $toolMagazineInfo, $toolComp, $recreate, $ROUTOVERLAP,
 																   $parExtend->GetResultValue(1) );
 
-		CamLayer->DisplayLayers( $inCAM, \@newRoutLayers );
-		$inCAM->PAUSE("Zkontroluj pripravene frezovaci vrstvy a uprav co je treba.");
+		if ( $resPrepare{"result"} ) {
+			@newRoutLayers = @{ $resPrepare{"routLayers"} };
+			CamLayer->DisplayLayers( $inCAM, \@newRoutLayers );
+			$inCAM->PAUSE("Zkontroluj pripravene frezovaci vrstvy a uprav co je treba.");
 
-		@mess = (@messHead);
-		push( @mess, "Vytvoření druhé hloubkové frézy (" . join( "; ", @newRoutLayers ) . ") tranzitní zóny" );
-		push( @mess, "----------------------------------------------------\n" );
-		push( @mess, "\nJsou frézovací vrstvy ok?" );
+			@mess = (@messHead);
+			push( @mess, "Vytvoření druhé hloubkové frézy (" . join( "; ", @newRoutLayers ) . ") tranzitní zóny" );
+			push( @mess, "----------------------------------------------------\n" );
+			push( @mess, "\nJsou frézovací vrstvy ok?" );
 
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit znovu", "Ok" ] );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit znovu", "Ok" ] );
 
-		$routLayerOk = 1 if ( $messMngr->Result() == 1 );
+			$routLayerOk = 1 if ( $messMngr->Result() == 1 );
+		}
+		else {
+			my @mess = (@messHead);
+			push( @mess, "Chyba při vytvoření první hloubkové frézy tranzitní zóny" );
+			push( @mess, "----------------------------------------------------\n" );
+			push( @mess, "\nDetail chyby:" );
+			push( @mess, "\n\n" . $resPrepare{"errMess"} );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+		}
 
 	}
 
@@ -285,16 +318,18 @@ sub __IsolateSigLayer {
 
 			my @sigLayers = ();
 
+			# Do not put negative to layer when drill ends
+
 			if ( $lInfo{"gROWdrl_dir"} eq "top2bot" ) {
 
-				for ( my $i = $lInfo{"NCStartOrder"} ; $i <= $lInfo{"NCEndOrder"} ; $i++ ) {
+				for ( my $i = $lInfo{"NCStartOrder"} ; $i < $lInfo{"NCEndOrder"} ; $i++ ) {
 
 					push( @sigLayers, first { $_->{"gROWrow"} eq $i } @allLayers );
 				}
 
 			}
 			else {
-				for ( my $i = $lInfo{"NCEndOrder"} ; $i <= $lInfo{"NCStartOrder"} ; $i++ ) {
+				for ( my $i = $lInfo{"NCStartOrder"} ; $i > $lInfo{"NCEndOrder"} ; $i-- ) {
 
 					push( @sigLayers, first { $_->{"gROWrow"} eq $i } @allLayers );
 				}
@@ -391,7 +426,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d269208";
+	my $jobId = "d306663";
 
 	my $notClose = 0;
 

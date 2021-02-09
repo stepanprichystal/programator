@@ -36,7 +36,7 @@ print "Total job number: " . scalar(@jobsFinal) . "\n\n";
 
 #sleep(5);
 
-#__GetPrograms(\@jobsFinal);
+__GetPrograms(\@jobsFinal);
 
 sub __GetPrograms {
 	my @jobs = @{ shift(@_) };
@@ -76,7 +76,7 @@ sub __GetPrograms {
 	print  "\n Total:".$cnt;
 }
 
-__CheckFsch( \@jobsFinal );
+#__CheckFsch( \@jobsFinal );
 
 sub __CheckFsch {
 	my @jobs = @{ shift(@_) };
