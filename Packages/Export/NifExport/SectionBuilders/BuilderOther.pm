@@ -58,7 +58,7 @@ sub Build {
 
 	#poznamka jadra
 	# Temporary solution, wait for analzsis of HEG production module in Kubatronik
-	if (1) {
+	if ( $self->_IsRequire("semiproducts") ) {
 
 		# add quick notes too
 

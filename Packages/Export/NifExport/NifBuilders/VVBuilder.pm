@@ -110,6 +110,8 @@ sub Build {
 	push( @req, "xri" );
 	push( @req, "yf" );
 	push( @req, "zri" );
+	push( @req, "semiproducts" );
+	
 
 	$nifMngr->AddSection( "Ostatni", BuilderOther->new( \@req ) );
 
