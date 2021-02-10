@@ -40,6 +40,7 @@ sub UnMaskBGAThroughHole {
 
 	my $unMaskedCntRef   = 0;
 	my $unMaskAttrValRef = "";
+	my $userCheck = 0;
 
 	my @NC = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
 	my @sm = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
@@ -50,7 +51,7 @@ sub UnMaskBGAThroughHole {
 		my $minDistHole2Pad = 2000;    # 2000µm minimal distance of through hole to pad
 		$result = UnMaskNC->UnMaskThroughHoleNearBGA( $inCAM, $jobId, $step, $resize, $minDistHole2Pad, \$unMaskedCntRef, \$unMaskAttrValRef );
 
-		if ( $result && $unMaskedCntRef > 0 ) {
+		if ($userCheck &&  $result && $unMaskedCntRef > 0 ) {
 
 			my $lTmp = "unmask_hole_near_bga";
 
@@ -97,6 +98,7 @@ sub UnMaskSMDThroughHole {
 
 	my $unMaskedCntRef   = 0;
 	my $unMaskAttrValRef = "";
+	my $userCheck = 0;
 
 	my @NC = CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_nDrill );
 	my @sm = map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "solder_mask" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
@@ -108,7 +110,7 @@ sub UnMaskSMDThroughHole {
 		$result = UnMaskNC->UnMaskThroughHoleNearSMD( $inCAM, $jobId, $step, $resize, $minDistHole2Pad, \$unMaskedCntRef, \$unMaskAttrValRef )
 		  ;
 
-		if ( $result && $unMaskedCntRef ) {
+		if ($userCheck && $result && $unMaskedCntRef ) {
 
 			my $lTmp = "unmask_hole_near_smd";
 
