@@ -70,7 +70,7 @@ sub Build {
 			my @semiProd = map { $_->GetData() } $stackup->GetLastPress()->GetLayers( StackEnums->ProductL_PRODUCT );
 
 			# Stackup contains  semiproducts with pressing
-			if ( scalar( grep { scalar( $_->GetLayers() ) > 1 } @semiProd ) ) {
+			if (  !$stackup->GetSequentialLam() && scalar( grep { scalar( $_->GetLayers() ) > 1 } @semiProd ) ) {
 
 				# Flag description
 
