@@ -16,6 +16,7 @@ use warnings;
 use threads;
 use threads::shared;
 use File::Basename;
+use Try::Tiny;
 
 #use strict;
 
@@ -24,10 +25,14 @@ use aliased 'Programs::Comments::CommWizard::Forms::CommWizardFrm';
 use aliased 'Programs::Comments::Comments';
 use aliased 'Programs::Comments::Enums' => 'CommEnums';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsPaths';
 use aliased 'Programs::Comments::CommMail::CommMail';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Programs::Exporter::ExportCheckerMini::RunExport::RunExporterCheckerMini';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
+use aliased 'Packages::SystemCall::SystemCall';
+use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -140,7 +145,7 @@ sub __SaveExitHndl {
 	}
 
 	if ($exit) {
-		
+
 		$self->__StopTimers();
 
 		$self->{"form"}->{"mainFrm"}->Close();
@@ -394,18 +399,21 @@ sub __OnEditFileHndl {
 }
 
 sub __OnAddFileHndl {
-	my $self      = shift;
-	my $commId    = shift;
-	my $addCAMDir = shift;                                                                                        # Add CAM directly without pause
-	my $addCAM    = shift;
-	my $addGS     = shift;
-	my $addFile   = shift;
+	my $self        = shift;
+	my $commId      = shift;
+	my $addCAMDir   = shift;    # Add CAM directly without pause
+	my $addCAM      = shift;
+	my $addGS       = shift;
+	my $addFile     = shift;
+	my $addFileType = shift;    # Existing/ PDF stackup/ IMG stackup ...
 
 	my $messMngr = $self->{"form"}->GetMessMngr();
 
 	$self->{"form"}->HideFrm() if ( $addCAM || $addGS );
 
-	my $p = "";
+	my $p          = "";
+	my $delOriFile = 0;         # Remove original file after adding to comments
+	my $custName   = undef;     # Name of final file
 	my $res;
 
 	# Process snapshots
@@ -440,8 +448,9 @@ sub __OnAddFileHndl {
 		}
 	}
 
-	# Process file attach
-	elsif ($addFile) {
+	elsif ( $addFile && $addFileType eq "existingFile" ) {
+
+		# Process file attach
 
 		$res = $self->{"comments"}->ChooseFile( \$p, $self->{"form"}->{"mainFrm"} );
 
@@ -451,20 +460,93 @@ sub __OnAddFileHndl {
 			$res = 0;
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["File name has to be without spaces and diacritics"] );   #  Script is stopped
 		}
+
+		my ( $name, $a, $suf ) = fileparse( $p, qr/\.\w*/ );
+		$custName = $name;    # Take name form original file
+
+	}
+	elsif ( $addFile && ( $addFileType eq "stackupPDF" || $addFileType eq "stackupImage" ) ) {
+
+		# Process stackup
+
+		$delOriFile = 1;
+		my $stckOutput = undef;
+
+		my $mess = "";
+
+		try {
+
+			my $control = ControlPdf->new( $self->{"inCAM"}, $self->{"jobId"}, "o+1", 0, 0 );
+
+			$control->AddStackupPreview( \$mess );
+
+			$res = $control->GeneratePdf( \$mess );
+			 
+			$stckOutput = $control->GetOutputPath();
+
+		}
+		catch {
+			$mess .= "Error during generating stackup stackup: " . $_;
+			$res = 0;
+
+		};
+
+		if ($res) {
+
+			if ( $addFileType eq "stackupPDF" ) {
+
+				$p = $stckOutput;
+
+			}
+			elsif ( $addFileType eq "stackupImage" ) {
+
+				my $pdf = $stckOutput;
+
+				my $pImg = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".jpeg";
+
+				my @cmds = ();
+				push( @cmds, EnumsPaths->Client_IMAGEMAGICK . "convert.exe +antialias" );
+
+				push( @cmds, " -density 300" );
+				push( @cmds, $pdf . " -flatten" );
+				push( @cmds, "-resize 1060x1500!" ); 
+				push( @cmds, $pImg );
+
+				print STDERR join( " ", @cmds );
+
+				my $systeMres = system( join( " ", @cmds ) );
+
+				unlink($pdf);
+
+				if ( $systeMres > 0 ) {
+					$messMngr->ShowModal( -1,
+										  EnumsGeneral->MessageType_ERROR,
+										  ["Error during converting PDF stackup to IMG. Error detail: $systeMres"] );    #  Script is stopped
+
+					$res = 0;
+
+				}
+				else {
+
+					$p = $pImg;
+				}
+
+			}
+
+			$custName = $self->{"jobId"} . "_stackup";    # Take name form original file
+		}
+		else {
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, ["Error during create stackup. Detail: $mess"] );    #  Script is stopped
+		}
+
 	}
 
 	# Store result
 	if ($res) {
 
-		my $custName = undef;
-
-		if ($addFile) {
-
-			my ( $name, $a, $suf ) = fileparse( $p, qr/\.\w*/ );
-			$custName = $name;
-		}
-
 		$self->{"comments"}->AddFile( $commId, $custName, $p );
+
+		unlink($p) if ($delOriFile);
 
 		# Refresh Comm view
 		my $commSnglLayout = $self->{"comments"}->GetLayout()->GetCommentById($commId);
@@ -645,7 +727,6 @@ sub __SetTimers {
 
 			my @comments = $self->{"comments"}->GetLayout()->GetAllComments();
 
- 
 			if ( scalar(@comments) > 0 ) {
 
 				$messMngr->ShowModal( -1,
@@ -769,24 +850,16 @@ sub __FormChecks {
 
 			if ( $commSngl->GetType() eq CommEnums->CommentType_QUESTION && scalar( $commSngl->GetAllSuggestions() ) < 1 ) {
 
-				push( @warnMess,
-					      "Komentář číslo: "
-						. ( $i + 1 ) . " i"
-						. " je otázka, ale nejsou navrženy žádné odpovědi. Je to ok?" );
+				push( @warnMess, "Komentář číslo: " . ( $i + 1 ) . " i" . " je otázka, ale nejsou navrženy žádné odpovědi. Je to ok?" );
 			}
 		}
 
 		if ( scalar(@warnMess) ) {
 
-			$messMngr->ShowModal(
-								  -1,
+			$messMngr->ShowModal( -1,
 								  EnumsGeneral->MessageType_WARNING,
-								  [
-									 "Varování při kontrole formuláře.",
-									 "Detail varování:\n" . join( "\n", map { "- " . $_ } @warnMess )
-								  ],
-								  [ "Repair", "Continue" ]
-			);
+								  [ "Varování při kontrole formuláře.", "Detail varování:\n" . join( "\n", map { "- " . $_ } @warnMess ) ],
+								  [ "Repair",                                "Continue" ] );
 
 			if ( $messMngr->Result() == 0 ) {
 

@@ -215,8 +215,8 @@ sub InsertDataCode {
 
 }
 
-# Indicate if customer require ULLogo on PCB
-sub InsertULLogo {
+# Return dedicated email adress for technical question
+sub GlobalEQEmail {
 	my $self = shift;
 
 	# default value if customer is not in db
@@ -224,9 +224,13 @@ sub InsertULLogo {
 		return undef;
 	}
 
-	return $self->{"notes"}->{"InsertULLogo"};
+	return $self->{"notes"}->{"GlobalEmailEQ"};
 
 }
+
+
+
+ 
 
 
 # ======== Stencil notes ============

@@ -13,6 +13,7 @@ use File::Copy;
 use POSIX qw(strftime);
 use File::Path 'rmtree';
 
+
 #local library
 
 use aliased 'Programs::Comments::CommLayout::CommLayout';
@@ -47,20 +48,19 @@ sub new {
 
 	# Path of main JSON file where comments are stored
 	$self->{"mainFile"} = $self->{"commDir"} . "comments.json";
-	
+
 	# Path where is stored snapshot from GreenShot
-	$self->{"GSSnapshot"}  = EnumsPaths->Client_INCAMTMPOTHER . "snapshot" . ".png";
-	
+	$self->{"GSSnapshot"} = EnumsPaths->Client_INCAMTMPOTHER . "snapshot" . ".png";
 
 	# Complete comment layout structure
-	$self->{"commLayout"}  = CommLayout->new();
-	
+	$self->{"commLayout"} = CommLayout->new();
+
 	# Object for storing/loading comments from json
 	$self->{"jsonStrMngr"} = JsonStorableMngr->new( $self->{"mainFile"} );
 
 	$self->__LoadFromJob();
 
-	$self->__AddDefaultComm() if ( $self->{"addDefaulComm"} && scalar($self->{"commLayout"}->GetAllComments()) == 0 );
+	$self->__AddDefaultComm() if ( $self->{"addDefaulComm"} && scalar( $self->{"commLayout"}->GetAllComments() ) == 0 );
 
 	$self->__ClearOldFiles();
 
@@ -208,7 +208,6 @@ sub SnapshotGS {
 	my $fileName = "CAM_" . GeneralHelper->GetNumUID();
 	$$p = $self->{"commDir"} . $fileName . ".png";
 
- 
 	if ( -e $self->{"GSSnapshot"} ) {
 		move( $self->{"GSSnapshot"}, $$p );
 
@@ -221,7 +220,6 @@ sub SnapshotGS {
 
 	return $result;
 }
-
 
 # Create Snapshot. GreenShot send image directly to app
 sub SnapshotGSDirectly {
@@ -229,10 +227,10 @@ sub SnapshotGSDirectly {
 	my $p    = shift;
 
 	my $result = 1;
- 
+
 	my $fileName = "CAM_" . GeneralHelper->GetNumUID();
 	$$p = $self->{"commDir"} . $fileName . ".png";
- 
+
 	if ( -e $self->{"GSSnapshot"} ) {
 		move( $self->{"GSSnapshot"}, $$p );
 
@@ -245,8 +243,6 @@ sub SnapshotGSDirectly {
 
 	return $result;
 }
-
-
 
 sub ChooseFile {
 	my $self = shift;
@@ -258,12 +254,12 @@ sub ChooseFile {
 	my $dirDialog = Wx::FileDialog->new( $frm, "Select directory with data", "c:/pcb" );
 
 	if ( $dirDialog->ShowModal() != &Wx::wxID_CANCEL ) {
-		
+
 		my $fileName = "CAM_" . GeneralHelper->GetNumUID();
 		my $pTmp     = $self->{"commDir"} . $fileName;
-		
-		copy( ($dirDialog->GetPaths() )[0], $pTmp);
-		
+
+		copy( ( $dirDialog->GetPaths() )[0], $pTmp );
+
 		$$p = $pTmp;
 
 	}
@@ -292,11 +288,11 @@ sub AddComment {
 	my $commCnt = scalar( $self->{"commLayout"}->GetAllComments() );
 
 	# Add default screenshot from InCAM
-#	my $p = "";
-#	if ( $self->SnapshotCAM( 1, \$p ) ) {
-#
-#		$self->AddFile( $commCnt - 1, "", $p );
-#	}
+	#	my $p = "";
+	#	if ( $self->SnapshotCAM( 1, \$p ) ) {
+	#
+	#		$self->AddFile( $commCnt - 1, "", $p );
+	#	}
 
 	return $comment;
 }
@@ -484,13 +480,19 @@ sub AddFile {
 	my $self      = shift;
 	my $commentId = shift;
 	my $name      = shift // "";
-	my $path      = shift;
+	my $oriPath   = shift;
 
 	my $comm = $self->{"commLayout"}->GetCommentById($commentId);
 
 	my $defName = $name;
+	
+	# Copy source file to comm dir (protection to removing original file before createing email)
+	my ( $oriName, $a, $suf ) = fileparse( $oriPath, qr/\.\w*/ );
+	my $tmpPath = $self->GetCommDir() . GeneralHelper->GetNumUID() . "$suf";
+	copy( $oriPath, $tmpPath );
 
-	my $f = $comm->AddFile( $defName, $path );
+	# Add file
+	my $f = $comm->AddFile( $defName, $tmpPath );
 
 	# Update file customer name if empty
 
@@ -622,10 +624,11 @@ sub GetCommArchiveDir {
 }
 
 # Return Green shot snapshot path
-sub GetGSSnapshotPath{
+sub GetGSSnapshotPath {
 	my $self = shift;
 	return $self->{"GSSnapshot"};
 }
+
 # --------------------------------------
 # Private methods
 # --------------------------------------
@@ -669,14 +672,14 @@ sub __AddDefaultComm {
 	my $commCnt = scalar( $self->{"commLayout"}->GetAllComments() );
 
 	$self->SetText( $commCnt - 1, "" );
-#	my $p = "";
-#	if ( $self->SnapshotCAM( 1, \$p ) ) {
-#
-#		$self->AddFile( $commCnt - 1, "", $p );
-#	}
+
+	#	my $p = "";
+	#	if ( $self->SnapshotCAM( 1, \$p ) ) {
+	#
+	#		$self->AddFile( $commCnt - 1, "", $p );
+	#	}
 
 }
-
 
 # Remove rubbish
 sub __ClearOldFiles {
@@ -700,9 +703,9 @@ sub __ClearOldFiles {
 	}
 
 	close(DIR);
-	
+
 	# 2) remove snapshot image on GS snapshot path when init object
-	unlink($self->{"GSSnapshot"}) if(-e $self->{"GSSnapshot"});
+	unlink( $self->{"GSSnapshot"} ) if ( -e $self->{"GSSnapshot"} );
 }
 
 #-------------------------------------------------------------------------------------------#

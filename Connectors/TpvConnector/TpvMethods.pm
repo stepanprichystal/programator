@@ -49,7 +49,8 @@ sub GetCustomerInfo {
 					IF(t1.MaxCustPnlDim1 = '', null , t1.MaxCustPnlDim1) as MaxCustPnlDim1,
 					IF(t1.MaxCustPnlDim2 = '', null , t1.MaxCustPnlDim2) as MaxCustPnlDim2,
 					IF(t1.InsertDataCode = '', null , t1.InsertDataCode) as InsertDataCode,
-					IF(t1.InsertULLogo = '', null , t1.InsertULLogo) as InsertULLogo
+					IF(t1.InsertULLogo = '', null , t1.InsertULLogo) as InsertULLogo,
+					IF(t1.GlobalEmailEQ = '', null , t1.GlobalEmailEQ) as GlobalEmailEQ
 	
     				FROM customer_note AS t1
 

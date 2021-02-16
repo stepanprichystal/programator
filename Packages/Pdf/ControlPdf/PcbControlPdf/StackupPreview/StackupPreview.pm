@@ -32,6 +32,7 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+	$self->{"step"} = shift;
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
@@ -45,7 +46,7 @@ sub Create {
 	my $result = 1;
 
 	# 1) Init customer stackup class
-	my $custStckp = CustStackup->new( $self->{"inCAM"}, $self->{"jobId"} );
+	my $custStckp = CustStackup->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
 
 	# 2) Build stackup
 	unless ( $custStckp->Build() ) {

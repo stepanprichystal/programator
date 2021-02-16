@@ -114,6 +114,16 @@ sub __SetContentLayout {
 
 	$szStatBox->Add( $ordersTxtXtrl, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
+
+
+
+	use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::AddFileFrm';
+	$self->{'quickNoteFrm'} = AddFileFrm->new($parent);
+
+	$self->{'quickNoteFrm'}->{"mainFrm"}->CentreOnParent(&Wx::wxBOTH);
+	$self->{'quickNoteFrm'}->{"mainFrm"}->Show();
+
+
 	return $szStatBox;
 }
 

@@ -159,7 +159,7 @@ sub AddStackupPreview {
 	$self->{"previewStckpReq"}->{"req"} = 1;
 
 	# 1) create stackup image
-	my $prev = StackupPreview->new( $self->{"inCAM"}, $self->{"jobId"} );
+	my $prev = StackupPreview->new( $self->{"inCAM"}, $self->{"jobId"},  $self->{"step"}  );
 	if ( $prev->Create($mess) ) {
 		$self->{"previewStckpReq"}->{"outfile"} = $prev->GetOutput();
 
@@ -533,7 +533,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $jobId = "x69801"; # RigidFlex Outer + cvrl
 #	my $jobId = "d298176"; # RigidFlex Outer + flexmask
- 	my $jobId = "d305981"; 
+ 	my $jobId = "d306663"; 
 
 	my $mess = "";
 

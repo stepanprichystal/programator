@@ -109,6 +109,9 @@ sub AddFile {
 	my $path = shift;
 
 	my $prefix = "Q";
+	
+
+	
 
 #	if ( $self->GetType() eq Enums->CommentType_NOTE ) {
 #		$prefix = "N";

@@ -40,12 +40,12 @@ use aliased 'Managers::MessageMngr::MessageMngr';
 #-------------------------------------------------------------------------------------------#
 
 # Types of aproval
-use constant APPROVAL_NO        => "No approval";
-use constant APPROVAL_OFFERDONE => "Offer DONE";
-use constant APPROVAL_OFFERPROC => "Offer PROCESSING";
-use constant APPROVAL_JOBDONE   => "Job DONE";
-use constant APPROVAL_JOBPROC   => "Job PROCESSING";
-use constant APPROVAL_JOBPTOSALES   => "Job RETURN TO SALES";
+use constant APPROVAL_NO          => "No approval";
+use constant APPROVAL_OFFERDONE   => "Offer DONE";
+use constant APPROVAL_OFFERPROC   => "Offer PROCESSING";
+use constant APPROVAL_JOBDONE     => "Job DONE";
+use constant APPROVAL_JOBPROC     => "Job PROCESSING";
+use constant APPROVAL_JOBPTOSALES => "Job RETURN TO SALES";
 
 sub new {
 	my $class  = shift;
@@ -369,7 +369,7 @@ sub __OnApprovalTypeChange {
 
 		# status
 		$self->{"orderStatusCb"}->SetValue( EnumsIS->CurStep_POSLANDOTAZ );
-	
+
 	}
 	elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBPTOSALES ) {
 
@@ -378,8 +378,6 @@ sub __OnApprovalTypeChange {
 		# status
 		$self->{"orderStatusCb"}->SetValue( EnumsIS->CurStep_VRACENONAOU );
 	}
-	
-	
 
 	# Set email by approval type
 	if ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBDONE ) {
@@ -402,7 +400,7 @@ sub __OnApprovalTypeChange {
 
 		# introduction
 		$self->{"emailIntroRTxt"}->Clear();
-		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( MailEnums->Subject_JOBFINIFHAPPROVAL) );
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( MailEnums->Subject_JOBFINIFHAPPROVAL ) );
 
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(0);
@@ -424,16 +422,24 @@ sub __OnApprovalTypeChange {
 		$self->{"emailActionSentRb"}->SetValue(1);
 
 		# adress To
-		my $emailTo = "";
-		my @orders  = $self->{"commMail"}->GetCurrOrderNumbers(0);
+		my @emailTo = ();
+
+		# add global email if defined
+		my $custNote = $self->{"defaultInfo"}->GetCustomerNote();
+		if ( defined $custNote->GlobalEQEmail() ) {
+			push( @emailTo, $custNote->GlobalEQEmail() );
+		}
+
+		# add email from order
+		my @orders = $self->{"commMail"}->GetCurrOrderNumbers(0);
 		if (@orders) {
 
 			my %ordInf   = HegMethods->GetAllByOrderId( $orders[0] );
 			my $contInfo = HegMethods->GetContactPersonInfo( $ordInf{"predano_komu"} );
-			$emailTo = $contInfo->{"e_mail"};
+			push( @emailTo, $contInfo->{"e_mail"} );
 		}
 
-		$self->{"emailToAddressCtrl"}->SetValue($emailTo);
+		$self->{"emailToAddressCtrl"}->SetValue( join("; ", @emailTo) );
 
 		# adress CC
 		$self->{"emailCCAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATCAM . "; " . EnumsPaths->MAIL_GATSALES );
@@ -443,7 +449,7 @@ sub __OnApprovalTypeChange {
 
 		# introduction
 		$self->{"emailIntroRTxt"}->Clear();
-		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro(  MailEnums->Subject_JOBPROCESSAPPROVAL ) );
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( MailEnums->Subject_JOBPROCESSAPPROVAL ) );
 
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(0);
@@ -453,8 +459,9 @@ sub __OnApprovalTypeChange {
 
 		# clear comments
 		$self->{"clearCommentsChb"}->SetValue(1);
-	
-	}elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBPTOSALES ) {
+
+	}
+	elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_JOBPTOSALES ) {
 
 		# export email
 		$self->{"exportEmailChb"}->SetValue(1);
@@ -474,7 +481,7 @@ sub __OnApprovalTypeChange {
 
 		# introduction
 		$self->{"emailIntroRTxt"}->Clear();
-		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( MailEnums->Subject_JOBRETURNTOSALES) );
+		$self->{"emailIntroRTxt"}->WriteText( $self->{"commMail"}->GetDefaultIntro( MailEnums->Subject_JOBRETURNTOSALES ) );
 
 		# include offer data
 		$self->{"includeOfferInfChb"}->SetValue(0);
@@ -485,7 +492,8 @@ sub __OnApprovalTypeChange {
 		# clear comments
 		$self->{"clearCommentsChb"}->SetValue(1);
 
-	}elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_OFFERDONE ) {
+	}
+	elsif ( $self->{"approvalTypeCb"}->GetValue() eq APPROVAL_OFFERDONE ) {
 
 		# export email
 		$self->{"exportEmailChb"}->SetValue(1);
@@ -498,7 +506,7 @@ sub __OnApprovalTypeChange {
 		$self->{"emailToAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATSALES );
 
 		# adress CC
-		$self->{"emailCCAddressCtrl"}->SetValue(""); # no copy
+		$self->{"emailCCAddressCtrl"}->SetValue("");                               # no copy
 
 		# subject
 		$self->{"emailSubjectCb"}->SetValue( MailEnums->Subject_OFFERFINIFHAPPROVAL );
@@ -527,16 +535,27 @@ sub __OnApprovalTypeChange {
 		$self->{"emailActionSentRb"}->SetValue(1);
 
 		# adress To
+
+		# adress To
+		my @emailTo = ();
+
+		# add global email if defined
+		my $custNote = $self->{"defaultInfo"}->GetCustomerNote();
+		if ( defined $custNote->GlobalEQEmail() ) {
+			push( @emailTo, $custNote->GlobalEQEmail() );
+		}
+
+		# add email from order
 		my $emailTo = "";
 		my @orders  = $self->{"commMail"}->GetCurrOrderNumbers(0);
 		if (@orders) {
 
 			my %ordInf   = HegMethods->GetAllByOrderId( $orders[0] );
 			my $contInfo = HegMethods->GetContactPersonInfo( $ordInf{"predano_komu"} );
-			$emailTo = $contInfo->{"e_mail"};
+			push( @emailTo, $contInfo->{"e_mail"} );
 		}
 
-		$self->{"emailToAddressCtrl"}->SetValue($emailTo);
+		$self->{"emailToAddressCtrl"}->SetValue( join( "; ", @emailTo ) );
 
 		# adress CC
 		$self->{"emailCCAddressCtrl"}->SetValue( EnumsPaths->MAIL_GATCAM . "; " . EnumsPaths->MAIL_GATSALES );
@@ -581,7 +600,9 @@ sub __OnMailPreviewHndl {
 
 	# Aware customer preview is not intended for email sending
 	my $messMngr = MessageMngr->new( $self->{"jobId"} );
-	my @txt      = ("Náhled v MS Outlook slouží pouze pro <b>kontrolu vygenerování emailu</b>. Pro odeslání používejte vždy tlačítko \"Export\"");
+	my @txt = (
+"Náhled v MS Outlook slouží pouze pro <b>kontrolu vygenerování emailu</b>. Pro odeslání používejte vždy tlačítko \"Export\""
+	);
 	push( @txt, "\n(Export uloží příznak o odeslání mailu do InCAM jobu + nastavení stav zakázky v IS atd..)" );
 	$messMngr->ShowModal( $self, EnumsGeneral->MessageType_INFORMATION, \@txt );
 
@@ -669,12 +690,11 @@ sub DisableControls {
 # SComm/GComm CONTROLS VALUES
 # =====================================================================
 
-
 # Approval type
 sub SetApprovalType {
 	my $self  = shift;
 	my $value = shift;
-	
+
 	$self->{"approvalTypeCb"}->SetValue($value);
 }
 
@@ -683,8 +703,6 @@ sub GetApprovalType {
 
 	return $self->{"approvalTypeCb"}->GetValue();
 }
-
- 
 
 # Change status of order in CAM department
 

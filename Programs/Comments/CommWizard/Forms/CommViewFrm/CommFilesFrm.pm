@@ -10,7 +10,6 @@ use strict;
 use warnings;
 use Wx;
 use List::Util qw[max min];
-use Win32::Exe;
 
 #local library
 use Widgets::Style;
@@ -19,6 +18,7 @@ use aliased 'Widgets::Forms::MyWxBookCtrlPage';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Programs::Comments::Enums';
 use aliased 'Enums::EnumsPaths';
+use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::AddFileFrm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -57,30 +57,29 @@ sub __SetLayout {
 
 	my $nb = Wx::Notebook->new( $self, -1, &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
-	my $btnRemove    = Wx::Button->new( $self, -1, "- Remove",             &Wx::wxDefaultPosition, [ 90,  28 ] );
-	my $btnEditGS    = Wx::Button->new( $self, -1, "Edit in GS",           &Wx::wxDefaultPosition, [ 90,  28 ] );
+	my $btnRemove    = Wx::Button->new( $self, -1, "- Remove",       &Wx::wxDefaultPosition, [ 90,  28 ] );
+	my $btnEditGS    = Wx::Button->new( $self, -1, "Edit in GS",     &Wx::wxDefaultPosition, [ 90,  28 ] );
 	my $btnAddCAMDir = Wx::Button->new( $self, -1, "+ CAM (direct)", &Wx::wxDefaultPosition, [ 110, 28 ] );
-	my $btnAddCAM    = Wx::Button->new( $self, -1, "+ CAM",    &Wx::wxDefaultPosition, [ 70, 28 ] );
-	my $btnAddGS     = Wx::Button->new( $self, -1, "+ GS",             &Wx::wxDefaultPosition, [ 70, 28 ] );
-	my $btnAddFile   = Wx::Button->new( $self, -1, "+ File",           &Wx::wxDefaultPosition, [ 70, 28 ] );
+	my $btnAddCAM    = Wx::Button->new( $self, -1, "+ CAM",          &Wx::wxDefaultPosition, [ 70,  28 ] );
+	my $btnAddGS     = Wx::Button->new( $self, -1, "+ GS",           &Wx::wxDefaultPosition, [ 70,  28 ] );
+	my $btnAddFile   = Wx::Button->new( $self, -1, "+ File",         &Wx::wxDefaultPosition, [ 70,  28 ] );
+
+	$self->{'addFileFrm'} = AddFileFrm->new($self);
 
 	# Set icons
-	$self->__SetIconByApp( $btnAddGS,     Enums->Path_GREENSHOT );
-	$self->__SetIconByApp( $btnAddCAMDir, GeneralHelper->GetLastInCAMVersion() . "bin\\InCAM.exe" );
-	$self->__SetIconByApp( $btnAddCAM,    GeneralHelper->GetLastInCAMVersion() . "bin\\InCAM.exe" );
-	my $pAddFile = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\file24x24.ico";
-
-	my $im = Wx::Image->new( $pAddFile, &Wx::wxBITMAP_TYPE_ICO );
-	my $btmIco = Wx::Bitmap->new( $im->Scale( 22, 22 ) );
-	$btnAddFile->SetBitmap($btmIco);
+	$self->__SetIconByApp( $btnAddGS,     GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\GreenShot22x22.ico" );
+	$self->__SetIconByApp( $btnAddCAMDir, GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\InCAM22x22.ico" );
+	$self->__SetIconByApp( $btnAddCAM,    GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\InCAM22x22.ico" );
+	$self->__SetIconByApp( $btnAddFile,   GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\file24x24.ico" );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_BUTTON( $btnAddCAMDir, -1, sub { $self->{"onAddFileEvt"}->Do( 1, 0, 0, 0 ) } );
 	Wx::Event::EVT_BUTTON( $btnAddCAM,    -1, sub { $self->{"onAddFileEvt"}->Do( 0, 1, 0, 0 ) } );
 	Wx::Event::EVT_BUTTON( $btnAddGS,     -1, sub { $self->{"onAddFileEvt"}->Do( 0, 0, 1, 0 ) } );
-	Wx::Event::EVT_BUTTON( $btnAddFile,   -1, sub { $self->{"onAddFileEvt"}->Do( 0, 0, 0, 1 ) } );
-	Wx::Event::EVT_BUTTON( $btnEditGS, -1, sub { $self->{"onEditFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
-	Wx::Event::EVT_BUTTON( $btnRemove, -1, sub { $self->{"onRemoveFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
+	Wx::Event::EVT_BUTTON( $btnAddFile,   -1, sub { $self->__ShowAddFileFrm() } );
+	Wx::Event::EVT_BUTTON( $btnEditGS,    -1, sub { $self->{"onEditFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
+	Wx::Event::EVT_BUTTON( $btnRemove,    -1, sub { $self->{"onRemoveFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
+	$self->{"addFileFrm"}->{"onAddFileEvt"}->Add( sub { $self->{"onAddFileEvt"}->Do(0,0,0,1, @_) } );
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -126,7 +125,7 @@ sub __AddFile {
 	# DEFINE CONTROLS
 	my $fileNameTxt = Wx::StaticText->new( $page, -1, "Output name:", &Wx::wxDefaultPosition, [ 90, 30 ] );
 	my $fileNamePrefValTxt = Wx::StaticText->new( $page, -1, $fileLayout->GetFilePrefix() . ( $commId + 1 ), &Wx::wxDefaultPosition, [ 20, 30 ] );
-	my $fileNameExtraValTxt = Wx::TextCtrl->new( $page, -1, $fileLayout->GetFileCustName(), &Wx::wxDefaultPosition, [ 100, 20 ] );
+	my $fileNameExtraValTxt = Wx::TextCtrl->new( $page, -1, $fileLayout->GetFileCustName(), &Wx::wxDefaultPosition, [ 120, 20 ] );
 	my $fileNameSuffValTxt = Wx::StaticText->new( $page, -1, $fileLayout->GetFileSufix(), &Wx::wxDefaultPosition, [ 30, 30 ] );
 
 	Wx::InitAllImageHandlers();
@@ -137,7 +136,17 @@ sub __AddFile {
 		$p = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\noImage.png";
 	}
 	elsif ( !$fileLayout->IsImage() ) {
-		$p = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\file.png";
+		
+		if($fileLayout->GetIsPDF()){
+			
+			$p = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\filePDF.png";
+		}else{
+			
+			$p = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\fileAll.png";
+		}
+		
+		
+		
 	}
 
 	my $im = Wx::Image->new( $p, &Wx::wxBITMAP_TYPE_ANY );
@@ -239,25 +248,27 @@ sub __OnShowFilePreview {
 }
 
 sub __SetIconByApp {
-	my $self    = shift;
-	my $button  = shift;
-	my $appPath = shift;
+	my $self     = shift;
+	my $button   = shift;
+	my $iconPath = shift;
 
-	return 0 unless ( -e $appPath );
-
+	return 0 unless ( -e $iconPath );
 	Wx::InitAllImageHandlers();
-	my $exeCAM = Win32::Exe->new($appPath);
-	$exeCAM = $exeCAM->create_resource_section if $exeCAM->can_create_resource_section;
-	my $iconName = ( $exeCAM->get_group_icon_names )[0];
-	if ( defined $iconName ) {
-		my $p = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".ico";
-		$exeCAM->export_group_icon( $iconName, $p );
+	my $im = Wx::Image->new( $iconPath, &Wx::wxBITMAP_TYPE_ICO );
+	my $btmIco = Wx::Bitmap->new( $im->Scale( 22, 22 ) );
+	$button->SetBitmap($btmIco);
 
-		my $im = Wx::Image->new( $p, &Wx::wxBITMAP_TYPE_ICO );
-		my $btmIco = Wx::Bitmap->new( $im->Scale( 20, 20 ) );
-		$button->SetBitmap($btmIco);
+}
 
-	}
+# =====================================================================
+# HANDLERS
+# =====================================================================
+
+sub __ShowAddFileFrm {
+	my $self = shift;
+
+	$self->{'addFileFrm'}->{"mainFrm"}->CentreOnParent(&Wx::wxBOTH);
+	$self->{'addFileFrm'}->{"mainFrm"}->Show();
 
 }
 
