@@ -115,7 +115,16 @@ sub GetULLogoInfo {
 
 			# add datacode only if parsed symbol is real datacode - contain text with datacode
 
-			my %inf = ( "source" => "symbol", "name" => $f->{"symbol"}, "mirror" => $f->{"mirror"} =~ /y/i ? 1 : 0 );
+			my $typ = undef;    # single layer or multi layer logo
+
+			if ( $f->{"symbol"} =~ /ML1/i ) {
+				$typ = "ml";
+			}
+			elsif ( $f->{"symbol"} =~ /SL1/i ) {
+				$typ = "sl";
+			}
+
+			my %inf = ( "source" => "symbol", "name" => $f->{"symbol"}, "mirror" => $f->{"mirror"} =~ /y/i ? 1 : 0, "typ" => $typ );
 
 			push( @ULLogos, \%inf );
 

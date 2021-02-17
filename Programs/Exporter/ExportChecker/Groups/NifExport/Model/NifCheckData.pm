@@ -951,7 +951,7 @@ sub OnCheckGroupData {
 						my $allUnmasked = 0;
 						if ( $coveredFeats == 0 ) {
 
-							# chech if therea are actully some covered feats 
+							# chech if therea are actully some covered feats
 							# (some PCB may have all feats unmasked, but rest of material without Cu is covered)
 							my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l, 0 );
 
@@ -1015,17 +1015,25 @@ sub __CheckDataCodeJob {
 
 	foreach my $layer ( split( ",", $dataCodes ) ) {
 
-		foreach my $step (@steps) {
+		$layer = lc($layer);
 
-			$layer = lc($layer);
+		# First check if exist marking in panel (in this case marking in nested step do not have to exist)
+		my $panelMarking = 0;
+		if (    scalar( grep { $_ eq "mpanel" } @steps ) > 0
+			 && scalar( MarkingDataCode->GetDatacodesInfo( $inCAM, $jobId, "mpanel", $layer ) ) > 0 )
+		{
+			$panelMarking = 1;
+		}
+
+		foreach my $step (@steps) {
 
 			die "Layer: $layer, which the datacode should be located in does not exist." if ( !$defaultInfo->LayerExist($layer) );
 
 			my @dtCodes = MarkingDataCode->GetDatacodesInfo( $inCAM, $jobId, $step, $layer );
 
-			# check if mirror datacode is ok in all steps where is datacont present
 			if (@dtCodes) {
 
+				# check if mirror datacode is ok in all steps where is datacont present
 				my @dtCodesWrong = grep { $_->{"wrongMirror"} } @dtCodes;
 				if (@dtCodesWrong) {
 
@@ -1033,11 +1041,12 @@ sub __CheckDataCodeJob {
 					$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" jsou nesprávně zrcadlené datakódy ($str).\n";
 					$result = 0;
 				}
+
 			}
 			else {
 
 				# Check if step contain child steps (datacode has to by present in each child step)
-				unless ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) ) {
+				if ( !CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) && !$panelMarking ) {
 					$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" nebyl dohledán dynamický datakód.\n";
 					$result = 0;
 				}
@@ -1069,17 +1078,25 @@ sub __CheckULLogoJob {
 
 	foreach my $layer ( split( ",", $ULLogos ) ) {
 
-		foreach my $step (@steps) {
+		$layer = lc($layer);
 
-			$layer = lc($layer);
+		# First check if exist marking in panel (in this case marking in nested step do not have to exist)
+		my $panelMarking = 0;
+		if (    scalar( grep { $_ eq "mpanel" } @steps ) > 0
+			 && scalar( MarkingULLogo->GetULLogoInfo( $inCAM, $jobId, "mpanel", $layer ) ) > 0 )
+		{
+			$panelMarking = 1;
+		}
+
+		foreach my $step (@steps) {
 
 			die "Layer: $layer, which UL logo should be located in does not exist." if ( !$defaultInfo->LayerExist($layer) );
 
 			my @ULLogos = MarkingULLogo->GetULLogoInfo( $inCAM, $jobId, $step, $layer );
 
-			# check if mirror UL logo is ok in all steps where is datacont present
 			if (@ULLogos) {
 
+				# check if mirror UL logo is ok in all steps where is datacont present
 				my @ULLogoWrong = grep { $_->{"wrongMirror"} } @ULLogos;
 				if (@ULLogoWrong) {
 
@@ -1087,11 +1104,22 @@ sub __CheckULLogoJob {
 					$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" jsou nesprávně zrcadlené UL loga ($str).\n";
 					$result = 0;
 				}
+
+				# check if UL logo typ is OK (ML vs SL)
+				my $reqType = $defaultInfo->GetSignalLayers() > 2 ? "ml" : "sl";
+
+				my @ulLogoWrongType = grep { $_->{"typ"} ne $reqType } @ULLogos;
+				if (@ulLogoWrongType) {
+					my $str = join( "; ", map { $_->{"name"} } @ulLogoWrongType );
+					$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" jsou nesprávné typy SL1/ML1 UL loga ($str).\n";
+					$result = 0;
+				}
+
 			}
 			else {
 
-				# Check if step contain child steps (UL logo has to by present in each child step)
-				unless ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) ) {
+				# Check if step contain child steps (UL logo has to by present in each child step if not present in mpanel)
+				if ( !CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $step ) && !$panelMarking ) {
 					$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" nebylo dohledáno UL logo.\n";
 					$result = 0;
 				}
