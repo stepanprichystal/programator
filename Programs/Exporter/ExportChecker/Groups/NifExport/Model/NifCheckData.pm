@@ -1108,7 +1108,7 @@ sub __CheckULLogoJob {
 				# check if UL logo typ is OK (ML vs SL)
 				my $reqType = $defaultInfo->GetSignalLayers() > 2 ? "ml" : "sl";
 
-				my @ulLogoWrongType = grep { $_->{"typ"} ne $reqType } @ULLogos;
+				my @ulLogoWrongType = grep { defined $_->{"typ"} && $_->{"typ"} ne $reqType } @ULLogos;
 				if (@ulLogoWrongType) {
 					my $str = join( "; ", map { $_->{"name"} } @ulLogoWrongType );
 					$$mess .= "Ve stepu: \"$step\", vrstvě: \"$layer\" jsou nesprávné typy SL1/ML1 UL loga ($str).\n";

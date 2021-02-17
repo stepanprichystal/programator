@@ -326,7 +326,7 @@ sub __CheckGroupDataBasic {
 		# single layer + double layer flex PCB
 		# Only PYRALUX material is possible
 
-		my @flexMats = ("PYRALUX", "THINFLEX");
+		my @flexMats = ( "PYRALUX", "THINFLEX" );
 
 		unless ( grep { $_ =~ /$materialKindIS/i } @flexMats ) {
 
@@ -1286,6 +1286,54 @@ sub __CheckGroupDataExtend {
 				);
 			}
 		}
+	}
+
+	# If there are impedance coupons, check if there are place in the middle of PCB
+	if ( $defaultInfo->StepExist( EnumsGeneral->Coupon_IMPEDANCE ) ) {
+
+		my @repeats = grep { $_->{"stepName"} eq EnumsGeneral->Coupon_IMPEDANCE } CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" );
+
+		my %lim = $defaultInfo->GetProfileLimits();
+
+		# Check center area of panel (area of 50% width/height of panel)
+
+		my $w = $lim{"xMax"} - $lim{"xMin"};
+		my $h = $lim{"yMax"} - $lim{"yMin"};
+
+		my %centerArea = ();
+
+		$centerArea{"xMin"} = $lim{"xMin"} + $w / 4;
+		$centerArea{"xMax"} = $lim{"xMax"} - $w / 4;
+		$centerArea{"yMin"} = $lim{"yMin"} + $h / 4;
+		$centerArea{"yMax"} = $lim{"yMax"} - $h / 4;
+
+		my $inMiddle = 0;
+		foreach my $step (@repeats) {
+
+			my $xMidCpn = $step->{"gREPEATxmin"} + ($step->{"gREPEATxmax"} - $step->{"gREPEATxmin"})/2;
+			my $yMidCpn = $step->{"gREPEATymin"} + ($step->{"gREPEATymax"} - $step->{"gREPEATymin"})/2;
+
+			if (    $xMidCpn > $centerArea{"xMin"}
+				 && $xMidCpn < $centerArea{"xMax"}
+				 && $yMidCpn > $centerArea{"yMin"}
+				 && $yMidCpn < $centerArea{"yMax"} )
+			{
+
+				$inMiddle = 1;
+				last;
+			}
+		}
+
+		unless ($inMiddle) {
+
+			$dataMngr->_AddWarningResult(
+				"Impedanční kupon",
+				"Na přířezu jsou impedanční kupony, ale ani jeden není uprostřed přířezu "
+				  . "(ideální umístějí kuponů je mít alespoň jeden uprostřed z důvodu nerovnoměrného nakovení)"
+
+			);
+		}
+
 	}
 
 }
