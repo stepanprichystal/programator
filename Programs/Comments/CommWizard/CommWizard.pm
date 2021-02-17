@@ -33,6 +33,7 @@ use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
 use aliased 'Packages::SystemCall::SystemCall';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::StackupPreview::StackupPreview';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -414,7 +415,7 @@ sub __OnAddFileHndl {
 	my $p          = "";
 	my $delOriFile = 0;         # Remove original file after adding to comments
 	my $custName   = undef;     # Name of final file
-	my $res;
+	my $res        = 1;
 
 	# Process snapshots
 	if ( $addCAM || $addCAMDir || $addGS ) {
@@ -476,14 +477,16 @@ sub __OnAddFileHndl {
 
 		try {
 
-			my $control = ControlPdf->new( $self->{"inCAM"}, $self->{"jobId"}, "o+1", 0, 0 );
+			my $stckp = StackupPreview->new( $self->{"inCAM"}, $self->{"jobId"}, "o+1" );
 
-			$control->AddStackupPreview( \$mess );
+			if ( $stckp->Create( \$mess ) ) {
+				$stckOutput = $stckp->GetOutput();
 
-			$res = $control->GeneratePdf( \$mess );
-			 
-			$stckOutput = $control->GetOutputPath();
+			}
+			else {
 
+				$res = 0;
+			}
 		}
 		catch {
 			$mess .= "Error during generating stackup stackup: " . $_;
@@ -509,7 +512,7 @@ sub __OnAddFileHndl {
 
 				push( @cmds, " -density 300" );
 				push( @cmds, $pdf . " -flatten" );
-				push( @cmds, "-resize 1060x1500!" ); 
+				push( @cmds, "-resize 1060x1500!" );
 				push( @cmds, $pImg );
 
 				print STDERR join( " ", @cmds );

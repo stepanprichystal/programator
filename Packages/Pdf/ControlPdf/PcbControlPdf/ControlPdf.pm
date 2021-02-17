@@ -497,7 +497,7 @@ sub GetOutputPath {
 	return $self->{"outputPdf"}->GetOutput();
 }
 
-# do some initialiyation, create pdf step in InCAM job
+# do some initialization, create pdf step in InCAM job
 sub __Checks {
 	my $self = shift;
 
@@ -506,7 +506,7 @@ sub __Checks {
 	my $panelExist = CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
 	my $nifFile = NifFile->new( $self->{"jobId"} );
 	
-	if ( 	  !JobHelper->GetJobIsOffer( $self->{"jobId"} ) && $panelExist && !$nifFile->Exist() ) {
+	if ( !JobHelper->GetJobIsOffer( $self->{"jobId"} ) && $panelExist && !$nifFile->Exist() ) {
 
 		die "If panel exist, nif file has to exist too.";
 	}
