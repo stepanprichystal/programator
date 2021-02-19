@@ -55,6 +55,12 @@ sub GetDefaultFiduc {
 
 		# 1V with bottom silcscreen
 		$fiducType = Enums->Fiducials_HOLE3;
+	
+	}elsif ( $pcbType eq EnumsGeneral->PcbType_1VFLEX || $pcbType eq EnumsGeneral->PcbType_2VFLEX ) {
+
+		#  Flexible PCB, because solder mask is not cover sun fiducials at panel edge, 
+		# so we can't use them
+		$fiducType = Enums->Fiducials_HOLE3;
 	}
 
 	return $fiducType;

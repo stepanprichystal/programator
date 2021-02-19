@@ -255,12 +255,12 @@ sub ChooseFile {
 
 	if ( $dirDialog->ShowModal() != &Wx::wxID_CANCEL ) {
 
-		my $fileName = "CAM_" . GeneralHelper->GetNumUID();
-		my $pTmp     = $self->{"commDir"} . $fileName;
+#		my $fileName = "CAM_" . GeneralHelper->GetNumUID();
+#		my $pTmp     = $self->{"commDir"} . $fileName;
+#
+#		copy( ( $dirDialog->GetPaths() )[0], $pTmp );
 
-		copy( ( $dirDialog->GetPaths() )[0], $pTmp );
-
-		$$p = $pTmp;
+		$$p = ( $dirDialog->GetPaths() )[0];
 
 	}
 	else {
