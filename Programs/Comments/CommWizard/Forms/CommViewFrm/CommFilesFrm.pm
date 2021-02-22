@@ -19,6 +19,7 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Programs::Comments::Enums';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::AddFileFrm';
+use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::CommFilesDragDrop';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -64,6 +65,11 @@ sub __SetLayout {
 	my $btnAddGS     = Wx::Button->new( $self, -1, "+ GS",           &Wx::wxDefaultPosition, [ 70,  28 ] );
 	my $btnAddFile   = Wx::Button->new( $self, -1, "+ File",         &Wx::wxDefaultPosition, [ 70,  28 ] );
 
+	# Drag and drop for File button
+	$btnAddFile->DragAcceptFiles(1);
+	my $btnDragDrop = CommFilesDragDrop->new($btnAddFile);
+	$btnAddFile->SetDropTarget($btnDragDrop);
+
 	$self->{'addFileFrm'} = AddFileFrm->new($self);
 
 	# Set icons
@@ -79,7 +85,8 @@ sub __SetLayout {
 	Wx::Event::EVT_BUTTON( $btnAddFile,   -1, sub { $self->__ShowAddFileFrm() } );
 	Wx::Event::EVT_BUTTON( $btnEditGS,    -1, sub { $self->{"onEditFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
 	Wx::Event::EVT_BUTTON( $btnRemove,    -1, sub { $self->{"onRemoveFileEvt"}->Do( $nb->GetCurrentPage()->GetPageId() ) } );
-	$self->{"addFileFrm"}->{"onAddFileEvt"}->Add( sub { $self->{"onAddFileEvt"}->Do(0,0,0,1, @_) } );
+	$self->{"addFileFrm"}->{"onAddFileEvt"}->Add( sub { $self->{"onAddFileEvt"}->Do( 0, 0, 0, 1, @_ ) } );
+	$btnDragDrop->{"onAddFileEvt"}->Add( sub { $self->{"onAddFileEvt"}->Do( 0, 0, 0, 1, "existingFileDragDrop", @_ ) } );
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -136,17 +143,16 @@ sub __AddFile {
 		$p = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\noImage.png";
 	}
 	elsif ( !$fileLayout->IsImage() ) {
-		
-		if($fileLayout->GetIsPDF()){
-			
+
+		if ( $fileLayout->GetIsPDF() ) {
+
 			$p = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\filePDF.png";
-		}else{
-			
+		}
+		else {
+
 			$p = GeneralHelper->Root() . "\\Programs\\Comments\\CommWizard\\Resources\\fileAll.png";
 		}
-		
-		
-		
+
 	}
 
 	my $im = Wx::Image->new( $p, &Wx::wxBITMAP_TYPE_ANY );
@@ -198,8 +204,6 @@ sub __AddFile {
 	# SET REFERENCES
 
 	#$self->{"fileNamePrefValTxt"} = $fileNamePrefValTxt;
-
-	$page->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );    #gray
 
 }
 

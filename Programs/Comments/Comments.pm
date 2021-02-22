@@ -14,6 +14,7 @@ use POSIX qw(strftime);
 use File::Path 'rmtree';
 
 
+
 #local library
 
 use aliased 'Programs::Comments::CommLayout::CommLayout';
@@ -486,7 +487,10 @@ sub AddFile {
 
 	my $defName = $name;
 	
+	$name =~ s/[^A-Za-z0-9_. ]+/_/ig;
+	
 	# Copy source file to comm dir (protection to removing original file before createing email)
+	# + remove all permited char
 	my ( $oriName, $a, $suf ) = fileparse( $oriPath, qr/\.\w*/ );
 	my $tmpPath = $self->GetCommDir() . GeneralHelper->GetNumUID() . "$suf";
 	copy( $oriPath, $tmpPath );

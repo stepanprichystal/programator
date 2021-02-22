@@ -17,6 +17,7 @@ use threads;
 use threads::shared;
 use File::Basename;
 use Try::Tiny;
+use File::Copy;
 
 #use strict;
 
@@ -400,21 +401,22 @@ sub __OnEditFileHndl {
 }
 
 sub __OnAddFileHndl {
-	my $self        = shift;
-	my $commId      = shift;
-	my $addCAMDir   = shift;    # Add CAM directly without pause
-	my $addCAM      = shift;
-	my $addGS       = shift;
-	my $addFile     = shift;
-	my $addFileType = shift;    # Existing/ PDF stackup/ IMG stackup ...
+	my $self         = shift;
+	my $commId       = shift;
+	my $addCAMDir    = shift;    # Add CAM directly without pause
+	my $addCAM       = shift;
+	my $addGS        = shift;
+	my $addFile      = shift;
+	my $addFileType  = shift;    # Existing file / Existing DrapDrop file/ PDF stackup/ IMG stackup ...
+	my $dragDropPath = shift;    # File path returned bz dragDrop
 
 	my $messMngr = $self->{"form"}->GetMessMngr();
 
 	$self->{"form"}->HideFrm() if ( $addCAM || $addGS );
 
 	my $p          = "";
-	my $delOriFile = 0;         # Remove original file after adding to comments
-	my $custName   = undef;     # Name of final file
+	my $delOriFile = 0;          # Remove original file after adding to comments
+	my $custName   = undef;      # Name of final file
 	my $res        = 1;
 
 	# Process snapshots
@@ -466,6 +468,34 @@ sub __OnAddFileHndl {
 		$custName = $name;    # Take name form original file
 
 	}
+
+	elsif ( $addFile && $addFileType eq "existingFileDragDrop" ) {
+
+		# No spaces alowed, renema file
+		if ( $dragDropPath =~ /\s/ ) {
+
+			my ( $nameNoSpace, $ipcDir ) = fileparse($dragDropPath);
+
+			$nameNoSpace =~ s/\s/_/g;
+
+			my $tmpPath = EnumsPaths->Client_INCAMTMPOTHER . $nameNoSpace;
+
+			copy( $dragDropPath, $tmpPath );
+
+			$p          = $tmpPath;
+			$delOriFile = 1           # actually remove temp file without spaces;
+
+		}
+		else {
+
+			$p = $dragDropPath;
+		}
+
+		my ( $name, $a, $suf ) = fileparse( $p, qr/\.\w*/ );
+		$custName = $name;            # Take name form original file
+
+	}
+
 	elsif ( $addFile && ( $addFileType eq "stackupPDF" || $addFileType eq "stackupImage" ) ) {
 
 		# Process stackup
