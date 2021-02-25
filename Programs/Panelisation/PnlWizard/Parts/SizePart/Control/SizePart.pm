@@ -20,7 +20,7 @@ use warnings;
 
 #local library
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
- 
+
 #use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
 #use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpCheckData';
 #use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpPrepareData';
@@ -29,6 +29,8 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::View::ImpUnitForm';
 
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::SizePartModel' => 'PartModel';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm'    => 'PartFrm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,20 +38,22 @@ use aliased 'Programs::Panelisation::PnlWizard::Enums';
 
 sub new {
 	my $class = shift;
-	my $self = {};
+	my $self  = {};
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
 	#uique key within all units
 	$self->{"partId"} = Enums->Part_PNLSIZE;
-#
-#	my $checkData = ImpCheckData->new();
-#	my $prepareData = ImpPrepareData->new();
-#	my $exportData = ImpExportData->new();
-#		
-#	
-#	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData);
+
+	$self->{"model"} = PartModel->new();
+	#
+	#	my $checkData = ImpCheckData->new();
+	#	my $prepareData = ImpPrepareData->new();
+	#	my $exportData = ImpExportData->new();
+	#
+	#
+	#	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData);
 
 	return $self;    # Return the reference to the hash.
 }
@@ -65,30 +69,39 @@ sub new {
 #7) GetGroupData()
 
 sub InitForm {
-	my $self         = shift;
+	my $self        = shift;
 	my $partWrapper = shift;
-	my $inCAM        = shift;
+	my $inCAM       = shift;
 
 	$self->{"partWrapper"} = $partWrapper;
 
 	my $parent = $partWrapper->GetParentForPart();
-#	$self->{"form"} = ImpUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo() );
-#
-#	$self->_SetHandlers();
+
+	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"} );
+	                                                                        #
+	                                                                        #	$self->_SetHandlers();
 
 }
 
-#sub RefreshGUI {
-#	my $self = shift;
-#
-#	my $groupData = $self->{"dataMngr"}->GetGroupData();
-#
-#	#refresh group form
-#	$self->{"form"}->SetExportMeasurePdf( $groupData->GetExportMeasurePdf() );
-#	$self->{"form"}->SetBuildMLStackup( $groupData->GetBuildMLStackup() );
-#	
-#
-#}
+sub InitModel {
+	my $self         = shift;
+	my $restoredData = shift;
+
+	$self->{"model"} = $restoredData if ( defined $restoredData );
+
+}
+
+sub RefreshGUI {
+	my $self = shift;
+
+	#my $groupData = $self->{"dataMngr"}->GetGroupData();
+
+	#refresh group form
+	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
+	$self->{"form"}->SetSelectedCreator( $self->{"model"}->GetSelectedCreator() );
+
+}
+
 #
 ## Update groupd data with values from GUI
 #sub UpdateGroupData {
@@ -101,12 +114,12 @@ sub InitForm {
 #
 #	if ($frm) {
 #		my $groupData = $self->{"dataMngr"}->GetGroupData();
-#		
+#
 #		$groupData->SetExportMeasurePdf( $frm->GetExportMeasurePdf() );
 #		$groupData->SetBuildMLStackup( $frm->GetBuildMLStackup() );
-#			
+#
 #	}
-# 
+#
 #}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

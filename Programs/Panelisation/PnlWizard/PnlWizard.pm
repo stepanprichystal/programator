@@ -18,6 +18,8 @@ use Wx;
 
 use aliased 'Programs::Panelisation::PnlWizard::Forms::PnlWizardForm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::PartContainer';
+use aliased 'Programs::Panelisation::PnlWizard::Core::StorageModelMngr';
+use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
 
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportCheckerForm';
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm';
@@ -84,11 +86,13 @@ sub new {
 	# Class whin manage popup form for checking
 	#$self->{"pnlWizardChecker"} = ExportPopup->new( $self->{"jobId"} );
 
+	$self->{"wizardModel"} = WizardModel->new( $self->{"jobId"} );
+
 	# Keep all references of used groups/units in form
-	$self->{"partContainer"} = PartContainer->new();
+	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"wizardModel"} );
 
 	# Manage group date (store/load group data from/to disc)
-	#$self->{"storageMngr"} = StorageMngr->new( $self->{"jobId"}, $self->{"units"} );
+	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"wizardModel"}, $self->{"partContainer"} );
 
 	return $self;
 }
@@ -104,7 +108,9 @@ sub Init {
 
 	#$self->{"inCAM"}->SetDisplay(0);
 
-	$self->{"partContainer"}->Init();
+	$self->{"wizardModel"}->Init($self->{"inCAM"});
+
+	$self->{"partContainer"}->Init($self->{"inCAM"});
 
 	# 3) Initialization of whole export app
 
@@ -132,11 +138,11 @@ sub Init {
 	#7) CheckBeforeExport()
 	#8) GetGroupData()
 
-	#	$self->{"partContainer"}->InitDataMngr( $self->{"inCAM"} );
+	$self->{"partContainer"}->InitModel( $self->{"inCAM"} );
 	#
-	#	$self->{"partContainer"}->RefreshGUI();
+	$self->{"partContainer"}->RefreshGUI();
 	#
-	#	$self->{"partContainer"}->RefreshWrapper();
+	#$self->{"partContainer"}->RefreshWrapper();
 
 	# After first loading group data, create event/handler connection between groups
 	#$self->{"partContainer"}->BuildGroupEventConn( $self->{"groupTables"} );

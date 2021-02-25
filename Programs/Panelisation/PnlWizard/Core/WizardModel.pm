@@ -5,6 +5,11 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlWizard::Core::WizardModel;
+use base('Programs::Panelisation::PnlWizard::Core::WizardModelBase');
+
+use Class::Interface;
+&implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
+
 
 #3th party library
 use strict;

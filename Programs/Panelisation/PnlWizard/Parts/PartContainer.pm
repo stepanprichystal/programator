@@ -19,8 +19,6 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
 #use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
 
-use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
-
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePart';
 
 #-------------------------------------------------------------------------------------------#
@@ -35,7 +33,8 @@ sub new {
 	#	$self->{"onCheckEvent"} = Event->new();
 	#	$self->{"switchAppEvt"} = Event->new();    # allow to run another app from unitForm
 
-	$self->{"wizardModel"} = undef;
+	$self->{"jobId"}       = shift;
+	$self->{"wizardModel"} = shift;
 	$self->{"parts"}       = [];
 
 	return $self;    # Return the reference to the hash.
@@ -44,11 +43,10 @@ sub new {
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
-	my $jobId = shift;
+
+	my $jobId = $self->{"jobId"};
 
 	# Each unit contain reference on default info - info with general info about pcb
-	$self->{"wizardModel"} = WizardModel->new($jobId);
-	$self->{"wizardModel"}->Init($inCAM);
 
 	my @parts = ();
 
@@ -81,44 +79,43 @@ sub GetParts {
 	return @{ $self->{"parts"} };
 }
 
-#
-#sub InitDataMngr {
-#	my $self           = shift;
-#	my $inCAM          = shift;
-#	my $storedDataMngr = shift;
-#
-#	#case when group data are taken from disc
-#	if ($storedDataMngr) {
-#
-#		unless ( $storedDataMngr->ExistGroupData() ) {
-#			return 0;
-#		}
-#
-#		foreach my $unit ( @{ $self->{"units"} } ) {
-#
-#			my $storedData = $storedDataMngr->GetDataByUnit($unit);
-#			$unit->InitDataMngr( $inCAM, $storedData );
-#		}
-#	}
-#
-#	#case, when "default" data for group are loaded
-#	else {
-#
-#		foreach my $unit ( @{ $self->{"units"} } ) {
-#
-#			$unit->InitDataMngr($inCAM);
-#		}
-#	}
-#}
-#
-#sub RefreshGUI {
-#	my $self = shift;
-#	foreach my $unit ( @{ $self->{"units"} } ) {
-#
-#		$unit->RefreshGUI();
-#	}
-#
-#}
+sub InitModel {
+	my $self            = shift;
+	my $inCAM           = shift;
+	my $storedModelMngr = shift;
+
+	#case when group data are taken from disc
+	if ($storedModelMngr) {
+
+		unless ( $storedModelMngr->ExistModelData() ) {
+			return 0;
+		}
+
+		foreach my $part ( @{ $self->{"parts"} } ) {
+
+			my $storedData = $storedModelMngr->GetDataByPart($part);
+			$part->InitModel( $inCAM, $storedData );
+		}
+	}
+
+	#case, when "default" data for group are loaded
+	else {
+
+		foreach my $part ( @{ $self->{"parts"} } ) {
+
+			$part->InitModel();
+		}
+	}
+}
+
+sub RefreshGUI {
+	my $self = shift;
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		$part->RefreshGUI();
+	}
+
+}
 #
 #sub RefreshWrapper {
 #	my $self = shift;

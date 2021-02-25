@@ -53,6 +53,8 @@ sub __SetLayout {
 	#$groupTable = $self->__DefineTableGroups();
 
 	#my @rows = $groupTable->GetRows();
+	$self->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
+	 
 
 	my $inCAM = shift;
 
