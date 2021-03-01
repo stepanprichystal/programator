@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::UserDefined;
+package Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::UserDefinedFrm;
 use base qw(Wx::Panel);
 
 #3th party library
@@ -50,11 +50,11 @@ sub __SetLayout {
 	# Add empty item
 
 	# DEFINE CONTROLS
-	my $widthTxt = Wx::StaticText->new( $pnlSett, -1, "Width:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $widthValTxt = Wx::TextCtrl->new( $pnlSett, -1, "", &Wx::wxDefaultPosition );
+	my $widthTxt = Wx::StaticText->new( $self, -1, "Width:", &Wx::wxDefaultPosition, [ 70, 22 ] );
+	my $widthValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
 
-	my $heightTxt = Wx::StaticText->new( $pnlSett, -1, "Height:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $heightValTxt = Wx::TextCtrl->new( $pnlSett, -1, "", &Wx::wxDefaultPosition );
+	my $heightTxt = Wx::StaticText->new( $self, -1, "Height:", &Wx::wxDefaultPosition, [ 70, 22 ] );
+	my $heightValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
 
 	# DEFINE EVENTS
 

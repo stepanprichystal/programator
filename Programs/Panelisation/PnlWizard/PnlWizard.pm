@@ -21,6 +21,8 @@ use aliased 'Programs::Panelisation::PnlWizard::Parts::PartContainer';
 use aliased 'Programs::Panelisation::PnlWizard::Core::StorageModelMngr';
 use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
 
+use aliased 'Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr';
+
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportCheckerForm';
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm';
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Unit::Units';
@@ -93,6 +95,9 @@ sub new {
 
 	# Manage group date (store/load group data from/to disc)
 	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"wizardModel"}, $self->{"partContainer"} );
+	
+	# Background task manager for executing background operation
+	$self->{"backgroundTaskMngr"} = BackgroundTaskMngr->new();
 
 	return $self;
 }
@@ -100,17 +105,21 @@ sub new {
 sub Init {
 	my $self     = shift;
 	my $launcher = shift;    # contain InCAM library conencted to server
-
-	# 1) Get InCAm from Launcher
+	# 1) Get background worker and InCAM library from launcher
 
 	$self->{"launcher"} = $launcher;
-	$self->{"inCAM"}    = $launcher->GetInCAM();
+	 
+	my $backgroundWorker = $launcher->InitBackgroundWorker( $self->{"form"}->{"mainFrm"}, sub { $self->__BackgroundWorker(@_) } ); 
+
+	$self->{"inCAM"} = $launcher->GetInCAM();
+	
+	$self->{"backgroundTaskMngr"}->Init($backgroundWorker); 
 
 	#$self->{"inCAM"}->SetDisplay(0);
 
-	$self->{"wizardModel"}->Init($self->{"inCAM"});
+	$self->{"wizardModel"}->Init( $self->{"inCAM"} );
 
-	$self->{"partContainer"}->Init($self->{"inCAM"});
+	$self->{"partContainer"}->Init( $self->{"inCAM"} );
 
 	# 3) Initialization of whole export app
 
@@ -150,7 +159,7 @@ sub Init {
 	#	$self->__RefreshForm();
 	#
 	#	#set handlers for main app form
-	#	$self->__SetHandlers();
+	$self->__SetHandlers();
 
 }
 
@@ -480,6 +489,15 @@ sub Run {
 # PRIVATE METHODS
 # ================================================================================
 
+sub __BackgroundWorker {
+	my $taskId            = shift;
+	my $taskParams        = shift;
+	my $inCAM             = shift;
+	my $thrPogressInfoEvt = shift;
+	my $thrMessageInfoEvt = shift;
+
+}
+
 #sub __RefreshForm {
 #	my $self = shift;
 #
@@ -503,23 +521,65 @@ sub Run {
 #
 #}
 #
-#sub __SetHandlers {
-#	my $self = shift;
-#
-#	$self->{"form"}->{"onExportSync"}->Add( sub  { $self->__ExportSyncFormHandler(@_) } );
-#	$self->{"form"}->{"onExportASync"}->Add( sub { $self->__ExportASyncFormHandler(@_) } );
-#	$self->{"form"}->{"onClose"}->Add( sub       { $self->__OnCloseFormHandler(@_) } );
-#	$self->{"form"}->{"onUncheckAll"}->Add( sub  { $self->__UncheckAllHandler(@_) } );
-#	$self->{"form"}->{"onLoadLast"}->Add( sub    { $self->__LoadLastHandler(@_) } );
-#	$self->{"form"}->{"onLoadDefault"}->Add( sub { $self->__LoadDefaultHandler(@_) } );
-#
-#	$self->{"exportPopup"}->{"onResultEvt"}->Add( sub { $self->__OnResultPopupHandler(@_) } );
-#	$self->{"exportPopup"}->{'onClose'}->Add( sub     { $self->__OnClosePopupHandler(@_) } );
-#
-#	$self->{"units"}->SetGroupChangeHandler( sub { $self->__OnGroupChangeState(@_) } );
-#	$self->{"units"}->{"switchAppEvt"}->Add( sub { $self->__OnSwitchAppHandler(@_) } );
-#
-#}
+
+sub __OnTaskStartHndl {
+	my $self   = shift;
+	my $taskId = shift;
+	
+	print STDERR "Task start in PnlWizard $taskId\n";
+
+}
+
+sub __OnTaskFinishHndl {
+	my $self   = shift;
+	my $taskId = shift;
+	
+	print STDERR "Task finish in PnlWizard $taskId\n";
+
+}
+
+sub __OnTaskEndHndl {
+	my $self   = shift;
+	my $taskId = shift;
+	
+	print STDERR "Task end in PnlWizard $taskId\n";
+
+}
+
+sub __OnInCAMIsBusyHndl {
+	my $self   = shift;
+	my $isBusy = shift;
+	
+	print STDERR "InCAM is busy: $isBusy in  PnlWizard\n";
+
+}
+
+sub __SetHandlers {
+	my $self = shift;
+
+	#	$self->{"form"}->{"onExportSync"}->Add( sub  { $self->__ExportSyncFormHandler(@_) } );
+	#	$self->{"form"}->{"onExportASync"}->Add( sub { $self->__ExportASyncFormHandler(@_) } );
+	#	$self->{"form"}->{"onClose"}->Add( sub       { $self->__OnCloseFormHandler(@_) } );
+	#	$self->{"form"}->{"onUncheckAll"}->Add( sub  { $self->__UncheckAllHandler(@_) } );
+	#	$self->{"form"}->{"onLoadLast"}->Add( sub    { $self->__LoadLastHandler(@_) } );
+	#	$self->{"form"}->{"onLoadDefault"}->Add( sub { $self->__LoadDefaultHandler(@_) } );
+	#
+	#	$self->{"exportPopup"}->{"onResultEvt"}->Add( sub { $self->__OnResultPopupHandler(@_) } );
+	#	$self->{"exportPopup"}->{'onClose'}->Add( sub     { $self->__OnClosePopupHandler(@_) } );
+	#
+	#	$self->{"units"}->SetGroupChangeHandler( sub { $self->__OnGroupChangeState(@_) } );
+	#	$self->{"units"}->{"switchAppEvt"}->Add( sub { $self->__OnSwitchAppHandler(@_) } );
+
+	$self->{"backgroundWorker"}->{"thrStartEvt"}->Add( sub  { $self->__OnTaskStartHndl(@_) } );
+	$self->{"backgroundWorker"}->{"thrFinishEvt"}->Add( sub { $self->__OnTaskFinishHndl(@_) } );
+	$self->{"backgroundWorker"}->{"thrEndEvt"}->Add( sub    { $self->__OnTaskEndHndl(@_) } );
+
+	$self->{"launcher"}->{"inCAMIsBusyEvt"}->Add( sub { $self->__OnInCAMIsBusyHndl(@_) } );
+
+	# 				$self->{"backgroundWorker"}->{"thrPogressInfoEvt"}->Add(sub {$self->__OnTaskStartHndl(@_)} );
+	# 					$self->{"backgroundWorker"}->{"thrMessageInfoEvt"}->Add(sub {$self->__OnTaskStartHndl(@_)} );
+
+}
 #
 
 #-------------------------------------------------------------------------------------------#

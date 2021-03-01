@@ -3,7 +3,7 @@
 # Description: Coupon layout
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::SizePart::Model::SizePartModel;
+package Programs::Panelisation::PnlWizard::Parts::SizePart::Model::HEGOrderModel;
 use base('Programs::Panelisation::PnlWizard::Core::WizardModelBase');
 
 use Class::Interface;
@@ -16,10 +16,7 @@ use warnings;
 #local library
 #use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
 #use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout';
-
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::UserDefinedModel';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::HEGOrderModel';
-use aliased 'Programs::Panelisation::PnlCreator::Enums' => 'PnlCreEnums';
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -30,40 +27,47 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"creators"} = [];
-	$self->{"selected"} = PnlCreEnums->SizePnlCreator_USERDEFINED;
-
-	push( @{ $self->{"creators"} }, UserDefinedModel->new() );
-	push( @{ $self->{"creators"} }, HEGOrderModel->new() );
+	$self->{"modelKey"}    = PnlCreEnums->SizePnlCreator_HEGORDER;
+	$self->{"data"}        = {};
+	$self->{"data"}->{"w"} = undef;
+	$self->{"data"}->{"h"} = undef;
 
 	return $self;
-}
-
-sub SetSelectedCreator {
-	my $self = shift;
-
-	$self->{"selected"} = shift;
 
 }
 
-sub GetSelectedCreator {
+sub GetModelKey {
 	my $self = shift;
 
-	return $self->{"selected"};
+	return $self->{"modelKey"};
 
 }
 
-sub SetCreators {
+sub SetWidth {
 	my $self = shift;
 
-	$self->{"creators"} = shift;
+	$self->{"data"}->{"w"} = shift;
 
 }
 
-sub GetCreators {
+sub GetWidth {
 	my $self = shift;
 
-	return $self->{"creators"};
+	return $self->{"data"}->{"w"};
+
+}
+
+sub SetHeight {
+	my $self = shift;
+
+	$self->{"data"}->{"h"} = shift;
+
+}
+
+sub GetHeight {
+	my $self = shift;
+
+	return $self->{"data"}->{"h"};
 
 }
 

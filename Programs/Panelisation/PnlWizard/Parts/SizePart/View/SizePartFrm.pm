@@ -17,6 +17,9 @@ use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::CreatorListFrm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::UserDefinedFrm';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -24,15 +27,18 @@ use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 sub new {
 	my $class  = shift;
 	my $parent = shift;
+	my $inCAM  = shift;
 	my $jobId  = shift;
+	my $model  = shift;    # model forfrist form inittialization
 
 	my $self = $class->SUPER::new($parent);
 
 	bless($self);
 
+	$self->{"inCAM"} = $inCAM;
 	$self->{"jobId"} = $jobId;
 
-	$self->__SetLayout();
+	$self->__SetLayout($model);
 
 	# DEFINE EVENTS
 
@@ -42,22 +48,23 @@ sub new {
 }
 
 sub __SetLayout {
-	my $self = shift;
+	my $self  = shift;
+	my $model = shift;
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# Add empty item
 
 	# DEFINE CONTROLS
-	my $creatorListLayout = $self->__SetLayoutCreatorList($self);
-	my $creatorLayout     = $self->__SetLayoutCreator($self);
+	my $creatorListLayout = $self->__SetLayoutCreatorList( $self, $model );
+	my $creatorViewLayout = $self->__SetLayoutCreatorView( $self, $model );
 
 	# DEFINE EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $creatorListLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $creatorListLayout, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $creatorLayout, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $creatorViewLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
 
@@ -68,9 +75,14 @@ sub __SetLayout {
 sub __SetLayoutCreatorList {
 	my $self   = shift;
 	my $parent = shift;
+	my $model  = shift;
 
 	# DEFINE CONTROLS
 	my $creatorList = CreatorListFrm->new($self);
+
+	my $creators = $model->GetCreators();
+
+	$creatorList->SetCreatorsLayout($creators);
 
 	my $listCrl = Wx::Colour->new( 230, 230, 230 );
 	$self->SetBackgroundColour($listCrl);
@@ -88,10 +100,10 @@ sub __SetLayoutCreatorList {
 	return $creatorList;
 }
 
-sub __SetLayoutCreator {
-	my $self        = shift;
-	my $parent      = shift;
-	my $creatorList = shift;
+sub __SetLayoutCreatorView {
+	my $self   = shift;
+	my $parent = shift;
+	my $model  = shift;
 
 	my $stepBackg = Wx::Colour->new( 215, 215, 215 );
 
@@ -104,20 +116,27 @@ sub __SetLayoutCreator {
 
 	my $notebook = CustomNotebook->new( $pnlMain, -1 );
 
-	#$szStatBox->Add( $btnDefault, 0, &Wx::wxEXPAND );
+	my $creators = $model->GetCreators();
 
-	foreach my $creator ( keys %{ $self->{"creatorList"} } ) {
+	foreach my $creator ( @{$creators} ) {
 
-#		my $page = $notebook->AddPage( $step, 0 );
-#
-#		$page->GetParent()->SetBackgroundColour($stepBackg);
-#
-#		#		$creator->
-#		#
-#
-#		my $content = $self->{"wizardSteps"}->{$step}->GetLayout( $page->GetParent() );
-#
-#		$page->AddContent( $content, 0 );
+		my $page = $notebook->AddPage( $creator->GetModelKey(), 0 );
+
+		$page->GetParent()->SetBackgroundColour($stepBackg);
+
+		my $content = undef;
+
+		if ( $creator->GetModelKey() eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
+
+			$content = UserDefinedFrm->new( $page->GetParent() );
+
+		}
+		elsif ( $creator->GetModelKey() eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
+
+			$content = UserDefinedFrm->new( $page->GetParent() );
+		}
+		$page->AddContent( $content, 0 );
+
 	}
 
 	# BUILD STRUCTURE OF LAYOUT
@@ -136,9 +155,13 @@ sub __SetLayoutCreator {
 # =====================================================================
 
 sub SetSelectedCreator {
-	my $self = shift;
+	my $self          = shift;
+	my $selCreatorKey = shift;
 
-	$self->{"selected"} = shift;
+
+	$self->{"creatorList"}->SetSelectedItem($selCreatorKey);
+
+	$self->{"notebook"}->ShowPage($selCreatorKey);
 
 }
 
@@ -150,8 +173,6 @@ sub GetSelectedCreator {
 
 sub SetCreators {
 	my $self = shift;
-
-	$self->{"creators"} = shift;
 
 }
 

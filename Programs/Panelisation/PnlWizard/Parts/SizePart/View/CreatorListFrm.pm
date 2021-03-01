@@ -41,22 +41,22 @@ sub new {
 	return $self;
 }
 
-sub SetCommentLayout {
-	my $self       = shift;
-	my $commId     = shift;
-	my $commLayout = shift;
+#sub SetCommentLayout {
+#	my $self       = shift;
+#	my $commId     = shift;
+#	my $commLayout = shift;
+#
+#	my $commItem = $self->GetItem($commId);
+#
+#	$commItem->SetCommentLayout($commLayout);
+#
+#}
 
-	my $commItem = $self->GetItem($commId);
+sub SetCreatorsLayout {
+	my $self     = shift;
+	my $creators = shift;
 
-	$commItem->SetCommentLayout($commLayout);
-
-}
-
-sub SetCommentsLayout {
-	my $self           = shift;
-	my $commListLayout = shift;
-
-	my @commSngl = @{$commListLayout};
+	my @creators = @{$creators};
 
 	# remove old groups
 	for ( my $i = $self->GetItemsCnt() - 1 ; $i >= 0 ; $i-- ) {
@@ -64,18 +64,16 @@ sub SetCommentsLayout {
 	}
 
 	#create rows for each constraint
-	for ( my $i = 0 ; $i < scalar(@commSngl) ; $i++ ) {
+	for ( my $i = 0 ; $i < scalar(@creators) ; $i++ ) {
 
-		my $item = CommListRowFrm->new( $self->GetParentForItem(), $i, $commSngl[$i] );
+		my $item = CreatorListRowFrm->new( $self->GetParentForItem(), $creators[$i]->GetModelKey(), $creators[$i] );
 		$self->AddItemToQueue($item);
 
-		$item->SetCommentLayout( $commSngl[$i] );
+		#$item->SetCommentLayout( $creators[$i] );
 
 		# Add handler to item
 		#$item->{"onGroupSett"}->Add( sub { $self->{"onGroupSett"}->Do(@_) } );
 	}
-
-	
 
 }
 

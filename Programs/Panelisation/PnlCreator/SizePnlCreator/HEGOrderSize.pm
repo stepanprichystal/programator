@@ -8,7 +8,7 @@
 # 3) View - only display data, which are passed from model by presenter class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlCreator::SizePnlCreator::UserDefinedSize;
+package Programs::Panelisation::PnlCreator::SizePnlCreator::HEGOrderSize;
 use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
 
 use Class::Interface;
@@ -39,12 +39,12 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 
-	my $key = Enums->SizePnlCreator_USERDEFINED;
+	my $key = Enums->SizePnlCreator_HEGORDER;
 	$self = $class->SUPER::new($key);
 	bless $self;
 
-	$self->{"settings"}->{"w"} = 10;
-	$self->{"settings"}->{"h"} = 10;
+	$self->{"settings"}->{"w"} = 20;
+	$self->{"settings"}->{"h"} = 20;
 
 	return $self;                        # Return the reference to the hash.
 }
@@ -53,6 +53,7 @@ sub new {
 # Interface method
 #-------------------------------------------------------------------------------------------#
 
+# Build layout, return 1 if succes, 0 if fail
 # Build layout, return 1 if succes, 0 if fail
 sub Init {
 	my $self = shift;

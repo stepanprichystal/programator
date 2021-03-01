@@ -9,14 +9,16 @@ package Packages::InCAMHelpers::AppLauncher::Launcher;
 
 #3th party library
 use strict;
-
 use Config;
 use Time::HiRes qw (sleep);
-
-#use Try::Tiny;
-
-use aliased 'Packages::InCAM::InCAM';
 use Win32::Process;
+
+
+# local libraru
+use aliased 'Packages::Events::Event';
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Packages::InCAMHelpers::AppLauncher::BackgroundWorker::BackgroundWorker';
+use aliased 'Packages::InCAMHelpers::AppLauncher::BackgroundWorker::InCAMWrapper';
 
 #use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
@@ -39,26 +41,67 @@ sub new {
 	$self->{"server"}->{"inCAM"} = undef;    # InCAM library
 
 	$self->{"waitFrmPid"} = shift;           # PID of waiting frm
-	
-	$self->{"letServerRun"} = 0;
 
+	$self->{"letServerRun"} = 0;             # After closing app, do not exit InCAM server
+
+	$self->{"backgroundWorker"} = BackgroundWorker->new();    # Support background execution of task
+
+	# Connect to InCAM server
 	unless ( $self->__Connect() ) {
-		die "Unable to connect to InCAM editor, port: ".$self->{"server"}->{"port"};
+		die "Unable to connect to InCAM editor, port: " . $self->{"server"}->{"port"};
 	}
 
-	return $self;                            # Return the reference to the hash.
+	# EVENTS
+
+	# Only if Background worker is initialized
+	# Raise if InCAM library wants execute command, but InCAM server is busy
+	$self->{"inCAMIsBusyEvt"} = Event->new();
+
+	return $self;    # Return the reference to the hash.
 }
 
 sub GetInCAM {
 	my $self = shift;
 
 	return $self->{"server"}->{"inCAM"};
-
-	
 }
 
+# Init background woker and return "Background worker manager"
+# for execution of asynchrounous background task
+# - Do not forget add handler "inCAMIsBusyEvt", which indicate InCAM server is busy
+sub InitBackgroundWorker {
+	my $self           = shift;
+	my $appMainFrm     = shift;        # app main frame
+	my $asyncWorkerSub = shift;        # worker subroutine which is called for newt  task
+	my $MAX_THREADS    = shift // 1;
+	my $MIN_THREADS    = shift // 1;
+	my $loger          = shift;
 
+	die "App main frame is not defined"        unless ( defined $appMainFrm );
+	die "Async worker function is not defined" unless ( defined $asyncWorkerSub );
 
+	# Change standard InCAM library for InCAM Wrapper,
+	# which support Events, which raise if InCAM server is busy
+	# (it means, child thread is using inCAM server)
+
+	$self->{"server"}->{"inCAM"}->ClientFinish();    # Close old connection
+
+	if ( $self->__Connect(1) ) {
+
+		# add handler for inCAM server busy
+		$self->{"server"}->{"inCAM"}->{"inCAMServerBusyEvt"}->Add( sub { $self->{"inCAMIsBusyEvt"}->Do(@_) } );
+
+	}
+	else {
+
+		die "Unable to connect to InCAM editor, port: " . $self->{"server"}->{"port"};
+	}
+
+	$self->{"backgroundWorker"}->Init( $appMainFrm, $self->{"server"}->{"inCAM"}, $asyncWorkerSub, $MAX_THREADS, $MIN_THREADS, $loger );
+
+	return $self->{"backgroundWorker"};
+
+}
 
 sub GetServerPort {
 	my $self = shift;
@@ -66,15 +109,15 @@ sub GetServerPort {
 	return $self->{"server"}->{"port"};
 }
 
-sub SetLetServerRun{
+sub SetLetServerRun {
 	my $self = shift;
-	
+
 	$self->{"letServerRun"} = 1;
 }
 
-sub GetLetServerRun{
+sub GetLetServerRun {
 	my $self = shift;
-	
+
 	return $self->{"letServerRun"};
 }
 
@@ -88,12 +131,10 @@ sub CloseWaitFrm {
 
 }
 
-
-
 # First connection of InCAM library
 sub __Connect {
-	my $self    = shift;
-	my $jobGUID = shift;
+	my $self             = shift;
+	my $backgroundWorker = shift;
 
 	my $inCAM = $self->{"server"}->{"inCAM"};
 	my $port  = $self->{"server"}->{"port"};
@@ -115,13 +156,18 @@ sub __Connect {
 			return 0;
 		}
 
-		if ($inCAM) {
+		if ($inCAM && $tryCnt > 0 ) {
 
 			print STDERR "CLIENT(parent): PID: $$  try connect to server port: $port....failed\n";
 			sleep(0.2);
 		}
 
-		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $self->{"server"}->{"port"} );
+		if ($backgroundWorker) {
+			$inCAM = InCAMWrapper->new( "remote" => 'localhost', "port" => $self->{"server"}->{"port"} );
+		}
+		else {
+			$inCAM = InCAM->new( "remote" => 'localhost', "port" => $self->{"server"}->{"port"} );
+		}
 
 		$tryCnt++;
 	}
@@ -163,7 +209,6 @@ sub __Connect {
 #	#${$serverRef}[$idx]{"pidInCAM"}  = -1;
 #	#${$serverRef}[$idx]{"pidServer"} = -1;
 #}
-
 
 ## Used when InCAMe need to be connected in child thread
 ## 1. Call Disconnect

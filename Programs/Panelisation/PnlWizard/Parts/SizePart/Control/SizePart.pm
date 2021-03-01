@@ -77,9 +77,9 @@ sub InitForm {
 
 	my $parent = $partWrapper->GetParentForPart();
 
-	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"} );
-	                                                                        #
-	                                                                        #	$self->_SetHandlers();
+	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"model"} );
+	#
+	#	$self->_SetHandlers();
 
 }
 
@@ -87,9 +87,32 @@ sub InitModel {
 	my $self         = shift;
 	my $restoredData = shift;
 
-	$self->{"model"} = $restoredData if ( defined $restoredData );
+	if ( defined $restoredData ) {
+		
+		# Load settings from history
 
+		$self->{"model"} = $restoredData;
+	}
+	else {
+		
+		# Set default settings
+		#$self->{"model"}->SetSelectedCreator()
+		
+	}
 }
+
+sub ProcessPart{
+	my $self = shift;
+	
+	$self->{"model"}->SetCreators( $self->{"form"}->GetCreators() );
+	$self->{"model"}->SetSelectedCreator( $self->{"form"}->GetSelectedCreator() );
+	
+	 
+	
+}
+
+
+
 
 sub RefreshGUI {
 	my $self = shift;
@@ -121,6 +144,14 @@ sub RefreshGUI {
 #	}
 #
 #}
+
+#-------------------------------------------------------------------------------------------#
+#  Handlers
+#-------------------------------------------------------------------------------------------#
+
+#sub __OnGetCreator
+
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
