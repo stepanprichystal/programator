@@ -33,27 +33,29 @@ sub new {
 	#	$self->{"onCheckEvent"} = Event->new();
 	#	$self->{"switchAppEvt"} = Event->new();    # allow to run another app from unitForm
 
-	$self->{"jobId"}       = shift;
-	$self->{"wizardModel"} = shift;
-	$self->{"parts"}       = [];
+	$self->{"jobId"}              = shift;
+	$self->{"wizardModel"}        = shift;
+	$self->{"backgroundTaskMngr"} = shift;
+	$self->{"parts"}              = [];
 
-	return $self;    # Return the reference to the hash.
+	return $self;                             # Return the reference to the hash.
 }
 
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
+	 
 
-	my $jobId = $self->{"jobId"};
+	  my $jobId = $self->{"jobId"};
 
 	# Each unit contain reference on default info - info with general info about pcb
 
 	my @parts = ();
 
 	# Part 1
-	push( @parts, SizePart->new($jobId) );
-	push( @parts, SizePart->new($jobId) );
-	push( @parts, SizePart->new($jobId) );
+	push( @parts, SizePart->new($jobId, $self->{"backgroundTaskMngr"}) );
+	#push( @parts, SizePart->new($jobId, $self->{"backgroundTaskMngr"}) );
+#	push( @parts, SizePart->new($jobId, $self->{"backgroundTaskMngr"}) );
 
 	#	# Save to each unit->dataMngr default info
 	#	foreach my $part (@parts) {
@@ -108,14 +110,28 @@ sub InitModel {
 	}
 }
 
+sub InitModelAsync {
+	my $self = shift;
+	
+	
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		$part->InitModelAsync();
+		
+		print STDERR "cyklus\n";
+	}
+}
+
+
 sub RefreshGUI {
 	my $self = shift;
 	foreach my $part ( @{ $self->{"parts"} } ) {
 
 		$part->RefreshGUI();
 	}
-
 }
+
+
 #
 #sub RefreshWrapper {
 #	my $self = shift;

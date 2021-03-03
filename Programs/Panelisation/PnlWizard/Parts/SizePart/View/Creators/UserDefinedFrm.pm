@@ -71,119 +71,46 @@ sub __SetLayout {
 
 	# SAVE REFERENCES
 
+	$self->{"widthValTxt"}  = $widthValTxt;
+	$self->{"heightValTxt"} = $heightValTxt;
+
 }
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
-#
-#sub SetSelectedCreator {
-#	my $self = shift;
-#
-#	$self->{"selected"} = shift;
-#
-#}
-#
-#sub GetSelectedCreator {
-#	my $self = shift;
-#
-#	return $self->{"selected"};
-#}
-#
-## CREATOR - user defined
-#
-#sub SetWidth_UserDefined {
-#	my $self = shift;
-#
-#	$self->{"w_UserDefined"} = shift;
-#
-#}
-#
-#sub GetWidth_UserDefined {
-#	my $self = shift;
-#
-#	return $self->{"w_UserDefined"};
-#
-#}
-#
-#sub SetHeight_UserDefined {
-#	my $self = shift;
-#
-#	$self->{"h_UserDefined"} = shift;
-#
-#}
-#
-#sub GetHeight_UserDefined {
-#	my $self = shift;
-#
-#	return $self->{"h_UserDefined"};
-#
-#}
 
-# CREATOR - heg info
+sub SetWidth {
+	my $self = shift;
+	my $val  = shift;
 
-#sub SetComm {
-#	my $self       = shift;
-#	my $commId     = shift;
-#	my $commLayout = shift;
-#
-#	$self->{"commList"}->SetCommentLayout( $commId, $commLayout );
-#
-#}
-#
-#sub SetCommList {
-#	my $self           = shift;
-#	my $commListLayout = shift;
-#
-#	$self->{"setCommList"} = 1;    #
-#
-#	$self->{"commList"}->SetCommentsLayout($commListLayout);
-#
-#	if ( scalar( @{$commListLayout} ) ) {
-#
-#		$self->{"btnRemove"}->Enable();
-#
-#	}
-#	else {
-#		$self->{"btnRemove"}->Disable();
-#
-#	}
-#
-#	if ( scalar( @{$commListLayout} ) > 1 ) {
-#		$self->{"btnMoveUp"}->Enable();
-#		$self->{"btnMoveDown"}->Enable();
-#	}
-#	else {
-#		$self->{"btnMoveUp"}->Disable();
-#		$self->{"btnMoveDown"}->Disable();
-#	}
-#
-#	$self->{"setCommList"} = 0;    #
-#
-#}
-#
-#sub SetCommSelected {
-#	my $self   = shift;
-#	my $commId = shift;
-#
-#	$self->{"commList"}->SetSelectedItem($commId);
-#
-#}
-#
-#sub GetSelectedComm {
-#	my $self = shift;
-#
-#	my $comm = $self->{"commList"}->GetSelectedItem();
-#
-#	if ( defined $comm ) {
-#		return $comm->GetPosition();
-#	}
-#	else {
-#		return undef;
-#	}
-#
-#}
+	$self->{"widthValTxt"}->SetValue($val);
 
+}
+
+sub GetWidth {
+	my $self = shift;
+
+	return $self->{"widthValTxt"}->GetValue();
+
+}
+
+
+
+sub SetHeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"widthValTxt"}->SetValue($val);
+
+}
+
+sub GetHeight {
+	my $self = shift;
+
+	return $self->{"widthValTxt"}->GetValue();
+
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

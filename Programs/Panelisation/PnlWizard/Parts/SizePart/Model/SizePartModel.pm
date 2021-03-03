@@ -12,6 +12,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 #use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
@@ -64,6 +65,16 @@ sub GetCreators {
 	my $self = shift;
 
 	return $self->{"creators"};
+
+}
+
+sub GetCreatorByKey {
+	my $self = shift;
+	my $modelKey = shift;
+
+	my $creatorModel =  first { $_->GetModelKey() eq $modelKey } @{$self->{"creators"}};
+
+	return $creatorModel;
 
 }
 

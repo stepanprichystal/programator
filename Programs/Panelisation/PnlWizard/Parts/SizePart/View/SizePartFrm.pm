@@ -11,6 +11,7 @@ use base qw(Wx::Panel);
 use strict;
 use warnings;
 use Wx;
+use List::Util qw(first);
 
 #local library
 use Widgets::Style;
@@ -35,14 +36,17 @@ sub new {
 
 	bless($self);
 
-	$self->{"inCAM"} = $inCAM;
-	$self->{"jobId"} = $jobId;
+	# PROPERTIES
+
+	$self->{"inCAM"}         = $inCAM;
+	$self->{"jobId"}         = $jobId;
+	$self->{"creatorModels"} = $model->GetCreators();
 
 	$self->__SetLayout($model);
 
 	# DEFINE EVENTS
 
-	$self->{"onCreatorChangedEvt"} = Event->new();
+	$self->{"creatorChangedEvt"} = Event->new();
 
 	return $self;
 }
@@ -90,7 +94,7 @@ sub __SetLayoutCreatorList {
 
 	# DEFINE EVENTS
 
-	$creatorList->{"onSelectItemChange"}->Add( sub { $self->{"onCreatorChangedEvt"}->Do( $_[0]->GetPosition() ) if ( !$self->{"setCommList"} ) } );
+	$creatorList->{"onSelectItemChange"}->Add( sub { $self->__OnCreatorChangedEvt(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -158,7 +162,6 @@ sub SetSelectedCreator {
 	my $self          = shift;
 	my $selCreatorKey = shift;
 
-
 	$self->{"creatorList"}->SetSelectedItem($selCreatorKey);
 
 	$self->{"notebook"}->ShowPage($selCreatorKey);
@@ -168,50 +171,88 @@ sub SetSelectedCreator {
 sub GetSelectedCreator {
 	my $self = shift;
 
-	return $self->{"selected"};
+	return $self->{"creatorList"}->GetSelectedItem()->GetItemId();
 }
 
 sub SetCreators {
-	my $self = shift;
+	my $self           = shift;
+	my $creatorsModels = shift;
+
+	foreach my $modelKey ( $self->{"creatorList"}->GetAllCreatorKeys() ) {
+
+		# Filter model from passed param
+		my $model = first { $_->GetModelKey() eq $modelKey } @{$creatorsModels};
+
+		if ( defined $model ) {
+
+			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+
+			print STDERR $model->GetWidth() . "\n";
+
+			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
+
+				$creatorFrm->SetWidth( $model->GetWidth() );
+				$creatorFrm->SetHeight( $model->GetHeight() );
+
+			}
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
+
+				$creatorFrm->SetWidth( $model->GetWidth() );
+				$creatorFrm->SetHeight( $model->GetHeight() );
+
+			}
+		}
+
+	}
 
 }
 
 sub GetCreators {
 	my $self = shift;
 
-	return $self->{"creators"};
+	my @models = ();
+
+	foreach my $model ( @{ $self->{"creatorModels"} } ) {
+
+		my $modelKey = $model->GetModelKey();
+
+		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+
+		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
+
+			$model->SetWidth( $creatorFrm->GetWidth() );
+			$model->SetHeight( $creatorFrm->GetHeight() );
+
+		}
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
+
+			$model->SetWidth( $creatorFrm->GetWidth() );
+			$model->SetHeight( $creatorFrm->GetHeight() );
+
+		}
+
+		push( @models, $model );
+
+	}
+
+	# return updated model
+	return @models;
+
+}
+
+sub __OnCreatorChangedEvt {
+	my $self     = shift;
+	my $listItem = shift;
+
+	my $creatorKey = $listItem->GetItemId();
+
+	$self->{"notebook"}->ShowPage($creatorKey);
+
+	$self->{"creatorChangedEvt"}->Do($creatorKey)
 
 }
 
 # CREATOR - user defined
-
-sub SetWidth_UserDefined {
-	my $self = shift;
-
-	$self->{"w_UserDefined"} = shift;
-
-}
-
-sub GetWidth_UserDefined {
-	my $self = shift;
-
-	return $self->{"w_UserDefined"};
-
-}
-
-sub SetHeight_UserDefined {
-	my $self = shift;
-
-	$self->{"h_UserDefined"} = shift;
-
-}
-
-sub GetHeight_UserDefined {
-	my $self = shift;
-
-	return $self->{"h_UserDefined"};
-
-}
 
 # CREATOR - heg info
 

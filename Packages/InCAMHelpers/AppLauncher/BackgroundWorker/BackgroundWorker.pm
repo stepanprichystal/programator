@@ -7,14 +7,14 @@
 package Packages::InCAMHelpers::AppLauncher::BackgroundWorker::BackgroundWorker;
 
 #3th party library
-use strict;
 use threads;
 use threads::shared;
 use Wx;
+use strict;
+use warnings;
 use Time::HiRes qw (sleep);
 use Thread::Queue;
 use Log::Log4perl qw(get_logger :easy);
-use Log::Log4perl::Appender::Screen;
 use JSON::XS;
 
 #local library
@@ -32,9 +32,13 @@ my $THREAD_GENERAL_EVT : shared;
 # Thread event types
 use constant ThrEvt_START        => "thrStartEvt";
 use constant ThrEvt_FINISH       => "thrFinishEvt";
-use constant ThrEvt_END          => "thrFinishEvt";
+use constant ThrEvt_END          => "thrEndEvt";
 use constant ThrEvt_MESSAGEINFO  => "thrMessageInfoEvtEvt";
 use constant ThrEvt_PROGRESSINFO => "thrProgressInfoEvt";
+
+# Task execution type
+use constant Task_SERIAL   => "serial";
+use constant Task_PARALLEL => "parallel";
 
 sub new {
 
@@ -88,13 +92,16 @@ sub DESTROY {
 
 sub Init {
 	my $self = shift;
-	$self->{"appMainFrm"}     = shift;        # app main frame
-	$self->{"inCAM"}          = shift;        # InCAM reference
-	$self->{"asyncWorkerSub"} = shift;        # worker subroutine which is called for newt  task
+	$self->{"appMainFrm"}     = shift;                                  # app main frame
+	$self->{"inCAM"}          = shift;                                  # InCAM reference
+	$self->{"asyncWorkerSub"} = shift;                                  # worker subroutine which is called for newt  task
 	$self->{"MAX_THREADS"}    = shift // 1;
 	$self->{"MIN_THREADS"}    = shift // 1;
-	$self->{"loger"} = shift // Log::Log4perl->get_logger();
- 
+	$self->{"loger"}          = shift // Log::Log4perl->get_logger();
+
+	die "MAX_THREADS value must be greater than MIN_THREADS" if ( $self->{"MIN_THREADS"} > $self->{"MAX_THREADS"} );
+	die "MAX_THREADS value must be greater than 0" if ( $self->{"MAX_THREADS"} < 1 );
+
 	$self->{"inCAMPort"} = $self->{"inCAM"}->GetPort();
 
 	$THREAD_GENERAL_EVT = Wx::NewEventType;
@@ -115,20 +122,52 @@ sub Init {
 
 }
 
-# Processrequest for starting new thread
-sub AddNewtask {
+# Add new asynchronouse task
+# All tasks added by this method will be executed one by one in one child thread
+sub AddTaskSerial {
+	my $self       = shift;
+	my $taskId     = shift;
+	my $taskParams = shift // [];    # array of parameters which will be serialized to JSON
+
+		# If app InCAM library is trying to recconect, wait to prevent inCAM connect collision
+		# (only oneInCAM library can by connected to server in same time)
+		print STDERR "\n---------------TEST BEFORE----------------\n";
+	
+		while ( $self->{"InCAMAppReConnecting"} ) {
+	
+			print STDERR "\n...reconnecting...\n";
+			sleep(1);
+		}
+	
+		print STDERR "\n---------------TEST AFTER----------------\n";
+
+	my $thrId = $self->__AddNewTask( Task_SERIAL, $taskId, $taskParams );
+
+	my %thrTaskInf = (
+		"taskId" => $taskId,
+		"thrId"  => $thrId,    # id of thread, where is task processed
+
+	);
+
+	push( @{ $self->{"threadTasks"} }, \%thrTaskInf );
+
+}
+
+# Add new asynchronouse task
+# All tasks added by this method will be executed parallely in more than one child thread
+sub AddTaskParallel {
 	my $self       = shift;
 	my $taskId     = shift;
 	my $taskParams = shift // [];    # array of parameters which will be serialized to JSON
 
 	# If app InCAM library is trying to recconect, wait to prevent inCAM connect collision
 	# (only oneInCAM library can by connected to server in same time)
-	while ( !$self->{"InCAMAppReConnecting"} ) {
+	while ( $self->{"InCAMAppReConnecting"} ) {
 
 		sleep(1);
 	}
 
-	my $thrId = $self->__AddNewTask( $taskId, $taskParams );
+	my $thrId = $self->__AddNewTask( Task_PARALLEL, $taskId, $taskParams );
 
 	my %thrTaskInf = (
 		"taskId" => $taskId,
@@ -232,6 +271,7 @@ sub __UpdateThreadPool {
 
 sub __AddNewTask {
 	my $self       = shift;
+	my $taskType   = shift;          # serial/parallel
 	my $taskId     = shift;
 	my $taskParams = shift // [];    # array of parameters which will be serialized to JSON
 
@@ -241,7 +281,35 @@ sub __AddNewTask {
 	$self->__UpdateThreadPool();
 
 	# 2) Wait for an available thread
-	my $tid = $self->{"IDLE_QUEUE"}->dequeue();
+	my $tid;
+
+	if ( $taskType eq Task_SERIAL ) {
+
+		# Always use first thread (queue) and execute all task in it
+
+		$tid = ( sort { $a <=> $b } keys %{ $self->{"work_queues"} } )[0];
+
+	}
+	elsif ( $taskType eq Task_PARALLEL ) {
+
+		# Always use first AVAILABLE thread (queue). There must be more than one thread to execute task parallel
+		my @thredCnt = scalar( keys %{ $self->{"work_queues"} } );
+
+		die "Threads number must be >= 2 if parallel task execution is requested" if ( scalar(@thredCnt) < 2 );
+
+		# Wait for random available thread
+		# No free thread? Do not block and choose random
+
+		$tid = $self->{"IDLE_QUEUE"}->dequeue_nb();
+		if ( !defined $tid ) {
+
+			$tid = ( sort { $a <=> $b } keys %{ $self->{"work_queues"} } )[0];
+		}
+
+	}
+
+	#	my $tid = $self->{"IDLE_QUEUE"}->dequeue_nb();
+	#	$tid = 1;
 
 	# 3) Check for termination condition
 	$self->{"loger"}->debug( "Thread is about to start  taskId: " . $taskId );
@@ -254,7 +322,7 @@ sub __AddNewTask {
 
 	my @ary : shared = ( $taskId, $taskParamsJSON );
 
-	# my $pom = 1;
+	print STDERR "TID:$tid,  workQueue: " . join( ";", map { $self->{"work_queues"}->{$_} } keys %{ $self->{"work_queues"} } ) . "\n";
 	$self->{"work_queues"}->{$tid}->enqueue( \@ary );
 
 	return $tid;
@@ -279,7 +347,7 @@ sub __WorkerMethod {
 	$thrPogressInfoEvtEvt->Add(
 		sub {
 
-			my $shift    = $taskId;
+			my $taskId   = shift;
 			my $progress = shift;
 
 			my %res : shared = ();
@@ -296,8 +364,8 @@ sub __WorkerMethod {
 	$thrMessageInfoEvtEvt->Add(
 		sub {
 
-			my $shift = $taskId;
-			my $mess  = shift;
+			my $taskId = shift;
+			my $mess   = shift;
 
 			my %res : shared = ();
 			$res{"evtType"} = ThrEvt_MESSAGEINFO;
@@ -346,7 +414,7 @@ sub __PoolWorker {
 
 		$SIG{'KILL'} = sub {
 
-			$inCAMWorker->ClientFinish();
+			$inCAMWorker->ClientFinish() if ( defined $inCAMWorker );
 
 			my %evtData : shared = ();
 			$evtData{"evtType"} = ThrEvt_END;
@@ -356,37 +424,63 @@ sub __PoolWorker {
 			exit;    #exit only this child thread
 		};
 
-		$self->{"loger"}->debug("In thread, taskId: $taskId ");
+		eval {
 
-		# Raise start task event
-		my %evtData : shared = ();
-		$evtData{"evtType"} = ThrEvt_START;
-		$evtData{"taskId"}  = $taskId;
-		Wx::PostEvent( $self->{"appMainFrm"}, new Wx::PlThreadEvent( -1, $THREAD_GENERAL_EVT, \%evtData ) );
+			$self->{"loger"}->debug("In thread, taskId: $taskId ");
 
-		my $connected = 0;
-		while ( !$connected ) {
+			# Raise start task event
+			my %evtData : shared = ();
+			$evtData{"evtType"} = ThrEvt_START;
+			$evtData{"taskId"}  = $taskId;
+			Wx::PostEvent( $self->{"appMainFrm"}, new Wx::PlThreadEvent( -1, $THREAD_GENERAL_EVT, \%evtData ) );
+			print STDERR "test 1\n";
 
-			# Connect InCAM library from child thread to server
-			$inCAMWorker = InCAM->new( "remote" => 'localhost', "port" => $self->{"inCAMPort"} );
+			my $connected = 0;
+			while ( !$connected ) {
 
-			my $pidServer = $inCAMWorker->ServerReady();
-			unless ($pidServer) {
-				sleep(1);
+				print STDERR "test 10\n";
+
+				# Connect InCAM library from child thread to server
+				$inCAMWorker = InCAM->new( "remote" => 'localhost', "port" => $self->{"inCAMPort"} );
+
+				my $pidServer = $inCAMWorker->ServerReady();
+				if ($pidServer) {
+
+					last;
+				}
+				else {
+					sleep(1);
+				}
 			}
+
+			print STDERR "test 2\n";
+
+			# Process working function
+			$self->__WorkerMethod( $taskId, $taskParamsJSON, $inCAMWorker );
+
+			print STDERR "test 3\n";
+
+			# dissconect InCAM library, in order another task in row or main app can connect
+			$inCAMWorker->ClientFinish();
+
+			# Raise finish task event
+			my %evtData2 : shared = ();
+			$evtData2{"evtType"} = ThrEvt_FINISH;
+			$evtData2{"taskId"}  = $taskId;
+			Wx::PostEvent( $self->{"appMainFrm"}, new Wx::PlThreadEvent( -1, $THREAD_GENERAL_EVT, \%evtData2 ) );
+
+		};
+		if ( my $e = $@ ) {
+
+			$inCAMWorker->ClientFinish() if ( defined $inCAMWorker );
+
+			my %evtData : shared = ();
+			$evtData{"evtType"} = ThrEvt_END;
+			$evtData{"taskId"}  = $taskId;
+			$evtData{"data"}    = $e;
+			Wx::PostEvent( $self->{"appMainFrm"}, new Wx::PlThreadEvent( -1, $THREAD_GENERAL_EVT, \%evtData ) );
+
 		}
-
-		# Process working function
-		$self->__WorkerMethod( $taskId, $taskParamsJSON, $inCAMWorker );
-
-		# dissconect InCAM library, in order another task in row or main app can connect
-		$inCAMWorker->ClientFinish();
-
-		# Raise finish task event
-		my %evtData2 : shared = ();
-		$evtData2{"evtType"} = ThrEvt_FINISH;
-		$evtData2{"taskId"}  = $taskId;
-		Wx::PostEvent( $self->{"appMainFrm"}, new Wx::PlThreadEvent( -1, $THREAD_GENERAL_EVT, \%evtData2 ) );
 
 		# Loop back to idle state if not told to terminate
 	} while (1);
@@ -401,12 +495,12 @@ sub __OnThreadGeneralHndl {
 
 	my $evtType = $d{"evtType"};
 	my $taskId  = $d{"taskId"};
-	my $data    = $d{"data"};
 
-	$self->{"appLoger"}->debug("Receive message event task id $taskId, event type: $evtType");
+	$self->{"loger"}->debug("Receive message event task id $taskId, event type: $evtType");
 
 	# Check if all worker queue are empty and we can reconnect app InCAM library
-	if ( $evtType eq ThrEvt_FINISH || $evtType eq ThrEvt_END ) {
+
+	if ( ( $evtType eq ThrEvt_FINISH || $evtType eq ThrEvt_END ) && !$self->{"InCAMAppReConnecting"} ) {
 
 		$self->{"InCAMAppReConnecting"} = 1;
 
@@ -419,10 +513,18 @@ sub __OnThreadGeneralHndl {
 			$activeTaskCnt += $pendingTaskCnt if ( defined $pendingTaskCnt );
 		}
 
-		$self->{"inCAM"}->Reconnect() unless ($activeTaskCnt);
+		print STDERR "\ntaskid: $taskId......Reconnect....Active task: $activeTaskCnt..........\n";
 
-		unless ( $self->{"inCAM"}->ServerReady() ) {
-			die "InCAM all library reconnect failed";
+		if ( $activeTaskCnt == 0 ) {
+ 
+			$self->{"inCAM"}->Reconnect();
+
+			unless ( $self->{"inCAM"}->ServerReady() ) {
+				die "InCAM all library reconnect failed";
+			}else{
+				
+				print STDERR "Reconnect succ";
+			}
 		}
 
 		$self->{"InCAMAppReConnecting"} = 0;
@@ -439,15 +541,21 @@ sub __OnThreadGeneralHndl {
 	}
 	elsif ( $evtType eq ThrEvt_END ) {
 
-		$self->{"thrEndEvt"}->Do( $taskId, $data );
+		my $errMess = $d{"data"};
+
+		$self->{"thrEndEvt"}->Do( $taskId, $errMess );
 	}
 	elsif ( $evtType eq ThrEvt_PROGRESSINFO ) {
 
-		$self->{"thrPogressInfoEvt"}->Do( $taskId, $data );
+		my $progress = $d{"data"};
+
+		$self->{"thrPogressInfoEvt"}->Do( $taskId, $progress );
 	}
 	elsif ( $evtType eq ThrEvt_MESSAGEINFO ) {
 
-		$self->{"thrMessageInfoEvt"}->Do( $taskId, $data );
+		my $message = $d{"data"};
+
+		$self->{"thrMessageInfoEvt"}->Do( $taskId, $message );
 	}
 
 }

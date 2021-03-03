@@ -28,9 +28,10 @@ sub new {
 	bless $self;
 
 	$self->{"modelKey"}    = PnlCreEnums->SizePnlCreator_HEGORDER;
-	$self->{"data"}        = {};
-	$self->{"data"}->{"w"} = undef;
-	$self->{"data"}->{"h"} = undef;
+	 
+	$self->{"settings"}->{"w"} = undef;
+	$self->{"settings"}->{"h"} = undef;
+	 
 
 	return $self;
 
@@ -46,28 +47,28 @@ sub GetModelKey {
 sub SetWidth {
 	my $self = shift;
 
-	$self->{"data"}->{"w"} = shift;
+	$self->{"settings"}->{"w"} = shift;
 
 }
 
 sub GetWidth {
 	my $self = shift;
 
-	return $self->{"data"}->{"w"};
+	return $self->{"settings"}->{"w"};
 
 }
 
 sub SetHeight {
 	my $self = shift;
 
-	$self->{"data"}->{"h"} = shift;
+	$self->{"settings"}->{"h"} = shift;
 
 }
 
 sub GetHeight {
 	my $self = shift;
 
-	return $self->{"data"}->{"h"};
+	return $self->{"settings"}->{"h"};
 
 }
 

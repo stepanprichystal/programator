@@ -35,11 +35,12 @@ use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 sub new {
 	my $class = shift;
 	my $self  = {};
-
-	$self = {};
 	bless $self;
 
-	$self->{"creatroKey"}   = shift;
+	$self->{"inCAM"}      = shift;
+	$self->{"jobId"}      = shift;
+	$self->{"creatroKey"} = shift;
+
 	$self->{"jsonStorable"} = JsonStorable->new();
 	$self->{"settings"}     = {};
 
@@ -47,22 +48,34 @@ sub new {
 }
 
 #
-sub ExportSett {
+sub ExportSettings {
 	my $self = shift;
 
-	my $serialized = $self->{"json"}->pretty->encode( $self->{"settings"} );
+	my $serialized = $self->{"jsonStorable"}->Encode( $self->{"settings"} );
 
 	return $serialized;
 
 }
 #
-sub ImportSett {
+sub ImportSettings {
 	my $self       = shift;
 	my $serialized = shift;
 
-	die "Serialized data are empty" if ( !defiend $serialized || $serialized eq "" );
+	die "Serialized data are empty" if ( !defined $serialized || $serialized eq "" );
 
 	my $data = $self->{"jsonStorable"}->Decode($serialized);
+
+	# Do check if some keys are not missing or if there are some extra
+	my @newSettings = keys %{$data};
+	my @oldSettings = keys %{ $self->{"settings"} };
+
+	my %hash;
+	$hash{$_}++ for ( @newSettings, @oldSettings );
+
+	my @wrongKeys = grep { $hash{$_} != 2 } keys %hash;
+
+	die "Import settings keys do not match with object setting keys (keys: " . join( "; ", @wrongKeys ) . " )" if (@wrongKeys);
+
 	$self->{"settings"} = $data;
 
 }

@@ -22,6 +22,9 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
+	# Properties
+	$self->{"waitWhenBusy"} = 0;
+
 	# EVENTS
 
 	# Raise if InCAM library wants execute command,
@@ -30,6 +33,13 @@ sub new {
 	$self->{"inCAMServerBusyEvt"} = Event->new();
 
 	return $self;
+}
+
+sub SetWaitWhenBusy {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"waitWhenBusy"} = $val;
 }
 
 # -----------------------------------------------------------------------------
@@ -124,6 +134,7 @@ sub AUX {
 
 	$self->SUPER::AUX(@params);
 }
+
 sub DO_INFO {
 	my ($self) = shift;
 
@@ -135,20 +146,24 @@ sub DO_INFO {
 	$self->SUPER::DO_INFO(@params);
 }
 
-
 sub __CheckIsServerBusy {
 	my $self = shift;
 
-	unless ( $self->{"connected"} ) {
+	if ( !$self->{"connected"} && $self->{"waitWhenBusy"} ) {
 
-		$self->{"inCAMServerBusyEvt"}->Do(1); # raise event, server busy
+		$self->{"inCAMServerBusyEvt"}->Do(1);    # raise event, server busy
 
 		# Wait until InCAM library is connected
 		while ( !$self->{"connected"} ) {
 			sleep(1);
 		}
 
-		$self->{"inCAMServerBusyEvt"}->Do(0); # raise event, server not busy
+		$self->{"inCAMServerBusyEvt"}->Do(0);    # raise event, server not busy
+
+	}
+	elsif ( !$self->{"connected"} ) {
+
+		die "InCAM library is not connected";
 
 	}
 

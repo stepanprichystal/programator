@@ -37,16 +37,17 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums';
 
 sub new {
 	my $class = shift;
-	my $self  = {};
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $key   = Enums->SizePnlCreator_USERDEFINED;
 
-	my $key = Enums->SizePnlCreator_USERDEFINED;
-	$self = $class->SUPER::new($key);
+	my $self = $class->SUPER::new( $inCAM, $jobId, $key );
 	bless $self;
 
-	$self->{"settings"}->{"w"} = 10;
-	$self->{"settings"}->{"h"} = 10;
+	$self->{"settings"}->{"w"} = 0;
+	$self->{"settings"}->{"h"} = 0;
 
-	return $self;                        # Return the reference to the hash.
+	return $self;                                    # Return the reference to the hash.
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -56,9 +57,17 @@ sub new {
 # Build layout, return 1 if succes, 0 if fail
 sub Init {
 	my $self = shift;
-	
-	sleep(2);
+	my $inCAM = shift;
 
+	 
+	$self->{"settings"}->{"w"} = 30;
+	$self->{"settings"}->{"h"} = 30;
+	sleep(0);
+	
+	
+	print STDERR "\n\nUSER !!\n\n";
+	
+	return 1;
 }
 
 ## If builded, return layout
@@ -72,10 +81,11 @@ sub Check {
 #
 #
 
-sub CreatePanel {
+sub Process {
 	my $self = shift;
+	my $inCAM = shift;
 
-sleep(2);
+	sleep(1);
 
 	return 1;
 }

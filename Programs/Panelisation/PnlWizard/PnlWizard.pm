@@ -9,10 +9,11 @@ use Class::Interface;
 &implements('Packages::InCAMHelpers::AppLauncher::IAppLauncher');
 
 #3th party library
+use threads;
+use threads::shared;
+use Wx;
 use strict;
 use warnings;
-
-use Wx;
 
 #local library
 
@@ -21,7 +22,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Parts::PartContainer';
 use aliased 'Programs::Panelisation::PnlWizard::Core::StorageModelMngr';
 use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
 
-use aliased 'Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr';
+use aliased 'Programs::Panelisation::PnlWizard::Core::BackgCreatorTaskMngr';
 
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportCheckerForm';
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm';
@@ -88,16 +89,16 @@ sub new {
 	# Class whin manage popup form for checking
 	#$self->{"pnlWizardChecker"} = ExportPopup->new( $self->{"jobId"} );
 
+	# Background task manager for executing background operation
+	$self->{"backgroundTaskMngr"} = BackgroundTaskMngr->new( $self->{"jobId"} );
+
 	$self->{"wizardModel"} = WizardModel->new( $self->{"jobId"} );
 
 	# Keep all references of used groups/units in form
-	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"wizardModel"} );
+	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"wizardModel"}, $self->{"backgroundTaskMngr"} );
 
 	# Manage group date (store/load group data from/to disc)
 	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"wizardModel"}, $self->{"partContainer"} );
-	
-	# Background task manager for executing background operation
-	$self->{"backgroundTaskMngr"} = BackgroundTaskMngr->new();
 
 	return $self;
 }
@@ -105,21 +106,19 @@ sub new {
 sub Init {
 	my $self     = shift;
 	my $launcher = shift;    # contain InCAM library conencted to server
-	# 1) Get background worker and InCAM library from launcher
+	                         # 1) Get background worker and InCAM library from launcher
 
 	$self->{"launcher"} = $launcher;
-	 
-	my $backgroundWorker = $launcher->InitBackgroundWorker( $self->{"form"}->{"mainFrm"}, sub { $self->__BackgroundWorker(@_) } ); 
 
 	$self->{"inCAM"} = $launcher->GetInCAM();
-	
-	$self->{"backgroundTaskMngr"}->Init($backgroundWorker); 
+
+	$self->{"backgroundTaskMngr"}->Init( $launcher, $self->{"form"}->{"mainFrm"} );
 
 	#$self->{"inCAM"}->SetDisplay(0);
 
 	$self->{"wizardModel"}->Init( $self->{"inCAM"} );
 
-	$self->{"partContainer"}->Init( $self->{"inCAM"} );
+	$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"backgroundTaskMngr"} );
 
 	# 3) Initialization of whole export app
 
@@ -147,9 +146,19 @@ sub Init {
 	#7) CheckBeforeExport()
 	#8) GetGroupData()
 
+	print STDERR "Init model START\n";
 	$self->{"partContainer"}->InitModel( $self->{"inCAM"} );
+	print STDERR "Init model END\n";
 	#
+
+	print STDERR "Refresh START\n";
 	$self->{"partContainer"}->RefreshGUI();
+	print STDERR "Refresh END\n";
+
+	print STDERR "Init model async START\n";
+	$self->{"partContainer"}->InitModelAsync();
+	print STDERR "Init model async END\n";
+
 	#
 	#$self->{"partContainer"}->RefreshWrapper();
 
@@ -161,10 +170,14 @@ sub Init {
 	#	#set handlers for main app form
 	$self->__SetHandlers();
 
+	print STDERR "endr RUN\n";
+
 }
 
 sub Run {
 	my $self = shift;
+
+	print STDERR "start SHOW\n";
 
 	$self->{"form"}->{"mainFrm"}->Show(1);
 
@@ -489,15 +502,6 @@ sub Run {
 # PRIVATE METHODS
 # ================================================================================
 
-sub __BackgroundWorker {
-	my $taskId            = shift;
-	my $taskParams        = shift;
-	my $inCAM             = shift;
-	my $thrPogressInfoEvt = shift;
-	my $thrMessageInfoEvt = shift;
-
-}
-
 #sub __RefreshForm {
 #	my $self = shift;
 #
@@ -522,34 +526,10 @@ sub __BackgroundWorker {
 #}
 #
 
-sub __OnTaskStartHndl {
-	my $self   = shift;
-	my $taskId = shift;
-	
-	print STDERR "Task start in PnlWizard $taskId\n";
-
-}
-
-sub __OnTaskFinishHndl {
-	my $self   = shift;
-	my $taskId = shift;
-	
-	print STDERR "Task finish in PnlWizard $taskId\n";
-
-}
-
-sub __OnTaskEndHndl {
-	my $self   = shift;
-	my $taskId = shift;
-	
-	print STDERR "Task end in PnlWizard $taskId\n";
-
-}
-
 sub __OnInCAMIsBusyHndl {
 	my $self   = shift;
 	my $isBusy = shift;
-	
+
 	print STDERR "InCAM is busy: $isBusy in  PnlWizard\n";
 
 }
@@ -569,10 +549,6 @@ sub __SetHandlers {
 	#
 	#	$self->{"units"}->SetGroupChangeHandler( sub { $self->__OnGroupChangeState(@_) } );
 	#	$self->{"units"}->{"switchAppEvt"}->Add( sub { $self->__OnSwitchAppHandler(@_) } );
-
-	$self->{"backgroundWorker"}->{"thrStartEvt"}->Add( sub  { $self->__OnTaskStartHndl(@_) } );
-	$self->{"backgroundWorker"}->{"thrFinishEvt"}->Add( sub { $self->__OnTaskFinishHndl(@_) } );
-	$self->{"backgroundWorker"}->{"thrEndEvt"}->Add( sub    { $self->__OnTaskEndHndl(@_) } );
 
 	$self->{"launcher"}->{"inCAMIsBusyEvt"}->Add( sub { $self->__OnInCAMIsBusyHndl(@_) } );
 

@@ -23,7 +23,7 @@ use warnings;
 
 ## set default data fo controls, which are on exported forms
 ## default data means, settings, which are ussualy exported for given group
-sub InitDataMngr;
+sub InitModel;
 #
 ## Do checking before export, based on group group data.
 ## Group data/ (= default data before user change them in GUI)

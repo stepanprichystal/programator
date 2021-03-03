@@ -47,6 +47,8 @@ sub new {
 	$self->{"partId"} = Enums->Part_PNLSIZE;
 
 	$self->{"model"} = PartModel->new();
+
+	$self->{"frmHandlersOff"} = 0;
 	#
 	#	my $checkData = ImpCheckData->new();
 	#	my $prepareData = ImpPrepareData->new();
@@ -78,50 +80,77 @@ sub InitForm {
 	my $parent = $partWrapper->GetParentForPart();
 
 	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"model"} );
-	#
-	#	$self->_SetHandlers();
+
+	#$self->{"form"}->{"onCreatorChangedEvt"}->Add( sub { $self->__OnCreatorChangedHndl(@_) } );
+	$self->{"form"}->{"creatorChangedEvt"}->Add( sub { $self->__OnCreatorChangedHndl(@_) } )
 
 }
 
 sub InitModel {
-	my $self         = shift;
-	my $restoredData = shift;
+	my $self      = shift;
+	my $modelData = shift;
 
-	if ( defined $restoredData ) {
-		
+	if ( defined $modelData ) {
+
 		# Load settings from history
 
-		$self->{"model"} = $restoredData;
+		$self->{"model"} = $modelData;
 	}
 	else {
-		
+
 		# Set default settings
 		#$self->{"model"}->SetSelectedCreator()
-		
+
 	}
 }
 
-sub ProcessPart{
+# Run after InitModel, update form of selected creator asynchronously
+sub InitModelAsync {
 	my $self = shift;
-	
-	$self->{"model"}->SetCreators( $self->{"form"}->GetCreators() );
-	$self->{"model"}->SetSelectedCreator( $self->{"form"}->GetSelectedCreator() );
-	
-	 
-	
+
+	my $creatorKey = $self->{"model"}->GetSelectedCreator();
+
+	$self->AsyncInitPart($creatorKey);
+
 }
 
+sub AsyncProcessPart {
+	my $self = shift;
 
+	$self->{"model"}->SetCreators( $self->{"form"}->GetCreators() );
+	$self->{"model"}->SetSelectedCreator( $self->{"form"}->GetSelectedCreator() );
 
+	# Process by selected creator
+
+	my $creatorKey   = $self->{"model"}->GetSelectedCreator();
+	my $creatorModel = $self->{"model"}->GetCreatorByKey($creatorKey);
+
+	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $creatorKey, $creatorModel->{"data"} );
+
+}
+
+sub AsyncInitPart {
+	my $self                = shift;
+	my $creatorKey          = shift;
+	my $creatorInitPatarams = shift // [];
+
+	 
+	$self->{"backgroundTaskMngr"}->AsyncInitPnlCreator( $creatorKey, $creatorInitPatarams );
+
+}
 
 sub RefreshGUI {
 	my $self = shift;
+
+	$self->{"frmHandlersOff"} = 1;
 
 	#my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
 	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
 	$self->{"form"}->SetSelectedCreator( $self->{"model"}->GetSelectedCreator() );
+
+	$self->{"frmHandlersOff"} = 0;
 
 }
 
@@ -145,12 +174,60 @@ sub RefreshGUI {
 #
 #}
 
+#sub __RefreshGUICreator {
+#	my $self = shift;
+#	my $creatorKey = shift;
+#
+#
+#
+#
+#}
+
 #-------------------------------------------------------------------------------------------#
 #  Handlers
 #-------------------------------------------------------------------------------------------#
 
-#sub __OnGetCreator
+sub OnCreatorInitedHndl {
+	my $self       = shift;
+	my $creatorKey = shift;
+	my $result     = shift;
+	my $JSONSett   = shift;
 
+	# Update Model data
+
+	$self->{"model"}->GetCreatorByKey($creatorKey)->ImportCreatorSettings($JSONSett);
+
+	# Refresh gui
+	print STDERR "\n\nRefreshGUI\n\n";
+	
+	$self->{"frmHandlersOff"} = 1;
+
+	$self->{"form"}->SetCreators( [ $self->{"model"}->GetCreatorByKey($creatorKey) ] );
+	$self->{"frmHandlersOff"} = 0;
+
+	return 1;
+
+}
+
+sub OnCreatorProcessedHndl {
+	my $self       = shift;
+	my $creatorKey = shift;
+	my $result     = shift;
+	my $errMess    = shift;
+
+	return 1;
+
+}
+
+sub __OnCreatorChangedHndl {
+	my $self       = shift;
+	my $creatorKey = shift;
+
+	return 0 if ( $self->{"frmHandlersOff"} );
+
+	$self->AsyncInitPart($creatorKey);
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
