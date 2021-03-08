@@ -35,7 +35,7 @@ sub new {
 
 	# DEFINE EVENTS
 
-	#$self->{"onCreatorChangedEvt"} = Event->new();
+	#$self->{"oncreatorSelectionChangedEvt"} = Event->new();
 
 	return $self;
 }
@@ -101,14 +101,14 @@ sub SetHeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"widthValTxt"}->SetValue($val);
+	$self->{"heightValTxt"}->SetValue($val);
 
 }
 
 sub GetHeight {
 	my $self = shift;
 
-	return $self->{"widthValTxt"}->GetValue();
+	return $self->{"heightValTxt"}->GetValue();
 
 }
 #-------------------------------------------------------------------------------------------#

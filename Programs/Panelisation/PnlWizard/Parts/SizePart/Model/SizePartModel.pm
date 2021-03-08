@@ -32,7 +32,7 @@ sub new {
 	bless $self;
 
 	$self->{"creators"} = [];
-	$self->{"selected"} = PnlCreEnums->SizePnlCreator_USERDEFINED;
+	$self->{"selected"} = PnlCreEnums->SizePnlCreator_HEGORDER;
 
 	push( @{ $self->{"creators"} }, UserDefinedModel->new() );
 	push( @{ $self->{"creators"} }, HEGOrderModel->new() );

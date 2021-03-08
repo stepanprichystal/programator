@@ -46,7 +46,9 @@ sub new {
 
 	# DEFINE EVENTS
 
-	$self->{"creatorChangedEvt"} = Event->new();
+	$self->{"creatorSelectionChangedEvt"} = Event->new();
+	$self->{"creatorSettingsChangedEvt"} = Event->new();
+	
 
 	return $self;
 }
@@ -94,7 +96,7 @@ sub __SetLayoutCreatorList {
 
 	# DEFINE EVENTS
 
-	$creatorList->{"onSelectItemChange"}->Add( sub { $self->__OnCreatorChangedEvt(@_) } );
+	$creatorList->{"onSelectItemChange"}->Add( sub { $self->__OncreatorSelectionChangedEvt(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -240,7 +242,7 @@ sub GetCreators {
 
 }
 
-sub __OnCreatorChangedEvt {
+sub __OncreatorSelectionChangedEvt {
 	my $self     = shift;
 	my $listItem = shift;
 
@@ -248,7 +250,7 @@ sub __OnCreatorChangedEvt {
 
 	$self->{"notebook"}->ShowPage($creatorKey);
 
-	$self->{"creatorChangedEvt"}->Do($creatorKey)
+	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey)
 
 }
 

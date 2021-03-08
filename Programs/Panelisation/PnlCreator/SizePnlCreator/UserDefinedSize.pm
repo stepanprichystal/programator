@@ -62,7 +62,7 @@ sub Init {
 	 
 	$self->{"settings"}->{"w"} = 30;
 	$self->{"settings"}->{"h"} = 30;
-	sleep(0);
+	sleep(3);
 	
 	
 	print STDERR "\n\nUSER !!\n\n";
@@ -74,7 +74,7 @@ sub Init {
 sub Check {
 	my $self    = shift;
 	my $errMess = shift;
-
+	sleep(2);
 	return 1
 
 }
@@ -84,8 +84,9 @@ sub Check {
 sub Process {
 	my $self = shift;
 	my $inCAM = shift;
+	my $errMess = shift;
 
-	sleep(1);
+	sleep(2);
 
 	return 1;
 }

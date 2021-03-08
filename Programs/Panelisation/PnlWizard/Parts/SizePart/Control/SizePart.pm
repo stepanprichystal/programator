@@ -29,8 +29,9 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::View::ImpUnitForm';
 
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::SizePartModel' => 'PartModel';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm'    => 'PartFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::SizePartModel'   => 'PartModel';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm'      => 'PartFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePartCheck' => 'PartCheckClass';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -48,7 +49,11 @@ sub new {
 
 	$self->{"model"} = PartModel->new();
 
+	$self->{"checkClass"} = PartCheckClass->new();
+
 	$self->{"frmHandlersOff"} = 0;
+	
+	$self->{"isPartFullyInited"} = 0;
 	#
 	#	my $checkData = ImpCheckData->new();
 	#	my $prepareData = ImpPrepareData->new();
@@ -75,14 +80,14 @@ sub InitForm {
 	my $partWrapper = shift;
 	my $inCAM       = shift;
 
-	$self->{"partWrapper"} = $partWrapper;
-
 	my $parent = $partWrapper->GetParentForPart();
 
 	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"model"} );
 
-	#$self->{"form"}->{"onCreatorChangedEvt"}->Add( sub { $self->__OnCreatorChangedHndl(@_) } );
-	$self->{"form"}->{"creatorChangedEvt"}->Add( sub { $self->__OnCreatorChangedHndl(@_) } )
+	#$self->{"form"}->{"oncreatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl(@_) } );
+	$self->{"form"}->{"creatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl(@_) } );
+
+	$self->SUPER::_InitForm($partWrapper);
 
 }
 
@@ -117,6 +122,10 @@ sub InitModelAsync {
 sub AsyncProcessPart {
 	my $self = shift;
 
+	#my $ignorePreview = shift // 0;
+
+	#if ( $self->GetPreview() || $ignorePreview ) {
+
 	$self->{"model"}->SetCreators( $self->{"form"}->GetCreators() );
 	$self->{"model"}->SetSelectedCreator( $self->{"form"}->GetSelectedCreator() );
 
@@ -125,7 +134,9 @@ sub AsyncProcessPart {
 	my $creatorKey   = $self->{"model"}->GetSelectedCreator();
 	my $creatorModel = $self->{"model"}->GetCreatorByKey($creatorKey);
 
-	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $creatorKey, $creatorModel->{"data"} );
+	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $creatorKey, $creatorModel->ExportSettings() );
+
+	#}
 
 }
 
@@ -134,7 +145,8 @@ sub AsyncInitPart {
 	my $creatorKey          = shift;
 	my $creatorInitPatarams = shift // [];
 
-	 
+	$self->{"isPartFullyInited"} = 0;
+
 	$self->{"backgroundTaskMngr"}->AsyncInitPnlCreator( $creatorKey, $creatorInitPatarams );
 
 }
@@ -152,6 +164,12 @@ sub RefreshGUI {
 
 	$self->{"frmHandlersOff"} = 0;
 
+}
+
+sub IsPartFullyInited {
+	my $self = shift;
+
+	$self->{"isPartFullyInited"};
 }
 
 #
@@ -199,11 +217,13 @@ sub OnCreatorInitedHndl {
 
 	# Refresh gui
 	print STDERR "\n\nRefreshGUI\n\n";
-	
+
 	$self->{"frmHandlersOff"} = 1;
 
 	$self->{"form"}->SetCreators( [ $self->{"model"}->GetCreatorByKey($creatorKey) ] );
 	$self->{"frmHandlersOff"} = 0;
+
+	$self->{"isPartFullyInited"} = 1;
 
 	return 1;
 
@@ -219,13 +239,31 @@ sub OnCreatorProcessedHndl {
 
 }
 
-sub __OnCreatorChangedHndl {
+sub OnOtherPartCreatorSelectionChangedHndl {
+	my $self            = shift;
+	my $changedPartId   = shift;
+	my $creatorSettings = shift
+
+}
+
+sub OnOtherPartCreatorSettingsChangedHndl {
+	my $self          = shift;
+	my $changedPartId = shift;
+	my $newCreatorKey = shift
+
+}
+
+sub __OnCreatorSelectionChangedHndl {
 	my $self       = shift;
 	my $creatorKey = shift;
 
 	return 0 if ( $self->{"frmHandlersOff"} );
 
+	# Init creator
 	$self->AsyncInitPart($creatorKey);
+
+	# Reise evevents for other parts
+	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey);
 
 }
 

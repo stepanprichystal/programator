@@ -3,7 +3,8 @@
 # Description: Widget slouzici pro zobrazovani zprav ruznych typu uzivateli
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Events::Event;
+package Packages::InCAMHelpers::AppLauncher::BackgroundWorker::BackgroundWorkerEvent;
+use base('Packages::Events::Event');
 
 #3th party library
 use utf8;
@@ -21,52 +22,42 @@ use warnings;
 #-------------------------------------------------------------------------------------------#
 
 sub new {
+	my $class   = shift;
+	my $errMngr = shift;
+	my $self    = {};
 
-	my $self = shift;    # Create an anonymous hash, and #self points to it.
-	$self = {};
-	bless $self;         # Connect the hash to the package Cocoa.
-
-	#incam library
-	my @subs = ();
-	$self->{"subs"} = \@subs;
-
+	$self = $class->SUPER::new(@_);
+	bless $self;
 
 	return $self;
 }
 
 sub Add {
-	my $self   = shift;
-	my $newSub = shift;
-
-		my $test = caller(0);
+	my $self        = shift;
+	my $newSub      = shift;
+	my $mngrPackage = caller(0);
 
 	if ( defined $newSub ) {
-		push( @{ $self->{"subs"} }, $newSub );
+		push( @{ $self->{"subs"} }, { "sub" => $newSub, "package" => $mngrPackage } );
 	}
 }
-
-sub RemoveAll {
-	my $self   = shift;
-	my $subRef = shift;
-
-	$self->{"subs"} = [];
-}
-
-sub Handlers {
-	my $self = shift;
-
-	return scalar( @{ $self->{"subs"} } );
-}
+ 
 
 sub Do {
-	my $self = shift;
+	my $self        = shift;
+	my $mngrPackage = shift;
+	my @params      = @_;
+
+	die "Package name of Backgroun manager is not defind" unless ( defined $mngrPackage );
 
 	#create copy of actual joined handlers
-	my @hanslersTmp = @{ $self->{"subs"} };
+	my @hanslersTmp = grep { $_->{"package"} eq $mngrPackage } @{ $self->{"subs"} };
+	
+	die "No handlers with Package Background manager name: $mngrPackage" if (scalar(@hanslersTmp) == 0 );
 
 	foreach my $s (@hanslersTmp) {
 
-		$s->(@_);
+		$s->{"sub"}->(@_);
 	}
 }
 

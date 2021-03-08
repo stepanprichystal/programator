@@ -18,6 +18,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::InCAMHelpers::AppLauncher::BackgroundWorker::BackgroundWorker';
 use aliased 'Packages::InCAMHelpers::AppLauncher::BackgroundWorker::InCAMWrapper';
+use aliased 'Packages::InCAMHelpers::AppLauncher::PopupChecker::PopupChecker';
 
 #use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
@@ -43,7 +44,9 @@ sub new {
 
 	$self->{"letServerRun"} = 0;             # After closing app, do not exit InCAM server
 
-	$self->{"backgroundWorkers"} =[];    # Support background execution of task
+	$self->{"backgroundWorker"} = undef;     # Support background execution of task
+
+	$self->{"pupupChecker"} = undef;         # Support background checker with error popup window
 
 	# Connect to InCAM server
 	unless ( $self->__Connect() ) {
@@ -68,31 +71,85 @@ sub GetInCAM {
 # Init background woker and return "Background worker manager"
 # for execution of asynchrounous background task
 # - Do not forget add handler "inCAMIsBusyEvt", which indicate InCAM server is busy
-sub AddBackgroundWorker {
-	my $self           = shift;
-	my $appMainFrm     = shift;        # app main frame
-	my $asyncWorkerSub = shift;        # worker subroutine which is called for newt  task
-	my $MAX_THREADS    = shift // 1;
-	my $MIN_THREADS    = shift // 1;
-	my $loger          = shift;
+sub InitBackgroundWorker {
+	my $self        = shift;
+	my $appMainFrm  = shift;        # app main frame
+	my $MAX_THREADS = shift // 1;
+	my $MIN_THREADS = shift // 1;
+	my $loger       = shift;
 
-	die "App main frame is not defined"        unless ( defined $appMainFrm );
-	die "Async worker function is not defined" unless ( defined $asyncWorkerSub );
+	die "App main frame is not defined" unless ( defined $appMainFrm );
 
-	# Change standard InCAM library for InCAM Wrapper,
-	# which support Events, which raise if InCAM server is busy
-	# (it means, child thread is using inCAM server)
+	#die "Async worker function is not defined" unless ( defined $asyncWorkerSub );
 
-	# add handler for inCAM server busy
-	$self->{"server"}->{"inCAM"}->SetWaitWhenBusy(1);
-	$self->{"server"}->{"inCAM"}->{"inCAMServerBusyEvt"}->Add( sub { $self->{"inCAMIsBusyEvt"}->Do(@_) } );
+	if ( !defined $self->{"backgroundWorker"} ) {
 
-	my $worker = BackgroundWorker->new();
-	$worker->Init( $appMainFrm, $self->{"server"}->{"inCAM"}, $asyncWorkerSub, $MAX_THREADS, $MIN_THREADS, $loger );
+		# Change standard InCAM library for InCAM Wrapper,
+		# which support Events, which raise if InCAM server is busy
+		# (it means, child thread is using inCAM server)
 
-	push(@{$self->{"backgroundWorkers"}}, $worker );
+		# add handler for inCAM server busy
+		$self->{"server"}->{"inCAM"}->SetWaitWhenBusy(1);
+		$self->{"server"}->{"inCAM"}->{"inCAMServerBusyEvt"}->Add( sub { $self->{"inCAMIsBusyEvt"}->Do(@_) } );
 
-	return $worker;
+		my $worker = BackgroundWorker->new();
+		$worker->Init( $appMainFrm, $self->{"server"}->{"inCAM"}, $MAX_THREADS, $MIN_THREADS, $loger );
+
+		$self->{"backgroundWorker"} = $worker;
+
+	}
+
+	return 1;
+
+}
+
+# Init background woker and return "Background worker manager"
+# for execution of asynchrounous background task
+# - Do not forget add handler "inCAMIsBusyEvt", which indicate InCAM server is busy
+sub GetBackgroundWorker {
+	my $self = shift;
+
+	if ( !defined $self->{"backgroundWorker"} ) {
+
+		die "Background worker is not inited";
+	}
+
+	return $self->{"backgroundWorker"};
+}
+
+sub InitPopupChecker {
+	my $self          = shift;
+	my $jobId         = shift;
+	my $appMainFrm    = shift;                    # app main frame
+	my $titleName     = shift;
+	my $commitBtnName = shift;
+
+	if ( !defined $self->{"pupupCheckers"} ) {
+
+		# Firstly create background worker for PopupChecker with one thread
+
+		# Get background worker
+		$self->InitBackgroundWorker($appMainFrm) if ( !defined $self->{"backgroundWorker"} );
+
+		my $checker = PopupChecker->new( $jobId, $appMainFrm, $titleName, $commitBtnName );
+
+		$checker->Init($self->{"backgroundWorker"});
+
+		$self->{"pupupCheckers"} = $checker;
+	}
+
+	return 1;
+}
+
+sub GetPopupChecker {
+	my $self = shift;
+
+	if ( !defined $self->{"pupupCheckers"} ) {
+
+		die "Popup checker in not inited";
+	}
+
+	return $self->{"pupupCheckers"};
 
 }
 

@@ -37,17 +37,17 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums';
 
 sub new {
 	my $class = shift;
- 	my $inCAM = shift;
- 	my $jobId = shift;
-	my $key = Enums->SizePnlCreator_HEGORDER;
-	
-	my $self = $class->SUPER::new($inCAM,$jobId, $key);
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $key   = Enums->SizePnlCreator_HEGORDER;
+
+	my $self = $class->SUPER::new( $inCAM, $jobId, $key );
 	bless $self;
 
 	$self->{"settings"}->{"w"} = undef;
 	$self->{"settings"}->{"h"} = undef;
 
-	return $self;                        # Return the reference to the hash.
+	return $self;    # Return the reference to the hash.
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -57,16 +57,20 @@ sub new {
 # Build layout, return 1 if succes, 0 if fail
 # Build layout, return 1 if succes, 0 if fail
 sub Init {
-	my $self = shift;
+	my $self  = shift;
 	my $inCAM = shift;
-	
+
 	$self->{"settings"}->{"w"} = 20;
 	$self->{"settings"}->{"h"} = 20;
-	
+
+	$inCAM->COM("get_user_name");
+
+	$self->{"settings"}->{"w"} = $inCAM->GetReply();
+
 	print STDERR "\n\nHEG !!\n\n";
-	
-	sleep(0);
-	
+
+	sleep(1);
+
 	return 1;
 
 }
@@ -76,17 +80,23 @@ sub Check {
 	my $self    = shift;
 	my $errMess = shift;
 
-	return 1
+	while (1) {
+		print STDERR "Check method\n";
+		sleep(1);
+	}
+
+	return 1;
 
 }
 #
 #
 
 sub Process {
-	my $self = shift;
-	my $inCAM = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $errMess = shift;
 
-sleep(1);
+	sleep(2);
 
 	return 1;
 }

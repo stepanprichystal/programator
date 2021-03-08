@@ -3,7 +3,7 @@
 # Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Core::BackgCreatorTaskMngr;
+package Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr;
 
 # Abstract class #
 
@@ -19,6 +19,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::HEGOrderSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::UserDefinedSize';
+use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -33,35 +35,35 @@ sub new {
 
 	# PROPERTIES
 
-	$self->{"jobId"}            = shift;
-	 
+	$self->{"jobId"} = shift;
+
 	$self->{"backgroundWorker"} = undef;    # helper background worker class
 
-	$self->{"json"} = JSON::XS->new->ascii->pretty->allow_nonref;
-	$self->{"json"}->convert_blessed( [1] );
+	$self->{"jsonStorable"} = JsonStorable->new();
+
+	$self->{"asyncWorkerSub"} = "__TaskBackgroundFunc";
 
 	# EVENTS
 
 	$self->{"pnlCreatorInitedEvt"}   = Event->new();
 	$self->{"pnlCreatorProcesedEvt"} = Event->new();
-	$self->{"asyncTaskEnd"}          = Event->new();
+	$self->{"asyncTaskDie"}          = Event->new();
 
 	return $self;
 }
 
 sub Init {
-	my $self       = shift;
-	my $launcher   = shift;
-	my $appMainFrm = shift;
+	my $self   = shift;
+	my $worker = shift;
 
 	# Tell to launcher backround woker will be used
-	 
- 
-	$self->{"backgroundWorker"} = $launcher->AddBackgroundWorker( $appMainFrm, sub { $self->__TaskBackgroundFunc(@_) } );
+
+	$self->{"backgroundWorker"} = $worker;
 
 	$self->{"backgroundWorker"}->{"thrStartEvt"}->Add( sub       { $self->__OnTaskStartHndl(@_) } );
 	$self->{"backgroundWorker"}->{"thrFinishEvt"}->Add( sub      { $self->__OnTaskFinishHndl(@_) } );
-	$self->{"backgroundWorker"}->{"thrEndEvt"}->Add( sub         { $self->__OnTaskEndHndl(@_) } );
+	$self->{"backgroundWorker"}->{"thrDieEvt"}->Add( sub         { $self->__OnTaskDieHndl(@_) } );
+	$self->{"backgroundWorker"}->{"thrAbortEvt"}->Add( sub       { $self->__OnTaskDieHndl(@_) } );
 	$self->{"backgroundWorker"}->{"thrPogressInfoEvt"}->Add( sub { $self->__OnTaskProgressInfoHndl(@_) } );
 	$self->{"backgroundWorker"}->{"thrMessageInfoEvt"}->Add( sub { $self->__OnTaskMessageInfoHndl(@_) } );
 
@@ -71,32 +73,33 @@ sub Init {
 sub AsyncInitPnlCreator {
 	my $self       = shift;
 	my $creatorKey = shift;
-	my $initParams = shift;    # array ref
+	my $initParams = shift;                                                                                    # array ref
 
 	my $taskId     = $creatorKey . "_INIT_CREATOR";
 	my @taskParams = ();
 	push( @taskParams, TaskType_INITCREATOR );
+	push( @taskParams, $self->{"jobId"} );
 	push( @taskParams, $creatorKey );
 	push( @taskParams, $initParams );
 
-	$self->{"backgroundWorker"}->AddTaskSerial( $taskId, \@taskParams );
+	$self->{"backgroundWorker"}->AddTaskSerial( $taskId, \@taskParams, $self->{"asyncWorkerSub"} );
 
 }
 
 # Raise "pnlCreatorProcesedEvt" event, which will contain result succes/failed
 sub AsyncProcessPnlCreator {
-	my $self             = shift;
-	my $creatorKey       = shift;
-	my $JSONSett = shift;    # hash of model properties
- 
+	my $self       = shift;
+	my $creatorKey = shift;
+	my $JSONSett   = shift;    # hash of model properties
+
 	my $taskId     = $creatorKey . "_PROCESSCREATOR";
 	my @taskParams = ();
 
 	push( @taskParams, TaskType_PROCESSCREATOR );
+	push( @taskParams, $self->{"jobId"} );
 	push( @taskParams, $creatorKey );
-	push( @taskParams, $JSONSett );
 
-	$self->{"backgroundWorker"}->AddNewtask( $taskId, \@taskParams );
+	$self->{"backgroundWorker"}->AddNewtask( $taskId, \@taskParams, $self->{"asyncWorkerSub"} );
 
 }
 
@@ -104,25 +107,26 @@ sub AsyncProcessPnlCreator {
 #  Background function (runing in child thread)
 #-------------------------------------------------------------------------------------------#
 
-
 sub __TaskBackgroundFunc {
-	my $self              = shift;
 	my $taskId            = shift;
 	my $taskParams        = shift;
 	my $inCAM             = shift;
 	my $thrPogressInfoEvt = shift;
 	my $thrMessageInfoEvt = shift;
 
+	my $jsonStorable = JsonStorable->new();
+
 	my $taskType   = shift @{$taskParams};
+	my $jobId      = shift @{$taskParams};
 	my $creatorKey = shift @{$taskParams};
 
-	my $creator = $self->__GetPnlCreatorByKey($creatorKey);
+	my $creator = __GetPnlCreatorByKey( $jobId, $creatorKey );
 
 	if ( $taskType eq TaskType_INITCREATOR ) {
 
 		my @creatorInitParams = @{ shift $taskParams };
 
-		my $result = $creator->Init($inCAM, @creatorInitParams);
+		my $result = $creator->Init( $inCAM, @creatorInitParams );
 
 		my $JSONSett = $creator->ExportSettings();
 
@@ -131,9 +135,9 @@ sub __TaskBackgroundFunc {
 		$res{"taskType"}     = $taskType;
 		$res{"creatorKey"}   = $creatorKey;
 		$res{"JSONSettings"} = $JSONSett;
-		$res{"result"} = $result;
+		$res{"result"}       = $result;
 
-		my $JSONMess = $self->{"json"}->pretty->encode( \%res );
+		my $JSONMess = $jsonStorable->Encode( \%res );
 
 		$thrMessageInfoEvt->Do( $taskId, $JSONMess );
 
@@ -144,8 +148,17 @@ sub __TaskBackgroundFunc {
 
 		$creator->ImportSettings($creatorJSONSett);
 
-		my $errMess = shift;
-		my $result  = $creator->Process($inCAM, \$errMess );
+		my $errMess = "";
+		my $result  = 0;
+
+		if ( $creator->Check( $inCAM, \$errMess ) ) {
+
+			$result = $creator->Process( $inCAM, \$errMess );
+
+		}
+		else {
+			$result = 0;
+		}
 
 		# Create JSON message
 		my %res = ();
@@ -154,7 +167,7 @@ sub __TaskBackgroundFunc {
 		$res{"result"}     = $result;
 		$res{"errMess"}    = $errMess;
 
-		my $JSONMess = $self->{"json"}->pretty->encode( \%res );
+		my $JSONMess = $jsonStorable->Encode( \%res );
 
 		$thrMessageInfoEvt->Do( $taskId, $JSONMess );
 
@@ -162,11 +175,9 @@ sub __TaskBackgroundFunc {
 
 }
 
-
 #-------------------------------------------------------------------------------------------#
 #  Private method
 #-------------------------------------------------------------------------------------------#
-
 
 #sub __ModelSettings2CreatorSettings {
 #	my $self       = shift;
@@ -203,10 +214,8 @@ sub __TaskBackgroundFunc {
 #}
 
 sub __GetPnlCreatorByKey {
-	my $self       = shift;
+	my $jobId      = shift;
 	my $creatorKey = shift;
-
-	my $jobId      = $self->{"jobId"};
 
 	my $creator = undef;
 
@@ -252,12 +261,12 @@ sub __OnTaskProgressInfoHndl {
 
 }
 
-sub __OnTaskEndHndl {
-	my $self   = shift;
-	my $taskId = shift;
+sub __OnTaskDieHndl {
+	my $self    = shift;
+	my $taskId  = shift;
 	my $errMess = shift;
 
-	$self->{"asyncTaskEnd"}->Do($taskId);
+	$self->{"asyncTaskDie"}->Do($taskId);
 
 	print STDERR "Asynchronous task ($taskId) END with error: $errMess. Handler in BackroundTaskMngr.\n";
 }
@@ -266,19 +275,19 @@ sub __OnTaskMessageInfoHndl {
 	my $self        = shift;
 	my $taskId      = shift;
 	my $messageJSON = shift;
-	
+
 	print STDERR "Asynchronous task ($taskId) SEND MESSAGE. Handler in BackroundTaskMngr.\n";
 
-	my %message = %{$self->{"json"}->decode($messageJSON)};
+	my %message = %{ $self->{"jsonStorable"}->Decode($messageJSON) };
 
 	my $taskType   = $message{"taskType"};
 	my $creatorKey = $message{"creatorKey"};
 
 	if ( $taskType eq TaskType_INITCREATOR ) {
-		my $result     = $message{"result"};
-		my $JSONSett   = $message{"JSONSettings"};
+		my $result   = $message{"result"};
+		my $JSONSett = $message{"JSONSettings"};
 
-#		my $modelData = $self->__CreatorSettings2ModelSettings( $creatorKey, $JSONSett );
+		#		my $modelData = $self->__CreatorSettings2ModelSettings( $creatorKey, $JSONSett );
 
 		$self->{"pnlCreatorInitedEvt"}->Do( $creatorKey, $result, $JSONSett )
 

@@ -20,6 +20,7 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
 
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePart';
+use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -38,24 +39,51 @@ sub new {
 	$self->{"backgroundTaskMngr"} = shift;
 	$self->{"parts"}              = [];
 
-	return $self;                             # Return the reference to the hash.
+	$self->{"backgroundTaskMngr"}->{"pnlCreatorProcesedEvt"}->Add( sub { $self->__OnCreatorProcessedHndl(@_) } );
+
+	return $self;    # Return the reference to the hash.
 }
 
+# Init parts
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
-	 
 
-	  my $jobId = $self->{"jobId"};
+	my $jobId = $self->{"jobId"};
 
 	# Each unit contain reference on default info - info with general info about pcb
 
 	my @parts = ();
 
 	# Part 1
-	push( @parts, SizePart->new($jobId, $self->{"backgroundTaskMngr"}) );
+	push( @parts, SizePart->new( $jobId, $self->{"backgroundTaskMngr"} ) );
+
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		$self->{"previewChangedEvt"}->Add( sub { $self->__OnPreviewChanged(@_) } );
+	}
+
+	# Bind part events each other
+	for ( my $i = 0 ; $i < scalar( @{ $self->{"parts"} } ) ; $i++ ) {
+
+		for ( my $j = 0 ; $j < scalar( @{ $self->{"parts"} } ) ; $j++ ) {
+
+			if ( $i != $j ) {
+
+				$self->{"parts"}->[$i]->{"creatorSelectionChangedEvt"}->Add( sub { $self->{"parts"}->[$j]->OnCreatorSelectionChangedHndl(@_) } )
+
+				  ;
+
+				$self->{"parts"}->[$i]->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"parts"}->[$j]->OnCreatorSettingsChangedHndl(@_) } );
+
+			}
+
+		}
+
+	}
+
 	#push( @parts, SizePart->new($jobId, $self->{"backgroundTaskMngr"}) );
-#	push( @parts, SizePart->new($jobId, $self->{"backgroundTaskMngr"}) );
+	#	push( @parts, SizePart->new($jobId, $self->{"backgroundTaskMngr"}) );
 
 	#	# Save to each unit->dataMngr default info
 	#	foreach my $part (@parts) {
@@ -112,16 +140,14 @@ sub InitModel {
 
 sub InitModelAsync {
 	my $self = shift;
-	
-	
+
 	foreach my $part ( @{ $self->{"parts"} } ) {
 
 		$part->InitModelAsync();
-		
+
 		print STDERR "cyklus\n";
 	}
 }
-
 
 sub RefreshGUI {
 	my $self = shift;
@@ -131,6 +157,41 @@ sub RefreshGUI {
 	}
 }
 
+sub AsyncProcessPart {
+	my $self   = shift;
+	my $partId = shift;
+
+	my @parts = @{ $self->{"parts"} };
+
+	@parts = grep { $_->GetPartId() eq $partId } @parts if ( defined $partId );
+
+	foreach my $part (@parts) {
+
+		$part->AsyncProcessPart();
+	}
+}
+
+sub SetPreview {
+	my $self    = shift;
+	my $preview = shift;
+
+	my @parts = @{ $self->{"parts"} };
+
+	foreach my $part (@parts) {
+
+		$part->SetPreview($preview);
+	}
+
+	if ($preview) {
+		$self->AsyncProcessPart();
+	}
+
+}
+
+sub GetPreview {
+	my $self = shift;
+
+}
 
 #
 #sub RefreshWrapper {
@@ -255,7 +316,48 @@ sub RefreshGUI {
 # ===================================================================
 # Helper method not requested by interface IUnit
 # ===================================================================
-#
+
+# Return array of information needed for check specific part
+# - part package name
+# - part title
+# - part data
+sub GetPartsCheckClass {
+	my $self  = shift;
+	my @parts = ();
+
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		my %inf = ();
+
+		$inf{"checkClassId"}      = $part->GetPartId();
+		$inf{"checkClassPackage"} = $part->GetCheckClass();
+		$inf{"checkClassTitle"}   = EnumsStyle->GetPartTitle( $part->GetPartId() );
+		$inf{"checkClassData"}    = $part->GetModel();
+
+		push( @parts, \%inf );
+	}
+
+	return @parts;
+
+}
+
+sub IsPartFullyInited {
+	my $self = shift;
+
+	my $inited = 1;
+
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		unless ( $part->IsPartFullyInited() ) {
+			$inited = 0;
+			last;
+		}
+	}
+
+	return $inited;
+
+}
+
 ##Set handler for catch changing state of each unit
 #sub SetGroupChangeHandler {
 #	my $self    = shift;
@@ -295,20 +397,59 @@ sub RefreshGUI {
 #}
 #
 ## ===================================================================
-## Other methods
+## Handlers
 ## ===================================================================
-#
-#sub GetUnitById {
-#	my $self   = shift;
-#	my $unitId = shift;
-#
-#	foreach my $unit ( @{ $self->{"units"} } ) {
-#
-#		if ( $unitId eq $unit->{"unitId"} ) {
-#			return $unit;
-#		}
-#	}
-#}
+sub __OnCreatorProcessedHndl {
+	my $self       = shift;
+	my $creatorKey = shift;
+	my $result     = shift;
+	my $errMess    = shift;
+
+	return 1;
+
+}
+
+sub __OnPreviewChanged {
+	my $self    = shift;
+	my $partId  = shift;
+	my $preview = shift;
+
+	if ($preview) {
+
+		# Activate preview for all parts, which have next part with active preview
+		my $activateDisabled = 0;
+		for ( my $i = scalar( @{ $self->{"parts"} } ) - 1 ; $i >= 0 ; $i-- ) {
+
+			if ( !$self->{"parts"}->[$i]->GetPreview() && $activateDisabled ) {
+				$self->{"parts"}->[$i]->SetPreview(1);
+			}
+
+			if ( $self->{"parts"}->[$i]->GetPreview() ) {
+				$activateDisabled = 1;
+			}
+
+		}
+
+		# If more parts has activated show preview,
+		#do Process part for all of them starting with first part
+		if ($activateDisabled) {
+
+			my @parts = @{ $self->{"parts"} };
+
+			foreach my $part (@parts) {
+
+				$self->AsyncProcessPart($partId) if ( $part->GetPreview() );
+			}
+
+		}
+		else {
+
+			$self->AsyncProcessPart($partId);
+		}
+
+	}
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -22,7 +22,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Parts::PartContainer';
 use aliased 'Programs::Panelisation::PnlWizard::Core::StorageModelMngr';
 use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
 
-use aliased 'Programs::Panelisation::PnlWizard::Core::BackgCreatorTaskMngr';
+use aliased 'Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr';
 
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportCheckerForm';
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm';
@@ -100,6 +100,8 @@ sub new {
 	# Manage group date (store/load group data from/to disc)
 	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"wizardModel"}, $self->{"partContainer"} );
 
+	$self->{"popupChecker"} = undef;
+
 	return $self;
 }
 
@@ -110,15 +112,24 @@ sub Init {
 
 	$self->{"launcher"} = $launcher;
 
-	$self->{"inCAM"} = $launcher->GetInCAM();
+	$self->{"launcher"}->InitBackgroundWorker( $self->{"form"}->{"mainFrm"} );
 
-	$self->{"backgroundTaskMngr"}->Init( $launcher, $self->{"form"}->{"mainFrm"} );
+	$self->{"backgroundTaskMngr"}->Init( $launcher->GetBackgroundWorker() );
+
+	$self->{"inCAM"} = $launcher->GetInCAM();
 
 	#$self->{"inCAM"}->SetDisplay(0);
 
 	$self->{"wizardModel"}->Init( $self->{"inCAM"} );
 
 	$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"backgroundTaskMngr"} );
+
+	my $title    = "Check before panelisation " . $self->{"jobId"};
+	my $taskName = "Create force";
+
+	$self->{"launcher"}->InitPopupChecker( $self->{"jobId"}, $self->{"form"}->{"mainFrm"}, $title, $taskName );
+
+	$self->{"popupChecker"} = $launcher->GetPopupChecker();
 
 	# 3) Initialization of whole export app
 
@@ -195,22 +206,20 @@ sub Run {
 # ================================================================================
 # FORM HANDLERS
 # ================================================================================
-#sub __ExportSyncFormHandler {
-#	my $self = shift;
-#
-#	#if ( $client->ClientConnected() ) {
-#	#
-#	#		print STDERR "Close\n";
-#	#		$self->{"inCAM"}->CloseServer();
-#	#
-#	#	}\
-#
-#	#use Win32::OLE;
-#	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-#
-#	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-#	$self->__CheckBeforeExport( EnumsJobMngr->TaskMode_SYNC );
-#}
+sub __OnCreateHndl {
+	my $self = shift;
+
+	# Only if all parts was inited
+
+	$self->__CreatePanel();
+
+}
+
+sub __OnCheckResultHndl {
+	my $self   = shift;
+	my $result = shift;
+
+}
 #
 #sub __ExportASyncFormHandler {
 #	my $self     = shift;
@@ -502,6 +511,28 @@ sub Run {
 # PRIVATE METHODS
 # ================================================================================
 
+sub __CreatePanel {
+	my $self = shift;
+
+	my $result = 1;
+
+	# Check if all parts are already inited (due to asynchrounous initialization)
+	unless ( $self->{"partContainer"}->IsPartFullyInited() ) {
+		return 0;
+	}
+
+	$self->{"popupChecker"}->ClearCheckClasses();
+
+	foreach my $checkClass ( $self->{"partContainer"}->GetPartsCheckClass() ) {
+
+		$self->{"popupChecker"}->AddCheckClass( $checkClass->{"checkClassId"},    $checkClass->{"checkClassPackage"},
+												$checkClass->{"checkClassTitle"}, $checkClass->{"checkClassData"} );
+
+	}
+
+	$self->{"popupChecker"}->Check();
+}
+
 #sub __RefreshForm {
 #	my $self = shift;
 #
@@ -537,10 +568,16 @@ sub __OnInCAMIsBusyHndl {
 sub __SetHandlers {
 	my $self = shift;
 
-	#	$self->{"form"}->{"onExportSync"}->Add( sub  { $self->__ExportSyncFormHandler(@_) } );
-	#	$self->{"form"}->{"onExportASync"}->Add( sub { $self->__ExportASyncFormHandler(@_) } );
-	#	$self->{"form"}->{"onClose"}->Add( sub       { $self->__OnCloseFormHandler(@_) } );
-	#	$self->{"form"}->{"onUncheckAll"}->Add( sub  { $self->__UncheckAllHandler(@_) } );
+	# Popup checker handlers
+	#$self->{"popupChecker"}->{"checkResultEvt"}->Add( sub { $self->__OnCheckResultHndl(@_) } );
+
+	# Form handlers
+
+	$self->{"form"}->{"createEvt"}->Add( sub { $self->__OnCreateHndl(@_) } );
+
+	#		$self->{"form"}->{"onExportASync"}->Add( sub { $self->__ExportASyncFormHandler(@_) } );
+	#		$self->{"form"}->{"onClose"}->Add( sub       { $self->__OnCloseFormHandler(@_) } );
+	#		$self->{"form"}->{"onUncheckAll"}->Add( sub  { $self->__UncheckAllHandler(@_) } );
 	#	$self->{"form"}->{"onLoadLast"}->Add( sub    { $self->__LoadLastHandler(@_) } );
 	#	$self->{"form"}->{"onLoadDefault"}->Add( sub { $self->__LoadDefaultHandler(@_) } );
 	#

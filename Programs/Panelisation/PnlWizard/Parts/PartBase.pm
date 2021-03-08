@@ -29,23 +29,21 @@ sub new {
 	$self->{"backgroundTaskMngr"} = shift;
 
 	$self->{"partId"} = undef;
+	$self->{"model"}  = undef;
+	
+	$self->{"checkClass"}  = undef;
+	
 
-	$self->{"partWrapper"} = undef;    #wrapper, which form is placed in
 	$self->{"form"}        = undef;    #form which represent GUI of this group
-	                                   #$self->{"eventClass"}   = undef;    # define connection between all groups by group and envents handler
-
-	$self->{"dataMngr"}    = undef;    # manager, which is responsible for create, update group data
-	$self->{"cellWidth"}   = 0;        #width of cell/unit form (%), placed in exporter table row
-	$self->{"exportOrder"} = 0;        #Order, which unit will be ecported
+	$self->{"partWrapper"} = undef;    #$self->{"eventClass"}   = undef;    # define connection between all groups by group and envents handler
 
 	# Events
-	$self->{"creatorReInitdEvt"}         = Event->new();
-	$self->{"creatorChangedEvt"}         = Event->new();
-	$self->{"creatorSettingsChangedEvt"} = Event->new();
-	$self->{"creatorSettingsChangedEvt"} = Event->new();
+	$self->{"creatorReInitdEvt"}          = Event->new();
+	$self->{"creatorSelectionChangedEvt"} = Event->new();
+	$self->{"creatorSettingsChangedEvt"}  = Event->new();
 
-	$self->{"modelChangedEvt"}       = Event->new();
-	$self->{"showPreviewChangedEvt"} = Event->new();
+	$self->{"modelChangedEvt"}   = Event->new();
+	$self->{"previewChangedEvt"} = Event->new();
 
 	# Se handlers
 
@@ -62,32 +60,83 @@ sub GetPartId {
 
 }
 
-sub __OnCreatorInitedHndl {
+sub GetModel {
 	my $self = shift;
+
+	return $self->{"model"};
+
+}
+ 
+ 
+sub GetCheckClass {
+	my $self = shift;
+
+	return $self->{"checkClass"};
+
+} 
+ 
+ 
+
+sub _InitForm {
+	my $self        = shift;
+	my $partWrapper = shift;
+
+	$self->{"partWrapper"} = $partWrapper;
+
+	$partWrapper->{"previewChangedEvt"}->Add( sub { $self->__OnPreviewChanged(@_) } );
+
+	$self->{"form"}->{"creatorSettingsChangedEvt"}->Add( sub { $self->__OnCreatorSettingsChangedHndl() } );
+
+}
+
+sub __OnCreatorInitedHndl {
+	my $self       = shift;
 	my $creatorKey = shift;
-	my $result = shift;
-	my $modelData = shift;
+	my $result     = shift;
+	my $modelData  = shift;
 
 	# Call sub class method if implemented
 	if ( $self->can("OnCreatorInitedHndl") ) {
-		$self->OnCreatorInitedHndl($creatorKey, $result, $modelData);
+		$self->OnCreatorInitedHndl( $creatorKey, $result, $modelData );
 	}
 
 }
 
 sub __OnCreatorProcessedHndl {
-	my $self = shift;
+	my $self       = shift;
 	my $creatorKey = shift;
-	my $result = shift;
-	my $errMess = shift;
+	my $result     = shift;
+	my $errMess    = shift;
 
 	# Call sub class method if implemented
 	if ( $self->can("OnCreatorProcessedHndl") ) {
-		$self->OnCreatorProcessedHndl($creatorKey, $result, $errMess);
+		$self->OnCreatorProcessedHndl( $creatorKey, $result, $errMess );
 	}
 
 }
- 
+
+sub __OnPreviewChanged {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"model"}->SetPreview($val);
+
+	$self->{"previewChangedEvt"}->Do( $self->GetPartId(), $val )
+
+}
+
+sub __OnCreatorSettingsChangedHndl {
+	my $self = shift;
+
+	# Do async process if previeww set
+
+	$self->AsyncProcessPart() if ( $self->GetPreview() );
+
+	# Reise Events
+	$self->{"creatorSettingsChangedEvt"}->Do(@_);
+
+}
+
 #sub _ProcessCreatorSettings {
 #
 #	# 1)Convert model to Creator settings
@@ -107,6 +156,21 @@ sub __OnCreatorProcessedHndl {
 #	my $thrMessageInfoEvt = shift;
 #
 #}
+
+sub SetPreview {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"model"}->SetPreview($val);
+	$self->{"partWrapper"}->SetPreview($val);
+
+}
+
+sub GetPreview {
+	my $self = shift;
+
+	return $self->{"model"}->GetPreview();
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

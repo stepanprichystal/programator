@@ -23,24 +23,24 @@ sub new {
 
 	$self->{"__CLASS__"} = caller();
 
-	$self->{"jsonStorable"} = JsonStorable->new();
+	
 	$self->{"settings"}     = {};
 
 	return $self;
 
 }
 
-sub SetShowPreview {
+sub SetPreview {
 	my $self = shift;
 
-	$self->{"showPreview"} = shift;
+	$self->{"Preview"} = shift;
 
 }
 
-sub GetShowPreview {
+sub GetPreview {
 	my $self = shift;
 
-	return $self->{"showPreview"};
+	return $self->{"Preview"};
 
 }
 
@@ -48,7 +48,9 @@ sub GetShowPreview {
 sub ExportCreatorSettings {
 	my $self = shift;
 
-	my $serialized = $self->{"jsonStorable"}->Encode( $self->{"settings"} );
+	my $jsonStorable = JsonStorable->new();
+
+	my $serialized = $jsonStorable->Encode( $self->{"settings"} );
 
 	return $serialized;
 
@@ -60,7 +62,9 @@ sub ImportCreatorSettings {
 
 	die "Serialized data are empty" if ( !defined $serialized || $serialized eq "" );
 
-	my $data = $self->{"jsonStorable"}->Decode($serialized);
+	my $jsonStorable = JsonStorable->new();
+
+	my $data = $jsonStorable->Decode($serialized);
 
 	# Do check if some keys are not missing or if there are some extra
 	my @newSettings = keys %{$data};

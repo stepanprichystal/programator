@@ -13,7 +13,7 @@ use Wx;
 #local library
 #use aliased 'Packages::Tests::Test';
 #use aliased 'Widgets::Forms::MyWxFrame';
-#use aliased 'Packages::Events::Event';
+use aliased 'Packages::Events::Event';
 #use aliased 'Managers::MessageMngr::MessageMngr';
 #use aliased 'Programs::Comments::CommWizard::Forms::CommListViewFrm::CommListViewFrm';
 #use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::CommViewFrm';
@@ -47,7 +47,7 @@ sub new {
 
 	#EVENTS
 
-	#	$self->{"onExportSync"}  = Event->new();
+	$self->{"createEvt"}  = Event->new();
 	#	$self->{"onExportASync"} = Event->new();
 	#	$self->{"onClose"}       = Event->new();
 	#

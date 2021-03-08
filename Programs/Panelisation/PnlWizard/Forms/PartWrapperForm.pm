@@ -75,7 +75,7 @@ sub __SetLayout {
 	my $pnlBody   = Wx::Panel->new( $self, -1 );
 
 	$self->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
-	$pnlHeader->SetBackgroundColour( EnumsStyle->BACKGCLR_LEFTPNLBLUE  );
+	$pnlHeader->SetBackgroundColour( EnumsStyle->BACKGCLR_LEFTPNLBLUE );
 	$pnlBody->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 
 	# DEFINE CONTROLS
@@ -88,7 +88,7 @@ sub __SetLayout {
 	my $titleTxt     = Wx::StaticText->new( $pnlHeader, -1, $self->{"title"}, &Wx::wxDefaultPosition );
 	my $f            = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 	$titleTxt->SetFont($f);
-	$titleTxt->SetForegroundColour(  EnumsStyle->TXTCLR_LEFTPNL );
+	$titleTxt->SetForegroundColour( EnumsStyle->TXTCLR_LEFTPNL );
 
 	my $previewChb = Wx::CheckBox->new( $pnlHeader, -1, "Preview", &Wx::wxDefaultPosition );
 	$previewChb->SetForegroundColour( Wx::Colour->new( 187, 187, 196 ) );
@@ -111,10 +111,15 @@ sub __SetLayout {
 
 	$self->SetSizer($szMain);
 
+	# SET EVENTS
+
+	Wx::Event::EVT_CHECKBOX( $previewChb, -1, sub { $self->{"previewChangedEvt"}->Do(@_) } );
+
 	# SET REFERENCES
 
-	$self->{"pnlBody"} = $pnlBody;
-	$self->{"szBody"}  = $szBody;
+	$self->{"pnlBody"}    = $pnlBody;
+	$self->{"szBody"}     = $szBody;
+	$self->{"previewChb"} = $previewChb;
 
 	#$self->__RecursiveHandler($pnlHeader);
 
@@ -132,6 +137,18 @@ sub GetParentForPart {
 	my $self = shift;
 
 	return $self->{"pnlBody"};
+}
+
+sub SetPreview {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"previewChb"}->SetValue($value);
+}
+
+sub GetPreview {
+	my $self = shift;
+	return $self->{"previewChb"}->GetValue();
 }
 
 1;
