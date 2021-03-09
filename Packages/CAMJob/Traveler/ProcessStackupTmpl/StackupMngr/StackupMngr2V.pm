@@ -56,22 +56,22 @@ sub GetAllLamination {
 	my @lam = ();
 
 	if ( $cvrlTopExist || $cvrlBotExist ) {
-		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_CVRLBASE, undef, "P" . ( scalar(@lam) + 1 ) );
+		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_CVRLBASE,  "P" . ( scalar(@lam) + 1 ) );
 		push( @lam, $inf );
 	}
 
 	if ( $tapeTopExist || $tapeBotExist ) {
-		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_TAPEPRODUCT, undef, "P" . ( scalar(@lam) ) );
+		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_TAPEPRODUCT,  "P" . ( scalar(@lam) + 1 ) );
 		push( @lam, $inf );
 	}
 
 	if ( $stiffTopExist || $stiffBotExist ) {
-		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_STIFFPRODUCT, undef, "P" . ( scalar(@lam) ) );
+		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_STIFFPRODUCT,  "P" . ( scalar(@lam)  + 1) );
 		push( @lam, $inf );
 	}
 
 	if ( $tapeStiffTopExist || $tapeStiffBotExist ) {
-		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_TAPESTIFFPRODUCT, undef, "P" . ( scalar(@lam) ) );
+		my $inf = StackupLam->new( scalar(@lam), Enums->LamType_TAPESTIFFPRODUCT,  "P" . ( scalar(@lam) + 1 ) );
 		push( @lam, $inf );
 	}
 
