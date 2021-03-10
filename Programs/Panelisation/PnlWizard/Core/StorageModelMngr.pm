@@ -13,6 +13,7 @@ use warnings;
 #local library
 use aliased "Enums::EnumsPaths";
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
+use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,7 +36,7 @@ sub new {
 
 		$type = "panel";
 	}
-	elsif ( $pnlWizardType eq Enums->PnlWizardType_PRODUCTIONPNL ) {
+	elsif ( $pnlWizardType eq Enums->PnlWizardType_CUSTOMERPNL ) {
 		$type = "mpanel";
 	}
 	else {
@@ -53,7 +54,7 @@ sub new {
 	#$self->{"modelData"}      = $modelData;
 	#$self->{"modelPartsData"} = $modelPartsData;
 
-	FileHelper->DeleteTempFilesFrom( EnumsPaths->Client_INCAMTMPPNLCRE, 3600 * 24 * 4 );    #delete 12 hours old settings
+	FileHelper->DeleteTempFilesFrom( EnumsPaths->Client_INCAMTMPPNLCRE, 3600 * 24 * 5 );    #delete 5 days old settings
 
 	return $self;
 }
@@ -70,12 +71,11 @@ sub GetModelDate {
 	my $time = shift // 1;
 	my $date = shift // 0;
 
-	my $dt = $self->SUPER::SerializedDataExist();
+	my $dt = $self->SUPER::GetSerializedDataDate();
 
 	my $str = "";
-	$str = $dt->hms() if ($time);
-	$str = $dt->dmy() if ($date);
-	$str = $dt->hms() . " " . $dt->dmy() if ( $time && $date );
+	$str .= $dt->hour() . ":" . $dt->minute() if ($time);
+	$str .= ( $time ? " " : "" ) .  $dt->day_abbr() if ($date);
 
 	return $str;
 }

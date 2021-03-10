@@ -46,13 +46,10 @@ use warnings;
 
 sub new {
 	my $class = shift;
-	my $jobId = shift;
-	my $step  = shift // "panel";
-
-	my $self = {};
+	my $self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"step"}  = $step;
+	$self->{"step"}  = undef;
 	$self->{"parts"} = {};
 
 	# Defaul values
@@ -61,7 +58,24 @@ sub new {
 	return $self;
 }
 
-sub GetPartById {
+
+sub GetStep {
+	my $self   = shift;
+ 
+	return $self->{"step"};
+
+}
+
+sub SetStep {
+	my $self   = shift;
+	my $val = shift;
+	 
+
+	$self->{"step"} =  $val;
+
+}
+
+sub GetPartModelById {
 	my $self   = shift;
 	my $partId = shift;
 
@@ -69,7 +83,7 @@ sub GetPartById {
 
 }
 
-sub SetPartById {
+sub SetPartModelById {
 	my $self   = shift;
 	my $partId = shift;
 	my $model  = shift;

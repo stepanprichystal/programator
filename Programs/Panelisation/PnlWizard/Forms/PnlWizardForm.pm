@@ -22,6 +22,7 @@ use aliased 'Packages::Events::Event';
 #use aliased 'Widgets::Forms::MyWxStaticBoxSizer';
 use aliased 'Programs::Panelisation::PnlWizard::Forms::PartContainerForm';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
+use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
 
 #-------------------------------------------------------------------------------------------#
@@ -30,11 +31,10 @@ use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
 
 sub new {
 
-	my $class  = shift;
-	my $parent = shift;
-
-	my $jobId  = shift;
-	my $orders = shift;
+	my $class   = shift;
+	my $parent  = shift;
+	my $jobId   = shift;
+	my $pnlType = shift;
 
 	my @dimension = ( 1000, 800 );
 	my $flags     = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
@@ -44,10 +44,14 @@ sub new {
 
 	bless($self);
 
-	$self->__SetLayout();
+	
 
 	# Properties
-	$self->{"title"} = $title;
+	$self->{"title"}   = $title;
+	$self->{"pnlType"} = $pnlType;
+	$self->{"loadLastEnabled"} = 0;
+	
+	$self->__SetLayout();
 
 	#EVENTS
 
@@ -239,7 +243,7 @@ sub SetAsyncTaskRunningLayout {
 		$self->EnableCancelBtn(0);
 	}
 	else {
-		$self->{"loadLastBtn"}->Enable();
+		$self->{"loadLastBtn"}->Enable() if($self->{"loadLastEnabled"});
 		$self->{"loadDefaultBtn"}->Enable();
 		$self->EnableCreateBtn(1);
 		$self->EnableShowInCAMBtn(1);
@@ -306,6 +310,9 @@ sub EnableLoadLastBtn {
 		$self->{"loadLastBtn"}->SetLabel("Last settings");
 
 	}
+	
+	
+	$self->{"loadLastEnabled"} = $enable;
 
 }
 
@@ -482,11 +489,11 @@ sub __SetLayout {
 
 	$self->AddContent($szMain);
 	$self->SetButtonHeight(30);
-	my $btnCancel = $self->AddButton( "Cancel", sub { $self->{"cancelEvt"}->Do() } );
+	my $btnCancel = $self->AddButton( "Cancel", sub { $self->{"cancelClickEvt"}->Do() } );
 
 	#my $btnLeave     = $self->AddButton( "Leave",      sub { $self->{"leaveEvt"}->Do() } );
-	my $btnShowInCAM = $self->AddButton( "Show InCAM", sub { $self->{"showInCAMEvt"}->Do() } );
-	my $btnCreate    = $self->AddButton( "Create",     sub { $self->{"createEvt"}->Do() } );
+	my $btnShowInCAM = $self->AddButton( "Show InCAM", sub { $self->{"showInCAMClickEvt"}->Do() } );
+	my $btnCreate    = $self->AddButton( "Create",     sub { $self->{"createClickEvt"}->Do() } );
 
 	# DEFINE LAYOUT STRUCTURE
 
@@ -526,7 +533,16 @@ sub __SetLayoutHeader {
 	$pnlSett->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
 
 	# DEFINE CONTROLS
-	my $titleTxt = Wx::StaticText->new( $pnlMain, -1, "Customer panel", &Wx::wxDefaultPosition, [ 260, -1 ] );
+	my $title = undef;
+	if ( $self->{"pnlType"} eq Enums->PnlWizardType_PRODUCTIONPNL ) {
+
+		$title = "Production panel";
+	}
+	elsif ( $self->{"pnlType"} eq Enums->PnlWizardType_CUSTOMERPNL ) {
+		$title = "Customer panel";
+	}
+
+	my $titleTxt = Wx::StaticText->new( $pnlMain, -1, $title, &Wx::wxDefaultPosition, [ 260, -1 ] );
 	$titleTxt->SetForegroundColour( Wx::Colour->new( 255, 255, 255 ) );
 	my $f = Wx::Font->new( 14, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 	$titleTxt->SetFont($f);
@@ -537,8 +553,8 @@ sub __SetLayoutHeader {
 	my $previewTxt = Wx::StaticText->new( $pnlSett, -1, "Preview:", &Wx::wxDefaultPosition, [ 70, 22 ] );
 	my $previewChb = Wx::CheckBox->new( $pnlSett, -1, "", &Wx::wxDefaultPosition );
 
-	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Load last",    &Wx::wxDefaultPosition, [ 120, 23 ] );
-	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Load default", &Wx::wxDefaultPosition, [ 120, 23 ] );
+	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [ 160, 23 ] );
+	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [ 120, 23 ] );
 
 	# BUILD LAYOUT STRUCTURE
 

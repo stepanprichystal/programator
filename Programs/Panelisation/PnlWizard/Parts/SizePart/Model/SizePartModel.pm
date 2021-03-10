@@ -68,11 +68,26 @@ sub GetCreators {
 
 }
 
-sub GetCreatorByKey {
-	my $self = shift;
+sub SetCreatorModelByKey {
+	my $self         = shift;
+	my $modelKey     = shift;
+	my $creatorModel = shift;
+
+	for ( my $i = 0 ; $i < scalar( @{ $self->{"creators"} } ) ; $i++ ) {
+
+		if ( $self->{"creators"}->[$i]->GetModelKey() eq $modelKey ) {
+
+			$self->{"creators"}->[$i] = $creatorModel;
+			last;
+		}
+	}
+}
+
+sub GetCreatorModelByKey {
+	my $self     = shift;
 	my $modelKey = shift;
 
-	my $creatorModel =  first { $_->GetModelKey() eq $modelKey } @{$self->{"creators"}};
+	my $creatorModel = first { $_->GetModelKey() eq $modelKey } @{ $self->{"creators"} };
 
 	return $creatorModel;
 

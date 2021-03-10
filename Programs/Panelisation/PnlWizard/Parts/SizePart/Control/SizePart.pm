@@ -52,7 +52,7 @@ sub new {
 	$self->{"checkClass"} = PartCheckClass->new();
 
 	$self->{"frmHandlersOff"} = 0;
-	
+
 	$self->{"isPartFullyInited"} = 0;
 	#
 	#	my $checkData = ImpCheckData->new();
@@ -91,8 +91,9 @@ sub InitForm {
 
 }
 
-sub InitModel {
+sub InitPartModel {
 	my $self      = shift;
+	my $inCAM     = shift;
 	my $modelData = shift;
 
 	if ( defined $modelData ) {
@@ -104,19 +105,9 @@ sub InitModel {
 	else {
 
 		# Set default settings
-		#$self->{"model"}->SetSelectedCreator()
+		$self->{"model"} = PartModel->new();
 
 	}
-}
-
-# Run after InitModel, update form of selected creator asynchronously
-sub InitModelAsync {
-	my $self = shift;
-
-	my $creatorKey = $self->{"model"}->GetSelectedCreator();
-
-	$self->AsyncInitPart($creatorKey);
-
 }
 
 sub OnOtherPartCreatorSelectionChangedHndl {
@@ -132,8 +123,6 @@ sub OnOtherPartCreatorSettingsChangedHndl {
 	my $newCreatorKey = shift
 
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

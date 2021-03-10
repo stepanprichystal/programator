@@ -115,24 +115,20 @@ sub GetParts {
 	return @{ $self->{"parts"} };
 }
 
-sub InitModel {
+sub InitPartModel {
 	my $self            = shift;
 	my $inCAM           = shift;
-	my $storedModelMngr = shift;
+	my $model = shift;
 
 	#case when group data are taken from disc
-	if ($storedModelMngr) {
-
-		unless ( $storedModelMngr->ExistModelData() ) {
-			return 0;
-		}
-
-		$self->{"wizardModel"} = $storedModelMngr->GetModel();
+	if ($model) {
+ 
+		$self->{"wizardModel"} = $model;
 
 		foreach my $part ( @{ $self->{"parts"} } ) {
 
-			my $model = $self->{"wizardModel"}->GetModelByPart($part);
-			$part->InitModel( $inCAM, $model );
+			my $model = $self->{"wizardModel"}->GetPartModelById($part->GetPartId());
+			$part->InitPartModel( $inCAM, $model );
 		}
 	}
 
@@ -141,17 +137,17 @@ sub InitModel {
 
 		foreach my $part ( @{ $self->{"parts"} } ) {
 
-			$part->InitModel();
+			$part->InitPartModel($inCAM);
 		}
 	}
 }
 
-sub InitModelAsync {
+sub AsyncInitSelCreatorModel {
 	my $self = shift;
 
 	foreach my $part ( @{ $self->{"parts"} } ) {
 
-		$part->InitModelAsync();
+		$part->AsyncInitSelCreatorModel();
 
 		print STDERR "cyklus\n";
 	}
@@ -165,7 +161,7 @@ sub RefreshGUI {
 	}
 }
 
-sub AsyncProcessPart {
+sub AsyncProcessSelCreatorModel {
 	my $self   = shift;
 	my $partId = shift;
 
@@ -175,7 +171,7 @@ sub AsyncProcessPart {
 
 	foreach my $part (@parts) {
 
-		$part->AsyncProcessPart();
+		$part->AsyncProcessSelCreatorModel();
 	}
 }
 
@@ -191,7 +187,7 @@ sub SetPreview {
 	}
 
 	if ($preview) {
-		$self->AsyncProcessPart();
+		$self->AsyncProcessSelCreatorModel();
 	}
 
 }
@@ -237,7 +233,7 @@ sub GetModel {
 
 	foreach my $part ( @{ $self->{"parts"} } ) {
 
-		$self->{"wizardModel"}->SetModelByPartId( $part->GetPartId(), $part->GetModel() );
+		$self->{"wizardModel"}->SetPartModelById( $part->GetPartId(), $part->GetModel() );
 
 	}
 
@@ -315,7 +311,7 @@ sub __OnPreviewChangedHndl {
 		$self->SetPreviewOnAllPart($partId);
 
 		# Process this specific part
-		$self->AsyncProcessPart($partId);
+		$self->AsyncProcessSelCreatorModel($partId);
 
 	}
 
@@ -329,7 +325,7 @@ sub __OnAsyncCreatorProcessedHndl {
 
 	if ( $self->{"finalProcessing"} ) {
 
-		$self->__OnAsyncProcessPartHndl( $creatorKey, $result, $errMess );
+		$self->__OnAsyncProcessSelCreatorModelHndl( $creatorKey, $result, $errMess );
 	}
 
 }
@@ -363,7 +359,7 @@ sub SetPreviewOnAllPart {
 		if ( !$self->{"parts"}->[$i]->GetPreview() ) {
 
 			$self->{"parts"}->[$i]->SetPreview(1);
-			$self->AsyncProcessPart( $self->{"parts"}->[$i]->GetPartId() );
+			$self->AsyncProcessSelCreatorModel( $self->{"parts"}->[$i]->GetPartId() );
 
 		}
 
@@ -394,11 +390,11 @@ sub AsyncCreatePanel {
 
 	my $nextPart = shift @{ $self->{"finalCreateParts"} };
 
-	$self->AsyncProcessPart($nextPart);
+	$self->AsyncProcessSelCreatorModel($nextPart);
 
 }
 
-sub __OnAsyncProcessPartHndl {
+sub __OnAsyncProcessSelCreatorModelHndl {
 	my $self       = shift;
 	my $creatorKey = shift;
 	my $result     = shift;
@@ -410,7 +406,7 @@ sub __OnAsyncProcessPartHndl {
 
 		if ( defined $nextPart ) {
 
-			$self->AsyncProcessPart($nextPart);
+			$self->AsyncProcessSelCreatorModel($nextPart);
 		}
 		else {
 

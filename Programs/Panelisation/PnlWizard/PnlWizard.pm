@@ -85,7 +85,7 @@ sub new {
 	$self->{"launcher"} = undef;
 
 	# Main application form
-	$self->{"form"} = PnlWizardForm->new( -1, $self->{"jobId"} );
+	$self->{"form"} = undef;
 
 	# Class whin manage popup form for checking
 	#$self->{"pnlWizardChecker"} = ExportPopup->new( $self->{"jobId"} );
@@ -113,6 +113,9 @@ sub Init {
 	$self->{"launcher"} = $launcher;
 
 	$self->{"pnlType"} = $pnlType;
+	
+	$self->{"form"} = PnlWizardForm->new( -1, $self->{"jobId"}, $self->{"pnlType"} );
+	
 
 	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"pnlType"} );
 
@@ -124,7 +127,6 @@ sub Init {
 
 	#$self->{"inCAM"}->SetDisplay(0);
 
-	$self->{"wizardModel"}->Init( $self->{"inCAM"} );
 
 	$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"backgroundTaskMngr"} );
 
@@ -145,6 +147,9 @@ sub Init {
 	#$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"jobId"}, "panel" ,\@cells );
 	#
 	#	# Build phyisic table with groups, which has completely set GUI
+	
+	
+	
 	my @parts = $self->{"partContainer"}->GetParts();
 	$self->{"form"}->BuildPartContainer( $self->{"inCAM"}, \@parts );
 	
@@ -171,7 +176,7 @@ sub Init {
 	#8) GetGroupData()
 
 	print STDERR "Init model START\n";
-	$self->{"partContainer"}->InitModel( $self->{"inCAM"} );
+	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"} );
 	print STDERR "Init model END\n";
 	#
 
@@ -182,7 +187,7 @@ sub Init {
 	$self->__SetHandlers();
 
 	print STDERR "Init model async START\n";
-	$self->{"partContainer"}->InitModelAsync();
+	$self->{"partContainer"}->AsyncInitSelCreatorModel();
 	print STDERR "Init model async END\n";
 
 	#
@@ -258,7 +263,7 @@ sub __OnCancelClickHndl {
 
 	if ( $self->{"inCAM"}->IsConnected() ) {
 
-		$self->{"inCAM"}->ClientFinish();
+		$self->{"inCAM"}->CloseServer();
 
 	}
 	$self->{"form"}->{"mainFrm"}->Destroy();
@@ -291,7 +296,7 @@ sub __OnLoadLastClickHndl {
 
 	my $restoredModel = $self->{"storageModelMngr"}->LoadModel();
 
-	$self->{"partContainer"}->InitModel( $self->{"inCAM"}, $restoredModel );
+	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"}, $restoredModel );
 	$self->{"partContainer"}->RefreshGUI();
 
 }
@@ -304,8 +309,10 @@ sub __OnLoadDefaultClickHndl {
 		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
 	}
 
-	$self->{"partContainer"}->InitModel( $self->{"inCAM"} );
+	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"}); # Load generally model
 	$self->{"partContainer"}->RefreshGUI();
+	$self->{"partContainer"}->AsyncInitSelCreatorModel(); # Load asynchronously selected model
+	 
 
 }
 

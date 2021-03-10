@@ -47,7 +47,7 @@ sub GetSerializedDataDate {
 
 	#my $data = undef;
 
-	die "File: " . $self->{"filePath"} . " doesn't exist" if ( $self->SerializedDataExist() );
+	die "File: " . $self->{"filePath"} . " doesn't exist" if ( !$self->SerializedDataExist() );
 
 	 
 

@@ -63,7 +63,7 @@ sub Init {
 	$self->{"settings"}->{"w"} = 20;
 	$self->{"settings"}->{"h"} = 20;
 
-	for ( my $i = 0 ; $i < 3 ; $i++ ) {
+	for ( my $i = 0 ; $i < 1 ; $i++ ) {
 
 		$inCAM->COM("get_user_name");
 

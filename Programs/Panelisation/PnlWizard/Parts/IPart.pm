@@ -23,14 +23,14 @@ use warnings;
 
 ## set default data fo controls, which are on exported forms
 ## default data means, settings, which are ussualy exported for given group
-sub InitModel;
+#sub InitModel;
 #
 ## Do checking before export, based on group group data.
 ## Group data/ (= default data before user change them in GUI)
 #sub CheckBeforeExport;
 #
 ## When group form is buiild, refresh controls based on default/group data
-#sub RefreshGUI;
+sub RefreshGUI;
 #
 ## When group form is buiild, refresh group wrapper
 #sub RefreshWrapper;
