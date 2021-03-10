@@ -21,6 +21,8 @@ use warnings;
 
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePart';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
+use aliased 'Packages::Events::Event';
+use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -31,17 +33,16 @@ sub new {
 	$self = {};
 	bless $self;
 
-	#	$self->{"onCheckEvent"} = Event->new();
-	#	$self->{"switchAppEvt"} = Event->new();    # allow to run another app from unitForm
+	$self->{"asyncPanelCreatedEvt"}   = Event->new();    #
+	$self->{"asyncCreatorsInitedEvt"} = Event->new();    #
+	                                                     #	$self->{"switchAppEvt"} = Event->new();    # allow to run another app from unitForm
 
 	$self->{"jobId"}              = shift;
-	$self->{"wizardModel"}        = shift;
+	$self->{"wizardModel"}        = WizardModel->new( $self->{"jobId"} );
 	$self->{"backgroundTaskMngr"} = shift;
 	$self->{"parts"}              = [];
 
-	$self->{"backgroundTaskMngr"}->{"pnlCreatorProcesedEvt"}->Add( sub { $self->__OnCreatorProcessedHndl(@_) } );
-
-	return $self;    # Return the reference to the hash.
+	return $self;                                        # Return the reference to the hash.
 }
 
 # Init parts
@@ -58,27 +59,15 @@ sub Init {
 	# Part 1
 	push( @parts, SizePart->new( $jobId, $self->{"backgroundTaskMngr"} ) );
 
-	foreach my $part ( @{ $self->{"parts"} } ) {
+	#push( @parts, SizePart->new( $jobId, $self->{"backgroundTaskMngr"} ) );
 
-		$self->{"previewChangedEvt"}->Add( sub { $self->__OnPreviewChanged(@_) } );
-	}
+	foreach my $part (@parts) {
 
-	# Bind part events each other
-	for ( my $i = 0 ; $i < scalar( @{ $self->{"parts"} } ) ; $i++ ) {
+		$part->{"previewChangedEvt"}->Add( sub        { $self->__OnPreviewChangedHndl(@_) } );
+		$part->{"asyncCreatorProcessedEvt"}->Add( sub { $self->__OnAsyncCreatorProcessedHndl(@_) } );
+		$part->{"asyncCreatorInitedEvt"}->Add( sub    { $self->__OnAsyncCreatorInitedHndl(@_) } );
 
-		for ( my $j = 0 ; $j < scalar( @{ $self->{"parts"} } ) ; $j++ ) {
-
-			if ( $i != $j ) {
-
-				$self->{"parts"}->[$i]->{"creatorSelectionChangedEvt"}->Add( sub { $self->{"parts"}->[$j]->OnCreatorSelectionChangedHndl(@_) } )
-
-				  ;
-
-				$self->{"parts"}->[$i]->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"parts"}->[$j]->OnCreatorSettingsChangedHndl(@_) } );
-
-			}
-
-		}
+		#$part->{"asyncCreatorProcessedEvt"}->Add( sub { $self->__OnCreatorProcessedHndl(@_) } );
 
 	}
 
@@ -101,6 +90,23 @@ sub Init {
 
 	$self->{"parts"} = \@parts;
 
+	# Bind part events each other
+	for ( my $i = 0 ; $i < scalar(@parts) ; $i++ ) {
+
+		for ( my $j = 0 ; $j < scalar(@parts) ; $j++ ) {
+
+			if ( $i != $j ) {
+
+				#				$self->{"parts"}->[$i]->{"creatorSelectionChangedEvt"}->Add( sub { $self->{"parts"}->[$j]->OnCreatorSelectionChangedHndl(@_) } )
+				#				  ;
+				#				$self->{"parts"}->[$i]->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"parts"}->[$j]->OnCreatorSettingsChangedHndl(@_) } );
+
+			}
+
+		}
+
+	}
+
 }
 
 sub GetParts {
@@ -121,10 +127,12 @@ sub InitModel {
 			return 0;
 		}
 
+		$self->{"wizardModel"} = $storedModelMngr->GetModel();
+
 		foreach my $part ( @{ $self->{"parts"} } ) {
 
-			my $storedData = $storedModelMngr->GetDataByPart($part);
-			$part->InitModel( $inCAM, $storedData );
+			my $model = $self->{"wizardModel"}->GetModelByPart($part);
+			$part->InitModel( $inCAM, $model );
 		}
 	}
 
@@ -194,125 +202,6 @@ sub GetPreview {
 }
 
 #
-#sub RefreshWrapper {
-#	my $self = shift;
-#
-#	foreach my $unit ( @{ $self->{"units"} } ) {
-#
-#		$unit->RefreshWrapper();
-#	}
-#
-#}
-#
-#sub CheckBeforeExport {
-#	my $self  = shift;
-#	my $inCAM = shift;
-#	my $mode  = shift;    # EnumsJobMngr->TaskMode_SYNC /  EnumsJobMngr->TaskMode_ASYNC
-#
-#	#my $totalRes = 1;
-#
-#	# Check only units, which are in ACTIVEON state
-#	my @activeOnUnits =
-#	  grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON || $_->GetGroupState() eq Enums->GroupState_ACTIVEALWAYS } @{ $self->{"units"} };
-#
-#	foreach my $unit (@activeOnUnits) {
-#
-#		#$totalRes = 0;
-#		my %info = ();
-#		$info{"unit"} = $unit;
-#
-#		my $resultMngr = -1;
-#
-#		# Start checking
-#		$self->{"onCheckEvent"}->Do( "start", \%info );
-#
-#		my $succes = $unit->CheckBeforeExport( $inCAM, \$resultMngr, $mode );
-#
-#		#unless ($succes) {
-#		#	$totalRes = 0;
-#		#}
-#
-#		$info{"resultMngr"} = $resultMngr;
-#
-#		# End checking
-#		$self->{"onCheckEvent"}->Do( "end", \%info );
-#	}
-#
-#	#return $totalRes;
-#}
-#
-## Return numbers of each state
-#sub GetGroupState {
-#	my $self = shift;
-#
-#	my $unitsCnt = scalar( @{ $self->{"units"} } );
-#
-#	my %unitState;
-#
-#	$unitState{ Enums->GroupState_ACTIVEALWAYS } = scalar( grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEALWAYS } @{ $self->{"units"} } );
-#	$unitState{ Enums->GroupState_DISABLE }      = scalar( grep { $_->GetGroupState() eq Enums->GroupState_DISABLE } @{ $self->{"units"} } );
-#	$unitState{ Enums->GroupState_ACTIVEOFF }    = scalar( grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEOFF } @{ $self->{"units"} } );
-#	$unitState{ Enums->GroupState_ACTIVEON }     = scalar( grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON } @{ $self->{"units"} } );
-#
-#	return %unitState;
-#
-#}
-#
-#sub SetGroupState {
-#	my $self       = shift;
-#	my $groupState = shift;
-#
-#	foreach my $unit ( @{ $self->{"units"} } ) {
-#
-#		# dnot set state, if group is disabled
-#
-#		if ( $unit->GetGroupState() eq Enums->GroupState_DISABLE || $unit->GetGroupState() eq Enums->GroupState_ACTIVEALWAYS ) {
-#			next;
-#		}
-#
-#		$unit->SetGroupState($groupState);
-#	}
-#
-#}
-#
-## Return current group data
-#sub GetGroupData {
-#	my $self = shift;
-#
-#	die "group is Not implemented";
-#}
-#
-#sub GetExportData {
-#	my $self         = shift;
-#	my $activeGroups = shift;
-#
-#	my %allExportData = ();
-#
-#	my @units = @{ $self->{"units"} };
-#
-#	if ($activeGroups) {
-#		@units = grep { $_->GetGroupState() eq Enums->GroupState_ACTIVEON || $_->GetGroupState() eq Enums->GroupState_ACTIVEALWAYS } @units;
-#	}
-#
-#	foreach my $unit (@units) {
-#
-#		my $exportData = $unit->GetExportData();
-#		$allExportData{ $unit->{"unitId"} } = $exportData;
-#	}
-#
-#	return %allExportData;
-#}
-#
-## Update group data from GUI
-#sub UpdateGroupData {
-#	my $self = shift;
-#
-#	foreach my $unit ( @{ $self->{"units"} } ) {
-#
-#		$unit->UpdateGroupData();
-#	}
-#}
-
 # ===================================================================
 # Helper method not requested by interface IUnit
 # ===================================================================
@@ -338,6 +227,21 @@ sub GetPartsCheckClass {
 	}
 
 	return @parts;
+
+}
+
+sub GetModel {
+	my $self = shift;
+
+	# Set all parts
+
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		$self->{"wizardModel"}->SetModelByPartId( $part->GetPartId(), $part->GetModel() );
+
+	}
+
+	return $self->{"wizardModel"};
 
 }
 
@@ -399,55 +303,127 @@ sub IsPartFullyInited {
 ## ===================================================================
 ## Handlers
 ## ===================================================================
-sub __OnCreatorProcessedHndl {
-	my $self       = shift;
-	my $creatorKey = shift;
-	my $result     = shift;
-	my $errMess    = shift;
 
-	return 1;
-
-}
-
-sub __OnPreviewChanged {
+sub __OnPreviewChangedHndl {
 	my $self    = shift;
 	my $partId  = shift;
 	my $preview = shift;
 
 	if ($preview) {
 
-		# Activate preview for all parts, which have next part with active preview
-		my $activateDisabled = 0;
-		for ( my $i = scalar( @{ $self->{"parts"} } ) - 1 ; $i >= 0 ; $i-- ) {
+		# Set preview + process up to this specific  part
+		$self->SetPreviewOnAllPart($partId);
 
-			if ( !$self->{"parts"}->[$i]->GetPreview() && $activateDisabled ) {
-				$self->{"parts"}->[$i]->SetPreview(1);
-			}
+		# Process this specific part
+		$self->AsyncProcessPart($partId);
 
-			if ( $self->{"parts"}->[$i]->GetPreview() ) {
-				$activateDisabled = 1;
-			}
+	}
 
-		}
+}
 
-		# If more parts has activated show preview,
-		#do Process part for all of them starting with first part
-		if ($activateDisabled) {
+sub __OnAsyncCreatorProcessedHndl {
+	my $self       = shift;
+	my $creatorKey = shift;
+	my $result     = shift;
+	my $errMess    = shift;
 
-			my @parts = @{ $self->{"parts"} };
+	if ( $self->{"finalProcessing"} ) {
 
-			foreach my $part (@parts) {
+		$self->__OnAsyncProcessPartHndl( $creatorKey, $result, $errMess );
+	}
 
-				$self->AsyncProcessPart($partId) if ( $part->GetPreview() );
-			}
+}
 
-		}
-		else {
+sub __OnAsyncCreatorInitedHndl {
+	my $self       = shift;
+	my $creatorKey = shift;
+	my $result     = shift;
+	my $errMess    = shift;
 
-			$self->AsyncProcessPart($partId);
+	# Check how many init creator task exist
+	#
+	#	my $taskCnt =  $self->{"backgroundTaskMngr"}->GetInitCreatorTaskCnt();
+	#
+	#	if($taskCnt == 0){
+	#
+	#		$self->{"asyncCreatorsInitedEvt"}->Do();
+	#	}
+
+}
+
+# Set previwe
+sub SetPreviewOnAllPart {
+	my $self   = shift;
+	my $partId = shift;    # if defined, set preview ON up to this specific partId (this part is excluded). By order from first partId
+
+	for ( my $i = scalar( @{ $self->{"parts"} } ) - 1 ; $i >= 0 ; $i-- ) {
+
+		last if ( defined $partId && $self->{"parts"}->[$i]->GetPartId() eq $partId );
+
+		if ( !$self->{"parts"}->[$i]->GetPreview() ) {
+
+			$self->{"parts"}->[$i]->SetPreview(1);
+			$self->AsyncProcessPart( $self->{"parts"}->[$i]->GetPartId() );
+
 		}
 
 	}
+
+}
+
+sub SetPreviewOffAllPart {
+	my $self = shift;
+
+	for ( my $i = scalar( @{ $self->{"parts"} } ) - 1 ; $i >= 0 ; $i-- ) {
+
+		if ( $self->{"parts"}->[$i]->GetPreview() ) {
+
+			$self->{"parts"}->[$i]->SetPreview(0);
+		}
+	}
+}
+
+# Process all parts
+sub AsyncCreatePanel {
+	my $self = shift;
+
+	# Get creator for every part
+	$self->{"finalProcessing"} = 1;
+
+	$self->{"finalCreateParts"} = [ map { $_->GetPartId() } @{ $self->{"parts"} } ];
+
+	my $nextPart = shift @{ $self->{"finalCreateParts"} };
+
+	$self->AsyncProcessPart($nextPart);
+
+}
+
+sub __OnAsyncProcessPartHndl {
+	my $self       = shift;
+	my $creatorKey = shift;
+	my $result     = shift;
+	my $errMess    = shift;
+
+	if ($result) {
+
+		my $nextPart = shift @{ $self->{"finalCreateParts"} };
+
+		if ( defined $nextPart ) {
+
+			$self->AsyncProcessPart($nextPart);
+		}
+		else {
+
+			$self->{"finalProcessing"} = 0;
+			$self->{"asyncPanelCreatedEvt"}->Do(1);
+		}
+	}
+	else {
+		$self->{"finalProcessing"} = 0;
+		$self->{"asyncPanelCreatedEvt"}->Do( 0, $errMess );
+	}
+
+	return 1;
 
 }
 

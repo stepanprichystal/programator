@@ -13,16 +13,18 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 use aliased 'Programs::Panelisation::PnlWizard::PnlWizard';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Launcher';
- 
+use aliased 'Programs::Panelisation::PnlWizard::Enums';
  
  
 my $jobId = "d222606";
 
-my $app = PnlWizard->new($jobId, 0);
+my @parameters = (Enums->PnlWizardType_CUSTOMERPNL);
+
+my $app = PnlWizard->new($jobId);
 
 my $launcher = Launcher->new(56753);
 
-$app->Init($launcher);
+$app->Init($launcher, @parameters);
 
 $app->Run();
 

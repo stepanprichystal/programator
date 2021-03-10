@@ -62,10 +62,17 @@ sub Init {
 	 
 	$self->{"settings"}->{"w"} = 30;
 	$self->{"settings"}->{"h"} = 30;
-	sleep(3);
-	
-	
-	print STDERR "\n\nUSER !!\n\n";
+		for ( my $i = 0 ; $i < 3 ; $i++ ) {
+
+		$inCAM->COM("get_user_name");
+
+	 	my $name =  $inCAM->GetReply();
+
+		print STDERR "\nUSER NAME !! $name \n";
+
+		sleep(1);
+
+	}
 	
 	return 1;
 }
@@ -73,20 +80,43 @@ sub Init {
 ## If builded, return layout
 sub Check {
 	my $self    = shift;
+	my $inCAM = shift;
 	my $errMess = shift;
-	sleep(2);
-	return 1
+
+	for ( my $i = 0 ; $i < 3 ; $i++ ) {
+
+		$inCAM->COM("get_user_name");
+
+	 	my $name =  $inCAM->GetReply();
+
+		print STDERR "\nChecking  USER NAME !! $name \n";
+
+		sleep(1);
+
+	}
+
+	return 1;
 
 }
 #
 #
 
 sub Process {
-	my $self = shift;
-	my $inCAM = shift;
+	my $self    = shift;
+	my $inCAM   = shift;
 	my $errMess = shift;
 
-	sleep(2);
+		for ( my $i = 0 ; $i < 3 ; $i++ ) {
+
+		$inCAM->COM("get_user_name");
+
+	 	my $name =  $inCAM->GetReply();
+
+		print STDERR "\nProcessing  USER NAME !! $name \n";
+
+		sleep(1);
+
+	}
 
 	return 1;
 }

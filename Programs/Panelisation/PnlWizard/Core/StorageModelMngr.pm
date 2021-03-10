@@ -12,18 +12,16 @@ use warnings;
 
 #local library
 use aliased "Enums::EnumsPaths";
-use aliased "Helpers::FileHelper";
-use JSON::XS;
+use aliased 'Programs::Panelisation::PnlWizard::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class          = shift;
-	my $jobId          = shift;
-	my $modelData      = shift;
-	my $modelPartsData = shift;
+	my $class         = shift;
+	my $jobId         = shift;
+	my $pnlWizardType = shift;
 
 	my $dir = EnumsPaths->Client_INCAMTMPPNLCRE;
 
@@ -31,14 +29,29 @@ sub new {
 		mkdir($dir) or die "Can't create dir: " . $dir . $_;
 	}
 
-	my $p = $dir . $jobId . "_modeldata";
+	my $type = undef;
+
+	if ( $pnlWizardType eq Enums->PnlWizardType_PRODUCTIONPNL ) {
+
+		$type = "panel";
+	}
+	elsif ( $pnlWizardType eq Enums->PnlWizardType_PRODUCTIONPNL ) {
+		$type = "mpanel";
+	}
+	else {
+
+		die "Unknow wizard type";
+	}
+
+	my $p = $dir . $jobId . "_$type";
 
 	my $self = $class->SUPER::new($p);
 	bless $self;
 
-	$self->{"jobId"}          = $jobId;
-	$self->{"modelData"}      = $modelData;
-	$self->{"modelPartsData"} = $modelPartsData;
+	$self->{"jobId"} = $jobId;
+
+	#$self->{"modelData"}      = $modelData;
+	#$self->{"modelPartsData"} = $modelPartsData;
 
 	FileHelper->DeleteTempFilesFrom( EnumsPaths->Client_INCAMTMPPNLCRE, 3600 * 24 * 4 );    #delete 12 hours old settings
 
@@ -52,72 +65,32 @@ sub ExistModelData {
 
 }
 
-sub GetDataByPart {
+sub GetModelDate {
 	my $self = shift;
-	my $unit = shift;
+	my $time = shift // 1;
+	my $date = shift // 0;
 
-	unless ( $self->{"hashGroupData"} ) {
-		return 0;
-	}
+	my $dt = $self->SUPER::SerializedDataExist();
 
-	my $id            = $unit->{"unitId"};
-	my %hashGroupData = %{ $self->{"hashGroupData"} };
+	my $str = "";
+	$str = $dt->hms() if ($time);
+	$str = $dt->dmy() if ($date);
+	$str = $dt->hms() . " " . $dt->dmy() if ( $time && $date );
 
-	my %data = %{ $hashGroupData{$id} };
-
-	#get information about unit state
-	my $unitState = $data{"__UNITSTATE__"};
-
-	# Get information about package name
-	my $packageName = $data{"__PACKAGE__"};
-
-	# Convert to object by package name
-	my $groupData = $packageName->new();
-	$groupData->{"data"}  = \%data;
-	$groupData->{"state"} = $unitState;
-
-	return $groupData;
+	return $str;
 }
 
-sub SaveGroupData {
+sub StoreModel {
+	my $self  = shift;
+	my $model = shift;
+
+	return $self->SUPER::StoreData($model);
+}
+
+sub LoadModel {
 	my $self = shift;
 
-	# get actual group data from all units
-	my %hashGroupData = ();
-
-	my @units = @{ $self->{"units"}->{"units"} };
-
-	# Get group data hasha
-	# Add information about "package name"
-	foreach my $unit (@units) {
-
-		my $groupData   = $unit->GetGroupData();
-		my $packageName = ref $groupData;
-		my $unitState   = $groupData->{"state"};
-
-		my %hashData = %{ $groupData->{"data"} };
-		$hashData{"__PACKAGE__"}   = $packageName;
-		$hashData{"__UNITSTATE__"} = $unitState;
-
-		$hashGroupData{ $unit->{"unitId"} } = \%hashData;
-	}
-
-	$self->{"hashGroupData"} = \%hashGroupData;
-
-	my $json = JSON::XS->new->ascii->pretty->allow_nonref;
-
-	my $serializedData = $json->pretty->encode( \%hashGroupData );
-
-	#delete old file
-	unlink $self->{"groupDataFile"};
-
-	unless ( -e EnumsPaths->Client_INCAMTMPCHECKER ) {
-		mkdir( EnumsPaths->Client_INCAMTMPCHECKER ) or die "Can't create dir: " . EnumsPaths->Client_INCAMTMPCHECKER . $_;
-	}
-
-	open( my $f, '>', $self->{"groupDataFile"} );
-	print $f $serializedData;
-	close $f;
+	return $self->SUPER::LoadData();
 }
 
 #-------------------------------------------------------------------------------------------#

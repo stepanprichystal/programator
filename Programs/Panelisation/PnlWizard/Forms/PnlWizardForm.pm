@@ -14,6 +14,7 @@ use Wx;
 #use aliased 'Packages::Tests::Test';
 #use aliased 'Widgets::Forms::MyWxFrame';
 use aliased 'Packages::Events::Event';
+
 #use aliased 'Managers::MessageMngr::MessageMngr';
 #use aliased 'Programs::Comments::CommWizard::Forms::CommListViewFrm::CommListViewFrm';
 #use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::CommViewFrm';
@@ -21,6 +22,7 @@ use aliased 'Packages::Events::Event';
 #use aliased 'Widgets::Forms::MyWxStaticBoxSizer';
 use aliased 'Programs::Panelisation::PnlWizard::Forms::PartContainerForm';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
+use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,19 +37,29 @@ sub new {
 	my $orders = shift;
 
 	my @dimension = ( 1000, 800 );
-	my $flags = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
+	my $flags     = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
+	my $title     = "Panelisation - $jobId";
 
-	my $self = $class->SUPER::new( $parent, "Panelisation - $jobId", \@dimension, $flags );
+	my $self = $class->SUPER::new( $parent, $title, \@dimension, $flags );
 
 	bless($self);
 
 	$self->__SetLayout();
 
 	# Properties
+	$self->{"title"} = $title;
 
 	#EVENTS
 
-	$self->{"createEvt"}  = Event->new();
+	$self->{"createClickEvt"}    = Event->new();
+	$self->{"cancelClickEvt"}    = Event->new();
+	$self->{"showInCAMClickEvt"} = Event->new();
+
+	$self->{"loadLastClickEvt"}    = Event->new();
+	$self->{"loadDefaultClickEvt"} = Event->new();
+
+	$self->{"previewChangedEvt"} = Event->new();
+
 	#	$self->{"onExportASync"} = Event->new();
 	#	$self->{"onClose"}       = Event->new();
 	#
@@ -160,6 +172,143 @@ sub new {
 #	return $page;
 #}
 #
+
+sub SetInCAMBusyLayout {
+	my $self   = shift;
+	my $isBusy = shift;
+
+	if ($isBusy) {
+
+		#$self->{"pnlInCAMBusy"}->Refresh();
+		$self->{"pnlHeader"}->Disable();
+		$self->{"partContainer"}->Disable();
+		$self->{"pnlBtns"}->Disable();
+
+		$self->{"waitFrmPID"} = Helper->ShowWaitFrm( $self->{"title"}, "Wait for background process until release InCAM" );
+
+	}
+	else {
+		#$self->{"InCAMBusy"}->Hide();
+		$self->{"pnlHeader"}->Enable();
+		$self->{"partContainer"}->Enable();
+		$self->{"pnlBtns"}->Enable();
+
+		if ( $self->{"waitFrmPID"} ) {
+
+			Helper->CloseWaitFrm( $self->{"waitFrmPID"} );
+		}
+	}
+
+}
+
+sub SetFinalProcessLayout {
+	my $self = shift;
+	my $val  = shift;    #
+
+	if ($val) {
+
+		$self->{"pnlHeaderSett"}->Disable();
+		$self->{"partContainer"}->SetFinalProcessLayout($val);
+
+		$self->EnableCreateBtn(0);
+		$self->EnableShowInCAMBtn(0);
+		$self->EnableCancelBtn(0);
+	}
+	else {
+		$self->{"pnlHeaderSett"}->Enable();
+		$self->{"partContainer"}->SetFinalProcessLayout($val);
+
+		$self->EnableCreateBtn(1);
+		$self->EnableShowInCAMBtn(1);
+		$self->EnableCancelBtn(1);
+	}
+
+}
+
+sub SetAsyncTaskRunningLayout {
+	my $self = shift;
+	my $val  = shift;    #
+
+	if ($val) {
+
+		$self->{"loadLastBtn"}->Disable();
+		$self->{"loadDefaultBtn"}->Disable();
+
+		$self->EnableCreateBtn(0);
+		$self->EnableShowInCAMBtn(0);
+		$self->EnableCancelBtn(0);
+	}
+	else {
+		$self->{"loadLastBtn"}->Enable();
+		$self->{"loadDefaultBtn"}->Enable();
+		$self->EnableCreateBtn(1);
+		$self->EnableShowInCAMBtn(1);
+		$self->EnableCancelBtn(1);
+	}
+
+}
+
+sub EnableCreateBtn {
+	my $self   = shift;
+	my $enable = shift;
+
+	if ($enable) {
+		$self->{"btnCreate"}->Enable();
+
+	}
+	else {
+		$self->{"btnCreate"}->Disable();
+
+	}
+}
+
+sub EnableShowInCAMBtn {
+	my $self   = shift;
+	my $enable = shift;
+
+	if ($enable) {
+		$self->{"btnShowInCAM"}->Enable();
+
+	}
+	else {
+		$self->{"btnShowInCAM"}->Disable();
+
+	}
+}
+
+sub EnableCancelBtn {
+	my $self   = shift;
+	my $enable = shift;
+
+	if ($enable) {
+		$self->{"btnCancel"}->Enable();
+
+	}
+	else {
+		$self->{"btnCancel"}->Disable();
+
+	}
+
+}
+
+sub EnableLoadLastBtn {
+	my $self   = shift;
+	my $enable = shift;
+	my $date   = shift;
+
+	if ($enable) {
+		$self->{"loadLastBtn"}->Enable();
+		$self->{"loadLastBtn"}->SetLabel( "Last settings (" . $date . ")" );
+
+	}
+	else {
+		$self->{"loadLastBtn"}->Disable();
+		$self->{"loadLastBtn"}->SetLabel("Last settings");
+
+	}
+
+}
+
 sub BuildPartContainer {
 	my $self  = shift;
 	my $inCAM = shift;
@@ -167,9 +316,18 @@ sub BuildPartContainer {
 
 	$self->{"mainFrm"}->Freeze();
 
-	$self->{"partContainer"}->InitContainer($parts);
+	my $messMngr = $self->_GetMessageMngr();
+
+	$self->{"partContainer"}->InitContainer( $parts, $messMngr );
 
 	$self->{"mainFrm"}->Thaw();
+}
+
+sub GetMessageMngr {
+	my $self = shift;
+
+	return $self->_GetMessageMngr();
+
 }
 #
 ## Create event/handler connection between groups by binding handlers to evnets
@@ -260,7 +418,7 @@ sub BuildPartContainer {
 sub __SetLayout {
 	my $self = shift;
 
-	$self->{"mainFrm"} ->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
+	$self->{"mainFrm"}->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
 
 	# DEFINE CONTROLS
 	my $szMain       = Wx::BoxSizer->new(&Wx::wxVERTICAL);
@@ -271,22 +429,74 @@ sub __SetLayout {
 	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
 	$szMain->Add( $partLayout, 1, &Wx::wxEXPAND );
 
+	# InCAM busy panel
+
+	use aliased 'Widgets::Forms::MyWxFrame';
+
+	#main formDefain forms
+	#	my $flags = &Wx::wxCAPTION;
+	#	my $pnlInCAMBusy = MyWxFrame->new(
+	#		$self->{"mainFrm"},                     # parent window
+	#		-1,                                     # ID -1 means any
+	#		"test",                                 # title
+	#		[ -1,  -1 ],                            # window position
+	#		[ 200, 200 ],
+	#		$flags
+	#	);
+	#
+	#	$pnlInCAMBusy->CentreOnParent(&Wx::wxBOTH);
+	#Wx::InitAllImageHandlers();
+
+  #	my $titleTxt =
+  #	  Wx::StaticText->new( $pnlInCAMBusy, -1, "Waiting for InCAM conenction, until background process finish.", &Wx::wxDefaultPosition, [ 260, -1 ] );
+  #
+  #	#my $pnlBtns = Wx::Panel->new( $mainFrm, -1 );
+  #	#$pnlInCAMBusy
+  #	my $szPnlInCAM = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+  #	$pnlInCAMBusy->SetSizer($szPnlInCAM);
+  #	$szPnlInCAM->Add( $statBtmClose, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+#	my $pnlInCAMBusy = Wx::PopupWindow->new( $self->{"mainFrm"} );
+#
+#	$pnlInCAMBusy->Move( 200, 200 );
+#	$pnlInCAMBusy->SetSize( 300, 200 );
+#
+#	my $iconPath     = GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . "table" . ".png";
+#	my $iconBtmp     = Wx::Bitmap->new( $iconPath, &Wx::wxBITMAP_TYPE_PNG );
+#	my $statBtmClose = Wx::StaticBitmap->new( $pnlInCAMBusy, -1, $iconBtmp );
+#
+#  #$popup->Show;
+#  #    	my $titleTxt =
+#  #	  Wx::StaticText->new( $pnlInCAMBusy, -1, "Waiting for InCAM conenction, until background process finish.", &Wx::wxDefaultPosition, [ 260, -1 ] );
+#	my $szPnlInCAM = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+#	$pnlInCAMBusy->SetSizer($szPnlInCAM);
+#	$szPnlInCAM->Add( $statBtmClose, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+#
+#	$self->{"InCAMBusy"} = $pnlInCAMBusy;
+
+	#$pnlInCAMBusy->Show();
+
+	#
+	#	$self->{"InCAMBusy"} =  Wx::SplashScreen->new( $iconBtmp, &Wx::wxSPLASH_CENTRE_ON_SCREEN, 0,  $self->{"mainFrm"}, -1 );
+	#	$self->{"InCAMBusy"}->Hide();
+
 	$self->AddContent($szMain);
 	$self->SetButtonHeight(30);
-	my $btnCancel    = $self->AddButton( "Cancel",     sub { $self->{"cancelEvt"}->Do() } );
-	my $btnLeave     = $self->AddButton( "Leave",      sub { $self->{"leaveEvt"}->Do() } );
+	my $btnCancel = $self->AddButton( "Cancel", sub { $self->{"cancelEvt"}->Do() } );
+
+	#my $btnLeave     = $self->AddButton( "Leave",      sub { $self->{"leaveEvt"}->Do() } );
 	my $btnShowInCAM = $self->AddButton( "Show InCAM", sub { $self->{"showInCAMEvt"}->Do() } );
 	my $btnCreate    = $self->AddButton( "Create",     sub { $self->{"createEvt"}->Do() } );
-
-	
 
 	# DEFINE LAYOUT STRUCTURE
 
 	# KEEP REFERENCES
-	$self->{"btnCancel"}    = $btnCancel;
-	$self->{"btnLeave"}     = $btnLeave;
+	$self->{"btnCancel"} = $btnCancel;
+
+	#$self->{"btnLeave"}     = $btnLeave;
 	$self->{"btnShowInCAM"} = $btnShowInCAM;
 	$self->{"btnCreate"}    = $btnCreate;
+
 }
 
 #
@@ -303,9 +513,8 @@ sub __SetLayoutHeader {
 	my $szSett     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szSettRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szSettRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	
-	my $szQuickBtn     = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	 
+
+	my $szQuickBtn = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# Define panels
 
@@ -313,20 +522,19 @@ sub __SetLayoutHeader {
 
 	my $pnlSett = Wx::Panel->new( $pnlMain, -1 );
 
-	$pnlMain->SetBackgroundColour( EnumsStyle->BACKGCLR_HEADERBLUE);
+	$pnlMain->SetBackgroundColour( EnumsStyle->BACKGCLR_HEADERBLUE );
 	$pnlSett->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
 
 	# DEFINE CONTROLS
 	my $titleTxt = Wx::StaticText->new( $pnlMain, -1, "Customer panel", &Wx::wxDefaultPosition, [ 260, -1 ] );
 	$titleTxt->SetForegroundColour( Wx::Colour->new( 255, 255, 255 ) );
-		my $f = Wx::Font->new( 14, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL,
-		&Wx::wxFONTWEIGHT_BOLD );
+	my $f = Wx::Font->new( 14, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 	$titleTxt->SetFont($f);
 
-	my $stepTxt = Wx::StaticText->new( $pnlSett, -1, "Step name:", &Wx::wxDefaultPosition , [ 70, 22 ]);
+	my $stepTxt = Wx::StaticText->new( $pnlSett, -1, "Step name:", &Wx::wxDefaultPosition, [ 70, 22 ] );
 	my $stepValTxt = Wx::TextCtrl->new( $pnlSett, -1, "mpanel", &Wx::wxDefaultPosition );
 
-	my $previewTxt = Wx::StaticText->new( $pnlSett, -1, "Preview:", &Wx::wxDefaultPosition , [ 70, 22 ]);
+	my $previewTxt = Wx::StaticText->new( $pnlSett, -1, "Preview:", &Wx::wxDefaultPosition, [ 70, 22 ] );
 	my $previewChb = Wx::CheckBox->new( $pnlSett, -1, "", &Wx::wxDefaultPosition );
 
 	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Load last",    &Wx::wxDefaultPosition, [ 120, 23 ] );
@@ -343,24 +551,27 @@ sub __SetLayoutHeader {
 	$szSett->Add( $szSettRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szSett->Add( $szSettRow2, 0, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
 
-	$szMainSett->Add( 10,10,         0,  );
-	$szMainSett->Add( $szSett,         1, &Wx::wxALL, 2 );
-	
-	$szQuickBtn->Add( $loadLastBtn,    0,  &Wx::wxALL, 1);
-	$szQuickBtn->Add( $loadDefaultBtn, 0,  &Wx::wxALL, 1 );
-	
-	$szMainSett->Add( $szQuickBtn,         0,  &Wx::wxALL, 2 );
+	$szMainSett->Add( 10, 10, 0, );
+	$szMainSett->Add( $szSett, 1, &Wx::wxALL, 2 );
+
+	$szQuickBtn->Add( $loadLastBtn,    0, &Wx::wxALL, 1 );
+	$szQuickBtn->Add( $loadDefaultBtn, 0, &Wx::wxALL, 1 );
+
+	$szMainSett->Add( $szQuickBtn, 0, &Wx::wxALL, 2 );
 
 	$pnlMain->SetSizer($szMain);
 	$pnlSett->SetSizer($szMainSett);
 
-	 
 	$szMain->Add( 14, 4, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szMain->Add( $titleTxt,   0, &Wx::wxALIGN_CENTER | &Wx::wxALL, 0 );
-	
-	$szMain->Add( $pnlSett,  1, &Wx::wxEXPAND | &Wx::wxALL, 5 );
+	$szMain->Add( $titleTxt, 0, &Wx::wxALIGN_CENTER | &Wx::wxALL, 0 );
+
+	$szMain->Add( $pnlSett, 1, &Wx::wxEXPAND | &Wx::wxALL, 5 );
 
 	# REGISTER EVENTS
+
+	Wx::Event::EVT_CHECKBOX( $previewChb, -1, sub { $self->{"previewChangedEvt"}->Do( ( $self->{"previewChb"}->IsChecked() ? 1 : 0 ) ) } );
+	Wx::Event::EVT_BUTTON( $loadLastBtn,    -1, sub { $self->{"loadLastClickEvt"}->Do() } );
+	Wx::Event::EVT_BUTTON( $loadDefaultBtn, -1, sub { $self->{"loadDefaultClickEvt"}->Do() } );
 
 	#$szRow1->Add( $defaultTxt,   1, &Wx::wxEXPAND );
 	#	$szRow1->Add( $noteTxt, 1, &Wx::wxEXPAND );
@@ -368,6 +579,14 @@ sub __SetLayoutHeader {
 	#	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND );
 	#
 	#	$szStatBox->Add( $szMain, 1, &Wx::wxEXPAND );
+
+	$self->{"pnlHeader"}     = $pnlMain;
+	$self->{"pnlHeaderSett"} = $pnlSett;
+
+	$self->{"loadLastBtn"}    = $loadLastBtn;
+	$self->{"loadDefaultBtn"} = $loadDefaultBtn;
+
+	$self->{"previewChb"} = $previewChb;
 
 	return $pnlMain;
 }

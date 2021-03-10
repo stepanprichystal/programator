@@ -41,7 +41,6 @@ sub Add {
 		push( @{ $self->{"subs"} }, { "sub" => $newSub, "package" => $mngrPackage } );
 	}
 }
- 
 
 sub Do {
 	my $self        = shift;
@@ -51,9 +50,8 @@ sub Do {
 	die "Package name of Backgroun manager is not defind" unless ( defined $mngrPackage );
 
 	#create copy of actual joined handlers
+
 	my @hanslersTmp = grep { $_->{"package"} eq $mngrPackage } @{ $self->{"subs"} };
-	
-	die "No handlers with Package Background manager name: $mngrPackage" if (scalar(@hanslersTmp) == 0 );
 
 	foreach my $s (@hanslersTmp) {
 

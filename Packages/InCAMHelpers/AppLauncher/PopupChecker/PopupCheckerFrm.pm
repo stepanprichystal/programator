@@ -30,7 +30,7 @@ sub new {
 
 	my @dimension = ( 370, 200 );
 
-	my $flags = &Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX;
+	my $flags = &Wx::wxSTAY_ON_TOP | &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX ;
 
 	my $self = $class->SUPER::new( $parent, $frmTitle, \@dimension, $flags );
 

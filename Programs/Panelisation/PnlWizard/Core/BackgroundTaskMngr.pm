@@ -25,8 +25,8 @@ use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-use constant TaskType_INITCREATOR    => "taskType_INIT_CREATOR";
-use constant TaskType_PROCESSCREATOR => "taskType_PROCESS_CREATOR";
+use constant TaskType_INITCREATOR    => "INIT_CREATOR";
+use constant TaskType_PROCESSCREATOR => "PROCESS_CREATOR";
 
 sub new {
 	my $self = shift;
@@ -48,6 +48,7 @@ sub new {
 	$self->{"pnlCreatorInitedEvt"}   = Event->new();
 	$self->{"pnlCreatorProcesedEvt"} = Event->new();
 	$self->{"asyncTaskDie"}          = Event->new();
+	$self->{"taskCntChangedEvt"}     = Event->new();
 
 	return $self;
 }
@@ -67,15 +68,17 @@ sub Init {
 	$self->{"backgroundWorker"}->{"thrPogressInfoEvt"}->Add( sub { $self->__OnTaskProgressInfoHndl(@_) } );
 	$self->{"backgroundWorker"}->{"thrMessageInfoEvt"}->Add( sub { $self->__OnTaskMessageInfoHndl(@_) } );
 
+	$self->{"backgroundWorker"}->{"taskCntChangedEvt"}->Add( sub { $self->{"taskCntChangedEvt"}->Do(@_) } );
+
 }
 
 # Raise "pnlCreatorInitedEvt" event, which will contain Creator Model data
 sub AsyncInitPnlCreator {
 	my $self       = shift;
 	my $creatorKey = shift;
-	my $initParams = shift;                                                                                    # array ref
+	my $initParams = shift;                                                                                     # array ref
 
-	my $taskId     = $creatorKey . "_INIT_CREATOR";
+	my $taskId     = $creatorKey . "_" . TaskType_INITCREATOR;
 	my @taskParams = ();
 	push( @taskParams, TaskType_INITCREATOR );
 	push( @taskParams, $self->{"jobId"} );
@@ -92,16 +95,38 @@ sub AsyncProcessPnlCreator {
 	my $creatorKey = shift;
 	my $JSONSett   = shift;    # hash of model properties
 
-	my $taskId     = $creatorKey . "_PROCESSCREATOR";
+	my $taskId     = $creatorKey . "_" . TaskType_PROCESSCREATOR;
 	my @taskParams = ();
 
 	push( @taskParams, TaskType_PROCESSCREATOR );
 	push( @taskParams, $self->{"jobId"} );
 	push( @taskParams, $creatorKey );
+	push( @taskParams, $JSONSett );
 
-	$self->{"backgroundWorker"}->AddNewtask( $taskId, \@taskParams, $self->{"asyncWorkerSub"} );
+	$self->{"backgroundWorker"}->AddTaskSerial( $taskId, \@taskParams, $self->{"asyncWorkerSub"} );
 
 }
+
+sub GetCurrentTasksCnt{
+		my $self       = shift;
+		
+		
+	return $self->{"backgroundWorker"}->GetCurrentTasks();
+	
+	
+}
+
+#sub GetInitCreatorTaskCnt {
+#	my $self = shift;
+#	GetInitCreatorTaskCnt
+#
+#	  my $t = TaskType_INITCREATOR;
+#
+#	my @tasks = grep { $_ =~ /$t/ } $self->{"backgroundWorker"}->GetCurrentTasks();
+#
+#	return scalar(@tasks);
+#
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Background function (runing in child thread)
@@ -124,7 +149,7 @@ sub __TaskBackgroundFunc {
 
 	if ( $taskType eq TaskType_INITCREATOR ) {
 
-		my @creatorInitParams = @{ shift $taskParams };
+		my @creatorInitParams = shift @{$taskParams};
 
 		my $result = $creator->Init( $inCAM, @creatorInitParams );
 
@@ -144,7 +169,7 @@ sub __TaskBackgroundFunc {
 	}
 	elsif ( $taskType eq TaskType_PROCESSCREATOR ) {
 
-		my $creatorJSONSett = @{ shift $taskParams };
+		my $creatorJSONSett = shift @{$taskParams};
 
 		$creator->ImportSettings($creatorJSONSett);
 
@@ -243,6 +268,8 @@ sub __OnTaskStartHndl {
 
 	print STDERR "Asynchronous task ($taskId) START. Handler in BackroundTaskMngr.\n";
 
+	
+
 }
 
 sub __OnTaskFinishHndl {
@@ -250,6 +277,8 @@ sub __OnTaskFinishHndl {
 	my $taskId = shift;
 
 	print STDERR "Asynchronous task ($taskId) FINISH. Handler in BackroundTaskMngr.\n";
+
+	
 
 }
 
@@ -269,6 +298,8 @@ sub __OnTaskDieHndl {
 	$self->{"asyncTaskDie"}->Do($taskId);
 
 	print STDERR "Asynchronous task ($taskId) END with error: $errMess. Handler in BackroundTaskMngr.\n";
+
+	
 }
 
 sub __OnTaskMessageInfoHndl {

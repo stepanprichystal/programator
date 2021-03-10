@@ -78,6 +78,8 @@ sub new {
 	$self->{"thrPogressInfoEvt"} = BackgroundWorkerEvent->new();    # percentage of thread progress
 	$self->{"thrMessageInfoEvt"} = BackgroundWorkerEvent->new();    # general message from thread
 
+	$self->{"taskCntChangedEvt"} = BackgroundWorkerEvent->new();
+
 	return $self;
 }
 
@@ -239,15 +241,30 @@ sub AbortTask {
 		# Remove thread queue
 		delete $self->{"work_queues"}->{ $thrObj->tid() };
 
-
 		$self->__UpdateThreadPool();
-
 
 		$result = 1;
 
 	}
 
 	return $result;
+}
+
+sub GetCurrentTasks {
+	my $self           = shift;
+	my $workerMngrPckg = caller(0);;
+
+	return $self->__GetCurrentTasks($workerMngrPckg);
+
+}
+
+
+sub __GetCurrentTasks {
+	my $self           = shift;
+	my $workerMngrPckg = shift;
+
+	return map { $_->{"taskId"} } grep { $_->{"workerMngrPckg"} eq $workerMngrPckg } @{ $self->{"tasks"} };
+
 }
 
 # Create new thread pool and add it
@@ -277,15 +294,14 @@ sub __AddThreadPool {
 sub __UpdateThreadPool {
 	my $self = shift;
 
-
-#	foreach my $thrObj ( threads->list()) {
-#
-#		 
-#		if ( defined $thrObj && $thrObj->is_running() ) {
-#			 
-#			 print STDERR $thrObj->tid();
-#		}
-#	}
+	#	foreach my $thrObj ( threads->list()) {
+	#
+	#
+	#		if ( defined $thrObj && $thrObj->is_running() ) {
+	#
+	#			 print STDERR $thrObj->tid();
+	#		}
+	#	}
 
 	# when we exit thread, it is necessary create new thread and add to thraad pool
 	# because we want keep maximum thread readz in order do more task in same time
@@ -368,12 +384,15 @@ sub __AddNewTask {
 	$self->{"work_queues"}->{$tid}->enqueue( \@ary );
 
 	my %taskInf = (
-		"taskId" => $taskId,
-		"thrId"  => $tid,      # id of thread, where is task processed
-
+					"taskId"         => $taskId,
+					"thrId"          => $tid,
+					"workerMngrPckg" => $workerMngrPckg    # id of thread, where is task processed
 	);
 
 	push( @{ $self->{"tasks"} }, \%taskInf );
+	
+ 
+	$self->{"taskCntChangedEvt"}->Do( $workerMngrPckg, $self->__GetCurrentTasks($workerMngrPckg) );
 
 	return $tid;
 }
@@ -525,6 +544,8 @@ sub __PoolWorker {
 			# dissconect InCAM library, in order another task in row or main app can connect
 			$inCAMWorker->ClientFinish();
 
+			print STDERR "test 4\n";
+
 			# Raise finish task event
 			my %evtData2 : shared = ();
 			$evtData2{"evtType"}        = ThrEvt_FINISH;
@@ -571,6 +592,8 @@ sub __OnThreadGeneralHndl {
 			if ( @{ $self->{"tasks"} }[$i]->{"taskId"} eq $taskId ) {
 
 				splice @{ $self->{"tasks"} }, $i, 1;    #delete thread from list
+				
+				$self->{"taskCntChangedEvt"}->Do( $workerMngrPckg, $self->__GetCurrentTasks($workerMngrPckg) );
 				last;
 			}
 		}
@@ -595,6 +618,7 @@ sub __OnThreadGeneralHndl {
 
 		if ( $activeTaskCnt == 0 ) {
 
+			# MainThread
 			$self->{"inCAM"}->Reconnect();
 
 			unless ( $self->{"inCAM"}->ServerReady() ) {
@@ -625,7 +649,6 @@ sub __OnThreadGeneralHndl {
 		$self->{"thrDieEvt"}->Do( $workerMngrPckg, $taskId, $errMess );
 	}
 	elsif ( $evtType eq ThrEvt_ABORT ) {
-
 
 		$self->{"thrAbortEvt"}->Do( $workerMngrPckg, $taskId );
 	}

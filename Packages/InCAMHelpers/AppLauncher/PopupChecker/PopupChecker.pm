@@ -111,8 +111,9 @@ sub AddCheckClass {
 
 }
 
-sub Check {
+sub AsyncCheck {
 	my $self = shift;
+	 
 
 	# Reset old values
 
@@ -139,9 +140,14 @@ sub Check {
 
 	$self->{"backgroundWorkerMngr"}->CheckClasses( $self->{"checkClasses"} );
 
-	$self->{"form"}->{"mainFrm"}->Show(1);
+	 
+		$self->{"form"}->{"mainFrm"}->Show(1);
+	 
+	
+	
 
 }
+ 
 
 # ================================================================================
 # PRIVATE WORKER (child thread) METHODS
@@ -233,8 +239,10 @@ sub __SetHandlers {
 	$self->{"form"}->{'errIndClickEvent'}->Add( sub  { $self->__OnErrIndicatorClick(@_) } );
 
 	$self->{"form"}->{"forceClickEvt"}->Add( sub  { $self->__OnForceClickHndl(@_) } );
-	$self->{"form"}->{'cancelClickEvt'}->Add( sub { $self->{"form"}->{"mainFrm"}->Hide() } );
+	$self->{"form"}->{'cancelClickEvt'}->Add( sub { $self->__OnCancelClickHndl(@_) } );
 	$self->{"form"}->{'stopClickEvt'}->Add( sub   { $self->__OnStopClickHndl(@_) } );
+	
+	#$self->{"form"}->{"mainFrm"}->{"onClose"}->Add( sub { $self->__OnCancelClickHndl(@_) } );
 
 }
 
@@ -261,6 +269,15 @@ sub __OnForceClickHndl {
 	$self->{"checkResultEvt"}->Do(1);
 
 }
+
+sub __OnCancelClickHndl {
+	my $self = shift;
+
+	$self->{"form"}->{"mainFrm"}->Hide();
+	$self->{"checkResultEvt"}->Do(0);
+
+}
+
 
 # ================================================================================
 # Background worker handlers
@@ -353,18 +370,22 @@ sub __OnCheckStartHndl {
 sub __OnCheckFinishHndl {
 	my $self = shift;
 
+	
+
 	if (    scalar( @{ $self->{"checkWarn"} } ) == 0
 		 && scalar( @{ $self->{"checkErr"} } ) == 0 )
 	{
-		$self->{"form"}->{"mainFrm"}->Hide();
-		$self->{"checkResultEvt"}->Do(1);
-
+		
+ 		$self->{"form"}->{"mainFrm"}->Hide();
+ 		$self->{"checkResultEvt"}->Do(1);
 	}
-
+ 
 	$self->{"form"}->SetStatusText("Done");
 	$self->{"form"}->EnableStopBtn(0);
 	$self->{"form"}->EnableCancelBtn(1);
 	$self->{"form"}->SetGaugeProgress(100);
+	
+	
 
 }
 

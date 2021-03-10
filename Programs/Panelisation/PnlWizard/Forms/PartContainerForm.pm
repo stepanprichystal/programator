@@ -31,30 +31,45 @@ sub new {
 
 	bless($self);
 
+	# Properties
+
+	$self->{"partWrappers"} = [];
+
 	#$self->SetBackgroundColour($Widgets::Style::clrBlack);
 
 	return $self;
 }
 
-sub InitContainer {
-	my $self  = shift;
-	my $parts = shift;
-	my $inCAM = shift;
+sub SetFinalProcessLayout {
+	my $self = shift;
+	my $val  = shift;    # start/end
 
-	$self->__SetLayout( $parts, $inCAM );
+	foreach my $partWrapper ( @{ $self->{"partWrappers"} } ) {
+
+		$partWrapper->SetFinalProcessLayout($val);
+
+	}
+
+}
+
+sub InitContainer {
+	my $self     = shift;
+	my $parts    = shift;
+	my $messMngr = shift;
+	$self->__SetLayout( $parts, $messMngr );
 
 }
 
 sub __SetLayout {
 
-	my $self  = shift;
-	my $parts = shift;
+	my $self     = shift;
+	my $parts    = shift;
+	my $messMngr = shift;
 
 	#$groupTable = $self->__DefineTableGroups();
 
 	#my @rows = $groupTable->GetRows();
 	$self->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
-	 
 
 	my $inCAM = shift;
 
@@ -68,7 +83,7 @@ sub __SetLayout {
 		my $title = EnumsStyle->GetPartTitle( $part->GetPartId() );
 
 		# Create new group wrapper, parent is this panel
-		my $partWrapper = PartWrapperForm->new( $self, $part->GetPartId(), $title );
+		my $partWrapper = PartWrapperForm->new( $self, $part->GetPartId(), $title, $messMngr );
 
 		# Init unit form, where parent will by group wrapper
 		$part->InitForm( $partWrapper, $inCAM );
@@ -85,6 +100,7 @@ sub __SetLayout {
 		#my $w = $part->GetCellWidth();
 
 		$szMain->Add( $partWrapper, 1, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+		push( @{ $self->{"partWrappers"} }, $partWrapper );
 	}
 
 	$self->SetSizer($szMain);

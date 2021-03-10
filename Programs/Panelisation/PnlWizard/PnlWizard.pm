@@ -20,7 +20,6 @@ use warnings;
 use aliased 'Programs::Panelisation::PnlWizard::Forms::PnlWizardForm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::PartContainer';
 use aliased 'Programs::Panelisation::PnlWizard::Core::StorageModelMngr';
-use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
 
 use aliased 'Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr';
 
@@ -53,7 +52,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr';
 #use aliased 'CamHelpers::CamHelper';
 #use aliased 'CamHelpers::CamJob';
 #use aliased 'Enums::EnumsPaths';
-#use aliased 'Enums::EnumsGeneral';
+use aliased 'Enums::EnumsGeneral';
 #
 #use aliased 'Packages::Export::PreExport::FakeLayers';
 
@@ -78,6 +77,8 @@ sub new {
 
 	$self->{"serverPort"} = shift;
 
+	$self->{"pnlType"} = undef;
+
 	$self->{"inCAM"} = undef;
 
 	# Launcher, helper, which do connection to InCAm editor
@@ -92,13 +93,11 @@ sub new {
 	# Background task manager for executing background operation
 	$self->{"backgroundTaskMngr"} = BackgroundTaskMngr->new( $self->{"jobId"} );
 
-	$self->{"wizardModel"} = WizardModel->new( $self->{"jobId"} );
-
 	# Keep all references of used groups/units in form
-	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"wizardModel"}, $self->{"backgroundTaskMngr"} );
+	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"backgroundTaskMngr"} );
 
 	# Manage group date (store/load group data from/to disc)
-	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"wizardModel"}, $self->{"partContainer"} );
+	$self->{"storageModelMngr"} = undef;
 
 	$self->{"popupChecker"} = undef;
 
@@ -107,10 +106,15 @@ sub new {
 
 sub Init {
 	my $self     = shift;
-	my $launcher = shift;    # contain InCAM library conencted to server
+	my $launcher = shift;
+	my $pnlType  = shift;    # contain InCAM library conencted to server
 	                         # 1) Get background worker and InCAM library from launcher
 
 	$self->{"launcher"} = $launcher;
+
+	$self->{"pnlType"} = $pnlType;
+
+	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"pnlType"} );
 
 	$self->{"launcher"}->InitBackgroundWorker( $self->{"form"}->{"mainFrm"} );
 
@@ -143,6 +147,15 @@ sub Init {
 	#	# Build phyisic table with groups, which has completely set GUI
 	my @parts = $self->{"partContainer"}->GetParts();
 	$self->{"form"}->BuildPartContainer( $self->{"inCAM"}, \@parts );
+	
+	if($self->{"storageModelMngr"}->ExistModelData()){
+		
+		$self->{"form"}->EnableLoadLastBtn(1, $self->{"storageModelMngr"}->GetModelDate(1,1) )
+	}else{
+		$self->{"form"}->EnableLoadLastBtn(0)
+	}
+	
+	
 
 	# 4) Initialization of each single group
 
@@ -166,6 +179,8 @@ sub Init {
 	$self->{"partContainer"}->RefreshGUI();
 	print STDERR "Refresh END\n";
 
+	$self->__SetHandlers();
+
 	print STDERR "Init model async START\n";
 	$self->{"partContainer"}->InitModelAsync();
 	print STDERR "Init model async END\n";
@@ -179,7 +194,6 @@ sub Init {
 	#	$self->__RefreshForm();
 	#
 	#	#set handlers for main app form
-	$self->__SetHandlers();
 
 	print STDERR "endr RUN\n";
 
@@ -206,320 +220,19 @@ sub Run {
 # ================================================================================
 # FORM HANDLERS
 # ================================================================================
-sub __OnCreateHndl {
-	my $self = shift;
-
-	# Only if all parts was inited
-
-	$self->__CreatePanel();
-
-}
-
-sub __OnCheckResultHndl {
-	my $self   = shift;
-	my $result = shift;
-
-}
-#
-#sub __ExportASyncFormHandler {
-#	my $self     = shift;
-#	my $onServer = shift;
-#
-#	my $client = $self->{"client"};
-#
-#	#if ( $client->ClientConnected() ) {
-#	#
-#	#		print STDERR "Close\n";
-#	#		$self->{"inCAM"}->CloseServer();
-#	#
-#	#	}\
-#
-#	#use Win32::OLE;
-#	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-#
-#	#my $typeOfPcb = HegMethods->GetTypeOfPcb( $self->{"jobId"} );
-#	$self->__CheckBeforeExport( EnumsJobMngr->TaskMode_ASYNC, $onServer );
-#
-#}
-#
-#sub __OnCloseFormHandler {
-#	my $self = shift;
-#
-#	$self->__CleanUpAndExitForm();
-#
-#}
-#
-#sub __CheckBeforeExport {
-#	my $self     = shift;
-#	my $mode     = shift;
-#	my $onServer = shift // 0;    # default is not export on server
-#
-#	#disable from during checking
-#	$self->{"disableForm"} = 1;
-#	$self->__RefreshForm();
-#
-#	my $inCAM = $self->{"inCAM"};
-#
-#	$self->{"units"}->UpdateGroupData();
-#
-#	#get all gorup data and save them to disc
-#	$self->{"storageMngr"}->SaveGroupData();
-#
-#	#test if client is connected
-#	#if so, disconnect, because child porcess has to connect to server itself
-#	if ( $inCAM->IsConnected() ) {
-#		$inCAM->ClientFinish();
-#
-#		#$client->SetConnected(0);
-#	}
-#
-#	#Win32::OLE->Uninitialize();
-#
-#	#init and run checking form
-#	$self->{"exportPopup"}->Init( $mode, $onServer, $self->{"units"}, $self->{"form"} );
-#	$self->{"exportPopup"}->CheckBeforeExport( $self->{"launcher"}->GetServerPort() );
-#
-#}
-#
-#sub __CleanUpAndExitForm {
-#	my ($self) = @_;
-#
-#	#my $client     = $self->{"client"};
-#	#my $serverPort = $client->ServerPort();
-#
-#	print STDERR "On close\n";
-#
-#	#reconnect again for exit server
-#
-#	#if ( $client->IsConnected() ) {
-#
-#	#$self->{"inCAM"}->ClientFinish();
-#
-#	#$self->{"inCAM"} = InCAM->new( "port" => $serverPort );
-#
-#	#if ( $self->{"inCAM"}->ServerReady() ) {
-#	#	$self->{"inCAM"}->CloseServer();
-#	#}
-#
-#	#}
-#
-#	FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, $self->{"jobId"} ) if ( !JobHelper->GetJobIsOffer( $self->{"jobId"} ) );
-#
-#	$self->{"form"}->{"mainFrm"}->Destroy();
-#
-#}
-#
-#sub __UncheckAllHandler {
-#	my $self = shift;
-#
-#	$self->{"units"}->SetGroupState( Enums->GroupState_ACTIVEOFF );
-#
-#	# Refresh wrapper
-#	$self->{"units"}->RefreshWrapper();
-#
-#	# Refresh form
-#	$self->__RefreshForm();
-#
-#}
-#
-#sub __LoadLastHandler {
-#	my $self = shift;
-#
-#	# Load/get saved group data
-#	$self->{"units"}->InitDataMngr( $self->{"inCAM"}, $self->{"storageMngr"} );
-#
-#	# Refresh loaded data in group form
-#	$self->{"units"}->RefreshGUI();
-#	$self->{"units"}->RefreshWrapper();
-#
-#	# Refresh form
-#	$self->__RefreshForm();
-#
-#}
-#
-#sub __LoadDefaultHandler {
-#	my $self = shift;
-#
-#	$self->{"units"}->InitDataMngr( $self->{"inCAM"} );
-#
-#	# Refresh loaded data in group form
-#	$self->{"units"}->RefreshGUI();
-#	$self->{"units"}->RefreshWrapper();
-#
-#	# Refresh form
-#	$self->__RefreshForm();
-#}
-#
-#sub __OnGroupChangeState {
-#	my $self = shift;
-#	my $unit = shift;
-#
-#	print STDERR "Unif " . $unit->{"unitId"} . " change state: " . $unit->GetGroupState() . "\n";
-#	print STDERR "All units state: " . $self->{"units"}->GetGroupState() . "\n";
-#
-#	$self->__RefreshForm();
-#
-#}
-#
-#sub __OnSwitchAppHandler {
-#	my $self    = shift;
-#	my $appName = shift;
-#
-#	die "Not implemented";
-#
-#}
-
-# ================================================================================
-# EXPORT POPUP HANDLERS
-# ================================================================================
-#sub __OnClosePopupHandler {
-#	my $self = shift;
-#
-#	# After close popup window is necessery Re-connect to income server
-#	# Because checking was processed in child thread and was connected
-#	# to this income server
-#
-#	$self->{"inCAM"}->Reconnect();
-#
-#	$self->{"disableForm"} = 0;
-#	$self->__RefreshForm();
-#
-#	#$self->__CleanUpAndExitForm();
-#
-#}
-#
-#sub __OnResultPopupHandler {
-#	my $self       = shift;
-#	my $resultType = shift;
-#	my $exportMode = shift;
-#	my $onServer   = shift;
-#
-#	# After close popup window is necessery Re-connect to income server
-#	# Because checking was processed in child thread and was connected
-#	# to this income server
-#
-#	$self->{"inCAM"}->Reconnect();
-#
-#	my $active    = 1;
-#	my $toProduce = $self->{"form"}->GetToProduce($active);
-#
-#	if (    $resultType eq Enums->PopupResult_EXPORTFORCE
-#		 || $resultType eq Enums->PopupResult_SUCCES )
-#	{
-#
-#		FakeLayers->RemoveFakeLayers( $self->{"inCAM"}, $self->{"jobId"} );
-#
-#		my $pathExportFile = EnumsPaths->Client_EXPORTFILES . $self->{"jobId"};
-#
-#		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC && $onServer ) {
-#			$pathExportFile = EnumsPaths->Jobs_EXPORTFILESPCB . $self->{"jobId"};
-#		}
-#
-#		my $dataTransfer = DataTransfer->new( $self->{"jobId"}, EnumsTransfer->Mode_WRITE, $self->{"units"}, undef, $pathExportFile );
-#
-#		my $inCAM = $self->{"inCAM"};
-#
-#		# Get orders on CAM department
-#		my @orders = HegMethods->GetPcbOrderNumbers( $self->{"jobId"} );
-#		@orders = map { $_->{"reference_subjektu"} } grep { $_->{"stav"} == 2 } @orders;
-#
-#		if ( $exportMode eq EnumsJobMngr->TaskMode_ASYNC ) {
-#
-#			# Save and close job
-#			$self->{"form"}->{"mainFrm"}->Hide();
-#
-#			CamJob->SaveJob( $inCAM, $self->{"jobId"} );
-#			CamJob->CheckInJob( $inCAM, $self->{"jobId"} );
-#			CamJob->CloseJob( $inCAM, $self->{"jobId"} );
-#
-#			if ( $inCAM->IsConnected() ) {
-#				$inCAM->CloseServer();
-#			}
-#
-#			# Save exported data
-#			$dataTransfer->SaveData( $exportMode, $toProduce, undef, undef, \@orders );
-#
-#		}
-#		elsif ( $exportMode eq EnumsJobMngr->TaskMode_SYNC ) {
-#
-#			# Generate random port number
-#
-#			#my $portNumber = "200". int(rand(9));    #random number
-#			#my $portNumber = "2001";    #random number
-#			#my $serverPID  = $$;        # PID
-#
-#			# Save and hide form
-#			$self->{"form"}->{"mainFrm"}->Hide();
-#			CamJob->SaveJob( $inCAM, $self->{"jobId"} );
-#
-#			my $formPos = $self->{"form"}->{"mainFrm"}->GetPosition();
-#
-#			# Save exported data
-#			$dataTransfer->SaveData( $exportMode, $toProduce, $self->{"launcher"}->GetServerPort(), $formPos, \@orders );
-#
-#			#test if client is connected
-#			#if so, disconnect, because exportUtility connect to this server (launched in InCAM toolkit)
-#
-#			if ( $inCAM->IsConnected() ) {
-#				$inCAM->ClientFinish();
-#
-#				#$client->SetConnected(0);
-#			}
-#
-#			$self->{"launcher"}->SetLetServerRun();
-#
-#			# Start server in this script
-#
-#			#my $serverPath = GeneralHelper->Root() . "\\Managers\\AsyncJobMngr\\Server\\ServerExporter.pl";
-#
-#			#$ARGV[0] = $self->{"serverPort"};    # port number of server running in Toolkit, pass as argument
-#			#require $serverPath;
-#
-#		}
-#
-#		if ($onServer) {
-#
-#			# Show summary message
-#			$self->{"form"}->{"messageMngr"}->ShowModal( $self->{"form"}->{"mainFrm"},
-#														 EnumsGeneral->MessageType_INFORMATION,
-#														 [ "Job: \"" . $self->{"jobId"} . "\" was succesfully sent to server." ] );
-#
-#		}
-#		else {
-#
-#			# Launch export utility if hasn't launched before
-#			my $utility = RunExportUtility->new(0);
-#		}
-#
-#		# Exit export window
-#		$self->{"form"}->{"mainFrm"}->Destroy();
-#
-#		return 1;
-#
-#	}
-#	elsif ( $resultType eq Enums->PopupResult_CHANGE ) {
-#
-#		#do nothing
-#
-#	}
-#
-#	$self->{"disableForm"} = 0;
-#	$self->__RefreshForm();
-#}
-
-# ================================================================================
-# PRIVATE METHODS
-# ================================================================================
-
-sub __CreatePanel {
+sub __OnCreateClickHndl {
 	my $self = shift;
 
 	my $result = 1;
 
 	# Check if all parts are already inited (due to asynchrounous initialization)
-	unless ( $self->{"partContainer"}->IsPartFullyInited() ) {
-		return 0;
+	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {
+		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
 	}
+
+	$self->__StoreModelToDisc();
+
+	$self->{"form"}->SetFinalProcessLayout(1);
 
 	$self->{"popupChecker"}->ClearCheckClasses();
 
@@ -530,7 +243,135 @@ sub __CreatePanel {
 
 	}
 
-	$self->{"popupChecker"}->Check();
+	$self->{"popupChecker"}->AsyncCheck();
+}
+
+sub __OnCancelClickHndl {
+	my $self = shift;
+
+	# Check if all parts are already inited (due to asynchrounous initialization)
+	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {
+		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
+	}
+
+	$self->__StoreModelToDisc();
+
+	if ( $self->{"inCAM"}->IsConnected() ) {
+
+		$self->{"inCAM"}->ClientFinish();
+
+	}
+	$self->{"form"}->{"mainFrm"}->Destroy();
+
+	#}
+
+}
+
+sub __OnShowInCAMClickHndl {
+	my $self = shift;
+
+	# Check if all parts are already inited (due to asynchrounous initialization)
+	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {
+		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
+	}
+
+	$self->__StoreModelToDisc();
+
+}
+
+sub __OnLoadLastClickHndl {
+	my $self = shift;
+
+	# Check if all parts are already inited (due to asynchrounous initialization)
+	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {
+		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
+	}
+
+	die "Model data not exist" if ( !$self->{"storageModelMngr"}->ExistModelData() );
+
+	my $restoredModel = $self->{"storageModelMngr"}->LoadModel();
+
+	$self->{"partContainer"}->InitModel( $self->{"inCAM"}, $restoredModel );
+	$self->{"partContainer"}->RefreshGUI();
+
+}
+
+sub __OnLoadDefaultClickHndl {
+	my $self = shift;
+
+	# Check if all parts are already inited (due to asynchrounous initialization)
+	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {
+		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
+	}
+
+	$self->{"partContainer"}->InitModel( $self->{"inCAM"} );
+	$self->{"partContainer"}->RefreshGUI();
+
+}
+
+sub __OnCheckResultHndl {
+	my $self   = shift;
+	my $result = shift;
+
+	if ($result) {
+
+		$self->{"partContainer"}->AsyncCreatePanel();
+	}
+	else {
+		$self->{"form"}->SetFinalProcessLayout(0);
+	}
+
+}
+
+sub __OnAsyncPanelCreatedHndl {
+	my $self    = shift;
+	my $result  = shift;
+	my $errMess = shift;
+
+	$self->{"form"}->SetFinalProcessLayout(0);
+
+	if ($result) {
+
+		if ( $self->{"inCAM"}->IsConnected() ) {
+
+			$self->{"inCAM"}->ClientFinish();
+
+		}
+		$self->{"form"}->{"mainFrm"}->Destroy();
+	}
+	else {
+
+		my $messMngr = $self->{"form"}->GetMessageMngr();
+
+		my @mess1 = ();
+		push( @mess1, "==========================================" );
+		push( @mess1, "<b>Error during panel creation</b>" );
+		push( @mess1, "==========================================\n" );
+		push( @mess1, "Detail:" );
+		push( @mess1, "$errMess" );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+
+	}
+
+}
+
+# ================================================================================
+# PRIVATE METHODS
+# ================================================================================
+
+sub __OnPreviewChangedlHndl {
+	my $self    = shift;
+	my $preview = shift;
+
+	if ($preview) {
+
+		$self->{"partContainer"}->SetPreviewOnAllPart();
+	}
+	else {
+
+		$self->{"partContainer"}->SetPreviewOffAllPart();
+	}
+
 }
 
 #sub __RefreshForm {
@@ -561,7 +402,33 @@ sub __OnInCAMIsBusyHndl {
 	my $self   = shift;
 	my $isBusy = shift;
 
+	if ($isBusy) {
+
+		$self->{"form"}->SetInCAMBusyLayout(1);
+
+	}
+	else {
+
+		$self->{"form"}->SetInCAMBusyLayout(0);
+	}
+
 	print STDERR "InCAM is busy: $isBusy in  PnlWizard\n";
+
+}
+
+sub __OnCurrentTaskCntChangedHndl {
+	my $self      = shift;
+	my $taskCount = shift;
+
+	if ($taskCount) {
+
+		$self->{"form"}->SetAsyncTaskRunningLayout(1);
+
+	}
+	else {
+
+		$self->{"form"}->SetAsyncTaskRunningLayout(0);
+	}
 
 }
 
@@ -569,11 +436,21 @@ sub __SetHandlers {
 	my $self = shift;
 
 	# Popup checker handlers
-	#$self->{"popupChecker"}->{"checkResultEvt"}->Add( sub { $self->__OnCheckResultHndl(@_) } );
+	$self->{"popupChecker"}->{"checkResultEvt"}->Add( sub { $self->__OnCheckResultHndl(@_) } );
 
 	# Form handlers
 
-	$self->{"form"}->{"createEvt"}->Add( sub { $self->__OnCreateHndl(@_) } );
+	$self->{"form"}->{"createClickEvt"}->Add( sub    { $self->__OnCreateClickHndl(@_) } );
+	$self->{"form"}->{"cancelClickEvt"}->Add( sub    { $self->__OnCancelClickHndl(@_) } );
+	$self->{"form"}->{"showInCAMClickEvt"}->Add( sub { $self->__OnShowInCAMClickHndl(@_) } );
+
+	$self->{"form"}->{"loadLastClickEvt"}->Add( sub    { $self->__OnLoadLastClickHndl(@_) } );
+	$self->{"form"}->{"loadDefaultClickEvt"}->Add( sub { $self->__OnLoadDefaultClickHndl(@_) } );
+
+	$self->{"form"}->{"previewChangedEvt"}->Add( sub { $self->__OnPreviewChangedlHndl(@_) } );
+
+	$self->{"partContainer"}->{"asyncPanelCreatedEvt"}->Add( sub   { $self->__OnAsyncPanelCreatedHndl(@_) } );
+	$self->{"backgroundTaskMngr"}->{"taskCntChangedEvt"}->Add( sub { $self->__OnCurrentTaskCntChangedHndl(@_) } );
 
 	#		$self->{"form"}->{"onExportASync"}->Add( sub { $self->__ExportASyncFormHandler(@_) } );
 	#		$self->{"form"}->{"onClose"}->Add( sub       { $self->__OnCloseFormHandler(@_) } );
@@ -591,6 +468,15 @@ sub __SetHandlers {
 
 	# 				$self->{"backgroundWorker"}->{"thrPogressInfoEvt"}->Add(sub {$self->__OnTaskStartHndl(@_)} );
 	# 					$self->{"backgroundWorker"}->{"thrMessageInfoEvt"}->Add(sub {$self->__OnTaskStartHndl(@_)} );
+
+}
+
+sub __StoreModelToDisc {
+	my $self = shift;
+
+	my $model = $self->{"partContainer"}->GetModel();
+
+	return $self->{"storageModelMngr"}->StoreModel($model);
 
 }
 #

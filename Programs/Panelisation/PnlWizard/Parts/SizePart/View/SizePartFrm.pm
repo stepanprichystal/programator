@@ -238,7 +238,7 @@ sub GetCreators {
 	}
 
 	# return updated model
-	return @models;
+	return \@models;
 
 }
 

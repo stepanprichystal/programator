@@ -10,7 +10,6 @@ use base('Programs::Panelisation::PnlWizard::Core::WizardModelBase');
 use Class::Interface;
 &implements('Packages::ObjectStorable::JsonStorable::IJsonStorable');
 
-
 #3th party library
 use strict;
 use warnings;
@@ -41,11 +40,11 @@ use warnings;
 #use aliased 'Programs::Comments::Comments';
 #use aliased 'Packages::CAMJob::Stackup::StackupCode';
 
-  #-------------------------------------------------------------------------------------------#
-  #  Package methods
-  #-------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------#
+#  Package methods
+#-------------------------------------------------------------------------------------------#
 
-  sub new {
+sub new {
 	my $class = shift;
 	my $jobId = shift;
 	my $step  = shift // "panel";
@@ -53,28 +52,31 @@ use warnings;
 	my $self = {};
 	bless $self;
 
-	$self->{"jobId"} = $jobId;
 	$self->{"step"}  = $step;
-	$self->{"init"}  = 0;
+	$self->{"parts"} = {};
 
 	# Defaul values
 	#$self->{"pcbType"}         = undef;
- 
 
 	return $self;
 }
 
-sub Init {
-	my $self = shift;
+sub GetPartById {
+	my $self   = shift;
+	my $partId = shift;
 
-	# Do not store InCAM object as Object property,
-	# becase if is Defalt info used in child thread, InCAM don't work
-	my $inCAM = shift;
-
-	$self->__Init($inCAM);
+	return $self->{"parts"}->{$partId};
 
 }
 
+sub SetPartById {
+	my $self   = shift;
+	my $partId = shift;
+	my $model  = shift;
+
+	$self->{"parts"}->{$partId} = $model;
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods
@@ -86,7 +88,6 @@ sub __Init {
 
 	#$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
 
-	
 }
 
 1;

@@ -19,6 +19,7 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::InCAMHelpers::AppLauncher::BackgroundWorker::BackgroundWorker';
 use aliased 'Packages::InCAMHelpers::AppLauncher::BackgroundWorker::InCAMWrapper';
 use aliased 'Packages::InCAMHelpers::AppLauncher::PopupChecker::PopupChecker';
+use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
 
 #use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
@@ -120,7 +121,7 @@ sub GetBackgroundWorker {
 sub InitPopupChecker {
 	my $self          = shift;
 	my $jobId         = shift;
-	my $appMainFrm    = shift;                    # app main frame
+	my $appMainFrm    = shift;    # app main frame
 	my $titleName     = shift;
 	my $commitBtnName = shift;
 
@@ -133,7 +134,7 @@ sub InitPopupChecker {
 
 		my $checker = PopupChecker->new( $jobId, $appMainFrm, $titleName, $commitBtnName );
 
-		$checker->Init($self->{"backgroundWorker"});
+		$checker->Init( $self->{"backgroundWorker"} );
 
 		$self->{"pupupCheckers"} = $checker;
 	}
@@ -176,7 +177,7 @@ sub CloseWaitFrm {
 
 	if ( $self->{"waitFrmPid"} ) {
 
-		Win32::Process::KillProcess( $self->{"waitFrmPid"}, 0 );
+		Helper->CloseWaitFrm( $self->{"waitFrmPid"} );
 	}
 
 }

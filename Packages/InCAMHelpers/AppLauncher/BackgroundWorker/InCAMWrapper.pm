@@ -52,9 +52,12 @@ sub VON {
 	my @params = @_;
 
 	my ($command) = @_;
-	$self->__CheckIsServerBusy();
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
 
 	$self->SUPER::VON(@params);
+
+	$self->ClientFinish() if ($reconnect);
 }
 
 sub VOF {
@@ -63,9 +66,12 @@ sub VOF {
 	my @params = @_;
 
 	my ($command) = @_;
-	$self->__CheckIsServerBusy();
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
 
 	$self->SUPER::VOF(@params);
+
+	$self->ClientFinish() if ($reconnect);
 }
 
 sub SU_ON {
@@ -74,9 +80,12 @@ sub SU_ON {
 	my @params = @_;
 
 	my ($command) = @_;
-	$self->__CheckIsServerBusy();
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
 
 	$self->SUPER::SU_ON(@params);
+
+	$self->ClientFinish() if ($reconnect);
 }
 
 sub SU_OFF {
@@ -85,9 +94,11 @@ sub SU_OFF {
 	my @params = @_;
 
 	my ($command) = @_;
-	$self->__CheckIsServerBusy();
-
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
 	$self->SUPER::SU_OFF(@params);
+
+	$self->ClientFinish() if ($reconnect);
 }
 
 sub PAUSE {
@@ -96,9 +107,12 @@ sub PAUSE {
 	my @params = @_;
 
 	my ($command) = @_;
-	$self->__CheckIsServerBusy();
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
 
 	$self->SUPER::PAUSE(@params);
+
+	$self->ClientFinish() if ($reconnect);
 }
 
 sub MOUSE {
@@ -107,9 +121,12 @@ sub MOUSE {
 	my @params = @_;
 
 	my ($command) = @_;
-	$self->__CheckIsServerBusy();
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
 
 	$self->SUPER::MOUSE(@params);
+
+	$self->ClientFinish() if ($reconnect);
 }
 
 sub COM {
@@ -118,9 +135,12 @@ sub COM {
 	my @params = @_;
 
 	my ($command) = @_;
-	$self->__CheckIsServerBusy();
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
 
 	$self->SUPER::COM(@params);
+
+	$self->ClientFinish() if ($reconnect);
 
 }
 
@@ -130,9 +150,12 @@ sub AUX {
 	my @params = @_;
 
 	my ($command) = @_;
-	$self->__CheckIsServerBusy();
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
 
 	$self->SUPER::AUX(@params);
+
+	$self->ClientFinish() if ($reconnect);
 }
 
 sub DO_INFO {
@@ -141,24 +164,45 @@ sub DO_INFO {
 	my @params = @_;
 
 	my ($command) = @_;
-	$self->__CheckIsServerBusy();
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
 
 	$self->SUPER::DO_INFO(@params);
+
+	$self->ClientFinish() if ($reconnect);
 }
 
 sub __CheckIsServerBusy {
-	my $self = shift;
+	my $self      = shift;
+	my $reconnect = shift;
 
+	$$reconnect = 0;
+
+	my $result = 1;
+
+	# it means, InCAM is used bz background worker
 	if ( !$self->{"connected"} && $self->{"waitWhenBusy"} ) {
 
 		$self->{"inCAMServerBusyEvt"}->Do(1);    # raise event, server busy
 
 		# Wait until InCAM library is connected
-		while ( !$self->{"connected"} ) {
+		my $i = 0;
+
+		# Try to connect after background worker finish job
+		while ( !$self->ServerReady() ) {
+
+			print STDERR "\nWait on INCAM\n";
 			sleep(1);
+
+			$self->Reconnect();
 		}
 
+		# If connection succes, process Command and than do CLientFinish()
+		# Than background worker class raise event background work finished and reconnect incam itself
+		$$reconnect = 1;
+
 		$self->{"inCAMServerBusyEvt"}->Do(0);    # raise event, server not busy
+		print STDERR "InCAM library is RECONNECTED";
 
 	}
 	elsif ( !$self->{"connected"} ) {

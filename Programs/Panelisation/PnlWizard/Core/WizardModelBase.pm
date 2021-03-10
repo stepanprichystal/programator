@@ -33,14 +33,14 @@ sub new {
 sub SetPreview {
 	my $self = shift;
 
-	$self->{"Preview"} = shift;
+	$self->{"preview"} = shift;
 
 }
 
 sub GetPreview {
 	my $self = shift;
 
-	return $self->{"Preview"};
+	return $self->{"preview"};
 
 }
 

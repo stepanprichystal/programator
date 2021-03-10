@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use utf8;
 use JSON;
+use DateTime;
 
 #local library
 
@@ -37,6 +38,26 @@ sub SerializedDataExist {
 	my $self = shift;
 
 	return ( -e $self->{"filePath"} ) ? 1 : 0;
+}
+
+sub GetSerializedDataDate {
+	my $self = shift;
+	#my $time = shift // 1;
+	#my $date = shift // 0;
+
+	#my $data = undef;
+
+	die "File: " . $self->{"filePath"} . " doesn't exist" if ( $self->SerializedDataExist() );
+
+	 
+
+	my @stats       = stat( $self->{"filePath"} );
+	my $fileCreated = $stats[9];
+
+	my $dt = DateTime->from_epoch( epoch => $fileCreated, "time_zone" => 'Europe/Prague' );
+
+	 
+	return $dt;
 }
 
 # Load serialized data

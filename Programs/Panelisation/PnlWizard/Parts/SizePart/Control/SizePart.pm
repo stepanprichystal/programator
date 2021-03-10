@@ -119,126 +119,6 @@ sub InitModelAsync {
 
 }
 
-sub AsyncProcessPart {
-	my $self = shift;
-
-	#my $ignorePreview = shift // 0;
-
-	#if ( $self->GetPreview() || $ignorePreview ) {
-
-	$self->{"model"}->SetCreators( $self->{"form"}->GetCreators() );
-	$self->{"model"}->SetSelectedCreator( $self->{"form"}->GetSelectedCreator() );
-
-	# Process by selected creator
-
-	my $creatorKey   = $self->{"model"}->GetSelectedCreator();
-	my $creatorModel = $self->{"model"}->GetCreatorByKey($creatorKey);
-
-	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $creatorKey, $creatorModel->ExportSettings() );
-
-	#}
-
-}
-
-sub AsyncInitPart {
-	my $self                = shift;
-	my $creatorKey          = shift;
-	my $creatorInitPatarams = shift // [];
-
-	$self->{"isPartFullyInited"} = 0;
-
-	$self->{"backgroundTaskMngr"}->AsyncInitPnlCreator( $creatorKey, $creatorInitPatarams );
-
-}
-
-sub RefreshGUI {
-	my $self = shift;
-
-	$self->{"frmHandlersOff"} = 1;
-
-	#my $groupData = $self->{"dataMngr"}->GetGroupData();
-
-	#refresh group form
-	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
-	$self->{"form"}->SetSelectedCreator( $self->{"model"}->GetSelectedCreator() );
-
-	$self->{"frmHandlersOff"} = 0;
-
-}
-
-sub IsPartFullyInited {
-	my $self = shift;
-
-	$self->{"isPartFullyInited"};
-}
-
-#
-## Update groupd data with values from GUI
-#sub UpdateGroupData {
-#	my $self = shift;
-#
-#	my $frm = $self->{"form"};
-#
-#	#if form is init/showed to user, return group data edited by form
-#	#else return default group data, not processed by form
-#
-#	if ($frm) {
-#		my $groupData = $self->{"dataMngr"}->GetGroupData();
-#
-#		$groupData->SetExportMeasurePdf( $frm->GetExportMeasurePdf() );
-#		$groupData->SetBuildMLStackup( $frm->GetBuildMLStackup() );
-#
-#	}
-#
-#}
-
-#sub __RefreshGUICreator {
-#	my $self = shift;
-#	my $creatorKey = shift;
-#
-#
-#
-#
-#}
-
-#-------------------------------------------------------------------------------------------#
-#  Handlers
-#-------------------------------------------------------------------------------------------#
-
-sub OnCreatorInitedHndl {
-	my $self       = shift;
-	my $creatorKey = shift;
-	my $result     = shift;
-	my $JSONSett   = shift;
-
-	# Update Model data
-
-	$self->{"model"}->GetCreatorByKey($creatorKey)->ImportCreatorSettings($JSONSett);
-
-	# Refresh gui
-	print STDERR "\n\nRefreshGUI\n\n";
-
-	$self->{"frmHandlersOff"} = 1;
-
-	$self->{"form"}->SetCreators( [ $self->{"model"}->GetCreatorByKey($creatorKey) ] );
-	$self->{"frmHandlersOff"} = 0;
-
-	$self->{"isPartFullyInited"} = 1;
-
-	return 1;
-
-}
-
-sub OnCreatorProcessedHndl {
-	my $self       = shift;
-	my $creatorKey = shift;
-	my $result     = shift;
-	my $errMess    = shift;
-
-	return 1;
-
-}
-
 sub OnOtherPartCreatorSelectionChangedHndl {
 	my $self            = shift;
 	my $changedPartId   = shift;
@@ -253,19 +133,7 @@ sub OnOtherPartCreatorSettingsChangedHndl {
 
 }
 
-sub __OnCreatorSelectionChangedHndl {
-	my $self       = shift;
-	my $creatorKey = shift;
 
-	return 0 if ( $self->{"frmHandlersOff"} );
-
-	# Init creator
-	$self->AsyncInitPart($creatorKey);
-
-	# Reise evevents for other parts
-	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey);
-
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

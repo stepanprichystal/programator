@@ -63,13 +63,17 @@ sub Init {
 	$self->{"settings"}->{"w"} = 20;
 	$self->{"settings"}->{"h"} = 20;
 
-	$inCAM->COM("get_user_name");
+	for ( my $i = 0 ; $i < 3 ; $i++ ) {
 
-	$self->{"settings"}->{"w"} = $inCAM->GetReply();
+		$inCAM->COM("get_user_name");
 
-	print STDERR "\n\nHEG !!\n\n";
+	 	my $name =  $inCAM->GetReply();
 
-	sleep(1);
+		print STDERR "\nHEG !! $name \n";
+
+		sleep(1);
+
+	}
 
 	return 1;
 
@@ -78,14 +82,30 @@ sub Init {
 ## If builded, return layout
 sub Check {
 	my $self    = shift;
+	my $inCAM = shift;
 	my $errMess = shift;
 
-	while (1) {
-		print STDERR "Check method\n";
-		sleep(1);
-	}
 
-	return 1;
+	my $result = 1;
+
+	for ( my $i = 0 ; $i < 2 ; $i++ ) {
+
+		$inCAM->COM("get_user_name");
+
+	 	my $name =  $inCAM->GetReply();
+
+		print STDERR "\nChecking  HEG !! $name \n";
+
+
+
+		sleep(1);
+
+	}
+	
+	$result = 0;
+	$$errMess .= "Nelze vytvorit";
+
+	return $result;
 
 }
 #
@@ -96,7 +116,17 @@ sub Process {
 	my $inCAM   = shift;
 	my $errMess = shift;
 
-	sleep(2);
+		for ( my $i = 0 ; $i < 3 ; $i++ ) {
+
+		$inCAM->COM("get_user_name");
+
+	 	my $name =  $inCAM->GetReply();
+
+		print STDERR "\nProcessing  HEG !! $name \n";
+		die "test";
+		sleep(1);
+
+	}
 
 	return 1;
 }

@@ -48,16 +48,16 @@ sub Check {
 	
 	$inCAM->COM("get_user_name");
 
-	for(my $i= 0; $i  < 5; $i++){
+	for(my $i= 0; $i  < 2; $i++){
 		
 		print STDERR "check";
 		sleep(1);
 	}
-	die "chyba scriptu.";
+	#die "chyba scriptu.";
 	
 	 
 	#if ( $model->GetWidth() > 10 ) {
 
-		$self->_AddError( "Velikost", "Nelze".$inCAM->GetReply() );
+		#$self->_AddError( "Velikost", "Nelze".$inCAM->GetReply() );
 	#}
 }

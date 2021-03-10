@@ -27,6 +27,7 @@ use aliased "Helpers::GeneralHelper";
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Other::AppConf';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Enums';
+use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -45,9 +46,9 @@ sub new {
 	$self->{"appParams"}  = \@_;      # scalar params, which will be passed to app constructor
 
 	$self->{"params"} = undef;        # helper array property, tmp file names, which contain papp parametr value in json
-	$self->{"runScrpit"}   = GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\AppLauncher\\Run.pl";
-	$self->{"serverPort"}  = undef;
-	$self->{"jobId"}       = undef;
+	$self->{"runScrpit"}  = GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\AppLauncher\\Run.pl";
+	$self->{"serverPort"} = undef;
+	$self->{"jobId"}      = undef;
 
 	$self->{"waitFrmShow"}  = 0;
 	$self->{"waitFrmTitle"} = undef;
@@ -55,7 +56,7 @@ sub new {
 	$self->{"waitFrmClose"} = "-";
 	$self->{"waitFrmPID"}   = 0;
 
-	$self->{"logConfig"} = 0;                                                                           # path of loging config file (log4perl)
+	$self->{"logConfig"} = 0;         # path of loging config file (log4perl)
 
 	return $self;
 }
@@ -83,8 +84,8 @@ sub RunFromInCAM {
 # After launch "appPackage" this script ends
 sub RunFromApp {
 	my $self = shift;
-	$self->{"jobId"}       = shift;
-	$self->{"serverPort"}  = shift;    # port of existing InCAM server
+	$self->{"jobId"}      = shift;
+	$self->{"serverPort"} = shift;    # port of existing InCAM server
 
 	die "Server port is not defined" if ( !defined $self->{"serverPort"} );
 
@@ -170,7 +171,7 @@ sub __RunApp {
 	  || die "Failed to run $cmdStr.\n";
 
 	my $pidInCAM = $processObj->GetProcessID();
-	
+
 	#$processObj->Wait(INFINITE)  if($self->{"waitOnExist"});
 }
 
@@ -183,24 +184,7 @@ sub __RunWaitFrm {
 	}
 
 	# 1) store title and text to file
-
-	my %inf = ( "title" => $self->{"waitFrmTitle"}, "text" => $self->{"waitFrmText"} );
-
-	my $json       = JSON->new()->allow_nonref();
-	my $serialized = $json->pretty->encode( \%inf );
-	my $fileName   = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
-
-	open( my $f, '>', $fileName );
-	print $f $serialized;
-	close $f;
-
-	my $perl = $Config{perlpath};
-	my $processObj;
-	Win32::Process::Create( $processObj, $perl, "perl " . GeneralHelper->Root() . "\\Packages\\InCAMHelpers\\AppLauncher\\RunWaitFrm.pl " . $fileName,
-							1, NORMAL_PRIORITY_CLASS, "." )
-	  || die "Failed to create run wait frm.\n";
-
-	$self->{"waitFrmPID"} = $processObj->GetProcessID();
+	$self->{"waitFrmPID"} = Helper->ShowWaitFrm( $self->{"waitFrmTitle"}, $self->{"waitFrmText"} );
 
 }
 
