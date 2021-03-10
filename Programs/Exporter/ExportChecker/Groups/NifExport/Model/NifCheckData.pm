@@ -296,9 +296,9 @@ sub OnCheckGroupData {
 	# If layer cnt is => 2 technology should be galvanics (if there are plated drill layers), in other case resist
 	if ( $defaultInfo->GetLayerCnt() >= 2 && $groupData->GetTechnology() eq EnumsGeneral->Technology_RESIST ) {
 
-		my $cu = $defaultInfo->GetBaseCuThick(" c ");
+		my $cu = $defaultInfo->GetBaseCuThick("c");
 		$dataMngr->_AddWarningResult(
-									  " Technology ",
+									  "Technology",
 									  "DPS má zvolenou technologii \"Leptací resist\". "
 										. "Tedy DPS nebude prokovená a výsledná Cu bude základní ("
 										. $cu
