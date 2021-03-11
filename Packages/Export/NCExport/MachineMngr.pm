@@ -440,11 +440,11 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop }{"ml"} = [ 0, 0, 1, 1, 0, 0 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop }{"sl"} = [ 0, 0, 1, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill }{"ml"} = [ 0, 0, 1, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill }{"sl"} = [ 0, 0, 1, 1, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop }{"ml"} = [ 0, 0, 1, 1, 0, 0 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop }{"sl"} = [ 0, 0, 1, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill }{"ml"} = [ 0, 0, 1, 1, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill }{"sl"} = [ 0, 0, 1, 1, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill }{"ml"} = [ 0, 0, 1, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill }{"sl"} = [ 0, 0, 1, 1, 0, 1 ];

@@ -1028,7 +1028,7 @@ sub __PrepareSTIFFENER {
 	my @stiffRoutLs = CamDrilling->GetNCLayersByTypes(
 		$inCAM, $jobId,
 		[
-		  EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop,
+		  EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill, EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill,
 		  EnumsGeneral->LAYERTYPE_nplt_stiffcMill,        EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
 		  EnumsGeneral->LAYERTYPE_nplt_tapecMill,         EnumsGeneral->LAYERTYPE_nplt_tapesMill,
 		]

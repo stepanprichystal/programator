@@ -204,9 +204,9 @@ sub __DefineNPlatedOperations {
 	my @nplt_stiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };    # milling for stiffener from side c
 	my @nplt_stiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };    # milling for stiffener from side s
 	my @nplt_bStiffcAdhMillTop =
-	  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop } };                 # depth milling of top stiffener adhesive from top
+	  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } };                 # depth milling of top stiffener adhesive from top
 	my @nplt_bStiffsAdhMillTop =
-	  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop } };                 # depth milling of bot stiffener adhesive from top
+	  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } };                 # depth milling of bot stiffener adhesive from top
 	my @nplt_bstiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } };  # depth milling of stiffener from side c
 	my @nplt_bstiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } };  # depth milling of stiffener from side s
 	my @nplt_tapecMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapecMill } };    # milling of doublesided tape sticked from top

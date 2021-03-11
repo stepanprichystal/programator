@@ -279,11 +279,11 @@ sub GetNPltNCLayerInfo {
 			push( @nplt_stiffsMill, $l );
 
 		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop ) {
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill ) {
 			push( @nplt_bStiffcAdhMillTop, $l );
 
 		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop ) {
+		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill ) {
 			push( @nplt_bStiffsAdhMillTop, $l );
 
 		}
@@ -336,8 +336,8 @@ sub GetNPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }       = \@nplt_prepregMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill }        = \@nplt_stiffcMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill }        = \@nplt_stiffsMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop } = \@nplt_bStiffcAdhMillTop;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop } = \@nplt_bStiffsAdhMillTop;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } = \@nplt_bStiffcAdhMillTop;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } = \@nplt_bStiffsAdhMillTop;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_soldcMill }         = \@nplt_soldcMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_soldsMill }         = \@nplt_soldsMill;
 

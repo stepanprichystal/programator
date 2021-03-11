@@ -388,7 +388,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_kMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
@@ -463,7 +463,7 @@ sub CheckDirBot2Top {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlysMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
@@ -574,8 +574,8 @@ sub CheckDrillStartStop {
 	my @t = ();
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );
@@ -600,7 +600,7 @@ sub CheckDrillStartStop {
 	# Check if stiffener layer start in proper board layer
 	my @t2 = ();
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_stiffcMill );
-	push( @t2, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill );
 
 	my @layers2 = $self->__GetLayersByType( \@layers, \@t2 );
 
@@ -615,7 +615,7 @@ sub CheckDrillStartStop {
 	# Check if stiffener layer start in proper board layer
 	my @t3 = ();
 	push( @t3, EnumsGeneral->LAYERTYPE_nplt_stiffsMill );
-	push( @t3, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
+	push( @t3, EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill );
 
 	my @layers3 = $self->__GetLayersByType( \@layers, \@t3 );
 
@@ -795,8 +795,8 @@ sub CheckContainDepth {
 	# 2) Check if layers contain depth in DTM table
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill );
 
 	my @layers2 = $self->__GetLayersByType( \@layers, \@t );
 

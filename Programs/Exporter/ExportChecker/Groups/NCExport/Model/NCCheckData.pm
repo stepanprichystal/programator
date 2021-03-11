@@ -1036,7 +1036,7 @@ sub OnCheckGroupData {
 			my $tapeLName     = "tp" .         ( $stiffSide eq "top" ? "c" : "s" );
 			my $stiffLName    = "stiff" .      ( $stiffSide eq "top" ? "c" : "s" );
 			my $stiffAdhLName = "fzstiffadh" . ( $stiffSide eq "top" ? "c" : "s" );
-			my $stiffAdhLType = $stiffSide eq "top" ? EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop : EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop;
+			my $stiffAdhLType = $stiffSide eq "top" ? EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill : EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill;
 
 			my $mInf = HegMethods->GetPcbStiffenerMat( $jobId, $stiffSide );
 			my $stiffThick = $mInf->{"vyska"};
@@ -1046,7 +1046,7 @@ sub OnCheckGroupData {
 			$stiffThick *= 1000000;    # µm
 			my $maxStiffH = 250;       # 250µm is max stiffener height withou depth milling of adehesive stiffener
 
-			# Do checks if LAYERTYPE_nplt_bStiffcAdhMillTop exists
+			# Do checks if LAYERTYPE_nplt_stiffcAdhMill exists
 			if ( scalar( grep { $_->{"type"} eq $stiffAdhLType } $defaultInfo->GetNCLayers() ) ) {
 
 				if ( $stiffThick < $maxStiffH ) {
@@ -1059,7 +1059,7 @@ sub OnCheckGroupData {
 				}
 			}
 			else {
-				# Do checks if LAYERTYPE_nplt_bStiffcAdhMillTop not  exists
+				# Do checks if LAYERTYPE_nplt_stiffcAdhMill not  exists
 
 				# tp[cs] layer must exist OR stiffener thickness must be less than $maxStiffH
 
@@ -1086,7 +1086,7 @@ sub OnCheckGroupData {
 	# Depth value should be always 250µm (this is enough for rout through adehsive)
 	{
 		my @adhMill =
-		  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop }
+		  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill }
 		  $defaultInfo->GetNCLayers();
 
 		my $depth = RoutStiffener->GetStiffAdhRotuDepth( $inCAM, $jobId );    # depth value [mm], which is enopugh for mill through adhesive

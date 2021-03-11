@@ -427,16 +427,16 @@ sub AddNCLayerType {
 			$l->{"technical"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fzstiffadhc\d?/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fstiffcadh\d?/ ) {
 
-			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill;
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^fzstiffadhs\d?/ ) {
+		elsif ( $l->{"gROWname"} =~ /^fstiffsadh\d?/ ) {
 
-			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop;
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill;
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 

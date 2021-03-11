@@ -239,7 +239,7 @@ sub __InitLayers {
 	$LDStiffenerTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^stiffc$/ } @boardL );    #  stiffener
 	$LDStiffenerTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tpc$/ } @boardL );    # tape also define stiffener
 	$LDStiffenerTOP->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill } @boardL );
-	$LDStiffenerTOP->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffcAdhMillTop } @boardL );
+	$LDStiffenerTOP->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } @boardL );
 	$LDStiffenerTOP->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapebrMill } @boardL )
 	  ;                                                                                  # tape bridge also define stiffener
 	push( @pdfLayers, $LDStiffenerTOP );
@@ -477,7 +477,7 @@ sub __InitLayers {
 	$LDStiffenerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tps$/ } @boardL );    # tape also define stiffener
 	$LDStiffenerBOT->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapebrMill } @boardL );
 	$LDStiffenerBOT->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill } @boardL );
-	$LDStiffenerBOT->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bStiffsAdhMillTop } @boardL );
+	$LDStiffenerBOT->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } @boardL );
 	push( @pdfLayers, $LDStiffenerBOT );
 
 	# POS 2: Type_TAPE from TOP
