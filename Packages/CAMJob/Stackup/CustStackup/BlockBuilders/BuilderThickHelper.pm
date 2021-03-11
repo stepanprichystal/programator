@@ -72,15 +72,23 @@ sub GetRequiredThick {
 		$t = $self->{"stackupMngr"}->GetNominalThickness();
 
 	}
-	elsif ( $section eq Enums->Sec_E_STIFFENER || $section eq Enums->Sec_F_STIFFENER ) {
+	elsif ( $section eq Enums->Sec_E_STIFFENER){
+ 
+		my @allThickness = $self->{"stackupMngr"}->GetAllRequestedStiffThick("top");
 
-		my @allThickness = $self->{"stackupMngr"}->GetAllRequestedStiffThick();
+		if (  scalar(@allThickness) == 1 ) {
 
-		my @stiff = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill }
-		  $self->{"stackupMngr"}->GetNCLayers();
+			$t = $allThickness[0];
+		}
+		else {
 
-		# Set thickness only if stiffener from one side and only one depth exists
-		if ( scalar(@stiff) == 1 && scalar(@allThickness) == 1 ) {
+			$t = "*";
+		}
+	}elsif ( $section eq Enums->Sec_F_STIFFENER){
+ 
+		my @allThickness = $self->{"stackupMngr"}->GetAllRequestedStiffThick("bot");
+
+		if (  scalar(@allThickness) == 1 ) {
 
 			$t = $allThickness[0];
 		}

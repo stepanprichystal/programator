@@ -202,8 +202,8 @@ sub GetNPltNCLayerInfo {
 	my @nplt_prepregMill       = ();    #prepreg mill
 	my @nplt_stiffcMill        = ();    # milling for stiffener from side c
 	my @nplt_stiffsMill        = ();    # milling for stiffener from side s
-	my @nplt_bStiffcAdhMillTop = ();    # depth milling of top stiffener adhesive from top
-	my @nplt_bStiffsAdhMillTop = ();    # depth milling of bot stiffener adhesive from top
+	my @nplt_stiffcAdhMill = ();    # depth milling of top stiffener adhesive from top
+	my @nplt_stiffsAdhMill = ();    # depth milling of bot stiffener adhesive from top
 	my @nplt_soldcMill         = ();    # milling of template for soldering coverlay from side c
 	my @nplt_soldsMill         = ();    # milling of template for soldering coverlay from side s
 
@@ -280,11 +280,11 @@ sub GetNPltNCLayerInfo {
 
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill ) {
-			push( @nplt_bStiffcAdhMillTop, $l );
+			push( @nplt_stiffcAdhMill, $l );
 
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill ) {
-			push( @nplt_bStiffsAdhMillTop, $l );
+			push( @nplt_stiffsAdhMill, $l );
 
 		}
 		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_soldcMill ) {
@@ -336,8 +336,8 @@ sub GetNPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_nplt_prepregMill }       = \@nplt_prepregMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill }        = \@nplt_stiffcMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill }        = \@nplt_stiffsMill;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } = \@nplt_bStiffcAdhMillTop;
-	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } = \@nplt_bStiffsAdhMillTop;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } = \@nplt_stiffcAdhMill;
+	$info{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } = \@nplt_stiffsAdhMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_soldcMill }         = \@nplt_soldcMill;
 	$info{ EnumsGeneral->LAYERTYPE_nplt_soldsMill }         = \@nplt_soldsMill;
 

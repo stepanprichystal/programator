@@ -384,14 +384,34 @@ sub __PrepareFLEXLAYERS {
 		CamLayer->ClipAreaByProf( $inCAM, $lName, 0, 0, 1 );
 		CamLayer->WorkLayer( $inCAM, $lName );
 
-		# 2) Copy negative of stiffener rout
+		# 2) Copy all negative of stiffener rout
 
 		my @stiffRoutLs =
-		  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill ] );
+		  CamDrilling->GetNCLayersByTypes(
+										   $inCAM, $jobId,
+										   [
+											  EnumsGeneral->LAYERTYPE_nplt_stiffcMill,    EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
+											  EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill, EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill
+										   ]
+		  );
 		CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
 
-		my $stiffRoutL = ( grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs )[0];
-		my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
+		@stiffRoutLs = grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs;
+
+		my $lTmp = GeneralHelper->GetGUID();
+
+		foreach my $s (@stiffRoutLs) {
+
+			my $lTmpComp = CamLayer->RoutCompensation( $inCAM, $s->{"gROWname"}, "document" );
+			$inCAM->COM(
+						 "merge_layers",
+						 "source_layer" => $lTmpComp,
+						 "dest_layer"   => $lTmp,
+						 "invert"       => "no"
+			);
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmpComp );
+		}
+		
 		CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
 		$inCAM->COM(
 					 "merge_layers",

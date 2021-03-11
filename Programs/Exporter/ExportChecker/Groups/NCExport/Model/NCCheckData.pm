@@ -71,7 +71,6 @@ sub new {
 sub OnCheckGroupData {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
-	
 
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
@@ -1033,9 +1032,9 @@ sub OnCheckGroupData {
 
 		foreach my $stiffSide (@stiffeners) {
 
-			my $tapeLName     = "tp" .         ( $stiffSide eq "top" ? "c" : "s" );
-			my $stiffLName    = "stiff" .      ( $stiffSide eq "top" ? "c" : "s" );
-			my $stiffAdhLName = "fzstiffadh" . ( $stiffSide eq "top" ? "c" : "s" );
+			my $tapeLName     = "tp" .    ( $stiffSide eq "top" ? "c" : "s" );
+			my $stiffLName    = "stiff" . ( $stiffSide eq "top" ? "c" : "s" );
+			my $stiffAdhLName = "stiff" . ( $stiffSide eq "top" ? "c" : "s" ) . "adh";
 			my $stiffAdhLType = $stiffSide eq "top" ? EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill : EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill;
 
 			my $mInf = HegMethods->GetPcbStiffenerMat( $jobId, $stiffSide );
@@ -1043,8 +1042,8 @@ sub OnCheckGroupData {
 
 			die "Stiffener $stiffSide thickness is not defined in IS" unless ( defined $stiffThick );
 			$stiffThick =~ s/,/\./;
-			$stiffThick *= 1000000;    # µm
-			my $maxStiffH = 250;       # 250µm is max stiffener height withou depth milling of adehesive stiffener
+			$stiffThick *= 1000000;                                                       # µm
+			my $maxStiffH = 250;    # 250µm is max stiffener height withou depth milling of adehesive stiffener
 
 			# Do checks if LAYERTYPE_nplt_stiffcAdhMill exists
 			if ( scalar( grep { $_->{"type"} eq $stiffAdhLType } $defaultInfo->GetNCLayers() ) ) {
@@ -1229,11 +1228,11 @@ sub OnCheckGroupData {
 			if ( scalar(@surf) ) {
 
 				$dataMngr->_AddWarningResult(
-					"Rozfrézování v mpanelu",
-					"Ve stepu mpanel byly nalezeny pojezdy frézou pomocí typu surface. "
-					  . "Pokud nebude vytvořená vrstva: fsch, tyto pojezdy budou vyfrézovány "
-					  . "až po vyfrézování všech vnořených stepů (o+1; ...) v mpanelu. "
-					  . "Je to správně? Pokud ne, vytvoř fsch, která zajistí správné pořadí."
+											  "Rozfrézování v mpanelu",
+											  "Ve stepu mpanel byly nalezeny pojezdy frézou pomocí typu surface. "
+												. "Pokud nebude vytvořená vrstva: fsch, tyto pojezdy budou vyfrézovány "
+												. "až po vyfrézování všech vnořených stepů (o+1; ...) v mpanelu. "
+												. "Je to správně? Pokud ne, vytvoř fsch, která zajistí správné pořadí."
 				);
 
 			}

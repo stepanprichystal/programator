@@ -159,7 +159,7 @@ sub GetExistCvrl {
 			$inf->{"adhesiveThick"} = $thickAdh;
 			$inf->{"cvrlText"}      = ( $matInfo->{"nazev_subjektu"} =~ /^(\w+\s*\w+)\s+/ )[0];    # ? is not store
 			$inf->{"cvrlThick"}     = $thick - $thickAdh;
-			$inf->{"selective"}     = 0;                                                     # Selective coverlay can bz onlz at RigidFLex pcb
+			$inf->{"selective"}     = 0;                                                           # Selective coverlay can bz onlz at RigidFLex pcb
 
 			die "Cvrl adhesive material name was not found at material:" . $matInfo->{"nazev_subjektu"}
 			  unless ( defined $inf->{"adhesiveText"} );
@@ -210,6 +210,9 @@ sub GetTG {
 # Return all requested total thiskcness fith stiffener in µm
 sub GetAllRequestedStiffThick {
 	my $self = shift;
+	my $side = shift;    # top/bot
+
+	die "stiffener side is not defined" unless ( defined $side );
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -232,12 +235,24 @@ sub GetAllRequestedStiffThick {
 			@steps = ( $self->{"step"} );
 		}
 
-		my @stiffL = grep {
+		my @stiffL = ();
+
+		my @stiffLTop =
+		  grep {
 			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
-			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
 			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
+
+		  } @{ $self->{"NCLayers"} };
+
+		my @stiffLBot =
+		  grep {
+			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill
 			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
-		} @{ $self->{"NCLayers"} };
+
+		  } @{ $self->{"NCLayers"} };
+
+		push( @stiffL, @stiffLTop ) if ( $side eq "top" );
+		push( @stiffL, @stiffLBot ) if ( $side eq "bot" );
 
 		foreach my $l (@stiffL) {
 
@@ -255,8 +270,7 @@ sub GetAllRequestedStiffThick {
 		}
 	}
 
- 
-	@all = sort{$b <=> $a}uniq(@all);
+	@all = sort { $b <=> $a } uniq(@all);
 
 	return @all;
 }

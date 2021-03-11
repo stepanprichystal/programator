@@ -253,13 +253,51 @@ sub __PrepareStiffLayer {
 			CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
 
 			my $lTmp = CamLayer->RoutCompensation( $inCAM, $thickInf->{"sourceL"}->{"gROWname"}, "document" );
-			CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+
+			# consider adhesive stiffener depth milling
+			if ( $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill ) {
+
+				my $stiffAdh = ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill ] ) )[0];
+				if ( defined $stiffAdh ) {
+
+					my $lTmpAdh = CamLayer->RoutCompensation( $inCAM, $stiffAdh->{"gROWname"}, "document" );
+					$inCAM->COM(
+								 "merge_layers",
+								 "source_layer" => $lTmpAdh,
+								 "dest_layer"   => $lTmp,
+								 "invert"       => "no"
+					);
+
+					CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmpAdh );
+				}
+			}
+			if ( $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill ) {
+
+				my $stiffAdh = ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill ] ) )[0];
+				if ( defined $stiffAdh ) {
+
+					my $lTmpAdh = CamLayer->RoutCompensation( $inCAM, $stiffAdh->{"gROWname"}, "document" );
+					$inCAM->COM(
+								 "merge_layers",
+								 "source_layer" => $lTmpAdh,
+								 "dest_layer"   => $lTmp,
+								 "invert"       => "no"
+					);
+
+					CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmpAdh );
+				}
+			}
+
+			CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );     # 203200 = max size of emptz space in InCAM which can be filled by surface
 			$inCAM->COM(
 						 "merge_layers",
 						 "source_layer" => $lTmp,
 						 "dest_layer"   => $lOut,
 						 "invert"       => "yes"
 			);
+
+			#
+
 			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 
 			$thickInf->{"outputL"} = $lOut;
@@ -535,7 +573,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d284648";
+	my $jobId = "d312164";
 	my $map = StiffenerPdf->new( $inCAM, $jobId );
 	$map->CreateStiffPdf();
 

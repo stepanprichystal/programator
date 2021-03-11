@@ -67,7 +67,8 @@ sub new {
 		my $builder = StackupBuilder->new( $inCAM, $jobId, $self );
 		$builder->BuildStackupLamination();
 
-		$cache->set( $key, $self, 200 );
+		# Chache 60s
+		$cache->set( $key, $self, 60 );
 	}
 	else {
 

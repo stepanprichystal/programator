@@ -55,7 +55,7 @@ sub __BuildHeadRow {
 	my $secMngr   = $self->{"sectionMngr"};
 
 	# Define first title row
-	my $rowGap = $tblMain->AddRowDef( "note_gap",   EnumsStyle->RowHeight_BLOCKGAP );
+	my $rowGap = $tblMain->AddRowDef( "note_gap", EnumsStyle->RowHeight_BLOCKGAP );
 	my $rowBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_HEADSUBBACK ) );
 	my $row = $tblMain->AddRowDef( "note_head", EnumsStyle->RowHeight_STANDARD, $rowBackgStyle );
 
@@ -150,17 +150,21 @@ sub __BuildNotesStiffRow {
 	my $stckpMngr = $self->{"stackupMngr"};
 	my $secMngr   = $self->{"sectionMngr"};
 
-	my @allStiffThickness = $stckpMngr->GetAllRequestedStiffThick();
+	my @allStiffThicknessTop = $stckpMngr->GetAllRequestedStiffThick("top");
+	my @allStiffThicknessBot = $stckpMngr->GetAllRequestedStiffThick("bot");
 
 	# Define first title row
+	my $cnt = scalar(  @allStiffThicknessTop) + scalar(@allStiffThicknessBot );
 
 	my $txt = "List of all customer requested final thickness\non different stiffener areas: ";
-	$txt.= "\n" if(scalar(@allStiffThickness) > 2);
-	$txt .= join( "; ", map { $_."µm"} @allStiffThickness );
- 
+	
+	$txt .= "\n" if ( $cnt  > 2 );
+	$txt .= join( "; ", map { $_ . "µm" } @allStiffThicknessTop ). " (top)";
+	$txt .= join( "; ", map { $_ . "µm" } @allStiffThicknessBot ). " (bot)";
+	
 
 	my $rowBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_HEADSUBBACK ) );
-	my $row = $tblMain->AddRowDef( "stiff_pcb_thick", (scalar(@allStiffThickness) > 2? 3 : 2) * EnumsStyle->RowHeight_STANDARD );
+	my $row = $tblMain->AddRowDef( "stiff_pcb_thick", ( $cnt > 2 ? 3 : 2 ) * EnumsStyle->RowHeight_STANDARD );
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 								   EnumsStyle->TxtSize_TITLE, Color->new( 0, 0, 0 ),
 								   undef, undef,
@@ -171,9 +175,7 @@ sub __BuildNotesStiffRow {
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 	if ( $sec_BEGIN->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
-						   $tblMain->GetRowDefPos($row),
-						   undef, undef, "* Note", $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $tblMain->GetRowDefPos($row), undef, undef, "* Note", $txtStyle );
 
 	}
 
@@ -193,7 +195,7 @@ sub __BuildNotesStiffRow {
 
 		$tblMain->AddCell( $posX, $tblMain->GetRowDefPos($row), $cellLen, undef, $txt, $NCTextStyle );
 	}
- 
+
 }
 
 #-------------------------------------------------------------------------------------------#

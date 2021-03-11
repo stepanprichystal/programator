@@ -130,8 +130,12 @@ sub BuildBlocks {
 	}
 
 	# Add total thickness of stackup
-	if ( ( $pcbType ne EnumsGeneral->PcbType_1VFLEX || $pcbType ne EnumsGeneral->PcbType_2VFLEX )
-		 && scalar( $stackupMngr->GetAllRequestedStiffThick() > 1 ) )
+	if (
+		( $pcbType eq EnumsGeneral->PcbType_1VFLEX || $pcbType eq EnumsGeneral->PcbType_2VFLEX )
+		&& (
+			 scalar( $stackupMngr->GetAllRequestedStiffThick("top") > 1 || scalar( $stackupMngr->GetAllRequestedStiffThick("bot") > 1 ) )
+		)
+	  )
 	{
 
 		$self->_AddBlock( BuilderNote->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"tblMain"}, $stackupMngr, $sectionMngr ) );

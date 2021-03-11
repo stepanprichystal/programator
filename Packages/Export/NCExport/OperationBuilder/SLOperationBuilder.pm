@@ -190,23 +190,21 @@ sub __DefineNPlatedOperations {
 	my %npltDrillInfo = %{ $self->{"npltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 
 	#non plated
-	my @nplt_nDrill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };        #normall nplt drill
-	my @nplt_nMill      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };         #normall mill slits
-	my @nplt_bMillTop   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };      #z-axis top mill
-	my @nplt_bMillBot   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };      #z-axis bot mill
-	my @nplt_rsMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_rsMill } };        #rs mill before plating
-	my @nplt_frMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };        #milling frame
-	my @nplt_kMill      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };         #milling conneector
-	my @nplt_lcMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };        #milling template snim lak c
-	my @nplt_lsMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };        #milling template snim lak s
-	my @nplt_cvrlycMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };    #top coverlay mill
-	my @nplt_cvrlysMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };    #bot coverlay mill
-	my @nplt_stiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };    # milling for stiffener from side c
-	my @nplt_stiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };    # milling for stiffener from side s
-	my @nplt_bStiffcAdhMillTop =
-	  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } };                 # depth milling of top stiffener adhesive from top
-	my @nplt_bStiffsAdhMillTop =
-	  @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } };                 # depth milling of bot stiffener adhesive from top
+	my @nplt_nDrill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };           #normall nplt drill
+	my @nplt_nMill         = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };            #normall mill slits
+	my @nplt_bMillTop      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };         #z-axis top mill
+	my @nplt_bMillBot      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };         #z-axis bot mill
+	my @nplt_rsMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_rsMill } };           #rs mill before plating
+	my @nplt_frMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };           #milling frame
+	my @nplt_kMill         = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };            #milling conneector
+	my @nplt_lcMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };           #milling template snim lak c
+	my @nplt_lsMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };           #milling template snim lak s
+	my @nplt_cvrlycMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };       #top coverlay mill
+	my @nplt_cvrlysMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };       #bot coverlay mill
+	my @nplt_stiffcMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };       # milling for stiffener from side c
+	my @nplt_stiffsMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };       # milling for stiffener from side s
+	my @nplt_stiffcAdhMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } };    # depth milling of top stiffener adhesive from top
+	my @nplt_stiffsAdhMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } };    # depth milling of bot stiffener adhesive from top
 	my @nplt_bstiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } };  # depth milling of stiffener from side c
 	my @nplt_bstiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } };  # depth milling of stiffener from side s
 	my @nplt_tapecMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapecMill } };    # milling of doublesided tape sticked from top
@@ -294,24 +292,24 @@ sub __DefineNPlatedOperations {
 
 	# 12) Operation name = fstiffc - can contain layer
 	# - @nplt_stiffcMill
-	# - @nplt_bStiffcAdhMillTop
+	# - @nplt_stiffcAdhMill
 	my @stiffc = @nplt_stiffcMill;
 
-	if ( scalar(@nplt_bStiffcAdhMillTop) > 0 ) {
+	if ( scalar(@nplt_stiffcAdhMill) > 0 ) {
 
-		push( @stiffc, @nplt_bStiffcAdhMillTop );
+		push( @stiffc, @nplt_stiffcAdhMill );
 	}
 
 	$opManager->AddOperationDef( "stiffc", \@stiffc, -1 );
 
 	# 13) Operation name = fstiffs - can contain layer
 	# - @nplt_stiffsMill
-	# - @nplt_bStiffsAdhMillTop
+	# - @nplt_stiffsAdhMill
 	my @stiffs = @nplt_stiffsMill;
 
-	if ( scalar(@nplt_bStiffsAdhMillTop) > 0 ) {
+	if ( scalar(@nplt_stiffsAdhMill) > 0 ) {
 
-		push( @stiffs, @nplt_bStiffsAdhMillTop );
+		push( @stiffs, @nplt_stiffsAdhMill );
 	}
 
 	$opManager->AddOperationDef( "stiffs", \@stiffs, -1 );

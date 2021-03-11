@@ -27,6 +27,9 @@ sub GetStiffAdhRotuDepth {
 	my $stiffSide = shift;    #top/bot
  
 	
+	
+	
+	
 	my $depth = 250;    # depth value [mm], which is enough for mill through adhesive
 
 	return $depth;
