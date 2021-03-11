@@ -3,7 +3,7 @@
 # Description: Interface for all coupon builders
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Coupon::CpnBuilder::ICpnBuilder;
+package Programs::Panelisation::PnlCreator::StepsPnlCreator::IStep;
 
 #3th party library
 use strict;
@@ -20,11 +20,7 @@ use warnings;
 use Class::Interface;
 &interface;    
 
-# Build layout, return 1 if succes, 0 if fail
-sub Build;     
- 
-# If builded, return layout 
-sub GetLayout;     
+sub Init;     
 
 
  

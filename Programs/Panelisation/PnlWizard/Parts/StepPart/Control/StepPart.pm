@@ -8,7 +8,7 @@
 # 3) View - only display data, which are passed from model by presenter class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePart;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPart;
 use base 'Programs::Panelisation::PnlWizard::Parts::PartBase';
 
 use Class::Interface;
@@ -29,9 +29,9 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::View::ImpUnitForm';
 
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::SizePartModel'   => 'PartModel';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm'      => 'PartFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePartCheck' => 'PartCheckClass';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::StepPartModel'   => 'PartModel';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::StepPartFrm'      => 'PartFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPartCheck' => 'PartCheckClass';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,11 +41,11 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 
-	$self = $class->SUPER::new(Enums->Part_PNLSIZE, @_);
+	$self = $class->SUPER::new(Enums->Part_PNLSTEPS, @_);
 	bless $self;
 
 	#uique key within all units
- 
+	 
 	$self->{"model"} = PartModel->new();
 
 	$self->{"checkClass"} = PartCheckClass->new();
@@ -109,6 +109,7 @@ sub InitPartModel {
 	}
 }
 
+
 sub OnOtherPartCreatorSelChangedHndl {
 	my $self            = shift;
 	my $changedPartId   = shift;
@@ -122,7 +123,6 @@ sub OnOtherPartCreatorSettChangedHndl {
 	my $newCreatorKey = shift
 
 }
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

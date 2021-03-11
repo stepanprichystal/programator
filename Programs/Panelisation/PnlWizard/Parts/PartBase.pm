@@ -27,11 +27,11 @@ sub new {
 	$self = {};
 	bless $self;
 
+	$self->{"partId"}             = shift;
 	$self->{"jobId"}              = shift;
 	$self->{"backgroundTaskMngr"} = shift;
 
-	$self->{"partId"} = undef;
-	$self->{"model"}  = undef;
+	$self->{"model"} = undef;
 
 	$self->{"checkClass"} = undef;
 
@@ -87,9 +87,12 @@ sub _InitForm {
 
 sub __OnCreatorInitedHndl {
 	my $self       = shift;
+	my $partId     = shift;
 	my $creatorKey = shift;
 	my $result     = shift;
 	my $JSONSett   = shift;
+
+	return 0 if ( $partId ne $self->{"partId"} );    # Catch only event from for this specific part
 
 	$self->{"isPartFullyInited"} = 0;
 
@@ -103,8 +106,8 @@ sub __OnCreatorInitedHndl {
 
 	#refresh group form
 	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
-	 
-	$self->{"frmHandlersOff"} = 0;
+
+	$self->{"frmHandlersOff"}    = 0;
 	$self->{"isPartFullyInited"} = 1;
 
 	$self->{"asyncCreatorInitedEvt"}->Do( $creatorKey, $result );
@@ -113,9 +116,12 @@ sub __OnCreatorInitedHndl {
 
 sub __OnCreatorProcessedHndl {
 	my $self       = shift;
+	my $partId     = shift;
 	my $creatorKey = shift;
 	my $result     = shift;
 	my $errMess    = shift;
+	
+	return 0 if ( $partId ne $self->{"partId"} );    # Catch only event from for this specific part
 
 	$self->{"partWrapper"}->ShowLoading(0);
 
@@ -212,7 +218,6 @@ sub GetModel {
 
 }
 
-
 sub RefreshGUI {
 	my $self = shift;
 
@@ -247,12 +252,11 @@ sub AsyncProcessSelCreatorModel {
 	my $creatorKey   = $self->{"model"}->GetSelectedCreator();
 	my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
 
-	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $creatorKey, $creatorModel->ExportCreatorSettings() );
+	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $self->{"partId"}, $creatorKey, $creatorModel->ExportCreatorSettings() );
 
 	#}
 
 }
-
 
 # Run after InitModel, update form of selected creator asynchronously
 sub AsyncInitSelCreatorModel {
@@ -283,13 +287,11 @@ sub GetPreview {
 	return $self->{"model"}->GetPreview();
 }
 
-
 sub IsPartFullyInited {
 	my $self = shift;
 
 	$self->{"isPartFullyInited"};
 }
-
 
 sub __AsyncInitCreatorModel {
 	my $self                = shift;
@@ -302,13 +304,9 @@ sub __AsyncInitCreatorModel {
 
 	$self->{"partWrapper"}->ShowLoading(1);
 
-	$self->{"backgroundTaskMngr"}->AsyncInitPnlCreator( $creatorKey, $creatorInitPatarams );
+	$self->{"backgroundTaskMngr"}->AsyncInitPnlCreator( $self->{"partId"}, $creatorKey, $creatorInitPatarams );
 
 }
-
-
-
-
 
 #
 ## Update groupd data with values from GUI
@@ -356,8 +354,6 @@ sub __OnCreatorSelectionChangedHndl {
 	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey);
 
 }
-
-
 
 sub __ClearErrors {
 	my $self = shift;

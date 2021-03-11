@@ -19,6 +19,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::HEGOrderSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::UserDefinedSize';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutopartSteps';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::UserDefinedSteps';
 use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 
 #-------------------------------------------------------------------------------------------#
@@ -75,13 +77,15 @@ sub Init {
 # Raise "pnlCreatorInitedEvt" event, which will contain Creator Model data
 sub AsyncInitPnlCreator {
 	my $self       = shift;
+	my $partId     = shift;
 	my $creatorKey = shift;
-	my $initParams = shift;                                                                                     # array ref
+	my $initParams = shift;    # array ref
 
 	my $taskId     = $creatorKey . "_" . TaskType_INITCREATOR;
 	my @taskParams = ();
 	push( @taskParams, TaskType_INITCREATOR );
 	push( @taskParams, $self->{"jobId"} );
+	push( @taskParams, $partId );
 	push( @taskParams, $creatorKey );
 	push( @taskParams, $initParams );
 
@@ -92,6 +96,7 @@ sub AsyncInitPnlCreator {
 # Raise "pnlCreatorProcesedEvt" event, which will contain result succes/failed
 sub AsyncProcessPnlCreator {
 	my $self       = shift;
+	my $partId     = shift;
 	my $creatorKey = shift;
 	my $JSONSett   = shift;    # hash of model properties
 
@@ -100,6 +105,7 @@ sub AsyncProcessPnlCreator {
 
 	push( @taskParams, TaskType_PROCESSCREATOR );
 	push( @taskParams, $self->{"jobId"} );
+	push( @taskParams, $partId );
 	push( @taskParams, $creatorKey );
 	push( @taskParams, $JSONSett );
 
@@ -107,13 +113,11 @@ sub AsyncProcessPnlCreator {
 
 }
 
-sub GetCurrentTasksCnt{
-		my $self       = shift;
-		
-		
+sub GetCurrentTasksCnt {
+	my $self = shift;
+
 	return $self->{"backgroundWorker"}->GetCurrentTasks();
-	
-	
+
 }
 
 #sub GetInitCreatorTaskCnt {
@@ -143,6 +147,7 @@ sub __TaskBackgroundFunc {
 
 	my $taskType   = shift @{$taskParams};
 	my $jobId      = shift @{$taskParams};
+	my $partId     = shift @{$taskParams};
 	my $creatorKey = shift @{$taskParams};
 
 	my $creator = __GetPnlCreatorByKey( $jobId, $creatorKey );
@@ -158,6 +163,7 @@ sub __TaskBackgroundFunc {
 		# Create JSON message
 		my %res = ();
 		$res{"taskType"}     = $taskType;
+		$res{"partId"}       = $partId;
 		$res{"creatorKey"}   = $creatorKey;
 		$res{"JSONSettings"} = $JSONSett;
 		$res{"result"}       = $result;
@@ -188,6 +194,7 @@ sub __TaskBackgroundFunc {
 		# Create JSON message
 		my %res = ();
 		$res{"taskType"}   = $taskType;
+		$res{"partId"}     = $partId;
 		$res{"creatorKey"} = $creatorKey;
 		$res{"result"}     = $result;
 		$res{"errMess"}    = $errMess;
@@ -250,6 +257,12 @@ sub __GetPnlCreatorByKey {
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
 		$creator = HEGOrderSize->new($jobId);
 	}
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOPART ) {
+		$creator = AutopartSteps->new($jobId);
+	}
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_USERDEFINED ) {
+		$creator = UserDefinedSteps->new($jobId);
+	}
 	else {
 
 		die "Creator was not defined  for key: $creatorKey";
@@ -268,8 +281,6 @@ sub __OnTaskStartHndl {
 
 	print STDERR "Asynchronous task ($taskId) START. Handler in BackroundTaskMngr.\n";
 
-	
-
 }
 
 sub __OnTaskFinishHndl {
@@ -277,8 +288,6 @@ sub __OnTaskFinishHndl {
 	my $taskId = shift;
 
 	print STDERR "Asynchronous task ($taskId) FINISH. Handler in BackroundTaskMngr.\n";
-
-	
 
 }
 
@@ -299,7 +308,6 @@ sub __OnTaskDieHndl {
 
 	print STDERR "Asynchronous task ($taskId) END with error: $errMess. Handler in BackroundTaskMngr.\n";
 
-	
 }
 
 sub __OnTaskMessageInfoHndl {
@@ -312,6 +320,7 @@ sub __OnTaskMessageInfoHndl {
 	my %message = %{ $self->{"jsonStorable"}->Decode($messageJSON) };
 
 	my $taskType   = $message{"taskType"};
+	my $partId     = $message{"partId"};
 	my $creatorKey = $message{"creatorKey"};
 
 	if ( $taskType eq TaskType_INITCREATOR ) {
@@ -320,7 +329,7 @@ sub __OnTaskMessageInfoHndl {
 
 		#		my $modelData = $self->__CreatorSettings2ModelSettings( $creatorKey, $JSONSett );
 
-		$self->{"pnlCreatorInitedEvt"}->Do( $creatorKey, $result, $JSONSett )
+		$self->{"pnlCreatorInitedEvt"}->Do( $partId, $creatorKey, $result, $JSONSett )
 
 	}
 	elsif ( $taskType eq TaskType_PROCESSCREATOR ) {
@@ -328,7 +337,7 @@ sub __OnTaskMessageInfoHndl {
 		my $result  = $message{"result"};
 		my $errMess = $message{"errMess"};
 
-		$self->{"pnlCreatorProcesedEvt"}->Do( $creatorKey, $result, $errMess )
+		$self->{"pnlCreatorProcesedEvt"}->Do( $partId, $creatorKey, $result, $errMess )
 
 	}
 

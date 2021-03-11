@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::View::StepPartFrm;
 use base qw(Programs::Panelisation::PnlWizard::Forms::CreactorSelectorFrm);
 
 #3th party library
@@ -19,8 +19,8 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlWizard::Forms::CreatorListFrm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::UserDefinedFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::HEGOrderFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::UserDefinedFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutopartFrm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -63,14 +63,14 @@ sub OnGetCreatorLayout {
 
 	my $content = undef;
 
-	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
+	if ( $creatorKey eq PnlCreEnums->StepPnlCreator_USERDEFINED ) {
 
 		$content = UserDefinedFrm->new($parent);
 
 	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOPART ) {
 
-		$content = HEGOrderFrm->new($parent);
+		$content = AutopartFrm->new($parent);
 	}
 
 	return $content;
@@ -96,13 +96,13 @@ sub SetCreators {
 
 			print STDERR $model->GetWidth() . "\n";
 
-			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
+			if ( $modelKey eq PnlCreEnums->StepPnlCreator_USERDEFINED ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 
 			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
+			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOPART ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
@@ -126,13 +126,13 @@ sub GetCreators {
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
+		if ( $modelKey eq PnlCreEnums->StepPnlCreator_USERDEFINED ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
 
 		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
+		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOPART ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );

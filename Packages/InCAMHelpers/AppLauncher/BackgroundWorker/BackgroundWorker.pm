@@ -252,7 +252,7 @@ sub AbortTask {
 
 sub GetCurrentTasks {
 	my $self           = shift;
-	my $workerMngrPckg = caller(0);;
+	my $workerMngrPckg = caller(0);
 
 	return $self->__GetCurrentTasks($workerMngrPckg);
 

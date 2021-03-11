@@ -1,0 +1,162 @@
+
+#-------------------------------------------------------------------------------------------#
+# Description: This is class, which represent "presenter"
+#
+# Every group in "export checker program" is composed from three layers:
+# 1) Model - responsible for actual group data, which are displyed in group form
+# 2) Presenter -  responsible for: edit/get goup data (model), build and refresh from for group
+# 3) View - only display data, which are passed from model by presenter class
+# Author:SPR
+#-------------------------------------------------------------------------------------------#
+package Programs::Panelisation::PnlCreator::StepsPnlCreator::AutopartSteps;
+use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
+
+use Class::Interface;
+&implements('Programs::Panelisation::PnlCreator::StepsPnlCreator::IStep');
+
+#3th party library
+use strict;
+use warnings;
+
+#local library
+#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
+
+#use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpCheckData';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpPrepareData';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpExportData';
+#use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::View::ImpUnitForm';
+
+#use aliased 'Programs::Panelisation::PnlWizard::Enums';
+use aliased 'Programs::Panelisation::PnlCreator::Enums';
+
+#-------------------------------------------------------------------------------------------#
+#  Package methods
+#-------------------------------------------------------------------------------------------#
+
+sub new {
+	my $class = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	my $key   = Enums->StepPnlCreator_AUTOPART;
+
+	my $self = $class->SUPER::new( $inCAM, $jobId, $key );
+	bless $self;
+
+	$self->{"settings"}->{"w"} = undef;
+	$self->{"settings"}->{"h"} = undef;
+
+	return $self;    # Return the reference to the hash.
+}
+
+#-------------------------------------------------------------------------------------------#
+# Interface method
+#-------------------------------------------------------------------------------------------#
+
+# Build layout, return 1 if succes, 0 if fail
+# Build layout, return 1 if succes, 0 if fail
+sub Init {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	$self->{"settings"}->{"w"} = 20;
+	$self->{"settings"}->{"h"} = 20;
+
+	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+
+		$inCAM->COM("get_user_name");
+
+	 	my $name =  $inCAM->GetReply();
+
+		print STDERR "\nHEG !! $name \n";
+
+		sleep(1);
+
+	}
+
+	return 1;
+
+}
+
+## If builded, return layout
+sub Check {
+	my $self    = shift;
+	my $inCAM = shift;
+	my $errMess = shift;
+
+
+	my $result = 1;
+
+	for ( my $i = 0 ; $i < 2 ; $i++ ) {
+
+		$inCAM->COM("get_user_name");
+
+	 	my $name =  $inCAM->GetReply();
+
+		print STDERR "\nChecking  HEG !! $name \n";
+
+
+
+		sleep(1);
+
+	}
+	
+	$result = 0;
+	$$errMess .= "Nelze vytvorit";
+
+	return $result;
+
+}
+#
+#
+
+sub Process {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $errMess = shift;
+
+		for ( my $i = 0 ; $i < 3 ; $i++ ) {
+
+		$inCAM->COM("get_user_name");
+
+	 	my $name =  $inCAM->GetReply();
+
+		print STDERR "\nProcessing  HEG !! $name \n";
+		die "test";
+		sleep(1);
+
+	}
+
+	return 1;
+}
+
+#-------------------------------------------------------------------------------------------#
+# Get/Set method
+#-------------------------------------------------------------------------------------------#
+
+sub SetWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"w"} = $val;
+
+}
+
+sub GetWidth {
+	my $self = shift;
+
+	return $self->{"settings"}->{"w"};
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
+
+}
+
+1;
+

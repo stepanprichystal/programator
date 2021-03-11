@@ -3,7 +3,7 @@
 # Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::SizePart::View::CreatorListFrm;
+package Programs::Panelisation::PnlWizard::Forms::CreatorListFrm;
 use base qw(Widgets::Forms::CustomQueue::MyWxCustomQueue);
 
 #3th party library
@@ -14,7 +14,7 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::CreatorListRowFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Forms::CreatorListRowFrm';
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::Other::AppConf';
 

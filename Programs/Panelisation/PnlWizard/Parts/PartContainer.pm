@@ -20,6 +20,7 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit';
 
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePart';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPart';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
@@ -58,6 +59,7 @@ sub Init {
 
 	# Part 1
 	push( @parts, SizePart->new( $jobId, $self->{"backgroundTaskMngr"} ) );
+	push( @parts, StepPart->new( $jobId, $self->{"backgroundTaskMngr"} ) );
 
 	#push( @parts, SizePart->new( $jobId, $self->{"backgroundTaskMngr"} ) );
 
@@ -91,15 +93,23 @@ sub Init {
 	$self->{"parts"} = \@parts;
 
 	# Bind part events each other
-	for ( my $i = 0 ; $i < scalar(@parts) ; $i++ ) {
+	foreach my $pi (@parts) {
 
-		for ( my $j = 0 ; $j < scalar(@parts) ; $j++ ) {
+		foreach my $pj (@parts) {
 
-			if ( $i != $j ) {
+			if ( $pi != $pj ) {
 
-				#				$self->{"parts"}->[$i]->{"creatorSelectionChangedEvt"}->Add( sub { $self->{"parts"}->[$j]->OnCreatorSelectionChangedHndl(@_) } )
-				#				  ;
-				#				$self->{"parts"}->[$i]->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"parts"}->[$j]->OnCreatorSettingsChangedHndl(@_) } );
+				#	my $hndlSel = $parts[$j]->can('OnOtherPartCreatorSelChangedHndl');
+
+				my $hndlSel = sub { $pj->OnOtherPartCreatorSelChangedHndl(@_) };
+				if ( defined $hndlSel ) {
+					$pi->{"creatorSelectionChangedEvt"}->Add( sub { $hndlSel->(@_) } );
+				}
+
+				my $hndlSett = sub { $pj->OnOtherPartCreatorSettChangedHndl(@_) };
+				if ( defined $hndlSett ) {
+					$pi->{"creatorSettingsChangedEvt"}->Add( sub { $hndlSett->(@_) } );
+				}
 
 			}
 
@@ -116,18 +126,18 @@ sub GetParts {
 }
 
 sub InitPartModel {
-	my $self            = shift;
-	my $inCAM           = shift;
+	my $self  = shift;
+	my $inCAM = shift;
 	my $model = shift;
 
 	#case when group data are taken from disc
 	if ($model) {
- 
+
 		$self->{"wizardModel"} = $model;
 
 		foreach my $part ( @{ $self->{"parts"} } ) {
 
-			my $model = $self->{"wizardModel"}->GetPartModelById($part->GetPartId());
+			my $model = $self->{"wizardModel"}->GetPartModelById( $part->GetPartId() );
 			$part->InitPartModel( $inCAM, $model );
 		}
 	}

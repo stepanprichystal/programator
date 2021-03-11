@@ -3,7 +3,7 @@
 # Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::SizePart::View::CreatorListRowFrm;
+package Programs::Panelisation::PnlWizard::Forms::CreatorListRowFrm;
 use base qw(Widgets::Forms::CustomQueue::MyWxCustomQueueItem);
 
 #3th party library
