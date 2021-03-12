@@ -5,7 +5,7 @@
 #-------------------------------------------------------------------------------------------#
 
 package Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::HEGOrderFrm;
-use base qw(Wx::Panel);
+use base qw(Programs::Panelisation::PnlWizard::Forms::CreatorFrmBase);
 
 #3th party library
 use strict;
@@ -25,17 +25,13 @@ sub new {
 	my $parent = shift;
 	my $jobId  = shift;
 
-	my $self = $class->SUPER::new($parent);
+	my $self = $class->SUPER::new( PnlCreEnums->SizePnlCreator_HEGORDER, $parent, $jobId );
 
 	bless($self);
-
-	$self->{"jobId"} = $jobId;
 
 	$self->__SetLayout();
 
 	# DEFINE EVENTS
-
-	#$self->{"oncreatorSelectionChangedEvt"} = Event->new();
 
 	return $self;
 }
@@ -57,6 +53,9 @@ sub __SetLayout {
 	my $heightValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
 
 	# DEFINE EVENTS
+	Wx::Event::EVT_TEXT( $widthValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $heightTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szRow1->Add( $widthTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -95,8 +94,6 @@ sub GetWidth {
 
 }
 
-
-
 sub SetHeight {
 	my $self = shift;
 	my $val  = shift;
@@ -111,6 +108,7 @@ sub GetHeight {
 	return $self->{"heightValTxt"}->GetValue();
 
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

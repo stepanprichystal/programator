@@ -29,6 +29,7 @@ sub new {
 
 	$self->{"partId"}             = shift;
 	$self->{"jobId"}              = shift;
+	$self->{"pnlType"}            = shift;
 	$self->{"backgroundTaskMngr"} = shift;
 
 	$self->{"model"} = undef;
@@ -81,7 +82,8 @@ sub _InitForm {
 	$partWrapper->{"previewChangedEvt"}->Add( sub { $self->__OnPreviewChangedHndl(@_) } );
 	$partWrapper->{"errIndClickEvent"}->Add( sub  { $self->__OnErrIndClickHndl(@_) } );
 
-	$self->{"form"}->{"creatorSettingsChangedEvt"}->Add( sub { $self->__OnCreatorSettingsChangedHndl() } );
+	$self->{"form"}->{"creatorSettingsChangedEvt"}->Add( sub { $self->__OnCreatorSettingsChangedHndl(@_) } );
+	$self->{"form"}->{"creatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl( @_) } );
 
 }
 
@@ -120,7 +122,7 @@ sub __OnCreatorProcessedHndl {
 	my $creatorKey = shift;
 	my $result     = shift;
 	my $errMess    = shift;
-	
+
 	return 0 if ( $partId ne $self->{"partId"} );    # Catch only event from for this specific part
 
 	$self->{"partWrapper"}->ShowLoading(0);
@@ -150,7 +152,7 @@ sub __OnPreviewChangedHndl {
 
 	unless ($val) {
 
-		$self->__ClearErrors();
+		$self->ClearErrors();
 	}
 
 	$self->{"model"}->SetPreview($val);
@@ -177,17 +179,26 @@ sub __OnErrIndClickHndl {
 
 sub __OnCreatorSettingsChangedHndl {
 	my $self = shift;
+	my $creatorKey = shift;
+
+	my $creatorModel = $self->GetCreators($creatorKey)->[0];
 
 	# Do async process if previeww set
 
 	$self->AsyncProcessSelCreatorModel() if ( $self->GetPreview() );
 
 	# Reise Events
-	$self->{"creatorSettingsChangedEvt"}->Do(@_);
+	$self->{"creatorSettingsChangedEvt"}->Do( $self->GetPartId(), $creatorKey, $creatorModel );
 
 }
 
-#sub _ProcessCreatorSettings {
+sub _ProcessCreatorSettings {
+	my $self = shift;
+	my $creatorKey = shift;
+	
+	
+	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );
+	
 #
 #	# 1)Convert model to Creator settings
 #
@@ -209,10 +220,16 @@ sub __OnCreatorSettingsChangedHndl {
 
 sub GetModel {
 	my $self = shift;
+	my $notUpdate = shift // 0;
+
+	return $self->{"model"} if ($notUpdate);
 
 	# Update model by form values
 	$self->{"model"}->SetCreators( $self->{"form"}->GetCreators() );
 	$self->{"model"}->SetSelectedCreator( $self->{"form"}->GetSelectedCreator() );
+	$self->{"model"}->SetPreview( $self->{"partWrapper"}->GetPreview() );
+
+	#$self->{"model"}->SetStep( $self->{"form"}->GetStep() );
 
 	return $self->{"model"};
 
@@ -228,6 +245,9 @@ sub RefreshGUI {
 	#refresh group form
 	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
 	$self->{"form"}->SetSelectedCreator( $self->{"model"}->GetSelectedCreator() );
+	$self->{"partWrapper"}->SetPreview( $self->{"model"}->GetPreview() );
+
+	#$self->{"form"}->SetStep( $self->{"model"}->GetStep() );
 
 	$self->{"frmHandlersOff"} = 0;
 
@@ -240,21 +260,10 @@ sub AsyncProcessSelCreatorModel {
 
 	#if ( $self->GetPreview() || $ignorePreview ) {
 
-	$self->__ClearErrors();
-
-	$self->{"partWrapper"}->ShowLoading(1);
-
-	$self->{"model"}->SetCreators( $self->{"form"}->GetCreators() );
-	$self->{"model"}->SetSelectedCreator( $self->{"form"}->GetSelectedCreator() );
-
 	# Process by selected creator
 
-	my $creatorKey   = $self->{"model"}->GetSelectedCreator();
-	my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
-
-	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $self->{"partId"}, $creatorKey, $creatorModel->ExportCreatorSettings() );
-
-	#}
+	my $creatorKey = $self->{"model"}->GetSelectedCreator();
+	$self->__AsyncProcessCreatorModel($creatorKey);
 
 }
 
@@ -273,7 +282,7 @@ sub SetPreview {
 	my $val  = shift;
 
 	unless ($val) {
-		$self->__ClearErrors();
+		$self->ClearErrors();
 	}
 
 	$self->{"model"}->SetPreview($val);
@@ -293,18 +302,40 @@ sub IsPartFullyInited {
 	$self->{"isPartFullyInited"};
 }
 
+sub UpdateStep {
+	my $self = shift;
+	my $step = shift;
+
+	$self->{"form"}->UpdateStep($step);
+
+}
+
 sub __AsyncInitCreatorModel {
 	my $self                = shift;
 	my $creatorKey          = shift;
 	my $creatorInitPatarams = shift // [];
 
-	$self->__ClearErrors();
+	$self->ClearErrors();
 
 	$self->{"isPartFullyInited"} = 0;
 
 	$self->{"partWrapper"}->ShowLoading(1);
 
 	$self->{"backgroundTaskMngr"}->AsyncInitPnlCreator( $self->{"partId"}, $creatorKey, $creatorInitPatarams );
+
+}
+
+sub __AsyncProcessCreatorModel {
+	my $self       = shift;
+	my $creatorKey = shift;
+
+	$self->ClearErrors();
+
+	$self->{"partWrapper"}->ShowLoading(1);
+
+	my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
+
+	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $self->{"partId"}, $creatorKey, $creatorModel->ExportCreatorSettings() );
 
 }
 
@@ -355,7 +386,7 @@ sub __OnCreatorSelectionChangedHndl {
 
 }
 
-sub __ClearErrors {
+sub ClearErrors {
 	my $self = shift;
 
 	$self->{"processErrMess"} = undef;

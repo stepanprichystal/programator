@@ -44,6 +44,23 @@ sub GetPreview {
 
 }
 
+sub GetStep {
+	my $self   = shift;
+ 
+	return $self->{"step"};
+
+}
+
+sub SetStep {
+	my $self   = shift;
+	my $val = shift;
+	 
+
+	$self->{"step"} =  $val;
+
+}
+
+
 #
 sub ExportCreatorSettings {
 	my $self = shift;

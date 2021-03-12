@@ -18,7 +18,7 @@ use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlWizard::Forms::CreatorListFrm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
-use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums"; 
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,8 +41,6 @@ sub new {
 	$self->{"jobId"}         = $jobId;
 	$self->{"creatorModels"} = $model->GetCreators();
 
-	
-
 	# DEFINE EVENTS
 
 	$self->{"creatorSelectionChangedEvt"} = Event->new();
@@ -52,16 +50,15 @@ sub new {
 }
 
 sub _SetLayout {
-	my $self  = shift;
-	 
+	my $self = shift;
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# Add empty item
 
 	# DEFINE CONTROLS
-	my $creatorListLayout = $self->__SetLayoutCreatorList( $self );
-	my $creatorViewLayout = $self->__SetLayoutCreatorView( $self );
+	my $creatorListLayout = $self->__SetLayoutCreatorList($self);
+	my $creatorViewLayout = $self->__SetLayoutCreatorView($self);
 
 	# DEFINE EVENTS
 
@@ -79,7 +76,6 @@ sub _SetLayout {
 sub __SetLayoutCreatorList {
 	my $self   = shift;
 	my $parent = shift;
-	 
 
 	# DEFINE CONTROLS
 	my $creatorList = CreatorListFrm->new($self);
@@ -107,7 +103,6 @@ sub __SetLayoutCreatorList {
 sub __SetLayoutCreatorView {
 	my $self   = shift;
 	my $parent = shift;
-	 
 
 	my $stepBackg = Wx::Colour->new( 215, 215, 215 );
 
@@ -134,8 +129,10 @@ sub __SetLayoutCreatorView {
 			$content = $self->OnGetCreatorLayout( $creator->GetModelKey(), $page->GetParent() );
 		}
 
-		die "Creator  control is not defined for creator:" . $creator->GetModelKey() if(!defined $content);
- 
+		die "Creator  control is not defined for creator:" . $creator->GetModelKey() if ( !defined $content );
+
+		$content->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do(@_) } );
+
 		$page->AddContent( $content, 0 );
 
 	}
@@ -183,6 +180,19 @@ sub GetCreators {
 	my $self = shift;
 
 	die "Must not be implemented in base class";
+
+}
+
+sub UpdateStep {
+	my $self = shift;
+	my $step = shift;
+
+	foreach my $modelKey ( $self->{"creatorList"}->GetAllCreatorKeys() ) {
+
+		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+		$creatorFrm->SetStep($step);
+
+	}
 
 }
 

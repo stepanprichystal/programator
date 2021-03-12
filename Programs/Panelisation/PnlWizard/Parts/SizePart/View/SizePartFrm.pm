@@ -100,12 +100,14 @@ sub SetCreators {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
+				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
+				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
 		}
@@ -117,12 +119,17 @@ sub SetCreators {
 # override base class method
 sub GetCreators {
 	my $self = shift;
+	my $creatorKey = shift;
 
 	my @models = ();
 
 	foreach my $model ( @{ $self->{"creatorModels"} } ) {
+		
+		
 
 		my $modelKey = $model->GetModelKey();
+		
+		next if(defined $creatorKey && $creatorKey ne $modelKey);
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
@@ -130,12 +137,14 @@ sub GetCreators {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
+			$model->SetStep( $creatorFrm->GetStep() );
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
+			$model->SetStep( $creatorFrm->GetStep() );
 
 		}
 

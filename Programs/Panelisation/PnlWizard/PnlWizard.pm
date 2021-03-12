@@ -20,7 +20,7 @@ use warnings;
 use aliased 'Programs::Panelisation::PnlWizard::Forms::PnlWizardForm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::PartContainer';
 use aliased 'Programs::Panelisation::PnlWizard::Core::StorageModelMngr';
-
+use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr';
 
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportCheckerForm';
@@ -53,7 +53,8 @@ use aliased 'Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr';
 #use aliased 'CamHelpers::CamJob';
 #use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
-#
+use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
+
 #use aliased 'Packages::Export::PreExport::FakeLayers';
 
 #-------------------------------------------------------------------------------------------#
@@ -113,9 +114,8 @@ sub Init {
 	$self->{"launcher"} = $launcher;
 
 	$self->{"pnlType"} = $pnlType;
-	
+
 	$self->{"form"} = PnlWizardForm->new( -1, $self->{"jobId"}, $self->{"pnlType"} );
-	
 
 	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"pnlType"} );
 
@@ -127,8 +127,7 @@ sub Init {
 
 	#$self->{"inCAM"}->SetDisplay(0);
 
-
-	$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"backgroundTaskMngr"} );
+	$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"pnlType"}   );
 
 	my $title    = "Check before panelisation " . $self->{"jobId"};
 	my $taskName = "Create force";
@@ -147,20 +146,17 @@ sub Init {
 	#$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"jobId"}, "panel" ,\@cells );
 	#
 	#	# Build phyisic table with groups, which has completely set GUI
-	
-	
-	
+
 	my @parts = $self->{"partContainer"}->GetParts();
 	$self->{"form"}->BuildPartContainer( $self->{"inCAM"}, \@parts );
-	
-	if($self->{"storageModelMngr"}->ExistModelData()){
-		
-		$self->{"form"}->EnableLoadLastBtn(1, $self->{"storageModelMngr"}->GetModelDate(1,1) )
-	}else{
-		$self->{"form"}->EnableLoadLastBtn(0)
+
+	if ( $self->{"storageModelMngr"}->ExistModelData() ) {
+
+		$self->{"form"}->EnableLoadLastBtn( 1, $self->{"storageModelMngr"}->GetModelDate( 1, 1 ) );
 	}
-	
-	
+	else {
+		$self->{"form"}->EnableLoadLastBtn(0);
+	}
 
 	# 4) Initialization of each single group
 
@@ -174,6 +170,9 @@ sub Init {
 	#==> export
 	#7) CheckBeforeExport()
 	#8) GetGroupData()
+
+	$self->__InitModel();
+	$self->__RefreshGUI();
 
 	print STDERR "Init model START\n";
 	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"} );
@@ -237,6 +236,8 @@ sub __OnCreateClickHndl {
 
 	$self->__StoreModelToDisc();
 
+	$self->{"partContainer"}->ClearErrors();
+
 	$self->{"form"}->SetFinalProcessLayout(1);
 
 	$self->{"popupChecker"}->ClearCheckClasses();
@@ -295,6 +296,12 @@ sub __OnLoadLastClickHndl {
 	die "Model data not exist" if ( !$self->{"storageModelMngr"}->ExistModelData() );
 
 	my $restoredModel = $self->{"storageModelMngr"}->LoadModel();
+	 $self->{"model"} = $restoredModel; # update model
+
+	# Set main form
+	$self->__RefreshGUI($restoredModel);
+
+	# Set parts
 
 	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"}, $restoredModel );
 	$self->{"partContainer"}->RefreshGUI();
@@ -309,10 +316,12 @@ sub __OnLoadDefaultClickHndl {
 		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
 	}
 
-	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"}); # Load generally model
+	$self->__InitModel();
+	$self->__RefreshGUI();
+
+	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"} );    # Load generally model
 	$self->{"partContainer"}->RefreshGUI();
-	$self->{"partContainer"}->AsyncInitSelCreatorModel(); # Load asynchronously selected model
-	 
+	$self->{"partContainer"}->AsyncInitSelCreatorModel();           # Load asynchronously selected model
 
 }
 
@@ -455,6 +464,7 @@ sub __SetHandlers {
 	$self->{"form"}->{"loadDefaultClickEvt"}->Add( sub { $self->__OnLoadDefaultClickHndl(@_) } );
 
 	$self->{"form"}->{"previewChangedEvt"}->Add( sub { $self->__OnPreviewChangedlHndl(@_) } );
+	$self->{"form"}->{"stepChangedEvt"}->Add( sub    { $self->{"partContainer"}->UpdateStep(@_) } );
 
 	$self->{"partContainer"}->{"asyncPanelCreatedEvt"}->Add( sub   { $self->__OnAsyncPanelCreatedHndl(@_) } );
 	$self->{"backgroundTaskMngr"}->{"taskCntChangedEvt"}->Add( sub { $self->__OnCurrentTaskCntChangedHndl(@_) } );
@@ -481,11 +491,79 @@ sub __SetHandlers {
 sub __StoreModelToDisc {
 	my $self = shift;
 
-	my $model = $self->{"partContainer"}->GetModel();
+	$self->__UpdateModel();
 
-	return $self->{"storageModelMngr"}->StoreModel($model);
+	return $self->{"storageModelMngr"}->StoreModel( $self->{"model"} );
 
 }
+
+sub __UpdateModel {
+	my $self = shift;
+
+	# Set model property from main form
+	
+		# Set part models
+	foreach my $partModelInf ( @{ $self->{"partContainer"}->GetModel() } ) {
+
+		$self->{"model"}->SetPartModelById( $partModelInf->[0], $partModelInf->[1] );
+	}
+	
+	$self->{"model"}->SetStep( $self->{"form"}->GetStep() );
+	$self->{"model"}->SetPreview( $self->{"form"}->GetPreview() );
+
+}
+
+sub __InitModel {
+	my $self = shift;
+
+	# Create fresh model
+	$self->{"model"} = WizardModel->new( $self->{"jobId"} );
+
+	# Set model step
+	my $step = "unknown_name";
+
+	if ( $self->{"pnlType"} eq Enums->PnlWizardType_PRODUCTIONPNL ) {
+
+		$step = "panel";
+	}
+	elsif ( $self->{"pnlType"} eq Enums->PnlWizardType_CUSTOMERPNL ) {
+		$step = "mpanel";
+	}
+
+	$self->{"model"}->SetStep($step);
+
+	# Set preview
+	$self->{"model"}->SetPreview(0);
+
+	# Set part models
+	foreach my $partModelInf ( @{ $self->{"partContainer"}->GetModel(1) } ) {
+
+		$self->{"model"}->SetPartModelById( $partModelInf->[0], $partModelInf->[1] );
+	}
+
+	# Pre init creator models
+	my %parts = %{ $self->{"model"}->GetParts() };
+	foreach my $partId ( keys %parts ) {
+
+		my @creators = @{$parts{$partId}->GetCreators()};
+
+		foreach my $modelCreator (@creators) {
+			
+			$modelCreator->SetStep($step);
+		}
+
+	}
+
+}
+
+sub __RefreshGUI {
+	my $self = shift;
+
+	$self->{"form"}->SetStep( $self->{"model"}->GetStep() );
+	$self->{"form"}->SetPreview( $self->{"model"}->GetPreview() );
+
+}
+
 #
 
 #-------------------------------------------------------------------------------------------#

@@ -44,13 +44,11 @@ sub new {
 
 	bless($self);
 
-	
-
 	# Properties
-	$self->{"title"}   = $title;
-	$self->{"pnlType"} = $pnlType;
+	$self->{"title"}           = $title;
+	$self->{"pnlType"}         = $pnlType;
 	$self->{"loadLastEnabled"} = 0;
-	
+
 	$self->__SetLayout();
 
 	#EVENTS
@@ -63,6 +61,7 @@ sub new {
 	$self->{"loadDefaultClickEvt"} = Event->new();
 
 	$self->{"previewChangedEvt"} = Event->new();
+	$self->{"stepChangedEvt"}    = Event->new();
 
 	#	$self->{"onExportASync"} = Event->new();
 	#	$self->{"onClose"}       = Event->new();
@@ -243,7 +242,7 @@ sub SetAsyncTaskRunningLayout {
 		$self->EnableCancelBtn(0);
 	}
 	else {
-		$self->{"loadLastBtn"}->Enable() if($self->{"loadLastEnabled"});
+		$self->{"loadLastBtn"}->Enable() if ( $self->{"loadLastEnabled"} );
 		$self->{"loadDefaultBtn"}->Enable();
 		$self->EnableCreateBtn(1);
 		$self->EnableShowInCAMBtn(1);
@@ -310,8 +309,7 @@ sub EnableLoadLastBtn {
 		$self->{"loadLastBtn"}->SetLabel("Last settings");
 
 	}
-	
-	
+
 	$self->{"loadLastEnabled"} = $enable;
 
 }
@@ -336,6 +334,40 @@ sub GetMessageMngr {
 	return $self->_GetMessageMngr();
 
 }
+
+sub GetStep {
+	my $self = shift;
+
+	return $self->{"stepValTxt"}->GetValue();
+}
+
+sub SetStep {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"stepValTxt"}->SetValue($value);
+}
+
+sub GetPreview {
+	my $self = shift;
+
+	if ( $self->{"previewChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
+sub SetPreview {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"previewChb"}->SetValue($value);
+}
+
 #
 ## Create event/handler connection between groups by binding handlers to evnets
 ## provided by groups
@@ -438,8 +470,7 @@ sub __SetLayout {
 
 	# InCAM busy panel
 
-	use aliased 'Widgets::Forms::MyWxFrame';
-
+	 
 	#main formDefain forms
 	#	my $flags = &Wx::wxCAPTION;
 	#	my $pnlInCAMBusy = MyWxFrame->new(
@@ -586,6 +617,7 @@ sub __SetLayoutHeader {
 	# REGISTER EVENTS
 
 	Wx::Event::EVT_CHECKBOX( $previewChb, -1, sub { $self->{"previewChangedEvt"}->Do( ( $self->{"previewChb"}->IsChecked() ? 1 : 0 ) ) } );
+	Wx::Event::EVT_TEXT( $stepValTxt, -1, sub { $self->{"stepChangedEvt"}->Do( $stepValTxt->GetValue() ) } );
 	Wx::Event::EVT_BUTTON( $loadLastBtn,    -1, sub { $self->{"loadLastClickEvt"}->Do() } );
 	Wx::Event::EVT_BUTTON( $loadDefaultBtn, -1, sub { $self->{"loadDefaultClickEvt"}->Do() } );
 
@@ -601,6 +633,8 @@ sub __SetLayoutHeader {
 
 	$self->{"loadLastBtn"}    = $loadLastBtn;
 	$self->{"loadDefaultBtn"} = $loadDefaultBtn;
+
+	$self->{"stepValTxt"} = $stepValTxt;
 
 	$self->{"previewChb"} = $previewChb;
 

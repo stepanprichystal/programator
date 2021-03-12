@@ -46,7 +46,7 @@ use warnings;
 
 sub new {
 	my $class = shift;
-	my $self = $class->SUPER::new(@_);
+	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
 	$self->{"step"}  = undef;
@@ -58,20 +58,10 @@ sub new {
 	return $self;
 }
 
+sub GetParts {
+	my $self = shift;
 
-sub GetStep {
-	my $self   = shift;
- 
-	return $self->{"step"};
-
-}
-
-sub SetStep {
-	my $self   = shift;
-	my $val = shift;
-	 
-
-	$self->{"step"} =  $val;
+	return $self->{"parts"};
 
 }
 

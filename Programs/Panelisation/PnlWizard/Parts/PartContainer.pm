@@ -23,7 +23,6 @@ use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePa
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPart';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods, requested by IUnit interface
@@ -38,8 +37,8 @@ sub new {
 	$self->{"asyncCreatorsInitedEvt"} = Event->new();    #
 	                                                     #	$self->{"switchAppEvt"} = Event->new();    # allow to run another app from unitForm
 
-	$self->{"jobId"}              = shift;
-	$self->{"wizardModel"}        = WizardModel->new( $self->{"jobId"} );
+	$self->{"jobId"} = shift;
+
 	$self->{"backgroundTaskMngr"} = shift;
 	$self->{"parts"}              = [];
 
@@ -50,6 +49,7 @@ sub new {
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
+	my $pnlType = shift;
 
 	my $jobId = $self->{"jobId"};
 
@@ -58,8 +58,8 @@ sub Init {
 	my @parts = ();
 
 	# Part 1
-	push( @parts, SizePart->new( $jobId, $self->{"backgroundTaskMngr"} ) );
-	push( @parts, StepPart->new( $jobId, $self->{"backgroundTaskMngr"} ) );
+	push( @parts, SizePart->new( $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
+	push( @parts, StepPart->new( $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
 
 	#push( @parts, SizePart->new( $jobId, $self->{"backgroundTaskMngr"} ) );
 
@@ -79,7 +79,7 @@ sub Init {
 	#	# Save to each unit->dataMngr default info
 	#	foreach my $part (@parts) {
 	#
-	#		$part->SetWizardModel( $self->{"wizardModel"} );
+	#		$part->SetWizardModel( $self->{"model"} );
 	#	}
 	#
 	#	# Add handelr to "switchAppEvt" for some events
@@ -114,7 +114,6 @@ sub Init {
 			}
 
 		}
-
 	}
 
 }
@@ -126,30 +125,27 @@ sub GetParts {
 }
 
 sub InitPartModel {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $model = shift;
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $restoredModel = shift;
 
 	#case when group data are taken from disc
-	if ($model) {
-
-		$self->{"wizardModel"} = $model;
+	if ($restoredModel) {
 
 		foreach my $part ( @{ $self->{"parts"} } ) {
 
-			my $model = $self->{"wizardModel"}->GetPartModelById( $part->GetPartId() );
-			$part->InitPartModel( $inCAM, $model );
+			my $partModel = $restoredModel->GetPartModelById( $part->GetPartId() );
+			$part->InitPartModel( $inCAM, $partModel );
 		}
 	}
-
-	#case, when "default" data for group are loaded
 	else {
-
+		
 		foreach my $part ( @{ $self->{"parts"} } ) {
 
-			$part->InitPartModel($inCAM);
+			$part->InitPartModel( $inCAM, undef );
 		}
 	}
+
 }
 
 sub AsyncInitSelCreatorModel {
@@ -236,18 +232,26 @@ sub GetPartsCheckClass {
 
 }
 
+# Returl list of parts
 sub GetModel {
 	my $self = shift;
+	my $notUpdate = shift;
 
 	# Set all parts
-
+	my @partModels = ();
 	foreach my $part ( @{ $self->{"parts"} } ) {
 
-		$self->{"wizardModel"}->SetPartModelById( $part->GetPartId(), $part->GetModel() );
+		push( @partModels, [ $part->GetPartId(), $part->GetModel($notUpdate) ] );
 
+		#$self->{"model"}->SetPartModelById( $part->GetPartId(), $part->GetModel() );
 	}
 
-	return $self->{"wizardModel"};
+	# Set preview
+	#$self->{"model"}->SetPreview( $self->{"partWrapper"}->GetPreview() );
+
+	# Set step name
+
+	return \@partModels;
 
 }
 
@@ -266,6 +270,26 @@ sub IsPartFullyInited {
 
 	return $inited;
 
+}
+
+sub ClearErrors {
+	my $self = shift;
+
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		$part->ClearErrors();
+	}
+
+}
+
+sub UpdateStep {
+	my $self = shift;
+	my $step = shift;
+
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		$part->UpdateStep($step);
+	}
 }
 
 ##Set handler for catch changing state of each unit
@@ -359,12 +383,12 @@ sub __OnAsyncCreatorInitedHndl {
 
 # Set previwe
 sub SetPreviewOnAllPart {
-	my $self   = shift;
-	my $partId = shift;    # if defined, set preview ON up to this specific partId (this part is excluded). By order from first partId
+	my $self       = shift;
+	my $lastPartId = shift;    # if defined, set preview ON up to this specific partId (this part is excluded). By order from first partId
 
-	for ( my $i = scalar( @{ $self->{"parts"} } ) - 1 ; $i >= 0 ; $i-- ) {
+	for ( my $i = 0 ; $i < scalar( @{ $self->{"parts"} } ) ; $i++ ) {
 
-		last if ( defined $partId && $self->{"parts"}->[$i]->GetPartId() eq $partId );
+		last if ( defined $lastPartId && $self->{"parts"}->[$i]->GetPartId() eq $lastPartId );
 
 		if ( !$self->{"parts"}->[$i]->GetPreview() ) {
 

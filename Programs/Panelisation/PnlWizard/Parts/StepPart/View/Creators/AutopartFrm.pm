@@ -5,7 +5,7 @@
 #-------------------------------------------------------------------------------------------#
 
 package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutopartFrm;
-use base qw(Wx::Panel);
+use base qw(Programs::Panelisation::PnlWizard::Forms::CreatorFrmBase);
 
 #3th party library
 use strict;
@@ -15,7 +15,7 @@ use Wx;
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
-
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -25,18 +25,15 @@ sub new {
 	my $parent = shift;
 	my $jobId  = shift;
 
-	my $self = $class->SUPER::new($parent);
+	my $self = $class->SUPER::new(PnlCreEnums->StepPnlCreator_AUTOPART, $parent, $jobId);
 
 	bless($self);
-
-	$self->{"jobId"} = $jobId;
-
+ 
 	$self->__SetLayout();
 
 	# DEFINE EVENTS
 
-	#$self->{"oncreatorSelectionChangedEvt"} = Event->new();
-
+	 
 	return $self;
 }
 
@@ -57,6 +54,8 @@ sub __SetLayout {
 	my $heightValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
 
 	# DEFINE EVENTS
+	Wx::Event::EVT_TEXT( $widthValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $heightTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szRow1->Add( $widthTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );

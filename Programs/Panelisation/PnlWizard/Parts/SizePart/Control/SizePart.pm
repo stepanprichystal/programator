@@ -41,11 +41,11 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 
-	$self = $class->SUPER::new(Enums->Part_PNLSIZE, @_);
+	$self = $class->SUPER::new( Enums->Part_PNLSIZE, @_ );
 	bless $self;
 
 	#uique key within all units
- 
+
 	$self->{"model"} = PartModel->new();
 
 	$self->{"checkClass"} = PartCheckClass->new();
@@ -91,35 +91,34 @@ sub InitForm {
 }
 
 sub InitPartModel {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $modelData = shift;
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $restoredModel = shift;
 
-	if ( defined $modelData ) {
+	if ( defined $restoredModel ) {
 
 		# Load settings from history
 
-		$self->{"model"} = $modelData;
+		$self->{"model"} = $restoredModel;
 	}
 	else {
 
-		# Set default settings
-		$self->{"model"} = PartModel->new();
-
+		# Init default
 	}
 }
 
 sub OnOtherPartCreatorSelChangedHndl {
 	my $self            = shift;
-	my $changedPartId   = shift;
-	my $creatorSettings = shift
+	my $partId          = shift;
+	my $creatorKey      = shift;
+	my $creatorSettings = shift;
 
 }
 
 sub OnOtherPartCreatorSettChangedHndl {
-	my $self          = shift;
-	my $changedPartId = shift;
-	my $newCreatorKey = shift
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
 
 }
 

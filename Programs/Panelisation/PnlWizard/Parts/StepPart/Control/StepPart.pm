@@ -112,15 +112,16 @@ sub InitPartModel {
 
 sub OnOtherPartCreatorSelChangedHndl {
 	my $self            = shift;
-	my $changedPartId   = shift;
-	my $creatorSettings = shift
+	my $partId          = shift;
+	my $creatorKey      = shift;
+	my $creatorSettings = shift;
 
 }
 
 sub OnOtherPartCreatorSettChangedHndl {
-	my $self          = shift;
-	my $changedPartId = shift;
-	my $newCreatorKey = shift
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
 
 }
 #-------------------------------------------------------------------------------------------#

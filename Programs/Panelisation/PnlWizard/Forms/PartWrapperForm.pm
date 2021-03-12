@@ -191,7 +191,17 @@ sub SetPreview {
 
 sub GetPreview {
 	my $self = shift;
-	return $self->{"previewChb"}->GetValue();
+	
+	
+	if ( $self->{"previewChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+	 
 }
 
 sub ShowLoading {
