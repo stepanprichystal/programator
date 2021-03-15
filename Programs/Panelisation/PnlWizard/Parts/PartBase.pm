@@ -1,19 +1,15 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Structure represent group of operation on technical procedure
-# Tell which operation will be merged, thus which layer will be merged to one file
+# Description: Base class for part controls
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlWizard::Parts::PartBase;
-
-# Abstract class #
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-#use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
@@ -27,31 +23,32 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"partId"}             = shift;
+	$self->{"partId"}             = shift;    # unique part id
 	$self->{"jobId"}              = shift;
-	$self->{"pnlType"}            = shift;
+	$self->{"pnlType"}            = shift;    # customer / production panel
 	$self->{"backgroundTaskMngr"} = shift;
 
-	$self->{"model"} = undef;
+	# PROPERTIES
 
-	$self->{"checkClass"} = undef;
+	$self->{"model"}      = undef;            # data model for specific part. Set by subclass
+	$self->{"checkClass"} = undef;            # Checking model before panelisation. Set by subclass
 
-	$self->{"form"}        = undef;    #form which represent GUI of this group
-	$self->{"partWrapper"} = undef;    #$self->{"eventClass"}   = undef;    # define connection between all groups by group and envents handler
+	$self->{"form"}        = undef;           # View form for part
+	$self->{"partWrapper"} = undef;           # Wrapper form reference where form is incluced in
 
-	$self->{"processErrMess"} = undef;
+	# Helper properties
+	$self->{"processErrMess"}    = undef;     # Array referencem where text errors during init/process part are stored
+	$self->{"frmHandlersOff"}    = 0;         # state indicator if handler shoud be processed
+	$self->{"isPartFullyInited"} = 0;         # state indicator if part is fully loaded (assync loading)
 
-	# Events
-	$self->{"creatorReInitdEvt"}          = Event->new();
+	# EVENTS
 	$self->{"creatorSelectionChangedEvt"} = Event->new();
 	$self->{"creatorSettingsChangedEvt"}  = Event->new();
+	$self->{"previewChangedEvt"}          = Event->new();
+	$self->{"asyncCreatorProcessedEvt"}   = Event->new();
+	$self->{"asyncCreatorInitedEvt"}      = Event->new();
 
-	$self->{"modelChangedEvt"}          = Event->new();
-	$self->{"previewChangedEvt"}        = Event->new();
-	$self->{"asyncCreatorProcessedEvt"} = Event->new();
-	$self->{"asyncCreatorInitedEvt"}    = Event->new();
-
-	# Se handlers
+	# Set handlers
 
 	$self->{"backgroundTaskMngr"}->{"pnlCreatorInitedEvt"}->Add( sub   { $self->__OnCreatorInitedHndl(@_) } );
 	$self->{"backgroundTaskMngr"}->{"pnlCreatorProcesedEvt"}->Add( sub { $self->__OnCreatorProcessedHndl(@_) } );
@@ -59,19 +56,124 @@ sub new {
 	return $self;
 }
 
+#-------------------------------------------------------------------------------------------#
+#  Interface method
+#-------------------------------------------------------------------------------------------#
+
+# Return updated model by values from View
+sub GetModel {
+	my $self = shift;
+	my $notUpdate = shift // 0;
+
+	return $self->{"model"} if ($notUpdate);
+
+	# Update model by form values
+	$self->{"model"}->SetCreators( $self->{"form"}->GetCreators() );
+	$self->{"model"}->SetSelectedCreator( $self->{"form"}->GetSelectedCreator() );
+	$self->{"model"}->SetPreview( $self->{"partWrapper"}->GetPreview() );
+	return $self->{"model"};
+
+}
+
+# Set values from model to View
+sub RefreshGUI {
+	my $self = shift;
+
+	$self->{"frmHandlersOff"} = 1;
+	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
+	$self->{"form"}->SetSelectedCreator( $self->{"model"}->GetSelectedCreator() );
+	$self->{"partWrapper"}->SetPreview( $self->{"model"}->GetPreview() );
+
+	$self->{"frmHandlersOff"} = 0;
+}
+
+# Asynchronously process selected creator for this part
+sub AsyncProcessSelCreatorModel {
+	my $self = shift;
+
+	# Process by selected creator
+
+	my $creatorKey = $self->{"model"}->GetSelectedCreator();
+	$self->__AsyncProcessCreatorModel($creatorKey);
+
+}
+
+# Asynchronously initialize selected creator for this part
+sub AsyncInitSelCreatorModel {
+	my $self = shift;
+
+	my $creatorKey = $self->{"model"}->GetSelectedCreator();
+
+	$self->__AsyncInitCreatorModel($creatorKey);
+}
+
+# Set directly preview option
+sub SetPreview {
+	my $self = shift;
+	my $val  = shift;
+
+	unless ($val) {
+		$self->ClearErrors();
+	}
+
+	$self->{"model"}->SetPreview($val);
+	$self->{"partWrapper"}->SetPreview($val);
+
+}
+
+# Get previre option
+sub GetPreview {
+	my $self = shift;
+
+	return $self->{"model"}->GetPreview();
+}
+
+# If all asynchronous init calling are done, return 1
+sub IsPartFullyInited {
+	my $self = shift;
+
+	$self->{"isPartFullyInited"};
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Other public  method
+#-------------------------------------------------------------------------------------------#
+
+# Return unique parrt Id
 sub GetPartId {
 	my $self = shift;
 
 	return $self->{"partId"};
+}
+
+# Update step if changed in main form
+sub UpdateStep {
+	my $self = shift;
+	my $step = shift;
+
+	$self->{"form"}->UpdateStep($step);
 
 }
 
+# Clear current errros for part
+sub ClearErrors {
+	my $self = shift;
+
+	$self->{"processErrMess"} = undef;
+	$self->{"partWrapper"}->SetErrIndicator(0);
+}
+
+# Return class for asynchronous checking
 sub GetCheckClass {
 	my $self = shift;
 
 	return $self->{"checkClass"};
 
 }
+
+#-------------------------------------------------------------------------------------------#
+#  Private/protected helper  method
+#-------------------------------------------------------------------------------------------#
 
 sub _InitForm {
 	my $self        = shift;
@@ -82,11 +184,47 @@ sub _InitForm {
 	$partWrapper->{"previewChangedEvt"}->Add( sub { $self->__OnPreviewChangedHndl(@_) } );
 	$partWrapper->{"errIndClickEvent"}->Add( sub  { $self->__OnErrIndClickHndl(@_) } );
 
-	$self->{"form"}->{"creatorSettingsChangedEvt"}->Add( sub { $self->__OnCreatorSettingsChangedHndl(@_) } );
-	$self->{"form"}->{"creatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl( @_) } );
+	$self->{"form"}->{"creatorSettingsChangedEvt"}->Add( sub  { $self->__OnCreatorSettingsChangedHndl(@_) } );
+	$self->{"form"}->{"creatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl(@_) } );
 
 }
 
+# Do init specific creator asynchronously
+sub __AsyncInitCreatorModel {
+	my $self                = shift;
+	my $creatorKey          = shift;
+	my $creatorInitPatarams = shift // [];
+
+	$self->ClearErrors();
+
+	$self->{"isPartFullyInited"} = 0;
+
+	$self->{"partWrapper"}->ShowLoading(1);
+
+	$self->{"backgroundTaskMngr"}->AsyncInitPnlCreator( $self->{"partId"}, $creatorKey, $creatorInitPatarams );
+
+}
+
+# Do process specific creator asynchronously
+sub __AsyncProcessCreatorModel {
+	my $self       = shift;
+	my $creatorKey = shift;
+
+	$self->ClearErrors();
+
+	$self->{"partWrapper"}->ShowLoading(1);
+
+	my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
+
+	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $self->{"partId"}, $creatorKey, $creatorModel->ExportCreatorSettings() );
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Background worker handlers
+#-------------------------------------------------------------------------------------------#
+
+# Handler which catch result of asynchronous init calling
 sub __OnCreatorInitedHndl {
 	my $self       = shift;
 	my $partId     = shift;
@@ -103,19 +241,16 @@ sub __OnCreatorInitedHndl {
 	$self->{"model"}->GetCreatorModelByKey($creatorKey)->ImportCreatorSettings($JSONSett);
 
 	$self->{"frmHandlersOff"} = 1;
-
-	#my $groupData = $self->{"dataMngr"}->GetGroupData();
-
-	#refresh group form
 	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
+	$self->{"frmHandlersOff"} = 0;
 
-	$self->{"frmHandlersOff"}    = 0;
 	$self->{"isPartFullyInited"} = 1;
 
 	$self->{"asyncCreatorInitedEvt"}->Do( $creatorKey, $result );
 
 }
 
+# Handler which catch result of asynchronous process calling
 sub __OnCreatorProcessedHndl {
 	my $self       = shift;
 	my $partId     = shift;
@@ -136,15 +271,13 @@ sub __OnCreatorProcessedHndl {
 
 	# add error to wraper
 	$self->{"partWrapper"}->SetErrIndicator( ( defined $self->{"processErrMess"} ? 1 : 0 ) );
-
-	# Call sub class method if implemented
-	if ( $self->can("OnCreatorProcessedHndl") ) {
-		$self->OnCreatorProcessedHndl( $creatorKey, $result, $errMess );
-	}
-
 	$self->{"asyncCreatorProcessedEvt"}->Do( $creatorKey, $result, $errMess );
 
 }
+
+#-------------------------------------------------------------------------------------------#
+#  View handlers
+#-------------------------------------------------------------------------------------------#
 
 sub __OnPreviewChangedHndl {
 	my $self = shift;
@@ -178,10 +311,12 @@ sub __OnErrIndClickHndl {
 }
 
 sub __OnCreatorSettingsChangedHndl {
-	my $self = shift;
+	my $self       = shift;
 	my $creatorKey = shift;
 
-	my $creatorModel = $self->GetCreators($creatorKey)->[0];
+	return 0 if ( $self->{"frmHandlersOff"} );
+
+	my $creatorModel = $self->{"form"}->GetCreators($creatorKey)->[0];
 
 	# Do async process if previeww set
 
@@ -191,186 +326,6 @@ sub __OnCreatorSettingsChangedHndl {
 	$self->{"creatorSettingsChangedEvt"}->Do( $self->GetPartId(), $creatorKey, $creatorModel );
 
 }
-
-sub _ProcessCreatorSettings {
-	my $self = shift;
-	my $creatorKey = shift;
-	
-	
-	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );
-	
-#
-#	# 1)Convert model to Creator settings
-#
-#	# 2)Process creator on background^
-#	my $creatorType = "test_creator";
-#
-#	$self->{"newBackgroundTaskEvt"}->Do( $creatorType, )
-#
-#}
-#
-#sub __BackgroundWorker {
-#	my $taskId            = shift;
-#	my $taskParams        = shift;
-#	my $inCAM             = shift;
-#	my $thrPogressInfoEvt = shift;
-#	my $thrMessageInfoEvt = shift;
-#
-#}
-
-sub GetModel {
-	my $self = shift;
-	my $notUpdate = shift // 0;
-
-	return $self->{"model"} if ($notUpdate);
-
-	# Update model by form values
-	$self->{"model"}->SetCreators( $self->{"form"}->GetCreators() );
-	$self->{"model"}->SetSelectedCreator( $self->{"form"}->GetSelectedCreator() );
-	$self->{"model"}->SetPreview( $self->{"partWrapper"}->GetPreview() );
-
-	#$self->{"model"}->SetStep( $self->{"form"}->GetStep() );
-
-	return $self->{"model"};
-
-}
-
-sub RefreshGUI {
-	my $self = shift;
-
-	$self->{"frmHandlersOff"} = 1;
-
-	#my $groupData = $self->{"dataMngr"}->GetGroupData();
-
-	#refresh group form
-	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
-	$self->{"form"}->SetSelectedCreator( $self->{"model"}->GetSelectedCreator() );
-	$self->{"partWrapper"}->SetPreview( $self->{"model"}->GetPreview() );
-
-	#$self->{"form"}->SetStep( $self->{"model"}->GetStep() );
-
-	$self->{"frmHandlersOff"} = 0;
-
-}
-
-sub AsyncProcessSelCreatorModel {
-	my $self = shift;
-
-	#my $ignorePreview = shift // 0;
-
-	#if ( $self->GetPreview() || $ignorePreview ) {
-
-	# Process by selected creator
-
-	my $creatorKey = $self->{"model"}->GetSelectedCreator();
-	$self->__AsyncProcessCreatorModel($creatorKey);
-
-}
-
-# Run after InitModel, update form of selected creator asynchronously
-sub AsyncInitSelCreatorModel {
-	my $self = shift;
-
-	my $creatorKey = $self->{"model"}->GetSelectedCreator();
-
-	$self->__AsyncInitCreatorModel($creatorKey);
-
-}
-
-sub SetPreview {
-	my $self = shift;
-	my $val  = shift;
-
-	unless ($val) {
-		$self->ClearErrors();
-	}
-
-	$self->{"model"}->SetPreview($val);
-	$self->{"partWrapper"}->SetPreview($val);
-
-}
-
-sub GetPreview {
-	my $self = shift;
-
-	return $self->{"model"}->GetPreview();
-}
-
-sub IsPartFullyInited {
-	my $self = shift;
-
-	$self->{"isPartFullyInited"};
-}
-
-sub UpdateStep {
-	my $self = shift;
-	my $step = shift;
-
-	$self->{"form"}->UpdateStep($step);
-
-}
-
-sub __AsyncInitCreatorModel {
-	my $self                = shift;
-	my $creatorKey          = shift;
-	my $creatorInitPatarams = shift // [];
-
-	$self->ClearErrors();
-
-	$self->{"isPartFullyInited"} = 0;
-
-	$self->{"partWrapper"}->ShowLoading(1);
-
-	$self->{"backgroundTaskMngr"}->AsyncInitPnlCreator( $self->{"partId"}, $creatorKey, $creatorInitPatarams );
-
-}
-
-sub __AsyncProcessCreatorModel {
-	my $self       = shift;
-	my $creatorKey = shift;
-
-	$self->ClearErrors();
-
-	$self->{"partWrapper"}->ShowLoading(1);
-
-	my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
-
-	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $self->{"partId"}, $creatorKey, $creatorModel->ExportCreatorSettings() );
-
-}
-
-#
-## Update groupd data with values from GUI
-#sub UpdateGroupData {
-#	my $self = shift;
-#
-#	my $frm = $self->{"form"};
-#
-#	#if form is init/showed to user, return group data edited by form
-#	#else return default group data, not processed by form
-#
-#	if ($frm) {
-#		my $groupData = $self->{"dataMngr"}->GetGroupData();
-#
-#		$groupData->SetExportMeasurePdf( $frm->GetExportMeasurePdf() );
-#		$groupData->SetBuildMLStackup( $frm->GetBuildMLStackup() );
-#
-#	}
-#
-#}
-
-#sub __RefreshGUICreator {
-#	my $self = shift;
-#	my $creatorKey = shift;
-#
-#
-#
-#
-#}
-
-#-------------------------------------------------------------------------------------------#
-#  Handlers
-#-------------------------------------------------------------------------------------------#
 
 sub __OnCreatorSelectionChangedHndl {
 	my $self       = shift;
@@ -382,15 +337,8 @@ sub __OnCreatorSelectionChangedHndl {
 	$self->__AsyncInitCreatorModel($creatorKey);
 
 	# Reise evevents for other parts
-	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey);
+	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );
 
-}
-
-sub ClearErrors {
-	my $self = shift;
-
-	$self->{"processErrMess"} = undef;
-	$self->{"partWrapper"}->SetErrIndicator(0);
 }
 
 #-------------------------------------------------------------------------------------------#

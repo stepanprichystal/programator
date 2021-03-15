@@ -1,6 +1,7 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Check class for checking before processing panel creator
+# Class should contain OnItemResult event
+# Class must implement ICheckClass
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPartCheck;
@@ -24,21 +25,22 @@ sub new {
 	my $class   = shift;
 	my $inCAM   = shift;
 	my $jobId   = shift;
-	my $errMngr = shift;
 	my $self    = {};
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
+	# PROPERTIES
+
 	$self->{"inCAM"}   = $inCAM;
 	$self->{"jobId"}   = $jobId;
 	
-
 
 	return $self;
 
 }
 
+# Do check of creator settings and part settings
 sub Check {
 	my $self  = shift;
 	my $model = shift;

@@ -1,34 +1,20 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: This is class, which represent "presenter"
-#
-# Every group in "export checker program" is composed from three layers:
-# 1) Model - responsible for actual group data, which are displyed in group form
-# 2) Presenter -  responsible for: edit/get goup data (model), build and refresh from for group
-# 3) View - only display data, which are passed from model by presenter class
+# Description: Class is responsible for creating panel profile
+# Import/Export settings method are meant for using class in bacground
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlCreator::StepsPnlCreator::AutopartSteps;
+package Programs::Panelisation::PnlCreator::SizePnlCreator::MatrixSize;
 use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
 
 use Class::Interface;
-&implements('Programs::Panelisation::PnlCreator::StepsPnlCreator::IStep');
+&implements('Programs::Panelisation::PnlCreator::SizePnlCreator::ISize');
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
-
-#use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
-#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpCheckData';
-#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpPrepareData';
-#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpExportData';
-#use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
-#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::View::ImpUnitForm';
-
-#use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
 
 #-------------------------------------------------------------------------------------------#
@@ -39,26 +25,29 @@ sub new {
 	my $class = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $key   = Enums->StepPnlCreator_AUTOPART;
+	my $key   = Enums->SizePnlCreator_MATRIX;
 
 	my $self = $class->SUPER::new( $inCAM, $jobId, $key );
 	bless $self;
 
-	$self->{"settings"}->{"w"} = undef;
-	$self->{"settings"}->{"h"} = undef;
+	# Setting values necessary for procesing panelisation
+	$self->{"settings"}->{""} = undef;
 
-	return $self;    # Return the reference to the hash.
+	return $self;    #
 }
 
 #-------------------------------------------------------------------------------------------#
 # Interface method
 #-------------------------------------------------------------------------------------------#
 
-# Build layout, return 1 if succes, 0 if fail
-# Build layout, return 1 if succes, 0 if fail
+# Init creator class in order process panelisation
+# (instead of Init method is possible init by import JSON settings)
+# Return 1 if succes 0 if fail
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
+
+	my $result = 1;
 
 	$self->{"settings"}->{"w"} = 20;
 	$self->{"settings"}->{"h"} = 20;
@@ -67,7 +56,7 @@ sub Init {
 
 		$inCAM->COM("get_user_name");
 
-	 	my $name =  $inCAM->GetReply();
+		my $name = $inCAM->GetReply();
 
 		print STDERR "\nHEG !! $name \n";
 
@@ -75,52 +64,52 @@ sub Init {
 
 	}
 
-	return 1;
+	return $result;
 
 }
 
-## If builded, return layout
+# Do necessary check before processing panelisation
+# This method is called always before Process method
+# Return 1 if succes 0 if fail
 sub Check {
 	my $self    = shift;
-	my $inCAM = shift;
-	my $errMess = shift;
-
+	my $inCAM   = shift;
+	my $errMess = shift;    # reference to err message
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 2 ; $i++ ) {
+	for ( my $i = 0 ; $i < 1 ; $i++ ) {
 
 		$inCAM->COM("get_user_name");
 
-	 	my $name =  $inCAM->GetReply();
+		my $name = $inCAM->GetReply();
 
 		print STDERR "\nChecking  HEG !! $name \n";
-
-
 
 		sleep(1);
 
 	}
-	
+
 	$result = 0;
 	$$errMess .= "Nelze vytvorit";
 
 	return $result;
 
 }
-#
-#
 
+# Return 1 if succes 0 if fail
 sub Process {
 	my $self    = shift;
 	my $inCAM   = shift;
-	my $errMess = shift;
+	my $errMess = shift;    # reference to err message
 
-		for ( my $i = 0 ; $i < 3 ; $i++ ) {
+	my $result = 1;
+
+	for ( my $i = 0 ; $i < 1 ; $i++ ) {
 
 		$inCAM->COM("get_user_name");
 
-	 	my $name =  $inCAM->GetReply();
+		my $name = $inCAM->GetReply();
 
 		print STDERR "\nProcessing  HEG !! $name \n";
 		die "test";
@@ -128,25 +117,25 @@ sub Process {
 
 	}
 
-	return 1;
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#
-# Get/Set method
+# Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
 
-sub SetWidth {
+sub Set {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"w"} = $val;
+	$self->{"settings"}->{""} = $val;
 
 }
 
-sub GetWidth {
+sub Get {
 	my $self = shift;
 
-	return $self->{"settings"}->{"w"};
+	return $self->{"settings"}->{""};
 
 }
 

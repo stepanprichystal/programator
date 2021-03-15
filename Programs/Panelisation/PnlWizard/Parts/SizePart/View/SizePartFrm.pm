@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: Part view, contain list of creators
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
@@ -16,11 +16,13 @@ use List::Util qw(first);
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
-use aliased 'Programs::Panelisation::PnlWizard::Forms::CreatorListFrm';
-use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::UserDefinedFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::HEGOrderFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::UserFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::HegFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::MatrixFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::ClassUserFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::ClassHegFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::PreviewFrm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -31,7 +33,7 @@ sub new {
 	my $parent = shift;
 	my $inCAM  = shift;
 	my $jobId  = shift;
-	my $model  = shift;    # model forfrist form inittialization
+	my $model  = shift;    # model for initial inittialization
 
 	my $self = $class->SUPER::new( $parent, $inCAM, $jobId, $model );
 
@@ -46,6 +48,7 @@ sub new {
 	return $self;
 }
 
+# Custom layout settings
 sub __SetLayout {
 	my $self = shift;
 
@@ -56,6 +59,7 @@ sub __SetLayout {
 
 }
 
+# Return proper creator view form
 sub OnGetCreatorLayout {
 	my $self       = shift;
 	my $creatorKey = shift;
@@ -63,14 +67,29 @@ sub OnGetCreatorLayout {
 
 	my $content = undef;
 
-	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
+	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
 
-		$content = UserDefinedFrm->new($parent);
-
+		$content = UserFrm->new($parent);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
-		$content = HEGOrderFrm->new($parent);
+		$content = HegFrm->new($parent);
+	}
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
+
+		$content = MatrixFrm->new($parent);
+	}
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+
+		$content = ClassUserFrm->new($parent);
+	}
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+		$content = ClassHegFrm->new($parent);
+	}
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+
+		$content = PreviewFrm->new($parent);
 	}
 
 	return $content;
@@ -96,20 +115,33 @@ sub SetCreators {
 
 			print STDERR $model->GetWidth() . "\n";
 
-			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
+			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
+
+			}
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+
+			}
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+			}
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+
+			}
+
 		}
 
 	}
@@ -118,33 +150,43 @@ sub SetCreators {
 
 # override base class method
 sub GetCreators {
-	my $self = shift;
+	my $self       = shift;
 	my $creatorKey = shift;
 
 	my @models = ();
 
 	foreach my $model ( @{ $self->{"creatorModels"} } ) {
-		
-		
 
 		my $modelKey = $model->GetModelKey();
-		
-		next if(defined $creatorKey && $creatorKey ne $modelKey);
+
+		next if ( defined $creatorKey && $creatorKey ne $modelKey );
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
+		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
 			$model->SetStep( $creatorFrm->GetStep() );
 
 		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
 			$model->SetStep( $creatorFrm->GetStep() );
+
+		}
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
+
+		}
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+
+		}
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+		}
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 
 		}
 
@@ -160,10 +202,6 @@ sub GetCreators {
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
-
-#	my $test = PureWindow->new(-1, "f13610" );
-#
-#	$test->MainLoop();
 
 1;
 

@@ -1,9 +1,8 @@
-
 #-------------------------------------------------------------------------------------------#
-# Description: Coupon layout
+# Description: Creator model
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::StepPart::Model::AutopartModel;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::Model::MatrixModel;
 use base('Programs::Panelisation::PnlWizard::Core::WizardModelBase');
 
 use Class::Interface;
@@ -14,8 +13,6 @@ use strict;
 use warnings;
 
 #local library
-#use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
-#use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 #-------------------------------------------------------------------------------------------#
@@ -27,14 +24,13 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"modelKey"}    = PnlCreEnums->StepPnlCreator_AUTOPART;
+	$self->{"modelKey"}    = PnlCreEnums->StepPnlCreator_MATRIX ;
 	 
 	$self->{"settings"}->{"w"} = undef;
 	$self->{"settings"}->{"h"} = undef;
 	 
 
 	return $self;
-
 }
 
 sub GetModelKey {
@@ -69,7 +65,6 @@ sub GetHeight {
 	my $self = shift;
 
 	return $self->{"settings"}->{"h"};
-
 }
 
 #-------------------------------------------------------------------------------------------#

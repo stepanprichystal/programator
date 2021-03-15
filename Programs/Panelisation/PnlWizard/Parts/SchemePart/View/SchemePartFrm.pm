@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Panelisation::PnlWizard::Parts::StepPart::View::StepPartFrm;
+package Programs::Panelisation::PnlWizard::Parts::SchemePart::View::SchemePartFrm;
 use base qw(Programs::Panelisation::PnlWizard::Forms::CreactorSelectorFrm);
 
 #3th party library
@@ -17,11 +17,8 @@ use List::Util qw(first);
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutoHegFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutoUserFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::MatrixFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::SetFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::PreviewFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::View::Creators::LibraryFrm';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -66,23 +63,27 @@ sub OnGetCreatorLayout {
 
 	my $content = undef;
 
-	if ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
 
-		$content = AutoHegFrm->new($parent);
+		$content = UserFrm->new($parent);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
-		$content = AutoUserFrm->new($parent);
+		$content = HegFrm->new($parent);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
 		$content = MatrixFrm->new($parent);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_SET ) {
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
 
-		$content = SetFrm->new($parent);
+		$content = ClassUserFrm->new($parent);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+		$content = ClassHegFrm->new($parent);
+	}
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 
 		$content = PreviewFrm->new($parent);
 	}
@@ -110,14 +111,14 @@ sub SetCreators {
 
 			print STDERR $model->GetWidth() . "\n";
 
-			if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
+			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
-			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
@@ -127,10 +128,13 @@ sub SetCreators {
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
 			}
-			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
 
 			}
-			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+			}
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 
 			}
 
@@ -155,14 +159,14 @@ sub GetCreators {
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-		if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
+		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
 			$model->SetStep( $creatorFrm->GetStep() );
 
 		}
-		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
@@ -172,10 +176,13 @@ sub GetCreators {
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
 		}
-		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
 
 		}
-		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+		}
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 
 		}
 

@@ -1,10 +1,10 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: View form for specific sreator
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::UserDefinedFrm;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::SetFrm;
 use base qw(Programs::Panelisation::PnlWizard::Forms::CreatorFrmBase);
 
 #3th party library
@@ -25,18 +25,18 @@ sub new {
 	my $parent = shift;
 	my $jobId  = shift;
 
-	my $self = $class->SUPER::new(PnlCreEnums->StepPnlCreator_USERDEFINED, $parent, $jobId);
+	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_SET, $parent, $jobId );
 
 	bless($self);
- 
+
 	$self->__SetLayout();
 
 	# DEFINE EVENTS
 
-	 
 	return $self;
 }
 
+# Do specific layout settings for creator
 sub __SetLayout {
 	my $self = shift;
 
@@ -55,7 +55,8 @@ sub __SetLayout {
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $widthValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $heightTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szRow1->Add( $widthTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -94,8 +95,6 @@ sub GetWidth {
 
 }
 
-
-
 sub SetHeight {
 	my $self = shift;
 	my $val  = shift;
@@ -110,6 +109,7 @@ sub GetHeight {
 	return $self->{"heightValTxt"}->GetValue();
 
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

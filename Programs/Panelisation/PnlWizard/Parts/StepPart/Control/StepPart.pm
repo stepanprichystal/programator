@@ -19,15 +19,6 @@ use strict;
 use warnings;
 
 #local library
-#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
-
-#use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
-#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpCheckData';
-#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpPrepareData';
-#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpExportData';
-#use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
-#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::View::ImpUnitForm';
-
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::StepPartModel'   => 'PartModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::StepPartFrm'      => 'PartFrm';
@@ -41,39 +32,23 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 
-	$self = $class->SUPER::new(Enums->Part_PNLSTEPS, @_);
+	$self = $class->SUPER::new( Enums->Part_PNLSTEPS, @_ );
 	bless $self;
 
-	#uique key within all units
-	 
-	$self->{"model"} = PartModel->new();
+	# PROPERTIES
 
-	$self->{"checkClass"} = PartCheckClass->new();
+	$self->{"model"}      = PartModel->new();         # Data model for view
+	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
 
-	$self->{"frmHandlersOff"} = 0;
-
-	$self->{"isPartFullyInited"} = 0;
-	#
-	#	my $checkData = ImpCheckData->new();
-	#	my $prepareData = ImpPrepareData->new();
-	#	my $exportData = ImpExportData->new();
-	#
-	#
-	#	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData);
-
-	return $self;    # Return the reference to the hash.
+	return $self;
 }
 
-#posloupnost volani metod
-#1) new()
-#2) InitForm()
-#3) BuildGUI()
-#4) InitDataMngr()
-#5) RefreshGUI()
-#==> export
-#6) CheckBeforeExport()
-#7) GetGroupData()
+#-------------------------------------------------------------------------------------------#
+#  Interface method
+#-------------------------------------------------------------------------------------------#
 
+# Set part View
+# Dock part View into passed View wrapper
 sub InitForm {
 	my $self        = shift;
 	my $partWrapper = shift;
@@ -83,47 +58,51 @@ sub InitForm {
 
 	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"model"} );
 
-	#$self->{"form"}->{"oncreatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl(@_) } );
-	$self->{"form"}->{"creatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl(@_) } );
-
 	$self->SUPER::_InitForm($partWrapper);
 
 }
 
+# Initialize part model by:
+# - Restored data from disc
+# - Default depanding on panelisation type
 sub InitPartModel {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $modelData = shift;
+	my $self          = shift;
+	my $inCAM         = shift;
+	my $restoredModel = shift;
 
-	if ( defined $modelData ) {
+	if ( defined $restoredModel ) {
 
-		# Load settings from history
+		# Load settings from restored data
 
-		$self->{"model"} = $modelData;
+		$self->{"model"} = $restoredModel;
 	}
 	else {
 
-		# Set default settings
-		$self->{"model"} = PartModel->new();
-
+		# Init default
 	}
 }
 
-
+# Handler which catch change of creatores in other parts
 sub OnOtherPartCreatorSelChangedHndl {
 	my $self            = shift;
 	my $partId          = shift;
 	my $creatorKey      = shift;
-	my $creatorSettings = shift;
+	my $creatorSettings = shift;    # creator model
+
+	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
 }
 
+# Handler which catch change of selected creatores settings in other parts
 sub OnOtherPartCreatorSettChangedHndl {
 	my $self       = shift;
 	my $partId     = shift;
 	my $creatorKey = shift;
 
+	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
+
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -133,4 +112,3 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-

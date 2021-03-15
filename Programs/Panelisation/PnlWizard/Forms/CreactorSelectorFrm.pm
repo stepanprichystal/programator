@@ -131,7 +131,7 @@ sub __SetLayoutCreatorView {
 
 		die "Creator  control is not defined for creator:" . $creator->GetModelKey() if ( !defined $content );
 
-		$content->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do(@_) } );
+		$content->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do( $content->GetCreatorKey(), @_) } );
 
 		$page->AddContent( $content, 0 );
 

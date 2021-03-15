@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Coupon layout
+# Description: Creator model
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::SizePart::Model::UserDefinedModel;
+package Programs::Panelisation::PnlWizard::Parts::SizePart::Model::HEGModel;
 use base('Programs::Panelisation::PnlWizard::Core::WizardModelBase');
 
 use Class::Interface;
@@ -14,8 +14,6 @@ use strict;
 use warnings;
 
 #local library
-#use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::CpnSingleLayout';
-#use aliased 'Programs::Coupon::CpnBuilder::CpnLayout::TitleLayout';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 #-------------------------------------------------------------------------------------------#
@@ -27,13 +25,13 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"modelKey"} = PnlCreEnums->SizePnlCreator_USERDEFINED;
- 
+	$self->{"modelKey"}    = PnlCreEnums->SizePnlCreator_HEG;
+	 
 	$self->{"settings"}->{"w"} = undef;
 	$self->{"settings"}->{"h"} = undef;
+	 
 
 	return $self;
-
 }
 
 sub GetModelKey {
@@ -68,7 +66,6 @@ sub GetHeight {
 	my $self = shift;
 
 	return $self->{"settings"}->{"h"};
-
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -80,5 +77,4 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-
 

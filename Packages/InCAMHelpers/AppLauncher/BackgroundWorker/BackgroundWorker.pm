@@ -258,7 +258,6 @@ sub GetCurrentTasks {
 
 }
 
-
 sub __GetCurrentTasks {
 	my $self           = shift;
 	my $workerMngrPckg = shift;
@@ -331,7 +330,8 @@ sub __AddNewTask {
 
 	die "Unique task id is not defined" unless ( defined $taskId );
 
-	my $workerFound = first { $_ eq $workerMngrFunc } @{ Class::Inspector->methods($workerMngrPckg) };
+	my $test = Class::Inspector->methods($workerMngrPckg);
+	my $workerFound = first { $_ eq $workerMngrFunc } @{$test};
 
 	die "Bakground worker manager ($workerMngrPckg), doesnt contain worker function: $workerMngrFunc" unless ( defined $workerMngrFunc );
 
@@ -366,6 +366,14 @@ sub __AddNewTask {
 
 	}
 
+	my %taskInf = (
+					"taskId"         => $taskId,
+					"thrId"          => $tid,
+					"workerMngrPckg" => $workerMngrPckg    # id of thread, where is task processed
+	);
+
+	push( @{ $self->{"tasks"} }, \%taskInf );
+
 	#	my $tid = $self->{"IDLE_QUEUE"}->dequeue_nb();
 	#	$tid = 1;
 
@@ -383,15 +391,6 @@ sub __AddNewTask {
 	print STDERR "TID:$tid,  workQueue: " . join( ";", map { $self->{"work_queues"}->{$_} } keys %{ $self->{"work_queues"} } ) . "\n";
 	$self->{"work_queues"}->{$tid}->enqueue( \@ary );
 
-	my %taskInf = (
-					"taskId"         => $taskId,
-					"thrId"          => $tid,
-					"workerMngrPckg" => $workerMngrPckg    # id of thread, where is task processed
-	);
-
-	push( @{ $self->{"tasks"} }, \%taskInf );
-	
- 
 	$self->{"taskCntChangedEvt"}->Do( $workerMngrPckg, $self->__GetCurrentTasks($workerMngrPckg) );
 
 	return $tid;
@@ -523,10 +522,10 @@ sub __PoolWorker {
 
 				# Connect InCAM library from child thread to server
 				$inCAMWorker = InCAM->new( "remote" => 'localhost', "port" => $self->{"inCAMPort"} );
-
+				print STDERR "Child thread try connected: $taskId\n ";
 				my $pidServer = $inCAMWorker->ServerReady();
 				if ($pidServer) {
-
+					print STDERR "Child thread connected: $taskId\n ";
 					last;
 				}
 				else {
@@ -592,7 +591,7 @@ sub __OnThreadGeneralHndl {
 			if ( @{ $self->{"tasks"} }[$i]->{"taskId"} eq $taskId ) {
 
 				splice @{ $self->{"tasks"} }, $i, 1;    #delete thread from list
-				
+
 				$self->{"taskCntChangedEvt"}->Do( $workerMngrPckg, $self->__GetCurrentTasks($workerMngrPckg) );
 				last;
 			}
@@ -605,15 +604,16 @@ sub __OnThreadGeneralHndl {
 
 		$self->{"InCAMAppReConnecting"} = 1;
 
-		my $activeTaskCnt = 0;
-		foreach my $thrId ( keys %{ $self->{"work_queues"} } ) {
+		#		my $activeTaskCnt = 0;
+		#		foreach my $thrId ( keys %{ $self->{"work_queues"} } ) {
+		#
+		#			my $workQueue      = $self->{"work_queues"}->{$thrId};
+		#			my $pendingTaskCnt = $workQueue->pending();
+		#
+		#			$activeTaskCnt += $pendingTaskCnt if ( defined $pendingTaskCnt );
+		#		}
 
-			my $workQueue      = $self->{"work_queues"}->{$thrId};
-			my $pendingTaskCnt = $workQueue->pending();
-
-			$activeTaskCnt += $pendingTaskCnt if ( defined $pendingTaskCnt );
-		}
-
+		my $activeTaskCnt = @{ $self->{"tasks"} };
 		print STDERR "\ntaskid: $taskId......Reconnect....Active task: $activeTaskCnt..........\n";
 
 		if ( $activeTaskCnt == 0 ) {

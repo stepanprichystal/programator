@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Prostrednik mezi formularem jednotky a buildere,
+# Description: Part interface
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlWizard::Parts::IPart;
@@ -16,43 +16,35 @@ use warnings;
 
 #local library
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-## set default data fo controls, which are on exported forms
-## default data means, settings, which are ussualy exported for given group
-#sub InitModel;
-#
-## Do checking before export, based on group group data.
-## Group data/ (= default data before user change them in GUI)
-#sub CheckBeforeExport;
-#
-## When group form is buiild, refresh controls based on default/group data
+# Initialize part model by:
+# - Restored data from disc
+# - Default depanding on panelisation type
+sub InitPartModel;
+
+# Set values from model to View
 sub RefreshGUI;
-#
-## When group form is buiild, refresh group wrapper
-#sub RefreshWrapper;
-#
-## Get vale, if group is disable, active and on, active and off
-#sub GetGroupState;
-#
-## Set programatically ifgroup is disable, active and on, active and off
-#sub SetGroupState;
-#
-#
-## Update group data by values from GUI
-#sub UpdateGroupData;
-#
-## Return current group data
-#sub GetGroupData;
-#
-## Return data intended for final export
-#sub GetExportData;
 
+# Return updated model by values from View
+sub GetModel;
 
+# Asynchronously process selected creator for this part
+sub AsyncProcessSelCreatorModel;
 
+# Asynchronously initialize selected creator for this part
+sub AsyncInitSelCreatorModel;
+
+# Set directly preview option
+sub SetPreview;
+
+# Get previre option
+sub GetPreview;
+
+# If all asynchronous init calling are done, return 1
+sub IsPartFullyInited;
 
 
 #-------------------------------------------------------------------------------------------#

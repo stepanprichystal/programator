@@ -17,10 +17,16 @@ use JSON::XS;
 use aliased 'Packages::Events::Event';
 
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::HEGOrderSize';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::UserDefinedSize';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::HEGSize';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::UserSize';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::MatrixSize';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassUser';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassHeg';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::Preview';
+
 use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutopartSteps';
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::UserDefinedSteps';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutopartSteps';
+
 use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 
 #-------------------------------------------------------------------------------------------#
@@ -251,16 +257,16 @@ sub __GetPnlCreatorByKey {
 
 	my $creator = undef;
 
-	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USERDEFINED ) {
-		$creator = UserDefinedSize->new($jobId);
+	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
+		$creator = UserSize->new($jobId);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEGORDER ) {
-		$creator = HEGOrderSize->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
+		$creator = HEGSize->new($jobId);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOPART ) {
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
 		$creator = AutopartSteps->new($jobId);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_USERDEFINED ) {
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
 		$creator = UserDefinedSteps->new($jobId);
 	}
 	else {

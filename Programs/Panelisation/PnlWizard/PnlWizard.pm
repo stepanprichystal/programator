@@ -282,6 +282,8 @@ sub __OnShowInCAMClickHndl {
 	}
 
 	$self->__StoreModelToDisc();
+	
+	$self->{"partContainer"}->AsyncCreatePanel();
 
 }
 

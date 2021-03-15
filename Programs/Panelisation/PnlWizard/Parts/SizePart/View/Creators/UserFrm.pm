@@ -1,10 +1,10 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:
+# Description: View form for specific sreator
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::HEGOrderFrm;
+package Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::UserFrm;
 use base qw(Programs::Panelisation::PnlWizard::Forms::CreatorFrmBase);
 
 #3th party library
@@ -15,7 +15,7 @@ use Wx;
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
-
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -25,7 +25,7 @@ sub new {
 	my $parent = shift;
 	my $jobId  = shift;
 
-	my $self = $class->SUPER::new( PnlCreEnums->SizePnlCreator_HEGORDER, $parent, $jobId );
+	my $self = $class->SUPER::new( PnlCreEnums->SizePnlCreator_USER, $parent, $jobId );
 
 	bless($self);
 
@@ -36,6 +36,7 @@ sub new {
 	return $self;
 }
 
+# Do specific layout settings for creator
 sub __SetLayout {
 	my $self = shift;
 
@@ -54,7 +55,7 @@ sub __SetLayout {
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $widthValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $heightTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	
 
 	# BUILD STRUCTURE OF LAYOUT

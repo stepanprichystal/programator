@@ -47,7 +47,17 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
-#
+# Return unique Id for creator
+sub GetCreatorKey {
+	my $self = shift;
+	my $val  = shift;
+
+	return $self->{"creatroKey"};
+}
+
+# Method is alternative to Init method
+# Allow set creator setting by JSON string 
+# mainly in order to use class in background workers
 sub ExportSettings {
 	my $self = shift;
 
@@ -56,7 +66,9 @@ sub ExportSettings {
 	return $serialized;
 
 }
-#
+
+# Allow set creator export setting as JSON string 
+# mainly in order to use class in background workers with together with ImportSettings method
 sub ImportSettings {
 	my $self       = shift;
 	my $serialized = shift;
@@ -80,16 +92,9 @@ sub ImportSettings {
 
 }
 
-sub GetCreatorKey {
-	my $self = shift;
-	my $val  = shift;
 
-	return $self->{"creatroKey"};
 
-}
-
-#
-#sub CreatePanel;
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
