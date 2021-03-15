@@ -28,13 +28,14 @@ use aliased 'CamHelpers::CamLayer';
 #-------------------------------------------------------------------------------------------#
 # delete et set
 sub SetStage {
-	my $self      = shift;
-	my $inCAM     = shift;
-	my $jobId     = shift;
-	my $stepName  = shift;
-	my $layerName = shift;
-	my $cuThick   = shift;
-	my $pcbThick  = shift;
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $jobId      = shift;
+	my $stepName   = shift;
+	my $layerName  = shift;
+	my $cuThick    = shift;
+	my $pcbThick   = shift;
+	my $etchFactor = shift;
 
 	# variables to fill
 	my @drillLayer = ();
@@ -44,7 +45,7 @@ sub SetStage {
 
 	my @pltLayer = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
 	push( @pltLayer, CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_rsMill ) )
-	  ;    # add rs layer, because it is done before AOI testing too
+	  ;                        # add rs layer, because it is done before AOI testing too
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@pltLayer );
 
 	# get plated drill layers, which goes from <$layerName>
@@ -106,15 +107,15 @@ sub SetStage {
 				);
 
 				$inCAM->COM(
-					"copy_layer",
-					"dest"         => "layer_name",
-					"source_job"   => $jobId,
-					"source_step"  => $nestStep,
-					"source_layer" => $lName,
-					"dest_step"    => $nestStep,
-					"dest_layer"   => $lTmpName,
-					"mode"         => "append",
-					"invert"       => "no"
+							 "copy_layer",
+							 "dest"         => "layer_name",
+							 "source_job"   => $jobId,
+							 "source_step"  => $nestStep,
+							 "source_layer" => $lName,
+							 "dest_step"    => $nestStep,
+							 "dest_layer"   => $lTmpName,
+							 "mode"         => "append",
+							 "invert"       => "no"
 				);
 
 				$inCAM->COM( "delete_layer", "layer" => $lName );
@@ -123,20 +124,20 @@ sub SetStage {
 
 		}
 
-#		# copy frame from "v" to aoiTempLayer
-#		# in order, we could add aoiTempLayer to AOI set. Layer can not be empty
-#		$inCAM->COM(
-#			"copy_layer",
-#			"dest"         => "layer_name",
-#			"source_job"   => $jobId,
-#			"source_step"  => "panel",
-#			"source_layer" => "v",
-#
-#			"dest_step"  => "panel",
-#			"dest_layer" => $lTmpName,
-#			"mode"       => "append",
-#			"invert"     => "no"
-#		);
+		#		# copy frame from "v" to aoiTempLayer
+		#		# in order, we could add aoiTempLayer to AOI set. Layer can not be empty
+		#		$inCAM->COM(
+		#			"copy_layer",
+		#			"dest"         => "layer_name",
+		#			"source_job"   => $jobId,
+		#			"source_step"  => "panel",
+		#			"source_layer" => "v",
+		#
+		#			"dest_step"  => "panel",
+		#			"dest_layer" => $lTmpName,
+		#			"mode"       => "append",
+		#			"invert"     => "no"
+		#		);
 
 		push( @drillLayer, $lTmpName );
 	}
@@ -150,7 +151,8 @@ sub SetStage {
 		"drill"         => $drill,
 		"layer"         => $layerName,
 		"copper_weight" => $cuThick,
-		"panel_thick"   => $pcbThick        #in mm
+		"panel_thick"   => $pcbThick,       #in mm
+		"etch"          => $etchFactor
 	);
 
 }

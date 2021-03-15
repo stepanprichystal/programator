@@ -1,0 +1,11 @@
+# Table define etch factor for patter PCB on AOI machine based on Cu thickness
+
+# Base cu thickness in µm = Etch factor in µm
+
+9   = 12
+12  = 12
+18  = 15
+35  = 22
+70  = 30
+105 = 35
+

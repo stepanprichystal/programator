@@ -27,7 +27,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Packages::AOTesting::BasicHelper::AOSet';
 use aliased 'Enums::EnumsGeneral';
-
+use aliased 'Packages::CAMJob::Technology::LayerSettings';
+use aliased 'Helpers::FileHelper';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -150,10 +151,13 @@ sub Export {
 	}
 
 	# 4) Axport OPFX
+	my $layerSett = LayerSettings->new( $self->{"jobId"}, $self->{"step"} );
+	$layerSett->Init($inCAM);
+
 	foreach my $layer (@signalLayers) {
 
 		# For each layer export AOI
-		$self->__ExportAOI( $exportPath, $layer, $setName, $incldMpanelFrm );
+		$self->__ExportAOI( $exportPath, $layer, $setName, $incldMpanelFrm, $layerSett );
 	}
 
 	# For each layer export AOI
@@ -202,6 +206,7 @@ sub __ExportAOI {
 	my $layerName      = shift;
 	my $setName        = shift;
 	my $incldMpanelFrm = shift;
+	my $layerSett      = shift;
 
 	my $inCAM       = $self->{"inCAM"};
 	my $jobId       = $self->{"jobId"};
@@ -213,13 +218,15 @@ sub __ExportAOI {
 	$inCAM->COM( "cdr_work_layer", "layer" => $layerName );
 
 	# Param set driils
-	my $cuThick  = undef;
-	my $pcbThick = undef;
+	my $baseCuThick = undef;
+	my $cuThick     = undef;
+	my $pcbThick    = undef;
 
 	if ( $self->{"layerCnt"} <= 2 ) {
 
-		$cuThick = HegMethods->GetOuterCuThick( $jobIdSource, $layerName );
-		$pcbThick = HegMethods->GetPcbMaterialThick($jobIdSource) * 1000;
+		$cuThick     = HegMethods->GetOuterCuThick( $jobIdSource, $layerName );
+		$baseCuThick = $cuThick;
+		$pcbThick    = HegMethods->GetPcbMaterialThick($jobIdSource) * 1000;
 
 	}
 	else {
@@ -232,10 +239,14 @@ sub __ExportAOI {
 																						  ? StackEnums->Plating_STD
 																						  : 0
 		);
+
+		$baseCuThick = $self->{"stackup"}->GetCuLayer( $lPars{"sourceName"} )->GetThick();
 		$pcbThick = sprintf( "%.3f", $self->{"stackup"}->GetThickByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} ) );
 	}
 
-	AOSet->SetStage( $inCAM, $jobId, $stepToTest, $layerName, $cuThick, $pcbThick );
+	my $etchFactor = $self->__GetEtchFactor( $layerSett->GetDefaultEtchType($layerName), $baseCuThick );
+
+	AOSet->SetStage( $inCAM, $jobId, $stepToTest, $layerName, $cuThick, $pcbThick, $etchFactor );
 
 	# Set nominal space, line
 
@@ -327,6 +338,40 @@ sub __ExportAOI {
 
 }
 
+# Return etching factor based on platuing technology and base Cu thickness
+sub __GetEtchFactor {
+	my $self        = shift;
+	my $etchingType = shift;
+	my $baseCu      = shift;
+
+	my $etchFactor = 0;
+
+	# COmpensation only for PATTERN
+	# Because after resist strip, AOI measure onlz top of etched track, not whole width (track bot)
+	if ( $etchingType eq EnumsGeneral->Etching_PATTERN ) {
+
+		my $p = GeneralHelper->Root() . "\\Packages\\AOTesting\\ExportOPFX\\EtchFactor";
+
+		die "Table definiton: $p doesn't exist" unless ( -e $p );
+
+		my @lines = grep { $_ =~ /^\d+\s*=\s*\d+/ } @{ FileHelper->ReadAsLines($p) };
+
+		my %etch = ();
+
+		foreach my $l (@lines) {
+			my ( $cuThickness, $etchcomp ) = $l =~ /(\d+)\s*=\s*(\d+)\s*/i;
+			$etch{$cuThickness} = $etchcomp;
+		}
+
+		$etchFactor = $etch{$baseCu};
+
+		die "Etch fatctor is not defined for cu: ${baseCu}um in table: $p" if ( !defined $etchFactor );
+	}
+
+	return $etchFactor;
+
+}
+
 # Delete all files from ot dir
 sub __DeleteOutputFiles {
 	my $self         = shift;
@@ -360,16 +405,16 @@ sub __DeleteOutputFiles {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::ETesting::ExportIPC::ExportIPC';
+	use aliased 'Packages::AOTesting::ExportOPFX::ExportOPFX';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d269726";
+	my $jobId = "d312555";
 	my $inCAM = InCAM->new();
 
 	my $step = "panel";
 
-	my $max = ExportIPC->new( $inCAM, $jobId, $step, 1, );
-	$max->Export( undef, 1 );
+	my $max = ExportOPFX->new( $inCAM, $jobId, $step, 1, );
+	$max->Export( "c:\\Export\\test", ["c"] );
 
 	print "area exceeded=" . $max . "---\n";
 
