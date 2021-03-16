@@ -18,10 +18,10 @@ use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::UserFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::HegFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::HEGFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::MatrixFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::ClassUserFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::ClassHegFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::ClassHEGFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::PreviewFrm';
 
 #-------------------------------------------------------------------------------------------#
@@ -73,7 +73,7 @@ sub OnGetCreatorLayout {
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
-		$content = HegFrm->new($parent);
+		$content = HEGFrm->new($parent);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
@@ -85,7 +85,7 @@ sub OnGetCreatorLayout {
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
 
-		$content = ClassHegFrm->new($parent);
+		$content = ClassHEGFrm->new($parent);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 
@@ -113,7 +113,6 @@ sub SetCreators {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-			print STDERR $model->GetWidth() . "\n";
 
 			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
 

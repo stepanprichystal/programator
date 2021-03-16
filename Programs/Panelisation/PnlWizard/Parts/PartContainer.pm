@@ -50,7 +50,7 @@ sub Init {
 	my @parts = ();
 
 	push( @parts, SizePart->new( $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
-	push( @parts, StepPart->new( $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
+#	push( @parts, StepPart->new( $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
 
 	foreach my $part (@parts) {
 

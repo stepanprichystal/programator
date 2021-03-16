@@ -74,6 +74,9 @@ sub InitPartModel {
 	else {
 
 		# Init default
+		# Init default
+		my $defCreator = @{$self->{"model"}->GetCreators()}[0];
+		$self->{"model"}->SetSelectedCreator($defCreator->GetModelKey());
 	}
 }
 

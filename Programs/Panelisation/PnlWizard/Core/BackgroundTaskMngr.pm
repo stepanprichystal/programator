@@ -20,12 +20,17 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::HEGSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::UserSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::MatrixSize';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassUser';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassHeg';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::Preview';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassUserSize';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassHegSize';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::PreviewSize';
 
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutopartSteps';
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutopartSteps';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoUserSteps';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoHEGSteps';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::MatrixSteps';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::SetSteps';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::PreviewSteps';
+
+use aliased 'Programs::Panelisation::PnlCreator::SchemePnlCreator::LibraryScheme';
 
 use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 
@@ -263,17 +268,40 @@ sub __GetPnlCreatorByKey {
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 		$creator = HEGSize->new($jobId);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
-		$creator = AutopartSteps->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
+		$creator = MatrixSize->new($jobId);
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
-		$creator = UserDefinedSteps->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+		$creator = ClassUserSize->new($jobId);
+	}
+		elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+		$creator = ClassHegSize->new($jobId);
+	}
+		elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+		$creator = PreviewSize->new($jobId);
+	}
+		elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
+		$creator = AutoUserSteps->new($jobId);
+	}
+		elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+		$creator = AutoHEGSteps->new($jobId);
+	}
+			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
+		$creator = MatrixSteps->new($jobId);
+	}
+			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_SET ) {
+		$creator = SetSteps->new($jobId);
+	}
+			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
+		$creator = LibraryScheme->new($jobId);
 	}
 	else {
 
 		die "Creator was not defined  for key: $creatorKey";
 	}
 
+
+ 
 	return $creator;
 }
 

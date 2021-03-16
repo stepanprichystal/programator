@@ -30,6 +30,9 @@ sub new {
 
 	bless($self);
 
+	#$self->__SetLayout();
+
+
 	$self->{"creatorKey"} = $creatorKey;
 	$self->{"jobId"}      = $jobId;
 	$self->{"step"}       = undef;
@@ -47,7 +50,7 @@ sub GetCreatorKey {
 	return $self->{"creatorKey"};
 }
 
-sub _SetLayout {
+sub __SetLayout {
 	my $self = shift;
 
 }
