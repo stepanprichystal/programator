@@ -9,10 +9,5 @@ use constant {
 };
 
 
-# Panelisation part types
-use constant {
-			   PnlWizardType_PRODUCTIONPNL   => "wizardType_ProductionPnl",
-			   PnlWizardType_CUSTOMERPNL  => "wizardType_CustomerPnl"
-};
 
 1;

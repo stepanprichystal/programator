@@ -108,39 +108,28 @@ sub SetCreators {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-			print STDERR $model->GetWidth() . "\n";
-
 			if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
 
-				$creatorFrm->SetWidth( $model->GetWidth() );
-				$creatorFrm->SetHeight( $model->GetHeight() );
-				$creatorFrm->SetStep( $model->GetStep() );
+				$creatorFrm->SetPlacementType( $model->GetPlacementType() );
+				$creatorFrm->SetRotationType( $model->GetRotationType() );
+				$creatorFrm->SetPatternType( $model->GetPatternType() );
+				$creatorFrm->SetInterlockType( $model->GetInterlockType() );
+				$creatorFrm->SetSpaceX( $model->GetSpaceX() );
+				$creatorFrm->SetSpaceY( $model->GetSpaceY() );
+				$creatorFrm->SetAlignType( $model->GetAlignType() );
+				$creatorFrm->SetAmountType( $model->GetAmountType() );
+				$creatorFrm->SetExactQuantity( $model->GetExactQuantity() );
+				$creatorFrm->SetMaxQuantity( $model->GetMaxQuantity() );
+				$creatorFrm->SetActionType( $model->GetActionType() );
+				$creatorFrm->SetJSONStepPlacement( $model->GetJSONStepPlacement() );
+				$creatorFrm->SetMinUtilization( $model->GetMinUtilization() );
+				$creatorFrm->SetExactQuantity( $model->GetExactQuantity() );
 
 			}
-			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
-
-				$creatorFrm->SetWidth( $model->GetWidth() );
-				$creatorFrm->SetHeight( $model->GetHeight() );
-				$creatorFrm->SetStep( $model->GetStep() );
-
-			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
-
-			}
-			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
-
-			}
-			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
-
-			}
-
 		}
-
 	}
-
 }
 
-# override base class method
 sub GetCreators {
 	my $self       = shift;
 	my $creatorKey = shift;
@@ -156,17 +145,28 @@ sub GetCreators {
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
 		if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
-
-			$model->SetWidth( $creatorFrm->GetWidth() );
-			$model->SetHeight( $creatorFrm->GetHeight() );
-			$model->SetStep( $creatorFrm->GetStep() );
+			
+			$model->SetPlacementType( $creatorFrm->GetPlacementType() );
+			$model->SetRotationType( $creatorFrm->GetRotationType() );
+			$model->SetPatternType( $creatorFrm->GetPatternType() );
+			$model->SetInterlockType( $creatorFrm->GetInterlockType() );
+			$model->SetSpaceX( $creatorFrm->GetSpaceX() );
+			$model->SetSpaceY( $creatorFrm->GetSpaceY() );
+			$model->SetAlignType( $creatorFrm->GetAlignType() );
+			$model->SetAmountType( $creatorFrm->GetAmountType() );
+			$model->SetExactQuantity( $creatorFrm->GetExactQuantity() );
+			$model->SetMaxQuantity( $creatorFrm->GetMaxQuantity() );
+			$model->SetActionType( $creatorFrm->GetActionType() );
+			$model->SetJSONStepPlacement( $creatorFrm->GetJSONStepPlacement() );
+			$model->SetMinUtilization( $creatorFrm->GetMinUtilization() );
+			$model->SetExactQuantity( $creatorFrm->GetExactQuantity() );
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
 
-			$model->SetWidth( $creatorFrm->GetWidth() );
-			$model->SetHeight( $creatorFrm->GetHeight() );
-			$model->SetStep( $creatorFrm->GetStep() );
+			#			$model->SetWidth( $creatorFrm->GetWidth() );
+			#			$model->SetHeight( $creatorFrm->GetHeight() );
+			#			$model->SetStep( $creatorFrm->GetStep() );
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {

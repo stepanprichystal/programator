@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlCreator::SizePnlCreator::ClassUserSize;
-use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
+use base('Programs::Panelisation::PnlCreator::SizePnlCreator::SizeCreatorBase');
 
 use Class::Interface;
 &implements('Programs::Panelisation::PnlCreator::SizePnlCreator::ISize');
@@ -23,11 +23,11 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums';
 
 sub new {
 	my $class = shift;
-	my $inCAM = shift;
 	my $jobId = shift;
+	my $pnlType = shift;
 	my $key   = Enums->SizePnlCreator_CLASSUSER;
 
-	my $self = $class->SUPER::new( $inCAM, $jobId, $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
 	bless $self;
 
 		# Setting values necessary for procesing panelisation

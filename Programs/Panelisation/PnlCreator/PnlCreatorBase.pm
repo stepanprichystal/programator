@@ -26,6 +26,8 @@ use warnings;
 
 #use aliased 'Programs::Panelisation::PnlWizard::Enums';
 
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 
 #-------------------------------------------------------------------------------------------#
@@ -37,12 +39,14 @@ sub new {
 	my $self  = {};
 	bless $self;
 
-	$self->{"inCAM"}      = shift;
 	$self->{"jobId"}      = shift;
+	$self->{"pnlType"}      = shift;
 	$self->{"creatroKey"} = shift;
 
 	$self->{"jsonStorable"} = JsonStorable->new();
 	$self->{"settings"}     = {};
+
+	$self->{"settings"}->{"step"} = undef;
 
 	return $self;    # Return the reference to the hash.
 }
@@ -56,7 +60,7 @@ sub GetCreatorKey {
 }
 
 # Method is alternative to Init method
-# Allow set creator setting by JSON string 
+# Allow set creator setting by JSON string
 # mainly in order to use class in background workers
 sub ExportSettings {
 	my $self = shift;
@@ -67,7 +71,7 @@ sub ExportSettings {
 
 }
 
-# Allow set creator export setting as JSON string 
+# Allow set creator export setting as JSON string
 # mainly in order to use class in background workers with together with ImportSettings method
 sub ImportSettings {
 	my $self       = shift;
@@ -92,9 +96,46 @@ sub ImportSettings {
 
 }
 
+#-------------------------------------------------------------------------------------------#
+# Get/Set method for adjusting settings after Init/ImportSetting
+#-------------------------------------------------------------------------------------------#
 
+sub GetStep {
+	my $self = shift;
 
- 
+	return $self->{"settings"}->{"step"};
+
+}
+
+sub SetStep {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"step"} = $val;
+
+}
+
+#-------------------------------------------------------------------------------------------#
+# Helper method
+#-------------------------------------------------------------------------------------------#
+
+sub _CreateStep {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	my $step = shift;
+
+	die "Step name is not defined." unless ( defined $self->GetStep() );
+
+	#$self->{"jobId"} = undef;
+	unless ( CamHelper->StepExists( $inCAM, $self->{"jobId"}, $self->GetStep() ) ) {
+		
+		CamStep->CreateStep( $inCAM, $self->{"jobId"}, $self->GetStep() );
+	}
+	
+	CamHelper->SetStep($inCAM, $self->GetStep());
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

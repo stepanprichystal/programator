@@ -44,21 +44,7 @@ sub GetPreview {
 
 }
 
-sub GetStep {
-	my $self   = shift;
- 
-	return $self->{"step"};
 
-}
-
-sub SetStep {
-	my $self   = shift;
-	my $val = shift;
-	 
-
-	$self->{"step"} =  $val;
-
-}
 
 
 #
@@ -100,6 +86,30 @@ sub ImportCreatorSettings {
 
 # Important because of serialize class
 sub TO_JSON { return { %{ shift() } }; }
+
+
+
+#-------------------------------------------------------------------------------------------#
+# Get/Set method for adjusting settings
+#-------------------------------------------------------------------------------------------#
+
+
+sub GetStep {
+	my $self   = shift;
+ 
+	return $self->{"settings"}->{"step"};
+
+}
+
+sub SetStep {
+	my $self   = shift;
+	my $val = shift;
+	 
+
+	$self->{"settings"}->{"step"} =  $val;
+
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

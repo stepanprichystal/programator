@@ -13,6 +13,7 @@ use warnings;
 #local library
 use aliased "Enums::EnumsPaths";
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#
@@ -32,11 +33,11 @@ sub new {
 
 	my $type = undef;
 
-	if ( $pnlWizardType eq Enums->PnlWizardType_PRODUCTIONPNL ) {
+	if ( $pnlWizardType eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
 
 		$type = "panel";
 	}
-	elsif ( $pnlWizardType eq Enums->PnlWizardType_CUSTOMERPNL ) {
+	elsif ( $pnlWizardType eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 		$type = "mpanel";
 	}
 	else {

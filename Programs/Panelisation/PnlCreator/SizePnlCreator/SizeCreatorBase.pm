@@ -1,36 +1,49 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class is responsible for creating panel profile
-# Import/Export settings method are meant for using class in bacground
+# Description: This is class, which represent "presenter"
+#
+# Every group in "export checker program" is composed from three layers:
+# 1) Model - responsible for actual group data, which are displyed in group form
+# 2) Presenter -  responsible for: edit/get goup data (model), build and refresh from for group
+# 3) View - only display data, which are passed from model by presenter class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlCreator::SizePnlCreator::ClassHEGSize;
+package Programs::Panelisation::PnlCreator::SizePnlCreator::SizeCreatorBase;
 use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
-
-use Class::Interface;
-&implements('Programs::Panelisation::PnlCreator::SizePnlCreator::ISize');
 
 #3th party library
 use strict;
 use warnings;
+use Scalar::Util qw(looks_like_number);
 
 #local library
-use aliased 'Programs::Panelisation::PnlCreator::Enums';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
+
+#use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpCheckData';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpPrepareData';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpExportData';
+#use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+#use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::View::ImpUnitForm';
+
+#use aliased 'Programs::Panelisation::PnlWizard::Enums';
+
+use aliased 'Packages::CAMJob::Panelization::SRStep';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $jobId = shift;
+	my $class   = shift;
+	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key   = Enums->SizePnlCreator_CLASSHEG;
+	my $key     = shift;
 
-	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
-		# Setting values necessary for procesing panelisation
+	# Setting values necessary for procesing panelisation
 	$self->{"settings"}->{"width"}       = undef;
 	$self->{"settings"}->{"height"}      = undef;
 	$self->{"settings"}->{"borderLeft"}  = undef;
@@ -38,87 +51,87 @@ sub new {
 	$self->{"settings"}->{"borderTop"}   = undef;
 	$self->{"settings"}->{"borderBot"}   = undef;
 
-	return $self;    #
+	return $self;    # Return the reference to the hash.
 }
 
-#-------------------------------------------------------------------------------------------#
-# Interface method
-#-------------------------------------------------------------------------------------------#
-
-# Init creator class in order process panelisation
-# (instead of Init method is possible init by import JSON settings)
-# Return 1 if succes 0 if fail
-sub Init {
-	my $self  = shift;
-	my $inCAM = shift;
+sub _Init {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
 
 	my $result = 1;
 
- 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	$self->{"settings"}->{"step"} = $stepName;
 
-		$inCAM->COM("get_user_name");
+	return $result;
 
-		my $name = $inCAM->GetReply();
+}
 
-		print STDERR "\nHEG !! $name \n";
+sub _Check {
+	my $self    = shift;
+	my $inCAM   = shift;
+	my $errMess = shift;
 
-		sleep(1);
+	my $result = 1;
 
+	my $w  = $self->GetWidth();
+	my $h  = $self->GetWidth();
+	my $bL = $self->GetBorderLeft();
+	my $bR = $self->GetBorderRight();
+	my $bT = $self->GetBorderTop();
+	my $bB = $self->GetBorderBot();
+
+	if ( !defined $w || !looks_like_number($w) || $w < 0 ) {
+
+		$result = 0;
+		$$errMess .= "Panel width is not set.\n";
+	}
+
+	if ( !defined $h || !looks_like_number($h) || $h < 0 ) {
+
+		$result = 0;
+		$$errMess .= "Panel height is not set.\n";
+	}
+
+	if (    !defined $bL
+		 || !defined $bR
+		 || !defined $bT
+		 || !defined $bB
+		 || !looks_like_number($bL)
+		 || !looks_like_number($bR)
+		 || !looks_like_number($bT)
+		 || !looks_like_number($bB) )
+	{
+
+		$result = 0;
+		$$errMess .= "Not all panel borders are defined (border must be number  >= 0).\n";
 	}
 
 	return $result;
 
 }
 
-# Do necessary check before processing panelisation
-# This method is called always before Process method
 # Return 1 if succes 0 if fail
-sub Check {
+sub _Process {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $errMess = shift;    # reference to err message
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	my $jobId = $self->{"jobId"};
 
-		$inCAM->COM("get_user_name");
+	$self->_CreateStep($inCAM);
 
-		my $name = $inCAM->GetReply();
+	my $step = SRStep->new( $inCAM, $jobId, $self->GetStep() );
 
-		print STDERR "\nChecking  HEG !! $name \n";
+	#	my %p = ("x"=> -10, "y" => -20);
+	$step->Edit( $self->GetWidth(),     $self->GetHeight(), $self->GetBorderLeft(), $self->GetBorderRight(),
+				   $self->GetBorderTop(), $self->GetBorderBot() );
 
-		sleep(1);
-
-	}
-
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
-
-	return $result;
-
-}
-
-# Return 1 if succes 0 if fail
-sub Process {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $errMess = shift;    # reference to err message
-
-	my $result = 1;
-
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
-
-	}
+	#	my $control = SRStep->new( $inCAM, $jobId, "test" );
+	#	my %p = ("x"=> 10, "y" => +10);
+	#	$control->Create( 300, 400, 10,10,10,10, \%p   );
 
 	return $result;
 }

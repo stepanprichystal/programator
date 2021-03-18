@@ -522,9 +522,14 @@ sub __PoolWorker {
 
 				# Connect InCAM library from child thread to server
 				$inCAMWorker = InCAM->new( "remote" => 'localhost', "port" => $self->{"inCAMPort"} );
+				 
 				print STDERR "Child thread try connected: $taskId\n ";
 				my $pidServer = $inCAMWorker->ServerReady();
+
 				if ($pidServer) {
+
+					$inCAMWorker->SupressToolkitException(1);
+
 					print STDERR "Child thread connected: $taskId\n ";
 					last;
 				}
@@ -561,7 +566,7 @@ sub __PoolWorker {
 			$evtData{"evtType"}        = ThrEvt_DIE;
 			$evtData{"workerMngrPckg"} = $workerMngrPckg;
 			$evtData{"taskId"}         = $taskId;
-			$evtData{"data"}           = $e;
+			$evtData{"data"}           = $e . "";
 			Wx::PostEvent( $self->{"appMainFrm"}, new Wx::PlThreadEvent( -1, $THREAD_GENERAL_EVT, \%evtData ) );
 
 		}
@@ -625,7 +630,6 @@ sub __OnThreadGeneralHndl {
 				die "InCAM all library reconnect failed";
 			}
 			else {
-
 				print STDERR "Reconnect succ";
 			}
 		}

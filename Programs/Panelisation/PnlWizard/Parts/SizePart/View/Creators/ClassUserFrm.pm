@@ -80,35 +80,7 @@ sub __SetLayout {
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
-sub SetWidth {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"widthValTxt"}->SetValue($val);
-
-}
-
-sub GetWidth {
-	my $self = shift;
-
-	return $self->{"widthValTxt"}->GetValue();
-
-}
-
-sub SetHeight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"heightValTxt"}->SetValue($val);
-
-}
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"heightValTxt"}->GetValue();
-
-}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

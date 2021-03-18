@@ -113,11 +113,14 @@ sub SetCreators {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-
 			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
+				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
+				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
+				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
+				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
 				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
@@ -125,6 +128,7 @@ sub SetCreators {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
+
 				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
@@ -166,6 +170,10 @@ sub GetCreators {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
+			$model->SetBorderLeft( $creatorFrm->GetBorderLeft() );
+			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
+			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
+			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
 			$model->SetStep( $creatorFrm->GetStep() );
 
 		}

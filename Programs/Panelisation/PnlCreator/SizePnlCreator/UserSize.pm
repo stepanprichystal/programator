@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlCreator::SizePnlCreator::UserSize;
-use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
+use base('Programs::Panelisation::PnlCreator::SizePnlCreator::SizeCreatorBase');
 
 use Class::Interface;
 &implements('Programs::Panelisation::PnlCreator::SizePnlCreator::ISize');
@@ -13,6 +13,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
@@ -22,21 +23,16 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-	my $key   = Enums->SizePnlCreator_USER;
+	my $class   = shift;
+	my $jobId   = shift;
+	my $pnlType = shift;
+	my $key     = Enums->SizePnlCreator_USER;
 
-	my $self = $class->SUPER::new( $inCAM, $jobId, $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
 	# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{"width"}       = undef;
-	$self->{"settings"}->{"height"}      = undef;
-	$self->{"settings"}->{"borderLeft"}  = undef;
-	$self->{"settings"}->{"borderRight"} = undef;
-	$self->{"settings"}->{"borderTop"}   = undef;
-	$self->{"settings"}->{"borderBot"}   = undef;
+	 
 
 	return $self;    #
 }
@@ -51,10 +47,13 @@ sub new {
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
+	my $stepName = shift;
+ 
 
 	my $result = 1;
+	
+	$self->_Init($inCAM, $stepName);
 
- 
 	for ( my $i = 0 ; $i < 1 ; $i++ ) {
 
 		$inCAM->COM("get_user_name");
@@ -81,20 +80,23 @@ sub Check {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nChecking  HEG !! $name \n";
-
-		sleep(1);
-
-	}
-
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
+	$result = $self->_Check($inCAM, $errMess);
+	
+	#
+	#	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	#
+	#		$inCAM->COM("get_user_name");
+	#
+	#		my $name = $inCAM->GetReply();
+	#
+	#		print STDERR "\nChecking  HEG !! $name \n";
+	#
+	#		sleep(1);
+	#
+	#	}
+	#
+	#	$result = 0;
+	#	$$errMess .= "Nelze vytvorit";
 
 	return $result;
 
@@ -108,102 +110,30 @@ sub Process {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	#	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	#
+	#		$inCAM->COM("get_user_name");
+	#
+	#		my $name = $inCAM->GetReply();
+	#
+	#		print STDERR "\nProcessing  HEG !! $name \n";
+	#		die "test";
+	#		sleep(1);
+	#
+	#	}
+	
+	$result = $self->_Process($inCAM, $errMess);
 
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
-
-	}
+	 
 
 	return $result;
 }
+
 
 #-------------------------------------------------------------------------------------------#
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
 
-sub SetWidth {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"width"} = $val;
-}
-
-sub GetWidth {
-	my $self = shift;
-
-	return $self->{"settings"}->{"width"};
-}
-
-sub SetHeight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"height"} = $val;
-}
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"height"};
-}
-
-sub SetBorderLeft {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderLeft"} = $val;
-}
-
-sub GetBorderLeft {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderLeft"};
-}
-
-sub SetBorderRight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderRight"} = $val;
-}
-
-sub GetBorderRight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderRight"};
-}
-
-sub SetBorderTop {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderTop"} = $val;
-}
-
-sub GetBorderTop {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderTop"};
-}
-
-sub SetBorderBot {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderBot"} = $val;
-}
-
-sub GetBorderBot {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderBot"};
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -119,7 +119,7 @@ sub __SetLayoutCreatorView {
 
 	foreach my $creator ( @{$creators} ) {
 
-		my $page = $notebook->AddPage( $creator->GetModelKey(), 0 );
+		my $page = $notebook->AddPage( $creator->GetModelKey(), 1 );
 
 		$page->GetParent()->SetBackgroundColour($stepBackg);
 

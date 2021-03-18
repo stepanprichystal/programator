@@ -24,7 +24,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Forms::PartContainerForm';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
-
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -565,11 +565,11 @@ sub __SetLayoutHeader {
 
 	# DEFINE CONTROLS
 	my $title = undef;
-	if ( $self->{"pnlType"} eq Enums->PnlWizardType_PRODUCTIONPNL ) {
+	if ( $self->{"pnlType"} eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
 
 		$title = "Production panel";
 	}
-	elsif ( $self->{"pnlType"} eq Enums->PnlWizardType_CUSTOMERPNL ) {
+	elsif ( $self->{"pnlType"} eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 		$title = "Customer panel";
 	}
 

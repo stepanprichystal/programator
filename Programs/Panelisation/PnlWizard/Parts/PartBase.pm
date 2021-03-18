@@ -193,7 +193,8 @@ sub _InitForm {
 sub __AsyncInitCreatorModel {
 	my $self                = shift;
 	my $creatorKey          = shift;
-	my $creatorInitPatarams = shift // [];
+	
+	my $creatorInitPatarams = [ $self->{"model"}->GetCreatorModelByKey($creatorKey)->GetStep()];
 
 	$self->ClearErrors();
 

@@ -50,7 +50,7 @@ sub Init {
 	my @parts = ();
 
 	push( @parts, SizePart->new( $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
-#	push( @parts, StepPart->new( $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
+	push( @parts, StepPart->new( $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
 
 	foreach my $part (@parts) {
 
@@ -146,8 +146,11 @@ sub GetModel {
 # Asynchronously process selected creator for all parts
 sub AsyncProcessSelCreatorModel {
 	my $self = shift;
+	my $partId  = shift;
 
 	foreach my $part ( @{ $self->{"parts"} } ) {
+		
+		next if ( defined $partId && $part->GetPartId() ne $partId );
 
 		$part->AsyncProcessSelCreatorModel();
 	}
@@ -156,8 +159,11 @@ sub AsyncProcessSelCreatorModel {
 # Asynchronously initialize selected creator for this part
 sub AsyncInitSelCreatorModel {
 	my $self = shift;
+	my $partId  = shift;
 
 	foreach my $part ( @{ $self->{"parts"} } ) {
+		
+		next if ( defined $partId && $part->GetPartId() ne $partId );
 
 		$part->AsyncInitSelCreatorModel();
 
@@ -321,6 +327,7 @@ sub __OnPreviewChangedHndl {
 	my $preview = shift;
 
 	if ($preview) {
+		
 
 		# Set preview + process up to this specific  part
 		$self->SetPreviewOnAllPart($partId);

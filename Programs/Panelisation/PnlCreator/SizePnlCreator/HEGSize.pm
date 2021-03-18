@@ -23,11 +23,11 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums';
 
 sub new {
 	my $class = shift;
-	my $inCAM = shift;
 	my $jobId = shift;
+	my $pnlType = shift;
 	my $key   = Enums->SizePnlCreator_HEG;
 
-	my $self = $class->SUPER::new( $inCAM, $jobId, $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
 	bless $self;
 
 	# Setting values necessary for procesing panelisation

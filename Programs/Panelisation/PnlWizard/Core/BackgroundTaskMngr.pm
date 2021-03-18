@@ -50,6 +50,8 @@ sub new {
 
 	$self->{"jobId"} = shift;
 
+	$self->{"pnlType"} = shift;
+
 	$self->{"backgroundWorker"} = undef;    # helper background worker class
 
 	$self->{"jsonStorable"} = JsonStorable->new();
@@ -60,7 +62,7 @@ sub new {
 
 	$self->{"pnlCreatorInitedEvt"}   = Event->new();
 	$self->{"pnlCreatorProcesedEvt"} = Event->new();
-	$self->{"asyncTaskDie"}          = Event->new();
+	$self->{"asyncTaskDieEvt"}          = Event->new();
 	$self->{"taskCntChangedEvt"}     = Event->new();
 
 	return $self;
@@ -96,6 +98,7 @@ sub AsyncInitPnlCreator {
 	my @taskParams = ();
 	push( @taskParams, TaskType_INITCREATOR );
 	push( @taskParams, $self->{"jobId"} );
+	push( @taskParams, $self->{"pnlType"} );
 	push( @taskParams, $partId );
 	push( @taskParams, $creatorKey );
 	push( @taskParams, $initParams );
@@ -116,6 +119,7 @@ sub AsyncProcessPnlCreator {
 
 	push( @taskParams, TaskType_PROCESSCREATOR );
 	push( @taskParams, $self->{"jobId"} );
+	push( @taskParams, $self->{"pnlType"} );
 	push( @taskParams, $partId );
 	push( @taskParams, $creatorKey );
 	push( @taskParams, $JSONSett );
@@ -158,14 +162,15 @@ sub __TaskBackgroundFunc {
 
 	my $taskType   = shift @{$taskParams};
 	my $jobId      = shift @{$taskParams};
+	my $pnlType    = shift @{$taskParams};
 	my $partId     = shift @{$taskParams};
 	my $creatorKey = shift @{$taskParams};
 
-	my $creator = __GetPnlCreatorByKey( $jobId, $creatorKey );
+	my $creator = __GetPnlCreatorByKey( $jobId, $pnlType, $creatorKey );
 
 	if ( $taskType eq TaskType_INITCREATOR ) {
 
-		my @creatorInitParams = shift @{$taskParams};
+		my @creatorInitParams = @{shift @{$taskParams}};
 
 		my $result = $creator->Init( $inCAM, @creatorInitParams );
 
@@ -196,6 +201,9 @@ sub __TaskBackgroundFunc {
 		if ( $creator->Check( $inCAM, \$errMess ) ) {
 
 			$result = $creator->Process( $inCAM, \$errMess );
+			
+			# Zoom
+			$inCAM->COM('zoom_home');
 
 		}
 		else {
@@ -258,50 +266,49 @@ sub __TaskBackgroundFunc {
 
 sub __GetPnlCreatorByKey {
 	my $jobId      = shift;
+	my $pnlType    = shift;
 	my $creatorKey = shift;
 
 	my $creator = undef;
 
 	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
-		$creator = UserSize->new($jobId);
+		$creator = UserSize->new($jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
-		$creator = HEGSize->new($jobId);
+		$creator = HEGSize->new($jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
-		$creator = MatrixSize->new($jobId);
+		$creator = MatrixSize->new($jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
-		$creator = ClassUserSize->new($jobId);
+		$creator = ClassUserSize->new($jobId, $pnlType);
 	}
-		elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-		$creator = ClassHegSize->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+		$creator = ClassHegSize->new($jobId, $pnlType);
 	}
-		elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
-		$creator = PreviewSize->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+		$creator = PreviewSize->new($jobId, $pnlType);
 	}
-		elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
-		$creator = AutoUserSteps->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
+		$creator = AutoUserSteps->new($jobId, $pnlType);
 	}
-		elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
-		$creator = AutoHEGSteps->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+		$creator = AutoHEGSteps->new($jobId, $pnlType);
 	}
-			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
-		$creator = MatrixSteps->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
+		$creator = MatrixSteps->new($jobId, $pnlType);
 	}
-			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_SET ) {
-		$creator = SetSteps->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_SET ) {
+		$creator = SetSteps->new($jobId, $pnlType);
 	}
-			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
-		$creator = LibraryScheme->new($jobId);
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
+		$creator = LibraryScheme->new($jobId, $pnlType);
 	}
 	else {
 
 		die "Creator was not defined  for key: $creatorKey";
 	}
 
-
- 
 	return $creator;
 }
 
@@ -338,7 +345,7 @@ sub __OnTaskDieHndl {
 	my $taskId  = shift;
 	my $errMess = shift;
 
-	$self->{"asyncTaskDie"}->Do($taskId);
+	$self->{"asyncTaskDieEvt"}->Do($taskId, $errMess);
 
 	print STDERR "Asynchronous task ($taskId) END with error: $errMess. Handler in BackroundTaskMngr.\n";
 

@@ -174,8 +174,8 @@ sub __SetLayoutFrame {
 	# save control references
 	$self->{"leftValTxt"}  = $leftValTxt;
 	$self->{"rightValTxt"} = $rightValTxt;
-	$self->{"topTxt"}      = $topTxt;
-	$self->{"botTxt"}      = $botTxt;
+	$self->{"topValTxt"}      = $topValTxt;
+	$self->{"botValTxt"}      = $botValTxt;
 
 	return $szStatBox;
 }

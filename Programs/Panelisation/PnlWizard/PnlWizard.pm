@@ -22,6 +22,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Parts::PartContainer';
 use aliased 'Programs::Panelisation::PnlWizard::Core::StorageModelMngr';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr';
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportCheckerForm';
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm';
@@ -92,7 +93,7 @@ sub new {
 	#$self->{"pnlWizardChecker"} = ExportPopup->new( $self->{"jobId"} );
 
 	# Background task manager for executing background operation
-	$self->{"backgroundTaskMngr"} = BackgroundTaskMngr->new( $self->{"jobId"} );
+	$self->{"backgroundTaskMngr"} = BackgroundTaskMngr->new( $self->{"jobId"}, $self->{"pnlType"} );
 
 	# Keep all references of used groups/units in form
 	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"backgroundTaskMngr"} );
@@ -124,10 +125,12 @@ sub Init {
 	$self->{"backgroundTaskMngr"}->Init( $launcher->GetBackgroundWorker() );
 
 	$self->{"inCAM"} = $launcher->GetInCAM();
+	
+	$self->{"inCAM"}->SupressToolkitException();
 
 	#$self->{"inCAM"}->SetDisplay(0);
 
-	$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"pnlType"}   );
+	$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"pnlType"} );
 
 	my $title    = "Check before panelisation " . $self->{"jobId"};
 	my $taskName = "Create force";
@@ -183,7 +186,15 @@ sub Init {
 	$self->{"partContainer"}->RefreshGUI();
 	print STDERR "Refresh END\n";
 
+	$self->{"inCAM"}->COM( "show_component", "component" => "Action_Area", "show" => "no" );
+
 	$self->__SetHandlers();
+	
+#	$self->{"inCAM"}->COM("get_step");
+#	my $test = $self->{"inCAM"}->GetReply();
+
+#	print STDERR "endr RUN $test\n";
+	
 
 	print STDERR "Init model async START\n";
 	$self->{"partContainer"}->AsyncInitSelCreatorModel();
@@ -198,8 +209,8 @@ sub Init {
 	#	$self->__RefreshForm();
 	#
 	#	#set handlers for main app form
-
-	print STDERR "endr RUN\n";
+	
+	
 
 }
 
@@ -255,6 +266,8 @@ sub __OnCreateClickHndl {
 sub __OnCancelClickHndl {
 	my $self = shift;
 
+ 
+
 	# Check if all parts are already inited (due to asynchrounous initialization)
 	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {
 		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
@@ -282,7 +295,7 @@ sub __OnShowInCAMClickHndl {
 	}
 
 	$self->__StoreModelToDisc();
-	
+
 	$self->{"partContainer"}->AsyncCreatePanel();
 
 }
@@ -298,7 +311,7 @@ sub __OnLoadLastClickHndl {
 	die "Model data not exist" if ( !$self->{"storageModelMngr"}->ExistModelData() );
 
 	my $restoredModel = $self->{"storageModelMngr"}->LoadModel();
-	 $self->{"model"} = $restoredModel; # update model
+	$self->{"model"} = $restoredModel;    # update model
 
 	# Set main form
 	$self->__RefreshGUI($restoredModel);
@@ -434,7 +447,7 @@ sub __OnInCAMIsBusyHndl {
 
 }
 
-sub __OnCurrentTaskCntChangedHndl {
+sub __OnBackgroundTaskCntChangedHndl {
 	my $self      = shift;
 	my $taskCount = shift;
 
@@ -447,6 +460,27 @@ sub __OnCurrentTaskCntChangedHndl {
 
 		$self->{"form"}->SetAsyncTaskRunningLayout(0);
 	}
+
+}
+
+sub __OnBackgroundTaskDieHndl {
+	my $self     = shift;
+	my $taskId   = shift;
+	my $errMesss = shift;
+
+	my $messMngr = $self->{"form"}->GetMessageMngr();
+
+	my @mess1 = ();
+	push( @mess1, "==========================================" );
+	push( @mess1, "<b>Error during running background task </b>" );
+	push( @mess1, "==========================================\n" );
+	push( @mess1, "Detail:" );
+	push( @mess1, "$errMesss" );
+	
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+	
+	$self->{"partContainer"}->ClearErrors();
+	$self->{"form"}->SetAsyncTaskRunningLayout(0);
 
 }
 
@@ -469,7 +503,8 @@ sub __SetHandlers {
 	$self->{"form"}->{"stepChangedEvt"}->Add( sub    { $self->{"partContainer"}->UpdateStep(@_) } );
 
 	$self->{"partContainer"}->{"asyncPanelCreatedEvt"}->Add( sub   { $self->__OnAsyncPanelCreatedHndl(@_) } );
-	$self->{"backgroundTaskMngr"}->{"taskCntChangedEvt"}->Add( sub { $self->__OnCurrentTaskCntChangedHndl(@_) } );
+	$self->{"backgroundTaskMngr"}->{"taskCntChangedEvt"}->Add( sub { $self->__OnBackgroundTaskCntChangedHndl(@_) } );
+	$self->{"backgroundTaskMngr"}->{"asyncTaskDieEvt"}->Add( sub { $self->__OnBackgroundTaskDieHndl(@_) } );
 
 	#		$self->{"form"}->{"onExportASync"}->Add( sub { $self->__ExportASyncFormHandler(@_) } );
 	#		$self->{"form"}->{"onClose"}->Add( sub       { $self->__OnCloseFormHandler(@_) } );
@@ -503,13 +538,13 @@ sub __UpdateModel {
 	my $self = shift;
 
 	# Set model property from main form
-	
-		# Set part models
+
+	# Set part models
 	foreach my $partModelInf ( @{ $self->{"partContainer"}->GetModel() } ) {
 
 		$self->{"model"}->SetPartModelById( $partModelInf->[0], $partModelInf->[1] );
 	}
-	
+
 	$self->{"model"}->SetStep( $self->{"form"}->GetStep() );
 	$self->{"model"}->SetPreview( $self->{"form"}->GetPreview() );
 
@@ -524,11 +559,11 @@ sub __InitModel {
 	# Set model step
 	my $step = "unknown_name";
 
-	if ( $self->{"pnlType"} eq Enums->PnlWizardType_PRODUCTIONPNL ) {
+	if ( $self->{"pnlType"} eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
 
 		$step = "panel";
 	}
-	elsif ( $self->{"pnlType"} eq Enums->PnlWizardType_CUSTOMERPNL ) {
+	elsif ( $self->{"pnlType"} eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 		$step = "mpanel";
 	}
 
@@ -547,10 +582,10 @@ sub __InitModel {
 	my %parts = %{ $self->{"model"}->GetParts() };
 	foreach my $partId ( keys %parts ) {
 
-		my @creators = @{$parts{$partId}->GetCreators()};
+		my @creators = @{ $parts{$partId}->GetCreators() };
 
 		foreach my $modelCreator (@creators) {
-			
+
 			$modelCreator->SetStep($step);
 		}
 
