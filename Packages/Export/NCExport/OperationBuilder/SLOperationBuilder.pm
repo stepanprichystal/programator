@@ -17,6 +17,7 @@ use warnings;
 use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Interface
@@ -66,6 +67,30 @@ sub DefineOperations {
 sub __DefinePlatedGroups {
 	my $self      = shift;
 	my $opManager = shift;
+
+	# 1) Create group from plated drill and plated rout for flex PCB
+	{
+
+		if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+
+			my @operations = ();
+			my $name       = "c";
+
+			my $operc = $opManager->GetOperationDef("c");
+			if ($operc) {
+				push( @operations, $operc );
+			}
+
+			my $operR = $opManager->GetOperationDef("r");
+			if ($operR) {
+				push( @operations, $operR );
+			}
+
+			$opManager->AddGroupDef( $name, \@operations, -1 );
+
+		}
+
+	}
 
 }
 
@@ -205,10 +230,10 @@ sub __DefineNPlatedOperations {
 	my @nplt_stiffsMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };       # milling for stiffener from side s
 	my @nplt_stiffcAdhMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } };    # depth milling of top stiffener adhesive from top
 	my @nplt_stiffsAdhMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } };    # depth milling of bot stiffener adhesive from top
-	my @nplt_bstiffcMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } };  # depth milling of stiffener from side c
-	my @nplt_bstiffsMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } };  # depth milling of stiffener from side s
-	my @nplt_tapecMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapecMill } };    # milling of doublesided tape sticked from top
-	my @nplt_tapesMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapesMill } };    # milling of doublesided tape sticked from bot
+	my @nplt_bstiffcMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } };      # depth milling of stiffener from side c
+	my @nplt_bstiffsMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } };      # depth milling of stiffener from side s
+	my @nplt_tapecMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapecMill } };        # milling of doublesided tape sticked from top
+	my @nplt_tapesMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapesMill } };        # milling of doublesided tape sticked from bot
 	my @nplt_tapebrMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill } };  # milling of doublesided tape bridges after tape is pressed
 
 	#Define operation:
