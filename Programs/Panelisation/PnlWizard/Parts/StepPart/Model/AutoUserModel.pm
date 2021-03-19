@@ -28,7 +28,7 @@ sub new {
 	$self->{"modelKey"}    = PnlCreEnums->StepPnlCreator_AUTOUSER;
 	 
 	$self->{"settings"}->{"pcbStep"}      = undef;
-	$self->{"settings"}->{"placementType"}     = PnlCreEnums->StepPlacement_ROTATION;
+	$self->{"settings"}->{"placementType"}     = PnlCreEnums->PnlClassTransform_ROTATION;
 	$self->{"settings"}->{"rotationType"}      = undef;
 	$self->{"settings"}->{"patternType"}       = undef;
 	$self->{"settings"}->{"interlockType"}     = undef;

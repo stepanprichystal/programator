@@ -32,7 +32,7 @@ sub new {
 
 	# Setting values necessary for procesing panelisation
 	$self->{"settings"}->{"pcbStep"}           = undef;
-	$self->{"settings"}->{"placementType"}     = Enums->StepPlacement_ROTATION;
+	$self->{"settings"}->{"placementType"}     = Enums->PnlClassTransform_ROTATION;
 	$self->{"settings"}->{"rotationType"}      = undef;
 	$self->{"settings"}->{"patternType"}       = undef;
 	$self->{"settings"}->{"interlockType"}     = undef;

@@ -136,7 +136,7 @@ sub __SetLayoutPlacement {
 	
 
 #	my @rotType =
-#	  ( PnlCreEnums->StepRotation_0DEG, PnlCreEnums->StepRotation_90DEG, PnlCreEnums->StepRotation_UNIFORM, PnlCreEnums->StepRotation_ANY );
+#	  ( PnlCreEnums->PnlClassRotation_0DEG, PnlCreEnums->PnlClassRotation_90DEG, PnlCreEnums->PnlClassRotation_UNIFORM, PnlCreEnums->PnlClassRotation_ANY );
 ##	my $rotTypeCb =
 ##	  Wx::ComboBox->new( $placementRotPage->GetParent(), -1, $rotType[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@rotType, &Wx::wxCB_READONLY );
 #
@@ -156,10 +156,10 @@ sub __SetLayoutPlacement {
 	
 
 	my @pattType = (
-					 PnlCreEnums->StepPattern_NO_PATTERN,     PnlCreEnums->StepPattern_ALTERNATE_ROW,
-					 PnlCreEnums->StepRotation_ALTERNATE_COL, PnlCreEnums->StepRotation_ALTERNATE_ROW_COL,
-					 PnlCreEnums->StepRotation_TOP_HALF,      PnlCreEnums->StepRotation_BOTTOM_HALF,
-					 PnlCreEnums->StepRotation_RIGHT_HALF,    PnlCreEnums->StepRotation_LEFT_HALF
+					 PnlCreEnums->PnlClassPattern_NO_PATTERN,     PnlCreEnums->PnlClassPattern_ALTERNATE_ROW,
+					 PnlCreEnums->PnlClassRotation_ALTERNATE_COL, PnlCreEnums->PnlClassRotation_ALTERNATE_ROW_COL,
+					 PnlCreEnums->PnlClassRotation_TOP_HALF,      PnlCreEnums->PnlClassRotation_BOTTOM_HALF,
+					 PnlCreEnums->PnlClassRotation_RIGHT_HALF,    PnlCreEnums->PnlClassRotation_LEFT_HALF
 	);
 
 	#my $pattTypeCb = Wx::ComboBox->new( $allPage->GetParent(), -1, $rotType[0], &Wx::wxDefaultPosition, [ 50, 25 ], \@rotType, &Wx::wxCB_READONLY );
@@ -178,7 +178,7 @@ sub __SetLayoutPlacement {
 	# Row 2
 
 	my $interlockTxt = Wx::StaticText->new( $statBox, -1, "Interlock:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my @interlockType = ( PnlCreEnums->StepInterlock_NONE, PnlCreEnums->StepInterlock_SIMPLE, PnlCreEnums->StepInterlock_SLIDING );
+	my @interlockType = ( PnlCreEnums->PnlClassInterlock_NONE, PnlCreEnums->PnlClassInterlock_SIMPLE, PnlCreEnums->PnlClassInterlock_SLIDING );
 	my $interlockCb =
 	  Wx::ComboBox->new( $statBox, -1, $interlockType[0], &Wx::wxDefaultPosition, [ 50, 25 ], \@interlockType, &Wx::wxCB_READONLY );
 
@@ -236,7 +236,7 @@ sub __SetLayoutSpacing {
 	my $spaceYValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
 
 	my $spacingTypeTxt = Wx::StaticText->new( $statBox, -1, "Space Y", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my @spacingType = ( PnlCreEnums->StepSpacing_KEEP_IN_CENTER, PnlCreEnums->StepSpacing_SPACE_EVENLY );
+	my @spacingType = ( PnlCreEnums->PnlClassSpacingAlign_KEEP_IN_CENTER, PnlCreEnums->PnlClassSpacingAlign_SPACE_EVENLY );
 	my $spacingTypeCb =
 	  Wx::ComboBox->new( $statBox, -1, $spacingType[0], &Wx::wxDefaultPosition, [ 50, 25 ], \@spacingType, &Wx::wxCB_READONLY );
 
@@ -447,7 +447,7 @@ sub SetPlacementType {
 	my $self = shift;
 	my $val  = shift;
 
-	if ( $val eq PnlCreEnums->StepPlacement_ROTATION ) {
+	if ( $val eq PnlCreEnums->PnlClassTransform_ROTATION ) {
 
 		$self->{"rbPlacementRot"}->SetValue(1);
 		$self->{"notebookPlacement"}->ShowPage(1);
@@ -472,7 +472,7 @@ sub GetPlacementType {
 
 	if ( $self->{"rbPlacementRot"}->GetValue() ) {
 
-		$val = PnlCreEnums->StepPlacement_ROTATION;
+		$val = PnlCreEnums->PnlClassTransform_ROTATION;
 	}
 	elsif ( $self->{"rbPlacementPatt"}->GetValue() ) {
 		$val = PnlCreEnums->StepPlacement_PATTERN;
