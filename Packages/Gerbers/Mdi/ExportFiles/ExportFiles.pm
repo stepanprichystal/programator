@@ -276,7 +276,7 @@ sub __GetLayers2Export {
 
 	if ( $layerTypes->{ Enums->Type_PLUG } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @all;
+		my @l = grep { $_->{"gROWname"} =~ /^plg[csv]\d*$/ } @all;
 		push( @exportLayers, @l );
 	}
 

@@ -326,6 +326,7 @@ sub __DefinePlatedOperations {
 	# - @plt_nDrill
 	# - @plt_fDrill
 	# - @plt_bDrillTop
+	# - @plt_bFillDrillTop
 
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
@@ -345,6 +346,12 @@ sub __DefinePlatedOperations {
 		# blind drilling start from top in layer <$drillStartTop>
 		my @blindTop = grep { $_->{"NCSigStartOrder"} == $startTop } @plt_bDrillTop;
 		push( @layers, @blindTop );
+
+		# blind fill drilling start from top in layer <$drillStartTop>
+		if ( $pressOrder < $stackup->GetPressCount() ) {
+			push( @layers, grep { $_->{"NCSigStartOrder"} == $startTop } @plt_bFillDrillTop );
+			push( @layers, grep { $_->{"NCSigStartOrder"} == $startTop } @plt_nFillDrill );
+		}
 
 		if ( $pressOrder == $stackup->GetPressCount() && !$viaFillOuter ) {
 
@@ -386,6 +393,13 @@ sub __DefinePlatedOperations {
 		#blind drilling start from bot in layer <$drillStartTop>
 		my @blindBot = grep { $_->{"NCSigStartOrder"} == $startBot } @plt_bDrillBot;
 		push( @layers, @blindBot );
+		
+		
+		# blind fill drilling start from top in layer <$drillStartBot>
+		if ( $pressOrder < $stackup->GetPressCount() ) {
+			my @blindFillBot = grep { $_->{"NCSigStartOrder"} == $startBot } @plt_bFillDrillBot;
+			push( @layers, @blindFillBot );
+		}
 
 		my $oDef = $opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
 	}
@@ -520,12 +534,11 @@ sub __DefinePlatedOperations {
 
 		$opManager->AddOperationDef( "v1", [$v1], $stackup->GetPressCount() );
 	}
-	
-	
+
 	# 12) Operation name = v1p<\d> - can contain layer
 	# - @plt_fcPressDrill
 	foreach my $l (@plt_fcPressDrill) {
- 
+
 		$opManager->AddOperationDef( $l->{"gROWname"}, [$l], -1 );
 	}
 
