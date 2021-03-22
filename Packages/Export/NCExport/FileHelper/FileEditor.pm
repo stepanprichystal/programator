@@ -341,30 +341,31 @@ sub EditBeforeSave {
 	# LAYERTYPE_plt_nDrill
 	# LAYERTYPE_plt_nMill
 	# Put M47, Frezovani pred prokovem (2nd mess in program) into brackets (M47 stop machine, brackets no)
+	# 18.3. LBA - pozadavek zrusit zavorky, aby se masina zastavila
 
-	my @l2 =
-	  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nMill } $opItem->GetSortedLayers();
-
-	unless ( scalar(@l2) ) {
-
-		# put M47, Message to brackets
-		my $messageCnt = 0;
-		for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
-
-			if ( $parseFile->{"body"}->[$i]->{"line"} =~ /m47/i ) {
-
-				$messageCnt++;
-
-				if ( $messageCnt == 2 ) {
-					$parseFile->{"body"}->[$i]->{"line"} =~ s/\n//;
-					$parseFile->{"body"}->[$i]->{"line"} = "(" . $parseFile->{"body"}->[$i]->{"line"} . ")\n";
-					last;
-				}
-
-			}
-
-		}
-	}
+#	my @l2 =
+#	  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nMill } $opItem->GetSortedLayers();
+#
+#	unless ( scalar(@l2) ) {
+#
+#		# put M47, Message to brackets
+#		my $messageCnt = 0;
+#		for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
+#
+#			if ( $parseFile->{"body"}->[$i]->{"line"} =~ /m47/i ) {
+#
+#				$messageCnt++;
+#
+#				if ( $messageCnt == 2 ) {
+#					$parseFile->{"body"}->[$i]->{"line"} =~ s/\n//;
+#					$parseFile->{"body"}->[$i]->{"line"} = "(" . $parseFile->{"body"}->[$i]->{"line"} . ")\n";
+#					last;
+#				}
+#
+#			}
+#
+#		}
+#	}
 
 	# =============================================================
 	# 3) EDIT: Renumber tool numbers ASC if program is merged from more layers

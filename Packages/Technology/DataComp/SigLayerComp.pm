@@ -28,13 +28,13 @@ sub new {
 
 	my $inCAM = shift;
 	my $jobId = shift;
-	my $step = shift // 'panel'; 
+	my $step  = shift // 'panel';
 
 	# PROPERTY
 
 	$self->{"inCAM"}    = $inCAM;
 	$self->{"jobId"}    = $jobId;
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $jobId);
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	if ( $self->{"layerCnt"} > 2 ) {
 
@@ -59,6 +59,7 @@ sub GetLayerCompensation {
 	else {
 
 		%comp = $self->__GetCompensation2V($sigLayer);
+
 	}
 
 	$comp{"x"} = sprintf( "%.3f", $comp{"x"} );
@@ -133,7 +134,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my %comp1 = $lc->GetLayerCompensation("c");
 
-	 
 }
 
 1;

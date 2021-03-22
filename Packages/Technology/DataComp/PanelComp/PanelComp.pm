@@ -120,6 +120,24 @@ sub GetBaseMatComp {
 
 	my @comp = $self->__GetPanelXYScale( $matKind, $matThick, $cuThick, $cuUsage );
 
+	# If pcb is flexible and PCB contain TOP + BOT soldermask without any coverlay
+	# add extra stretch, beasuce PCB are empirically more shrinked
+
+	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
+
+		my @board = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
+
+		my $cvrl = scalar( grep { $_->{"gROWlayer_type"} eq "coverlay" } @board );
+		my $sm   = scalar( grep { $_->{"gROWlayer_type"} eq "solder_mask" } @board );
+
+		if ( !$cvrl && $sm >= 2 ) {
+
+			use constant EXTRA_SM_STRETCH => 0.05;    # 0.05%
+			$comp[0] += EXTRA_SM_STRETCH;
+			$comp[1] += EXTRA_SM_STRETCH;
+		}
+	}
+
 	return ( "x" => $comp[0], "y" => $comp[1] );
 }
 
@@ -130,7 +148,7 @@ sub __GetCoreMaterialKind {
 
 	my $mKind = undef;
 	$mKind = "PYRALUX"  if ( $mTxt =~ /pyralux/i );
-	$mKind = "THINFLEX"  if ( $mTxt =~ /thinflex/i );
+	$mKind = "THINFLEX" if ( $mTxt =~ /thinflex/i );
 	$mKind = "IS400"    if ( $mTxt =~ /IS.*400/i );
 	$mKind = "PCL370HR" if ( $mTxt =~ /PCL.*370.*HR/i );
 
