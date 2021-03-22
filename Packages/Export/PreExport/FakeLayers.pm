@@ -74,6 +74,7 @@ sub RemoveFakeLayers {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
+	
 
 	my $step = "panel";
 

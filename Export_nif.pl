@@ -15,10 +15,18 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmp';
 use aliased 'Packages::Export::PreExport::FakeLayers';
 
+use aliased 'Packages::Export::PreExport::FakeLayers';
+ 
+ 
+ 
+
+ 
+
+
 
 #input parameters
  
-my $jobId    = "d290377";
+my $jobId    = "d312990";
  
  
 my $poznamka = "";
@@ -33,6 +41,12 @@ my $jumpScoring  = 0;
 
 
 my $inCAM = InCAM->new();
+
+FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 0 );
+
+
+
+
 my $export = NifExportTmp->new();
 
 #return 1 if OK, else 0

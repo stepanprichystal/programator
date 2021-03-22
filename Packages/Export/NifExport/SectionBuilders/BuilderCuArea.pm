@@ -236,48 +236,65 @@ sub Build {
 	}
 
 	# comment
-	if ( $self->_IsRequire("plg_plocha_c") || $self->_IsRequire("plg_plocha_s") ) {
+	if ( $self->_IsRequire("plg_plocha") || $self->_IsRequire("plg_plocha") ) {
 
 		$section->AddComment("Plocha Cu plosek zaplnovanych otvoru");
 	}
 
 	#plg_plocha_c
-	if ( $self->_IsRequire("plg_plocha_c") ) {
+	if ( $self->_IsRequire("plg_plocha") ) {
 
-		if ( CamHelper->LayerExists( $inCAM, $jobId, "plgc" ) ) {
-
+		foreach my $layer ( map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "via_plug" } CamJob->GetBoardBaseLayers( $inCAM, $jobId ) ) {
+		
 			my %result = ();
 
 			if ( $self->{"layerCnt"} > 2 ) {
 
-				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, \%frLim, 1, 1 );
+				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", $layer, undef, \%frLim, 1, 1 );
 			}
 			else {
-				%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, 1, 1 );
+				%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", $layer, undef, 1, 1 );
 			}
 
-			$section->AddRow( "plg_plocha_c", $result{"area"} );
+			my $sigL = ( $layer =~ m/plg(.*)/ )[0];
+
+			$section->AddRow( "plg_plocha_$sigL", $result{"area"} );
 		}
 	}
+	     #
+	     #		if ( CamHelper->LayerExists( $inCAM, $jobId, "plgc" ) ) {
+	     #
+	     #			my %result = ();
+	     #
+	     #			if ( $self->{"layerCnt"} > 2 ) {
+	     #
+	     #				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, \%frLim, 1, 1 );
+	     #			}
+	     #			else {
+	     #				%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, 1, 1 );
+	     #			}
+	     #
+	     #			$section->AddRow( "plg_plocha_c", $result{"area"} );
+	     #		}
 
-	#plg_plocha_s
-	if ( $self->_IsRequire("plg_plocha_s") ) {
-
-		if ( CamHelper->LayerExists( $inCAM, $jobId, "plgs" ) ) {
-
-			my %result = ();
-
-			if ( $self->{"layerCnt"} > 2 ) {
-
-				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "plgs", \%frLim, 1, 1 );
-			}
-			else {
-				%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "plgs", 1, 1 );
-			}
-
-			$section->AddRow( "plg_plocha_s", $result{"area"} );
-		}
-	}
+	#	#plg_plocha_s
+	#	if ( $self->_IsRequire("plg_plocha") ) {
+	#
+	#		if ( CamHelper->LayerExists( $inCAM, $jobId, "plgs" ) ) {
+	#
+	#			my %result = ();
+	#
+	#			if ( $self->{"layerCnt"} > 2 ) {
+	#
+	#				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "plgs", \%frLim, 1, 1 );
+	#			}
+	#			else {
+	#				%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", undef, "plgs", 1, 1 );
+	#			}
+	#
+	#			$section->AddRow( "plg_plocha_s", $result{"area"} );
+	#		}
+	#	}
 
 	# Cu area (if blind holes) during pressing
 	if ( $self->{"layerCnt"} > 2 && $pressCnt > 0 ) {
@@ -291,12 +308,14 @@ sub Build {
 			my $press      = $stackupNC->GetNCPressProduct($pressOrder);
 
 			my $existTopPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			my $existTopPlt_nFillDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
 			my $existPlt_bDrillTop = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
 			my $existBotPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			my $existBotPlt_nFillDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
 			my $existPlt_bDrillBot = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
-			if ( $existTopPlt_nDrill || $existPlt_bDrillTop || $existBotPlt_nDrill || $existPlt_bDrillBot ) {
+			if ( $existTopPlt_nDrill || $existTopPlt_nFillDrill || $existPlt_bDrillTop || $existBotPlt_nDrill || $existBotPlt_nFillDrill ||$existPlt_bDrillBot ) {
 
 				my $actualThick = $stackup->GetThickByCuLayer( $press->GetTopCopperLayer() );        #in µm
 				my $baseCuThick = $stackup->GetCuLayer( $press->GetTopCopperLayer() )->GetThick();
@@ -395,7 +414,7 @@ sub Build {
 		#			$prog = 1;
 		#		}
 
-		if ( !$rsMillExist && !$blindDrillExist && $pcbClass < 9) {
+		if ( !$rsMillExist && !$blindDrillExist && $pcbClass < 9 ) {
 
 			$prog = 0;
 		}

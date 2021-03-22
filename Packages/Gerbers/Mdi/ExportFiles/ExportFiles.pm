@@ -406,14 +406,16 @@ sub __GetFiducials {
 	}
 
 	# Exception 2: If inner layer and sequential lamination, use OLEC which contain SL - sequential lamination
-	if ( $layerName =~ /^v\d+$/ && $self->{"stackup"}->GetSequentialLam() ) {
+	if ( $layerName =~ /^(plg)?v\d+$/ && $self->{"stackup"}->GetSequentialLam() ) {
 
-		if ( $self->{"stackup"}->GetCuLayer($layerName)->GetIsFoil() ) {
+		my %lPars = JobHelper->ParseSignalLayerName($layerName);
+	
+		if ( $self->{"stackup"}->GetCuLayer( $lPars{"sourceName"} )->GetIsFoil() ) {
 
 			@features = grep { $_->{"att"}->{".pnl_place"} =~ /-SL-/i } @features;
 		}
 		else {
-			
+
 			@features = grep { $_->{"att"}->{".pnl_place"} !~ /-SL-/i } @features;
 		}
 	}
@@ -638,7 +640,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d296472";
+	my $jobId    = "d312990";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -647,9 +649,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
-				 Enums->Type_SIGNAL => "1",
+				 Enums->Type_SIGNAL => "0",
 				 Enums->Type_MASK   => "0",
-				 Enums->Type_PLUG   => "0",
+				 Enums->Type_PLUG   => "1",
 				 Enums->Type_GOLD   => "0"
 	);
 

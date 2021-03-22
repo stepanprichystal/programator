@@ -112,8 +112,8 @@ sub Build {
 	push( @req, "g_plocha_s" );
 	push( @req, "gold_c" );
 	push( @req, "gold_s" );
-	push( @req, "plg_plocha_c" );
-	push( @req, "plg_plocha_s" );
+	push( @req, "plg_plocha" );
+	push( @req, "plg_plocha" );
 	push( @req, "pocet_ponoru" );
 	push( @req, "zlacena_plocha" );
 	push( @req, "imersni_plocha" );

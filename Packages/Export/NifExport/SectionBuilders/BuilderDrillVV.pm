@@ -45,11 +45,9 @@ sub Build {
 	my %nifData  = %{ $self->{"nifData"} };
 	my $stepName = "panel";
 
-	my $stackup   = Stackup->new( $inCAM, $self->{'jobId'} );
+	my $stackup = Stackup->new( $inCAM, $self->{'jobId'} );
 	my $stackupNC = StackupNC->new( $inCAM, $self->{'jobId'} );
-	my $pressCnt  = $stackupNC->GetPressCount();
-	
-	
+	my $pressCnt = $stackupNC->GetPressCount();
 
 	# comment
 	$section->AddComment(" SLEPE VRTANI SKRZ DPS PO LISOVANI");
@@ -65,28 +63,38 @@ sub Build {
 
 		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $existNormalDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $existFillDrill   = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
+
+		die "Only one type of drilling (through or through fille) is allowed" if ( $existNormalDrill && $existFillDrill );
+
+		my $layerType = EnumsGeneral->LAYERTYPE_plt_nDrill;              # default
+		my $existDrill = $existNormalDrill || $existFillDrill ? 1 : 0;
+
+		if ($existFillDrill) {
+			$layerType = EnumsGeneral->LAYERTYPE_plt_nFillDrill;
+		}
 
 		#if ( $self->_IsRequire( "slepe_vrtani_" . $pressOrder . "c" ) ) {
 		$section->AddRow( "slepe_vrtani_" . $pressOrder . "c", $existDrill ? "A" : "N" );
 
 		#}
 
-		my $stagesCnt = $press->GetStageCnt( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $stagesCnt = $press->GetStageCnt( Enums->SignalLayer_TOP, undef, $layerType );
 
 		#if ( $self->_IsRequire( "stages_slepe_vrtani_c_" . $pressOrder ) ) {
 		$section->AddRow( "stages_slepe_vrtani_c_" . $pressOrder, $stagesCnt );
 
 		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, undef,  EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, undef, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_c_" . $pressOrder, $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_TOP, undef, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_c_" . $pressOrder, $maxAspectRatio );
@@ -105,28 +113,40 @@ sub Build {
 
 		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		#	my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+
+		my $existNormalDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $existFillDrill   = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
+
+		die "Only one type of drilling (through or through fille) is allowed" if ( $existNormalDrill && $existFillDrill );
+
+		my $layerType = EnumsGeneral->LAYERTYPE_plt_nDrill;              # default
+		my $existDrill = $existNormalDrill || $existFillDrill ? 1 : 0;
+
+		if ($existFillDrill) {
+			$layerType = EnumsGeneral->LAYERTYPE_plt_nFillDrill;
+		}
 
 		#if ( $self->_IsRequire( "slepe_vrtani_" . $pressOrder . "s" ) ) {
 		$section->AddRow( "slepe_vrtani_" . $pressOrder . "s", $existDrill ? "A" : "N" );
 
 		#}
 
-		my $stagesCnt = $press->GetStageCnt( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $stagesCnt = $press->GetStageCnt( Enums->SignalLayer_BOT, undef, $layerType );
 
 		#if ( $self->_IsRequire( "stages_slepe_vrtani_s_" . $pressOrder ) ) {
 		$section->AddRow( "stages_slepe_vrtani_s_" . $pressOrder, $stagesCnt );
 
 		#}
 
-		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, undef, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_s_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_s_" . $pressOrder, $self->__FormatTool($minTool) );
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+		my $maxAspectRatio = $press->GetMaxAspectRatio( Enums->SignalLayer_BOT, undef, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_s_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_s_" . $pressOrder, $maxAspectRatio );
@@ -134,8 +154,8 @@ sub Build {
 		#}
 	}
 
-	my $viaFill  = CamDrilling->GetViaFillExists( $inCAM, $jobId );
- 
+	my $viaFill = CamDrilling->GetViaFillExists( $inCAM, $jobId );
+
 	# comment
 	$section->AddComment( " SLEPE VRTANI PO LISOVANI " . ( $viaFill ? "(PRED ZAPLNENIM OTVORU)" : "" ) );
 
@@ -153,7 +173,7 @@ sub Build {
 
 		my $press = $stackupNC->GetNCPressProduct($pressOrder);
 
-		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef,  $layerType );
+		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, $layerType );
 
 		#if ( $self->_IsRequire( "slepe_otvory_c_" . $pressOrder ) ) {
 		$section->AddRow( "slepe_otvory_c_" . $pressOrder, $existDrill ? "A" : "N" );
@@ -167,14 +187,14 @@ sub Build {
 
 		#}
 
-		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_TOP, undef,  $layerType );
+		my $maxAspectRatio = $press->GetMaxBlindAspectRatio( Enums->SignalLayer_TOP, undef, $layerType );
 
 		#if ( $self->_IsRequire( "min_vrtak_pomer_sl_c_" . $pressOrder ) ) {
 		$section->AddRow( "min_vrtak_pomer_sl_c_" . $pressOrder, $maxAspectRatio );
 
 		#}
 	}
- 
+
 	for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
 
 		my $pressOrder = $i + 1;
@@ -211,8 +231,6 @@ sub Build {
 		#}
 	}
 
-
-
 	if ($viaFill) {
 
 		# comment
@@ -223,12 +241,12 @@ sub Build {
 
 		my $press = $stackupNC->GetNCPressProduct($pressCnt);
 
-#		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
-#
-#		#if ( $self->_IsRequire( "slepe_otvory_c_" . $pressOrder ) ) {
-#		$section->AddRow( "vrtani_do_c" . $pressCnt, $existDrill ? "A" : "N" );
-#
-#		#}
+		#		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+		#
+		#		#if ( $self->_IsRequire( "slepe_otvory_c_" . $pressOrder ) ) {
+		#		$section->AddRow( "vrtani_do_c" . $pressCnt, $existDrill ? "A" : "N" );
+		#
+		#		#}
 
 		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
@@ -258,7 +276,8 @@ sub Build {
 		my $existDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
 		#if ( $self->_IsRequire( "vrtani_do_s" ) ) {
-			$section->AddRow( "vrtani_do_s", $existDrill ? "A" : "N" );
+		$section->AddRow( "vrtani_do_s", $existDrill ? "A" : "N" );
+
 		#}
 
 		my $minTool = $press->GetMinHoleTool( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
