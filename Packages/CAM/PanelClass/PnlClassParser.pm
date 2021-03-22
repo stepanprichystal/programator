@@ -61,7 +61,7 @@ sub Parse {
 	my $sizesXML = XML::LibXML->load_xml( "location" => $pSize );
 
 	my @sizes = ();
-	foreach my $node ( $sizesXML->findnodes('/PnlSize/size') ; ) {
+	foreach my $node ( $sizesXML->findnodes('/PnlSize/size') ) {
 
 		my $size = PnlSize->new( $node->{"name"} );
 		$size->SetWidth( $node->{"width"} );
@@ -75,10 +75,10 @@ sub Parse {
 
 	die "Sizes definition: ${pBord} doesn't exist" unless ( -e $pBord );
 
-	my $sizesXML = XML::LibXML->load_xml( "location" => $pBord );
+	my $bordSpacXML = XML::LibXML->load_xml( "location" => $pBord );
 
 	my @border = ();
-	foreach my $node ( $sizesXML->findnodes('/PnlSize/borderSpacing ') ; ) {
+	foreach my $node ( $bordSpacXML->findnodes('/PnlSize/borderSpacing ') ) {
 
 		my $border = PnlBorder->new( $node->{"name"} );
 		$border->SetLeftBorder( $node->{"leftBorder"} );
@@ -90,14 +90,9 @@ sub Parse {
 	}
 
 	# 3) Parse spacing
-	my $pSpac = $self->{"path"} . "pnlborderspacing.xml";
-
-	die "Sizes definition: ${pSpac} doesn't exist" unless ( -e $pSpac );
-
-	my $sizesXML = XML::LibXML->load_xml( "location" => $pSpac );
 
 	my @space = ();
-	foreach my $node ( $sizesXML->findnodes('/PnlSize/borderSpacing ') ; ) {
+	foreach my $node ( $bordSpacXML->findnodes('/PnlSize/borderSpacing ') ) {
 
 		my $space = PnlSpacing->new( $node->{"name"} );
 		$space->SetSpaceX( $node->{"spaceX"} );
@@ -111,10 +106,10 @@ sub Parse {
 
 	die "Sizes definition: ${$pClass} doesn't exist" unless ( -e $pClass );
 
-	my $sizesXML = XML::LibXML->load_xml( "location" => $pClass );
+	my $classesXML = XML::LibXML->load_xml( "location" => $pClass );
 
 	my @classes = ();
-	foreach my $node ( $sizesXML->findnodes('/PnlSize/class ') ; ) {
+	foreach my $node ( $classesXML->findnodes('/PnlSize/class ') ) {
 
 		my $class = PnlSpacing->new( $node->{"name"} );
 		$class->SetGoldScoringDist( $node->{"goldScoringDist"} );
@@ -126,7 +121,7 @@ sub Parse {
 		$class->SetNumMaxSteps( $node->{"numMaxSteps"} );
 
 		my @sz = ();
-		foreach my $node ( $sizesXML->findnodes('/Sizes ') ) {
+		foreach my $node ( $classesXML->findnodes('/Sizes ') ) {
 
 			my $obj = first { $_->GetName() eq $node->{"name"} } @sizes;
 			die "Size: " . $node->{"name"} . " is not defined" unless ( defined $obj );
@@ -137,7 +132,7 @@ sub Parse {
 		$class->SetSizes( \@sz );
 
 		my @bord = ();
-		foreach my $node ( $sizesXML->findnodes('/BordersSpacings ') ) {
+		foreach my $node ( $classesXML->findnodes('/BordersSpacings ') ) {
 
 			my $obj = first { $_->GetName() eq $node->{"name"} } @border;
 			die "Border: " . $node->{"name"} . " is not defined" unless ( defined $obj );
@@ -167,11 +162,60 @@ sub Parse {
 sub GetClassesCustomerPanel {
 	my $self = shift;
 
+	my $matType = $self->__GetPCBMaterialType();
+	my $numType = $self->__GetPCBLayerCntType();
+
+	my $className = join( "_", ( $matType, $numType ) );
+
+	my @classes = grep { $_->GetName() =~ /^$className$/i } @{ $self->{"classes"} };
+
+ 
+	return @classes;
+
 }
 
 sub GetClassesProductionPanel {
 	my $self = shift;
+	
+	my $matType = $self->__GetPCBMaterialType();
+	my $numType = $self->__GetPCBLayerCntType();
 
+	my $className = join( "_", ( "mpanel". $matType, $numType ) );
+
+	my @classes = grep { $_->GetName() =~ /^$className/i } @{ $self->{"classes"} };
+	
+	
+
+	return @classes;
+}
+
+sub GetBordersByClassSize {
+	my $self      = shift;
+	my $className = shift;
+	my $sizeName  = shift;
+
+	my $class = first { $_->GetName() =~ /^$sizeName$/i } @{ $self->{"classes"} };
+	die "Class:  $className was not found " unless ( defined $class );
+
+	my @parsedSze = split( "_", $sizeName );
+
+	# add special type to name if exist
+	my $spec = $self->__GetPCBSpecialType();
+	push( @parsedSze, $spec ) if ( defined $spec );
+
+	my @borders = ();
+
+	my @allClassBorders = @{ $class->GetBorders() };
+
+	while ( scalar(@borders) == 0 ) {
+
+		my $borderName = join( "_", @parsedSze );
+
+		my @b = grep { $_->GetName() =~ /^$borderName$/i } @allClassBorders;
+		push( @borders, @b ) if ( scalar(@b) );
+	}
+
+	return @borders;
 }
 
 sub __GetPCBMaterialType {
@@ -243,7 +287,7 @@ sub __GetPCBSpecialType {
 	push( @prior, Enums->PCBSpecial_GRAFIT ) if ($grafit);
 	push( @prior, Enums->PCBSpecial_AU )     if ($HardGold);
 	push( @prior, Enums->PCBSpecial_PBHAL )  if ($PbHAL);
-	
+
 	$type = shift @prior;
 
 	return $type;

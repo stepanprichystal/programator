@@ -526,6 +526,10 @@ sub __SetLayout {
 	my $btnShowInCAM = $self->AddButton( "Show InCAM", sub { $self->{"showInCAMClickEvt"}->Do() } );
 	my $btnCreate    = $self->AddButton( "Create",     sub { $self->{"createClickEvt"}->Do() } );
 
+	# DEFINE EVENTS
+	$self->{"mainFrm"}->{"onClose"}->Add( sub { $self->{"cancelClickEvt"}->Do(); } );
+
+
 	# DEFINE LAYOUT STRUCTURE
 
 	# KEEP REFERENCES
@@ -548,9 +552,12 @@ sub __SetLayoutHeader {
 	my $szMain     = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szMainSett = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	my $szSett     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szSettRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szSettRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szSettCol1     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szSettCol2     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szSettCol3     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szSettCol1Row1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szSettCol2Row1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	 
 
 	my $szQuickBtn = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
@@ -559,9 +566,11 @@ sub __SetLayoutHeader {
 	my $pnlMain = Wx::Panel->new( $parent, -1 );
 
 	my $pnlSett = Wx::Panel->new( $pnlMain, -1 );
+	my $pnlSepar = Wx::Panel->new( $pnlSett, -1, &Wx::wxDefaultPosition, [ 4, -1 ] );
 
 	$pnlMain->SetBackgroundColour( EnumsStyle->BACKGCLR_HEADERBLUE );
 	$pnlSett->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
+	$pnlSepar->SetBackgroundColour( EnumsStyle->BACKGCLR_MEDIUMGRAY );
 
 	# DEFINE CONTROLS
 	my $title = undef;
@@ -578,34 +587,43 @@ sub __SetLayoutHeader {
 	my $f = Wx::Font->new( 14, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 	$titleTxt->SetFont($f);
 
-	my $stepTxt = Wx::StaticText->new( $pnlSett, -1, "Step name:", &Wx::wxDefaultPosition, [ 70, 22 ] );
+	my $stepTxt = Wx::StaticText->new( $pnlSett, -1, "Step name:", &Wx::wxDefaultPosition, [ 70, 24 ] );
 	my $stepValTxt = Wx::TextCtrl->new( $pnlSett, -1, "mpanel", &Wx::wxDefaultPosition );
 
-	my $previewTxt = Wx::StaticText->new( $pnlSett, -1, "Preview:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $previewChb = Wx::CheckBox->new( $pnlSett, -1, "", &Wx::wxDefaultPosition );
+	#my $previewTxt = Wx::StaticText->new( $pnlSett, -1, "Preview:", &Wx::wxDefaultPosition, [ 70, 22 ] );
+	my $previewChb = Wx::CheckBox->new( $pnlSett, -1, "Preview", &Wx::wxDefaultPosition, [ -1, 24 ] );
 
-	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [ 160, 23 ] );
-	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [ 120, 23 ] );
+	my $dockWindowsBtn    = Wx::Button->new( $pnlSett, -1, "Dock windows",    &Wx::wxDefaultPosition, [ 160, 24 ] );
+	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [ 160, 24 ] );
+	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [ 120, 24 ] );
 
 	# BUILD LAYOUT STRUCTURE
 
-	$szSettRow1->Add( $stepTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szSettRow1->Add( $stepValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol1Row1->Add( $stepTxt,    0,  &Wx::wxALL, 0 );
+	$szSettCol1Row1->Add( $stepValTxt, 0,  &Wx::wxALL, 0 );
 
-	$szSettRow2->Add( $previewTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szSettRow2->Add( $previewChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol2Row1->Add( $previewChb, 0,  &Wx::wxALL, 0 );
+	$szSettCol2Row1->Add( $dockWindowsBtn, 0,  &Wx::wxALL, 0 );
 
-	$szSett->Add( $szSettRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szSett->Add( $szSettRow2, 0, &Wx::wxEXPAND | &Wx::wxTOP, 1 );
+	$szSettCol1->Add( 10, 10, 1);
+	$szSettCol1->Add( $szSettCol1Row1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	#$szSettCol1->Add( 5, 5, 1);
+	
+	$szSettCol2->Add( 10, 10, 1);
+	$szSettCol2->Add( $szSettCol2Row1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	#$szSettCol2->Add( 1, 1, 1);
+	
+	$szSettCol3->Add( $loadDefaultBtn, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol3->Add( $loadLastBtn, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMainSett->Add( 10, 10, 0, );
-	$szMainSett->Add( $szSett, 1, &Wx::wxALL, 2 );
+	$szMainSett->Add( $szSettCol1, 0, &Wx::wxLEFT, 2 );
+	$szMainSett->Add( $pnlSepar, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szMainSett->Add( $szSettCol2, 0, &Wx::wxLEFT, 2 );
+	$szMainSett->Add( 10, 10, 1, );
+	$szMainSett->Add( $szSettCol3, 0, &Wx::wxLEFT, 2 );
 
-	$szQuickBtn->Add( $loadLastBtn,    0, &Wx::wxALL, 1 );
-	$szQuickBtn->Add( $loadDefaultBtn, 0, &Wx::wxALL, 1 );
-
-	$szMainSett->Add( $szQuickBtn, 0, &Wx::wxALL, 2 );
-
+  
 	$pnlMain->SetSizer($szMain);
 	$pnlSett->SetSizer($szMainSett);
 

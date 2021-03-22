@@ -15,6 +15,7 @@ use warnings;
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
+use aliased 'Packages::CAM::PanelClass::Enums' => 'PnlClassEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -28,7 +29,7 @@ sub new {
 	$self->{"modelKey"}    = PnlCreEnums->StepPnlCreator_AUTOUSER;
 	 
 	$self->{"settings"}->{"pcbStep"}      = undef;
-	$self->{"settings"}->{"placementType"}     = PnlCreEnums->PnlClassTransform_ROTATION;
+	$self->{"settings"}->{"placementType"}     = PnlClassEnums->PnlClassTransform_ROTATION;
 	$self->{"settings"}->{"rotationType"}      = undef;
 	$self->{"settings"}->{"patternType"}       = undef;
 	$self->{"settings"}->{"interlockType"}     = undef;

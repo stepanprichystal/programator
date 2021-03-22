@@ -113,7 +113,7 @@ sub SetCreators {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
+			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ||  $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
@@ -124,14 +124,7 @@ sub SetCreators {
 				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
-
-				$creatorFrm->SetWidth( $model->GetWidth() );
-				$creatorFrm->SetHeight( $model->GetHeight() );
-
-				$creatorFrm->SetStep( $model->GetStep() );
-
-			}
+			 
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
 			}
@@ -166,7 +159,7 @@ sub GetCreators {
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
+		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ||  $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
@@ -177,13 +170,7 @@ sub GetCreators {
 			$model->SetStep( $creatorFrm->GetStep() );
 
 		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
-
-			$model->SetWidth( $creatorFrm->GetWidth() );
-			$model->SetHeight( $creatorFrm->GetHeight() );
-			$model->SetStep( $creatorFrm->GetStep() );
-
-		}
+		 
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
 		}

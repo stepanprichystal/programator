@@ -7,6 +7,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Enums';
 
 use constant {
 	BACKGCLR_LIGHTGRAY => Wx::Colour->new( 233, 233, 233 ),
+	BACKGCLR_MEDIUMGRAY => Wx::Colour->new( 200, 200, 200 ),
 	BACKGCLR_HEADERBLUE => Wx::Colour->new( 112, 146, 190 ),
 	BACKGCLR_LEFTPNLBLUE => Wx::Colour->new( 51, 52, 74 ),
 	

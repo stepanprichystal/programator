@@ -65,8 +65,8 @@ sub __Layout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $sizeStatBox,  0, &Wx::wxEXPAND | &Wx::wxALL, 2);
-	$szMain->Add( $frameStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 2);
+	$szMain->Add( $sizeStatBox,  0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $frameStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$self->SetSizer($szMain);
 
@@ -110,7 +110,7 @@ sub __SetLayoutSize {
 
 	# save control references
 	$self->{"widthValTxt"}  = $widthValTxt;
-	$self->{"heightValTxt"} = $widthValTxt;
+	$self->{"heightValTxt"} = $heightValTxt;
 
 	return $szStatBox;
 }
@@ -140,9 +140,9 @@ sub __SetLayoutFrame {
 	my $topTxt = Wx::StaticText->new( $statBox, -1, "Top:", &Wx::wxDefaultPosition, [ 70, 25 ] );
 	my $topValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
 
-	my $botTxt = Wx::StaticText->new( $statBox, -1, "Bot:", &Wx::wxDefaultPosition, [70, 25 ] );
+	my $botTxt = Wx::StaticText->new( $statBox, -1, "Bot:", &Wx::wxDefaultPosition, [ 70, 25 ] );
 	my $botValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	
+
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $leftValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $rightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -157,8 +157,6 @@ sub __SetLayoutFrame {
 
 	$szRow1->Add( $topTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow1->Add( $topValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	
-	
 
 	$szRow2->Add( $rightTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( $rightValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -174,8 +172,8 @@ sub __SetLayoutFrame {
 	# save control references
 	$self->{"leftValTxt"}  = $leftValTxt;
 	$self->{"rightValTxt"} = $rightValTxt;
-	$self->{"topValTxt"}      = $topValTxt;
-	$self->{"botValTxt"}      = $botValTxt;
+	$self->{"topValTxt"}   = $topValTxt;
+	$self->{"botValTxt"}   = $botValTxt;
 
 	return $szStatBox;
 }
@@ -187,6 +185,8 @@ sub __SetLayoutFrame {
 sub SetWidth {
 	my $self = shift;
 	my $val  = shift;
+
+	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
 
 	$self->{"widthValTxt"}->SetValue($val);
 }
@@ -201,6 +201,8 @@ sub SetHeight {
 	my $self = shift;
 	my $val  = shift;
 
+	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
+
 	$self->{"heightValTxt"}->SetValue($val);
 }
 
@@ -213,6 +215,8 @@ sub GetHeight {
 sub SetBorderLeft {
 	my $self = shift;
 	my $val  = shift;
+
+	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
 
 	$self->{"leftValTxt"}->SetValue($val);
 }
@@ -227,6 +231,8 @@ sub SetBorderRight {
 	my $self = shift;
 	my $val  = shift;
 
+	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
+
 	$self->{"rightValTxt"}->SetValue($val);
 }
 
@@ -240,6 +246,8 @@ sub SetBorderTop {
 	my $self = shift;
 	my $val  = shift;
 
+	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
+
 	$self->{"topValTxt"}->SetValue($val);
 }
 
@@ -252,6 +260,8 @@ sub GetBorderTop {
 sub SetBorderBot {
 	my $self = shift;
 	my $val  = shift;
+
+	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
 
 	$self->{"botValTxt"}->SetValue($val);
 }

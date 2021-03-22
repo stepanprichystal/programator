@@ -211,7 +211,9 @@ sub GetInfoDimensions {
 				 d.kus_x,
 				 d.kus_y,
 				 d.panel_x,
-				 d.panel_y
+				 d.panel_y,
+				 d.rozmer_x,
+				 d.rozmer_y
 				 
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu

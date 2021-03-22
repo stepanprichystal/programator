@@ -11,6 +11,8 @@ use Win32::GuiTest qw(FindWindowLike GetWindowText);
 
 my $jobId = "f49968";
 
+
+
 my @jobId = GetWindowTitle($jobId); 
 
 print @jobId;

@@ -75,19 +75,19 @@ sub _Check {
 	my $result = 1;
 
 	my $w  = $self->GetWidth();
-	my $h  = $self->GetWidth();
+	my $h  = $self->GetHeight();
 	my $bL = $self->GetBorderLeft();
 	my $bR = $self->GetBorderRight();
 	my $bT = $self->GetBorderTop();
 	my $bB = $self->GetBorderBot();
 
-	if ( !defined $w || !looks_like_number($w) || $w < 0 ) {
+	if ( !defined $w || !looks_like_number($w) || $w <= 0 ) {
 
 		$result = 0;
 		$$errMess .= "Panel width is not set.\n";
 	}
 
-	if ( !defined $h || !looks_like_number($h) || $h < 0 ) {
+	if ( !defined $h || !looks_like_number($h) || $h <= 0 ) {
 
 		$result = 0;
 		$$errMess .= "Panel height is not set.\n";
@@ -126,8 +126,8 @@ sub _Process {
 	my $step = SRStep->new( $inCAM, $jobId, $self->GetStep() );
 
 	#	my %p = ("x"=> -10, "y" => -20);
-	$step->Edit( $self->GetWidth(),     $self->GetHeight(), $self->GetBorderLeft(), $self->GetBorderRight(),
-				   $self->GetBorderTop(), $self->GetBorderBot() );
+	$step->Edit( $self->GetWidth(),     $self->GetHeight(),
+				   $self->GetBorderTop(), $self->GetBorderBot(), $self->GetBorderLeft(), $self->GetBorderRight() );
 
 	#	my $control = SRStep->new( $inCAM, $jobId, "test" );
 	#	my %p = ("x"=> 10, "y" => +10);

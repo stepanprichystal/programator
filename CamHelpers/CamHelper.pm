@@ -90,12 +90,17 @@ sub OpenStep {
 
 # Set step
 # Use when work with one job  at script
+# Optimalization - Set only if not set
+# Current step is stored in environment variables
+# If InCAM is connected to Editor through server script
+# After connect InCAM librarz to server script running in InCAM editor,
+# Server send ENV variables to InCAM library and override current script ENV variables
 sub SetStep {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $stepName = shift;
 
-	$inCAM->COM( "set_step", "name" => $stepName );
+	$inCAM->COM( "set_step", "name" => $stepName ) if(!defined $stepName || $stepName ne $ENV{"STEP"});
 
 }
 

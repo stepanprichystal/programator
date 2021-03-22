@@ -1,7 +1,11 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class is responsible for creating panel profile
-# Import/Export settings method are meant for using class in bacground
+# Description: Represent Panel class definition
+# panel class name has following format:
+# <material type>_<layer number type>_<dimension>_<special>
+# - <material type> - mandatory (flex, rigid, al, hybrid, ..)
+# - <layer number type> - mandatory (2v, vv)
+#
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::PanelClass::Classes::PnlClass;
@@ -45,17 +49,7 @@ sub new {
 }
 
 
-sub GetSpacesBySize{
-	my $self = shift;
-	my $sizeName = shift;
-	
-	
-	split("_")
-	
-	
-	
-	
-}
+
 
 
 #-------------------------------------------------------------------------------------------#

@@ -40,6 +40,7 @@ sub new {
 	$self->{"processErrMess"}    = undef;     # Array referencem where text errors during init/process part are stored
 	$self->{"frmHandlersOff"}    = 0;         # state indicator if handler shoud be processed
 	$self->{"isPartFullyInited"} = 0;         # state indicator if part is fully loaded (assync loading)
+	$self->{"creatorInited"}     = {};        # Indicator for each creator if was asynchrounouslz inited
 
 	# EVENTS
 	$self->{"creatorSelectionChangedEvt"} = Event->new();
@@ -191,10 +192,10 @@ sub _InitForm {
 
 # Do init specific creator asynchronously
 sub __AsyncInitCreatorModel {
-	my $self                = shift;
-	my $creatorKey          = shift;
-	
-	my $creatorInitPatarams = [ $self->{"model"}->GetCreatorModelByKey($creatorKey)->GetStep()];
+	my $self       = shift;
+	my $creatorKey = shift;
+
+	my $creatorInitPatarams = [ $self->{"model"}->GetCreatorModelByKey($creatorKey)->GetStep() ];
 
 	$self->ClearErrors();
 
@@ -235,6 +236,8 @@ sub __OnCreatorInitedHndl {
 
 	return 0 if ( $partId ne $self->{"partId"} );    # Catch only event from for this specific part
 
+	$self->{"creatorInited"}->{$creatorKey} = 1;
+
 	$self->{"isPartFullyInited"} = 0;
 
 	$self->{"partWrapper"}->ShowLoading(0);
@@ -248,6 +251,12 @@ sub __OnCreatorInitedHndl {
 	$self->{"isPartFullyInited"} = 1;
 
 	$self->{"asyncCreatorInitedEvt"}->Do( $creatorKey, $result );
+
+	# Process part after async init if preview
+	if ( $self->GetPreview() ) {
+
+		$self->{"previewChangedEvt"}->Do( $self->GetPartId(), 1 );
+	}
 
 }
 
@@ -334,8 +343,21 @@ sub __OnCreatorSelectionChangedHndl {
 
 	return 0 if ( $self->{"frmHandlersOff"} );
 
+	# Change model
+	$self->{"model"}->SetSelectedCreator($creatorKey);
+
 	# Init creator
-	$self->__AsyncInitCreatorModel($creatorKey);
+	if ( $self->{"creatorInited"}->{$creatorKey} ) {
+
+		# Process part after async init if preview
+		if ( $self->GetPreview() ) {
+
+			$self->{"previewChangedEvt"}->Do( $self->GetPartId(), 1 );
+		}
+	}
+	else {
+		$self->__AsyncInitCreatorModel($creatorKey);
+	}
 
 	# Reise evevents for other parts
 	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );

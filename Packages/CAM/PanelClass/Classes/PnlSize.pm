@@ -1,7 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Class is responsible for creating panel profile
-# Import/Export settings method are meant for using class in bacground
+# Description: Represent Panel size definition
+# panel class name has following format:
+# <material type>_<layer number type>_<dimension>_<special>
+# - <material type> - mandatory (flex, rigid, al, hybrid, ..)
+# - <layer number type> - mandatory (2v, vv)
+# - <dimension> - optional (\d x \d)
+# - <special> - optional, represent special durface in most cases (pbhal, grafit, au, ..)
+#
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::CAM::PanelClass::Classes::PnlSize;

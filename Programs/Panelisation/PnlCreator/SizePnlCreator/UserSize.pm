@@ -54,18 +54,6 @@ sub Init {
 	
 	$self->_Init($inCAM, $stepName);
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nHEG !! $name \n";
-
-		sleep(1);
-
-	}
-
 	return $result;
 
 }
@@ -82,22 +70,6 @@ sub Check {
 
 	$result = $self->_Check($inCAM, $errMess);
 	
-	#
-	#	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-	#
-	#		$inCAM->COM("get_user_name");
-	#
-	#		my $name = $inCAM->GetReply();
-	#
-	#		print STDERR "\nChecking  HEG !! $name \n";
-	#
-	#		sleep(1);
-	#
-	#	}
-	#
-	#	$result = 0;
-	#	$$errMess .= "Nelze vytvorit";
-
 	return $result;
 
 }

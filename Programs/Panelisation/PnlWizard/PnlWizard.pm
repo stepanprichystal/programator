@@ -93,10 +93,10 @@ sub new {
 	#$self->{"pnlWizardChecker"} = ExportPopup->new( $self->{"jobId"} );
 
 	# Background task manager for executing background operation
-	$self->{"backgroundTaskMngr"} = BackgroundTaskMngr->new( $self->{"jobId"}, $self->{"pnlType"} );
+	$self->{"backgroundTaskMngr"} = undef;
 
 	# Keep all references of used groups/units in form
-	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"backgroundTaskMngr"} );
+	$self->{"partContainer"} = undef;
 
 	# Manage group date (store/load group data from/to disc)
 	$self->{"storageModelMngr"} = undef;
@@ -122,13 +122,17 @@ sub Init {
 
 	$self->{"launcher"}->InitBackgroundWorker( $self->{"form"}->{"mainFrm"} );
 
+	$self->{"backgroundTaskMngr"} = BackgroundTaskMngr->new( $self->{"jobId"}, $self->{"pnlType"} );
+
 	$self->{"backgroundTaskMngr"}->Init( $launcher->GetBackgroundWorker() );
 
 	$self->{"inCAM"} = $launcher->GetInCAM();
-	
+
 	$self->{"inCAM"}->SupressToolkitException();
 
 	#$self->{"inCAM"}->SetDisplay(0);
+
+	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"backgroundTaskMngr"} );
 
 	$self->{"partContainer"}->Init( $self->{"inCAM"}, $self->{"pnlType"} );
 
@@ -186,15 +190,13 @@ sub Init {
 	$self->{"partContainer"}->RefreshGUI();
 	print STDERR "Refresh END\n";
 
-	$self->{"inCAM"}->COM( "show_component", "component" => "Action_Area", "show" => "no" );
-
 	$self->__SetHandlers();
-	
-#	$self->{"inCAM"}->COM("get_step");
-#	my $test = $self->{"inCAM"}->GetReply();
 
-#	print STDERR "endr RUN $test\n";
-	
+	#	$self->{"inCAM"}->COM("get_step");
+	#	my $test = $self->{"inCAM"}->GetReply();
+
+	#	print STDERR "endr RUN $test\n";
+	$self->__InCAMEditorPreviewMode(1);
 
 	print STDERR "Init model async START\n";
 	$self->{"partContainer"}->AsyncInitSelCreatorModel();
@@ -209,8 +211,6 @@ sub Init {
 	#	$self->__RefreshForm();
 	#
 	#	#set handlers for main app form
-	
-	
 
 }
 
@@ -266,7 +266,69 @@ sub __OnCreateClickHndl {
 sub __OnCancelClickHndl {
 	my $self = shift;
 
- 
+	use Win32::GuiTest qw(FindWindowLike GetWindowText GetDesktopWindow GetScreenRes SendKeys SetFocus SendRawKey :VK SetActiveWindow SendMessage) ;
+
+	#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
+	my $jobId = $self->{"jobId"};
+
+	my $pnlWizard      = GetWindowByTitle($jobId, qr/^Panelisation.*${jobId}/i);
+	my $pnlWizardInCAM = GetWindowByTitle($jobId, qr/InCAM.*PID.*${jobId}/i);
+
+	if ( defined $pnlWizard && defined $pnlWizardInCAM ) {
+
+			 SendMessage($pnlWizard, 0x0112, 0xF030, 0);
+	
+	 #   SendMessage($pnlWizardInCAM, 0xF040, 0xF160, 0);
+	 
+	  
+	SetFocus($pnlWizard);
+	SendRawKey( VK_LWIN, 0 );
+	SendKeys("{LEFT}");
+	SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
+		 
+		 
+		   SendMessage($pnlWizardInCAM, 0x0112, 0xF030, 0);
+		   
+		   SetFocus($pnlWizardInCAM);
+		 #  sleep(1);
+	SendRawKey( VK_LWIN, 0 );
+	SendKeys("{RIGHT}");
+	SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
+
+	}
+	else {
+
+		print STDERR "Windows not found";
+	}
+
+	#foreach my $pid (@jobId){
+	#
+	#	Win32::Process::KillProcess( $pid, 0 );
+	#}
+
+	# Return InCAM editor PIDS, based on jobId in windows title
+	sub GetWindowByTitle {
+		my $jobId = shift;
+
+		my $regexp = shift;
+
+		my $win = undef;
+
+		my @windows = FindWindowLike( 0, $jobId );
+		foreach my $win (@windows) {
+
+			my $winTitle = GetWindowText($win);
+
+			if ( $winTitle =~ m/$regexp/ ) {
+
+				return $win;
+			}
+
+		}
+	}
+
+	return 0;
 
 	# Check if all parts are already inited (due to asynchrounous initialization)
 	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {
@@ -275,11 +337,14 @@ sub __OnCancelClickHndl {
 
 	$self->__StoreModelToDisc();
 
+	$self->__InCAMEditorPreviewMode(0);
+
 	if ( $self->{"inCAM"}->IsConnected() ) {
 
 		$self->{"inCAM"}->CloseServer();
 
 	}
+
 	$self->{"form"}->{"mainFrm"}->Destroy();
 
 	#}
@@ -363,12 +428,15 @@ sub __OnAsyncPanelCreatedHndl {
 
 	if ($result) {
 
+		$self->__InCAMEditorPreviewMode(0);
 		if ( $self->{"inCAM"}->IsConnected() ) {
 
 			$self->{"inCAM"}->ClientFinish();
 
 		}
+
 		$self->{"form"}->{"mainFrm"}->Destroy();
+
 	}
 	else {
 
@@ -390,7 +458,7 @@ sub __OnAsyncPanelCreatedHndl {
 # PRIVATE METHODS
 # ================================================================================
 
-sub __OnPreviewChangedlHndl {
+sub __OnFormPreviewChangedlHndl {
 	my $self    = shift;
 	my $preview = shift;
 
@@ -476,9 +544,9 @@ sub __OnBackgroundTaskDieHndl {
 	push( @mess1, "==========================================\n" );
 	push( @mess1, "Detail:" );
 	push( @mess1, "$errMesss" );
-	
+
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
-	
+
 	$self->{"partContainer"}->ClearErrors();
 	$self->{"form"}->SetAsyncTaskRunningLayout(0);
 
@@ -492,19 +560,23 @@ sub __SetHandlers {
 
 	# Form handlers
 
-	$self->{"form"}->{"createClickEvt"}->Add( sub    { $self->__OnCreateClickHndl(@_) } );
-	$self->{"form"}->{"cancelClickEvt"}->Add( sub    { $self->__OnCancelClickHndl(@_) } );
+	$self->{"form"}->{"createClickEvt"}->Add( sub { $self->__OnCreateClickHndl(@_) } );
+	$self->{"form"}->{"cancelClickEvt"}->Add( sub { $self->__OnCancelClickHndl(@_) } );
+
 	$self->{"form"}->{"showInCAMClickEvt"}->Add( sub { $self->__OnShowInCAMClickHndl(@_) } );
 
 	$self->{"form"}->{"loadLastClickEvt"}->Add( sub    { $self->__OnLoadLastClickHndl(@_) } );
 	$self->{"form"}->{"loadDefaultClickEvt"}->Add( sub { $self->__OnLoadDefaultClickHndl(@_) } );
 
-	$self->{"form"}->{"previewChangedEvt"}->Add( sub { $self->__OnPreviewChangedlHndl(@_) } );
+	$self->{"form"}->{"previewChangedEvt"}->Add( sub { $self->__OnFormPreviewChangedlHndl(@_) } );
 	$self->{"form"}->{"stepChangedEvt"}->Add( sub    { $self->{"partContainer"}->UpdateStep(@_) } );
 
-	$self->{"partContainer"}->{"asyncPanelCreatedEvt"}->Add( sub   { $self->__OnAsyncPanelCreatedHndl(@_) } );
+	$self->{"partContainer"}->{"asyncPanelCreatedEvt"}->Add( sub { $self->__OnAsyncPanelCreatedHndl(@_) } );
+
+	#$self->{"partContainer"}->{"previewChangedEvt"}->Add( sub    { $self->__OnPartPreviewChangedlHndl(@_) } );
+
 	$self->{"backgroundTaskMngr"}->{"taskCntChangedEvt"}->Add( sub { $self->__OnBackgroundTaskCntChangedHndl(@_) } );
-	$self->{"backgroundTaskMngr"}->{"asyncTaskDieEvt"}->Add( sub { $self->__OnBackgroundTaskDieHndl(@_) } );
+	$self->{"backgroundTaskMngr"}->{"asyncTaskDieEvt"}->Add( sub   { $self->__OnBackgroundTaskDieHndl(@_) } );
 
 	#		$self->{"form"}->{"onExportASync"}->Add( sub { $self->__ExportASyncFormHandler(@_) } );
 	#		$self->{"form"}->{"onClose"}->Add( sub       { $self->__OnCloseFormHandler(@_) } );
@@ -599,6 +671,14 @@ sub __RefreshGUI {
 	$self->{"form"}->SetStep( $self->{"model"}->GetStep() );
 	$self->{"form"}->SetPreview( $self->{"model"}->GetPreview() );
 
+}
+
+sub __InCAMEditorPreviewMode {
+	my $self    = shift;
+	my $preview = shift;
+
+	$self->{"inCAM"}->COM( "show_component", "component" => "Action_Area", "show" => ( $preview ? "no" : "yes" ) );
+	$self->{"inCAM"}->COM( "show_component", "component" => "Layers_List", "show" => ( $preview ? "no" : "yes" ) );
 }
 
 #

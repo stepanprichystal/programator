@@ -30,6 +30,8 @@ sub new {
 
 	$self->{"asyncPanelCreatedEvt"}   = Event->new();
 	$self->{"asyncCreatorsInitedEvt"} = Event->new();
+	$self->{"previewChangedEvt"}   = Event->new();
+	 
 
 	$self->{"jobId"} = shift;
 
@@ -336,6 +338,8 @@ sub __OnPreviewChangedHndl {
 		$self->AsyncProcessSelCreatorModel($partId);
 
 	}
+	
+	$self->{"previewChangedEvt"}->Do($partId, $preview);
 
 }
 

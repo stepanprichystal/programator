@@ -59,6 +59,14 @@ sub GetCreatorKey {
 	return $self->{"creatroKey"};
 }
 
+# Return type of panelisation
+sub GetPnlType {
+	my $self = shift;
+ 
+	return $self->{"pnlType"};
+}
+ 
+
 # Method is alternative to Init method
 # Allow set creator setting by JSON string
 # mainly in order to use class in background workers
@@ -123,7 +131,7 @@ sub _CreateStep {
 	my $self  = shift;
 	my $inCAM = shift;
 
-	my $step = shift;
+	#my $step = shift;
 
 	die "Step name is not defined." unless ( defined $self->GetStep() );
 

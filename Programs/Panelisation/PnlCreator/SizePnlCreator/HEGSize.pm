@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlCreator::SizePnlCreator::HEGSize;
-use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
+use base('Programs::Panelisation::PnlCreator::SizePnlCreator::SizeCreatorBase');
 
 use Class::Interface;
 &implements('Programs::Panelisation::PnlCreator::SizePnlCreator::ISize');
@@ -16,27 +16,22 @@ use warnings;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $jobId = shift;
+	my $class   = shift;
+	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key   = Enums->SizePnlCreator_HEG;
+	my $key     = Enums->SizePnlCreator_USER;
 
-	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
 	# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{"width"}       = undef;
-	$self->{"settings"}->{"height"}      = undef;
-	$self->{"settings"}->{"borderLeft"}  = undef;
-	$self->{"settings"}->{"borderRight"} = undef;
-	$self->{"settings"}->{"borderTop"}   = undef;
-	$self->{"settings"}->{"borderBot"}   = undef;
 
 	return $self;    #
 }
@@ -49,22 +44,28 @@ sub new {
 # (instead of Init method is possible init by import JSON settings)
 # Return 1 if succes 0 if fail
 sub Init {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
 
 	my $result = 1;
 
- 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	$self->_Init( $inCAM, $stepName );
 
-		$inCAM->COM("get_user_name");
+	my $jobId = $self->{"jobId"};
 
-		my $name = $inCAM->GetReply();
+	my $dim = HegMethods->GetInfoDimensions($jobId);
 
-		print STDERR "\nHEG !! $name \n";
+	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
 
-		sleep(1);
+		$self->{"settings"}->{"width"}  = $dim->{"panel_x"} if ( defined $dim->{"panel_x"} );
+		$self->{"settings"}->{"height"} = $dim->{"panel_y"} if ( defined $dim->{"panel_y"} );
 
+	}    # Load panel size from HEG
+	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
+
+		$self->{"settings"}->{"width"}  = $dim->{"rozmer_x"} if ( defined $dim->{"rozmer_x"} );
+		$self->{"settings"}->{"height"} = $dim->{"rozmer_y"} if ( defined $dim->{"rozmer_y"} );
 	}
 
 	return $result;
@@ -81,20 +82,7 @@ sub Check {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nChecking  HEG !! $name \n";
-
-		sleep(1);
-
-	}
-
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
+	$result = $self->_Check( $inCAM, $errMess );
 
 	return $result;
 
@@ -108,17 +96,19 @@ sub Process {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	#	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	#
+	#		$inCAM->COM("get_user_name");
+	#
+	#		my $name = $inCAM->GetReply();
+	#
+	#		print STDERR "\nProcessing  HEG !! $name \n";
+	#		die "test";
+	#		sleep(1);
+	#
+	#	}
 
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
-
-	}
+	$result = $self->_Process( $inCAM, $errMess );
 
 	return $result;
 }
@@ -126,84 +116,6 @@ sub Process {
 #-------------------------------------------------------------------------------------------#
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
-
-sub SetWidth {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"width"} = $val;
-}
-
-sub GetWidth {
-	my $self = shift;
-
-	return $self->{"settings"}->{"width"};
-}
-
-sub SetHeight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"height"} = $val;
-}
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"height"};
-}
-
-sub SetBorderLeft {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderLeft"} = $val;
-}
-
-sub GetBorderLeft {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderLeft"};
-}
-
-sub SetBorderRight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderRight"} = $val;
-}
-
-sub GetBorderRight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderRight"};
-}
-
-sub SetBorderTop {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderTop"} = $val;
-}
-
-sub GetBorderTop {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderTop"};
-}
-
-sub SetBorderBot {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderBot"} = $val;
-}
-
-sub GetBorderBot {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderBot"};
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
