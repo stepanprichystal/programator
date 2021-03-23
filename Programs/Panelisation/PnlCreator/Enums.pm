@@ -14,12 +14,12 @@ use constant {
 use constant {
 
 	# Profile creators
-	SizePnlCreator_USER      => "SizePnlCreator_User",
-	SizePnlCreator_HEG       => "SizePnlCreator_Heg",
-	SizePnlCreator_MATRIX    => "SizePnlCreator_Matrix",
-	SizePnlCreator_CLASSUSER => "SizePnlCreator_ClassUser",
-	SizePnlCreator_CLASSHEG  => "SizePnlCreator_ClassHeg",
-	SizePnlCreator_PREVIEW   => "SizePnlCreator_Preview",
+	SizePnlCreator_USER      => "SizePnlCreator_User", # panel + mpanel
+	SizePnlCreator_HEG       => "SizePnlCreator_Heg", # panel + mpanel
+	SizePnlCreator_MATRIX    => "SizePnlCreator_Matrix", # mpanel
+	SizePnlCreator_CLASSUSER => "SizePnlCreator_ClassUser", # panel + mpanel
+	SizePnlCreator_CLASSHEG  => "SizePnlCreator_ClassHeg", # panel + mpanel
+	SizePnlCreator_PREVIEW   => "SizePnlCreator_Preview", # panel + mpanel
 
 	# Step placement creaotrs
 	StepPnlCreator_AUTOUSER => "StepPnlCreator_AutoUser",

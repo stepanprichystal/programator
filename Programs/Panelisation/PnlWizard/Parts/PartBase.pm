@@ -187,6 +187,7 @@ sub _InitForm {
 
 	$self->{"form"}->{"creatorSettingsChangedEvt"}->Add( sub  { $self->__OnCreatorSettingsChangedHndl(@_) } );
 	$self->{"form"}->{"creatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl(@_) } );
+	#$self->{"form"}->{"creatorInitRequestEvt"}->Add( sub { $self->__AsyncInitCreatorModel(@_) } );
 
 }
 

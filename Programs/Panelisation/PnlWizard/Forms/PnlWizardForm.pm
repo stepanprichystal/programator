@@ -9,6 +9,7 @@ use base 'Widgets::Forms::StandardFrm';
 use strict;
 use warnings;
 use Wx;
+use Win32::GuiTest qw(FindWindowLike GetWindowText   SendKeys SetFocus SendRawKey :VK SendMessage);
 
 #local library
 #use aliased 'Packages::Tests::Test';
@@ -25,6 +26,7 @@ use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -45,6 +47,7 @@ sub new {
 	bless($self);
 
 	# Properties
+	$self->{"jobId"}           = $jobId;
 	$self->{"title"}           = $title;
 	$self->{"pnlType"}         = $pnlType;
 	$self->{"loadLastEnabled"} = 0;
@@ -470,7 +473,6 @@ sub __SetLayout {
 
 	# InCAM busy panel
 
-	 
 	#main formDefain forms
 	#	my $flags = &Wx::wxCAPTION;
 	#	my $pnlInCAMBusy = MyWxFrame->new(
@@ -529,7 +531,6 @@ sub __SetLayout {
 	# DEFINE EVENTS
 	$self->{"mainFrm"}->{"onClose"}->Add( sub { $self->{"cancelClickEvt"}->Do(); } );
 
-
 	# DEFINE LAYOUT STRUCTURE
 
 	# KEEP REFERENCES
@@ -557,7 +558,6 @@ sub __SetLayoutHeader {
 	my $szSettCol3     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szSettCol1Row1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szSettCol2Row1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	 
 
 	my $szQuickBtn = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
@@ -593,37 +593,38 @@ sub __SetLayoutHeader {
 	#my $previewTxt = Wx::StaticText->new( $pnlSett, -1, "Preview:", &Wx::wxDefaultPosition, [ 70, 22 ] );
 	my $previewChb = Wx::CheckBox->new( $pnlSett, -1, "Preview", &Wx::wxDefaultPosition, [ -1, 24 ] );
 
-	my $dockWindowsBtn    = Wx::Button->new( $pnlSett, -1, "Dock windows",    &Wx::wxDefaultPosition, [ 160, 24 ] );
+	my $dockWindowsBtn = Wx::Button->new( $pnlSett, -1, "Dock windows",     &Wx::wxDefaultPosition, [ 160, 24 ] );
 	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [ 160, 24 ] );
 	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [ 120, 24 ] );
 
 	# BUILD LAYOUT STRUCTURE
 
-	$szSettCol1Row1->Add( $stepTxt,    0,  &Wx::wxALL, 0 );
-	$szSettCol1Row1->Add( $stepValTxt, 0,  &Wx::wxALL, 0 );
+	$szSettCol1Row1->Add( $stepTxt,    0, &Wx::wxALL, 0 );
+	$szSettCol1Row1->Add( $stepValTxt, 0, &Wx::wxALL, 0 );
 
-	$szSettCol2Row1->Add( $previewChb, 0,  &Wx::wxALL, 0 );
-	$szSettCol2Row1->Add( $dockWindowsBtn, 0,  &Wx::wxALL, 0 );
+	$szSettCol2Row1->Add( $previewChb,     0, &Wx::wxALL, 0 );
+	$szSettCol2Row1->Add( $dockWindowsBtn, 0, &Wx::wxALL, 0 );
 
-	$szSettCol1->Add( 10, 10, 1);
+	$szSettCol1->Add( 10, 10, 1 );
 	$szSettCol1->Add( $szSettCol1Row1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
 	#$szSettCol1->Add( 5, 5, 1);
-	
-	$szSettCol2->Add( 10, 10, 1);
+
+	$szSettCol2->Add( 10, 10, 1 );
 	$szSettCol2->Add( $szSettCol2Row1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
 	#$szSettCol2->Add( 1, 1, 1);
-	
+
 	$szSettCol3->Add( $loadDefaultBtn, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szSettCol3->Add( $loadLastBtn, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol3->Add( $loadLastBtn,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMainSett->Add( 10, 10, 0, );
-	$szMainSett->Add( $szSettCol1, 0, &Wx::wxLEFT, 2 );
-	$szMainSett->Add( $pnlSepar, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$szMainSett->Add( $szSettCol2, 0, &Wx::wxLEFT, 2 );
+	$szMainSett->Add( $szSettCol1, 0, &Wx::wxLEFT,                 2 );
+	$szMainSett->Add( $pnlSepar,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szMainSett->Add( $szSettCol2, 0, &Wx::wxLEFT,                 2 );
 	$szMainSett->Add( 10, 10, 1, );
 	$szMainSett->Add( $szSettCol3, 0, &Wx::wxLEFT, 2 );
 
-  
 	$pnlMain->SetSizer($szMain);
 	$pnlSett->SetSizer($szMainSett);
 
@@ -638,6 +639,9 @@ sub __SetLayoutHeader {
 	Wx::Event::EVT_TEXT( $stepValTxt, -1, sub { $self->{"stepChangedEvt"}->Do( $stepValTxt->GetValue() ) } );
 	Wx::Event::EVT_BUTTON( $loadLastBtn,    -1, sub { $self->{"loadLastClickEvt"}->Do() } );
 	Wx::Event::EVT_BUTTON( $loadDefaultBtn, -1, sub { $self->{"loadDefaultClickEvt"}->Do() } );
+	Wx::Event::EVT_BUTTON( $dockWindowsBtn, -1, sub { $self->__OnDockWindows(@_) } );
+	
+	
 
 	#$szRow1->Add( $defaultTxt,   1, &Wx::wxEXPAND );
 	#	$szRow1->Add( $noteTxt, 1, &Wx::wxEXPAND );
@@ -862,6 +866,70 @@ sub __OnResize {
 	$self->{"mainFrm"}->Refresh();
 
 }
+
+sub __OnDockWindows {
+	my $self = shift;
+
+	#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
+	my $jobId = $self->{"jobId"};
+
+	my $title          = $self->{"title"};
+	my $pnlWizard      = GetWindowByTitle( $jobId, qr/^$title/i );
+	my $pnlWizardInCAM = GetWindowByTitle( $jobId, qr/InCAM.*PID.*${jobId}/i );
+
+	if ( defined $pnlWizard && defined $pnlWizardInCAM ) {
+
+		SendMessage( $pnlWizard, 0x0112, 0xF030, 0 ); # Maximize window
+ 
+ 		#  Dock to left half of screen
+		SetFocus($pnlWizard);
+		SendRawKey( VK_LWIN, 0 );
+		SendKeys("{LEFT}");
+		SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
+
+		SendMessage( $pnlWizardInCAM, 0x0112, 0xF030, 0 ); # Maximize window
+
+		#  Dock to right half of screen
+		SetFocus($pnlWizardInCAM);
+		SendRawKey( VK_LWIN, 0 );
+		SendKeys("{RIGHT}");
+		SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
+		
+		$self->{"previewChb"}->SetValue(1); # Activate preview if docking window
+		$self->{"previewChangedEvt"}->Do(1);
+
+	}
+	else {
+
+		my $messMngr = $self->_GetMessageMngr();
+		my @mess1    = ("Error during docking windows");
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+	}
+
+	sub GetWindowByTitle {
+		my $jobId = shift;
+
+		my $regexp = shift;
+
+		my $win = undef;
+
+		my @windows = FindWindowLike( 0, $jobId );
+		foreach my $win (@windows) {
+
+			my $winTitle = GetWindowText($win);
+
+			if ( $winTitle =~ m/$regexp/ ) {
+
+				return $win;
+			}
+		}
+	}
+
+	return 0;
+
+}
+
 #
 #sub _AddEvent {
 #	my $self      = shift;

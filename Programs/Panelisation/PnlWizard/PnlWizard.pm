@@ -266,69 +266,7 @@ sub __OnCreateClickHndl {
 sub __OnCancelClickHndl {
 	my $self = shift;
 
-	use Win32::GuiTest qw(FindWindowLike GetWindowText GetDesktopWindow GetScreenRes SendKeys SetFocus SendRawKey :VK SetActiveWindow SendMessage) ;
-
-	#use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
-
-	my $jobId = $self->{"jobId"};
-
-	my $pnlWizard      = GetWindowByTitle($jobId, qr/^Panelisation.*${jobId}/i);
-	my $pnlWizardInCAM = GetWindowByTitle($jobId, qr/InCAM.*PID.*${jobId}/i);
-
-	if ( defined $pnlWizard && defined $pnlWizardInCAM ) {
-
-			 SendMessage($pnlWizard, 0x0112, 0xF030, 0);
 	
-	 #   SendMessage($pnlWizardInCAM, 0xF040, 0xF160, 0);
-	 
-	  
-	SetFocus($pnlWizard);
-	SendRawKey( VK_LWIN, 0 );
-	SendKeys("{LEFT}");
-	SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
-		 
-		 
-		   SendMessage($pnlWizardInCAM, 0x0112, 0xF030, 0);
-		   
-		   SetFocus($pnlWizardInCAM);
-		 #  sleep(1);
-	SendRawKey( VK_LWIN, 0 );
-	SendKeys("{RIGHT}");
-	SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
-
-	}
-	else {
-
-		print STDERR "Windows not found";
-	}
-
-	#foreach my $pid (@jobId){
-	#
-	#	Win32::Process::KillProcess( $pid, 0 );
-	#}
-
-	# Return InCAM editor PIDS, based on jobId in windows title
-	sub GetWindowByTitle {
-		my $jobId = shift;
-
-		my $regexp = shift;
-
-		my $win = undef;
-
-		my @windows = FindWindowLike( 0, $jobId );
-		foreach my $win (@windows) {
-
-			my $winTitle = GetWindowText($win);
-
-			if ( $winTitle =~ m/$regexp/ ) {
-
-				return $win;
-			}
-
-		}
-	}
-
-	return 0;
 
 	# Check if all parts are already inited (due to asynchrounous initialization)
 	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {

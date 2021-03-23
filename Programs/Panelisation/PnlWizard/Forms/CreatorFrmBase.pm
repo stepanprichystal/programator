@@ -40,6 +40,8 @@ sub new {
 	# DEFINE EVENTS
 
 	$self->{"creatorSettingsChangedEvt"} = Event->new( $self->{"creatorKey"} );
+	$self->{"creatorInitRequestEvt"} = Event->new( $self->{"creatorKey"} );
+	
 
 	return $self;
 }

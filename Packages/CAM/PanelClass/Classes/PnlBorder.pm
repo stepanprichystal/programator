@@ -48,53 +48,53 @@ sub new {
 #-------------------------------------------------------------------------------------------#
 
 
-sub SetLeftBorder {
+sub SetBorderLeft {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"leftBorder"} = $val;
 }
 
-sub GetLeftBorder {
+sub GetBorderLeft {
 	my $self = shift;
 
 	return $self->{"leftBorder"};
 }
 
-sub SetRightBorder {
+sub SetBorderRight {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"rightBorder"} = $val;
 }
 
-sub GetRightBorder {
+sub GetBorderRight {
 	my $self = shift;
 
 	return $self->{"rightBorder"};
 }
 
-sub SetTopBorder {
+sub SetBorderTop {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"topBorder"} = $val;
 }
 
-sub GetTopBorder {
+sub GetBorderTop {
 	my $self = shift;
 
 	return $self->{"topBorder"};
 }
 
-sub SetBotBorder {
+sub SetBorderBot {
 	my $self = shift;
 	my $val  = shift;
 
 	$self->{"botBorder"} = $val;
 }
 
-sub GetBotBorder {
+sub GetBorderBot {
 	my $self = shift;
 
 	return $self->{"botBorder"};

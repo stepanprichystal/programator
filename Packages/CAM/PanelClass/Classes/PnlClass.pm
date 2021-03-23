@@ -27,8 +27,8 @@ use aliased 'Packages::CAM::PanelClass::Enums';
 
 sub new {
 	my $class = shift;
-	my $name = shift;
-	my $self = $class->SUPER::new( $name, @_ );
+	my $name  = shift;
+	my $self  = $class->SUPER::new( $name, @_ );
 	bless $self;
 
 	#
@@ -48,10 +48,6 @@ sub new {
 	return $self;
 }
 
-
-
-
-
 #-------------------------------------------------------------------------------------------#
 #  GET/SET methods for setting class settings
 #-------------------------------------------------------------------------------------------#
@@ -66,7 +62,7 @@ sub SetSizes {
 sub GetSizes {
 	my $self = shift;
 
-	return $self->{"sizes"};
+	return @{ $self->{"sizes"} };
 }
 
 sub SetBorders {
@@ -79,7 +75,7 @@ sub SetBorders {
 sub GetBorders {
 	my $self = shift;
 
-	return $self->{"borders"};
+	return @{ $self->{"borders"} };
 }
 
 sub SetSpacings {
@@ -92,9 +88,8 @@ sub SetSpacings {
 sub GetSpacings {
 	my $self = shift;
 
-	return $self->{"spacings"};
+	return @{ $self->{"spacings"} };
 }
-
 
 sub SetGoldScoringDist {
 	my $self = shift;
@@ -186,7 +181,6 @@ sub GetNumMaxSteps {
 
 	return $self->{"numMaxSteps"};
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

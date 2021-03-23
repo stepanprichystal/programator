@@ -36,43 +36,26 @@ sub new {
 	return $self;
 }
 
+
 # Do specific layout settings for creator
 sub __SetLayout {
 	my $self = shift;
-
-	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
-	# Add empty item
+ 
+ 	 
 
 	# DEFINE CONTROLS
-	my $widthTxt = Wx::StaticText->new( $self, -1, "Width:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $widthValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
-
-	my $heightTxt = Wx::StaticText->new( $self, -1, "Height:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $heightValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
-
-	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $widthValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	
-
+ 
+ 
+	# DEFINE EVENTS
+ 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $widthTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $widthValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	$szRow2->Add( $heightTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $heightValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$self->SetSizer($szMain);
-
+ 
 	# SAVE REFERENCES
+	
+ 	$self->_SetLayoutCBMain("Class", )
 
-	$self->{"widthValTxt"}  = $widthValTxt;
-	$self->{"heightValTxt"} = $heightValTxt;
+	 
 
 }
 
@@ -82,6 +65,57 @@ sub __SetLayout {
 
  
 
+sub SetPnlClasses {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"pnlClasses"} = $val;
+}
+
+sub GetPnlClasses {
+	my $self = shift;
+
+	return $self->{"settings"}->{"pnlClasses"};
+}
+
+sub SetDefPnlClass {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"defPnlClass"} = $val;
+}
+
+sub GetDefPnlClass {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlClass"};
+}
+
+sub SetDefPnlSize {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"defPnlSize"} = $val;
+}
+
+sub GetDefPnlSize {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlSize"};
+}
+
+sub SetDefPnlBorder {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"defPnlBorder"} = $val;
+}
+
+sub GetDefPnlBorder {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlBorder"};
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

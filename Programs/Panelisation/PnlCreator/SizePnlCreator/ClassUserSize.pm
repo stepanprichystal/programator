@@ -16,27 +16,27 @@ use warnings;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
+use aliased 'Packages::CAM::PanelClass::PnlClassParser';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $jobId = shift;
+	my $class   = shift;
+	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key   = Enums->SizePnlCreator_CLASSUSER;
+	my $key     = Enums->SizePnlCreator_CLASSUSER;
 
-	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
-		# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{"width"}       = undef;
-	$self->{"settings"}->{"height"}      = undef;
-	$self->{"settings"}->{"borderLeft"}  = undef;
-	$self->{"settings"}->{"borderRight"} = undef;
-	$self->{"settings"}->{"borderTop"}   = undef;
-	$self->{"settings"}->{"borderBot"}   = undef;
+	# Setting values necessary for procesing panelisation
+	$self->{"settings"}->{"defPnlClass"}  = undef;
+	$self->{"settings"}->{"defPnlSize"}   = undef;
+	$self->{"settings"}->{"defPnlBorder"} = undef;
+
+	$self->{"settings"}->{"pnlClasses"} = undef;
 
 	return $self;    #
 }
@@ -49,26 +49,86 @@ sub new {
 # (instead of Init method is possible init by import JSON settings)
 # Return 1 if succes 0 if fail
 sub Init {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
 
 	my $result = 1;
 
- 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	$self->_Init( $inCAM, $stepName );
 
-		$inCAM->COM("get_user_name");
+	# Load Pnl class
 
-		my $name = $inCAM->GetReply();
+	my $jobId = $self->{'jobId'};
 
-		print STDERR "\nHEG !! $name \n";
+	my $parser = PnlClassParser->new( $inCAM, $jobId );
+	$parser->Parse();
 
-		sleep(1);
+	my @classes = ();
+	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
+
+		@classes = $parser->GetClassesCustomerPanel();
+
+		$self->{"settings"}->{"pnlClasses"} = \@classes;
+
+	}
+	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
+
+		@classes = $parser->GetClassesProductionPanel();
+
+		$self->{"settings"}->{"pnlClasses"} = \@classes;
 
 	}
 
-	return $result;
+	my $defSize   = undef;
+	my $defBorder = undef;
 
+	# 1)Set default class (should be only one for specific pcb type)
+	$self->{"settings"}->{"defPnlClass"} = $classes[0]->GetName();
+
+	# 2) Set default size. Take the biger one
+	my @sizes = $classes[0]->GetSizes();
+	@sizes = sort { $b->GetHeight() <=> $a->GetHeight() } @sizes;
+	$defSize = $sizes[0];
+
+	$self->{"settings"}->{"defPnlSize"} = $defSize->GetName();
+
+	# 3) Set default pnl border/ Should be only one border per specific size
+
+	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
+
+		my @borders = $parser->GetCustomerPnlBorder( $self->{"settings"}->{"defPnlClass"}, $self->{"settings"}->{"defPnlSize"} );
+		$defBorder = $borders[0];
+		$self->{"settings"}->{"defPnlBorder"} = $defBorder->GetName();
+
+	}
+	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
+
+		my @borders = $parser->GetProductionPnlBorder( $self->{"settings"}->{"defPnlClass"}, $self->{"settings"}->{"defPnlSize"} );
+		$defBorder = $borders[0];
+		$self->{"settings"}->{"defPnlBorder"} = $defBorder->GetName();
+
+	}
+
+	# Set width/height
+	if ( defined $defSize ) {
+
+		$self->SetWidth( $defSize->GetWidth() );
+		$self->SetHeight( $defSize->GetHeight() );
+
+	}
+
+	# Set border
+
+	if ( defined $defBorder ) {
+
+		$self->SetBorderLeft( $defBorder->GetBorderLeft() );
+		$self->SetBorderRight( $defBorder->GetBorderRight() );
+		$self->SetBorderTop( $defBorder->GetBorderTop() );
+		$self->SetBorderBot( $defBorder->GetBorderBot() );
+	}
+
+	return $result;
 }
 
 # Do necessary check before processing panelisation
@@ -81,20 +141,7 @@ sub Check {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nChecking  HEG !! $name \n";
-
-		sleep(1);
-
-	}
-
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
+	$result = $self->_Check( $inCAM, $errMess );
 
 	return $result;
 
@@ -108,17 +155,7 @@ sub Process {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
-
-	}
+	$result = $self->_Process( $inCAM, $errMess );
 
 	return $result;
 }
@@ -127,82 +164,28 @@ sub Process {
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
 
-sub SetWidth {
+sub GetPnlClasses {
 	my $self = shift;
-	my $val  = shift;
 
-	$self->{"settings"}->{"width"} = $val;
+	return $self->{"settings"}->{"pnlClasses"};
 }
 
-sub GetWidth {
+sub GetDefPnlClass {
 	my $self = shift;
 
-	return $self->{"settings"}->{"width"};
+	return $self->{"settings"}->{"defPnlClass"};
 }
 
-sub SetHeight {
+sub GetDefPnlSize {
 	my $self = shift;
-	my $val  = shift;
 
-	$self->{"settings"}->{"height"} = $val;
+	return $self->{"settings"}->{"defPnlSize"};
 }
 
-sub GetHeight {
+sub GetDefPnlBorder {
 	my $self = shift;
 
-	return $self->{"settings"}->{"height"};
-}
-
-sub SetBorderLeft {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderLeft"} = $val;
-}
-
-sub GetBorderLeft {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderLeft"};
-}
-
-sub SetBorderRight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderRight"} = $val;
-}
-
-sub GetBorderRight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderRight"};
-}
-
-sub SetBorderTop {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderTop"} = $val;
-}
-
-sub GetBorderTop {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderTop"};
-}
-
-sub SetBorderBot {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderBot"} = $val;
-}
-
-sub GetBorderBot {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderBot"};
+	return $self->{"settings"}->{"defPnlBorder"};
 }
 
 #-------------------------------------------------------------------------------------------#
