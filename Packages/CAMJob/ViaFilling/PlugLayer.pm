@@ -34,8 +34,8 @@ sub CreateCopperPlugLayersAllSteps {
 	my $inCAM       = shift;
 	my $jobId       = shift;
 	my $annularRing = shift // 75;    # annular ring for via plug is 75um
-	
-	my $stepPnl = "panel"; 
+
+	my $stepPnl = "panel";
 
 	die "Step panel doesn't exist" unless ( CamHelper->StepExists( $inCAM, $jobId, $stepPnl ) );
 
@@ -51,7 +51,7 @@ sub CreateCopperPlugLayersAllSteps {
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $plg->{"gROWname"} );
 	}
 
-	my @childs = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepPnl);
+	my @childs = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepPnl );
 	foreach my $step (@childs) {
 
 		my @l = $self->CreateCopperPlugLayers( $inCAM, $jobId, $step->{"stepName"}, $annularRing );
@@ -99,7 +99,6 @@ sub CreateCopperPlugLayers {
 
 				CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 				CamLayer->CopySelOtherLayer( $inCAM, [ $topL, $botL ], 0, 2 * $annularRing );
-
 			}
 		}
 	}
@@ -119,11 +118,13 @@ sub CreateCopperPlugLayers {
 			# Create plgc layers for outer Cu of product
 			if ( !CamHelper->LayerExists( $inCAM, $jobId, $topL ) ) {
 				CamMatrix->CreateLayer( $inCAM, $jobId, $topL, "via_plug", "positive", 1, $IProduct->GetTopCopperLayer(), "before" );
+ 
 				push( @plgLayers, $topL );
 			}
 
 			if ( !CamHelper->LayerExists( $inCAM, $jobId, $botL ) ) {
 				CamMatrix->CreateLayer( $inCAM, $jobId, $botL, "via_plug", "positive", 1, $IProduct->GetBotCopperLayer(), "after" );
+ 
 				push( @plgLayers, $botL );
 			}
 

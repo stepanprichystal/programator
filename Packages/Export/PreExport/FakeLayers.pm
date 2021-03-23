@@ -74,7 +74,6 @@ sub RemoveFakeLayers {
 	my $self  = shift;
 	my $inCAM = shift;
 	my $jobId = shift;
-	
 
 	my $step = "panel";
 
@@ -308,6 +307,20 @@ sub __CreateFakePLGLayers {
 		}
 		CamLayer->ClearLayers($inCAM);
 
+		# Set layer side attribute for inner layers
+		# Schema maks depands on this attribute
+
+		if ( CamJob->GetSignalLayerCnt( $inCAM, $jobId ) > 2 ) {
+
+			my $stackup = Stackup->new( $inCAM, $jobId );
+			foreach my $l (@fakeLayers) {
+
+				my %lPars = JobHelper->ParseSignalLayerName($l);
+				my $side = $stackup->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+				CamAttributes->SetLayerAttribute( $inCAM, "layer_side", $side, $jobId, $step, $l );
+			}
+
+		}
 	}
 
 	return @fakeLayers;
@@ -511,8 +524,8 @@ sub __CreateCoreDrillLayers {
 		# Only to layer which are not pressed as semi product
 		if ( CamHelper->LayerExists( $inCAM, $jobId, "v1p2" ) ) {
 
-			my @p        = grep { scalar( $_->GetLayers() ) == 1 } $stackup->GetInputProducts();
-			my @products = map { $_->GetData() } map  { $_->GetChildProducts() } @p;
+			my @p = grep { scalar( $_->GetLayers() ) == 1 } $stackup->GetInputProducts();
+			my @products = map { $_->GetData() } map { $_->GetChildProducts() } @p;
 
 			my @notPressLayers = ();
 			foreach my $coreProdut (@products) {
@@ -582,7 +595,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d306663";
+	my $jobId    = "d312990";
 	my $stepName = "panel";
 
 	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );

@@ -26,7 +26,7 @@ use aliased 'Packages::Export::PreExport::FakeLayers';
 
 #input parameters
  
-my $jobId    = "d312990";
+my $jobId    = "d313703";
  
  
 my $poznamka = "";
@@ -42,7 +42,7 @@ my $jumpScoring  = 0;
 
 my $inCAM = InCAM->new();
 
-FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 0 );
+#FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel", 0 );
 
 
 

@@ -248,7 +248,7 @@ sub Build {
 		
 			my %result = ();
 
-			if ( $self->{"layerCnt"} > 2 ) {
+			if ( $self->{"layerCnt"} > 2 && $layer !~ /v\d+/ ) {
 
 				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", $layer, undef, \%frLim, 1, 1 );
 			}
