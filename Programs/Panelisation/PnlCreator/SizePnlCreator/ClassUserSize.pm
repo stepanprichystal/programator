@@ -16,7 +16,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
-use aliased 'Packages::CAM::PanelClass::PnlClassParser';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlClassParser';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -67,47 +67,43 @@ sub Init {
 	my @classes = ();
 	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
 
-		@classes = $parser->GetClassesCustomerPanel();
-
-		$self->{"settings"}->{"pnlClasses"} = \@classes;
-
+		@classes = $parser->GetCustomerPnlClasses();
 	}
 	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
 
-		@classes = $parser->GetClassesProductionPanel();
-
-		$self->{"settings"}->{"pnlClasses"} = \@classes;
+		@classes = $parser->GetProductionPnlClasses(1);
 
 	}
 
+	my $defClass  = undef;
 	my $defSize   = undef;
 	my $defBorder = undef;
 
+	$self->{"settings"}->{"pnlClasses"} = \@classes;
+
 	# 1)Set default class (should be only one for specific pcb type)
-	$self->{"settings"}->{"defPnlClass"} = $classes[0]->GetName();
+	$defClass = $classes[0];
+	if ( defined $defClass ) {
 
-	# 2) Set default size. Take the biger one
-	my @sizes = $classes[0]->GetSizes();
-	@sizes = sort { $b->GetHeight() <=> $a->GetHeight() } @sizes;
-	$defSize = $sizes[0];
+		$self->{"settings"}->{"defPnlClass"} = $defClass->GetName();
 
-	$self->{"settings"}->{"defPnlSize"} = $defSize->GetName();
+		# 2) Set default size. Take the biger one
+		my @sizes = $classes[0]->GetSizes();
+		@sizes = sort { $b->GetHeight() <=> $a->GetHeight() } @sizes;
+		$defSize = $sizes[0];
 
-	# 3) Set default pnl border/ Should be only one border per specific size
+		if ( defined $defSize ) {
 
-	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
+			$self->{"settings"}->{"defPnlSize"} = $defSize->GetName();
 
-		my @borders = $parser->GetCustomerPnlBorder( $self->{"settings"}->{"defPnlClass"}, $self->{"settings"}->{"defPnlSize"} );
-		$defBorder = $borders[0];
-		$self->{"settings"}->{"defPnlBorder"} = $defBorder->GetName();
+			# 3) Set default pnl border/ Should be only one border per specific size
+			$defBorder = ( $defSize->GetBorders() )[0];
 
-	}
-	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
+			if ( defined $defBorder ) {
 
-		my @borders = $parser->GetProductionPnlBorder( $self->{"settings"}->{"defPnlClass"}, $self->{"settings"}->{"defPnlSize"} );
-		$defBorder = $borders[0];
-		$self->{"settings"}->{"defPnlBorder"} = $defBorder->GetName();
-
+				$self->{"settings"}->{"defPnlBorder"} = $defBorder->GetName();
+			}
+		}
 	}
 
 	# Set width/height
@@ -115,7 +111,6 @@ sub Init {
 
 		$self->SetWidth( $defSize->GetWidth() );
 		$self->SetHeight( $defSize->GetHeight() );
-
 	}
 
 	# Set border
@@ -126,6 +121,7 @@ sub Init {
 		$self->SetBorderRight( $defBorder->GetBorderRight() );
 		$self->SetBorderTop( $defBorder->GetBorderTop() );
 		$self->SetBorderBot( $defBorder->GetBorderBot() );
+
 	}
 
 	return $result;

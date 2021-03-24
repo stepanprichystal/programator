@@ -37,6 +37,9 @@ sub new {
 	# Setting values necessary for procesing panelisation
 	$self->{"width"} = 0;
 	$self->{"height"} = 0;
+	
+	$self->{"borders"}  = [];
+	$self->{"spacings"} = [];
 
 	return $self;   
 }
@@ -46,6 +49,31 @@ sub new {
 #  GET/SET methods for setting class settings
 #-------------------------------------------------------------------------------------------#
 
+sub SetBorders {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"borders"} = $val;
+}
+
+sub GetBorders {
+	my $self = shift;
+
+	return @{ $self->{"borders"} };
+}
+
+sub SetSpacings {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"spacings"} = $val;
+}
+
+sub GetSpacings {
+	my $self = shift;
+
+	return @{ $self->{"spacings"} };
+}
 
 sub SetWidth {
 	my $self = shift;

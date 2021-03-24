@@ -107,13 +107,13 @@ sub __SetLayoutSize {
 	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow0->Add( $widthTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow0->Add( $widthValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $widthTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $widthValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow0->Add( 10, 10, 0 );
+	$szRow1->Add( 10, 10, 0 );
 
-	$szRow0->Add( $heightTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow0->Add( $heightValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $heightTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $heightValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND );
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
@@ -188,8 +188,8 @@ sub __SetLayoutFrame {
 	$self->{"rightValTxt"}         = $rightValTxt;
 	$self->{"topValTxt"}           = $topValTxt;
 	$self->{"botValTxt"}           = $botValTxt;
-	$self->{"customCBFrameSz"}     = $szRow0;
-	$self->{"customCBFrameParent"} = $statBox;
+	$self->{"customCBBorderSz"}     = $szRow0;
+	$self->{"customCBBorderParent"} = $statBox;
 
 	return $szStatBox;
 }
@@ -200,11 +200,11 @@ sub _SetLayoutCBMain {
 	my $choices = shift;
 
 	# DEFINE CONTROLS
-	my $mainCbTxt = Wx::StaticText->new( $statBox, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
+	my $mainCbTxt = Wx::StaticText->new( $self, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
 	my $mainCB = Wx::ComboBox->new( $self, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBMainChangedEvt"} } );
+	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBMainChangedEvt"}->Do($mainCB->GetValue()) } );
 
 	# DEFINE LAYOUT
 	$self->{"szCustomCBMain"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -223,11 +223,11 @@ sub _SetLayoutCBSize {
 	my $mainCB =  Wx::ComboBox->new( $self->{"customCBSizeParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"} } );
+	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"}->Do($mainCB->GetValue()) } );
 
 	# DEFINE LAYOUT
-	$self->{"szCustomCBSize"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$self->{"szCustomCBSize"}->Add( $mainCB,    30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customCBSizeSz"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customCBSizeSz"}->Add( $mainCB,    30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	return $mainCB;
 }
@@ -242,11 +242,11 @@ sub _SetLayoutCBBorder {
 	my $mainCB =  Wx::ComboBox->new( $self->{"customCBBorderParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBBorderChangedEvt"} } );
+	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBBorderChangedEvt"}->Do($mainCB->GetValue()) } );
 
 	# DEFINE LAYOUT
-	$self->{"szCustomCBBorder"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$self->{"szCustomCBBorder"}->Add( $mainCB,    30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customCBBorderSz"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customCBBorderSz"}->Add( $mainCB,    30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	return $mainCB;
 }

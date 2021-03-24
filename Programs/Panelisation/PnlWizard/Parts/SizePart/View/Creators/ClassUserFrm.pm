@@ -5,17 +5,19 @@
 #-------------------------------------------------------------------------------------------#
 
 package Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::ClassUserFrm;
-use base qw(Programs::Panelisation::PnlWizard::Forms::CreatorFrmBase);
+use base qw(Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators::Frm::PnlSizeBase);
 
 #3th party library
 use strict;
 use warnings;
 use Wx;
+use List::Util qw(first);
 
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -36,26 +38,104 @@ sub new {
 	return $self;
 }
 
-
 # Do specific layout settings for creator
 sub __SetLayout {
 	my $self = shift;
- 
- 	 
 
 	# DEFINE CONTROLS
-	
- 
- 
-	# DEFINE EVENTS
- 
-	# BUILD STRUCTURE OF LAYOUT
- 
-	# SAVE REFERENCES
-	
- 	$self->_SetLayoutCBMain("Class", )
 
-	 
+	# DEFINE EVENTS
+
+	# BUILD STRUCTURE OF LAYOUT
+
+	# SAVE REFERENCES
+
+	# Init combobox class
+	$self->{"pnlClassCB"} = $self->_SetLayoutCBMain( "Class", [] );
+
+	$self->{"CBMainChangedEvt"}->Add( sub { $self->__OnPnlClassChanged(@_) } );
+
+	# Init combobox class size
+	$self->{"pnlClassSizeCB"} = $self->_SetLayoutCBSize( "Class size", [] );
+
+	$self->{"CBSizeChangedEvt"}->Add( sub { $self->__OnPnlClassSizeChanged(@_) } );
+
+	# Init combobox class border
+	$self->{"pnlClassBorderCB"} = $self->_SetLayoutCBBorder( "Class border", [] );
+
+	$self->{"CBBorderChangedEvt"}->Add( sub { $self->__OnPnlClassBorderChanged(@_) } );
+
+}
+
+sub __OnPnlClassChanged {
+	my $self      = shift;
+	my $className = shift;
+
+	my $class = first { $_->GetName() eq $className } @{ $self->{"classes"} };
+
+	# Set cb classes size
+	$self->{"pnlClassSizeCB"}->Clear();
+	foreach my $classSize ( $class->GetSizes() ) {
+
+		$self->{"pnlClassSizeCB"}->Append( $classSize->GetName() );
+	}
+
+	if ( scalar( $class->GetSizes() ) ) {
+
+		my $sizeName = ( $class->GetSizes() )[0]->GetName();
+		$self->{"pnlClassSizeCB"}->SetValue( $sizeName );
+		$self->__OnPnlClassSizeChanged($sizeName);
+	}
+
+}
+
+sub __OnPnlClassSizeChanged {
+	my $self          = shift;
+	my $classSizeName = shift;
+
+	my $class     = first { $_->GetName() eq $self->{"pnlClassCB"}->GetValue() } @{ $self->{"classes"} };
+	my $classSize = first { $_->GetName() eq $classSizeName } $class->GetSizes();
+
+	if ( defined $classSize ) {
+
+		# Change dimension
+
+		$self->SetWidth( $classSize->GetWidth() );
+		$self->SetHeight( $classSize->GetHeight() );
+
+		# Set cb classes border
+		$self->{"pnlClassBorderCB"}->Clear();
+		foreach my $classBorder ( $classSize->GetBorders() ) {
+
+			$self->{"pnlClassBorderCB"}->Append( $classBorder->GetName() );
+		}
+
+		if ( scalar( $classSize->GetBorders() ) ) {
+
+			my $borderName = ( $classSize->GetBorders() )[0]->GetName();
+			$self->{"pnlClassBorderCB"}->SetValue( $borderName );
+			$self->__OnPnlClassBorderChanged($borderName);
+
+		}
+	}
+}
+
+sub __OnPnlClassBorderChanged {
+	my $self            = shift;
+	my $classBorderName = shift;
+
+	my $class       = first { $_->GetName() eq $self->{"pnlClassCB"}->GetValue() } @{ $self->{"classes"} };
+	my $classSize   = first { $_->GetName() eq $self->{"pnlClassSizeCB"}->GetValue() } $class->GetSizes();
+	my $classBorder = first { $_->GetName() eq $classBorderName } $classSize->GetBorders();
+
+	# Change dimension
+	if ( defined $classBorder ) {
+		$self->SetBorderLeft( $classBorder->GetBorderLeft() );
+		$self->SetBorderRight( $classBorder->GetBorderRight() );
+		$self->SetBorderTop( $classBorder->GetBorderTop() );
+		$self->SetBorderBot( $classBorder->GetBorderBot() );
+
+	}
 
 }
 
@@ -63,59 +143,73 @@ sub __SetLayout {
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
- 
-
 sub SetPnlClasses {
-	my $self = shift;
-	my $val  = shift;
+	my $self    = shift;
+	my $classes = shift;
 
-	$self->{"settings"}->{"pnlClasses"} = $val;
+	$self->{"classes"} = $classes;
+
+	$self->{"pnlClassCB"}->Clear();
+
+	# Set cb classes
+	foreach my $class ( @{$classes} ) {
+
+		$self->{"pnlClassCB"}->Append( $class->GetName() );
+	}
+
 }
 
 sub GetPnlClasses {
 	my $self = shift;
 
-	return $self->{"settings"}->{"pnlClasses"};
+	return $self->{"classes"};
 }
 
 sub SetDefPnlClass {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"defPnlClass"} = $val;
+	$self->{"pnlClassCB"}->SetValue($val);
+
+	$self->__OnPnlClassChanged($val) if ( defined $val );
 }
 
 sub GetDefPnlClass {
 	my $self = shift;
 
-	return $self->{"settings"}->{"defPnlClass"};
+	return $self->{"pnlClassCB"}->GetValue();
 }
 
 sub SetDefPnlSize {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"defPnlSize"} = $val;
+	$self->{"pnlClassSizeCB"}->SetValue($val);
+
+	$self->__OnPnlClassSizeChanged($val) if ( defined $val );
 }
 
 sub GetDefPnlSize {
 	my $self = shift;
 
-	return $self->{"settings"}->{"defPnlSize"};
+	return $self->{"pnlClassSizeCB"}->GetValue();
 }
 
 sub SetDefPnlBorder {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"defPnlBorder"} = $val;
+	$self->{"pnlClassBorderCB"}->SetValue($val);
+
+	$self->__OnPnlClassBorderChanged($val) if ( defined $val );
 }
 
 sub GetDefPnlBorder {
 	my $self = shift;
 
-	return $self->{"settings"}->{"defPnlBorder"};
+	return $self->{"pnlClassBorderCB"}->GetValue();
 }
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

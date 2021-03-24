@@ -34,6 +34,11 @@ sub new {
 	$self->{"settings"}->{"borderRight"} = undef;
 	$self->{"settings"}->{"borderTop"}   = undef;
 	$self->{"settings"}->{"borderBot"}   = undef;
+	
+	$self->{"settings"}->{"pnlClasses"}   = undef;
+	$self->{"settings"}->{"defPnlBorder"}   = undef;
+	$self->{"settings"}->{"defPnlSize"}   = undef;
+	$self->{"settings"}->{"defPnlClass"}   = undef;
 
 	return $self;
 }

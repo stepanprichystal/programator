@@ -34,8 +34,7 @@ sub new {
 	#
 
 	$self->{"sizes"}    = [];
-	$self->{"borders"}  = [];
-	$self->{"spacings"} = [];
+	
 
 	$self->{"goldScoringDist"} = 0;
 	$self->{"transformation"}  = Enums->PnlClassTransform_ROTATION;
@@ -65,31 +64,7 @@ sub GetSizes {
 	return @{ $self->{"sizes"} };
 }
 
-sub SetBorders {
-	my $self = shift;
-	my $val  = shift;
 
-	$self->{"borders"} = $val;
-}
-
-sub GetBorders {
-	my $self = shift;
-
-	return @{ $self->{"borders"} };
-}
-
-sub SetSpacings {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"spacings"} = $val;
-}
-
-sub GetSpacings {
-	my $self = shift;
-
-	return @{ $self->{"spacings"} };
-}
 
 sub SetGoldScoringDist {
 	my $self = shift;

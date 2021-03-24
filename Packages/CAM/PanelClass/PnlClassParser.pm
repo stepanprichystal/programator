@@ -28,7 +28,7 @@ use aliased 'Packages::CAM::PanelClass::Enums';
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
-sub new {
+sub new{
 	my $class = shift;
 	my $self  = {};
 	bless $self;
@@ -41,26 +41,15 @@ sub new {
 	# Properties
 	$self->{"parsed"}   = 0;       # 1 if panel class files are parsed
 	$self->{"classes"}  = [];
-	$self->{"layerCnt"} = undef;
-	$self->{"matKind"}  = undef;
-	$self->{"isFlex"}   = undef;
-	$self->{"surface"}  = undef;
-	$self->{"zlaceni"}  = undef;
+ 
 
 	return $self;
-}
+  }
 
-# if no shorts and brokens, return 1, else 0
+  # if no shorts and brokens, return 1, else 0
 sub Parse {
 	my $self = shift;
-
-	# Set default job poperty
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
-	$self->{"matKind"}  = HegMethods->GetMaterialKind( $self->{"jobId"} );
-	$self->{"isFlex"}   = JobHelper->GetIsFlex( $self->{"jobId"} );
-	$self->{"surface"}  = HegMethods->GetPcbSurface( $self->{"jobId"} );
-	$self->{"zlaceni"}  = CamGoldArea->GoldFingersExist( $self->{"inCAM"}, $self->{"jobId"}, "o+1", undef, ".gold_plating" );
-
+ 
 	# 1) Parse all sizes
 	my $pSize = $self->{"path"} . "pnlsize.xml";
 
@@ -106,10 +95,10 @@ sub Parse {
 		$bb = $self->__INCH2MM($bb) if ( $node->{"units"} eq "inch" );
 
 		my $border = PnlBorder->new( $node->{"name"} );
-		$border->SetLeftBorder($lb);
-		$border->SetRightBorder($rb);
-		$border->SetTopBorder($tb);
-		$border->SetBotBorder($bb);
+		$border->SetBorderLeft($lb);
+		$border->SetBorderRight($rb);
+		$border->SetBorderTop($tb);
+		$border->SetBorderBot($bb);
 
 		push( @border, $border );
 	}
@@ -151,17 +140,7 @@ sub Parse {
 		$class->SetSpacingAlign( $node->{"spacingAlign"} );
 		$class->SetNumMaxSteps( $node->{"numMaxSteps"} );
 
-		my @sz = ();
-		foreach my $nodeInner ( $node->findnodes('./Sizes/size') ) {
-
-			my $obj = first { $_->GetName() eq $nodeInner->{"name"} } @sizes;
-			die "Size: " . $nodeInner->{"name"} . " is not defined" unless ( defined $obj );
-
-			push( @sz, $obj );
-		}
-
-		$class->SetSizes( \@sz );
-
+		# Parse borders
 		my @bord = ();
 		foreach my $nodeInner ( $node->findnodes('./BordersSpacings/borderSpacing') ) {
 
@@ -170,8 +149,7 @@ sub Parse {
 			push( @bord, $obj );
 		}
 
-		$class->SetBorders( \@bord );
-
+		# parse spacing
 		my @spac = ();
 		foreach my $nodeInner ( $node->findnodes('./BordersSpacings/borderSpacing') ) {
 
@@ -180,7 +158,20 @@ sub Parse {
 			push( @spac, $obj );
 		}
 
-		$class->SetSpacings( \@spac );
+		# all border and spacing in class are matched in all sizes
+		my @sz = ();
+		foreach my $nodeInner ( $node->findnodes('./Sizes/size') ) {
+
+			my $obj = first { $_->GetName() eq $nodeInner->{"name"} } @sizes;
+			die "Size: " . $nodeInner->{"name"} . " is not defined" unless ( defined $obj );
+
+			$obj->SetBorders( \@bord );
+			$obj->SetSpacings( \@spac );
+
+			push( @sz, $obj );
+		}
+
+		$class->SetSizes( \@sz );
 
 		push( @classes, $class );
 	}
@@ -188,289 +179,6 @@ sub Parse {
 	$self->{"classes"} = \@classes;
 
 	$self->{"parsed"} = 1;
-}
-
-sub GetCustomerPnlClasses {
-	my $self = shift;
-	my $considerType = shift // 1;    # consider base pcb type (mat type + layer count)
-
-	my @classes = @{ $self->{"classes"} };
-
-	if ($considerType) {
-
-		my $matType = $self->__GetPCBMaterialType();
-		my $numType = $self->__GetPCBLayerCntType();
-
-		my $className = join( "_", ( "mpanel", $matType, $numType ) );
-
-		@classes = grep { $_->GetName() =~ /^$className/i } @{ $self->{"classes"} };
-
-	}
-
-	# 1) Pnl class
-	foreach my $class (@classes) {
-
-		die "Pnl class name: " . $class->GetName() . " has invlaid format" if ( $class->GetName() !~ /^mpanel_\w+_[2v]v$/ );
-
-		# 2) Pnl size
-		foreach my $sizeName ( map { $_->GetName() } $class->GetSizes() ) {
-
-			die "Pnl size class name: ${sizeName} has invlaid format" if ( $sizeName !~ /^mpanel_\w+_[2v]v_\w+_\d+x\d+$/ );
-		}
-
-		# 3) Pnl border + spacing
-		foreach my $borderName ( map { $_->GetName() } ( $class->GetBorders(), $class->GetSpacings() ) ) {
-
-			die "Pnl border/spacing class name: ${borderName} has invlaid format"
-			  if ( $borderName !~ /^mpanel(_\w+)?(_[2v]v)?/ );
-		}
-	}
-
-	return @classes;
-}
-
-sub GetProductionPnlClasses {
-	my $self = shift;
-	my $considerType = shift // 1;    # consider base pcb type (mat type + layer count)
-
-	my @classes = @{ $self->{"classes"} };
-
-	if ($considerType) {
-		my $matType = $self->__GetPCBMaterialType();
-		my $numType = $self->__GetPCBLayerCntType();
-
-		my $className = join( "_", ( $matType, $numType ) );
-
-		@classes = grep { $_->GetName() =~ /^$className$/i } @{ $self->{"classes"} };
-
-	}
-
-	# Do check of naming convention
-
-	# 1) Pnl class
-	foreach my $class (@classes) {
-
-		die "Pnl class name: " . $class->GetName() . " has invlaid format" if ( $class->GetName() !~ /^\w+_[2v]v$/ );
-
-		# 2) Pnl size
-		foreach my $sizeName ( map { $_->GetName() } $class->GetSizes() ) {
-
-			die "Pnl size class name: ${sizeName} has invlaid format" if ( $sizeName !~ /^\w+_[2v]v_\d+x\d+$/ );
-		}
-
-		# 3) Pnl border + spacing
-		foreach my $borderName ( map { $_->GetName() } ( $class->GetBorders(), $class->GetSpacings() ) ) {
-
-			die "Pnl border/spacing class name: ${borderName} has invlaid format"
-			  if ( $borderName !~ /^\w+_[2v]v(_\d+x\d+)?(_\w+)?$/ );
-		}
-	}
-
-	return @classes;
-
-}
-
-sub GetProductionPnlBorder {
-	my $self      = shift;
-	my $className = shift;
-	my $sizeName  = shift;
-
-	my @borders = $self->__GetProductionPnlBS( $className, $sizeName, "border" );
-
-	return @borders;
-}
-
-sub GetProductionPnlSpace {
-	my $self      = shift;
-	my $className = shift;
-	my $sizeName  = shift;
-
-	my @borders = $self->__GetProductionPnlBS( $className, $sizeName, "space" );
-
-	return @borders;
-}
-
-sub GetCustomerPnlBorder {
-	my $self      = shift;
-	my $className = shift;
-	my $sizeName  = shift;
-
-	my @borders = $self->__GetCustomerPnlBS( $className, $sizeName, "border" );
-
-	return @borders;
-}
-
-sub GetCustomerPnlSpace {
-	my $self      = shift;
-	my $className = shift;
-	my $sizeName  = shift;
-
-	my @borders = $self->__GetCustomerPnlBS( $className, $sizeName, "space" );
-
-	return @borders;
-}
-
-sub __GetProductionPnlBS {
-	my $self      = shift;
-	my $className = shift;
-	my $sizeName  = shift;
-	my $type      = shift;    # borde / space
-
-	die "Class is not defined"      if ( !defined $className );
-	die "Class size is not defined" if ( !defined $sizeName );
-
-	my $class = first { $_->GetName() =~ /^$sizeName$/i } @{ $self->{"classes"} };
-	die "Class:  $className was not found " unless ( defined $class );
-
-	my @parsedSze = split( "_", $sizeName );
-
-	# add special type to name if exist
-	my $spec = $self->__GetPCBSpecialType();
-	push( @parsedSze, $spec ) if ( defined $spec );
-
-	my @class = ();
-
-	my @allClass = ();
-
-	if ( $type eq "border" ) {
-
-		@allClass = @{ $class->GetBorders() };
-	}
-	elsif ( $type eq "border" ) {
-
-		@allClass = @{ $class->GetSpaces() };
-	}
-	else {
-
-		die "Unknow type..";
-	}
-
-	while ( scalar(@class) == 0 ) {
-
-		my $name = join( "_", @parsedSze );
-
-		my @b = grep { $_->GetName() =~ /^$name/i } @allClass;
-		push( @class, @b ) if ( scalar(@b) );
-	}
-
-	return @class;
-}
-
-sub __GetCustomerPnlBS {
-	my $self      = shift;
-	my $className = shift;
-	my $sizeName  = shift;
-	my $type      = shift;    # borde / space
-
-	die "Class is not defined"      if ( !defined $className );
-	die "Class size is not defined" if ( !defined $sizeName );
-
-	my $class = first { $_->GetName() =~ /^$sizeName$/i } @{ $self->{"classes"} };
-	die "Class:  $className was not found " unless ( defined $class );
-
-	my @parsedSze = split( "_", $sizeName );
-
-	my @class = ();
-
-	my @allClass = ();
-
-	if ( $type eq "border" ) {
-
-		@allClass = @{ $class->GetBorders() };
-	}
-	elsif ( $type eq "border" ) {
-
-		@allClass = @{ $class->GetSpaces() };
-	}
-	else {
-
-		die "Unknow type..";
-	}
-
-	while ( scalar(@class) == 0 ) {
-
-		my $name = join( "_", @parsedSze );
-
-		my @b = grep { $_->GetName() =~ /^$name/i } @allClass;
-		push( @class, @b ) if ( scalar(@b) );
-	}
-
-	return @class;
-}
-
-sub __GetPCBMaterialType {
-	my $self = shift;
-
-	my $type = undef;
-
-	if ( $self->{"matKind"} =~ /^AL_CORE|CU_CORE$/ ) {
-
-		$type = Enums->PCBMaterialType_AL;
-
-	}
-	else {
-
-		if ( $self->{"matKind"} =~ /^HYBRID$/ ) {
-
-			$type = Enums->PCBMaterialType_HYBRID;
-
-		}
-		elsif ( $self->{"isFlex"} ) {
-
-			$type = Enums->PCBMaterialType_FLEX;
-
-		}
-		else {
-
-			$type = Enums->PCBMaterialType_RIGID;
-		}
-	}
-
-	die "Type is not defined" unless ( defined $type );
-
-	return $type;
-}
-
-sub __GetPCBLayerCntType {
-	my $self = shift;
-
-	my $type = undef;
-
-	if ( $self->{"layerCnt"} <= 2 ) {
-
-		$type = Enums->PCBLayerCnt_2V;
-
-	}
-	else {
-
-		$type = Enums->PCBLayerCnt_VV;
-	}
-
-	die "Type is not defined" unless ( defined $type );
-
-	return $type;
-}
-
-sub __GetPCBSpecialType {
-	my $self = shift;
-
-	my $type = undef;
-
-	my $PbHAL = $self->{"surface"} =~ /^A$/ ? 1 : 0;
-	my $HardGold = $self->{"zlaceni"};
-	my $grafit =
-	  scalar( grep { $_->{"gROWname"} =~ /^g[cs]$/i } CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} ) ) ? 1 : 0;
-
-	# first has highest priority
-	my @prior = ();
-
-	push( @prior, Enums->PCBSpecial_GRAFIT ) if ($grafit);
-	push( @prior, Enums->PCBSpecial_AU )     if ($HardGold);
-	push( @prior, Enums->PCBSpecial_PBHAL )  if ($PbHAL);
-
-	$type = shift @prior;
-
-	return $type;
 }
 
 sub __INCH2MM {

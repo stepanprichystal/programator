@@ -113,7 +113,7 @@ sub SetCreators {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ||  $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
+			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER || $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
@@ -124,18 +124,33 @@ sub SetCreators {
 				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
-			 
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
+				die "Not impemented";
 			}
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
 
+				# Specific for class
+				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
+				$creatorFrm->SetDefPnlClass( $model->GetDefPnlClass() );
+				$creatorFrm->SetDefPnlSize( $model->GetDefPnlSize() );
+				$creatorFrm->SetDefPnlBorder( $model->GetDefPnlBorder() );
+
+				# Base property
+				$creatorFrm->SetWidth( $model->GetWidth() );
+				$creatorFrm->SetHeight( $model->GetHeight() );
+				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
+				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
+				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
+				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
+				$creatorFrm->SetStep( $model->GetStep() );
+
 			}
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-
+				die "Not impemented";
 			}
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
-
+				die "Not impemented";
 			}
 
 		}
@@ -159,7 +174,7 @@ sub GetCreators {
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ||  $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
+		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER || $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
@@ -170,18 +185,32 @@ sub GetCreators {
 			$model->SetStep( $creatorFrm->GetStep() );
 
 		}
-		 
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
+			die "Not impemented";
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
 
+			# Specific for class
+			$model->SetPnlClasses( $creatorFrm->GetPnlClasses() );
+			$model->SetDefPnlClass( $creatorFrm->GetDefPnlClass() );
+			$model->SetDefPnlSize( $creatorFrm->GetDefPnlSize() );
+			$model->SetDefPnlBorder( $creatorFrm->GetDefPnlBorder() );
+
+			# Base property
+			$model->SetWidth( $creatorFrm->GetWidth() );
+			$model->SetHeight( $creatorFrm->GetHeight() );
+			$model->SetBorderLeft( $creatorFrm->GetBorderLeft() );
+			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
+			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
+			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
+			$model->SetStep( $creatorFrm->GetStep() );
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-
+			die "Not impemented";
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
-
+			die "Not impemented";
 		}
 
 		push( @models, $model );
