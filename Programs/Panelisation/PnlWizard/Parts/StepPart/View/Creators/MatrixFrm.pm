@@ -23,9 +23,10 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 sub new {
 	my $class  = shift;
 	my $parent = shift;
+		my $inCAM  = shift;
 	my $jobId  = shift;
 
-	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_MATRIX, $parent, $jobId );
+	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_MATRIX, $parent,$inCAM, $jobId );
 
 	bless($self);
 

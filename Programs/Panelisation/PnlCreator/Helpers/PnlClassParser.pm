@@ -11,6 +11,7 @@ use strict;
 use warnings;
 use XML::LibXML qw(:threads_shared);
 use List::Util qw(first);
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -79,9 +80,32 @@ sub GetProductionPnlClasses {
 
 }
 
+sub AddCustomSizeToClass {
+	my $self                = shift;
+	my $class               = shift;
+	my $sizeName            = shift;
+	my $width               = shift;
+	my $height              = shift;
+	my $addAllBorderSpacing = shift // 1;    # Add all borders/spacings to new size from class
+
+	my $size = PnlSize->new($sizeName);
+	$size->SetWidth($width);
+	$size->SetHeight($height);
+
+	if ($addAllBorderSpacing) {
+		$size->SetBorders(  [ uniq( map { $_->GetBorders() } $class->GetSizes() ) ] );
+		$size->SetSpacings( [ uniq( map { $_->GetSpacings() } $class->GetSizes() ) ] );
+	}
+
+	$class->AddSize($size);
+
+	return $size;
+
+}
+
 sub __AdjustCustomerClasses {
-	my $self         = shift;
-	my $considerType = shift // 1;                                        # consider base pcb type (mat type + layer count)
+	my $self = shift;
+	my $considerType = shift // 1;    # consider base pcb type (mat type + layer count)
 
 	my @classes = @{ $self->{"classes"} };
 
@@ -94,6 +118,7 @@ sub __AdjustCustomerClasses {
 	@classes = grep { $_->GetName() =~ /^$className/i } @{ $self->{"classes"} };
 
 	# 2) Filter border + spacings in each class size
+	my @spacings = $self->__GetCustomerPnlSpacings();
 
 	foreach my $class (@classes) {
 
@@ -102,10 +127,8 @@ sub __AdjustCustomerClasses {
 			my @parsedSze = split( "_", $size->GetName() );
 
 			my @allBorders = $size->GetBorders();
-			my @allSpaces  = $size->GetSpacings();
 
 			my @filtredBorders = ();
-			my @filtredSpaces  = ();
 
 			while ( scalar(@filtredBorders) == 0 ) {
 
@@ -115,16 +138,8 @@ sub __AdjustCustomerClasses {
 				push( @filtredBorders, @b ) if ( scalar(@b) );
 			}
 
-			while ( scalar(@filtredSpaces) == 0 ) {
-
-				my $name = join( "_", @parsedSze );
-
-				my @b = grep { $_->GetName() =~ /^$name/i } @allSpaces;
-				push( @filtredSpaces, @b ) if ( scalar(@b) );
-			}
-
 			$size->SetBorders( \@filtredBorders );
-			$size->SetSpacings( \@filtredSpaces );
+			$size->SetSpacings( [@spacings] );
 		}
 	}
 
@@ -142,7 +157,7 @@ sub __AdjustCustomerClasses {
 		}
 
 		# 3) Pnl border + spacing
-		foreach my $borderName ( map { $_->GetName() } ( $class->GetBorders(), $class->GetSpacings() ) ) {
+		foreach my $borderName ( map { $_->GetName() } ( $class->GetBorders() ) ) {
 
 			die "Pnl border/spacing class name: ${borderName} has invlaid format"
 			  if ( $borderName !~ /^mpanel(_\w+)?(_[2v]v)?/ );
@@ -166,6 +181,7 @@ sub __AdjustProductionClasses {
 	@classes = grep { $_->GetName() =~ /^$className$/i } @{ $self->{"classes"} };
 
 	# 2) Filter border + spacings in each class size
+	my @spacings = $self->__GetProductionPnlSpacings();
 
 	foreach my $class (@classes) {
 
@@ -177,11 +193,8 @@ sub __AdjustProductionClasses {
 			# add special type to name if exist
 			my $spec = $self->__GetPCBSpecialType();
 
-			my @allBorders = $size->GetBorders();
-			my @allSpaces  = $size->GetSpacings();
-
+			my @allBorders     = $size->GetBorders();
 			my @filtredBorders = ();
-			my @filtredSpaces  = ();
 
 			my @parsedSze = split( "_", $size->GetName() );
 			push( @parsedSze, $spec ) if ( defined $spec );
@@ -198,24 +211,8 @@ sub __AdjustProductionClasses {
 				pop @parsedSze;
 			}
 
-			@parsedSze = split( "_", $size->GetName() );
-			push( @parsedSze, $spec ) if ( defined $spec );
-			while ( scalar(@parsedSze) > 0 ) {
-
-				my $name = join( "_", @parsedSze );
-
-				my @b = grep { $_->GetName() =~ /^$name$/i } @allSpaces;
-				if ( scalar(@b) ) {
-					push( @filtredSpaces, @b );
-					last;
-				}
-
-				pop @parsedSze;
-			}
-
 			$size->SetBorders( \@filtredBorders );
-			$size->SetSpacings( \@filtredSpaces );
-
+			$size->SetSpacings( [@spacings] );
 		}
 	}
 
@@ -232,7 +229,7 @@ sub __AdjustProductionClasses {
 			die "Pnl size class name: " . $size->GetName() . " has invlaid format" if ( $size->GetName() !~ /^\w+_[2v]v_\d+x\d+$/ );
 
 			# 3) Pnl border + spacing
-			foreach my $borderName ( map { $_->GetName() } ( $size->GetBorders(), $size->GetSpacings() ) ) {
+			foreach my $borderName ( map { $_->GetName() } ( $size->GetBorders() ) ) {
 
 				die "Pnl border/spacing class name: ${borderName} has invlaid format"
 				  if ( $borderName !~ /^\w+_[2v]v(_\d+x\d+)?(_\w+)?$/ );
@@ -336,6 +333,60 @@ sub __GetEmptyClass {
 	$class->SetSizes( [$size] );
 
 	return $class;
+
+}
+
+sub __GetProductionPnlSpacings {
+	my $self = shift;
+
+	my @spacings = ();
+
+	my $spac1 = PnlSpacing->new("Produc_pnl_4,5mm");
+	$spac1->SetSpaceX(4.5);
+	$spac1->SetSpaceY(4.5);
+
+	push( @spacings, $spac1 );
+
+	my $spac2 = PnlSpacing->new("Produc_pnl_10mm");
+	$spac2->SetSpaceX(10);
+	$spac2->SetSpaceY(10);
+
+	push( @spacings, $spac2 );
+
+	my $spac3 = PnlSpacing->new("Produc_pnl_15mm");
+	$spac3->SetSpaceX(15);
+	$spac3->SetSpaceY(15);
+
+	push( @spacings, $spac3 );
+
+	return @spacings;
+
+}
+
+sub __GetCustomerPnlSpacings {
+	my $self = shift;
+
+	my @spacings = ();
+
+	my $spac1 = PnlSpacing->new("Customer_pnl_0mm");
+	$spac1->SetSpaceX(0);
+	$spac1->SetSpaceY(0);
+
+	push( @spacings, $spac1 );
+
+	my $spac2 = PnlSpacing->new("Customer_pnl_2mm");
+	$spac2->SetSpaceX(2);
+	$spac2->SetSpaceY(2);
+
+	push( @spacings, $spac2 );
+
+	my $spac3 = PnlSpacing->new("Customer_pnl_10mm");
+	$spac3->SetSpaceX(10);
+	$spac3->SetSpaceY(10);
+
+	push( @spacings, $spac3 );
+
+	return @spacings;
 
 }
 

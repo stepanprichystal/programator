@@ -128,7 +128,7 @@ sub SetCreators {
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 				die "Not impemented";
 			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER || $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
 
 				# Specific for class
 				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
@@ -146,9 +146,7 @@ sub SetCreators {
 				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-				die "Not impemented";
-			}
+
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 				die "Not impemented";
 			}
@@ -189,7 +187,7 @@ sub GetCreators {
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 			die "Not impemented";
 		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER || $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
 
 			# Specific for class
 			$model->SetPnlClasses( $creatorFrm->GetPnlClasses() );
@@ -205,9 +203,6 @@ sub GetCreators {
 			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
 			$model->SetStep( $creatorFrm->GetStep() );
-		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-			die "Not impemented";
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 			die "Not impemented";

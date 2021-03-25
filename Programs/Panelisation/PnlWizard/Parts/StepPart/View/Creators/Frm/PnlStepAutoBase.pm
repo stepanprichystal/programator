@@ -10,6 +10,7 @@ use base qw(Programs::Panelisation::PnlWizard::Forms::CreatorFrmBase);
 use strict;
 use warnings;
 use Wx;
+use List::Util qw(first);
 
 BEGIN {
 	eval { require Wx::BitmapComboBox; };
@@ -22,7 +23,8 @@ use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-use aliased 'Packages::CAM::PanelClass::Enums' => 'PnlClassEnums';
+use aliased 'Packages::CAM::PanelClass::Enums'          => 'PnlClassEnums';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::ManualPanelisation';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -61,6 +63,7 @@ sub __Layout {
 
 	my $szRow1  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow3  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szClmn1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szClmn2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
@@ -68,6 +71,9 @@ sub __Layout {
 
 	my $pcbStepTxt = Wx::StaticText->new( $self, -1, "PCB step:", &Wx::wxDefaultPosition, [ 70, 25 ] );
 	my $pcbStepValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+
+	my $pnlClassTxt = Wx::StaticText->new( $self, -1, "Class:", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $pnlClassCB = Wx::ComboBox->new( $self, -1, undef, &Wx::wxDefaultPosition, [ -1, -1 ], [], &Wx::wxCB_READONLY );
 
 	my $placementStatBox = $self->__SetLayoutPlacement($self);
 	my $spacingStatBox   = $self->__SetLayoutSpacing($self);
@@ -77,6 +83,8 @@ sub __Layout {
 	#$richTxt->Layout();
 
 	# SET EVENTS
+
+	Wx::Event::EVT_TEXT( $pnlClassCB, -1, sub { $self->__OnPnlClassChanged( $pnlClassCB->GetValue() ) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -93,16 +101,21 @@ sub __Layout {
 	$szRow1->Add( $pcbStepTxt,    1, &Wx::wxEXPAND );
 	$szRow1->Add( $pcbStepValTxt, 1, &Wx::wxEXPAND );
 
-	$szRow2->Add( $szClmn1, 1, &Wx::wxEXPAND );
-	$szRow2->Add( $szClmn2, 1, &Wx::wxEXPAND );
+	$szRow2->Add( $pnlClassTxt, 1, &Wx::wxEXPAND );
+	$szRow2->Add( $pnlClassCB,  1, &Wx::wxEXPAND );
+
+	$szRow3->Add( $szClmn1, 1, &Wx::wxEXPAND );
+	$szRow3->Add( $szClmn2, 1, &Wx::wxEXPAND );
 
 	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND );
-	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND );
+	$szMain->Add( $szRow2, 0, &Wx::wxEXPAND );
+	$szMain->Add( $szRow3, 1, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
 	# save control references
 	$self->{"pcbStepValTxt"} = $pcbStepValTxt;
+	$self->{"pnlClassCB"}    = $pnlClassCB;
 
 }
 
@@ -131,33 +144,31 @@ sub __SetLayoutPlacement {
 	my $rbPlacementPatt = Wx::RadioButton->new( $statBox, -1, "Pattern", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
 	my $notebook = CustomNotebook->new( $statBox, -1 );
-	my $placementRotPage  = $notebook->AddPage( 1, 0 ); 
+	my $placementRotPage  = $notebook->AddPage( 1, 0 );
 	my $placementPattPage = $notebook->AddPage( 2, 0 );
 
-	
+	my @rotType = (
+					PnlClassEnums->PnlClassRotation_0DEG,    PnlClassEnums->PnlClassRotation_90DEG,
+					PnlClassEnums->PnlClassRotation_UNIFORM, PnlClassEnums->PnlClassRotation_ANY
+	);
+	my $rotTypeCb =
+	  Wx::ComboBox->new( $placementRotPage->GetParent(), -1, $rotType[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@rotType, &Wx::wxCB_READONLY );
+	#
+	#	my $pnlRotPage = Wx::Panel->new($placementRotPage->GetParent());
+	#	my $szRotPage = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	#
+	#
+	#
+	#	#my $rotTypeCb = Wx::ComboBox->new( $pnlRotPage, -1, $rotType[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@rotType );
+	#my $rotTypeCb = Wx::ComboBox->new( $placementRotPage->GetParent(), -1, "", &Wx::wxDefaultPosition, [ -1, -1 ] );
 
-#	my @rotType =
-#	  ( PnlCreEnums->PnlClassRotation_0DEG, PnlCreEnums->PnlClassRotation_90DEG, PnlCreEnums->PnlClassRotation_UNIFORM, PnlCreEnums->PnlClassRotation_ANY );
-##	my $rotTypeCb =
-##	  Wx::ComboBox->new( $placementRotPage->GetParent(), -1, $rotType[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@rotType, &Wx::wxCB_READONLY );
-#
-#	my $pnlRotPage = Wx::Panel->new($placementRotPage->GetParent());
-#	my $szRotPage = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-#	
-#	
-#	
-#	#my $rotTypeCb = Wx::ComboBox->new( $pnlRotPage, -1, $rotType[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@rotType );
-	my $rotTypeCb = Wx::ComboBox->new( $placementRotPage->GetParent(), -1, "", &Wx::wxDefaultPosition, [ -1, -1 ] );
-	
 	#$pnlRotPage->SetSizer($szRotPage);
-	
-	
+
 	#$szRotPage->Add( $rotTypeCb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	#$szRotPage->Add(  Wx::TextCtrl->new( $pnlRotPage, -1, $rotType[0], &Wx::wxDefaultPosition, [ -1, -1 ] ) ,0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	
 
 	my @pattType = (
-					 PnlClassEnums->PnlClassPattern_NO_PATTERN,     PnlClassEnums->PnlClassPattern_ALTERNATE_ROW,
+					 PnlClassEnums->PnlClassPattern_NO_PATTERN,    PnlClassEnums->PnlClassPattern_ALTERNATE_ROW,
 					 PnlClassEnums->PnlClassPattern_ALTERNATE_COL, PnlClassEnums->PnlClassPattern_ALTERNATE_ROW_COL,
 					 PnlClassEnums->PnlClassPattern_TOP_HALF,      PnlClassEnums->PnlClassPattern_BOTTOM_HALF,
 					 PnlClassEnums->PnlClassPattern_RIGHT_HALF,    PnlClassEnums->PnlClassPattern_LEFT_HALF
@@ -170,7 +181,6 @@ sub __SetLayoutPlacement {
 	  Wx::ComboBox->new( $placementPattPage->GetParent(), -1, $pattType[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@pattType, &Wx::wxCB_READONLY );
 
 	$placementRotPage->AddContent($rotTypeCb);
- 
 
 	$placementPattPage->AddContent($pattTypeCb);
 
@@ -224,11 +234,15 @@ sub __SetLayoutSpacing {
 
 	# Load data, for filling form by values
 
+	my $szRow0 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
+
+	my $pnlClassSpaceTxt = Wx::StaticText->new( $statBox, -1, "Predefined space:", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $pnlClassSpaceCB = Wx::ComboBox->new( $statBox, -1, undef, &Wx::wxDefaultPosition, [ -1, -1 ], [], &Wx::wxCB_READONLY );
 
 	my $spaceXTxt = Wx::StaticText->new( $statBox, -1, "Space X:", &Wx::wxDefaultPosition, [ 70, 25 ] );
 	my $spaceXValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
@@ -236,14 +250,18 @@ sub __SetLayoutSpacing {
 	my $spaceYTxt = Wx::StaticText->new( $statBox, -1, "Space Y", &Wx::wxDefaultPosition, [ 70, 25 ] );
 	my $spaceYValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
 
-	my $spacingTypeTxt = Wx::StaticText->new( $statBox, -1, "Space Y", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $spacingTypeTxt = Wx::StaticText->new( $statBox, -1, "Space align", &Wx::wxDefaultPosition, [ 70, 25 ] );
 	my @spacingType = ( PnlClassEnums->PnlClassSpacingAlign_KEEP_IN_CENTER, PnlClassEnums->PnlClassSpacingAlign_SPACE_EVENLY );
 	my $spacingTypeCb =
 	  Wx::ComboBox->new( $statBox, -1, $spacingType[0], &Wx::wxDefaultPosition, [ 50, 25 ], \@spacingType, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
+	Wx::Event::EVT_TEXT( $pnlClassSpaceCB, -1, sub { $self->__OnPnlClassSpacingChanged( $pnlClassSpaceCB->GetValue() ) } );
 
 	# BUILD STRUCTURE OF LAYOUT
+	$szRow0->Add( $pnlClassSpaceTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow0->Add( $pnlClassSpaceCB,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
 	$szRow1->Add( $spaceXTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow1->Add( $spaceXValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
@@ -253,15 +271,17 @@ sub __SetLayoutSpacing {
 	$szRow3->Add( $spacingTypeTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow3->Add( $spacingTypeCb,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
+	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# save control references
 
-	$self->{"spaceXValTxt"}  = $spaceXValTxt;
-	$self->{"spaceYValTxt"}  = $spaceXValTxt;
-	$self->{"spacingTypeCb"} = $spacingTypeCb;
+	$self->{"spaceXValTxt"}    = $spaceXValTxt;
+	$self->{"spaceYValTxt"}    = $spaceYValTxt;
+	$self->{"spacingTypeCb"}   = $spacingTypeCb;
+	$self->{"pnlClassSpaceCB"} = $pnlClassSpaceCB;
 
 	return $szStatBox;
 }
@@ -372,11 +392,14 @@ sub __SetLayoutCreatePnl {
 	my $placementManualPage = $notebook->AddPage( 2, 0 );
 
 	my $szManual        = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $manualPlacBtn   = Wx::Button->new( $placementManualPage->GetParent(), -1, "Prepare", &Wx::wxDefaultPosition, [ 40, 22 ] );
-	my $manualIndicator = ResultIndicator->new( $placementManualPage->GetParent(), 20 );
+	
+	my $pnlPicker = ManualPanelisation->new( $placementManualPage->GetParent(),  $self->{"inCAM"}, $self->{"jobId"}, $self->GetStep(), "Pick panel", "Choose + adjust panel" );
+	
+	 
+	 
 
-	$szManual->Add( $manualPlacBtn,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szManual->Add( $manualIndicator, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szManual->Add( $pnlPicker,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	 
 
 	$placementManualPage->AddContent($szManual);
 
@@ -416,29 +439,119 @@ sub __SetLayoutCreatePnl {
 	$self->{"minUtilValTxt"}     = $minUtilValTxt;
 	$self->{"rbPlacementAuto"}   = $rbPlacementAuto;
 	$self->{"rbPlacementManual"} = $rbPlacementManual;
-	$self->{"manualPlacBtn"}     = $manualPlacBtn;
-	$self->{"manualIndicator"}   = $manualIndicator;
+	 
+	$self->{"pnlPicker"}   = $pnlPicker;
 	$self->{"notebookCreatePnl"} = $notebook;
 
 	return $szStatBox;
+}
+
+sub __OnPnlClassChanged {
+	my $self      = shift;
+	my $className = shift;
+
+	my $class = first { $_->GetName() eq $className } @{ $self->{"classes"} };
+
+	# Set cb classes size
+	$self->{"pnlClassSpaceCB"}->Clear();
+	foreach my $classSpace ( $class->GetAllClassSpacings() ) {
+
+		$self->{"pnlClassSpaceCB"}->Append( $classSpace->GetName() );
+	}
+
+	if ( scalar( $class->GetAllClassSpacings() ) ) {
+
+		my $spaceName = ( $class->GetAllClassSpacings() )[0]->GetName();
+		$self->{"pnlClassSpaceCB"}->SetValue($spaceName);
+		$self->__OnPnlClassSpacingChanged($spaceName);
+	}
+
+}
+
+sub __OnPnlClassSpacingChanged {
+	my $self           = shift;
+	my $classSpaceName = shift;
+
+	my $class      = first { $_->GetName() eq $self->{"pnlClassCB"}->GetValue() } @{ $self->{"classes"} };
+	my $classSpace = first { $_->GetName() eq $classSpaceName } $class->GetAllClassSpacings();
+
+	# Change dimension
+	if ( defined $classSpace ) {
+		$self->SetSpaceX( $classSpace->GetSpaceX() );
+		$self->SetSpaceY( $classSpace->GetSpaceY() );
+
+	}
+
 }
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
+sub SetPnlClasses {
+	my $self    = shift;
+	my $classes = shift;
+
+	$self->{"classes"} = $classes;
+
+	$self->{"pnlClassCB"}->Clear();
+
+	# Set cb classes
+	foreach my $class ( @{$classes} ) {
+
+		$self->{"pnlClassCB"}->Append( $class->GetName() );
+	}
+
+}
+
+sub GetPnlClasses {
+	my $self = shift;
+
+	return $self->{"classes"};
+}
+
+sub SetDefPnlClass {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnlClassCB"}->SetValue($val);
+
+	$self->__OnPnlClassChanged($val) if ( defined $val );
+}
+
+sub GetDefPnlClass {
+	my $self = shift;
+
+	return $self->{"pnlClassCB"}->GetValue();
+}
+
+sub SetDefPnlSpacing {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnlClassSpaceCB"}->SetValue($val);
+
+	$self->__OnPnlClassSpacingChanged($val) if ( defined $val );
+}
+
+sub GetDefPnlSpacing {
+	my $self = shift;
+
+	return $self->{"pnlClassSpaceCB"}->GetValue();
+}
+
 sub SetPCBStep {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"pcbStepValTxt"} = $val;
+	$self->{"pcbStepValTxt"}->SetValue($val);
 
 }
 
 sub GetPCBStep {
 	my $self = shift;
 
-	return $self->{"settings"}->{"pcbStepValTxt"};
+	return $self->{"pcbStepValTxt"}->GetValue();
 
 }
 
@@ -726,6 +839,86 @@ sub GetMinUtilization {
 
 	return $self->{"minUtilValTxt"}->GetValue();
 
+}
+
+# Panel dimension settings
+
+sub SetWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnl_width"} = $val;
+}
+
+sub GetWidth {
+	my $self = shift;
+
+	return $self->{"pnl_width"};
+}
+
+sub SetHeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnl_height"} = $val;
+}
+
+sub GetHeight {
+	my $self = shift;
+
+	return $self->{"pnl_height"};
+}
+
+sub SetBorderLeft {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnl_borderLeft"} = $val;
+}
+
+sub GetBorderLeft {
+	my $self = shift;
+
+	return $self->{"pnl_borderLeft"};
+}
+
+sub SetBorderRight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnl_borderRight"} = $val;
+}
+
+sub GetBorderRight {
+	my $self = shift;
+
+	return $self->{"pnl_borderRight"};
+}
+
+sub SetBorderTop {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnl_borderTop"} = $val;
+}
+
+sub GetBorderTop {
+	my $self = shift;
+
+	return $self->{"pnl_borderTop"};
+}
+
+sub SetBorderBot {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnl_borderBot"} = $val;
+}
+
+sub GetBorderBot {
+	my $self = shift;
+
+	return $self->{"pnl_borderBot"};
 }
 
 #-------------------------------------------------------------------------------------------#

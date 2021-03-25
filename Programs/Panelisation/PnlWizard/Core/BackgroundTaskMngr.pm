@@ -21,7 +21,7 @@ use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::HEGSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::UserSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::MatrixSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassUserSize';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassHegSize';
+use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassHEGSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::PreviewSize';
 
 use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoUserSteps';
@@ -284,7 +284,7 @@ sub __GetPnlCreatorByKey {
 		$creator = ClassUserSize->new($jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-		$creator = ClassHegSize->new($jobId, $pnlType);
+		$creator = ClassHEGSize->new($jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 		$creator = PreviewSize->new($jobId, $pnlType);

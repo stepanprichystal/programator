@@ -40,7 +40,7 @@ sub new {
 	push( @{ $self->{"creators"} }, HEGModel->new() );
 	#push( @{ $self->{"creators"} }, MatrixModel->new() );
 	push( @{ $self->{"creators"} }, ClassUserModel->new() );
-#	push( @{ $self->{"creators"} }, ClassHEGModel->new() );
+	push( @{ $self->{"creators"} }, ClassHEGModel->new() );
 #	push( @{ $self->{"creators"} }, PreviewModel->new() );
 	return $self;
 }

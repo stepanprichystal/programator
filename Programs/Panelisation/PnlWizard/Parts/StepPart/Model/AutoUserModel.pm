@@ -26,9 +26,12 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"modelKey"}    = PnlCreEnums->StepPnlCreator_AUTOUSER;
-	 
-	$self->{"settings"}->{"pcbStep"}      = undef;
+	$self->{"modelKey"} = PnlCreEnums->StepPnlCreator_AUTOUSER;
+
+	$self->{"settings"}->{"pnlClasses"}        = undef;
+	$self->{"settings"}->{"defPnlClass"}       = undef;
+	$self->{"settings"}->{"defPnlSpacing"}     = undef;
+	$self->{"settings"}->{"pcbStep"}           = undef;
 	$self->{"settings"}->{"placementType"}     = PnlClassEnums->PnlClassTransform_ROTATION;
 	$self->{"settings"}->{"rotationType"}      = undef;
 	$self->{"settings"}->{"patternType"}       = undef;
@@ -43,7 +46,14 @@ sub new {
 	$self->{"settings"}->{"actionType"}        = PnlCreEnums->StepPlacementMode_AUTO;
 	$self->{"settings"}->{"JSONStepPlacement"} = undef;
 	$self->{"settings"}->{"minUtilization"}    = undef;
-	 
+
+	$self->{"settings"}->{"width"}       = undef;
+	$self->{"settings"}->{"height"}      = undef;
+	$self->{"settings"}->{"borderLeft"}  = undef;
+	$self->{"settings"}->{"borderRight"} = undef;
+	$self->{"settings"}->{"borderTop"}   = undef;
+	$self->{"settings"}->{"borderBot"}   = undef;
+
 	return $self;
 }
 
@@ -54,6 +64,23 @@ sub GetModelKey {
 
 }
 
+sub GetPnlClasses {
+	my $self = shift;
+
+	return $self->{"settings"}->{"pnlClasses"};
+}
+
+sub GetDefPnlClass {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlClass"};
+}
+
+sub GetDefPnlSpacing {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlSpacing"};
+}
 
 sub SetPCBStep {
 	my $self = shift;
@@ -69,7 +96,6 @@ sub GetPCBStep {
 	return $self->{"settings"}->{"pcbStep"};
 
 }
-
 
 # Placement settings
 
@@ -220,7 +246,6 @@ sub GetMaxQuantity {
 	return $self->{"settings"}->{"maxQuantity"};
 
 }
- 
 
 # Panelisation
 
@@ -267,6 +292,86 @@ sub GetMinUtilization {
 
 	return $self->{"settings"}->{"minUtilization"};
 
+}
+
+# Step dimenson
+
+sub SetWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"width"} = $val;
+}
+
+sub GetWidth {
+	my $self = shift;
+
+	return $self->{"settings"}->{"width"};
+}
+
+sub SetHeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"height"} = $val;
+}
+
+sub GetHeight {
+	my $self = shift;
+
+	return $self->{"settings"}->{"height"};
+}
+
+sub SetBorderLeft {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"borderLeft"} = $val;
+}
+
+sub GetBorderLeft {
+	my $self = shift;
+
+	return $self->{"settings"}->{"borderLeft"};
+}
+
+sub SetBorderRight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"borderRight"} = $val;
+}
+
+sub GetBorderRight {
+	my $self = shift;
+
+	return $self->{"settings"}->{"borderRight"};
+}
+
+sub SetBorderTop {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"borderTop"} = $val;
+}
+
+sub GetBorderTop {
+	my $self = shift;
+
+	return $self->{"settings"}->{"borderTop"};
+}
+
+sub SetBorderBot {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"borderBot"} = $val;
+}
+
+sub GetBorderBot {
+	my $self = shift;
+
+	return $self->{"settings"}->{"borderBot"};
 }
 
 #-------------------------------------------------------------------------------------------#

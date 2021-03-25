@@ -17,21 +17,25 @@ use warnings;
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
 use aliased 'Packages::CAM::PanelClass::Enums' => "PnlClassEnums";
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlClassParser';
+use aliased 'CamHelpers::CamHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $jobId = shift;
+	my $class   = shift;
+	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key   = Enums->StepPnlCreator_AUTOUSER;
+	my $key     = Enums->StepPnlCreator_AUTOUSER;
 
-	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
-	# Setting values necessary for procesing panelisation
+	$self->{"settings"}->{"pnlClasses"}        = undef;
+	$self->{"settings"}->{"defPnlClass"}       = undef;
+	$self->{"settings"}->{"defPnlSpacing"}     = undef;
 	$self->{"settings"}->{"pcbStep"}           = undef;
 	$self->{"settings"}->{"placementType"}     = PnlClassEnums->PnlClassTransform_ROTATION;
 	$self->{"settings"}->{"rotationType"}      = undef;
@@ -48,6 +52,13 @@ sub new {
 	$self->{"settings"}->{"JSONStepPlacement"} = undef;
 	$self->{"settings"}->{"minUtilization"}    = undef;
 
+	$self->{"settings"}->{"width"}       = undef;
+	$self->{"settings"}->{"height"}      = undef;
+	$self->{"settings"}->{"borderLeft"}  = undef;
+	$self->{"settings"}->{"borderRight"} = undef;
+	$self->{"settings"}->{"borderTop"}   = undef;
+	$self->{"settings"}->{"borderBot"}   = undef;
+
 	return $self;    #
 }
 
@@ -59,25 +70,87 @@ sub new {
 # (instead of Init method is possible init by import JSON settings)
 # Return 1 if succes 0 if fail
 sub Init {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
 
 	my $result = 1;
 
-	#	$self->{"settings"}->{"w"} = 20;
-	#	$self->{"settings"}->{"h"} = 20;
+	my $jobId = $self->{'jobId'};
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	$self->{"settings"}->{"step"} = $stepName;
 
-		$inCAM->COM("get_user_name");
+	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
 
-		my $name = $inCAM->GetReply();
+		$self->SetPCBStep("o+1");
+	}
+	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
 
-		print STDERR "\nHEG !! $name \n";
-
-		sleep(1);
+		if ( CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) ) {
+			$self->SetPCBStep("mpanel");
+		}
+		else {
+			$self->SetPCBStep("o+1");
+		}
 
 	}
+
+	# Load Pnl class
+
+	my $parser = PnlClassParser->new( $inCAM, $jobId );
+	$parser->Parse();
+
+	my @classes = ();
+	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
+
+		@classes = $parser->GetCustomerPnlClasses();
+	}
+	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
+
+		@classes = $parser->GetProductionPnlClasses(1);
+
+	}
+
+	my $defClass   = undef;
+	my $defSpacing = undef;
+
+	$self->{"settings"}->{"pnlClasses"} = \@classes;
+
+	# 1)Set default class (should be only one for specific pcb type)
+	$defClass = $classes[0];
+	if ( defined $defClass ) {
+
+		$self->{"settings"}->{"defPnlClass"} = $defClass->GetName();
+
+		# Set placement settings
+
+		$self->SetPlacementType( $defClass->GetTransformation() );
+		$self->SetRotationType( $defClass->GetRotation() );
+		$self->SetPatternType( $defClass->GetPattern() );
+		$self->SetInterlockType( $defClass->GetInterlock() );
+
+		# Set space settings
+		$self->SetAlignType( $defClass->GetSpacingAlign() );
+		my @spacings = $classes[0]->GetAllClassSpacings();
+		$defSpacing = $spacings[0];
+
+		if ( defined $defSpacing ) {
+
+			$self->{"settings"}->{"defPnlSpacing"} = $defSpacing->GetName();
+
+			$self->SetSpaceX( $defSpacing->GetSpaceX() );
+			$self->SetSpaceY( $defSpacing->GetSpaceY() );
+
+		}
+
+	}
+
+	# Set amount settings
+	$self->SetAmountType( Enums->StepAmount_AUTO );
+
+	# Set action type
+
+	$self->SetActionType( Enums->StepPlacementMode_AUTO );
 
 	return $result;
 
@@ -138,6 +211,24 @@ sub Process {
 #-------------------------------------------------------------------------------------------#
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
+
+sub GetPnlClasses {
+	my $self = shift;
+
+	return $self->{"settings"}->{"pnlClasses"};
+}
+
+sub GetDefPnlClass {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlClass"};
+}
+
+sub GetDefPnlSpacing {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlSpacing"};
+}
 
 sub SetPCBStep {
 	my $self = shift;
@@ -349,6 +440,86 @@ sub GetMinUtilization {
 
 	return $self->{"settings"}->{"minUtilization"};
 
+}
+
+# Step dimenson
+
+sub SetWidth {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"width"} = $val;
+}
+
+sub GetWidth {
+	my $self = shift;
+
+	return $self->{"settings"}->{"width"};
+}
+
+sub SetHeight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"height"} = $val;
+}
+
+sub GetHeight {
+	my $self = shift;
+
+	return $self->{"settings"}->{"height"};
+}
+
+sub SetBorderLeft {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"borderLeft"} = $val;
+}
+
+sub GetBorderLeft {
+	my $self = shift;
+
+	return $self->{"settings"}->{"borderLeft"};
+}
+
+sub SetBorderRight {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"borderRight"} = $val;
+}
+
+sub GetBorderRight {
+	my $self = shift;
+
+	return $self->{"settings"}->{"borderRight"};
+}
+
+sub SetBorderTop {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"borderTop"} = $val;
+}
+
+sub GetBorderTop {
+	my $self = shift;
+
+	return $self->{"settings"}->{"borderTop"};
+}
+
+sub SetBorderBot {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"borderBot"} = $val;
+}
+
+sub GetBorderBot {
+	my $self = shift;
+
+	return $self->{"settings"}->{"borderBot"};
 }
 
 #-------------------------------------------------------------------------------------------#

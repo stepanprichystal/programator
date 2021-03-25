@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlCreator::SizePnlCreator::ClassHEGSize;
-use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
+use base('Programs::Panelisation::PnlCreator::SizePnlCreator::SizeCreatorBase');
 
 use Class::Interface;
 &implements('Programs::Panelisation::PnlCreator::SizePnlCreator::ISize');
@@ -13,30 +13,32 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlClassParser';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $jobId = shift;
+	my $class   = shift;
+	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key   = Enums->SizePnlCreator_CLASSHEG;
+	my $key     = Enums->SizePnlCreator_CLASSHEG;
 
-	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
-		# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{"width"}       = undef;
-	$self->{"settings"}->{"height"}      = undef;
-	$self->{"settings"}->{"borderLeft"}  = undef;
-	$self->{"settings"}->{"borderRight"} = undef;
-	$self->{"settings"}->{"borderTop"}   = undef;
-	$self->{"settings"}->{"borderBot"}   = undef;
+	# Setting values necessary for procesing panelisation
+	$self->{"settings"}->{"defPnlClass"}  = undef;
+	$self->{"settings"}->{"defPnlSize"}   = undef;
+	$self->{"settings"}->{"defPnlBorder"} = undef;
+
+	$self->{"settings"}->{"pnlClasses"} = undef;
 
 	return $self;    #
 }
@@ -49,26 +51,124 @@ sub new {
 # (instead of Init method is possible init by import JSON settings)
 # Return 1 if succes 0 if fail
 sub Init {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
 
 	my $result = 1;
 
- 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	$self->_Init( $inCAM, $stepName );
 
-		$inCAM->COM("get_user_name");
+	# Load Pnl class
 
-		my $name = $inCAM->GetReply();
+	my $jobId = $self->{'jobId'};
 
-		print STDERR "\nHEG !! $name \n";
+	my $parser = PnlClassParser->new( $inCAM, $jobId );
+	$parser->Parse();
 
-		sleep(1);
+	my @classes = ();
+	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
+
+		@classes = $parser->GetCustomerPnlClasses(1);
+	}
+	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
+
+		@classes = $parser->GetProductionPnlClasses(1);
+
+	}
+
+	my $defClass  = undef;
+	my $defSize   = undef;
+	my $defBorder = undef;
+
+	$self->{"settings"}->{"pnlClasses"} = \@classes;
+
+	# 1)Set default class (should be only one for specific pcb type)
+	$defClass = $classes[0];
+	if ( defined $defClass ) {
+
+		$self->{"settings"}->{"defPnlClass"} = $defClass->GetName();
+
+		# 2) Set default size. Take the biger one
+
+		# Check if there is dimension in HEG
+
+		my $dim = HegMethods->GetInfoDimensions($jobId);
+
+		my $ISpnlW = undef;
+		my $ISpnlH = undef;
+
+		if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
+
+			$ISpnlW = $dim->{"panel_x"};
+			$ISpnlH = $dim->{"panel_y"};
+
+		}    # Load panel size from HEG
+		elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
+
+			$ISpnlW = $dim->{"rozmer_x"};
+			$ISpnlH = $dim->{"rozmer_y"};
+		}
+
+		my @sizes = $classes[0]->GetSizes();
+
+		my $ISSize = first { $_->GetWidth() == $ISpnlW && $_->GetHeight() == $ISpnlH } @sizes;
+
+		if ( defined $ISSize ) {
+
+			# Edit name + set as defalut
+
+			$ISSize->SetName( $ISSize->GetName() . " (HEG)" );
+
+			$defSize = $ISSize;
+
+		}
+		else {
+			# Create custome HEG size + add borders/spacings + set as default
+
+			my $size = $parser->AddCustomSizeToClass( $defClass, "non standard (HEG)", $ISpnlW, $ISpnlH );
+			$defSize = $size;
+
+		}
+
+		if ( defined $defSize ) {
+
+			$self->{"settings"}->{"defPnlSize"} = $defSize->GetName();
+
+			# 3) Set default pnl border/ Should be only one border per specific size
+			$defBorder = ( $defSize->GetBorders() )[0];
+
+			if ( defined $defBorder ) {
+
+				$self->{"settings"}->{"defPnlBorder"} = $defBorder->GetName();
+			}
+		}
+		else {
+
+			# add
+
+		}
+	}
+
+	# Set width/height
+	if ( defined $defSize ) {
+
+		$self->SetWidth( $defSize->GetWidth() );
+		$self->SetHeight( $defSize->GetHeight() );
+	}
+
+	# Set border
+
+	if ( defined $defBorder ) {
+
+		$self->SetBorderLeft( $defBorder->GetBorderLeft() );
+		$self->SetBorderRight( $defBorder->GetBorderRight() );
+		$self->SetBorderTop( $defBorder->GetBorderTop() );
+		$self->SetBorderBot( $defBorder->GetBorderBot() );
 
 	}
 
 	return $result;
-
 }
 
 # Do necessary check before processing panelisation
@@ -81,20 +181,7 @@ sub Check {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nChecking  HEG !! $name \n";
-
-		sleep(1);
-
-	}
-
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
+	$result = $self->_Check( $inCAM, $errMess );
 
 	return $result;
 
@@ -108,17 +195,7 @@ sub Process {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
-
-	}
+	$result = $self->_Process( $inCAM, $errMess );
 
 	return $result;
 }
@@ -127,82 +204,28 @@ sub Process {
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
 
-sub SetWidth {
+sub GetPnlClasses {
 	my $self = shift;
-	my $val  = shift;
 
-	$self->{"settings"}->{"width"} = $val;
+	return $self->{"settings"}->{"pnlClasses"};
 }
 
-sub GetWidth {
+sub GetDefPnlClass {
 	my $self = shift;
 
-	return $self->{"settings"}->{"width"};
+	return $self->{"settings"}->{"defPnlClass"};
 }
 
-sub SetHeight {
+sub GetDefPnlSize {
 	my $self = shift;
-	my $val  = shift;
 
-	$self->{"settings"}->{"height"} = $val;
+	return $self->{"settings"}->{"defPnlSize"};
 }
 
-sub GetHeight {
+sub GetDefPnlBorder {
 	my $self = shift;
 
-	return $self->{"settings"}->{"height"};
-}
-
-sub SetBorderLeft {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderLeft"} = $val;
-}
-
-sub GetBorderLeft {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderLeft"};
-}
-
-sub SetBorderRight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderRight"} = $val;
-}
-
-sub GetBorderRight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderRight"};
-}
-
-sub SetBorderTop {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderTop"} = $val;
-}
-
-sub GetBorderTop {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderTop"};
-}
-
-sub SetBorderBot {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderBot"} = $val;
-}
-
-sub GetBorderBot {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderBot"};
+	return $self->{"settings"}->{"defPnlBorder"};
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -214,4 +237,3 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 }
 
 1;
-

@@ -16,6 +16,7 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -23,9 +24,10 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 sub new {
 	my $class  = shift;
 	my $parent = shift;
+	my $inCAM  = shift;
 	my $jobId  = shift;
 
-	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_SET, $parent, $jobId );
+	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_SET, $parent, $inCAM, $jobId );
 
 	bless($self);
 
@@ -54,9 +56,8 @@ sub __SetLayout {
 	my $heightValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $widthValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $widthValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	
 
 	# BUILD STRUCTURE OF LAYOUT
 	$szRow1->Add( $widthTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );

@@ -27,15 +27,18 @@ sub new {
 
 	$self->{"modelKey"}    = PnlCreEnums->SizePnlCreator_CLASSHEG;
 	 
-		# Setting values necessary for procesing panelisation
+	# Setting values necessary for procesing panelisation
 	$self->{"settings"}->{"width"}       = undef;
 	$self->{"settings"}->{"height"}      = undef;
 	$self->{"settings"}->{"borderLeft"}  = undef;
 	$self->{"settings"}->{"borderRight"} = undef;
 	$self->{"settings"}->{"borderTop"}   = undef;
 	$self->{"settings"}->{"borderBot"}   = undef;
-
-	 
+	
+	$self->{"settings"}->{"pnlClasses"}   = undef;
+	$self->{"settings"}->{"defPnlBorder"}   = undef;
+	$self->{"settings"}->{"defPnlSize"}   = undef;
+	$self->{"settings"}->{"defPnlClass"}   = undef;
 
 	return $self;
 }
@@ -46,8 +49,6 @@ sub GetModelKey {
 	return $self->{"modelKey"};
 
 }
-
-
 
 sub SetWidth {
 	my $self = shift;
@@ -125,6 +126,58 @@ sub GetBorderBot {
 	my $self = shift;
 
 	return $self->{"settings"}->{"borderBot"};
+}
+
+sub SetPnlClasses {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"pnlClasses"} = $val;
+}
+
+sub GetPnlClasses {
+	my $self = shift;
+
+	return $self->{"settings"}->{"pnlClasses"};
+}
+
+sub SetDefPnlClass {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"defPnlClass"} = $val;
+}
+
+sub GetDefPnlClass {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlClass"};
+}
+
+sub SetDefPnlSize {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"defPnlSize"} = $val;
+}
+
+sub GetDefPnlSize {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlSize"};
+}
+
+sub SetDefPnlBorder {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"defPnlBorder"} = $val;
+}
+
+sub GetDefPnlBorder {
+	my $self = shift;
+
+	return $self->{"settings"}->{"defPnlBorder"};
 }
 
 #-------------------------------------------------------------------------------------------#

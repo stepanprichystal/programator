@@ -64,27 +64,31 @@ sub OnGetCreatorLayout {
 	my $creatorKey = shift;
 	my $parent     = shift;
 
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	my $content = undef;
 
 	if ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
 
-		$content = AutoHegFrm->new($parent);
+		$content = AutoHegFrm->new($parent, $inCAM, $jobId);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
 
-		$content = AutoUserFrm->new($parent);
+		$content = AutoUserFrm->new($parent, $inCAM, $jobId);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
 
-		$content = MatrixFrm->new($parent);
+		$content = MatrixFrm->new($parent, $inCAM, $jobId);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_SET ) {
 
-		$content = SetFrm->new($parent);
+		$content = SetFrm->new($parent, $inCAM, $jobId);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
 
-		$content = PreviewFrm->new($parent);
+		$content = PreviewFrm->new($parent, $inCAM, $jobId);
 	}
 
 	return $content;
@@ -110,6 +114,11 @@ sub SetCreators {
 
 			if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
 
+				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
+				$creatorFrm->SetDefPnlClass( $model->GetDefPnlClass() );
+				$creatorFrm->SetDefPnlSpacing( $model->GetDefPnlSpacing() );
+
+				$creatorFrm->SetPCBStep( $model->GetPCBStep() );
 				$creatorFrm->SetPlacementType( $model->GetPlacementType() );
 				$creatorFrm->SetRotationType( $model->GetRotationType() );
 				$creatorFrm->SetPatternType( $model->GetPatternType() );
@@ -125,6 +134,12 @@ sub SetCreators {
 				$creatorFrm->SetMinUtilization( $model->GetMinUtilization() );
 				$creatorFrm->SetExactQuantity( $model->GetExactQuantity() );
 
+				$creatorFrm->SetWidth( $model->GetWidth() );
+				$creatorFrm->SetHeight( $model->GetHeight() );
+				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
+				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
+				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
+				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
 			}
 		}
 	}
@@ -145,7 +160,8 @@ sub GetCreators {
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
 		if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
-			
+
+			$model->SetPCBStep( $creatorFrm->GetPCBStep() );
 			$model->SetPlacementType( $creatorFrm->GetPlacementType() );
 			$model->SetRotationType( $creatorFrm->GetRotationType() );
 			$model->SetPatternType( $creatorFrm->GetPatternType() );
@@ -161,6 +177,13 @@ sub GetCreators {
 			$model->SetMinUtilization( $creatorFrm->GetMinUtilization() );
 			$model->SetExactQuantity( $creatorFrm->GetExactQuantity() );
 
+			$model->SetWidth( $creatorFrm->GetWidth() );
+			$model->SetHeight( $creatorFrm->GetHeight() );
+			$model->SetBorderLeft( $creatorFrm->GetBorderLeft() );
+			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
+			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
+			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
+
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
 
@@ -170,13 +193,13 @@ sub GetCreators {
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
-
+			die "not implemented";
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
-
+			die "not implemented";
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
-
+			die "not implemented";
 		}
 
 		push( @models, $model );

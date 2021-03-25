@@ -17,6 +17,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Packages::CAM::PanelClass::Enums';
@@ -33,8 +34,7 @@ sub new {
 
 	#
 
-	$self->{"sizes"}    = [];
-	
+	$self->{"sizes"} = [];
 
 	$self->{"goldScoringDist"} = 0;
 	$self->{"transformation"}  = Enums->PnlClassTransform_ROTATION;
@@ -45,6 +45,28 @@ sub new {
 	$self->{"numMaxSteps"}     = Enums->PnlClassNumMaxSteps_NO_LIMIT;
 
 	return $self;
+}
+
+sub AddSize {
+	my $self = shift;
+	my $val  = shift;
+
+	push( @{ $self->{"sizes"} }, $val );
+}
+
+sub GetAllClassSpacings {
+	my $self = shift;
+
+	my @spaces = ();
+
+	foreach my $space ( map { $_->GetSpacings() } @{ $self->{"sizes"} } ) {
+
+		unless ( grep { $_->GetName() eq $space->GetName() } @spaces ) {
+			push( @spaces, $space );
+		}
+
+	}
+	return @spaces;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -63,8 +85,6 @@ sub GetSizes {
 
 	return @{ $self->{"sizes"} };
 }
-
-
 
 sub SetGoldScoringDist {
 	my $self = shift;
