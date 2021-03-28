@@ -66,7 +66,7 @@ sub Run {
 		my $dif = $archive . "\\" . $jobId . ".dif";
 
 		if ( -e $dif ) {
-			$zip->addFile( $nif, $jobId . ".dif" );
+			$zip->addFile( $dif, $jobId . ".dif" );
 		}
 
 		my $pdf = $archive . "\\zdroje\\" . "$jobId-control.pdf";
