@@ -47,12 +47,12 @@ sub new {
 	$self->{"settings"}->{"JSONStepPlacement"} = undef;
 	$self->{"settings"}->{"minUtilization"}    = undef;
 
-	$self->{"settings"}->{"width"}       = undef;
-	$self->{"settings"}->{"height"}      = undef;
-	$self->{"settings"}->{"borderLeft"}  = undef;
-	$self->{"settings"}->{"borderRight"} = undef;
-	$self->{"settings"}->{"borderTop"}   = undef;
-	$self->{"settings"}->{"borderBot"}   = undef;
+#	$self->{"settings"}->{"width"}       = undef;
+#	$self->{"settings"}->{"height"}      = undef;
+#	$self->{"settings"}->{"borderLeft"}  = undef;
+#	$self->{"settings"}->{"borderRight"} = undef;
+#	$self->{"settings"}->{"borderTop"}   = undef;
+#	$self->{"settings"}->{"borderBot"}   = undef;
 
 	return $self;
 }
@@ -295,84 +295,84 @@ sub GetMinUtilization {
 }
 
 # Step dimenson
-
-sub SetWidth {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"width"} = $val;
-}
-
-sub GetWidth {
-	my $self = shift;
-
-	return $self->{"settings"}->{"width"};
-}
-
-sub SetHeight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"height"} = $val;
-}
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"height"};
-}
-
-sub SetBorderLeft {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderLeft"} = $val;
-}
-
-sub GetBorderLeft {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderLeft"};
-}
-
-sub SetBorderRight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderRight"} = $val;
-}
-
-sub GetBorderRight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderRight"};
-}
-
-sub SetBorderTop {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderTop"} = $val;
-}
-
-sub GetBorderTop {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderTop"};
-}
-
-sub SetBorderBot {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderBot"} = $val;
-}
-
-sub GetBorderBot {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderBot"};
-}
+#
+#sub SetWidth {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"width"} = $val;
+#}
+#
+#sub GetWidth {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"width"};
+#}
+#
+#sub SetHeight {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"height"} = $val;
+#}
+#
+#sub GetHeight {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"height"};
+#}
+#
+#sub SetBorderLeft {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"borderLeft"} = $val;
+#}
+#
+#sub GetBorderLeft {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"borderLeft"};
+#}
+#
+#sub SetBorderRight {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"borderRight"} = $val;
+#}
+#
+#sub GetBorderRight {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"borderRight"};
+#}
+#
+#sub SetBorderTop {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"borderTop"} = $val;
+#}
+#
+#sub GetBorderTop {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"borderTop"};
+#}
+#
+#sub SetBorderBot {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"borderBot"} = $val;
+#}
+#
+#sub GetBorderBot {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"borderBot"};
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

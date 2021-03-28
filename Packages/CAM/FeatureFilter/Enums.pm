@@ -29,4 +29,5 @@ use constant {
 			   Polarity_BOTH => "both",
 			   
 };
+
 1;

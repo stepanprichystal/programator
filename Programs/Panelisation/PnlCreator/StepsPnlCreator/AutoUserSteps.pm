@@ -19,6 +19,9 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums';
 use aliased 'Packages::CAM::PanelClass::Enums' => "PnlClassEnums";
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlClassParser';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
+use aliased 'Packages::CAMJob::Panelization::AutoPart';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -52,12 +55,12 @@ sub new {
 	$self->{"settings"}->{"JSONStepPlacement"} = undef;
 	$self->{"settings"}->{"minUtilization"}    = undef;
 
-	$self->{"settings"}->{"width"}       = undef;
-	$self->{"settings"}->{"height"}      = undef;
-	$self->{"settings"}->{"borderLeft"}  = undef;
-	$self->{"settings"}->{"borderRight"} = undef;
-	$self->{"settings"}->{"borderTop"}   = undef;
-	$self->{"settings"}->{"borderBot"}   = undef;
+	#	$self->{"settings"}->{"width"}       = undef;
+	#	$self->{"settings"}->{"height"}      = undef;
+	#	$self->{"settings"}->{"borderLeft"}  = undef;
+	#	$self->{"settings"}->{"borderRight"} = undef;
+	#	$self->{"settings"}->{"borderTop"}   = undef;
+	#	$self->{"settings"}->{"borderBot"}   = undef;
 
 	return $self;    #
 }
@@ -164,22 +167,40 @@ sub Check {
 	my $inCAM   = shift;
 	my $errMess = shift;    # reference to err message
 
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->GetStep();
+
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	# Check if panel step exist
+	if ( !CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
+		$result = 0;
+		$$errMess .= "Panel step: $step doesn't exist in job.";
+	}
 
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nChecking  HEG !! $name \n";
-
-		sleep(1);
+	# Check if panel profile exist
+	my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+	if (    abs( $profLim{"xMax"} - $profLim{"xMin"} ) <= 0
+		 || abs( $profLim{"yMax"} - $profLim{"yMin"} ) <= 0 )
+	{
+		$result = 0;
+		$$errMess .= "Panel step ($step) profile has invalid dimension";
 
 	}
 
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
+	# 1) Check if nested step exists
+	my $nestStep = $self->GetPCBStep();
+	if ( !defined $nestStep || $nestStep eq "" ) {
+		$result = 0;
+		$$errMess .= "Nested step name is not defined";
+
+	}
+
+	# Check if nested step exist in job
+	if ( CamHelper->StepExists( $inCAM, $jobId, $nestStep ) ) {
+		$result = 0;
+		$$errMess .= "Nested step: $nestStep doesn't exist in job.";
+	}
 
 	return $result;
 
@@ -193,18 +214,73 @@ sub Process {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->GetStep();
 
-		$inCAM->COM("get_user_name");
+	# Process by auto/manual choice
 
-		my $name = $inCAM->GetReply();
+	if ( $self->GetActionType() eq Enums->StepPlacementMode_AUTO ) {
 
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
+		my $autoPart = AutoPart->new( $inCAM, $jobId, $step );
+
+		# Add size (get from step profile)
+		my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+		my $w       = abs( $profLim{"xMax"} - $profLim{"xMin"} );
+		my $h       = abs( abs( $profLim{"yMax"} - $profLim{"yMin"} ) <= 0 );
+
+		$autoPart->AddPnlSize( $w, $h );
+
+		# Add border (get from step profile) + spacing
+		my %areaLim = CamStep->GetActiveAreaLim( $inCAM, $jobId, $step );
+
+		my $bL = abs( $profLim{"xMin"} - $areaLim{"xMin"} );
+		my $bR = abs( $profLim{"xMax"} - $areaLim{"xMax"} );
+		my $bT = abs( $profLim{"yMax"} - $areaLim{"yMax"} );
+		my $bB = abs( $profLim{"yMin"} - $areaLim{"yMin"} );
+
+		$autoPart->AddPnlBorderSpacing( $bT, $bB, $bL, $bR, $self->GetSpaceX(), $self->GetSpaceY() );
+
+		# Create panel (best utilization)
+
+		my $unitPerPanel = 0;
+		my $numMaxSteps  = "no_limit";
+
+		if ( $self->GetAmountType() eq Enums->StepAmount_AUTO ) {
+
+			$unitPerPanel = "automatic";
+
+		}
+		elsif ( $self->GetAmountType() eq Enums->StepAmount_EXACT ) {
+			$unitPerPanel = $self->GetExactQuantity();
+
+		}
+		elsif ( $self->GetAmountType() eq Enums->StepAmount_EXACT ) {
+
+			$unitPerPanel = "automatic";
+			$numMaxSteps  = $self->GetMaxQuantity();
+		}
+
+		$autoPart->Panelise(
+			$self->GetPCBStep(),
+			$unitPerPanel,
+			$self->GetMinUtilization(),
+			1,
+			undef,
+			1,
+			undef,
+			undef,
+			$self->GetAlignType(),
+			$numMaxSteps,
+			$self->GetPlacementType(),
+			$self->GetRotationType(),
+			$self->GetPatternType(),
+			undef,
+			$self->GetInterlockType(),
+			0, 0, 0
+
+		);
 
 	}
-
 	return $result;
 }
 
@@ -443,84 +519,84 @@ sub GetMinUtilization {
 }
 
 # Step dimenson
-
-sub SetWidth {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"width"} = $val;
-}
-
-sub GetWidth {
-	my $self = shift;
-
-	return $self->{"settings"}->{"width"};
-}
-
-sub SetHeight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"height"} = $val;
-}
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"height"};
-}
-
-sub SetBorderLeft {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderLeft"} = $val;
-}
-
-sub GetBorderLeft {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderLeft"};
-}
-
-sub SetBorderRight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderRight"} = $val;
-}
-
-sub GetBorderRight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderRight"};
-}
-
-sub SetBorderTop {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderTop"} = $val;
-}
-
-sub GetBorderTop {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderTop"};
-}
-
-sub SetBorderBot {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderBot"} = $val;
-}
-
-sub GetBorderBot {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderBot"};
-}
+#
+#sub SetWidth {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"width"} = $val;
+#}
+#
+#sub GetWidth {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"width"};
+#}
+#
+#sub SetHeight {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"height"} = $val;
+#}
+#
+#sub GetHeight {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"height"};
+#}
+#
+#sub SetBorderLeft {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"borderLeft"} = $val;
+#}
+#
+#sub GetBorderLeft {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"borderLeft"};
+#}
+#
+#sub SetBorderRight {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"borderRight"} = $val;
+#}
+#
+#sub GetBorderRight {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"borderRight"};
+#}
+#
+#sub SetBorderTop {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"borderTop"} = $val;
+#}
+#
+#sub GetBorderTop {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"borderTop"};
+#}
+#
+#sub SetBorderBot {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"borderBot"} = $val;
+#}
+#
+#sub GetBorderBot {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"borderBot"};
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
