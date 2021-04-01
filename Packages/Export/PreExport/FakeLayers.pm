@@ -31,6 +31,7 @@ use aliased 'Packages::Polygon::PolygonFeatures';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
+use aliased 'Packages::Technology::DataComp::SigLayerComp';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -491,27 +492,27 @@ sub __CreateCoreDrillLayers {
 	my $note = CamAttributes->GetJobAttrByName( $inCAM, $jobId, ".comment" );
 
 	# Only multilayer and flex or Jobs which
-	if (
-		$layerCnt > 2
+	if ( $layerCnt > 2 ) {
 
-		&& ( JobHelper->GetIsFlex($jobId)
-			 || $note =~ /tpv-kompenzace/i )
-	  )
-	{
+		my $comp = SigLayerComp->new( $inCAM, $jobId );
 
 		my $stackup = Stackup->new( $inCAM, $jobId );
-
 		my @products = $stackup->GetInputChildProducts();
 
 		foreach my $coreProdut ( sort { $b->GetCoreNumber() <=> $a->GetCoreNumber() } @products ) {
 
-			my $lName = "v1j" . $coreProdut->GetCoreNumber();
+			my %matComp = $comp->GetLayerCompensation( $coreProdut->GetTopCopperLayer() );
 
-			CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
-			CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "drill", "positive", 1, "v1", "after" );
-			CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $lName, $coreProdut->GetTopCopperLayer(), $coreProdut->GetBotCopperLayer() );
+			if ( $matComp{"x"} > 0 || $matComp{"y"} > 0 ) {
 
-			push( @fakeLayers, $lName );
+				my $lName = "v1j" . $coreProdut->GetCoreNumber();
+
+				CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
+				CamMatrix->CreateLayer( $inCAM, $jobId, $lName, "drill", "positive", 1, "v1", "after" );
+				CamMatrix->SetNCLayerStartEnd( $inCAM, $jobId, $lName, $coreProdut->GetTopCopperLayer(), $coreProdut->GetBotCopperLayer() );
+
+				push( @fakeLayers, $lName );
+			}
 		}
 
 		CamHelper->SetStep( $inCAM, $step );

@@ -194,6 +194,9 @@ sub __ScalingRequired {
 	my $scale = 0;
 
 	# Decide which material and PCB type compensate
+
+	use constant MINMATTHICK => 150;    # material thickness treshold where stretch is apply
+
 	if (    $self->{"pcbType"} eq EnumsGeneral->PcbType_1VFLEX
 		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_2VFLEX
 		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_MULTIFLEX
@@ -201,19 +204,28 @@ sub __ScalingRequired {
 		 || $self->{"pcbType"} eq EnumsGeneral->PcbType_RIGIDFLEXI )
 	{
 
+		# Always if flex
+
 		$scale = 1;
 
 	}
-	else {
+	elsif ( ( $self->{"pcbType"} eq EnumsGeneral->PcbType_1V || $self->{"pcbType"} eq EnumsGeneral->PcbType_2V )
+			&& $matThick <= MINMATTHICK )
+	{
 
-		# Temporary solution, scaling depnads on InCAM attr. If there is string kompenzace-1 scale
-		use aliased 'CamHelpers::CamAttributes';
-		my $note = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, ".comment" );
+		# If thin material and 1 + 2v
+		$scale = 1;
+	}
+	elsif ( $self->{"pcbType"} eq EnumsGeneral->PcbType_MULTI ) {
 
-		if ( $note =~ /tpv-kompenzace/i ) {
+		# If at least one core in stackup thin is <= MINMATTHICK
+		my @core = $self->{"stackup"}->GetAllCores();
+
+		my @thinCore = grep { $_->GetThick() <= MINMATTHICK } @core;
+
+		if ( scalar(@thinCore) ) {
 			$scale = 1;
 		}
-
 	}
 
 	return $scale;
