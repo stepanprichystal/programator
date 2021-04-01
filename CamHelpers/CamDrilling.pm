@@ -13,8 +13,6 @@ use Array::Utils qw(:all);
 
 #loading of locale modules
 
-use aliased 'Enums::EnumsPaths';
-use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamMatrix';

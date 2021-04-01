@@ -13,8 +13,6 @@ use warnings;
 #loading of locale modules
 
 use aliased 'Enums::EnumsPaths';
-use aliased 'CamHelpers::CamHelper';
-use aliased 'CamHelpers::CamLayer';
 use aliased 'Enums::EnumsDrill';
 
 #-------------------------------------------------------------------------------------------#

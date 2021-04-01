@@ -9,7 +9,7 @@ use constant {
 	PnlClassRotation_0DEG    => "no_rotation",
 	PnlClassRotation_90DEG   => "rotate_90",
 	PnlClassRotation_UNIFORM => "uniform",
-	PnlClassRotation_ANY     => "any",
+	PnlClassRotation_ANY     => "any_rotation",
 
 	PnlClassPattern_NO_PATTERN        => "no_pattern",
 	PnlClassPattern_ALTERNATE_ROW     => "alternate_row",

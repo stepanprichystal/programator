@@ -24,6 +24,7 @@ sub new {
 	my $class      = shift;
 	my $creatorKey = shift;
 	my $parent     = shift;
+	my $inCAM      = shift;
 	my $jobId      = shift;
 
 	my $self = $class->SUPER::new($parent);
@@ -32,16 +33,15 @@ sub new {
 
 	#$self->__SetLayout();
 
-
 	$self->{"creatorKey"} = $creatorKey;
+	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
 	$self->{"step"}       = undef;
 
 	# DEFINE EVENTS
 
 	$self->{"creatorSettingsChangedEvt"} = Event->new( $self->{"creatorKey"} );
-	$self->{"creatorInitRequestEvt"} = Event->new( $self->{"creatorKey"} );
-	
+	$self->{"creatorInitRequestEvt"}     = Event->new( $self->{"creatorKey"} );
 
 	return $self;
 }

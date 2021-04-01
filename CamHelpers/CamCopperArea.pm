@@ -11,13 +11,10 @@ use warnings;
 
 #loading of locale modules
 use aliased 'Helpers::JobHelper';
-use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::Polygon::Features::Features::Features';
-use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods

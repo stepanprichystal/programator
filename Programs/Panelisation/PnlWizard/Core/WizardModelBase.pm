@@ -23,8 +23,7 @@ sub new {
 
 	$self->{"__CLASS__"} = caller();
 
-	
-	$self->{"settings"}     = {};
+	$self->{"settings"} = {};
 
 	return $self;
 
@@ -43,9 +42,6 @@ sub GetPreview {
 	return $self->{"preview"};
 
 }
-
-
-
 
 #
 sub ExportCreatorSettings {
@@ -78,7 +74,9 @@ sub ImportCreatorSettings {
 
 	my @wrongKeys = grep { $hash{$_} != 2 } keys %hash;
 
-	die "Import settings keys do not match with object setting keys (keys: " . join( "; ", @wrongKeys ) . " )" if (@wrongKeys);
+	if (@wrongKeys) {
+		die "Import settings keys do not match with object setting keys (keys: " . join( "; ", @wrongKeys ) . " )";
+	}
 
 	$self->{"settings"} = $data;
 
@@ -87,29 +85,24 @@ sub ImportCreatorSettings {
 # Important because of serialize class
 sub TO_JSON { return { %{ shift() } }; }
 
-
-
 #-------------------------------------------------------------------------------------------#
 # Get/Set method for adjusting settings
 #-------------------------------------------------------------------------------------------#
 
-
 sub GetStep {
-	my $self   = shift;
- 
+	my $self = shift;
+
 	return $self->{"settings"}->{"step"};
 
 }
 
 sub SetStep {
-	my $self   = shift;
-	my $val = shift;
-	 
+	my $self = shift;
+	my $val  = shift;
 
-	$self->{"settings"}->{"step"} =  $val;
+	$self->{"settings"}->{"step"} = $val;
 
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

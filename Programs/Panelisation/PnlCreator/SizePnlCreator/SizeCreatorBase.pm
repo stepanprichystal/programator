@@ -44,12 +44,12 @@ sub new {
 	bless $self;
 
 	# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{"width"}       = undef;
-	$self->{"settings"}->{"height"}      = undef;
-	$self->{"settings"}->{"borderLeft"}  = undef;
-	$self->{"settings"}->{"borderRight"} = undef;
-	$self->{"settings"}->{"borderTop"}   = undef;
-	$self->{"settings"}->{"borderBot"}   = undef;
+	$self->{"settings"}->{"width"}       = 0;
+	$self->{"settings"}->{"height"}      = 0;
+	$self->{"settings"}->{"borderLeft"}  = 0;
+	$self->{"settings"}->{"borderRight"} = 0;
+	$self->{"settings"}->{"borderTop"}   = 0;
+	$self->{"settings"}->{"borderBot"}   = 0;
 
 	return $self;    # Return the reference to the hash.
 }
@@ -81,30 +81,53 @@ sub _Check {
 	my $bT = $self->GetBorderTop();
 	my $bB = $self->GetBorderBot();
 
-	if ( !defined $w || !looks_like_number($w) || $w <= 0 ) {
+	if ( !defined $w || $w eq "" || !looks_like_number($w) || $w <= 0 ) {
 
 		$result = 0;
 		$$errMess .= "Panel width is not set.\n";
 	}
 
-	if ( !defined $h || !looks_like_number($h) || $h <= 0 ) {
+	if ( !defined $h || $h eq "" || !looks_like_number($h) || $h <= 0 ) {
 
 		$result = 0;
 		$$errMess .= "Panel height is not set.\n";
 	}
 
-	if (    !defined $bL
-		 || !defined $bR
-		 || !defined $bT
-		 || !defined $bB
-		 || !looks_like_number($bL)
-		 || !looks_like_number($bR)
-		 || !looks_like_number($bT)
-		 || !looks_like_number($bB) )
+	if (
+		   !defined $bL
+		|| !defined $bR
+		|| !defined $bT
+		|| !defined $bB
+		|| $bL eq ""
+		|| $bR eq ""
+		|| $bT eq ""
+		|| $bB eq ""
+		|| !looks_like_number($bL)
+		|| !looks_like_number($bR)
+		|| !looks_like_number($bT)
+		|| !looks_like_number($bB)
+		|| $bL < 0
+		|| $bR < 0
+		|| $bT < 0
+		|| $bB < 0
+	  )
 	{
 
 		$result = 0;
 		$$errMess .= "Not all panel borders are defined (border must be number  >= 0).\n";
+	}
+	
+	#  border width has to be smaller than total panel dimension
+	if( ($bL + $bR) >=  $w){
+		
+		$result = 0;
+		$$errMess .= "Border width left (${bL}mm) + right (${bR}mm) is larger than panel width: ${w}mm.\n";
+	}
+	
+	if( ($bT + $bB) >=  $h){
+		
+		$result = 0;
+		$$errMess .= "Border width left (${bT}mm) + right (${bB}mm) is larger than panel width: ${h}mm.\n";
 	}
 
 	return $result;
@@ -126,8 +149,8 @@ sub _Process {
 	my $step = SRStep->new( $inCAM, $jobId, $self->GetStep() );
 
 	#	my %p = ("x"=> -10, "y" => -20);
-	$step->Edit( $self->GetWidth(),     $self->GetHeight(),
-				   $self->GetBorderTop(), $self->GetBorderBot(), $self->GetBorderLeft(), $self->GetBorderRight() );
+	$step->Edit( $self->GetWidth(),      $self->GetHeight(), $self->GetBorderTop(), $self->GetBorderBot(),
+				 $self->GetBorderLeft(), $self->GetBorderRight() );
 
 	#	my $control = SRStep->new( $inCAM, $jobId, "test" );
 	#	my %p = ("x"=> 10, "y" => +10);

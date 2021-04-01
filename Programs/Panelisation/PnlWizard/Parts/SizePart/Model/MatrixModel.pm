@@ -34,6 +34,8 @@ sub new {
 	$self->{"settings"}->{"borderRight"} = undef;
 	$self->{"settings"}->{"borderTop"}   = undef;
 	$self->{"settings"}->{"borderBot"}   = undef;
+	#$self->{"settings"}->{"activeAreaW"}   = 0;
+	#$self->{"settings"}->{"activeAreaH"}   = 0;
 
 	 
 
@@ -126,6 +128,33 @@ sub GetBorderBot {
 
 	return $self->{"settings"}->{"borderBot"};
 }
+
+#
+#sub SetActiveAreaW {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"activeAreaW"} = $val;
+#}
+#
+#sub GetActiveAreaW {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"activeAreaW"};
+#}
+#
+#sub SetActiveAreaH {
+#	my $self = shift;
+#	my $val  = shift;
+#
+#	$self->{"settings"}->{"activeAreaH"} = $val;
+#}
+#
+#sub GetActiveAreaH {
+#	my $self = shift;
+#
+#	return $self->{"settings"}->{"activeAreaH"};
+#}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

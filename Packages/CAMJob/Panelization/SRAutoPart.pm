@@ -1,15 +1,9 @@
 #-------------------------------------------------------------------------------------------#
-# Description: Wrapper for autopart/ sr autopart command
-# Two ways how to use autopart:
-# 1) Manual panel pick (or best) with result viewer
-#  - AutopartAddPnlSize
-#  - AutopartAddPnlBorderSpacing
-#  - AutopartPanelise
-# 2) Automatic panel creation without displaying result viewer
-#  - SRAutopartPanelise
+# Description: Automatic panelisa
+
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::CAMJob::Panelization::AutoPart;
+package Packages::CAMJob::Panelization::SRAutoPart;
 
 #3th party library
 use strict;
@@ -22,7 +16,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
-#  Public methods
+#  Interface
 #-------------------------------------------------------------------------------------------#
 
 sub new {
@@ -39,13 +33,7 @@ sub new {
 	return $self;
 }
 
-
-#-------------------------------------------------------------------------------------------#
-# 1) Manual panel pick (or best) with result viewer
-#-------------------------------------------------------------------------------------------#
-
-
-sub AutoPartAddPnlSize {
+sub AddPnlSize {
 	my $self   = shift;
 	my $width  = shift;
 	my $height = shift;
@@ -58,7 +46,7 @@ sub AutoPartAddPnlSize {
 
 }
 
-sub AutoPartAddPnlBorderSpacing {
+sub AddPnlBorderSpacing {
 	my $self         = shift;
 	my $topBorder    = shift;
 	my $bottomBorder = shift;
@@ -83,7 +71,7 @@ sub AutoPartAddPnlBorderSpacing {
 
 }
 
-sub AutoPartPanelise {
+sub Panelise {
 	my $self            = shift;
 	my $nestStep        = shift;
 	my $unitsInPanel    = shift // "automatic";
@@ -109,7 +97,7 @@ sub AutoPartPanelise {
 	my $stepName = $self->{"step"};
 
 	$inCAM->COM(
-				 "auto_part_place",
+				 "sr_auto_part_place",
 				 "step"            => $nestStep,
 				 "unitsInPanel"    => $unitsInPanel,
 				 "minUtilization"  => $minUtilization,
@@ -131,18 +119,7 @@ sub AutoPartPanelise {
 	);
 }
 
-
-
-#-------------------------------------------------------------------------------------------#
-# 2) Automatic panel creation without displaying result viewer
-#-------------------------------------------------------------------------------------------#
-
-
-# Return hash with result, nested step cnt, utilization
-# Raise error if nested steps are greater thjan active area
-# Raise error alwas if there is no solution of panelisation (nested step == 0)
-# Suppress InCAM exception before calling if necessary
-sub SRAutoPartPanelise {
+sub PaneliseAuto {
 	my $self   = shift;
 	my $width  = shift;
 	my $height = shift;
@@ -220,8 +197,7 @@ sub SRAutoPartPanelise {
 		$res{"result"}      = 1;
 		$res{"stepCnt"}     = $stepCnt;
 		$res{"utilization"} = $utilization;
-	
-	} 
+	}
 
 	return %res;
 }

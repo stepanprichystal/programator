@@ -25,16 +25,16 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"modelKey"}    = PnlCreEnums->SizePnlCreator_HEG;
-	 
-		# Setting values necessary for procesing panelisation
+	$self->{"modelKey"} = PnlCreEnums->SizePnlCreator_HEG;
+
+	# Setting values necessary for procesing panelisation
 	$self->{"settings"}->{"width"}       = undef;
 	$self->{"settings"}->{"height"}      = undef;
 	$self->{"settings"}->{"borderLeft"}  = undef;
 	$self->{"settings"}->{"borderRight"} = undef;
 	$self->{"settings"}->{"borderTop"}   = undef;
 	$self->{"settings"}->{"borderBot"}   = undef;
-
+	$self->{"settings"}->{"ISDimensionFilled"}   = undef;
 	 
 
 	return $self;
@@ -46,8 +46,6 @@ sub GetModelKey {
 	return $self->{"modelKey"};
 
 }
-
-
 
 sub SetWidth {
 	my $self = shift;
@@ -125,6 +123,19 @@ sub GetBorderBot {
 	my $self = shift;
 
 	return $self->{"settings"}->{"borderBot"};
+}
+
+sub SetISDimensionFilled {
+	my $self = shift;
+	my $val  = shift;
+	
+	$self->{"settings"}->{"ISDimensionFilled"} = $val;
+}
+
+sub GetISDimensionFilled {
+	my $self = shift;
+
+	return $self->{"settings"}->{"ISDimensionFilled"};
 }
 
 #-------------------------------------------------------------------------------------------#

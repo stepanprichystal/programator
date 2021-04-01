@@ -17,6 +17,7 @@ use List::Util qw(first);
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -54,6 +55,9 @@ sub __SetLayout {
 	$self->{"pnlClassCB"} = $self->_SetLayoutCBMain( "Class", [] );
 
 	$self->{"CBMainChangedEvt"}->Add( sub { $self->__OnPnlClassChanged(@_) } );
+
+
+	$self->{"ISDimensionFilled"} = $self->_SetLayoutISSize( "HEG dimension filled", 0 );
 
 	# Init combobox class size
 	$self->{"pnlClassSizeCB"} = $self->_SetLayoutCBSize( "Class size", [] );
@@ -209,6 +213,31 @@ sub GetDefPnlBorder {
 
 	return $self->{"pnlClassBorderCB"}->GetValue();
 }
+
+
+sub SetISDimensionFilled {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"ISDimensionFilled"}->SetStatus( ( $val ? EnumsGeneral->ResultType_OK : EnumsGeneral->ResultType_FAIL ) );
+
+}
+
+sub GetISDimensionFilled {
+	my $self = shift;
+
+	my $stat = $self->{"ISDimensionFilled"}->GetStatus();
+
+	if ( $stat eq EnumsGeneral->ResultType_OK ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

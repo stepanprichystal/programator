@@ -40,6 +40,8 @@ sub new {
 
 	$self->{"settings"}->{"pnlClasses"} = undef;
 
+	$self->{"settings"}->{"ISDimensionFilled"} = undef;
+
 	return $self;    #
 }
 
@@ -108,6 +110,22 @@ sub Init {
 
 			$ISpnlW = $dim->{"rozmer_x"};
 			$ISpnlH = $dim->{"rozmer_y"};
+		}
+
+		if (
+			    defined $ISpnlW
+			 && $ISpnlW > 0
+			 && defined $ISpnlW
+			 && $ISpnlH
+			 && $ISpnlH > 0
+		  )
+		{
+
+			$self->SetISDimensionFilled(1);
+		}
+		else {
+
+			$self->SetISDimensionFilled(0);
 		}
 
 		my @sizes = $classes[0]->GetSizes();
@@ -227,6 +245,20 @@ sub GetDefPnlBorder {
 
 	return $self->{"settings"}->{"defPnlBorder"};
 }
+
+sub SetISDimensionFilled {
+	my $self = shift;
+	my $val  = shift;
+	
+	$self->{"settings"}->{"ISDimensionFilled"} = $val;
+}
+
+sub GetISDimensionFilled {
+	my $self = shift;
+
+	return $self->{"settings"}->{"ISDimensionFilled"};
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

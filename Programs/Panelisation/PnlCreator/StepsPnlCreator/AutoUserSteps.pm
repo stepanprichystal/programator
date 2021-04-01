@@ -13,6 +13,8 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min first];
+use Try::Tiny;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
@@ -21,6 +23,7 @@ use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlClassParser';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAMJob::Panelization::AutoPart';
 
 #-------------------------------------------------------------------------------------------#
@@ -36,24 +39,25 @@ sub new {
 	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
-	$self->{"settings"}->{"pnlClasses"}        = undef;
+	$self->{"settings"}->{"pnlClasses"}        = [];
 	$self->{"settings"}->{"defPnlClass"}       = undef;
 	$self->{"settings"}->{"defPnlSpacing"}     = undef;
+	$self->{"settings"}->{"pcbStepsList"}      = [];
 	$self->{"settings"}->{"pcbStep"}           = undef;
 	$self->{"settings"}->{"placementType"}     = PnlClassEnums->PnlClassTransform_ROTATION;
 	$self->{"settings"}->{"rotationType"}      = undef;
 	$self->{"settings"}->{"patternType"}       = undef;
 	$self->{"settings"}->{"interlockType"}     = undef;
-	$self->{"settings"}->{"spaceX"}            = undef;
-	$self->{"settings"}->{"spaceY"}            = undef;
+	$self->{"settings"}->{"spaceX"}            = 0;
+	$self->{"settings"}->{"spaceY"}            = 0;
 	$self->{"settings"}->{"alignType"}         = undef;
 	$self->{"settings"}->{"amountType"}        = Enums->StepAmount_EXACT;
-	$self->{"settings"}->{"exactQuantity"}     = undef;
-	$self->{"settings"}->{"maxQuantity"}       = undef;
+	$self->{"settings"}->{"exactQuantity"}     = 0;
+	$self->{"settings"}->{"maxQuantity"}       = 0;
 	$self->{"settings"}->{"autoQuantity"}      = undef;
 	$self->{"settings"}->{"actionType"}        = Enums->StepPlacementMode_AUTO;
 	$self->{"settings"}->{"JSONStepPlacement"} = undef;
-	$self->{"settings"}->{"minUtilization"}    = undef;
+	$self->{"settings"}->{"minUtilization"}    = 1;
 
 	#	$self->{"settings"}->{"width"}       = undef;
 	#	$self->{"settings"}->{"height"}      = undef;
@@ -83,17 +87,25 @@ sub Init {
 
 	$self->{"settings"}->{"step"} = $stepName;
 
+	my @childs =  grep { $_ =~ /^\w+\+1$/ } CamStep->GetAllStepNames( $inCAM, $jobId );
+	@childs = grep { $_ ne $stepName } @childs;
+	$self->SetPCBStepsList( \@childs );
+
 	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
 
-		$self->SetPCBStep("o+1");
+		# Create step list choice
+
+		$self->SetPCBStep( $childs[0] );
 	}
 	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
 
-		if ( CamHelper->StepExists( $inCAM, $jobId, "mpanel" ) ) {
+		my $mpanel = first { $_ eq "mpanel" } @childs;
+
+		if ( defined $mpanel ) {
 			$self->SetPCBStep("mpanel");
 		}
 		else {
-			$self->SetPCBStep("o+1");
+			$self->SetPCBStep( $childs[0] );
 		}
 
 	}
@@ -148,6 +160,10 @@ sub Init {
 
 	}
 
+	# Set min utilization 30%
+
+	$self->SetMinUtilization(30);
+
 	# Set amount settings
 	$self->SetAmountType( Enums->StepAmount_AUTO );
 
@@ -177,31 +193,98 @@ sub Check {
 		$result = 0;
 		$$errMess .= "Panel step: $step doesn't exist in job.";
 	}
+	else {
 
-	# Check if panel profile exist
-	my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
-	if (    abs( $profLim{"xMax"} - $profLim{"xMin"} ) <= 0
-		 || abs( $profLim{"yMax"} - $profLim{"yMin"} ) <= 0 )
-	{
-		$result = 0;
-		$$errMess .= "Panel step ($step) profile has invalid dimension";
+		# Check if panel profile exist
+		my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+		if (    abs( $profLim{"xMax"} - $profLim{"xMin"} ) <= 0
+			 || abs( $profLim{"yMax"} - $profLim{"yMin"} ) <= 0 )
+		{
+			$result = 0;
+			$$errMess .= "Panel step ($step) profile has invalid dimension";
 
+		}
+
+		# 1) Check if nested step exists
+		my $nestStep = $self->GetPCBStep();
+		if ( !defined $nestStep || $nestStep eq "" ) {
+			$result = 0;
+			$$errMess .= "Nested step name is not defined";
+
+		}
+
+		# Check if nested step exist in job
+		if ( defined $nestStep && $nestStep ne "" ) {
+
+			if ( !CamHelper->StepExists( $inCAM, $jobId, $nestStep ) ) {
+				$result = 0;
+				$$errMess .= "Nested step: $nestStep doesn't exist in job.";
+			}
+		}
+
+		if ( $self->GetActionType() eq Enums->StepPlacementMode_AUTO ) {
+
+			my $minUtil = $self->GetMinUtilization();
+
+			# Check if nested step exist in job
+			if ( !defined $minUtil || $minUtil eq "" || $minUtil < 0 || $minUtil > 100 ) {
+				$result = 0;
+				$$errMess .= "Wrong value of Minimal utilization: $minUtil";
+			}
+
+			# Space X
+			my $spaceX = $self->GetSpaceX();
+
+			if ( !defined $spaceX || $spaceX eq "" || $spaceX < 0 ) {
+				$result = 0;
+				$$errMess .= "Wrong value of Space X: $spaceX";
+			}
+
+			# Space Y
+			my $spaceY = $self->GetSpaceY();
+
+			if ( !defined $spaceY || $spaceY eq "" || $spaceY < 0 ) {
+				$result = 0;
+				$$errMess .= "Wrong value of Space Y: $spaceY";
+			}
+
+			# Units per panel check
+			my $unitPerPanel = 0;
+			my $numMaxSteps  = "no_limit";
+
+			if ( $self->GetAmountType() eq Enums->StepAmount_AUTO ) {
+
+				$unitPerPanel = "automatic";
+				$numMaxSteps  = "no_limit";
+
+			}
+			elsif ( $self->GetAmountType() eq Enums->StepAmount_EXACT ) {
+
+				$unitPerPanel = $self->GetExactQuantity();
+				$numMaxSteps  = "no_limit";
+
+			}
+			elsif ( $self->GetAmountType() eq Enums->StepAmount_MAX ) {
+
+				$unitPerPanel = "automatic";
+				$numMaxSteps  = $self->GetMaxQuantity();
+			}
+
+			if ( !defined $unitPerPanel || ( $unitPerPanel ne "automatic" && $unitPerPanel <= 0 ) ) {
+				$result = 0;
+				$$errMess .= "Wrong value ($unitPerPanel) of step amount amount";
+			}
+
+			if ( !defined $numMaxSteps || ( $numMaxSteps ne "no_limit" && $numMaxSteps <= 0 ) ) {
+				$result = 0;
+				$$errMess .= "Wrong value ($numMaxSteps) of step max step amount";
+			}
+
+		}
+		elsif ( $self->GetActionType() eq Enums->StepPlacementMode_MANUAL ) {
+
+		}
 	}
-
-	# 1) Check if nested step exists
-	my $nestStep = $self->GetPCBStep();
-	if ( !defined $nestStep || $nestStep eq "" ) {
-		$result = 0;
-		$$errMess .= "Nested step name is not defined";
-
-	}
-
-	# Check if nested step exist in job
-	if ( CamHelper->StepExists( $inCAM, $jobId, $nestStep ) ) {
-		$result = 0;
-		$$errMess .= "Nested step: $nestStep doesn't exist in job.";
-	}
-
 	return $result;
 
 }
@@ -218,27 +301,58 @@ sub Process {
 	my $step  = $self->GetStep();
 
 	# Process by auto/manual choice
+	CamHelper->SetStep( $inCAM, $self->GetStep() );
 
 	if ( $self->GetActionType() eq Enums->StepPlacementMode_AUTO ) {
-
-		my $autoPart = AutoPart->new( $inCAM, $jobId, $step );
 
 		# Add size (get from step profile)
 		my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 		my $w       = abs( $profLim{"xMax"} - $profLim{"xMin"} );
-		my $h       = abs( abs( $profLim{"yMax"} - $profLim{"yMin"} ) <= 0 );
-
-		$autoPart->AddPnlSize( $w, $h );
+		my $h       = abs( $profLim{"yMax"} - $profLim{"yMin"} );
 
 		# Add border (get from step profile) + spacing
 		my %areaLim = CamStep->GetActiveAreaLim( $inCAM, $jobId, $step );
+		my $areaW   = abs( $areaLim{"xMax"} - $areaLim{"xMin"} );
+		my $areaH   = abs( $areaLim{"yMax"} - $areaLim{"yMin"} );
 
 		my $bL = abs( $profLim{"xMin"} - $areaLim{"xMin"} );
 		my $bR = abs( $profLim{"xMax"} - $areaLim{"xMax"} );
 		my $bT = abs( $profLim{"yMax"} - $areaLim{"yMax"} );
 		my $bB = abs( $profLim{"yMin"} - $areaLim{"yMin"} );
 
-		$autoPart->AddPnlBorderSpacing( $bT, $bB, $bL, $bR, $self->GetSpaceX(), $self->GetSpaceY() );
+		#  border width has to be smaller than total panel dimension
+		if ( ( $bL + $bR ) >= $w ) {
+
+			$result = 0;
+			$$errMess .= "Border width left (${bL}mm) + right (${bR}mm) is larger than panel width: ${w}mm.\n";
+			$self->__ClearSteps($inCAM);
+
+			return $result;
+		}
+
+		if ( ( $bT + $bB ) >= $h ) {
+
+			$result = 0;
+			$$errMess .= "Border width left (${bT}mm) + right (${bB}mm) is larger than panel width: ${h}mm.\n";
+			$self->__ClearSteps($inCAM);
+
+			return $result;
+		}
+
+		# Active area has to be larger than step
+		my $nestStep    = $self->GetPCBStep();
+		my %nestStepLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $nestStep );
+		my $nestStepW   = abs( $nestStepLim{"xMax"} - $nestStepLim{"xMin"} );
+		my $nestStepH   = abs( $nestStepLim{"yMax"} - $nestStepLim{"yMin"} );
+
+		if ( !( max( $nestStepW, $nestStepH ) < max( $areaW, $areaH ) && min( $nestStepW, $nestStepH ) < min( $areaW, $areaH ) ) ) {
+
+			$result = 0;
+			$$errMess .=
+"Nested step: $nestStep profile dimensions ( ${nestStepW} x ${nestStepH}mm) are larger than panel active area ( ${areaW} x ${areaH}mm)\n";
+			$self->__ClearSteps($inCAM);
+			return $result;
+		}
 
 		# Create panel (best utilization)
 
@@ -248,40 +362,106 @@ sub Process {
 		if ( $self->GetAmountType() eq Enums->StepAmount_AUTO ) {
 
 			$unitPerPanel = "automatic";
+			$numMaxSteps  = "no_limit";
 
 		}
 		elsif ( $self->GetAmountType() eq Enums->StepAmount_EXACT ) {
-			$unitPerPanel = $self->GetExactQuantity();
+
+			#$unitPerPanel = $self->GetExactQuantity();
+			$unitPerPanel = "automatic";
+			$numMaxSteps  = $self->GetExactQuantity()
 
 		}
-		elsif ( $self->GetAmountType() eq Enums->StepAmount_EXACT ) {
+		elsif ( $self->GetAmountType() eq Enums->StepAmount_MAX ) {
 
 			$unitPerPanel = "automatic";
 			$numMaxSteps  = $self->GetMaxQuantity();
 		}
 
-		$autoPart->Panelise(
-			$self->GetPCBStep(),
-			$unitPerPanel,
-			$self->GetMinUtilization(),
-			1,
-			undef,
-			1,
-			undef,
-			undef,
-			$self->GetAlignType(),
-			$numMaxSteps,
-			$self->GetPlacementType(),
-			$self->GetRotationType(),
-			$self->GetPatternType(),
-			undef,
-			$self->GetInterlockType(),
-			0, 0, 0
+		# Raise error if nested steps are greater thjan active area
+		# Raise error alwas if there is no solution of panelisation (nested step == 0)
 
-		);
+		my $autoPart = AutoPart->new( $inCAM, $jobId, $step );
 
+		my %autoRes = ();
+
+		try {
+
+			%autoRes = $autoPart->SRAutoPartPanelise(
+				$w, $h, $bT, $bB, $bL, $bR, $self->GetSpaceX(), $self->GetSpaceY(),
+
+				$self->GetPCBStep(),
+				$unitPerPanel,
+				$self->GetMinUtilization(),
+				1,
+				undef,
+				1,
+				undef,
+				undef,
+				$self->GetAlignType(),
+				$numMaxSteps,
+				$self->GetPlacementType(),
+				$self->GetRotationType(),
+				$self->GetPatternType(),
+				undef,
+				$self->GetInterlockType(),
+				0, 0, 0
+			);
+
+		}
+		catch {
+
+			my $e = $_;
+			$autoRes{"result"} = 0;
+		};
+
+		if ( !$autoRes{"result"} ) {
+
+			$$errMess .= " \"Auto part algorithm\" is not able to panelise steps (result is 0 nested steps in panel)";
+			$$errMess .= " \nChange panelise settings";
+			$result = 0;
+			$self->__ClearSteps($inCAM);
+		}
+
+		if ( $autoRes{"result"} ) {
+
+			my $clearSteps = 0;
+
+			if ( $autoRes{"stepCnt"} == 0 ) {
+				$$errMess .= " \"Auto part algorithm\" is not able to panelise steps (result is 0 nested steps in panel)";
+				$$errMess .= " \nChange panelise settings";
+				$result = 0;
+				$self->__ClearSteps($inCAM);
+			}
+
+			if ( $self->GetAmountType() eq Enums->StepAmount_EXACT && $self->GetExactQuantity() != $autoRes{"stepCnt"} ) {
+				$$errMess .= " \"Auto part algorithm\" is not able to panelise required exact step amount: " . $self->GetExactQuantity();
+				$$errMess .= " \nMax possible step amount with current settings is: " . $autoRes{"stepCnt"};
+				$result = 0;
+				$self->__ClearSteps($inCAM);
+			}
+
+			if ( $self->GetMinUtilization() > $autoRes{"utilization"} ) {
+				$$errMess .= " \"Auto part algorithm\" is not able to panelise with minimal utilization: " . $self->GetMinUtilization() . "%";
+				$$errMess .= " \nMax possible panel utilization with current settings is: " . $autoRes{"utilization"} . "%";
+				$result = 0;
+				$self->__ClearSteps($inCAM);
+			}
+
+		}
 	}
 	return $result;
+}
+
+sub __ClearSteps {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	my $jobId = $self->{"jobId"};
+
+	foreach my $step ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $self->GetStep() ) ) {
+		CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $self->GetStep(), $step->{"stepName"} );
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -304,6 +484,21 @@ sub GetDefPnlSpacing {
 	my $self = shift;
 
 	return $self->{"settings"}->{"defPnlSpacing"};
+}
+
+sub SetPCBStepsList {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"pcbStepsList"} = $val;
+
+}
+
+sub GetPCBStepsList {
+	my $self = shift;
+
+	return $self->{"settings"}->{"pcbStepsList"};
+
 }
 
 sub SetPCBStep {

@@ -13,7 +13,6 @@ use File::Spec;
 #local library
 
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
 
 #-------------------------------------------------------------------------------------------#

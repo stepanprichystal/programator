@@ -14,13 +14,9 @@ use warnings;
 
 #loading of locale modules
 
-use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsDrill';
-use aliased 'CamHelpers::CamHelper';
-use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'CamHelpers::CamCopperArea';
 use aliased 'Packages::Polygon::Features::RouteFeatures::RouteFeatures';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';

@@ -24,11 +24,17 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"modelKey"}    = PnlCreEnums->StepPnlCreator_MATRIX ;
-	 
-	$self->{"settings"}->{"w"} = undef;
-	$self->{"settings"}->{"h"} = undef;
-	 
+	$self->{"modelKey"} = PnlCreEnums->StepPnlCreator_MATRIX;
+
+		$self->{"settings"}->{"pcbStepsList"}      = [];
+	$self->{"settings"}->{"pcbStep"}      = undef;
+	$self->{"settings"}->{"stepMultiX"}   = undef;
+	$self->{"settings"}->{"stepMultiX"}   = undef;
+	$self->{"settings"}->{"stepMultiY"}   = undef;
+	$self->{"settings"}->{"stepSpaceX"}   = undef;
+	$self->{"settings"}->{"stepSpaceY"}   = undef;
+	$self->{"settings"}->{"stepRotation"} = undef;
+
 
 	return $self;
 }
@@ -40,32 +46,101 @@ sub GetModelKey {
 
 }
 
-sub SetWidth {
+sub SetPCBStepsList {
 	my $self = shift;
+	my $val  = shift;
 
-	$self->{"settings"}->{"w"} = shift;
+	$self->{"settings"}->{"pcbStepsList"} = $val;
 
 }
 
-sub GetWidth {
+sub GetPCBStepsList {
 	my $self = shift;
 
-	return $self->{"settings"}->{"w"};
+	return $self->{"settings"}->{"pcbStepsList"};
 
 }
 
-sub SetHeight {
+sub SetPCBStep {
 	my $self = shift;
+	my $val  = shift;
 
-	$self->{"settings"}->{"h"} = shift;
+	$self->{"settings"}->{"pcbStep"} = $val;
 
 }
 
-sub GetHeight {
+sub GetPCBStep {
 	my $self = shift;
 
-	return $self->{"settings"}->{"h"};
+	return $self->{"settings"}->{"pcbStep"};
+
 }
+
+sub SetStepMultiplX {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"stepMultiX"} = $val;
+}
+
+sub GetStepMultiplX {
+	my $self = shift;
+
+	return $self->{"settings"}->{"stepMultiX"};
+}
+
+sub SetStepMultiplY {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"stepMultiY"} = $val;
+}
+
+sub GetStepMultiplY {
+	my $self = shift;
+
+	return $self->{"settings"}->{"stepMultiY"};
+}
+
+sub SetStepSpaceX {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"stepSpaceX"} = $val;
+}
+
+sub GetStepSpaceX {
+	my $self = shift;
+
+	return $self->{"settings"}->{"stepSpaceX"};
+}
+
+sub SetStepSpaceY {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"stepSpaceY"} = $val;
+}
+
+sub GetStepSpaceY {
+	my $self = shift;
+
+	return $self->{"settings"}->{"stepSpaceY"};
+}
+
+sub SetStepRotation {
+	my $self = shift;
+	my $val  = shift;
+	$self->{"settings"}->{"stepRotation"} = $val;
+}
+
+sub GetStepRotation {
+	my $self = shift;
+
+	return $self->{"settings"}->{"stepRotation"};
+}
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

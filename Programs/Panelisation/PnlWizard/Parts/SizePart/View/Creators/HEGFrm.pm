@@ -14,8 +14,10 @@ use Wx;
 
 #local library
 use Widgets::Style;
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -35,27 +37,48 @@ sub new {
 
 	return $self;
 }
+
 # Do specific layout settings for creator
 sub __SetLayout {
 	my $self = shift;
- 
 
 	# DEFINE CONTROLS
- 
+
 	# DEFINE EVENTS
- 
+
 	# BUILD STRUCTURE OF LAYOUT
- 
+
 	# SAVE REFERENCES
 
-	 
+	$self->{"ISDimensionFilled"} = $self->_SetLayoutISSize( "HEG dimension filled", 0 );
 
 }
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
- 
+sub SetISDimensionFilled {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"ISDimensionFilled"}->SetStatus( ( $val ? EnumsGeneral->ResultType_OK : EnumsGeneral->ResultType_FAIL ) );
+
+}
+
+sub GetISDimensionFilled {
+	my $self = shift;
+
+	my $stat = $self->{"ISDimensionFilled"}->GetStatus();
+
+	if ( $stat eq EnumsGeneral->ResultType_OK ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -12,8 +12,10 @@ use warnings;
 use Wx;
 
 #local library
+use aliased 'Enums::EnumsGeneral';
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
+use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -92,7 +94,8 @@ sub __SetLayoutSize {
 	# Load data, for filling form by values
 
 	my $szRow0 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);    # row for custom control, which are added by inherit class
-	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);    # row for custom control, which are added by inherit class
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
 
@@ -107,22 +110,24 @@ sub __SetLayoutSize {
 	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $widthTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow1->Add( $widthValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $widthTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $widthValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow1->Add( 10, 10, 0 );
+	$szRow2->Add( 10, 10, 0 );
 
-	$szRow1->Add( $heightTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow1->Add( $heightValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $heightTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $heightValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND );
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND );
 
 	# save control references
-	$self->{"widthValTxt"}        = $widthValTxt;
-	$self->{"heightValTxt"}       = $heightValTxt;
-	$self->{"customCBSizeSz"}     = $szRow0;
-	$self->{"customCBSizeParent"} = $statBox;
+	$self->{"widthValTxt"}           = $widthValTxt;
+	$self->{"heightValTxt"}          = $heightValTxt;
+	$self->{"customISValueSz"}       = $szRow0;
+	$self->{"customCBSizeSz"}        = $szRow1;
+	$self->{"customLyoutSizeParent"} = $statBox;
 
 	return $szStatBox;
 }
@@ -184,10 +189,10 @@ sub __SetLayoutFrame {
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# save control references
-	$self->{"leftValTxt"}          = $leftValTxt;
-	$self->{"rightValTxt"}         = $rightValTxt;
-	$self->{"topValTxt"}           = $topValTxt;
-	$self->{"botValTxt"}           = $botValTxt;
+	$self->{"leftValTxt"}           = $leftValTxt;
+	$self->{"rightValTxt"}          = $rightValTxt;
+	$self->{"topValTxt"}            = $topValTxt;
+	$self->{"botValTxt"}            = $botValTxt;
 	$self->{"customCBBorderSz"}     = $szRow0;
 	$self->{"customCBBorderParent"} = $statBox;
 
@@ -204,7 +209,7 @@ sub _SetLayoutCBMain {
 	my $mainCB = Wx::ComboBox->new( $self, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBMainChangedEvt"}->Do($mainCB->GetValue()) } );
+	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBMainChangedEvt"}->Do( $mainCB->GetValue() ) } );
 
 	# DEFINE LAYOUT
 	$self->{"szCustomCBMain"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -213,17 +218,39 @@ sub _SetLayoutCBMain {
 	return $mainCB;
 }
 
+sub _SetLayoutISSize {
+	my $self  = shift;
+	my $title = shift;    #
+
+	# DEFINE CONTROLS
+	my $isTxt = Wx::StaticText->new( $self->{"customLyoutSizeParent"}, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
+
+	my $isIndicator = ResultIndicator->new( $self->{"customLyoutSizeParent"}, 20 );
+
+	$isIndicator->SetStatus( EnumsGeneral->ResultType_NA );
+
+	# DEFINE EVENTS
+	#Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"}->Do( $mainCB->GetValue() ) } );
+
+	# DEFINE LAYOUT
+	$self->{"customISValueSz"}->Add( $isTxt,       30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customISValueSz"}->Add( $isIndicator, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	return $isIndicator;
+}
+
 sub _SetLayoutCBSize {
 	my $self    = shift;
 	my $title   = shift;
 	my $choices = shift;
 
 	# DEFINE CONTROLS
-	my $mainCbTxt = Wx::StaticText->new( $self->{"customCBSizeParent"}, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
-	my $mainCB =  Wx::ComboBox->new( $self->{"customCBSizeParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
+	my $mainCbTxt = Wx::StaticText->new( $self->{"customLyoutSizeParent"}, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
+	my $mainCB =
+	  Wx::ComboBox->new( $self->{"customLyoutSizeParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"}->Do($mainCB->GetValue()) } );
+	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"}->Do( $mainCB->GetValue() ) } );
 
 	# DEFINE LAYOUT
 	$self->{"customCBSizeSz"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -239,16 +266,70 @@ sub _SetLayoutCBBorder {
 
 	# DEFINE CONTROLS
 	my $mainCbTxt = Wx::StaticText->new( $self->{"customCBBorderParent"}, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
-	my $mainCB =  Wx::ComboBox->new( $self->{"customCBBorderParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
+	my $mainCB =
+	  Wx::ComboBox->new( $self->{"customCBBorderParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBBorderChangedEvt"}->Do($mainCB->GetValue()) } );
+	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBBorderChangedEvt"}->Do( $mainCB->GetValue() ) } );
 
 	# DEFINE LAYOUT
 	$self->{"customCBBorderSz"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$self->{"customCBBorderSz"}->Add( $mainCB,    30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	return $mainCB;
+}
+
+sub _EnableLayoutSize {
+	my $self   = shift;
+	my $enable = shift;
+
+	if ($enable) {
+
+		$self->{"widthValTxt"}->Enable();
+		$self->{"heightValTxt"}->Enable();
+	}
+	else {
+
+		$self->{"widthValTxt"}->Disable();
+		$self->{"heightValTxt"}->Disable();
+	}
+
+}
+
+sub _GetPnlWidthControl {
+	my $self = shift;
+
+	return $self->{"widthValTxt"};
+}
+
+sub _GetPnlHeightControl {
+	my $self = shift;
+
+	return $self->{"heightValTxt"};
+}
+
+sub _GetPnlBorderLControl {
+	my $self = shift;
+
+	return $self->{"leftValTxt"};
+}
+
+sub _GetPnlBorderRControl {
+	my $self = shift;
+
+	return $self->{"rightValTxt"};
+}
+
+sub _GetPnlBorderTControl {
+	my $self = shift;
+
+	return $self->{"topValTxt"};
+}
+
+sub _GetPnlBorderBControl {
+	my $self = shift;
+
+	return $self->{"botValTxt"};
 }
 
 # =====================================================================
@@ -259,9 +340,13 @@ sub SetWidth {
 	my $self = shift;
 	my $val  = shift;
 
-	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
+	if ( defined $val && $val ne "" ) {
 
-	$self->{"widthValTxt"}->SetValue($val);
+		$val = sprintf( "%.1f", $val );
+
+		$self->{"widthValTxt"}->SetValue($val);
+
+	}
 }
 
 sub GetWidth {
@@ -274,9 +359,12 @@ sub SetHeight {
 	my $self = shift;
 	my $val  = shift;
 
-	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
+	if ( defined $val && $val ne "" ) {
 
-	$self->{"heightValTxt"}->SetValue($val);
+		$val = sprintf( "%.1f", $val );
+		$self->{"heightValTxt"}->SetValue($val);
+	}
+
 }
 
 sub GetHeight {
@@ -289,9 +377,12 @@ sub SetBorderLeft {
 	my $self = shift;
 	my $val  = shift;
 
-	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
+	if ( defined $val && $val ne "" ) {
 
-	$self->{"leftValTxt"}->SetValue($val);
+		$val = sprintf( "%.1f", $val );
+		$self->{"leftValTxt"}->SetValue($val);
+	}
+
 }
 
 sub GetBorderLeft {
@@ -304,9 +395,13 @@ sub SetBorderRight {
 	my $self = shift;
 	my $val  = shift;
 
-	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
+	if ( defined $val && $val ne "" ) {
 
-	$self->{"rightValTxt"}->SetValue($val);
+		$val = sprintf( "%.1f", $val );
+
+		$self->{"rightValTxt"}->SetValue($val);
+
+	}
 }
 
 sub GetBorderRight {
@@ -319,9 +414,12 @@ sub SetBorderTop {
 	my $self = shift;
 	my $val  = shift;
 
-	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
+	if ( defined $val && $val ne "" ) {
+		$val = sprintf( "%.1f", $val );
 
-	$self->{"topValTxt"}->SetValue($val);
+		$self->{"topValTxt"}->SetValue($val);
+
+	}
 }
 
 sub GetBorderTop {
@@ -334,9 +432,12 @@ sub SetBorderBot {
 	my $self = shift;
 	my $val  = shift;
 
-	$val = sprintf( "%.1f", $val ) if ( defined $val && $val ne "" );
+	if ( defined $val && $val ne "" ) {
+		$val = sprintf( "%.1f", $val );
 
-	$self->{"botValTxt"}->SetValue($val);
+		$self->{"botValTxt"}->SetValue($val);
+
+	}
 }
 
 sub GetBorderBot {

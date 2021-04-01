@@ -32,6 +32,7 @@ sub new {
 	bless $self;
 
 	# Setting values necessary for procesing panelisation
+	$self->{"settings"}->{"ISDimensionFilled"} = undef;
 
 	return $self;    #
 }
@@ -61,11 +62,37 @@ sub Init {
 		$self->{"settings"}->{"width"}  = $dim->{"panel_x"} if ( defined $dim->{"panel_x"} );
 		$self->{"settings"}->{"height"} = $dim->{"panel_y"} if ( defined $dim->{"panel_y"} );
 
+		if (    defined $dim->{"panel_x"}
+			 && $dim->{"panel_x"} > 0
+			 && defined $dim->{"panel_y"}
+			 && $dim->{"panel_y"} > 0 )
+		{
+
+			$self->SetISDimensionFilled(1);
+		}
+		else {
+
+			$self->SetISDimensionFilled(0);
+		}
+
 	}    # Load panel size from HEG
 	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
 
 		$self->{"settings"}->{"width"}  = $dim->{"rozmer_x"} if ( defined $dim->{"rozmer_x"} );
 		$self->{"settings"}->{"height"} = $dim->{"rozmer_y"} if ( defined $dim->{"rozmer_y"} );
+
+		if (    defined $dim->{"rozmer_x"}
+			 && $dim->{"rozmer_x"} > 0
+			 && defined $dim->{"rozmer_y"}
+			 && $dim->{"rozmer_y"} > 0 )
+		{
+
+			$self->SetISDimensionFilled(1);
+		}
+		else {
+
+			$self->SetISDimensionFilled(0);
+		}
 	}
 
 	return $result;
@@ -116,6 +143,18 @@ sub Process {
 #-------------------------------------------------------------------------------------------#
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
+sub SetISDimensionFilled {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"ISDimensionFilled"} = $val;
+}
+
+sub GetISDimensionFilled {
+	my $self = shift;
+
+	return $self->{"settings"}->{"ISDimensionFilled"};
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

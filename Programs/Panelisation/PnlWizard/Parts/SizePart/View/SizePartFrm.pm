@@ -115,6 +115,7 @@ sub SetCreators {
 
 			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER || $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
+				# Base property
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
@@ -123,18 +124,28 @@ sub SetCreators {
 				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
 				$creatorFrm->SetStep( $model->GetStep() );
 
+				if ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
+
+					$creatorFrm->SetISDimensionFilled( $model->GetISDimensionFilled() );
+
+				}
+
 			}
 
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
-				die "Not impemented";
+
+				# Base property
+				$creatorFrm->SetStep( $model->GetStep() );
+				$creatorFrm->SetWidth( $model->GetWidth() );
+				$creatorFrm->SetHeight( $model->GetHeight() );
+				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
+				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
+				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
+				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
+
+				 
 			}
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER || $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-
-				# Specific for class
-				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
-				$creatorFrm->SetDefPnlClass( $model->GetDefPnlClass() );
-				$creatorFrm->SetDefPnlSize( $model->GetDefPnlSize() );
-				$creatorFrm->SetDefPnlBorder( $model->GetDefPnlBorder() );
 
 				# Base property
 				$creatorFrm->SetWidth( $model->GetWidth() );
@@ -144,6 +155,18 @@ sub SetCreators {
 				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
 				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
 				$creatorFrm->SetStep( $model->GetStep() );
+
+				# Specific for class
+				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
+				$creatorFrm->SetDefPnlClass( $model->GetDefPnlClass() );
+				$creatorFrm->SetDefPnlSize( $model->GetDefPnlSize() );
+				$creatorFrm->SetDefPnlBorder( $model->GetDefPnlBorder() );
+
+				if ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+					$creatorFrm->SetISDimensionFilled( $model->GetISDimensionFilled() );
+
+				}
 
 			}
 
@@ -174,6 +197,7 @@ sub GetCreators {
 
 		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER || $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
+			# Base property
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
 			$model->SetBorderLeft( $creatorFrm->GetBorderLeft() );
@@ -182,18 +206,28 @@ sub GetCreators {
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
 			$model->SetStep( $creatorFrm->GetStep() );
 
+			# Sepcific class property
+			if ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
+
+				$model->SetISDimensionFilled( $creatorFrm->GetISDimensionFilled() );
+			}
+
 		}
 
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
-			die "Not impemented";
+
+			# Base property
+			$model->SetStep( $creatorFrm->GetStep() );
+			$model->SetWidth( $creatorFrm->GetWidth() );
+			$model->SetHeight( $creatorFrm->GetHeight() );
+			$model->SetBorderLeft( $creatorFrm->GetBorderLeft() );
+			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
+			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
+			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
+			 
+
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER || $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-
-			# Specific for class
-			$model->SetPnlClasses( $creatorFrm->GetPnlClasses() );
-			$model->SetDefPnlClass( $creatorFrm->GetDefPnlClass() );
-			$model->SetDefPnlSize( $creatorFrm->GetDefPnlSize() );
-			$model->SetDefPnlBorder( $creatorFrm->GetDefPnlBorder() );
 
 			# Base property
 			$model->SetWidth( $creatorFrm->GetWidth() );
@@ -203,6 +237,18 @@ sub GetCreators {
 			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
 			$model->SetStep( $creatorFrm->GetStep() );
+
+			# Specific for class
+			$model->SetPnlClasses( $creatorFrm->GetPnlClasses() );
+			$model->SetDefPnlClass( $creatorFrm->GetDefPnlClass() );
+			$model->SetDefPnlSize( $creatorFrm->GetDefPnlSize() );
+			$model->SetDefPnlBorder( $creatorFrm->GetDefPnlBorder() );
+
+			if ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+				$model->SetISDimensionFilled( $creatorFrm->GetISDimensionFilled() );
+			}
+
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 			die "Not impemented";

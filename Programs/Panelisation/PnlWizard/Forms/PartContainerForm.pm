@@ -56,7 +56,9 @@ sub InitContainer {
 	my $self     = shift;
 	my $parts    = shift;
 	my $messMngr = shift;
-	$self->__SetLayout( $parts, $messMngr );
+	my $inCAM = shift;
+	
+	$self->__SetLayout( $parts, $messMngr, $inCAM );
 
 }
 
@@ -65,13 +67,14 @@ sub __SetLayout {
 	my $self     = shift;
 	my $parts    = shift;
 	my $messMngr = shift;
+	my $inCAM = shift;
 
 	#$groupTable = $self->__DefineTableGroups();
 
 	#my @rows = $groupTable->GetRows();
 	$self->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
 
-	my $inCAM = shift;
+	
 
 	# ================= NEW ===========================
 

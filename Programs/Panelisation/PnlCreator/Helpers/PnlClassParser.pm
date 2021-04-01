@@ -66,6 +66,8 @@ sub GetCustomerPnlClasses {
 	my @classes = @{ $self->{"customerPnlClasses"} };
 
 	push( @classes, $self->__GetEmptyClass() ) if ($addEmptyClass);
+	
+	return @classes;
 }
 
 sub GetProductionPnlClasses {

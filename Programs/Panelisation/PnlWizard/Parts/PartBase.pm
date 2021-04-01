@@ -24,6 +24,7 @@ sub new {
 	bless $self;
 
 	$self->{"partId"}             = shift;    # unique part id
+	$self->{"inCAM"}              = shift;
 	$self->{"jobId"}              = shift;
 	$self->{"pnlType"}            = shift;    # customer / production panel
 	$self->{"backgroundTaskMngr"} = shift;
@@ -91,11 +92,12 @@ sub RefreshGUI {
 # Asynchronously process selected creator for this part
 sub AsyncProcessSelCreatorModel {
 	my $self = shift;
+	my $callReason = shift // "";    # reason, why method is called (after creator setting changed)
 
 	# Process by selected creator
 
 	my $creatorKey = $self->{"model"}->GetSelectedCreator();
-	$self->__AsyncProcessCreatorModel($creatorKey);
+	$self->__AsyncProcessCreatorModel( $creatorKey, $callReason );
 
 }
 
@@ -187,6 +189,7 @@ sub _InitForm {
 
 	$self->{"form"}->{"creatorSettingsChangedEvt"}->Add( sub  { $self->__OnCreatorSettingsChangedHndl(@_) } );
 	$self->{"form"}->{"creatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl(@_) } );
+
 	#$self->{"form"}->{"creatorInitRequestEvt"}->Add( sub { $self->__AsyncInitCreatorModel(@_) } );
 
 }
@@ -212,6 +215,7 @@ sub __AsyncInitCreatorModel {
 sub __AsyncProcessCreatorModel {
 	my $self       = shift;
 	my $creatorKey = shift;
+	my $callReason = shift;
 
 	$self->ClearErrors();
 
@@ -219,7 +223,7 @@ sub __AsyncProcessCreatorModel {
 
 	my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
 
-	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $self->{"partId"}, $creatorKey, $creatorModel->ExportCreatorSettings() );
+	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $self->{"partId"}, $creatorKey, $creatorModel->ExportCreatorSettings(), $callReason );
 
 }
 
@@ -252,11 +256,12 @@ sub __OnCreatorInitedHndl {
 	$self->{"isPartFullyInited"} = 1;
 
 	$self->{"asyncCreatorInitedEvt"}->Do( $creatorKey, $result );
+	$self->{"creatorSettingsChangedEvt"}->Do( $partId, $creatorKey, $self->{"model"}->GetCreatorModelByKey($creatorKey) );
 
 	# Process part after async init if preview
 	if ( $self->GetPreview() ) {
 
-		$self->{"previewChangedEvt"}->Do( $self->GetPartId(), 1 );
+		$self->AsyncProcessSelCreatorModel("settingsChanged");
 	}
 
 }
@@ -268,6 +273,7 @@ sub __OnCreatorProcessedHndl {
 	my $creatorKey = shift;
 	my $result     = shift;
 	my $errMess    = shift;
+	my $callReason = shift;
 
 	return 0 if ( $partId ne $self->{"partId"} );    # Catch only event from for this specific part
 
@@ -283,6 +289,11 @@ sub __OnCreatorProcessedHndl {
 	# add error to wraper
 	$self->{"partWrapper"}->SetErrIndicator( ( defined $self->{"processErrMess"} ? 1 : 0 ) );
 	$self->{"asyncCreatorProcessedEvt"}->Do( $creatorKey, $result, $errMess );
+
+	if ( defined $callReason && $callReason eq "settingsChanged" ) {
+		my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
+		$self->{"creatorSettingsChangedEvt"}->Do( $partId, $creatorKey, $creatorModel );
+	}
 
 }
 
@@ -331,10 +342,16 @@ sub __OnCreatorSettingsChangedHndl {
 
 	# Do async process if previeww set
 
-	$self->AsyncProcessSelCreatorModel() if ( $self->GetPreview() );
+	if ( $self->GetPreview() ) {
+		$self->AsyncProcessSelCreatorModel("settingsChanged");
 
-	# Reise Events
-	$self->{"creatorSettingsChangedEvt"}->Do( $self->GetPartId(), $creatorKey, $creatorModel );
+		# creatorSettingsChangedEvt will be raised after AsyncProcessSelCreatorModel
+
+	}
+	else {
+		# Reise Events
+		$self->{"creatorSettingsChangedEvt"}->Do( $self->GetPartId(), $creatorKey, $creatorModel );
+	}
 
 }
 
@@ -353,15 +370,13 @@ sub __OnCreatorSelectionChangedHndl {
 		# Process part after async init if preview
 		if ( $self->GetPreview() ) {
 
-			$self->{"previewChangedEvt"}->Do( $self->GetPartId(), 1 );
+			$self->AsyncProcessSelCreatorModel();
 		}
+
 	}
 	else {
 		$self->__AsyncInitCreatorModel($creatorKey);
 	}
-
-	# Reise evevents for other parts
-	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );
 
 }
 

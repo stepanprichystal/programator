@@ -12,7 +12,6 @@ use List::Util qw[sum];
 
 #loading of locale modules
 
-use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::Polygon::Enums' => 'EnumsPoly';
 

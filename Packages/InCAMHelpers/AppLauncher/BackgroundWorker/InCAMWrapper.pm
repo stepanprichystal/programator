@@ -172,6 +172,21 @@ sub DO_INFO {
 	$self->ClientFinish() if ($reconnect);
 }
 
+
+sub INFO {
+	my ($self) = shift;
+
+	my @params = @_;
+
+	my ($command) = @_;
+	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	$self->__CheckIsServerBusy( \$reconnect );
+
+	$self->SUPER::INFO(@params);
+
+	$self->ClientFinish() if ($reconnect);
+}
+
 sub __CheckIsServerBusy {
 	my $self      = shift;
 	my $reconnect = shift;
@@ -183,13 +198,21 @@ sub __CheckIsServerBusy {
 	# it means, InCAM is used bz background worker
 	if ( !$self->{"connected"} && $self->{"waitWhenBusy"} ) {
 
-		$self->{"inCAMServerBusyEvt"}->Do(1);    # raise event, server busy
+		
 
 		# Wait until InCAM library is connected
 		my $i = 0;
 
 		# Try to connect after background worker finish job
+		my $evtRaised = 0;
+		$self->Reconnect();
 		while ( !$self->ServerReady() ) {
+			
+			# raise event, server busy. Just after first incam connection test, not unnecessarily earlier
+			unless($evtRaised){
+			$self->{"inCAMServerBusyEvt"}->Do(1);    
+			$evtRaised = 1;
+			}
 
 			print STDERR "\nWait on INCAM\n";
 			sleep(1);

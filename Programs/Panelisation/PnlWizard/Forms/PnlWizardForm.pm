@@ -326,7 +326,7 @@ sub BuildPartContainer {
 
 	my $messMngr = $self->_GetMessageMngr();
 
-	$self->{"partContainer"}->InitContainer( $parts, $messMngr );
+	$self->{"partContainer"}->InitContainer( $parts, $messMngr, $inCAM );
 
 	$self->{"mainFrm"}->Thaw();
 }

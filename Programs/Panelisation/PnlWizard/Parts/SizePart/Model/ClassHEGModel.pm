@@ -39,6 +39,8 @@ sub new {
 	$self->{"settings"}->{"defPnlBorder"}   = undef;
 	$self->{"settings"}->{"defPnlSize"}   = undef;
 	$self->{"settings"}->{"defPnlClass"}   = undef;
+	
+	$self->{"settings"}->{"ISDimensionFilled"}   = undef;
 
 	return $self;
 }
@@ -180,6 +182,19 @@ sub GetDefPnlBorder {
 	return $self->{"settings"}->{"defPnlBorder"};
 }
 
+
+sub SetISDimensionFilled {
+	my $self = shift;
+	my $val  = shift;
+	
+	$self->{"settings"}->{"ISDimensionFilled"} = $val;
+}
+
+sub GetISDimensionFilled {
+	my $self = shift;
+
+	return $self->{"settings"}->{"ISDimensionFilled"};
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
