@@ -43,9 +43,9 @@ push( @messHead, "<g>==========================================================<
 push( @messHead, "<g>Průvodce vytvořením vrstev pro zahloubení v tranzitní zóně</g>" );
 push( @messHead, "<g>==========================================================</g>\n" );
 
-my $ROUTOVERLAP       = 0.2;     # 0.2mm Overlap of routs whcich go from top and from bot during routing PCB flexible part
+my $ROUTOVERLAP       = 0.30;     # 0.2mm Overlap of routs whcich go from top and from bot during routing PCB flexible part
 my $EXTENDTRANZONE    = 1.5;     # 1.5mm transition rout slots will be exteneded on both ends
-my $DEFROUTPART1DEPTH = 0.23;    #  0.23mm Default depth for first routing (part 1) Rout overlap is not considered
+my $DEFROUTPART1DEPTH = 0.18;    #  0.19mm Default depth for first routing (part 1) Rout overlap is not considered
 
 # Set impedance lines
 sub PrepareRoutLayers {

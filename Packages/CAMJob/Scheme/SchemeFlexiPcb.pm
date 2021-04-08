@@ -42,40 +42,40 @@ use aliased 'CamHelpers::CamStepRepeatPnl';
 #-------------------------------------------------------------------------------------------#
 # Set depth to technical frame holes, because all holes in depth mill layer have to contain depth
 # 1.5mm depth is because thicker PCB si no need to be inside special frame in production
-sub AdjustFlexiHolesCoreMill {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-
-	my $result = 1;
-
-	return unless JobHelper->GetIsFlex($jobId);
-
-	my @millL =
-	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cbMillTop, EnumsGeneral->LAYERTYPE_nplt_cbMillBot, ] );
-
-	# TODO set depth for layers LAYERTYPE_nplt_cbMillTop an LAYERTYPE_nplt_cbMillBot, because all tools must have
-	if ( scalar(@millL) ) {
-
-		foreach my $layer ( map { $_->{"gROWname"} } @millL ) {
-
-			my $defDTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, "panel", $layer, 1 );
-			my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, "panel", $layer );
-
-			foreach my $DTMt (@DTMTools) {
-
-				$DTMt->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = 1.5;    # 1,5mm depth
-			}
-
-			CamDTM->SetDTMTools( $inCAM, $jobId, "panel", $layer, \@DTMTools, $defDTMType );
-
-		}
-		
-		CamLayer->ClearLayers($inCAM);
-	}
-
-	return $result;
-}
+#sub AdjustFlexiHolesCoreMill {
+#	my $self  = shift;
+#	my $inCAM = shift;
+#	my $jobId = shift;
+#
+#	my $result = 1;
+#
+#	return unless JobHelper->GetIsFlex($jobId);
+#
+#	my @millL =
+#	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_cbMillTop, EnumsGeneral->LAYERTYPE_nplt_cbMillBot, ] );
+#
+#	# TODO set depth for layers LAYERTYPE_nplt_cbMillTop an LAYERTYPE_nplt_cbMillBot, because all tools must have
+#	if ( scalar(@millL) ) {
+#
+#		foreach my $layer ( map { $_->{"gROWname"} } @millL ) {
+#
+#			my $defDTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, "panel", $layer, 1 );
+#			my @DTMTools = CamDTM->GetDTMTools( $inCAM, $jobId, "panel", $layer );
+#
+#			foreach my $DTMt (@DTMTools) {
+#
+#				$DTMt->{"userColumns"}->{ EnumsDrill->DTMclmn_DEPTH } = 1.5;    # 1,5mm depth
+#			}
+#
+#			CamDTM->SetDTMTools( $inCAM, $jobId, "panel", $layer, \@DTMTools, $defDTMType );
+#
+#		}
+#		
+#		CamLayer->ClearLayers($inCAM);
+#	}
+#
+#	return $result;
+#}
 
 ## Check if mpanel contain requsted schema by customer
 #sub AddFlexiHoles {

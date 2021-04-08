@@ -501,7 +501,10 @@ sub __CreateCoreDrillLayers {
 
 		foreach my $coreProdut ( sort { $b->GetCoreNumber() <=> $a->GetCoreNumber() } @products ) {
 
-			my %matComp = $comp->GetLayerCompensation( $coreProdut->GetTopCopperLayer() );
+			 
+			my $l = JobHelper->BuildSignalLayerName( $coreProdut->GetTopCopperLayer(), $coreProdut->GetOuterCoreTop(), 0 );
+	 
+			my %matComp = $comp->GetLayerCompensation( $l );
 
 			if ( $matComp{"x"} > 0 || $matComp{"y"} > 0 ) {
 
@@ -596,7 +599,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d312990";
+	my $jobId    = "d314368";
 	my $stepName = "panel";
 
 	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );

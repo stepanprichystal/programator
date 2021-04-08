@@ -290,7 +290,7 @@ sub AddNCLayerType {
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_fcPressDrill;
 			$l->{"plated"}    = 1;
 			$l->{"technical"} = 1;
-		
+
 		}
 		elsif ( $l->{"gROWname"} =~ /^dc$/ ) {
 
@@ -920,6 +920,17 @@ sub GetToolOperation {
 
 		$operation = EnumsDrill->ToolOp_PREPREGROUT;
 
+	}
+	elsif (
+		$processType eq EnumsDrill->TypeProc_CHAIN
+		&& (    $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
+			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill
+			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill
+			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill )
+	  )
+	{
+
+		$operation = EnumsDrill->ToolOp_TAPEROUT;
 	}
 
 	die "Tool operation is not defined for tool process type: $processType, layer: " . $layer unless ( defined $operation );

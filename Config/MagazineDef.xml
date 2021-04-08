@@ -18,14 +18,18 @@
       <magazine material="AL_CORE">I9</magazine>
       <magazine material="CU_CORE">I9</magazine>
       <magazine material="PYRALUX">I7</magazine>
+      <magazine material="THINFLEX">I7</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">I7</magazine>
+      <magazine material="HYBRID_THINFLEX-FR4">I7</magazine>
    </tooloperation>
    <tooloperation name="NPlatedDrill">
       <magazine material="FR4">-</magazine>
       <magazine material="IS400">-</magazine>
       <magazine material="PCL370HR">-</magazine>
       <magazine material="PYRALUX">-</magazine>
+      <magazine material="THINFLEX">-</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">-</magazine>
+      <magazine material="HYBRID_THINFLEX-FR4">-</magazine>
    </tooloperation>
    <tooloperation name="RoutBeforeEtch">
       <magazine material="FR4">I7</magazine>
@@ -34,15 +38,21 @@
    </tooloperation>
      <tooloperation name="PrepregRout">
       <magazine material="PYRALUX">I7</magazine>
+      <magazine material="THINFLEX">I7</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">I7</magazine>
+      <magazine material="HYBRID_THINFLEX-FR4">I7</magazine>
    </tooloperation>
    <tooloperation name="CoverlayRout">
       <magazine material="PYRALUX">I7</magazine>
+      <magazine material="THINFLEX">I7</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">I7</magazine>
+      <magazine material="HYBRID_THINFLEX-FR4">I7</magazine>
    </tooloperation>
       <tooloperation name="TapeRout">
       <magazine material="PYRALUX">I7</magazine>
+      <magazine material="THINFLEX">I7</magazine>
       <magazine material="HYBRID_PYRALUX-FR4">I7</magazine>
+      <magazine material="HYBRID_THINFLEX-FR4">I7</magazine>
    </tooloperation>
    
 </tooloperations>

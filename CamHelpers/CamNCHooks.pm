@@ -326,15 +326,24 @@ sub GetMaterialParams {
 		$materialFile = "COVERLAY";
 
 	}
+	elsif (    $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
+			|| $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill
+			|| $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill
+			|| $lInfo{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill )
+	{
+
+		$materialFile = "TAPE";
+
+	}
 	else {
 
 		# Get proper material type from stackup
 
 		my $matKinds = [];
 		if ( JobHelper->GetIsHybridMat( $jobId, $materialName, $matKinds ) ) {
-			
+
 			$materialFile = undef;
-			
+
 			$materialFile = JobHelper->GetHybridMatCode( $jobId, $matKinds );
 		}
 
