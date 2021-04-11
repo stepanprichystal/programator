@@ -67,6 +67,9 @@ sub SetStatus {
 	
 	
 	$self->{"statBtmError"}->SetBitmap($path);
+	
+	$self->{"szMain"}->Layout();
+	 
 }
 
 sub GetStatus {
@@ -112,6 +115,7 @@ sub __SetLayout {
 
 	# SAVE REFERENCES
 	$self->{"statBtmError"}  = $statBtmError;
+	$self->{"szMain"} = $szMain;
 }
 
 1;

@@ -12,8 +12,8 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 my $jobId = "d304342";
 
-my @parameters = (PnlCreEnums->PnlType_CUSTOMERPNL);
-#my @parameters = ( PnlCreEnums->PnlType_PRODUCTIONPNL );
+#my @parameters = (PnlCreEnums->PnlType_CUSTOMERPNL);
+my @parameters = ( PnlCreEnums->PnlType_PRODUCTIONPNL );
 
 my $app = PnlWizard->new($jobId);
 

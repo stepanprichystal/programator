@@ -39,11 +39,9 @@ sub new {
 	return $self;
 }
 
-
 #-------------------------------------------------------------------------------------------#
 # 1) Manual panel pick (or best) with result viewer
 #-------------------------------------------------------------------------------------------#
-
 
 sub AutoPartAddPnlSize {
 	my $self   = shift;
@@ -129,14 +127,13 @@ sub AutoPartPanelise {
 				 "ymin"            => $ymin,
 				 "base_rotation"   => $base_rotation
 	);
+	
+	
 }
-
-
 
 #-------------------------------------------------------------------------------------------#
 # 2) Automatic panel creation without displaying result viewer
 #-------------------------------------------------------------------------------------------#
-
 
 # Return hash with result, nested step cnt, utilization
 # Raise error if nested steps are greater thjan active area
@@ -220,8 +217,8 @@ sub SRAutoPartPanelise {
 		$res{"result"}      = 1;
 		$res{"stepCnt"}     = $stepCnt;
 		$res{"utilization"} = $utilization;
-	
-	} 
+
+	}
 
 	return %res;
 }

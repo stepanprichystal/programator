@@ -36,7 +36,7 @@ sub new {
 	$self->{"selected"} = undef;
 
 	push( @{ $self->{"creators"} }, AutoUserModel->new() );
-	#push( @{ $self->{"creators"} }, AutoHEGModel->new() );
+	push( @{ $self->{"creators"} }, AutoHEGModel->new() );
 	push( @{ $self->{"creators"} }, MatrixModel->new() );
 	#push( @{ $self->{"creators"} }, SetModel->new() );
 	#push( @{ $self->{"creators"} }, PreviewModel->new() );

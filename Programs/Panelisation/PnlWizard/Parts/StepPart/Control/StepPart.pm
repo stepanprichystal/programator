@@ -19,12 +19,15 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::StepPartModel'   => 'PartModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::StepPartFrm'      => 'PartFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPartCheck' => 'PartCheckClass';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper'                        => "CreatorHelper";
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -90,41 +93,111 @@ sub InitPartModel {
 }
 
 sub __OnManualPlacementHndl {
-	my $self = shift;
+	my $self      = shift;
+	my $pauseText = shift;
+
+	# Check if preview mode is active
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	unless ( $self->GetPreview() ) {
+
+		my $messMngr = $self->{"partWrapper"}->GetMessMngr();
+		my @mess     = ();
+		push( @mess, " \"Preview mode\" must be active for manual panel pick/adjust." );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
 
 		return 0;
 	}
 
-	$self->{"inCAM"}->PAUSE("Upav panel");
+	# Do check of selected creator
+	my $creatorKey   = $self->{"form"}->GetSelectedCreator();
+	my $creatorModel = $self->{"form"}->GetCreators($creatorKey)->[0];
+	$creatorModel->SetManualPlacementJSON(undef);
+	$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_NA );
 
-	# Do check of user panelisation
+	my $creator = CreatorHelper->GetPnlCreatorByKey( $self->{"jobId"}, $self->{"pnlType"}, $creatorKey );
+
+	$creator->ImportSettings( $creatorModel->ExportCreatorSettings() );
+
 	my $errMess = "";
-	my $result  = 1;
+	my $result  = 0;    # succes / failure od manual step placement
 
-	# 1) Check if step exist
-	#	my $step = $self->{"model"}->GetStep();
-	#
-	#	my @steps = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $step );
-	#
-	#	if ( scalar(@steps) == 0 ) {
-	#
-	#		$errMess .=  "No nested step in panel";
-	#		$result   = 0;
-	#	}
-	#
-	#	if ( $result) {
-	#
-	#		# Prepare JSON
-	#		my @steps = CamStepRepeat->GetRepeatStep( $inCAM, $jobId, $step );
-	#		$self->{"indicator"}->SetStatus( EnumsGeneral->ResultType_OK );
-	#	}
-	#	else {
-	#
-	#		$self->{"indicator"}->SetStatus( EnumsGeneral->ResultType_FAIL );
-	#		$result = 0;
-	#	}
+	if ( $creator->Check( $inCAM, \$errMess ) ) {
+
+		my $step = $creatorModel->GetStep();
+
+		# Remove steps
+		foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
+			CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} );
+		}
+
+		# Hide form
+		$self->{"showPnlWizardFrmEvt"}->Do(0);
+		$inCAM->PAUSE($pauseText);
+		$self->{"showPnlWizardFrmEvt"}->Do(1);
+
+		# Show form
+
+		my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
+
+		my $errMessJSON = "";
+
+		if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
+
+			my $JSON = $pnlToJSON->ParsePnlToJSON();
+
+			if ( defined $JSON ) {
+
+				$creatorModel->SetManualPlacementJSON($JSON);
+
+				$result = 1;
+			}
+
+		}
+		else {
+
+			my $messMngr = $self->{"partWrapper"}->GetMessMngr();
+			my @mess     = ();
+			push( @mess, "Manual step placement failed. Detail:\n\n" );
+			push( @mess, $errMessJSON );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+
+		}
+
+	}
+	else {
+
+		my $messMngr = $self->{"partWrapper"}->GetMessMngr();
+		my @mess     = ();
+		push( @mess, "Check before manual panel pick/adjus failed. Detail:\n\n" );
+		push( @mess, $errMess );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+
+	}
+
+	# Set status of parsing for model
+	if ($result) {
+
+		$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_OK );
+	}
+	else {
+
+		$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_NA );
+	}
+
+	# Update form
+	$self->{"frmHandlersOff"} = 1;
+
+	$self->{"form"}->SetCreators( [$creatorModel] );
+
+	$self->{"frmHandlersOff"} = 0;
+
+	# Call change settings to return panel automatically to former settings if fail
+	unless ($result) {
+ 
+		$self->__OnCreatorSettingsChangedHndl($creatorKey);
+	}
 
 }
 

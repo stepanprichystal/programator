@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoHEGSteps;
-use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
+use base('Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoCreatorBase');
 
 use Class::Interface;
 &implements('Programs::Panelisation::PnlCreator::StepsPnlCreator::ISteps');
@@ -13,25 +13,39 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min first];
+use Try::Tiny;
 
 #local library
+use aliased 'Enums::EnumsGeneral';
+
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+
+#use aliased 'Packages::CAM::PanelClass::Enums' => "PnlClassEnums";
+#use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlClassParser';
+#use aliased 'CamHelpers::CamHelper';
+#use aliased 'CamHelpers::CamJob';
+#use aliased 'CamHelpers::CamStep';
+#use aliased 'CamHelpers::CamStepRepeat';
+#use aliased 'Packages::CAMJob::Panelization::AutoPart';
+#use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $jobId = shift;
+	my $class   = shift;
+	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key   = Enums->StepPnlCreator_AUTOHEG;
+	my $key     = Enums->StepPnlCreator_AUTOHEG;
 
-	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
-	# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{""} = undef;
+	# Properties
+	$self->{"settings"}->{"ISMultiplFilled"} = undef;
 
 	return $self;    #
 }
@@ -44,25 +58,54 @@ sub new {
 # (instead of Init method is possible init by import JSON settings)
 # Return 1 if succes 0 if fail
 sub Init {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
 
 	my $result = 1;
 
-	$self->{"settings"}->{"w"} = 20;
-	$self->{"settings"}->{"h"} = 20;
+	my $jobId = $self->{'jobId'};
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	# Set default settings
+	$self->SUPER::_Init( $inCAM, $stepName );
 
-		$inCAM->COM("get_user_name");
+	# Set amount settings from HEG
 
-		my $name = $inCAM->GetReply();
+	my $dim = HegMethods->GetInfoDimensions($jobId);
 
-		print STDERR "\nHEG !! $name \n";
+	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
 
-		sleep(1);
+		my $multiplIS = $dim->{"nasobnost_panelu"};
 
+		if ( defined $multiplIS && $multiplIS > 0 ) {
+
+			$self->SetExactQuantity($multiplIS);
+			$self->SetISMultiplFilled(1);
+		}
+		else {
+
+			$self->SetExactQuantity(0);
+			$self->SetISMultiplFilled(0);
+		}
+
+	}    # Load panel size from HEG
+	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
+
+		my $multiplIS = $dim->{"nasobnost"};
+
+		if ( defined $multiplIS && $multiplIS > 0 ) {
+
+			$self->SetExactQuantity($multiplIS);
+			$self->SetISMultiplFilled(1);
+		}
+		else {
+
+			$self->SetExactQuantity(0);
+			$self->SetISMultiplFilled(0);
+		}
 	}
+
+	$self->SetAmountType( Enums->StepAmount_EXACT );
 
 	return $result;
 
@@ -76,22 +119,12 @@ sub Check {
 	my $inCAM   = shift;
 	my $errMess = shift;    # reference to err message
 
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->GetStep();
+
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nChecking  HEG !! $name \n";
-
-		sleep(1);
-
-	}
-
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
+	$result = $self->SUPER::_Check( $inCAM, $errMess );
 
 	return $result;
 
@@ -105,18 +138,10 @@ sub Process {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->GetStep();
 
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
-
-	}
-
+	$result = $self->SUPER::_Process( $inCAM, $errMess );
 	return $result;
 }
 
@@ -124,19 +149,17 @@ sub Process {
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
 
-sub Set {
+sub SetISMultiplFilled {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{""} = $val;
-
+	$self->{"settings"}->{"ISMultiplFilled"} = $val;
 }
 
-sub Get {
+sub GetISMultiplFilled {
 	my $self = shift;
 
-	return $self->{"settings"}->{""};
-
+	return $self->{"settings"}->{"ISMultiplFilled"};
 }
 
 #-------------------------------------------------------------------------------------------#

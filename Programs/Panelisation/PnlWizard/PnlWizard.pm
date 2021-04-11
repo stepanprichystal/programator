@@ -421,6 +421,23 @@ sub __OnAsyncPanelCreatedHndl {
 
 }
 
+# Request from parts to show/hode whole form mostly during user interaction with InCAM editor
+sub __OnShowPnlWizardFrmHndl {
+	my $self = shift;
+	my $show = shift;
+
+	if ($show) {
+		
+		$self->{"form"}->{"mainFrm"}->Show();
+	}
+	else {
+
+		$self->{"form"}->{"mainFrm"}->Hide();
+
+	}
+
+}
+
 # ================================================================================
 # PRIVATE METHODS
 # ================================================================================
@@ -539,6 +556,7 @@ sub __SetHandlers {
 	$self->{"form"}->{"stepChangedEvt"}->Add( sub    { $self->{"partContainer"}->UpdateStep(@_) } );
 
 	$self->{"partContainer"}->{"asyncPanelCreatedEvt"}->Add( sub { $self->__OnAsyncPanelCreatedHndl(@_) } );
+	$self->{"partContainer"}->{"showPnlWizardFrmEvt"}->Add( sub  { $self->__OnShowPnlWizardFrmHndl(@_) } );
 
 	#$self->{"partContainer"}->{"previewChangedEvt"}->Add( sub    { $self->__OnPartPreviewChangedlHndl(@_) } );
 

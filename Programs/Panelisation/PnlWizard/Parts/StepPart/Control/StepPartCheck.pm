@@ -48,18 +48,7 @@ sub Check {
 	my $inCAM   = $self->{"inCAM"};
 	my $jobId   = $self->{"jobId"};
 	
-	$inCAM->COM("get_user_name");
-
-	for(my $i= 0; $i  < 2; $i++){
-		
-		print STDERR "check";
-		sleep(1);
-	}
-	#die "chyba scriptu.";
-	
-	 
-	#if ( $model->GetWidth() > 10 ) {
-
-		#$self->_AddError( "Velikost", "Nelze".$inCAM->GetReply() );
-	#}
+ 
+ 	# If manual step placement, checj if JSON i set !!!!!!
+ 
 }

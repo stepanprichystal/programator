@@ -114,13 +114,21 @@ sub SetCreators {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-			if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
+			if (    $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
+				 || $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG )
+			{
 
 				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
 				$creatorFrm->SetDefPnlClass( $model->GetDefPnlClass() );
 				$creatorFrm->SetDefPnlSpacing( $model->GetDefPnlSpacing() );
 
 				$creatorFrm->SetPCBStepsList( $model->GetPCBStepsList() );
+
+				if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+
+					$creatorFrm->SetISMultiplFilled( $model->GetISMultiplFilled() );
+				}
+
 				$creatorFrm->SetPCBStep( $model->GetPCBStep() );
 				$creatorFrm->SetPlacementType( $model->GetPlacementType() );
 				$creatorFrm->SetRotationType( $model->GetRotationType() );
@@ -129,20 +137,15 @@ sub SetCreators {
 				$creatorFrm->SetSpaceX( $model->GetSpaceX() );
 				$creatorFrm->SetSpaceY( $model->GetSpaceY() );
 				$creatorFrm->SetAlignType( $model->GetAlignType() );
+
 				$creatorFrm->SetAmountType( $model->GetAmountType() );
 				$creatorFrm->SetExactQuantity( $model->GetExactQuantity() );
 				$creatorFrm->SetMaxQuantity( $model->GetMaxQuantity() );
 				$creatorFrm->SetActionType( $model->GetActionType() );
-				$creatorFrm->SetJSONStepPlacement( $model->GetJSONStepPlacement() );
+				$creatorFrm->SetManualPlacementJSON( $model->GetManualPlacementJSON() );
+				$creatorFrm->SetManualPlacementStatus( $model->GetManualPlacementStatus() );
 				$creatorFrm->SetMinUtilization( $model->GetMinUtilization() );
 				$creatorFrm->SetExactQuantity( $model->GetExactQuantity() );
-
-				#				$creatorFrm->SetWidth( $model->GetWidth() );
-				#				$creatorFrm->SetHeight( $model->GetHeight() );
-				#				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
-				#				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
-				#				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
-				#				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
 
 			}
 			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
@@ -175,7 +178,9 @@ sub GetCreators {
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-		if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
+		if (    $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
+			 || $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG )
+		{
 
 			$model->SetPnlClasses( $creatorFrm->GetPnlClasses() );
 			$model->SetDefPnlClass( $creatorFrm->GetDefPnlClass() );
@@ -194,9 +199,15 @@ sub GetCreators {
 			$model->SetExactQuantity( $creatorFrm->GetExactQuantity() );
 			$model->SetMaxQuantity( $creatorFrm->GetMaxQuantity() );
 			$model->SetActionType( $creatorFrm->GetActionType() );
-			$model->SetJSONStepPlacement( $creatorFrm->GetJSONStepPlacement() );
+			$model->SetManualPlacementJSON( $creatorFrm->GetManualPlacementJSON() );
+			$model->SetManualPlacementStatus( $creatorFrm->GetManualPlacementStatus() );
 			$model->SetMinUtilization( $creatorFrm->GetMinUtilization() );
 			$model->SetExactQuantity( $creatorFrm->GetExactQuantity() );
+
+			if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+
+				$model->SetISMultiplFilled( $creatorFrm->GetISMultiplFilled() );
+			}
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {

@@ -5,7 +5,7 @@
 #-------------------------------------------------------------------------------------------#
 
 package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutoHegFrm;
-use base qw(Programs::Panelisation::PnlWizard::Forms::CreatorFrmBase);
+use base qw(Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::PnlStepAutoBase);
 
 #3th party library
 use strict;
@@ -16,6 +16,8 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Enums::EnumsGeneral';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -26,7 +28,7 @@ sub new {
 	my $inCAM  = shift;
 	my $jobId  = shift;
 
-	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_AUTOHEG, $parent,$inCAM, $jobId );
+	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_AUTOHEG, $parent, $inCAM, $jobId );
 
 	bless($self);
 
@@ -41,39 +43,17 @@ sub new {
 sub __SetLayout {
 	my $self = shift;
 
-	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
-	# Add empty item
-
 	# DEFINE CONTROLS
-	my $widthTxt = Wx::StaticText->new( $self, -1, "Width:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $widthValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
-
-	my $heightTxt = Wx::StaticText->new( $self, -1, "Height:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $heightValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
+	
+	my $indicator = $self->_SetLayoutISMultipl("HEG");
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $widthValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $widthTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $widthValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	$szRow2->Add( $heightTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $heightValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
-
-	$self->{"widthValTxt"}  = $widthValTxt;
-	$self->{"heightValTxt"} = $heightValTxt;
+	
+	$self->{"ISMultiplFilled"} = $indicator;
 
 }
 
@@ -81,34 +61,27 @@ sub __SetLayout {
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
-sub SetWidth {
+sub SetISMultiplFilled {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"widthValTxt"}->SetValue($val);
+	$self->{"ISMultiplFilled"}->SetStatus( ( $val ? EnumsGeneral->ResultType_OK : EnumsGeneral->ResultType_FAIL ) );
 
 }
 
-sub GetWidth {
+sub GetISMultiplFilled {
 	my $self = shift;
 
-	return $self->{"widthValTxt"}->GetValue();
+	my $stat = $self->{"ISMultiplFilled"}->GetStatus();
 
-}
+	if ( $stat eq EnumsGeneral->ResultType_OK ) {
 
-sub SetHeight {
-	my $self = shift;
-	my $val  = shift;
+		return 1;
+	}
+	else {
 
-	$self->{"heightValTxt"}->SetValue($val);
-
-}
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"heightValTxt"}->GetValue();
-
+		return 0;
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

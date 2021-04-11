@@ -31,6 +31,7 @@ sub new {
 	$self->{"asyncPanelCreatedEvt"}   = Event->new();
 	$self->{"asyncCreatorsInitedEvt"} = Event->new();
 	$self->{"previewChangedEvt"}      = Event->new();
+	$self->{"showPnlWizardFrmEvt"}    = Event->new();
 
 	$self->{"jobId"} = shift;
 
@@ -58,6 +59,7 @@ sub Init {
 		$part->{"previewChangedEvt"}->Add( sub        { $self->__OnPreviewChangedHndl(@_) } );
 		$part->{"asyncCreatorProcessedEvt"}->Add( sub { $self->__OnAsyncCreatorProcessedHndl(@_) } );
 		$part->{"asyncCreatorInitedEvt"}->Add( sub    { $self->__OnAsyncCreatorInitedHndl(@_) } );
+		$part->{"showPnlWizardFrmEvt"}->Add( sub      { $self->{"showPnlWizardFrmEvt"}->Do(@_) } );
 
 	}
 
@@ -291,8 +293,8 @@ sub SetPreviewOnAllPart {
 }
 
 sub SetPreviewOffAllPart {
-	my $self = shift;
-	my $firstPartId = shift; 
+	my $self        = shift;
+	my $firstPartId = shift;
 
 	for ( my $i = scalar( @{ $self->{"parts"} } ) - 1 ; $i >= 0 ; $i-- ) {
 
@@ -300,7 +302,7 @@ sub SetPreviewOffAllPart {
 
 			$self->{"parts"}->[$i]->SetPreview(0);
 		}
-		
+
 		last if ( defined $firstPartId && $self->{"parts"}->[$i]->GetPartId() eq $firstPartId );
 	}
 }
@@ -334,13 +336,13 @@ sub __OnPreviewChangedHndl {
 
 		# Set preview ON (+ process part) from first to this specific  part
 		$self->SetPreviewOnAllPart($partId);
- 
 
-	}else{
-		
+	}
+	else {
+
 		# Set preview OFF from  this specific to last part
 		$self->SetPreviewOffAllPart($partId);
-		
+
 	}
 
 	$self->{"previewChangedEvt"}->Do( $partId, $preview );

@@ -60,7 +60,7 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	my $pcbStepTxt = Wx::StaticText->new( $self, -1, "PCB step:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $pcbStepCB = Wx::ComboBox->new( $self, -1, undef, &Wx::wxDefaultPosition, [ -1, -1 ], [], &Wx::wxCB_READONLY );
+	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
 	 
 	my $multiplicityStatBox   = $self->__SetLayoutMultipl($self);
 	my $spacesStatBox         = $self->__SetLayoutSpaces($self);
@@ -296,7 +296,7 @@ sub SetPCBStep {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pcbStepCB"}->SetValue($val);
+	$self->{"pcbStepCB"}->SetValue($val) if(defined $val);
 
 }
 
@@ -311,7 +311,7 @@ sub SetStepMultiplX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"multiXValTxt"}->SetValue($val);
+	$self->{"multiXValTxt"}->SetValue($val)if(defined $val);;
 }
 
 sub GetStepMultiplX {
@@ -324,7 +324,7 @@ sub SetStepMultiplY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"multiYValTxt"}->SetValue($val);
+	$self->{"multiYValTxt"}->SetValue($val)if(defined $val);;
 }
 
 sub GetStepMultiplY {
@@ -337,7 +337,7 @@ sub SetStepSpaceX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spaceValXTxt"}->SetValue($val);
+	$self->{"spaceValXTxt"}->SetValue($val) if(defined $val);;
 }
 
 sub GetStepSpaceX {
@@ -350,7 +350,7 @@ sub SetStepSpaceY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spaceValYTxt"}->SetValue($val);
+	$self->{"spaceValYTxt"}->SetValue($val) if(defined $val);;
 }
 
 sub GetStepSpaceY {
@@ -363,7 +363,7 @@ sub SetStepRotation {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"rotationCb"}->SetValue($val);
+	$self->{"rotationCb"}->SetValue($val) if(defined $val);;
 }
 
 sub GetStepRotation {

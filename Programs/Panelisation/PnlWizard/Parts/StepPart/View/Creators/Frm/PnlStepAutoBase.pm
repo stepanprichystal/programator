@@ -18,13 +18,14 @@ BEGIN {
 
 #local library
 use Widgets::Style;
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Packages::CAM::PanelClass::Enums'          => 'PnlClassEnums';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::ManualPanelisation';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::ManualPlacement';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -73,10 +74,10 @@ sub __Layout {
 	# DEFINE CONTROLS
 
 	my $pcbStepTxt = Wx::StaticText->new( $self, -1, "PCB step:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $pcbStepCB = Wx::ComboBox->new( $self, -1, undef, &Wx::wxDefaultPosition, [ -1, -1 ], [], &Wx::wxCB_READONLY );
+	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
 
 	my $pnlClassTxt = Wx::StaticText->new( $self, -1, "Class:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $pnlClassCB = Wx::ComboBox->new( $self, -1, undef, &Wx::wxDefaultPosition, [ -1, -1 ], [], &Wx::wxCB_READONLY );
+	my $pnlClassCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
 
 	my $placementStatBox = $self->__SetLayoutPlacement($self);
 	my $spacingStatBox   = $self->__SetLayoutSpacing($self);
@@ -87,9 +88,10 @@ sub __Layout {
 
 	# SET EVENTS
 
-	Wx::Event::EVT_TEXT( $pnlClassCB, -1, sub { $self->__OnPnlClassChanged( $pnlClassCB->GetValue() ) } );
-	Wx::Event::EVT_TEXT( $pcbStepCB,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $pnlClassCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $pcbStepCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $pnlClassCB, -1, sub { $self->__OnPnlClassChanged( $pnlClassCB->GetValue(), $self->{"creatorSettingsChangedEvt"}->Do() ) } );
+
+	#Wx::Event::EVT_TEXT( $pnlClassCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -251,7 +253,7 @@ sub __SetLayoutSpacing {
 	# DEFINE CONTROLS
 
 	my $pnlClassSpaceTxt = Wx::StaticText->new( $statBox, -1, "Predefined space:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $pnlClassSpaceCB = Wx::ComboBox->new( $statBox, -1, undef, &Wx::wxDefaultPosition, [ -1, -1 ], [], &Wx::wxCB_READONLY );
+	my $pnlClassSpaceCB = Wx::ComboBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
 
 	my $spaceXTxt = Wx::StaticText->new( $statBox, -1, "Space X:", &Wx::wxDefaultPosition, [ 70, 25 ] );
 	my $spaceXValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
@@ -312,6 +314,7 @@ sub __SetLayoutAmount {
 
 	#	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
+	my $szRow0     = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow1     = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow1Col1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szRow1Col2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
@@ -366,6 +369,7 @@ sub __SetLayoutAmount {
 	$szRow1->Add( $szRow1Col1, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow1->Add( $szRow1Col2, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
+	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 	$szStatBox->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 
 	#$szStatBox->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
@@ -379,6 +383,8 @@ sub __SetLayoutAmount {
 	$self->{"exactValTxt"} = $exactValTxt;
 	$self->{"maxValTxt"}   = $maxValTxt;
 
+	$self->{"customLayoutAmountParent"} = $statBox;
+	$self->{"customLayoutSz"}           = $szRow0;
 	return $szStatBox;
 }
 
@@ -413,8 +419,10 @@ sub __SetLayoutCreatePnl {
 
 	my $szManual = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	my $pnlPicker = ManualPanelisation->new( $placementManualPage->GetParent(),
-											 $self->{"inCAM"}, $self->{"jobId"}, $self->GetStep(), "Pick panel", "Choose + adjust panel" );
+	my $pnlPicker = ManualPlacement->new( $placementManualPage->GetParent(),
+										  $self->{"inCAM"}, $self->{"jobId"}, $self->GetStep(), "Pick panel",
+										  "Accept best panel (+ adjust if needed) and press Continue.",
+										  1, "Clear" );
 
 	$szManual->Add( $pnlPicker, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
@@ -432,7 +440,8 @@ sub __SetLayoutCreatePnl {
 	#	Wx::Event::EVT_RADIOBUTTON( $rbPlacementAuto,  -1, sub {  } );
 	#	Wx::Event::EVT_RADIOBUTTON( $rbPlacementManual,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $minUtilValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	$pnlPicker->{"prePanelisationEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do() } );
+	$pnlPicker->{"placementEvt"}->Add( sub      { $self->{"manualPlacementEvt"}->Do(@_) } );
+	$pnlPicker->{"clearPlacementEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	#	Wx::Event::EVT_TEXT( $leftValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	#	Wx::Event::EVT_TEXT( $rightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -466,6 +475,28 @@ sub __SetLayoutCreatePnl {
 	$self->{"notebookCreatePnl"} = $notebook;
 
 	return $szStatBox;
+}
+
+sub _SetLayoutISMultipl {
+	my $self  = shift;
+	my $title = shift;    #
+
+	# DEFINE CONTROLS
+	my $isTxt = Wx::StaticText->new( $self->{"customLayoutAmountParent"}, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
+
+	my $isIndicator = ResultIndicator->new( $self->{"customLayoutAmountParent"}, 20 );
+
+	$isIndicator->SetStatus( EnumsGeneral->ResultType_NA );
+
+	# DEFINE EVENTS
+	#Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"}->Do( $mainCB->GetValue() ) } );
+
+	# DEFINE LAYOUT
+	$self->{"customLayoutSz"}->Add( $isTxt, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	$self->{"customLayoutSz"}->Add( $isIndicator, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	return $isIndicator;
 }
 
 sub __OnPnlClassChanged {
@@ -520,7 +551,7 @@ sub SetPnlClasses {
 
 	# Set cb classes
 	foreach my $class ( @{$classes} ) {
-
+ 
 		$self->{"pnlClassCB"}->Append( $class->GetName() );
 	}
 
@@ -536,7 +567,7 @@ sub SetDefPnlClass {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassCB"}->SetValue($val);
+	$self->{"pnlClassCB"}->SetValue($val) if ( defined $val );
 
 	$self->__OnPnlClassChanged($val) if ( defined $val );
 }
@@ -551,7 +582,7 @@ sub SetDefPnlSpacing {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassSpaceCB"}->SetValue($val);
+	$self->{"pnlClassSpaceCB"}->SetValue($val) if(defined $val);;
 
 	$self->__OnPnlClassSpacingChanged($val) if ( defined $val );
 }
@@ -589,7 +620,7 @@ sub SetPCBStep {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pcbStepCB"}->SetValue($val);
+	$self->{"pcbStepCB"}->SetValue($val) if(defined $val);;
 
 }
 
@@ -649,7 +680,7 @@ sub SetRotationType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"rotTypeCb"}->SetValue($val);
+	$self->{"rotTypeCb"}->SetValue($val) if(defined $val);;
 }
 
 sub GetRotationType {
@@ -662,7 +693,7 @@ sub SetPatternType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pattTypeCb"}->SetValue($val);
+	$self->{"pattTypeCb"}->SetValue($val) if(defined $val);;
 }
 
 sub GetPatternType {
@@ -675,7 +706,7 @@ sub SetInterlockType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"interlockCb"}->SetValue($val);
+	$self->{"interlockCb"}->SetValue($val) if(defined $val);;
 }
 
 sub GetInterlockType {
@@ -718,7 +749,7 @@ sub SetAlignType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spacingTypeCb"}->SetValue($val);
+	$self->{"spacingTypeCb"}->SetValue($val) if(defined $val);
 
 }
 
@@ -856,19 +887,32 @@ sub GetActionType {
 
 }
 
-sub SetJSONStepPlacement {
+sub SetManualPlacementJSON {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{" JSONStepPlacement "} = $val;
+	$self->{"pnlPicker"}->SetManualPlacementJSON($val);
 
 }
 
-sub GetJSONStepPlacement {
+sub GetManualPlacementJSON {
 	my $self = shift;
 
-	return $self->{" JSONStepPlacement "};
+	return $self->{"pnlPicker"}->GetManualPlacementJSON();
 
+}
+
+sub SetManualPlacementStatus {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnlPicker"}->SetManualPlacementStatus($val);
+}
+
+sub GetManualPlacementStatus {
+	my $self = shift;
+
+	return $self->{"pnlPicker"}->GetManualPlacementStatus();
 }
 
 sub SetMinUtilization {

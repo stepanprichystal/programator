@@ -15,24 +15,9 @@ use JSON::XS;
 #local library
 #use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Packages::Events::Event';
-
-use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::HEGSize';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::UserSize';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::MatrixSize';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassUserSize';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassHEGSize';
-use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::PreviewSize';
-
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoUserSteps';
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoHEGSteps';
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::MatrixSteps';
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::SetSteps';
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::PreviewSteps';
-
 use aliased 'Programs::Panelisation::PnlCreator::SchemePnlCreator::LibraryScheme';
-
 use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper' => "CreatorHelper";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -168,7 +153,7 @@ sub __TaskBackgroundFunc {
 	my $partId     = shift @{$taskParams};
 	my $creatorKey = shift @{$taskParams};
 
-	my $creator = __GetPnlCreatorByKey( $jobId, $pnlType, $creatorKey );
+	my $creator = CreatorHelper->GetPnlCreatorByKey( $jobId, $pnlType, $creatorKey );
 
 	if ( $taskType eq TaskType_INITCREATOR ) {
 
@@ -267,54 +252,6 @@ sub __TaskBackgroundFunc {
 #
 #	return $modelData;
 #}
-
-sub __GetPnlCreatorByKey {
-	my $jobId      = shift;
-	my $pnlType    = shift;
-	my $creatorKey = shift;
-
-	my $creator = undef;
-
-	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
-		$creator = UserSize->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
-		$creator = HEGSize->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
-		$creator = MatrixSize->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
-		$creator = ClassUserSize->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-		$creator = ClassHEGSize->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
-		$creator = PreviewSize->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
-		$creator = AutoUserSteps->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
-		$creator = AutoHEGSteps->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
-		$creator = MatrixSteps->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_SET ) {
-		$creator = SetSteps->new( $jobId, $pnlType );
-	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
-		$creator = LibraryScheme->new( $jobId, $pnlType );
-	}
-	else {
-
-		die "Creator was not defined  for key: $creatorKey";
-	}
-
-	return $creator;
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Background woker handlers

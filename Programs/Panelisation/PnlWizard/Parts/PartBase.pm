@@ -49,6 +49,7 @@ sub new {
 	$self->{"previewChangedEvt"}          = Event->new();
 	$self->{"asyncCreatorProcessedEvt"}   = Event->new();
 	$self->{"asyncCreatorInitedEvt"}      = Event->new();
+	$self->{"showPnlWizardFrmEvt"}        = Event->new();
 
 	# Set handlers
 

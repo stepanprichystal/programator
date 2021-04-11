@@ -13,6 +13,7 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Packages::CAM::PanelClass::Enums' => 'PnlClassEnums';
@@ -28,32 +29,33 @@ sub new {
 
 	$self->{"modelKey"} = PnlCreEnums->StepPnlCreator_AUTOUSER;
 
-	$self->{"settings"}->{"pnlClasses"}        = [];
-	$self->{"settings"}->{"defPnlClass"}       = undef;
-	$self->{"settings"}->{"defPnlSpacing"}     = undef;
-	$self->{"settings"}->{"pcbStepsList"}           = [];
-	$self->{"settings"}->{"pcbStep"}           = undef;
-	$self->{"settings"}->{"placementType"}     = PnlClassEnums->PnlClassTransform_ROTATION;
-	$self->{"settings"}->{"rotationType"}      = undef;
-	$self->{"settings"}->{"patternType"}       = undef;
-	$self->{"settings"}->{"interlockType"}     = undef;
-	$self->{"settings"}->{"spaceX"}            = 0;
-	$self->{"settings"}->{"spaceY"}            = 0;
-	$self->{"settings"}->{"alignType"}         = undef;
-	$self->{"settings"}->{"amountType"}        = PnlCreEnums->StepAmount_EXACT;
-	$self->{"settings"}->{"exactQuantity"}     = 0;
-	$self->{"settings"}->{"maxQuantity"}       = 0;
-	$self->{"settings"}->{"autoQuantity"}      = undef;
-	$self->{"settings"}->{"actionType"}        = PnlCreEnums->StepPlacementMode_AUTO;
-	$self->{"settings"}->{"JSONStepPlacement"} = undef;
-	$self->{"settings"}->{"minUtilization"}    = 1;
+	$self->{"settings"}->{"pnlClasses"}            = [];
+	$self->{"settings"}->{"defPnlClass"}           = undef;
+	$self->{"settings"}->{"defPnlSpacing"}         = undef;
+	$self->{"settings"}->{"pcbStepsList"}          = [];
+	$self->{"settings"}->{"pcbStep"}               = undef;
+	$self->{"settings"}->{"placementType"}         = PnlClassEnums->PnlClassTransform_ROTATION;
+	$self->{"settings"}->{"rotationType"}          = undef;
+	$self->{"settings"}->{"patternType"}           = undef;
+	$self->{"settings"}->{"interlockType"}         = undef;
+	$self->{"settings"}->{"spaceX"}                = 0;
+	$self->{"settings"}->{"spaceY"}                = 0;
+	$self->{"settings"}->{"alignType"}             = undef;
+	$self->{"settings"}->{"amountType"}            = PnlCreEnums->StepAmount_EXACT;
+	$self->{"settings"}->{"exactQuantity"}         = 0;
+	$self->{"settings"}->{"maxQuantity"}           = 0;
+	$self->{"settings"}->{"autoQuantity"}          = undef;
+	$self->{"settings"}->{"actionType"}            = PnlCreEnums->StepPlacementMode_AUTO;
+	$self->{"settings"}->{"manualPlacementJSON"}   = undef;
+	$self->{"settings"}->{"manualPlacementStatus"} = EnumsGeneral->ResultType_NA;
+	$self->{"settings"}->{"minUtilization"}        = 1;
 
-#	$self->{"settings"}->{"width"}       = undef;
-#	$self->{"settings"}->{"height"}      = undef;
-#	$self->{"settings"}->{"borderLeft"}  = undef;
-#	$self->{"settings"}->{"borderRight"} = undef;
-#	$self->{"settings"}->{"borderTop"}   = undef;
-#	$self->{"settings"}->{"borderBot"}   = undef;
+	#	$self->{"settings"}->{"width"}       = undef;
+	#	$self->{"settings"}->{"height"}      = undef;
+	#	$self->{"settings"}->{"borderLeft"}  = undef;
+	#	$self->{"settings"}->{"borderRight"} = undef;
+	#	$self->{"settings"}->{"borderTop"}   = undef;
+	#	$self->{"settings"}->{"borderBot"}   = undef;
 
 	return $self;
 }
@@ -71,10 +73,24 @@ sub GetPnlClasses {
 	return $self->{"settings"}->{"pnlClasses"};
 }
 
+sub SetPnlClasses {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"pnlClasses"} = $val;
+}
+
 sub GetDefPnlClass {
 	my $self = shift;
 
 	return $self->{"settings"}->{"defPnlClass"};
+}
+
+sub SetDefPnlClass {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"defPnlClass"} = $val;
 }
 
 sub GetDefPnlSpacing {
@@ -83,7 +99,12 @@ sub GetDefPnlSpacing {
 	return $self->{"settings"}->{"defPnlSpacing"};
 }
 
+sub SetDefPnlSpacing {
+	my $self = shift;
+	my $val  = shift;
 
+	$self->{"settings"}->{"defPnlSpacing"} = $val;
+}
 
 sub SetPCBStepsList {
 	my $self = shift;
@@ -282,18 +303,33 @@ sub GetActionType {
 
 }
 
-sub SetJSONStepPlacement {
+sub SetManualPlacementJSON {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"JSONStepPlacement"} = $val;
+	$self->{"settings"}->{"manualPlacementJSON"} = $val;
 
 }
 
-sub GetJSONStepPlacement {
+sub GetManualPlacementJSON {
 	my $self = shift;
 
-	return $self->{"settings"}->{"JSONStepPlacement"};
+	return $self->{"settings"}->{"manualPlacementJSON"};
+
+}
+
+sub SetManualPlacementStatus {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementStatus"} = $val;
+
+}
+
+sub GetManualPlacementStatus {
+	my $self = shift;
+
+	return $self->{"settings"}->{"manualPlacementStatus"};
 
 }
 
