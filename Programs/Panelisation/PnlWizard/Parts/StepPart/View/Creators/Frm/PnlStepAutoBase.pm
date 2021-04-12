@@ -77,7 +77,7 @@ sub __Layout {
 	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
 
 	my $pnlClassTxt = Wx::StaticText->new( $self, -1, "Class:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $pnlClassCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
+	my $pnlClassCB = Wx::ComboBox->new( $self, -1, "123", &Wx::wxDefaultPosition, [ -1, -1 ], [ "123", "123", "123" ], &Wx::wxCB_READONLY );
 
 	my $placementStatBox = $self->__SetLayoutPlacement($self);
 	my $spacingStatBox   = $self->__SetLayoutSpacing($self);
@@ -420,7 +420,7 @@ sub __SetLayoutCreatePnl {
 	my $szManual = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	my $pnlPicker = ManualPlacement->new( $placementManualPage->GetParent(),
-										  $self->{"inCAM"}, $self->{"jobId"}, $self->GetStep(), "Pick panel",
+										   $self->{"jobId"}, $self->GetStep(), "Pick panel",
 										  "Accept best panel (+ adjust if needed) and press Continue.",
 										  1, "Clear" );
 
@@ -506,11 +506,15 @@ sub __OnPnlClassChanged {
 	my $class = first { $_->GetName() eq $className } @{ $self->{"classes"} };
 
 	# Set cb classes size
+	$self->{"pnlClassSpaceCB"}->Freeze();
+	
 	$self->{"pnlClassSpaceCB"}->Clear();
 	foreach my $classSpace ( $class->GetAllClassSpacings() ) {
 
 		$self->{"pnlClassSpaceCB"}->Append( $classSpace->GetName() );
 	}
+
+	$self->{"pnlClassSpaceCB"}->Thaw();
 
 	if ( scalar( $class->GetAllClassSpacings() ) ) {
 
@@ -547,13 +551,17 @@ sub SetPnlClasses {
 
 	$self->{"classes"} = $classes;
 
+	$self->{"pnlClassCB"}->Freeze();
+
 	$self->{"pnlClassCB"}->Clear();
 
 	# Set cb classes
 	foreach my $class ( @{$classes} ) {
- 
+
 		$self->{"pnlClassCB"}->Append( $class->GetName() );
 	}
+
+	$self->{"pnlClassCB"}->Thaw();
 
 }
 
@@ -582,7 +590,7 @@ sub SetDefPnlSpacing {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassSpaceCB"}->SetValue($val) if(defined $val);;
+	$self->{"pnlClassSpaceCB"}->SetValue($val) if ( defined $val );
 
 	$self->__OnPnlClassSpacingChanged($val) if ( defined $val );
 }
@@ -599,6 +607,8 @@ sub SetPCBStepsList {
 
 	$self->{"pcbStepsList"} = $val;
 
+	$self->{"pcbStepCB"}->Freeze();
+
 	$self->{"pcbStepCB"}->Clear();
 
 	# Set cb classes
@@ -606,6 +616,8 @@ sub SetPCBStepsList {
 
 		$self->{"pcbStepCB"}->Append($step);
 	}
+
+	$self->{"pcbStepCB"}->Thaw();
 
 }
 
@@ -620,7 +632,7 @@ sub SetPCBStep {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pcbStepCB"}->SetValue($val) if(defined $val);;
+	$self->{"pcbStepCB"}->SetValue($val) if ( defined $val );
 
 }
 
@@ -680,7 +692,7 @@ sub SetRotationType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"rotTypeCb"}->SetValue($val) if(defined $val);;
+	$self->{"rotTypeCb"}->SetValue($val) if ( defined $val );
 }
 
 sub GetRotationType {
@@ -693,7 +705,7 @@ sub SetPatternType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pattTypeCb"}->SetValue($val) if(defined $val);;
+	$self->{"pattTypeCb"}->SetValue($val) if ( defined $val );
 }
 
 sub GetPatternType {
@@ -706,7 +718,7 @@ sub SetInterlockType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"interlockCb"}->SetValue($val) if(defined $val);;
+	$self->{"interlockCb"}->SetValue($val) if ( defined $val );
 }
 
 sub GetInterlockType {
@@ -749,7 +761,7 @@ sub SetAlignType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spacingTypeCb"}->SetValue($val) if(defined $val);
+	$self->{"spacingTypeCb"}->SetValue($val) if ( defined $val );
 
 }
 

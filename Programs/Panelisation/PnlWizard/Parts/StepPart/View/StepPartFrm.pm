@@ -73,6 +73,8 @@ sub OnGetCreatorLayout {
 	if ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
 
 		$content = AutoHegFrm->new( $parent, $inCAM, $jobId );
+
+		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
 
@@ -118,18 +120,11 @@ sub SetCreators {
 				 || $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG )
 			{
 
+				$creatorFrm->SetPCBStepsList( $model->GetPCBStepsList() );
+				$creatorFrm->SetPCBStep( $model->GetPCBStep() );
 				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
 				$creatorFrm->SetDefPnlClass( $model->GetDefPnlClass() );
 				$creatorFrm->SetDefPnlSpacing( $model->GetDefPnlSpacing() );
-
-				$creatorFrm->SetPCBStepsList( $model->GetPCBStepsList() );
-
-				if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
-
-					$creatorFrm->SetISMultiplFilled( $model->GetISMultiplFilled() );
-				}
-
-				$creatorFrm->SetPCBStep( $model->GetPCBStep() );
 				$creatorFrm->SetPlacementType( $model->GetPlacementType() );
 				$creatorFrm->SetRotationType( $model->GetRotationType() );
 				$creatorFrm->SetPatternType( $model->GetPatternType() );
@@ -137,7 +132,6 @@ sub SetCreators {
 				$creatorFrm->SetSpaceX( $model->GetSpaceX() );
 				$creatorFrm->SetSpaceY( $model->GetSpaceY() );
 				$creatorFrm->SetAlignType( $model->GetAlignType() );
-
 				$creatorFrm->SetAmountType( $model->GetAmountType() );
 				$creatorFrm->SetExactQuantity( $model->GetExactQuantity() );
 				$creatorFrm->SetMaxQuantity( $model->GetMaxQuantity() );
@@ -146,6 +140,11 @@ sub SetCreators {
 				$creatorFrm->SetManualPlacementStatus( $model->GetManualPlacementStatus() );
 				$creatorFrm->SetMinUtilization( $model->GetMinUtilization() );
 				$creatorFrm->SetExactQuantity( $model->GetExactQuantity() );
+
+				if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+
+					$creatorFrm->SetISMultiplFilled( $model->GetISMultiplFilled() );
+				}
 
 			}
 			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {

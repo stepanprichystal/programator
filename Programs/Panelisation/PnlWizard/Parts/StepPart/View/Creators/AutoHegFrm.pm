@@ -45,7 +45,7 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 	
-	my $indicator = $self->_SetLayoutISMultipl("HEG");
+	my $indicator = $self->_SetLayoutISMultipl("HEG multiplicity fileld");
 
 	# DEFINE EVENTS
 

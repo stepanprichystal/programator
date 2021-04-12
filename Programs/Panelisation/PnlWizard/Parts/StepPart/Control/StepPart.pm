@@ -147,15 +147,20 @@ sub __OnManualPlacementHndl {
 
 			my $JSON = $pnlToJSON->ParsePnlToJSON();
 
+			
+
 			if ( defined $JSON ) {
 
 				$creatorModel->SetManualPlacementJSON($JSON);
+				$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_OK );
 
 				$result = 1;
 			}
 
 		}
 		else {
+
+			$self->{"showPnlWizardFrmEvt"}->Do(1);
 
 			my $messMngr = $self->{"partWrapper"}->GetMessMngr();
 			my @mess     = ();
@@ -176,16 +181,6 @@ sub __OnManualPlacementHndl {
 
 	}
 
-	# Set status of parsing for model
-	if ($result) {
-
-		$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_OK );
-	}
-	else {
-
-		$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_NA );
-	}
-
 	# Update form
 	$self->{"frmHandlersOff"} = 1;
 
@@ -195,7 +190,7 @@ sub __OnManualPlacementHndl {
 
 	# Call change settings to return panel automatically to former settings if fail
 	unless ($result) {
- 
+
 		$self->__OnCreatorSettingsChangedHndl($creatorKey);
 	}
 

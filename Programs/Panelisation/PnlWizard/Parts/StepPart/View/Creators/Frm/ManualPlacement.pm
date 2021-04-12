@@ -26,7 +26,6 @@ use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
 sub new {
 	my $class          = shift;
 	my $parent         = shift;
-	my $inCAM          = shift;
 	my $jobId          = shift;
 	my $step           = shift;
 	my $actionBtnTitle = shift;
@@ -39,7 +38,7 @@ sub new {
 	bless($self);
 
 	# PROPERTIES
-	$self->{"inCAM"}        = $inCAM;
+	 
 	$self->{"jobId"}        = $jobId;
 	$self->{"step"}         = $step;
 	$self->{"pauseMessage"} = $pauseMessText;
