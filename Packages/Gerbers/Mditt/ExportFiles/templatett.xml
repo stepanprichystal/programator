@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<job_layer>
+   <display_name />
+   <parent_job />
+   <categories>
+      <category>1001</category>
+      <user_category />
+   </categories>
+   <creation>
+      <template_name />
+      <parameter_source />
+      <auxiliary_files />
+      <cropping_offset x="0" y="0" unit="Length.Millimeter" />
+      <cropping_size x="0" y="0" unit="Length.Millimeter" />
+      <exposure_area_reduction x="0" y="0" unit="Length.Micrometer" />
+      <image_size x="0" y="0" unit="Length.Millimeter" />
+      <mirror x="1" y="0" />
+      <polarity>0</polarity>
+      <rotation_cw unit="Angle.Degree">0</rotation_cw>
+   </creation>
+   <process_parameters>
+      <infinite_part_count>False</infinite_part_count>
+      <parts_remaining>1</parts_remaining>
+      <parts_total>1</parts_total>
+      <part_thickness unit="Length.Millimeter">5.17</part_thickness>
+      <exposure>
+         <exposure_energy unit="RadiantExposure.MillijoulePerSquareCentimeter">27</exposure_energy>
+         <led_power_ratio id="1">0</led_power_ratio>
+         <led_power_ratio id="2">0</led_power_ratio>
+         <led_power_ratio id="3">0</led_power_ratio>
+         <led_power_ratio id="4">0</led_power_ratio>
+         <led_power_ratio_mode>1</led_power_ratio_mode>
+      </exposure>
+      <fiducial_groups>
+         <fiducial_group>
+            <fiducial_id_global>1000</fiducial_id_global>
+            <fiducial_id_local />
+            <fiducials />
+            <fiducials_default>
+               <fiducial>
+                  <type>Global</type>
+                  <part_side>None</part_side>
+                  <position x="0" y="0" z="0" unit="Length.Meter" coordinate_system="original_data" />
+                  <position x="0" y="0" z="0" unit="Length.Meter" coordinate_system="original_data_zero" />
+                  <position x="0" y="0" z="0" unit="Length.Meter" coordinate_system="external" />
+                  <camera_groups />
+                  <image_object id="2" />
+               </fiducial>
+            </fiducials_default>
+         </fiducial_group>
+      </fiducial_groups>
+      <registration>
+         <image_offset x="0" y="0" z="0" unit="Length.Millimeter" />
+         <force_global_registration_points_to_rectangle>False</force_global_registration_points_to_rectangle>
+         <scale_based_parts_global>1</scale_based_parts_global>
+         <scale_preset_global x="1" y="1" z="0" />
+         <scaling_mode_global>1</scaling_mode_global>
+         <share_fiducials_at_local_zones>False</share_fiducials_at_local_zones>
+      </registration>
+      <placeholder />
+      <placeholder_values />
+   </process_parameters>
+</job_layer>
