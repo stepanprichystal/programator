@@ -93,6 +93,8 @@ sub OnGetCreatorLayout {
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
 
 		$content = PreviewFrm->new( $parent, $inCAM, $jobId );
+		
+			$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
 
 	return $content;
@@ -156,6 +158,14 @@ sub SetCreators {
 				$creatorFrm->SetStepSpaceX( $model->GetStepSpaceX() );
 				$creatorFrm->SetStepSpaceY( $model->GetStepSpaceY() );
 				$creatorFrm->SetStepRotation( $model->GetStepRotation() );
+
+			}
+			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
+
+				$creatorFrm->SetSrcJobId( $model->GetSrcJobId() );
+				$creatorFrm->SetPanelJSON( $model->GetPanelJSON() );
+				$creatorFrm->SetManualPlacementJSON( $model->GetManualPlacementJSON() );
+				$creatorFrm->SetManualPlacementStatus( $model->GetManualPlacementStatus() );
 
 			}
 
@@ -229,9 +239,15 @@ sub GetCreators {
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
 			die "not implemented";
+			
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
-			die "not implemented";
+
+			$model->SetSrcJobId( $creatorFrm->GetSrcJobId() );
+			$model->SetPanelJSON( $creatorFrm->GetPanelJSON() );
+			$model->SetManualPlacementJSON( $creatorFrm->GetManualPlacementJSON() );
+			$model->SetManualPlacementStatus( $creatorFrm->GetManualPlacementStatus() );
+
 		}
 
 		push( @models, $model );

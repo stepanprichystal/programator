@@ -90,7 +90,7 @@ sub __SetLayout {
 sub GetAllCreatorKeys {
 	my $self = shift;
 
-	return map{$_->GetItemId() } @{ $self->{"jobItems"} };
+	return map { $_->GetItemId() } @{ $self->{"jobItems"} };
 
 }
 

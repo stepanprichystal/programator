@@ -14,9 +14,9 @@ use Class::Interface;
 use strict;
 use warnings;
 
-
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
+use aliased 'Packages::CAMJob::Panelization::SRStep';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -32,7 +32,6 @@ sub new {
 	bless $self;
 
 	# Setting values necessary for procesing panelisation
-	 
 
 	return $self;    #
 }
@@ -45,14 +44,13 @@ sub new {
 # (instead of Init method is possible init by import JSON settings)
 # Return 1 if succes 0 if fail
 sub Init {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
 	my $stepName = shift;
- 
 
 	my $result = 1;
-	
-	$self->_Init($inCAM, $stepName);
+
+	$self->_Init( $inCAM, $stepName );
 
 	return $result;
 
@@ -68,8 +66,8 @@ sub Check {
 
 	my $result = 1;
 
-	$result = $self->_Check($inCAM, $errMess);
-	
+	$result = $self->_Check( $inCAM, $errMess );
+
 	return $result;
 
 }
@@ -82,30 +80,24 @@ sub Process {
 
 	my $result = 1;
 
-	#	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-	#
-	#		$inCAM->COM("get_user_name");
-	#
-	#		my $name = $inCAM->GetReply();
-	#
-	#		print STDERR "\nProcessing  HEG !! $name \n";
-	#		die "test";
-	#		sleep(1);
-	#
-	#	}
-	
-	$result = $self->_Process($inCAM, $errMess);
+	# Process base class
+	$result = $self->_Process( $inCAM, $errMess );
 
-	 
+	# Process specific
+	my $jobId = $self->{"jobId"};
+
+	my $step = SRStep->new( $inCAM, $jobId, $self->GetStep() );
+
+	#	my %p = ("x"=> -10, "y" => -20);
+	$step->Edit( $self->GetWidth(),      $self->GetHeight(), $self->GetBorderTop(), $self->GetBorderBot(),
+				 $self->GetBorderLeft(), $self->GetBorderRight() );
 
 	return $result;
 }
 
-
 #-------------------------------------------------------------------------------------------#
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

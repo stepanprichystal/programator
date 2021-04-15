@@ -5,7 +5,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlCreator::SizePnlCreator::PreviewSize;
-use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
+use base('Programs::Panelisation::PnlCreator::SizePnlCreator::SizeCreatorBase');
 
 use Class::Interface;
 &implements('Programs::Panelisation::PnlCreator::SizePnlCreator::ISize');
@@ -16,27 +16,34 @@ use warnings;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Connectors::HeliosConnector::Enums' => 'HegEnums';
+use aliased 'Connectors::SqlParameter';
+use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
+use aliased 'Packages::CAMJob::Panelization::SRStep';
+use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorder::AcquireJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $jobId = shift;
+	my $class   = shift;
+	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key   = Enums->SizePnlCreator_PREVIEW;
+	my $key     = Enums->SizePnlCreator_PREVIEW;
 
-	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
-		# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{"width"}       = undef;
-	$self->{"settings"}->{"height"}      = undef;
-	$self->{"settings"}->{"borderLeft"}  = undef;
-	$self->{"settings"}->{"borderRight"} = undef;
-	$self->{"settings"}->{"borderTop"}   = undef;
-	$self->{"settings"}->{"borderBot"}   = undef;
+	# Setting values necessary for procesing panelisation
+	$self->{"settings"}->{"srcJobId"}         = undef;
+	$self->{"settings"}->{"srcJobListByName"} = [];
+	$self->{"settings"}->{"srcJobListByNote"} = [];
+	$self->{"settings"}->{"panelJSON"}        = undef;
 
 	return $self;    #
 }
@@ -49,26 +56,192 @@ sub new {
 # (instead of Init method is possible init by import JSON settings)
 # Return 1 if succes 0 if fail
 sub Init {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
+	my $srcJobId = shift;
 
 	my $result = 1;
 
- 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	$self->_Init( $inCAM, $stepName );
 
-		$inCAM->COM("get_user_name");
+	# Try to get list of former orders
+	my $jobId = $self->{"jobId"};
 
-		my $name = $inCAM->GetReply();
+	# Check TPV note if there is reference job id
 
-		print STDERR "\nHEG !! $name \n";
+	my @params = ( SqlParameter->new( "_PcbId", HegEnums->SqlDbType_VARCHAR, $jobId ) );
 
-		sleep(1);
+	my $cmd = "select top 1
+				 	d.poznamka_tpv
+				 from lcs.desky_22 d with (nolock)
+				 left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
 
+	my $tpvNote = HegMethods->CustomSQLExecuteScalar( $cmd, \@params );
+
+	if ( defined $tpvNote ) {
+
+		if (    $tpvNote =~ /minul.*\s*verz/i
+			 || $tpvNote =~ /nov.*verz/i
+			 || $tpvNote =~ /p.*ede.*l.*verz/i
+			 || $tpvNote =~ /p.*edcho.*verz/i )
+		{
+
+			if ( $tpvNote =~ m/(\w\d{5,6})/i ) {
+
+				my $noteJobId = $1;
+				$noteJobId = lc($noteJobId);
+
+				my $noteInfo = HegMethods->GetBasePcbInfo($noteJobId);
+				my $info = { "jobId" => uc($noteJobId), "jobName" => $noteInfo->{"nazev_subjektu"} };
+
+				$self->SetSrcJobListByNote( [$info] );
+
+			}
+		}
 	}
 
-	return $result;
+	# Check if exist jobs with similar name if not job in TPV note
+	unless ( scalar( @{ $self->GetSrcJobListByNote() } ) ) {
 
+		my $customerInfo = HegMethods->GetCustomerInfo($jobId);
+
+		if ( defined $customerInfo->{"reference_subjektu"} ) {
+
+			my $pcbInfo = HegMethods->GetBasePcbInfo($jobId);
+			my $pcbName = $pcbInfo->{"nazev_subjektu"};
+
+			my @jobsByNote = ();
+
+			my $nameCnt = length($pcbName);
+
+			while ( length($pcbName) > $nameCnt / 2 ) {
+
+				my @params = ();
+				push( @params, SqlParameter->new( "__CustReference", HegEnums->SqlDbType_VARCHAR, $customerInfo->{"reference_subjektu"} ) );
+				push( @params, SqlParameter->new( "__Name",          HegEnums->SqlDbType_TEXT,    $pcbName ) );
+				push( @params, SqlParameter->new( "__JobId",         HegEnums->SqlDbType_VARCHAR, uc($jobId) ) );
+
+				my $cmd = "select distinct 
+						d.reference_subjektu AS jobId,
+						d.nazev_subjektu AS jobName
+				   from lcs.desky_22 d with (nolock)
+				 		left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+				 		left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+					WHERE
+						z.cislo_poradace = 22050  AND
+					    c.reference_subjektu = __CustReference AND
+						d.reference_subjektu <> __JobId AND
+				 		d.nazev_subjektu LIKE '__Name%'  
+				 	 ";
+
+				my @jobs = HegMethods->CustomSQLExecuteDataset( $cmd, \@params );
+
+				if ( scalar(@jobs) ) {
+
+					push( @jobsByNote, @jobs );
+				}
+
+				if ( scalar(@jobsByNote) > 5 ) {
+					last;
+				}
+
+				$pcbName = substr( $pcbName, 0, length($pcbName) - 1 );
+			}
+
+			# remove original jobId
+			@jobsByNote = grep { $_->{"jobId"} ne $jobId } @jobsByNote;
+
+			my %seen;
+			my @uniqueJobs = grep { !$seen{ $_->{"jobId"} }++ } @jobsByNote;
+
+			# sort
+			@uniqueJobs = sort { $b->{"jobName"} <=> $a->{"jobName"} } @uniqueJobs;
+
+			if ( scalar(@uniqueJobs) ) {
+
+				$self->SetSrcJobListByName( \@uniqueJobs );
+			}
+		}
+	}
+
+	# Get dimension and borders if source job is known
+	if ( defined $srcJobId && $srcJobId =~ /^\w\d{6}$/i ) {
+		
+		$self->SetSrcJobId($srcJobId);
+
+		$srcJobId = lc($srcJobId);
+
+		# Unarchive job
+		my $acquireErr = "";
+		my $jobExist = AcquireJob->Acquire( $inCAM, $srcJobId, \$acquireErr );
+
+		if ($jobExist) {
+
+			# open job
+			CamHelper->OpenJob( $inCAM, $srcJobId, 1 );
+			CamJob->CheckOutJob( $inCAM, $srcJobId );
+
+			if ( CamHelper->StepExists( $inCAM, $srcJobId, $stepName ) ) {
+
+				# Set dimensions for GUI
+				my %profLim = CamJob->GetProfileLimits2( $inCAM, $srcJobId, $stepName );
+				my %areaLim = CamStep->GetActiveAreaLim( $inCAM, $srcJobId, $stepName );
+
+				my $bL = abs( $profLim{"xMin"} - $areaLim{"xMin"} );
+				my $bR = abs( $profLim{"xMax"} - $areaLim{"xMax"} );
+				my $bT = abs( $profLim{"yMax"} - $areaLim{"yMax"} );
+				my $bB = abs( $profLim{"yMin"} - $areaLim{"yMin"} );
+
+				my $w = abs( $profLim{"xMax"} - $profLim{"xMin"} );
+				my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+
+				$self->SetWidth($w);
+				$self->SetHeight($h);
+
+				$self->SetBorderLeft($bL);
+				$self->SetBorderRight($bR);
+				$self->SetBorderTop($bT);
+				$self->SetBorderBot($bB);
+
+				# Set parsed profile data for crating panel
+
+				my $pnlToJSON = PnlToJSON->new( $inCAM, $srcJobId, $stepName );
+
+				my $errMessJSON = "";
+
+				if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
+
+					my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 1, 1 );
+					$self->SetPanelJSON($JSON);
+
+				}
+
+			}
+			else {
+
+				my $err = "Source job error";
+
+				$self->SetWidth($err);
+				$self->SetHeight($err);
+
+				$self->SetBorderLeft($err);
+				$self->SetBorderRight($err);
+				$self->SetBorderTop($err);
+				$self->SetBorderBot($err);
+			}
+
+			# Close job
+			CamJob->CheckInJob( $inCAM, $srcJobId );
+			CamJob->CloseJob( $inCAM, $srcJobId );
+			CamJob->CheckInJob( $inCAM, $jobId, 0 );    # Reopen jon
+
+		}
+	}
+	 
+
+	return $result;
 }
 
 # Do necessary check before processing panelisation
@@ -81,20 +254,28 @@ sub Check {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	$result = $self->_Check( $inCAM, $errMess );
 
-		$inCAM->COM("get_user_name");
+	# Check if source job exist
+	my $srcJobExist = $self->GetSrcJobId();
 
-		my $name = $inCAM->GetReply();
+	if ( !defined $srcJobExist || $srcJobExist eq "" ) {
 
-		print STDERR "\nChecking  HEG !! $name \n";
+		$result = 0;
+		$$errMess .= "Source job, which panel should be coppied from is not defined.\n";
+	}
+	else {
 
-		sleep(1);
+		# Check if JSON exist
+		my $JSON = $self->GetPanelJSON();
+
+		if ( !defined $JSON || $JSON eq "" ) {
+
+			$result = 0;
+			$$errMess .= "Source job panel dimension was not properly parsed.\n";
+		}
 
 	}
-
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
 
 	return $result;
 
@@ -108,17 +289,17 @@ sub Process {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	# Process base class
+	$result = $self->_Process( $inCAM, $errMess );
 
-		$inCAM->COM("get_user_name");
+	# Process specific
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->GetStep();
+	
+ 
 
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
-
-	}
+	my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
+	$pnlToJSON->CreatePnlByJSON( $self->GetPanelJSON(), 1, 0 );
 
 	return $result;
 }
@@ -127,82 +308,58 @@ sub Process {
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
 
-sub SetWidth {
+sub SetSrcJobId {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"width"} = $val;
+	$self->{"settings"}->{"srcJobId"} = $val;
 }
 
-sub GetWidth {
+sub GetSrcJobId {
 	my $self = shift;
 
-	return $self->{"settings"}->{"width"};
+	return $self->{"settings"}->{"srcJobId"};
 }
 
-sub SetHeight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"height"} = $val;
-}
-
-sub GetHeight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"height"};
-}
-
-sub SetBorderLeft {
+sub SetSrcJobListByName {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"borderLeft"} = $val;
+	$self->{"settings"}->{"srcJobListByName"} = $val;
 }
 
-sub GetBorderLeft {
+sub GetSrcJobListByName {
 	my $self = shift;
 
-	return $self->{"settings"}->{"borderLeft"};
+	return $self->{"settings"}->{"srcJobListByName"};
 }
 
-sub SetBorderRight {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"borderRight"} = $val;
-}
-
-sub GetBorderRight {
-	my $self = shift;
-
-	return $self->{"settings"}->{"borderRight"};
-}
-
-sub SetBorderTop {
+sub SetSrcJobListByNote {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"borderTop"} = $val;
+	$self->{"settings"}->{"srcJobListByNote"} = $val;
 }
 
-sub GetBorderTop {
+sub GetSrcJobListByNote {
 	my $self = shift;
 
-	return $self->{"settings"}->{"borderTop"};
+	return $self->{"settings"}->{"srcJobListByNote"};
 }
 
-sub SetBorderBot {
+sub SetPanelJSON {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"borderBot"} = $val;
+	$self->{"settings"}->{"panelJSON"} = $val;
+
 }
 
-sub GetBorderBot {
+sub GetPanelJSON {
 	my $self = shift;
 
-	return $self->{"settings"}->{"borderBot"};
+	return $self->{"settings"}->{"panelJSON"};
+
 }
 
 #-------------------------------------------------------------------------------------------#

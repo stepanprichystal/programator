@@ -16,6 +16,7 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::ManualPlacement';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -24,16 +25,21 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 sub new {
 	my $class  = shift;
 	my $parent = shift;
-		my $inCAM  = shift;
+	my $inCAM  = shift;
 	my $jobId  = shift;
 
-	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_PREVIEW, $parent, $inCAM,$jobId );
+	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_PREVIEW, $parent, $inCAM, $jobId );
 
 	bless($self);
 
 	$self->__SetLayout();
 
+	# Properties
+
+	$self->{"panelJSON"} = undef;
+
 	# DEFINE EVENTS
+	$self->{"manualPlacementEvt"} = Event->new();
 
 	return $self;
 }
@@ -49,22 +55,31 @@ sub __SetLayout {
 	# Add empty item
 
 	# DEFINE CONTROLS
-	my $widthTxt = Wx::StaticText->new( $self, -1, "Width:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $widthValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
+	my $jobSrcTxt = Wx::StaticText->new( $self, -1, "Source job", &Wx::wxDefaultPosition, [ -1, 25 ] );
+	my $jobSrcValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, 25 ],  &Wx::wxTE_READONLY );
 
-	my $heightTxt = Wx::StaticText->new( $self, -1, "Height:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $heightValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
+ 
+
+	my $pnlPickerTxt = Wx::StaticText->new( $self, -1, "Manual adjustment", &Wx::wxDefaultPosition, [ -1, 25 ] );
+	my $pnlPicker = ManualPlacement->new( $self,
+										  $self->{"jobId"}, $self->GetStep(), "Adjust panel",
+										  "Adjust panel settings.",
+										  1, "Clear" );
+	
+
+	 
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $widthValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+
+	$pnlPicker->{"placementEvt"}->Add( sub      { $self->{"manualPlacementEvt"}->Do(@_) } );
+	$pnlPicker->{"clearPlacementEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $widthTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $widthValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $jobSrcTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $jobSrcValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow2->Add( $heightTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $heightValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $pnlPickerTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $pnlPicker,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
@@ -72,43 +87,70 @@ sub __SetLayout {
 
 	# SAVE REFERENCES
 
-	$self->{"widthValTxt"}  = $widthValTxt;
-	$self->{"heightValTxt"} = $heightValTxt;
-
+	$self->{"pnlPicker"} = $pnlPicker;
+	$self->{"jobSrcValTxt"} = $jobSrcValTxt;
+	
+	
 }
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
-sub SetWidth {
+sub SetSrcJobId {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"widthValTxt"}->SetValue($val);
-
+	$self->{"jobSrcValTxt"}->SetValue($val) if ( defined $val );
 }
 
-sub GetWidth {
+sub GetSrcJobId {
 	my $self = shift;
 
-	return $self->{"widthValTxt"}->GetValue();
-
+	return $self->{"jobSrcValTxt"}->GetValue();
 }
 
-sub SetHeight {
+sub SetPanelJSON {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"heightValTxt"}->SetValue($val);
+	$self->{"panelJSON"} = $val;
 
 }
 
-sub GetHeight {
+sub GetPanelJSON {
 	my $self = shift;
 
-	return $self->{"heightValTxt"}->GetValue();
+	return $self->{"panelJSON"};
 
+}
+
+sub SetManualPlacementJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnlPicker"}->SetManualPlacementJSON($val);
+
+}
+
+sub GetManualPlacementJSON {
+	my $self = shift;
+
+	return $self->{"pnlPicker"}->GetManualPlacementJSON();
+
+}
+
+sub SetManualPlacementStatus {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnlPicker"}->SetManualPlacementStatus($val);
+}
+
+sub GetManualPlacementStatus {
+	my $self = shift;
+
+	return $self->{"pnlPicker"}->GetManualPlacementStatus();
 }
 
 #-------------------------------------------------------------------------------------------#

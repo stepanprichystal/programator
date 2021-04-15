@@ -190,8 +190,7 @@ sub _InitForm {
 
 	$self->{"form"}->{"creatorSettingsChangedEvt"}->Add( sub  { $self->__OnCreatorSettingsChangedHndl(@_) } );
 	$self->{"form"}->{"creatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl(@_) } );
-
-	#$self->{"form"}->{"creatorInitRequestEvt"}->Add( sub { $self->__AsyncInitCreatorModel(@_) } );
+	$self->{"form"}->{"creatorInitRequestEvt"}->Add( sub      { $self->__OnCreatorInitRequestHndl(@_) } );
 
 }
 
@@ -222,7 +221,8 @@ sub __AsyncProcessCreatorModel {
 
 	$self->{"partWrapper"}->ShowLoading(1);
 
-	my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
+	#	my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
+	my $creatorModel = $self->{"form"}->GetCreators($creatorKey)->[0];
 
 	$self->{"backgroundTaskMngr"}->AsyncProcessPnlCreator( $self->{"partId"}, $creatorKey, $creatorModel->ExportCreatorSettings(), $callReason );
 
@@ -339,8 +339,6 @@ sub __OnCreatorSettingsChangedHndl {
 
 	return 0 if ( $self->{"frmHandlersOff"} );
 
-	my $creatorModel = $self->{"form"}->GetCreators($creatorKey)->[0];
-
 	# Do async process if previeww set
 
 	if ( $self->GetPreview() ) {
@@ -351,6 +349,7 @@ sub __OnCreatorSettingsChangedHndl {
 	}
 	else {
 		# Reise Events
+		my $creatorModel = $self->{"form"}->GetCreators($creatorKey)->[0];
 		$self->{"creatorSettingsChangedEvt"}->Do( $self->GetPartId(), $creatorKey, $creatorModel );
 	}
 
@@ -378,6 +377,34 @@ sub __OnCreatorSelectionChangedHndl {
 	else {
 		$self->__AsyncInitCreatorModel($creatorKey);
 	}
+
+}
+
+sub __OnCreatorInitRequestHndl {
+	my $self       = shift;
+	my $creatorKey = shift;
+	my @params     = shift;
+
+	return 0 if ( $self->{"frmHandlersOff"} );
+
+	# Built parametres for init creator
+	my $creatorInitPatarams = [ $self->{"model"}->GetCreatorModelByKey($creatorKey)->GetStep() ];
+
+	# Check if there are extra parameters, otherwise no extra Init request is needed
+	unless ( scalar(@params) ) {
+
+		die "No extra init parameters, for creator: $creatorKey";
+	}
+
+	push( @{$creatorInitPatarams}, @params );
+
+	$self->ClearErrors();
+
+	$self->{"isPartFullyInited"} = 0;
+
+	$self->{"partWrapper"}->ShowLoading(1);
+
+	$self->{"backgroundTaskMngr"}->AsyncInitPnlCreator( $self->{"partId"}, $creatorKey, $creatorInitPatarams );
 
 }
 

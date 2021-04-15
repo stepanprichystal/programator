@@ -45,6 +45,8 @@ sub new {
 
 	$self->{"creatorSelectionChangedEvt"} = Event->new();
 	$self->{"creatorSettingsChangedEvt"}  = Event->new();
+	$self->{"creatorInitRequestEvt"}  = Event->new();
+	
 
 	return $self;
 }
@@ -132,6 +134,8 @@ sub __SetLayoutCreatorView {
 		die "Creator  control is not defined for creator:" . $creator->GetModelKey() if ( !defined $content );
 
 		$content->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do( $content->GetCreatorKey(), @_ ) } );
+		$content->{"creatorInitRequestEvt"}->Add( sub { $self->{"creatorInitRequestEvt"}->Do( $content->GetCreatorKey(), @_ ) } );
+		
 
 		$page->AddContent( $content, 0 );
 

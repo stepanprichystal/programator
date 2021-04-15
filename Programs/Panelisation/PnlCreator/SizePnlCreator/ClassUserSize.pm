@@ -17,7 +17,7 @@ use warnings;
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlClassParser';
-
+use aliased 'Packages::CAMJob::Panelization::SRStep';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -151,7 +151,17 @@ sub Process {
 
 	my $result = 1;
 
+# Process base class
 	$result = $self->_Process( $inCAM, $errMess );
+
+	# Process specific 	
+	my $jobId = $self->{"jobId"};
+
+	my $step = SRStep->new( $inCAM, $jobId, $self->GetStep() );
+
+	#	my %p = ("x"=> -10, "y" => -20);
+	$step->Edit( $self->GetWidth(),      $self->GetHeight(), $self->GetBorderTop(), $self->GetBorderBot(),
+				 $self->GetBorderLeft(), $self->GetBorderRight() );
 
 	return $result;
 }

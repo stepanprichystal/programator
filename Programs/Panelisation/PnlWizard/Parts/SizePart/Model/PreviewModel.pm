@@ -25,17 +25,19 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"modelKey"}    = PnlCreEnums->SizePnlCreator_PREVIEW;
-	 
-			# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{"width"}       = undef;
-	$self->{"settings"}->{"height"}      = undef;
-	$self->{"settings"}->{"borderLeft"}  = undef;
-	$self->{"settings"}->{"borderRight"} = undef;
-	$self->{"settings"}->{"borderTop"}   = undef;
-	$self->{"settings"}->{"borderBot"}   = undef;
+	$self->{"modelKey"} = PnlCreEnums->SizePnlCreator_PREVIEW;
 
-	 
+	# Setting values necessary for procesing panelisation
+	$self->{"settings"}->{"width"}            = undef;
+	$self->{"settings"}->{"height"}           = undef;
+	$self->{"settings"}->{"borderLeft"}       = undef;
+	$self->{"settings"}->{"borderRight"}      = undef;
+	$self->{"settings"}->{"borderTop"}        = undef;
+	$self->{"settings"}->{"borderBot"}        = undef;
+	$self->{"settings"}->{"srcJobId"}         = undef;
+	$self->{"settings"}->{"srcJobListByName"} = [];
+	$self->{"settings"}->{"srcJobListByNote"} = [];
+	$self->{"settings"}->{"panelJSON"}      = undef;
 
 	return $self;
 }
@@ -46,8 +48,6 @@ sub GetModelKey {
 	return $self->{"modelKey"};
 
 }
-
-
 
 sub SetWidth {
 	my $self = shift;
@@ -125,6 +125,60 @@ sub GetBorderBot {
 	my $self = shift;
 
 	return $self->{"settings"}->{"borderBot"};
+}
+
+sub SetSrcJobId {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"srcJobId"} = $val;
+}
+
+sub GetSrcJobId {
+	my $self = shift;
+
+	return $self->{"settings"}->{"srcJobId"};
+}
+
+sub SetSrcJobListByName {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"srcJobListByName"} = $val;
+}
+
+sub GetSrcJobListByName {
+	my $self = shift;
+
+	return $self->{"settings"}->{"srcJobListByName"};
+}
+
+sub SetSrcJobListByNote {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"srcJobListByNote"} = $val;
+}
+
+sub GetSrcJobListByNote {
+	my $self = shift;
+
+	return $self->{"settings"}->{"srcJobListByNote"};
+}
+
+sub SetPanelJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"panelJSON"} = $val;
+
+}
+
+sub GetPanelJSON {
+	my $self = shift;
+
+	return $self->{"settings"}->{"panelJSON"};
+
 }
 
 #-------------------------------------------------------------------------------------------#

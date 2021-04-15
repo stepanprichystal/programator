@@ -69,7 +69,7 @@ sub GetPnlCreatorByKey {
 		$creator = SetSteps->new( $jobId, $pnlType );
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
-		$creator = LibraryScheme->new( $jobId, $pnlType );
+		$creator = PreviewSteps->new( $jobId, $pnlType );
 	}
 	else {
 

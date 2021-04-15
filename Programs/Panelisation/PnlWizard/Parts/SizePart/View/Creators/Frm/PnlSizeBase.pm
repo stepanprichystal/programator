@@ -79,6 +79,7 @@ sub __Layout {
 
 	# save control references
 	$self->{"szCustomCBMain"} = $szCustom;
+	$self->{"szMain"}         = $szMain;
 
 }
 
@@ -296,6 +297,26 @@ sub _EnableLayoutSize {
 
 }
 
+sub _EnableLayoutBorder {
+	my $self   = shift;
+	my $enable = shift;
+
+	if ($enable) {
+
+		$self->{"leftValTxt"}->Enable();
+		$self->{"rightValTxt"}->Enable();
+		$self->{"topValTxt"}->Enable();
+		$self->{"botValTxt"}->Enable();
+	}
+	else {
+		$self->{"leftValTxt"}->Disable();
+		$self->{"rightValTxt"}->Disable();
+		$self->{"topValTxt"}->Disable();
+		$self->{"botValTxt"}->Disable();
+	}
+
+}
+
 sub _GetPnlWidthControl {
 	my $self = shift;
 
@@ -330,6 +351,12 @@ sub _GetPnlBorderBControl {
 	my $self = shift;
 
 	return $self->{"botValTxt"};
+}
+
+sub _GetMainSizer {
+	my $self = shift;
+
+	return $self->{"szMain"};
 }
 
 # =====================================================================

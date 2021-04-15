@@ -15,23 +15,28 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $jobId = shift;
+	my $class   = shift;
+	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key   = Enums->StepPnlCreator_PREVIEW ;
+	my $key     = Enums->StepPnlCreator_PREVIEW;
 
-	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
 	# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{""} = undef;
+	$self->{"settings"}->{"srcJobId"}              = undef;
+	$self->{"settings"}->{"panelJSON"}             = undef;
+	$self->{"settings"}->{"manualPlacementJSON"}   = undef;
+	$self->{"settings"}->{"manualPlacementStatus"} = EnumsGeneral->ResultType_NA;
 
 	return $self;    #
 }
@@ -44,25 +49,13 @@ sub new {
 # (instead of Init method is possible init by import JSON settings)
 # Return 1 if succes 0 if fail
 sub Init {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $stepName = shift;
+
+	$self->SetStep($stepName);
 
 	my $result = 1;
-
-	$self->{"settings"}->{"w"} = 20;
-	$self->{"settings"}->{"h"} = 20;
-
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nHEG !! $name \n";
-
-		sleep(1);
-
-	}
 
 	return $result;
 
@@ -78,20 +71,37 @@ sub Check {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	# Check if source job exist
+	my $srcJobExist = $self->GetSrcJobId();
 
-		$inCAM->COM("get_user_name");
+	if ( !defined $srcJobExist || $srcJobExist eq "" ) {
 
-		my $name = $inCAM->GetReply();
+		$result = 0;
+		$$errMess .= "Source job, which panel should be coppied from is not defined.\n";
+	}
+	else {
 
-		print STDERR "\nChecking  HEG !! $name \n";
+		# Check if JSON exist
+		my $JSON = $self->GetPanelJSON();
 
-		sleep(1);
+		if ( !defined $JSON || $JSON eq "" ) {
+
+			$result = 0;
+			$$errMess .= "Source job panel SR was not properly parsed.\n";
+		}
 
 	}
 
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
+	if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
+
+		unless ( defined $self->GetManualPlacementJSON() ) {
+
+			# JSON placement is not defined
+			$result = 0;
+			$$errMess .= "Manual panel step palcement error. Missing JSON panel placement.";
+		}
+
+	}
 
 	return $result;
 
@@ -105,17 +115,14 @@ sub Process {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
+	$self->_CreateStep($inCAM);
 
-		$inCAM->COM("get_user_name");
+	# Process specific
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->GetStep();
 
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
-
-	}
+	my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
+	$pnlToJSON->CreatePnlByJSON( $self->GetPanelJSON(), 0, 1 );
 
 	return $result;
 }
@@ -124,18 +131,59 @@ sub Process {
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
 
-sub Set {
+sub SetSrcJobId {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{""} = $val;
+	$self->{"settings"}->{"srcJobId"} = $val;
+}
+
+sub GetSrcJobId {
+	my $self = shift;
+
+	return $self->{"settings"}->{"srcJobId"};
+}
+
+sub SetPanelJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"panelJSON"} = $val;
+}
+
+sub GetPanelJSON {
+	my $self = shift;
+
+	return $self->{"settings"}->{"panelJSON"};
+}
+
+sub SetManualPlacementJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementJSON"} = $val;
 
 }
 
-sub Get {
+sub GetManualPlacementJSON {
 	my $self = shift;
 
-	return $self->{"settings"}->{""};
+	return $self->{"settings"}->{"manualPlacementJSON"};
+
+}
+
+sub SetManualPlacementStatus {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementStatus"} = $val;
+
+}
+
+sub GetManualPlacementStatus {
+	my $self = shift;
+
+	return $self->{"settings"}->{"manualPlacementStatus"};
 
 }
 

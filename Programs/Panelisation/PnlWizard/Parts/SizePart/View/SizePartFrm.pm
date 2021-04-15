@@ -143,7 +143,6 @@ sub SetCreators {
 				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
 				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
 
-				 
 			}
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER || $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
 
@@ -171,7 +170,22 @@ sub SetCreators {
 			}
 
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
-				die "Not impemented";
+
+				# Base property
+				$creatorFrm->SetWidth( $model->GetWidth() );
+				$creatorFrm->SetHeight( $model->GetHeight() );
+				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
+				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
+				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
+				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
+				$creatorFrm->SetStep( $model->GetStep() );
+
+				# Specific for class
+				$creatorFrm->SetSrcJobId( $model->GetSrcJobId() );
+				$creatorFrm->SetSrcJobListByName( $model->GetSrcJobListByName() );
+				$creatorFrm->SetSrcJobListByNote( $model->GetSrcJobListByNote() );
+				$creatorFrm->SetPanelJSON( $model->GetPanelJSON() );
+
 			}
 
 		}
@@ -224,7 +238,6 @@ sub GetCreators {
 			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
 			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
-			 
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER || $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
@@ -251,7 +264,22 @@ sub GetCreators {
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
-			die "Not impemented";
+
+			# Base property
+			$model->SetWidth( $creatorFrm->GetWidth() );
+			$model->SetHeight( $creatorFrm->GetHeight() );
+			$model->SetBorderLeft( $creatorFrm->GetBorderLeft() );
+			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
+			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
+			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
+			$model->SetStep( $creatorFrm->GetStep() );
+
+			# Specific for class
+			$model->SetSrcJobId( $creatorFrm->GetSrcJobId() );
+			$model->SetSrcJobListByName( $creatorFrm->GetSrcJobListByName() );
+			$model->SetSrcJobListByNote( $creatorFrm->GetSrcJobListByNote() );
+			$model->SetPanelJSON( $creatorFrm->GetPanelJSON() );
+
 		}
 
 		push( @models, $model );

@@ -14,7 +14,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-
+use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -26,8 +26,10 @@ sub new {
 
 	$self->{"modelKey"}    = PnlCreEnums->StepPnlCreator_PREVIEW ;
 	 
-	$self->{"settings"}->{"w"} = undef;
-	$self->{"settings"}->{"h"} = undef;
+	$self->{"settings"}->{"srcJobId"}              = undef;
+	$self->{"settings"}->{"panelJSON"}             = undef;
+	$self->{"settings"}->{"manualPlacementJSON"}   = undef;
+	$self->{"settings"}->{"manualPlacementStatus"} = EnumsGeneral->ResultType_NA;
 	 
 
 	return $self;
@@ -40,32 +42,62 @@ sub GetModelKey {
 
 }
 
-sub SetWidth {
+sub SetSrcJobId {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"srcJobId"} = $val;
+}
+
+sub GetSrcJobId {
 	my $self = shift;
 
-	$self->{"settings"}->{"w"} = shift;
+	return $self->{"settings"}->{"srcJobId"};
+}
+
+sub SetPanelJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"panelJSON"} = $val;
+}
+
+sub GetPanelJSON {
+	my $self = shift;
+
+	return $self->{"settings"}->{"panelJSON"};
+}
+
+sub SetManualPlacementJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementJSON"} = $val;
 
 }
 
-sub GetWidth {
+sub GetManualPlacementJSON {
 	my $self = shift;
 
-	return $self->{"settings"}->{"w"};
+	return $self->{"settings"}->{"manualPlacementJSON"};
 
 }
 
-sub SetHeight {
+sub SetManualPlacementStatus {
 	my $self = shift;
+	my $val  = shift;
 
-	$self->{"settings"}->{"h"} = shift;
+	$self->{"settings"}->{"manualPlacementStatus"} = $val;
 
 }
 
-sub GetHeight {
+sub GetManualPlacementStatus {
 	my $self = shift;
 
-	return $self->{"settings"}->{"h"};
+	return $self->{"settings"}->{"manualPlacementStatus"};
+
 }
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

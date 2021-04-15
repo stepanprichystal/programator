@@ -19,6 +19,9 @@ sub new {
 	my $self = shift;
 	$self = {};
 	bless $self;
+	
+	$self->{"__CLASS__"} = caller(); # for serialize/deserizlize purpose only
+	
 
 	# Integer InCam feature id
 	$self->{"id"} = undef;
@@ -80,6 +83,11 @@ sub new {
 
 	return $self;
 }
+
+ 
+ 
+# Allow serialiye class to JSON serialize class
+sub TO_JSON { return { %{ shift() } }; }
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

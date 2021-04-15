@@ -128,8 +128,14 @@ sub __OnManualPlacementHndl {
 		my $step = $creatorModel->GetStep();
 
 		# Remove steps
-		foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
-			CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} );
+		if (    $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
+			 || $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG
+			 || $creatorKey eq PnlCreEnums->StepPnlCreator_SET )
+		{
+
+			foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
+				CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} );
+			}
 		}
 
 		# Hide form
@@ -146,8 +152,6 @@ sub __OnManualPlacementHndl {
 		if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
 
 			my $JSON = $pnlToJSON->ParsePnlToJSON();
-
-			
 
 			if ( defined $JSON ) {
 
@@ -221,9 +225,12 @@ sub OnOtherPartCreatorSelChangedHndl {
 # Handler which catch change of selected creatores settings in other parts
 # Event is raised alwazs after AsyncCreatorProcess if specific part has active Preview
 sub OnOtherPartCreatorSettChangedHndl {
-	my $self       = shift;
-	my $partId     = shift;
-	my $creatorKey = shift;
+	my $self            = shift;
+	my $partId          = shift;
+	my $creatorKey      = shift;
+	my $creatorSettings = shift;    # creator model
+
+	my $currCreatorKey = $self->{"model"}->GetSelectedCreator();
 
 	if ( $partId eq Enums->Part_PNLSIZE ) {
 
@@ -235,6 +242,19 @@ sub OnOtherPartCreatorSettChangedHndl {
 
 			}
 		}
+
+	}
+
+	# Update creator Step Preview according Creator Size Preview
+	if ( $partId eq Enums->Part_PNLSIZE && $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+
+		# Update creator
+		my $model = $self->{"model"}->GetCreatorModelByKey( PnlCreEnums->StepPnlCreator_PREVIEW );
+
+		$model->SetSrcJobId( $creatorSettings->GetSrcJobId() );
+		$model->SetPanelJSON( $creatorSettings->GetPanelJSON() );
+
+		$self->{"form"}->SetCreators( [$model] );
 
 	}
 

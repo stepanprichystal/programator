@@ -27,8 +27,38 @@ use aliased 'Connectors::EnumsErrors';
 use aliased 'Packages::Exceptions::HeliosException';
 
 #-------------------------------------------------------------------------------------------#
-#  Package methods
+#  General SQL methods, for execute non reusable (specific) commands
 #-------------------------------------------------------------------------------------------#
+
+# Execute dataset
+sub CustomSQLExecuteDataset {
+	my $self   = shift;
+	my $cmd    = shift;    # string SQL cmd which include parameter keys from @params if any exist
+	my $params = shift;    # array of SqlParameter item
+
+	die "Sql command is not defined" if ( !defined $cmd || $cmd eq "" );
+
+	my @result = Helper->ExecuteDataSet( $cmd, $params );
+
+	return @result;
+}
+
+
+# Execute Scalaer
+sub CustomSQLExecuteScalar {
+	my $self  = shift;
+	my $cmd    = shift;    # string SQL cmd which include parameter keys from @params if any exist
+	my $params = shift;    # array of SqlParameter item
+	
+	die "Sql command is not defined" if ( !defined $cmd || $cmd eq "" );
+
+	return Helper->ExecuteScalar( $cmd, $params );
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Reusable SQL methods
+#-------------------------------------------------------------------------------------------#
+
 # Return lots of information from deska, zakazka,..
 # Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
 sub GetAllByPcbId {
@@ -1276,7 +1306,7 @@ sub UpdateNCInfo {
 sub UpdateNote {
 	my $self        = shift;
 	my $pcbId       = shift;
-	my $note      = shift;
+	my $note        = shift;
 	my $childThread = shift;
 
 	if ($childThread) {
@@ -1296,8 +1326,6 @@ sub UpdateNote {
 	}
 
 }
-
- 
 
 sub UpdateMaterialKind {
 	my $self        = shift;
@@ -1536,7 +1564,7 @@ sub UpdateOfferSpecification {
 
 		foreach my $par ( @{$params} ) {
 
-			my $resIn = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $par->[1],  $par->[0] );
+			my $resIn = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $par->[1], $par->[0] );
 
 			$res = 0 unless ($resIn);
 
@@ -2224,7 +2252,7 @@ sub GetPcbMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
 
@@ -2257,7 +2285,7 @@ sub GetPcbCoverlayMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
 
@@ -2290,7 +2318,7 @@ sub GetPcbStiffenerMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
 
@@ -2323,10 +2351,9 @@ sub GetPcbStiffenerAdhMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
-
 
 # Return information of tape flex material in PCB
 # Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
@@ -2357,10 +2384,9 @@ sub GetPcbTapeFlexMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
-
 
 # Return information of tape stiffener material in PCB
 # Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
@@ -2391,7 +2417,7 @@ sub GetPcbTapeStiffMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
 
@@ -2723,12 +2749,56 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Connectors::HeliosConnector::HegMethods';
 	use Data::Dump qw(dump);
 
-	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
+	#	my @matTop = HegMethods->GetPcbIdByCustomer("09674");
+	#
 	#	dump(@matTop);
 
-	my $mat = HegMethods->UpdateNote( "D290377-J2", "test");
+	my $pcbId = "d291442";
+	my @params = ( SqlParameter->new( "_PcbId", Enums->SqlDbType_VARCHAR, $pcbId ) );
 
-	dump($mat);
+	my $cmd = "select top 1
+				 d.poznamka_tpv
+				 from lcs.desky_22 d with (nolock)
+				  left outer join lcs.zakazky_dps_22_hlavicka z with (nolock) on z.deska=d.cislo_subjektu
+				 where d.reference_subjektu=_PcbId and  z.cislo_poradace = 22050";
+				 
+	my $customerInfo = HegMethods->GetCustomerInfo($pcbId);
+
+	if ( defined $customerInfo->{"reference_subjektu"} ) {
+
+		my @params = ();
+		push( @params, SqlParameter->new( "__CustReference", Enums->SqlDbType_VARCHAR, $customerInfo->{"reference_subjektu"} ) );
+
+		push( @params, SqlParameter->new( "__Poznamka1", Enums->SqlDbType_TEXT, "minul_%verz_" ) );
+		push( @params, SqlParameter->new( "__Poznamka2", Enums->SqlDbType_TEXT, "nov_%verz_" ) );
+		push( @params, SqlParameter->new( "__Poznamka3", Enums->SqlDbType_TEXT, "predchoz_%verz_" ) );
+		push( @params, SqlParameter->new( "__Poznamka4", Enums->SqlDbType_TEXT, "p_ede_l_%verz_" ) );
+		push( @params, SqlParameter->new( "__Poznamka5", Enums->SqlDbType_TEXT, "podle" ) );
+
+		my $cmd = "select distinct 
+					d.reference_subjektu AS pcbid,
+					d.nazev_subjektu AS pcbname,
+					c.nazev_subjektu,
+					c.reference_subjektu
+				 from lcs.desky_22 d with (nolock)
+				 	left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik
+					WHERE 
+				 	c.reference_subjektu = __CustReference AND
+				 	(
+				 		d.poznamka_tpv LIKE '%__Poznamka1%' OR
+				 		d.poznamka_tpv LIKE '%__Poznamka2%' OR
+				 		d.poznamka_tpv LIKE '%__Poznamka3%' OR
+				 		d.poznamka_tpv LIKE '%__Poznamka4%' OR
+				 		d.poznamka_tpv LIKE '%__Poznamka5%'
+	 	
+				 	)
+				 	 order by d.reference_subjektu desc";
+
+		my @matTop = HegMethods->CustomSQLExecuteDataset( $cmd, \@params );
+
+		dump(@matTop);
+	}
+
 	die;
 }
 

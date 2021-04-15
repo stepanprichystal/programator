@@ -146,11 +146,7 @@ sub _Process {
 
 	$self->_CreateStep($inCAM);
 
-	my $step = SRStep->new( $inCAM, $jobId, $self->GetStep() );
-
-	#	my %p = ("x"=> -10, "y" => -20);
-	$step->Edit( $self->GetWidth(),      $self->GetHeight(), $self->GetBorderTop(), $self->GetBorderBot(),
-				 $self->GetBorderLeft(), $self->GetBorderRight() );
+	
 
 	#	my $control = SRStep->new( $inCAM, $jobId, "test" );
 	#	my %p = ("x"=> 10, "y" => +10);
