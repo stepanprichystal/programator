@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- All individual parameters of a layer -->
+<job_layer id="0">
+  <categories>
+    <category>0</category>
+    <user_category/>
+  </categories>
+  <creation>
+    <mirror x="false" y="false"/>
+    <polarity>0</polarity>
+    <rotation_cw unit="Angle.Degree">0</rotation_cw>
+  </creation>
+  <process_parameters>
+    <fiducial_groups>
+      <fiducial_group>
+        <fiducial_id_global>54</fiducial_id_global>
+        <fiducial_id_local>0</fiducial_id_local>
+        <fiducials/>
+        <fiducials_default>
+          <fiducial>
+            <type>Global</type>
+          </fiducial>
+        </fiducials_default>
+      </fiducial_group>
+    </fiducial_groups>
+    <exposure>
+      <exposure_energy unit="RadiantExposure.MillijoulePerSquareCentimeter">0</exposure_energy>
+    </exposure>
+  </process_parameters>
+</job_layer>

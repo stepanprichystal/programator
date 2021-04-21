@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<jobconfig>
+	<data_type>1000</data_type>
+	
+	<!-- Definition of layer id for specific gerber files -->
+	<layer_names>
+	</layer_names>
+	<format_gerber />
+	<!-- ******************* -->
+	<!-- Global job settings -->
+	<!-- ******************* -->
+	<job>
+		<creation/>
+		<process_parameters>
+			<multi_table_sequential_usage>0</multi_table_sequential_usage>
+			<part_size x="0" y="0" z="0" unit="Length.Millimeter" />
+			<part_offset x="0" y="0" unit="Length.Millimeter" />
+			<slipsheet_size x="0" y="0" unit="Length.Millimeter" />
+		</process_parameters>
+		<traceability>
+			<active_data_set>1</active_data_set>
+			<trace_data_set id="1">
+				<batch_id>1234567</batch_id>
+				<job_id>1234567</job_id>
+			</trace_data_set>
+		</traceability>
+		<user_categories />
+	</job>
+	<!-- ******************************** -->
+	<!-- Common parameters for all layers -->
+	<!-- ******************************** -->
+	<job_layer>
+		<categories />
+		<creation>
+			<template_name></template_name>
+			<cropping_offset x="0" y="0" unit="Length.Millimeter" />
+			<cropping_size x="0" y="0" unit="Length.Millimeter" />
+			<exposure_area_reduction x="0" y="0" unit="Length.Micrometer" />
+		</creation>
+		<process_parameters>
+			<infinite_part_count>False</infinite_part_count>
+			<parts_remaining>1</parts_remaining>
+			<parts_total>1</parts_total>
+			<part_thickness unit="Length.Millimeter">0.17</part_thickness>
+			<exposure>
+				<led_power_ratio id="1">100</led_power_ratio>
+				<led_power_ratio id="2">100</led_power_ratio>
+				<led_power_ratio id="3">100</led_power_ratio>
+				<led_power_ratio id="4">100</led_power_ratio>
+				<led_power_ratio_mode>1</led_power_ratio_mode>
+			</exposure>
+			<registration>
+				<image_offset x="0" y="0" z="0" unit="Length.Millimeter" />
+				<force_global_registration_points_to_rectangle>False</force_global_registration_points_to_rectangle>
+				<scale_based_parts_global>1</scale_based_parts_global>
+				<scale_based_parts_local>1</scale_based_parts_local>
+				<scale_preset_local x="1" y="1" z="0" />
+				<scaling_mode_local>1</scaling_mode_local>
+				<share_fiducials_at_local_zones>False</share_fiducials_at_local_zones>
+				<scale_preset_global x="1" y="1" z="0" />
+				<scaling_mode_global>2</scaling_mode_global>
+			</registration>
+		</process_parameters>
+	</job_layer>
+	<!-- ***************************************** -->
+	<!-- Individual parameters for specific layers -->
+	<!-- ***************************************** -->
+</jobconfig>

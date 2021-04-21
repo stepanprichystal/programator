@@ -9,28 +9,53 @@
 use utf8;
 use strict;
 use warnings;
+use XML::LibXML;
 
-use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoExportTmp';
+my $jobL = "c:\\Export\\test\\Final\\script\\joblayer.xml";
 
-my $jobId = "f13609";
-my $inCAM = InCAM->new();
-my $lName = "footdown_" . $jobId;
+my $jobDoc  = XML::LibXML->load_xml( "location" => $jobL );
+my $eleml   = ( $jobDoc->findnodes('/job_layer') )[0];
+my $jobDoc2 = XML::LibXML->load_xml( "location" => $jobL );
+my $eleml2  = ( $jobDoc2->findnodes('/job_layer') )[0];
 
-if ( CamHelper->LayerExists( $inCAM, $jobId, $lName ) ) {
-	$inCAM->COM( "delete_layer", "layer" => $lName );
-}
+my $stcFile = "c:\\Export\\test\\Final\\script\\d315805c_mdi.jobconfig.xml";
 
-$inCAM->COM( 'create_layer', layer => $lName, context => 'misc', type => 'document', polarity => 'positive', ins_layer => '' );
- 
+my $doc = XML::LibXML->load_xml( "location" => $stcFile );
 
-# Draw helper scheme which clarify where should be placed woot downs
+#my $elem = ( $doc->findnodes('/jobconfig/data_type') )[0];
+#
+#$elem->removeChildNodes();
+#$elem->appendText('VAL2');
 
-$inCAM->COM(
-			 "display_layer",
-			 name    => $layer,
-			 display => "yes",
-			 number  => 2
-);
+my $jobconfig = ( $doc->findnodes('/jobconfig') )[-1];
 
-$inCAM->COM( "work_layer", name => $layer );
+$jobconfig->appendChild($eleml);
+$jobconfig->appendChild($eleml2);
+
+
+
+die;
+
+
+# $jobconfig->insertAfter( $eleml );
+#  my  $jobconfig2= ( $doc->findnodes('/jobconfig/job_layer') )[-1];
+#   $jobconfig2->addSibling( $eleml2 );
+#
+#
+#
+#my $outPath =  "c:\\Export\\test\\Final\\script\\out.xml";
+### save
+#open my $out, '>', $outPath;
+#binmode $out; # as above
+#$doc->toFH($out, 2);
+### or
+##print {$out} $doc->toString();
+#
+##use XML::LibXML::PrettyPrint;
+##
+##my $document = XML::LibXML->new->parse_file($outPath);
+##my $pp = XML::LibXML::PrettyPrint->new(indent_string => "  ");
+###$pp->pretty_print($document); # modified in-place
+###
+###
+##die;

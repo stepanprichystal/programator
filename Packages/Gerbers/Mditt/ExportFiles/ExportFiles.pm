@@ -10,7 +10,7 @@ use base('Packages::ItemResult::ItemEventMngr');
 use strict;
 use warnings;
 use File::Copy;
-use List::Util qw[max min];
+use List::Util qw[max min first];
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -66,6 +66,8 @@ sub new {
 
 	$self->{"pcbClass"} = CamJob->GetJobPcbClass( $self->{"inCAM"}, $self->{"jobId"} );
 
+	$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
+
 	# Get limits of fr, profile ===============
 
 	my %frLim = $self->__GetFrLimits();
@@ -82,7 +84,7 @@ sub new {
 		die "Dif file must exist when MDI data are exported.\n";
 	}
 
-	$self->{"mdiStep"} = "mdi_panel";
+	$self->{"mdiStep"} = "mditt_panel";
 
 	$self->{"fiducMark"} = FiducMark->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"units"} );
 
@@ -98,104 +100,122 @@ sub Run {
 	# delete old MDI files
 	$self->__DeleteOldFiles($layerTypes);
 
-	# Create fake layers for solder mask export (solder mask layer can be duplicated. Same data but different color)
-	#my @fakeL = Helper->CreateFakeLayers( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
-
 	# Get all layer for export
-	my @layers = $self->__GetLayers2Export($layerTypes);
+	my @lCouples = $self->__GetLayers2Export($layerTypes);
 
-	unless ( scalar(@layers) ) {
+	unless ( scalar(@lCouples) ) {
 		return 0;
 	}
 
-	$self->__CreateMDIStep( \@layers );
-	$self->__ExportLayers( \@layers );
-	$self->__DeleteMdiStep();
+	$self->__CreateMDIStep( [ map { @{$_} } @lCouples ] );
+	$self->__ExportLayers( \@lCouples );
 
-	# delete fake layers
-	#CamMatrix->DeleteLayer( $self->{"inCAM"}, $self->{"jobId"}, $_ ) foreach (@fakeL);
+	$self->__DeleteMdiStep();
 
 	return 1;
 }
 
 sub __ExportLayers {
-	my $self   = shift;
-	my @layers = @{ shift(@_) };
+	my $self     = shift;
+	my @lCouples = @{ shift(@_) };
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	foreach my $l (@layers) {
+	# Go through layer couples
+	foreach my $couples (@lCouples) {
 
-		CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
+		# new result item for layer couple
+		my $resultItem = $self->_GetNewItem( join( " + ", map { $_->{"gROWname"} } @{$couples} ) );
 
-		# new result item for lyer
-		my $resultItem = $self->_GetNewItem( $l->{"gROWname"} );
-
-		# get limits (define physic dimension) for layer
-		my %dataLim = $self->__GetLayerLimit( $l->{"gROWname"} );
+		my %dataLim = $self->__GetLayerLimit( $couples->[0]->{"gROWname"} );
 		my %pnlDim = ( "w" => $dataLim{"xMax"} - $dataLim{"xMin"}, "h" => $dataLim{"yMax"} - $dataLim{"yMin"} );
 
-		# 1) Find position of fiducial marks
-		my @fiducials = $self->__GetFiducials( $l->{"gROWname"}, \%dataLim );
+		$self->{"exportXml"}->Create( \%pnlDim );
 
-		# 1) Optimize layer (move layer data to zero + optimize levels)
-		$self->__OptimizeLayer( $l, \%dataLim );
+		# Go through Primary/Secondary layer
+		for ( my $i = 0 ; $i < scalar( @{$couples} ) ; $i++ ) {
 
-		# 2) insert frame 100µm width around pcb (fr frame coordinate)
-		$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%pnlDim );
+			my $l = $couples->[$i];
 
-		# 3) clip data by limits
-		$self->__ClipAreaLayer( $l->{"gROWname"}, \%pnlDim );
+			CamLayer->WorkLayer( $inCAM, $l->{"gROWname"} );
 
-		# 4) compensate layer by computed compensation
-		$self->__CompensateLayer( $l->{"gROWname"} );
+			# 1) Find position of fiducial marks
+			my @fiducials = $self->__GetFiducials( $l->{"gROWname"}, \%dataLim );
 
-		# 5) export gerbers
-		my $tmpFile = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
+			# 1) Optimize layer (move layer data to zero + optimize levels)
+			$self->__OptimizeLayer( $l, \%dataLim );
 
-		# 6) Add fiducial marks to gerber file
-		my $fiducDCode = $self->{"fiducMark"}->AddFiducialMarks( $tmpFile, \@fiducials );
+			# 2) insert frame 100µm width around pcb (fr frame coordinate)
+			$self->__PutFrameAorundPcb( $l->{"gROWname"}, \%pnlDim );
 
-		# 7) export xml
-		$self->{"exportXml"}->Export( $l, $fiducDCode, \%pnlDim );
+			# 3) clip data by limits
+			$self->__ClipAreaLayer( $l->{"gROWname"}, \%pnlDim );
 
-		# 8) Copy file to mdi folder after exportig xml template
-		my $fileName = $l->{"gROWname"};
+			# 4) compensate layer by computed compensation
+			$self->__CompensateLayer( $l->{"gROWname"} );
 
-		if ( $l->{"gROWname"} =~ /outer/ ) {
+			# 5) export gerbers
+			my $tmpFile = $self->__ExportGerberLayer( $l->{"gROWname"}, $resultItem );
 
-			# Convert outer signal layer name to standard layer name
-			$fileName = Helper->ConverOuterName2FileName( $l->{"gROWname"}, $self->{"layerCnt"} );
+			# 6) Add fiducial marks to gerber file
+			my $fiducDCode = $self->{"fiducMark"}->AddFiducialMarks( $tmpFile, \@fiducials );
 
-		}
-		elsif ( $l->{"gROWname"} =~ /^v\d+$/ ) {
+			#my $fiducDCode = 1;
 
-			my %lPars = JobHelper->ParseSignalLayerName( $l->{"gROWname"} );
+			# 7) Generate file name
+			my $fileName = $l->{"gROWname"};
 
-			my $p = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+			if ( $l->{"gROWname"} =~ /outer/ ) {
 
-			if ( $p->GetProductType() eq StackEnums->Product_PRESS ) {
+				# Convert outer signal layer name to standard layer name
+				$fileName = Helper->ConverOuterName2FileName( $l->{"gROWname"}, $self->{"layerCnt"} );
 
-				my $side = $self->{"stackup"}->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+			}
+			elsif ( $l->{"gROWname"} =~ /^v\d+$/ ) {
 
-				my $matL = $p->GetProductOuterMatLayer( $side eq "top" ? "first" : "last" )->GetData();
+				my %lPars = JobHelper->ParseSignalLayerName( $l->{"gROWname"} );
 
-				if ( $matL->GetType() eq StackEnums->MaterialType_COPPER && !$matL->GetIsFoil() ) {
+				my $p = $self->{"stackup"}->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
 
-					# Convert standard inner signal layer name to name "after press"
-					$fileName = Helper->ConverInnerName2AfterPressFileName($fileName);
+				if ( $p->GetProductType() eq StackEnums->Product_PRESS ) {
+
+					my $side = $self->{"stackup"}->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+					my $matL = $p->GetProductOuterMatLayer( $side eq "top" ? "first" : "last" )->GetData();
+
+					if ( $matL->GetType() eq StackEnums->MaterialType_COPPER && !$matL->GetIsFoil() ) {
+
+						# Convert standard inner signal layer name to name "after press"
+						$fileName = Helper->ConverInnerName2AfterPressFileName($fileName);
+					}
 				}
+
 			}
 
+			$fileName = "${jobId}${fileName}_mdi";
+
+			# 8) Add exposition settings for specific layers to XML
+			if ( $i == 0 ) {
+
+				$self->{"exportXml"}->AddPrimarySide( $l->{"gROWname"}, $fiducDCode, $fileName );
+			}
+			elsif ( $i == 1 ) {
+				$self->{"exportXml"}->AddSecondarySide( $l->{"gROWname"}, $fiducDCode, $fileName );
+			}
+
+			#9 ) Copy file to mdi folder after exportig xml template
+			my $finalName = EnumsPaths->Jobs_MDITT . $fileName . ".ger";
+			copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
+			unlink($tmpFile);
+
 		}
 
-		my $finalName = EnumsPaths->Jobs_PCBMDITT . $jobId . $fileName . "_mdi.ger";
-		copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
-		unlink($tmpFile);
+		$self->{"exportXml"}->Export();
 
 		#  reise result of export
 		$self->_OnItemResult($resultItem);
+
 	}
 }
 
@@ -210,35 +230,31 @@ sub __DeleteOldFiles {
 
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . '^[csv]\d*' );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . '^[csv]\d*' );
+		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . '^[csv]\d*' );
 
-		push( @file2del, ( @f, @f2 ) );
+		push( @file2del, @f );
 	}
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . "^m[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "^m[cs]_mdi" );
+		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "^m[cs]_mdi" );
 
-		push( @file2del, ( @f, @f2 ) );
+		push( @file2del, @f );
 	}
 
 	if ( $layerTypes->{ Enums->Type_PLUG } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . "^plg[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "^plg[cs]_mdi" );
+		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "^plg[cs]_mdi" );
 
-		push( @file2del, ( @f, @f2 ) );
+		push( @file2del, @f );
 
 	}
 
 	if ( $layerTypes->{ Enums->Type_GOLD } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . "^gold[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "^gold[cs]_mdi" );
+		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "^gold[cs]_mdi" );
 
-		push( @file2del, ( @f, @f2 ) );
+		push( @file2del, @f );
 
 	}
 
@@ -250,7 +266,8 @@ sub __DeleteOldFiles {
 
 }
 
-# Return which layers export by type
+# Return all layer couples (always TOP + BOT layer for semiproduct)
+# If only one layer exist (eg one sided PCB, it doesn't matter)
 sub __GetLayers2Export {
 	my $self       = shift;
 	my $layerTypes = shift;
@@ -262,28 +279,124 @@ sub __GetLayers2Export {
 
 	my @all = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
+	# Signal layers
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^(outer)?[csv]\d*$/ } @all;    # outer is for fake innera layers: v1outer, ..
-		push( @exportLayers, @l );
+		if ( $self->{"layerCnt"} <= 2 ) {
+
+			my @couple = grep { $_->{"gROWname"} =~ /^[cs]$/ } @all;
+
+			push( @exportLayers, \@couple );
+
+		}
+		else {
+
+			my @products = $self->{"stackup"}->GetAllProducts();
+
+			foreach my $p (@products) {
+
+				# Skip if producti is parent input product,
+				# - which doesn not contain any pressing
+				# - or doesn't contain Cu foil as outer layers (Cu foil must be not "empty")
+				if ( $p->GetProductType() eq StackEnums->Product_INPUT && $p->GetIsParent() ) {
+
+					my $matLTop = $p->GetProductOuterMatLayer("first")->GetData();
+					my $matLBot = $p->GetProductOuterMatLayer("last")->GetData();
+
+					if (
+						 scalar( $p->GetLayers() ) == 1
+						 || !(
+							      $matLTop->GetType() eq StackEnums->MaterialType_COPPER
+							   && $matLBot->GetType() eq StackEnums->MaterialType_COPPER
+							   && !$p->GetTopEmptyFoil()
+							   && !$p->GetBotEmptyFoil()
+						 )
+					  )
+					{
+						next;
+					}
+				}
+
+				my $topLName = JobHelper->BuildSignalLayerName( $p->GetTopCopperLayer(), $p->GetOuterCoreTop(), 0 );
+				my $botLName = JobHelper->BuildSignalLayerName( $p->GetBotCopperLayer(), $p->GetOuterCoreBot(), 0 );
+
+				my $topL = first { $_->{"gROWname"} =~ /^$topLName$/ } @all;
+				my $botL = first { $_->{"gROWname"} =~ /^$botLName$/ } @all;
+
+				push( @exportLayers, [ $topL, $botL ] );
+			}
+		}
 	}
 
+	# Solder mask layers
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?(flex)?$/ } @all;      # number 2 is second scilkscreeen and soldermask
-		push( @exportLayers, @l );
+		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?$/ } @all;    # number 2 is second soldermask
+
+		my @suffixes = ( "", "2" );                               #mask name suffix
+
+		foreach my $suff (@suffixes) {
+
+			my @l = grep { $_->{"gROWname"} =~ /^m[cs]$suff$/ } @l;
+
+			if ( scalar(@l) ) {
+
+				push( @exportLayers, \@l );
+			}
+		}
 	}
 
+	# Plugging layers
 	if ( $layerTypes->{ Enums->Type_PLUG } ) {
 
-		my @l = grep { $_->{"gROWname"} =~ /^plg[csv]\d*$/ } @all;
-		push( @exportLayers, @l );
+		if ( $self->{"layerCnt"} <= 2 ) {
+
+			my @couple = grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @all;
+
+			push( @exportLayers, \@couple );
+
+		}
+		else {
+
+			my @products = $self->{"stackup"}->GetAllProducts();
+
+			foreach my $p (@products) {
+
+				if ( $p->GetPlugging() ) {
+
+					my $topLName = JobHelper->BuildSignalLayerName( $p->GetTopCopperLayer(), 0, $p->GetPlugging() );
+					my $botLName = JobHelper->BuildSignalLayerName( $p->GetBotCopperLayer(), 0, $p->GetPlugging() );
+
+					my $topL = first { $_->{"gROWname"} =~ /^$topLName$/ } @all;
+					my $botL = first { $_->{"gROWname"} =~ /^$botLName$/ } @all;
+
+					push( @exportLayers, [ $topL, $botL ] );
+				}
+			}
+
+		}
 	}
 
+	# Gold layers
 	if ( $layerTypes->{ Enums->Type_GOLD } ) {
 
 		my @l = grep { $_->{"gROWname"} =~ /^gold[cs]$/ } @all;
-		push( @exportLayers, @l );
+
+		push( @exportLayers, \@l ) if ( scalar(@l) );
+	}
+
+	# Check if all couples has 1-2 layers
+
+	foreach my $couple (@exportLayers) {
+
+		my $lCnt = scalar( @{$couple} );
+
+		die "Wrong number of layers (min 1 max 2)" if ( $lCnt < 1 || $lCnt > 2 );
+
+		my @undef = grep { !defined $_ } @{$couple};
+
+		die "Layer is not defined " if ( scalar(@undef) );
+
 	}
 
 	return @exportLayers;
@@ -379,24 +492,39 @@ sub __GetFiducials {
 	# v - panel profile frame drilling
 	# v1 - core frame drilling
 
-	my $drillLayer = undef;
+	my $fiducLayer = undef;
 
 	if ( $layerName =~ /^((outer)|(plg))?v\d+$/ || $layerName =~ /^outer[cs]$/ ) {
 
-		$drillLayer = "v1";
+		$fiducLayer = "v1";
 
+	}
+	elsif (    ( $layerName =~ /^mc\d?$/ && CamHelper->LayerExists( $inCAM, $jobId, "c" ) && $self->{"pcbType"} ne EnumsGeneral->PcbType_NOCOPPER )
+			|| ( $layerName =~ /^ms\d?$/ && CamHelper->LayerExists( $inCAM, $jobId, "s" ) ) )
+	{
+
+		$fiducLayer = "c";
 	}
 	else {
 
-		$drillLayer = "v";
+		$fiducLayer = "v";
 	}
 
 	# 2) Choose proper 4 camera marks
 	my $f = Features->new();
-	$f->Parse( $inCAM, $jobId, $step, $drillLayer );
+	$f->Parse( $inCAM, $jobId, $step, $fiducLayer );
 
-	my @features =
-	  grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_((IN)|(2V))$/ } $f->GetFeatures();
+	my @features = undef;
+
+	if ( $layerName =~ /^m[cs]\d?$/ ) {
+		@features = grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^score_fiducial$/ && $_->{"polarity"} eq "P" }
+		  $f->GetFeatures();
+	}
+	else {
+
+		@features =
+		  grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^OLEC_otvor_((IN)|(2V))$/ } $f->GetFeatures();
+	}
 
 	my $useCut = ( $layerName =~ /^gold[cs]$/ && CamAttributes->GetJobAttrByName( $inCAM, $jobId, "technology_cut" ) !~ /no/i ) ? 1 : 0;
 
@@ -409,7 +537,7 @@ sub __GetFiducials {
 	if ( $layerName =~ /^(plg)?v\d+$/ && $self->{"stackup"}->GetSequentialLam() ) {
 
 		my %lPars = JobHelper->ParseSignalLayerName($layerName);
-	
+
 		if ( $self->{"stackup"}->GetCuLayer( $lPars{"sourceName"} )->GetIsFoil() ) {
 
 			@features = grep { $_->{"att"}->{".pnl_place"} =~ /-SL-/i } @features;
@@ -421,7 +549,7 @@ sub __GetFiducials {
 	}
 
 	# There are 4-6 (2 extra top marks when cut panel) marks
-	die "All fiducial marks (four marks, attribut: OLEC_otvor_<IN/2V>) were not found in layer: $drillLayer" if ( scalar(@features) < 4 );
+	die "All fiducial marks (four marks) were not found in layer: $fiducLayer" if ( scalar(@features) < 4 );
 
 	# Take position and sort them: lefttop; right-top; right-bot; left-bot
 	my @fiducials = ();
@@ -437,10 +565,10 @@ sub __GetFiducials {
 	my $fRB = ( grep { $_->{"att"}->{".pnl_place"} =~ /right-bot$/i } @features )[0];
 	my $fLB = ( grep { $_->{"att"}->{".pnl_place"} =~ /left-bot$/i } @features )[0];
 
-	die "OLEC fiducial mark left-top was not found"  if ( !defined $fLT );
-	die "OLEC fiducial mark right-top was not found" if ( !defined $fRT );
-	die "OLEC fiducial mark right-top was not found" if ( !defined $fRB );
-	die "OLEC fiducial mark left-bot was not found"  if ( !defined $fLB );
+	die "Fiducial mark left-top was not found"  if ( !defined $fLT );
+	die "Fiducial mark right-top was not found" if ( !defined $fRT );
+	die "Fiducial mark right-top was not found" if ( !defined $fRB );
+	die "Fiducial mark left-bot was not found"  if ( !defined $fLB );
 
 	push( @fiducials, { "x" => $fLT->{"x1"}, "y" => $fLT->{"y1"} } );                         # left-top
 	push( @fiducials, { "x" => $fRT->{"x1"}, "y" => $fRT->{"y1"} } );                         # right-top
@@ -640,24 +768,25 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d315805";
+	my $jobId    = "d314333";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
+
 	FakeLayers->CreateFakeLayers( $inCAM, $jobId, undef, 1 );
 
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
-				 Enums->Type_SIGNAL => "1",
-				 Enums->Type_MASK   => "0",
+				 Enums->Type_SIGNAL => "0",
+				 Enums->Type_MASK   => "1",
 				 Enums->Type_PLUG   => "0",
 				 Enums->Type_GOLD   => "0"
 	);
 
 	$export->Run( \%type );
 
-	FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
+	#FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
 
 }
 

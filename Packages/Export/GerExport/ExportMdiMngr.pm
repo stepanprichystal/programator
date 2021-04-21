@@ -15,8 +15,8 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums';
 use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
+use aliased 'Packages::Gerbers::Mditt::ExportFiles::ExportFiles' => "ExportFilesTT";
 use aliased 'CamHelpers::CamJob';
-
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,17 +42,33 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $export = ExportFiles->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
-	$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
+	{
+		my $export = ExportFiles->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
+		$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
 
-	my %types = (
-				  Enums->Type_SIGNAL => $self->{"mdiInfo"}->{"exportSignal"},
-				  Enums->Type_MASK   => $self->{"mdiInfo"}->{"exportMask"},
-				  Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"},
-				  Enums->Type_GOLD   => $self->{"mdiInfo"}->{"exportGold"}
-	);
+		my %types = (
+					  Enums->Type_SIGNAL => $self->{"mdiInfo"}->{"exportSignal"},
+					  Enums->Type_MASK   => $self->{"mdiInfo"}->{"exportMask"},
+					  Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"},
+					  Enums->Type_GOLD   => $self->{"mdiInfo"}->{"exportGold"}
+		);
 
-	$export->Run( \%types );
+		$export->Run( \%types );
+	}
+
+	{
+		my $export = ExportFilesTT->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
+		$export->{"onItemResult"}->Add( sub { $self->__OnExportLayerTT(@_) } );
+
+		my %types = (
+					  Enums->Type_SIGNAL => $self->{"mdiInfo"}->{"exportSignal"},
+					  Enums->Type_MASK   => $self->{"mdiInfo"}->{"exportMask"},
+					  Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"},
+					  Enums->Type_GOLD   => $self->{"mdiInfo"}->{"exportGold"}
+		);
+
+		$export->Run( \%types );
+	}
 
 	return 1;
 }
@@ -62,6 +78,16 @@ sub __OnExportLayer {
 	my $item = shift;
 
 	$item->SetGroup("Mdi data");
+
+	$self->{"onItemResult"}->Do($item);
+}
+
+
+sub __OnExportLayerTT {
+	my $self = shift;
+	my $item = shift;
+
+	$item->SetGroup("Mdi data TT");
 
 	$self->{"onItemResult"}->Do($item);
 }

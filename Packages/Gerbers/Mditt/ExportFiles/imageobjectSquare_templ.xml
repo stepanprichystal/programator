@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<image_object>
+	<name>TPV copper square 3mm</name>
+	<type>Square</type>
+	<tolerance lower_tolerance_factor="" upper_tolerance_factor="" iterations="" lower_tolerance_factor_change="" upper_tolerance_factor_change="" />
+	<image_acquisition_object_search_params id="1">
+		<type>IAOSP1</type>
+		<acceptance_level>0.7</acceptance_level>
+		<object_polarity>Dark</object_polarity>
+		<search_window>
+			<position x="0" y="0" z="0" unit="Length.Millimeter" />
+			<size x="0" y="0" z="0" unit="Length.Millimeter" />
+		</search_window>
+		<camera>
+			<exposure_time unit="TimeSpan.Millisecond">3</exposure_time>
+		</camera>
+		<camera_light>
+			<color a="1" r="255" g="0" b="0" />
+		</camera_light>
+	</image_acquisition_object_search_params>
+	<square>
+		<length_unit>Millimeter</length_unit>
+		<rotation_angle_mp unit="Angle.Degree">0</rotation_angle_mp>
+		<length>3</length>
+	</square>
+</image_object>
