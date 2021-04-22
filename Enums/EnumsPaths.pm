@@ -35,6 +35,7 @@ use constant {
 	Jobs_STACKUPS        => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_slozeni\\",
 	Jobs_COUPONS         => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_InStackCoupon\\",
 	Jobs_PCBMDI          => "\\\\gatema.cz\\fs\\r\\pcb\\mdi\\",
+	Jobs_PCBMDITT          => "\\\\gatema.cz\\fs\\r\\pcb\\mditt\\",
 	Jobs_MDI             => "\\\\gatema.cz\\fs\\r\\mdi\\",
 	Jobs_MDITT           => "\\\\gatema.cz\\fs\\r\\mditt\\",
 	Jobs_JETPRINT        => "\\\\gatema.cz\\fs\\r\\potisk\\",

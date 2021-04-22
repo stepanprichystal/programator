@@ -260,7 +260,7 @@ sub __GetPcb2Export {
 
 					# chek if exist relevant gerber file
 					my $gerFile = $xmlFile;
-					$gerFile =~ s/\.xml/\.ger/;
+					$gerFile =~ s/\.jobconfig\.xml/\.ger/;
 
 					unless ( -e $gerFile ) {
 						push( @pcb2Export, $jobId );

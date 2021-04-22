@@ -229,7 +229,7 @@ sub Export {
 
 			$primaryXML = $gerName . ".jobconfig.xml";
 
-			$finalFile = EnumsPaths->Jobs_MDITT . $primaryXML;
+			$finalFile = EnumsPaths->Jobs_PCBMDITT . $primaryXML;
 
 			my $xmlString = $self->{"jobConfigXML"}->toString();
 
@@ -248,7 +248,7 @@ sub Export {
 			# export secondary reference XML
 			die "Primart xml file name is not defined" unless ( defined $primaryXML );
 
-			$finalFile = EnumsPaths->Jobs_MDITT . $gerName . ".jobconfig.xml";
+			$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig.xml";
 
 			my $templPath = GeneralHelper->Root() . "\\Packages\\Gerbers\\Mditt\\ExportFiles\\jobconfigsec_templ.xml";
 			$self->{"jobConfigXML"} = XML::LibXML->load_xml( "location" => $templPath );
@@ -353,7 +353,7 @@ sub __AddJobLayerSett {
 	$elPolarity->appendText($polarity);
 
 	# Set exposure energy
-	my $energy = 25;    # Default energy for resist = 25
+	my $energy = 47;    # Default energy for resist = 25
 
 	if ( $layerName =~ /^m[cs]2?$/ ) {
 

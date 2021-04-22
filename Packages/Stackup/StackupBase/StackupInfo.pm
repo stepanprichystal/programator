@@ -37,41 +37,41 @@ sub new {
 	return $self;
 }
 
-
-
 # open all files to avoid repeated opening files
 sub __LoadInfoFiles {
 	my $self = shift;
+
 	#my $multicalPath    = shift;
 
 	#my $fname2 = FileHelper->ChangeEncoding( GeneralHelper->Root()."\\Resources\\ml.xml", "utf8", "utf8" );
 	#my $strfMultical = FileHelper->ReadAsString( EnumsPaths->Client_INCAMTMPOTHER . $fname2 );
-	
- 
- 	# File ml.xml has to be in  8utf8
-	my $multicalDb = EnumsPaths->InCAM_TPVApp."\\Multical6-1\\ml.xml";
-	my $strfMultical = FileHelper->ReadAsString( $multicalDb);
- 
 
-	$strfMultical =~ s/\xC2//g; # remove 	latin capital letter a with circumflex from string
- 
+	# File ml.xml has to be in  8utf8
+	my $multicalDb   = EnumsPaths->InCAM_TPVApp . "\\Multical6-1\\ml.xml";
+	my $strfMultical = FileHelper->ReadAsString($multicalDb);
+
+	$strfMultical =~ s/\xC2//g;    # remove 	latin capital letter a with circumflex from string
+
 	my $xml = XMLin( $strfMultical, KeyAttr => { quality => 'id' } );
 	$self->{"multicalInfo"} = $xml;
- 
+
 }
 
 #Return dictionary with core info by id's
 sub GetCoreInfo {
 	my $self = shift;
-	my $qId  = shift;    #core quality id
-	my $id   = shift;    #core id
+	my $qId  = shift;              #core quality id
+	my $id   = shift;              #core id
 
-#	my $xml = XMLin(
-#		$fStr,
-#
-#		#ForceArray => ,
-#		KeyAttr => { quality => 'id' },
-#	);
+	die "UDA qId is not defined" unless ( defined $qId );
+	die "UDA id is not defined"  unless ( defined $id );
+
+	#	my $xml = XMLin(
+	#		$fStr,
+	#
+	#		#ForceArray => ,
+	#		KeyAttr => { quality => 'id' },
+	#	);
 
 	my $xml = $self->{"multicalInfo"};
 
@@ -99,6 +99,8 @@ sub GetCopperInfo {
 	my $self = shift;
 	my $id   = shift;    #prepreg id
 
+	die "UDA Id is not defined" unless ( defined $id );
+
 	#my $xml = XMLin( $fStr, KeyAttr => { quality => 'id' }, );
 
 	my $xml = $self->{"multicalInfo"};
@@ -123,13 +125,16 @@ sub GetPrepregInfo {
 	my $id         = shift;    #prepreg id
 	my $realThicks = shift;
 
+	die "UDA qId is not defined" unless ( defined $qId );
+	die "UDA id is not defined"  unless ( defined $id );
+
 	#my $xml = XMLin(
 	#	$fStr,
 	#
 	#	#ForceArray => ,
 	#	KeyAttr => { quality => 'id' },
 	#);
-	
+
 	my $xml = $self->{"multicalInfo"};
 
 	my $prepreg = $xml->{prepreg};
@@ -154,7 +159,6 @@ sub GetPrepregInfo {
 		}
 	}
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

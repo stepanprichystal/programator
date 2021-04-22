@@ -205,7 +205,7 @@ sub __ExportLayers {
 			}
 
 			#9 ) Copy file to mdi folder after exportig xml template
-			my $finalName = EnumsPaths->Jobs_MDITT . $fileName . ".ger";
+			my $finalName = EnumsPaths->Jobs_PCBMDITT . $fileName . ".ger";
 			copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
 			unlink($tmpFile);
 
@@ -224,37 +224,41 @@ sub __DeleteOldFiles {
 	my $self       = shift;
 	my $layerTypes = shift;
 
-	my $jobId = $self->{"jobId"};
+my $jobId = $self->{"jobId"};
 
 	my @file2del = ();
 
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . '^[csv]\d*' );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . '^[csv]\d*' );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . '^[csv]\d*' );
 
-		push( @file2del, @f );
+		push( @file2del, ( @f, @f2 ) );
 	}
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "^m[cs]_mdi" );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . "^m[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "^m[cs]_mdi" );
 
-		push( @file2del, @f );
+		push( @file2del, ( @f, @f2 ) );
 	}
 
 	if ( $layerTypes->{ Enums->Type_PLUG } ) {
 
-		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "^plg[cs]_mdi" );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . "^plg[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "^plg[cs]_mdi" );
 
-		push( @file2del, @f );
+		push( @file2del, ( @f, @f2 ) );
 
 	}
 
 	if ( $layerTypes->{ Enums->Type_GOLD } ) {
 
-		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "^gold[cs]_mdi" );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . "^gold[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "^gold[cs]_mdi" );
 
-		push( @file2del, @f );
+		push( @file2del, ( @f, @f2 ) );
 
 	}
 
