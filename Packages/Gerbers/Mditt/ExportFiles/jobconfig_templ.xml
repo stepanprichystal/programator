@@ -39,9 +39,9 @@
 		</creation>
 		<process_parameters>
 			<infinite_part_count>False</infinite_part_count>
-			<parts_remaining>1</parts_remaining>
-			<parts_total>1</parts_total>
-			<part_thickness unit="Length.Millimeter">0.17</part_thickness>
+			<parts_remaining></parts_remaining>
+			<parts_total></parts_total>
+			<part_thickness unit="Length.Millimeter"></part_thickness>
 			<exposure>
 				<led_power_ratio id="1">100</led_power_ratio>
 				<led_power_ratio id="2">100</led_power_ratio>

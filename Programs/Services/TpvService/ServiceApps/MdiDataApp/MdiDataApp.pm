@@ -27,13 +27,13 @@ use aliased 'Enums::EnumsApp';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::Enums';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums'  => 'MdiEnums';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper' => 'MdiHelper';
+use aliased 'Packages::Gerbers::Mditt::ExportFiles::Enums'  => 'MdiEnums';
+use aliased 'Packages::Gerbers::Mditt::ExportFiles::Helper' => 'MdiHelper';
 use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
+use aliased 'Packages::Gerbers::Mditt::ExportFiles::ExportFiles';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Packages::TifFile::TifFile::TifFile';
 use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -234,8 +234,8 @@ sub __GetPcb2Export {
 	my @pcbInProduc = $self->__GetPcbsInProduc();
 
 	# all files from MDI folder
-	my @xmlAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.xml' );
-	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.ger' );
+	my @xmlAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, '.xml' );
+	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, '.ger' );
 
 	foreach my $jobId (@pcbInProduc) {
 
@@ -272,8 +272,8 @@ sub __GetPcb2Export {
 	}
 
 	# limit if more than 30jobs, in order don't block  another service apps
-	if ( scalar(@pcb2Export) > 30 ) {
-		@pcb2Export = @pcb2Export[ 0 .. 29 ];    # oricess max 30 jobs
+	if ( scalar(@pcb2Export) > 10 ) {
+		@pcb2Export = @pcb2Export[ 0 .. 9 ];    # oricess max 9 jobs
 	}
 
 	return @pcb2Export;

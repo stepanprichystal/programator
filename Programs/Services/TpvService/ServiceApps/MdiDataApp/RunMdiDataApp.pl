@@ -24,11 +24,11 @@ my $jobId    = "d264450";
 
 my $app = App->new();
 
-#my $inCAM    = InCAM->new();
+my $inCAM    = InCAM->new();
 
-#$inCAM->SupressToolkitException(1);
+$inCAM->SupressToolkitException(1);
 
-#$app->{"inCAM"} = $inCAM;
+$app->{"inCAM"} = $inCAM;
 
 $app->Run();
 
