@@ -56,19 +56,19 @@ sub Run {
 		$export->Run( \%types );
 	}
 
-	{
-		my $export = ExportFilesTT->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
-		$export->{"onItemResult"}->Add( sub { $self->__OnExportLayerTT(@_) } );
-
-		my %types = (
-					  Enums->Type_SIGNAL => $self->{"mdiInfo"}->{"exportSignal"},
-					  Enums->Type_MASK   => $self->{"mdiInfo"}->{"exportMask"},
-					  Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"},
-					  Enums->Type_GOLD   => $self->{"mdiInfo"}->{"exportGold"}
-		);
-
-		$export->Run( \%types );
-	}
+#	{
+#		my $export = ExportFilesTT->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
+#		$export->{"onItemResult"}->Add( sub { $self->__OnExportLayerTT(@_) } );
+#
+#		my %types = (
+#					  Enums->Type_SIGNAL => $self->{"mdiInfo"}->{"exportSignal"},
+#					  Enums->Type_MASK   => $self->{"mdiInfo"}->{"exportMask"},
+#					  Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"},
+#					  Enums->Type_GOLD   => $self->{"mdiInfo"}->{"exportGold"}
+#		);
+#
+#		$export->Run( \%types );
+#	}
 
 	return 1;
 }
