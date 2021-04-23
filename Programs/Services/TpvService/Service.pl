@@ -27,6 +27,7 @@ use aliased 'Helpers::FileHelper';
 # applications
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp';
+use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataAppOld';
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::JetprintDataApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
@@ -169,6 +170,9 @@ sub __GetApp {
 	elsif ( $appName eq EnumsApp->App_MDIDATA ) {
 
 		$app = MdiDataApp->new();
+	}	elsif ( $appName eq EnumsApp->App_MDIDATAOLD ) {
+
+		$app = MdiDataAppOld->new();
 	}
 	elsif ( $appName eq EnumsApp->App_ARCHIVEJOBS ) {
 

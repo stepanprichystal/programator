@@ -353,7 +353,7 @@ sub __AddJobLayerSett {
 	$elPolarity->appendText($polarity);
 
 	# Set exposure energy
-	my $energy = 47;    # Default energy for resist = 25
+	my $energy = 27;    # Default energy for resist = 25
 
 	if ( $layerName =~ /^m[cs]2?$/ ) {
 
@@ -457,8 +457,8 @@ sub __AddFiducCircle {
 		# When tenting, fiducial holes are plated => smaller
 		if ( $etchingTIF eq "tenting" ) {
 			$diameter               = 2.87;
-			$upper_tolerance_factor = 0.1;
-			$lower_tolerance_factor = -0.1;
+			$upper_tolerance_factor = 0.075;
+			$lower_tolerance_factor = -0.75;
 
 		}
 		else {
@@ -466,8 +466,8 @@ sub __AddFiducCircle {
 			# When pattern + flash, fiducial holes are plated => smaller
 			if ( $self->{"nifFile"}->GetValue("flash") > 0 ) {
 				$diameter               = 2.87;
-				$upper_tolerance_factor = 0.08;
-				$lower_tolerance_factor = -0.08;
+				$upper_tolerance_factor = 0.075;
+				$lower_tolerance_factor = -0.075;
 
 			}
 			else {

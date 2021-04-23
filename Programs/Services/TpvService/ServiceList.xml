@@ -9,6 +9,7 @@
    <app name="checkReorder" 	active="1" repeat="0.5" night="0" />
    <app name="processReorder" 	active="1" repeat="1" night="0" />
    <app name="mdiData" 			active="1" repeat="5" night="0" />
+   <app name="mdiDataOld" 			active="1" repeat="60" night="0" />
    <app name="jetprintData" 	active="1" repeat="60" night="0" />
    <app name="checkElTests" 	active="0" repeat="60" night="0" />
    <app name="ETKooper" 		active="1" repeat="480" night="0" />
