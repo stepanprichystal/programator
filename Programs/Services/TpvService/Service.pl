@@ -27,7 +27,7 @@ use aliased 'Helpers::FileHelper';
 # applications
 use aliased 'Programs::Services::TpvService::ServiceApps::CheckReorderApp::CheckReorderApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ProcessReorderApp::ProcessReorderApp';
-use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataAppOld';
+use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataAppOld::MdiDataApp' => 'MdiDataAppOld' ;
 use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::JetprintDataApp::JetprintDataApp';
 use aliased 'Programs::Services::TpvService::ServiceApps::ArchiveJobsApp::ArchiveJobsApp';
