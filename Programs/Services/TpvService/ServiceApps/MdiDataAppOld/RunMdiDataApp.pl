@@ -18,7 +18,7 @@ use PackagesLib;
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'Packages::InCAM::InCAM';
-use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataApp::MdiDataApp' => "App";
+use aliased 'Programs::Services::TpvService::ServiceApps::MdiDataAppOld::MdiDataApp' => "App";
  
 my $jobId    = "d264450";
 

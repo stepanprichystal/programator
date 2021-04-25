@@ -24,7 +24,6 @@ use aliased 'Helpers::FileHelper';
 sub GetFreeEditorLicense {
 	my $self  = shift;
 	my $inCAM = shift;
- 
 
 	my $free = 0;
 
@@ -33,23 +32,26 @@ sub GetFreeEditorLicense {
 	my $res = $inCAM->COM( "license", "op" => "Usage", "out_file" => $p );
 
 	my @lines = @{ FileHelper->ReadAsLines($p) };
-	
-	if(-e $p){
+
+	if ( -e $p ) {
 		unlink($p);
 	}
 
 	my ( $cur, $max ) = undef;
 
-	
 	foreach (@lines) {
-		if ( $_ =~ m/gedit64\s*(\d+)\s*(\d+)/ ) {
+
+		#		if ( $_ =~ m/gedit64\s*(\d+)\s*(\d+)/ ) {
+		#			$cur = $1;
+		#			$max = $2;
+		#			last;
+		#		}
+		if ( $_ =~ m/incamfl\s*(\d+)\s*(\d+)/ ) {
 			$cur = $1;
 			$max = $2;
 			last;
 		}
 	}
-	
-	 
 
 	if ( defined $cur && defined $max ) {
 
@@ -76,11 +78,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $jobId    = "f13608";
 	my $stepName = "panel";
 
-	my $num = CamEditor->GetFreeEditorLicense( $inCAM);
+	my $num = CamEditor->GetFreeEditorLicense($inCAM);
 
 	print $num;
 
-	 
 }
 
 1;

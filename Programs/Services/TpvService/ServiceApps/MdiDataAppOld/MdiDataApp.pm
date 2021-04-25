@@ -45,7 +45,7 @@ use aliased 'Packages::Export::PreExport::FakeLayers';
 sub new {
 	my $class = shift;
 
-	my $appName = EnumsApp->App_MDIDATA;
+	my $appName = EnumsApp->App_MDIDATAOLD;
 	my $self = $class->SUPER::new( $appName, @_ );
 
 	#my $self = {};
