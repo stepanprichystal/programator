@@ -41,16 +41,16 @@ sub GetFreeEditorLicense {
 
 	foreach (@lines) {
 
-		#		if ( $_ =~ m/gedit64\s*(\d+)\s*(\d+)/ ) {
-		#			$cur = $1;
-		#			$max = $2;
-		#			last;
-		#		}
-		if ( $_ =~ m/incamfl\s*(\d+)\s*(\d+)/ ) {
-			$cur = $1;
-			$max = $2;
-			last;
-		}
+				if ( $_ =~ m/gedit64\s*(\d+)\s*(\d+)/i ) {
+					$cur = $1;
+					$max = $2;
+					last;
+				}
+#		if ( $_ =~ m/incamfl\s*(\d+)\s*(\d+)/ ) {
+#			$cur = $1;
+#			$max = $2;
+#			last;
+#		}
 	}
 
 	if ( defined $cur && defined $max ) {
