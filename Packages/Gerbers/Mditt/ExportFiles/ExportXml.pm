@@ -236,9 +236,9 @@ sub Export {
 			$xmlString =~ s/></>\n</gi;
 
 			FileHelper->WriteString( $finalFile, $xmlString );
- 
+
 			# create new   XML::Tidy object by loading:  MainFile.xml
-			my $tidy_obj = XML::Tidy->new( 'filename' => $finalFile);
+			my $tidy_obj = XML::Tidy->new( 'filename' => $finalFile );
 			$tidy_obj->tidy("tab");
 			$tidy_obj->write();
 
@@ -476,6 +476,15 @@ sub __AddFiducCircle {
 				$lower_tolerance_factor = -0.06;
 			}
 		}
+	}
+
+	# Solder mask layer mc, ms, mcflex, msflex
+	elsif ( $layerName =~ /^m[cs]2?$/ ) {
+		
+		$diameter               = 2.85;
+		$upper_tolerance_factor = 0.08;
+		$lower_tolerance_factor = -0.08;
+
 	}
 
 	# Plug hole layers, gold connector layers

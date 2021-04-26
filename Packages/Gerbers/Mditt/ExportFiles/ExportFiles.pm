@@ -224,7 +224,7 @@ sub __DeleteOldFiles {
 	my $self       = shift;
 	my $layerTypes = shift;
 
-my $jobId = $self->{"jobId"};
+	my $jobId = $self->{"jobId"};
 
 	my @file2del = ();
 
@@ -520,7 +520,7 @@ sub __GetFiducials {
 
 	my @features = undef;
 
-	if ( $layerName =~ /^m[cs]\d?$/ ) {
+	if ( $fiducLayer eq "c" ) {
 		@features = grep { defined $_->{"att"}->{".geometry"} && $_->{"att"}->{".geometry"} =~ /^score_fiducial$/ && $_->{"polarity"} eq "P" }
 		  $f->GetFeatures();
 	}
@@ -772,7 +772,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d314333";
+	my $jobId    = "d318060";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
