@@ -458,7 +458,7 @@ sub __AddFiducCircle {
 		if ( $etchingTIF eq "tenting" ) {
 			$diameter               = 2.87;
 			$upper_tolerance_factor = 0.075;
-			$lower_tolerance_factor = -0.75;
+			$lower_tolerance_factor = -0.075;
 
 		}
 		else {

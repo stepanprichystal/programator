@@ -6,36 +6,74 @@
 #-------------------------------------------------------------------------------------------#
 
 #3th party library
-use utf8;
 use strict;
 use warnings;
-use XML::LibXML;
+use Path::Tiny qw(path);
+use Log::Log4perl qw(get_logger :levels);
 
-my $jobL = "c:\\Export\\test\\Final\\script\\joblayer.xml";
+use aliased "Enums::EnumsPaths";
 
-my $jobDoc  = XML::LibXML->load_xml( "location" => $jobL );
-my $eleml   = ( $jobDoc->findnodes('/job_layer') )[0];
-my $jobDoc2 = XML::LibXML->load_xml( "location" => $jobL );
-my $eleml2  = ( $jobDoc2->findnodes('/job_layer') )[0];
+my $p = EnumsPaths->Jobs_MDITT;
 
-my $stcFile = "c:\\Export\\test\\Final\\script\\d315805c_mdi.jobconfig.xml";
+#my $p  = "c:\\Export\\test\\test\\";
 
-my $doc = XML::LibXML->load_xml( "location" => $stcFile );
+my $dir;
+opendir( $dir, $p ) or die $!;
 
-#my $elem = ( $doc->findnodes('/jobconfig/data_type') )[0];
+my $exist = 0;
+
+my $i = 0;
+my $total = 0;
+while ( my $filename = readdir($dir) ) {
+
+	next unless($filename =~ /joblayer\.xml/);
+	
+	
+		my $file = path($p.$filename);
+
+		my $data = $file->slurp_utf8;
+
+			#lower_tolerance_factor="-0.75"
+
+		if ( $data =~ /lower_tolerance_factor="-0.75"/ ) {
+			
+			$data =~ s/lower_tolerance_factor="-0.75"/lower_tolerance_factor="-0.075"/i;
+			
+		 
+			$file->spew_utf8($data);
+			
+			$i++;
+			
+			print "$i: ".$file."\n";
+		}
+
+	$total++;
+
+}
+
+print "Total:".$total;
+
+#	foreach my $filename (@xmlFiles) {
 #
-#$elem->removeChildNodes();
-#$elem->appendText('VAL2');
+#		$logger->debug("update file: $filename");
+#
+#		my $file = path($filename);
+#
+#		my $data = $file->slurp_utf8;
+#
+#		if ( $data =~ /(<parts_remaining>)(\d*)(<\/parts_remaining>)/ ) {
+#			$logger->debug("parts_remaining found ok");
+#		}
+#
+#		$data =~ s/(<parts_remaining>)(\d*)(<\/parts_remaining>)/$1$parts$3/i;
+#		$data =~ s/(<parts_total>)(\d*)(<\/parts_total>)/$1$parts$3/i;
+#		$file->spew_utf8($data);
+#
+#	}
 
-my $jobconfig = ( $doc->findnodes('/jobconfig') )[-1];
-
-$jobconfig->appendChild($eleml);
-$jobconfig->appendChild($eleml2);
-
-
+1;
 
 die;
-
 
 # $jobconfig->insertAfter( $eleml );
 #  my  $jobconfig2= ( $doc->findnodes('/jobconfig/job_layer') )[-1];
