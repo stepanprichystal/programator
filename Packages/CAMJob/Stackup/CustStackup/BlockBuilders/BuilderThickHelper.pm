@@ -94,7 +94,7 @@ sub GetRequiredThick {
 		}
 		else {
 
-			$t = "*";
+			$t = "**";
 		}
 	}
 

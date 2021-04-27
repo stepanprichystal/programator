@@ -24,6 +24,7 @@ use constant {
 	Type_GRAFIT => "typeGrafitPaste",
 	Type_VIAFILL => "typeViaFill",
 	Type_STIFFENER => "typeStiffener",
+	Type_STIFFDEPTHNC => "typeStiffDepthNc",
 	Type_TAPEBACK => "typeTapeBack",
 	Type_TAPE => "typeTape",
 };

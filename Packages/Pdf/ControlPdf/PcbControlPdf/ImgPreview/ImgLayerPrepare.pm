@@ -133,6 +133,7 @@ sub __PrepareLayers {
 		$self->__PrepareNPLTDEPTHNC($l)   if ( $l->GetType() eq Enums->Type_NPLTDEPTHNC );
 		$self->__PrepareNPLTTHROUGHNC($l) if ( $l->GetType() eq Enums->Type_NPLTTHROUGHNC );
 		$self->__PrepareSTIFFENER($l)     if ( $l->GetType() eq Enums->Type_STIFFENER );
+		$self->__PrepareSTIFFDEPTHNC($l)  if ( $l->GetType() eq Enums->Type_STIFFDEPTHNC );
 		$self->__PrepareTAPE($l)          if ( $l->GetType() eq Enums->Type_TAPE );
 		$self->__PrepareTAPE($l)          if ( $l->GetType() eq Enums->Type_TAPEBACK );
 	}
@@ -651,6 +652,94 @@ sub __PreparePLTDEPTHNC {
 
 }
 
+sub __PrepareSTIFFDEPTHNC {
+	my $self  = shift;
+	my $layer = shift;
+
+	unless ( $layer->HasLayers() ) {
+		return 0;
+	}
+
+	my $inCAM  = $self->{"inCAM"};
+	my $jobId  = $self->{"jobId"};
+	my @layers = $layer->GetSingleLayers();
+	my $lName  = GeneralHelper->GetGUID();
+
+	$inCAM->COM(
+				 'create_layer',
+				 layer     => $lName,
+				 context   => 'misc',
+				 type      => 'document',
+				 polarity  => 'positive',
+				 ins_layer => ''
+	);
+
+	# compensate
+	foreach my $l (@layers) {
+
+		my $outputParser = OutputParserNC->new( $inCAM, $jobId, $self->{"pdfStep"} );
+
+		my $result = $outputParser->Prepare($l);
+
+		next unless ( $result->GetResult() );
+
+		foreach my $classResult ( $result->GetClassResults(1) ) {
+
+			foreach my $classL ( $classResult->GetLayers() ) {
+
+				# When angle tool, resize final tool dieameter by tool depth
+				if (    $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKSURF
+					 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKARC
+					 || $classResult->GetType() eq OutParserEnums->Type_COUNTERSINKPAD
+					 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSURFCHAMFER
+					 || $classResult->GetType() eq OutParserEnums->Type_ZAXISSLOTCHAMFER )
+				{
+
+					my $DTMTool     = $classL->GetDataVal("DTMTool");
+					my $newDiameter = tan( deg2rad( $DTMTool->GetAngle() / 2 ) ) * $DTMTool->GetDepth() * 2;
+
+					my $resizeFeats = ( $classL->GetDataVal("DTMTool")->GetDrillSize() - $newDiameter * 1000 );
+
+					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
+					CamLayer->ResizeFeatures( $inCAM, -$resizeFeats );
+
+				}
+
+				$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $lName );
+
+			}
+		}
+
+		$outputParser->Clear();
+	}
+
+	# Copy negative of stiffener through NC to layer
+	# Get all through stiffener from TOP/BOT
+	my @routThrough = ();
+	if ( $layers[0]->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ) {
+		
+		@routThrough = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcMill ] );
+		
+	}
+	elsif ( $layers[0]->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ) {
+		
+		@routThrough = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffsMill ] );
+		
+	}
+
+	die "No stiffener rout found" unless ( scalar(@routThrough) );
+
+	foreach my $routL (@routThrough) {
+		my $lTmp = CamLayer->RoutCompensation( $inCAM, $routL->{"gROWname"}, "document" );
+		$inCAM->COM( "merge_layers", "source_layer" => $lTmp, "dest_layer" => $lName, "invert" => "yes" );
+
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+	}
+
+	$layer->SetOutputLayer($lName);
+
+}
+
 sub __PrepareNPLTDEPTHNC {
 	my $self  = shift;
 	my $layer = shift;
@@ -1026,12 +1115,12 @@ sub __PrepareSTIFFENER {
 
 	my $tapeL = ( grep { $_->{"gROWname"} =~ /^tp[cs]$/ } $layer->GetSingleLayers() )[0];
 	my @stiffRoutLs = CamDrilling->GetNCLayersByTypes(
-		$inCAM, $jobId,
-		[
-		  EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill, EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill,
-		  EnumsGeneral->LAYERTYPE_nplt_stiffcMill,        EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
-		  EnumsGeneral->LAYERTYPE_nplt_tapecMill,         EnumsGeneral->LAYERTYPE_nplt_tapesMill,
-		]
+													   $inCAM, $jobId,
+													   [
+														  EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill, EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill,
+														  EnumsGeneral->LAYERTYPE_nplt_stiffcMill,    EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
+														  EnumsGeneral->LAYERTYPE_nplt_tapecMill,     EnumsGeneral->LAYERTYPE_nplt_tapesMill,
+													   ]
 	);
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
 	my @stiffRoutL = grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs;
@@ -1203,7 +1292,12 @@ sub __GetOverlayBendArea {
 
 					CamLayer->WorkLayer( $inCAM, $classL->GetLayerName() );
 					if ( CamFilter->SelectBySingleAtt( $inCAM, $jobId, "transition_zone", "" ) ) {
-						$inCAM->COM( "merge_layers", "source_layer" => $classL->GetLayerName(), "dest_layer" => $bendNegL, "invert" => "yes" );
+						$inCAM->COM(
+									 "merge_layers",
+									 "source_layer" => $classL->GetLayerName(),
+									 "dest_layer"   => $bendNegL,
+									 "invert"       => "yes"
+						);
 					}
 				}
 			}

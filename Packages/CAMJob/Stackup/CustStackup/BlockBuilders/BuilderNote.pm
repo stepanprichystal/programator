@@ -154,17 +154,32 @@ sub __BuildNotesStiffRow {
 	my @allStiffThicknessBot = $stckpMngr->GetAllRequestedStiffThick("bot");
 
 	# Define first title row
-	my $cnt = scalar(  @allStiffThicknessTop) + scalar(@allStiffThicknessBot );
+	my $cnt = scalar(@allStiffThicknessTop) + scalar(@allStiffThicknessBot);
 
-	my $txt = "List of all customer requested final thickness\non different stiffener areas: ";
-	
-	$txt .= "\n" if ( $cnt  > 2 );
-	$txt .= join( "; ", map { $_ . "µm" } @allStiffThicknessTop ). " (top)";
-	$txt .= join( "; ", map { $_ . "µm" } @allStiffThicknessBot ). " (bot)";
-	
+	my $txtBase = "All required final PCB thickness \n(including stiffener) from";
 
+	my $txt = undef;
+	if ( scalar(@allStiffThicknessTop) > 1 ) {
+
+		$txt .= "*${txtBase} TOP side:\n";
+		$txt .= join( "; ", map { $_ . "µm" } @allStiffThicknessTop )."\n";
+	}
+
+	if ( scalar(@allStiffThicknessBot) > 1 ) {
+
+		$txt .= "\n" if ( defined $txt );
+
+		$txt .= "**${txtBase} BOT side:\n";
+		$txt .= join( "; ", map { $_ . "µm" } @allStiffThicknessBot )."\n";
+	}
+	
+	$txt .= "\n";
+
+	 
+	#my $rowCnt = ( scalar( $txt =~ /\n/g ) + 1 );
+	  
 	my $rowBackgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new( EnumsStyle->Clr_HEADSUBBACK ) );
-	my $row = $tblMain->AddRowDef( "stiff_pcb_thick", ( $cnt > 2 ? 3 : 2 ) * EnumsStyle->RowHeight_STANDARD );
+	my $row = $tblMain->AddRowDef( "stiff_pcb_thick", ( scalar( $txt =~ /\n/g ) + 2 ) * EnumsStyle->RowHeight_STANDARD  );  
 	my $txtStyle = TextStyle->new( TblDrawEnums->TextStyle_LINE,
 								   EnumsStyle->TxtSize_TITLE, Color->new( 0, 0, 0 ),
 								   undef, undef,
@@ -175,7 +190,9 @@ sub __BuildNotesStiffRow {
 	my $sec_BEGIN = $secMngr->GetSection( Enums->Sec_BEGIN );
 	if ( $sec_BEGIN->GetIsActive() ) {
 
-		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ), $tblMain->GetRowDefPos($row), undef, undef, "* Note", $txtStyle );
+		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
+						   $tblMain->GetRowDefPos($row),
+						   undef, undef, "Required stiffener", $txtStyle );
 
 	}
 

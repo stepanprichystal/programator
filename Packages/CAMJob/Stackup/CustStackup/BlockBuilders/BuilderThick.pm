@@ -199,7 +199,7 @@ sub __BuildThickRows {
 						   undef, undef, "Estimated", $txtStyle );
 		$tblMain->AddCell( $secMngr->GetColumnPos( Enums->Sec_BEGIN, "matTitle" ),
 						   $tblMain->GetRowDefPos($rowReq),
-						   undef, undef, "Requested", $txtStyle );
+						   undef, undef, "Required", $txtStyle );
 	}
 
 	# Sec_A_MAIN ---------------------------------------------
@@ -260,7 +260,7 @@ sub __BuildThickRows {
 			$rThick = "-";
 		}
 		elsif ( $rThick =~ /^\*+$/ ) {
-			$rThick = "- ".$rThick;    # asterisk refer to block special notes
+			$rThick = "Spec. notes*";    # asterisk refer to block special notes
 		}
 		else {
 			$rThick = int($rThick);
@@ -286,7 +286,7 @@ sub __BuildThickRows {
 			$rThick = "-";
 		}
 		elsif ( $rThick =~ /^\*+$/ ) {
-			$rThick = "- ".$rThick;    # asterisk refer to block special notes
+			$rThick = "Spec. notes**";     # asterisk refer to block special notes
 		}
 		else {
 			$rThick = int($rThick);

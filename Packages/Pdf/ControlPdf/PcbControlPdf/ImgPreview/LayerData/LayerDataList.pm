@@ -217,17 +217,21 @@ sub __InitLayers {
 
 	# 2) Prepare layers which are visible either from BOT or from TOP
 
-	# POS 1: Type_NPLTDEPTHNC from TOP
+	# POS 0: Type_NPLTDEPTHNC from TOP
 	my $LDNPltDepthTOP = LayerData->new( Enums->Type_NPLTDEPTHNC, Enums->Visible_FROMTOP );
 	$LDNPltDepthTOP->AddSingleLayers(
 		grep {
 			$_->{"type"}
 			  && (    $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
-				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
 				   || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_score )
 		} @boardL
 	);
 	push( @pdfLayers, $LDNPltDepthTOP );
+
+	# POS 1: Type_STIFFDEPTHNC from TOP
+	my $LDStiffDepthTOP = LayerData->new( Enums->Type_STIFFDEPTHNC, Enums->Visible_FROMTOP );
+	$LDStiffDepthTOP->AddSingleLayers( grep { $_->{"type"} && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ) } @boardL );
+	push( @pdfLayers, $LDStiffDepthTOP );
 
 	# POS 2: Type_TAPE from TOP
 	my $LDTapestiffTOP = LayerData->new( Enums->Type_TAPE, Enums->Visible_FROMTOP );
@@ -237,11 +241,11 @@ sub __InitLayers {
 	# POS 3: Type_STIFFENER from TOP
 	my $LDStiffenerTOP = LayerData->new( Enums->Type_STIFFENER, Enums->Visible_FROMTOP );
 	$LDStiffenerTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^stiffc$/ } @boardL );    #  stiffener
-	$LDStiffenerTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tpc$/ } @boardL );    # tape also define stiffener
+	$LDStiffenerTOP->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tpc$/ } @boardL );       # tape also define stiffener
 	$LDStiffenerTOP->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill } @boardL );
 	$LDStiffenerTOP->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } @boardL );
 	$LDStiffenerTOP->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapebrMill } @boardL )
-	  ;                                                                                  # tape bridge also define stiffener
+	  ;                                                                                     # tape bridge also define stiffener
 	push( @pdfLayers, $LDStiffenerTOP );
 
 	# POS 2: Type_TAPE from TOP
@@ -470,11 +474,16 @@ sub __InitLayers {
 	my $LDTapeBOT = LayerData->new( Enums->Type_TAPE, Enums->Visible_FROMBOT );
 	$LDTapeBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tps$/ } @boardL );
 	push( @pdfLayers, $LDTapeBOT );
+	
+	# POS 29: Type_STIFFDEPTHNC from BOT
+	my $LDStiffDepthBOT = LayerData->new( Enums->Type_STIFFDEPTHNC, Enums->Visible_FROMBOT );
+	$LDStiffDepthBOT->AddSingleLayers( grep { $_->{"type"} && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ) } @boardL );
+	push( @pdfLayers, $LDStiffDepthBOT );
 
-	# POS 27: Type_STIFFENER from BOT
+	# POS 30: Type_STIFFENER from BOT
 	my $LDStiffenerBOT = LayerData->new( Enums->Type_STIFFENER, Enums->Visible_FROMBOT );
 	$LDStiffenerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^stiffs$/ } @boardL );    # t stiffener
-	$LDStiffenerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tps$/ } @boardL );    # tape also define stiffener
+	$LDStiffenerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tps$/ } @boardL );       # tape also define stiffener
 	$LDStiffenerBOT->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapebrMill } @boardL );
 	$LDStiffenerBOT->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill } @boardL );
 	$LDStiffenerBOT->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } @boardL );

@@ -79,7 +79,7 @@ sub __BuildRow1 {
 	}
 
 	if ( $pcbType eq EnumsGeneral->PcbType_1V ) {
-		$titleStr .= "One sided PCB";
+		$titleStr .= "Single sided PCB";
 	}
 
 	if ( $pcbType eq EnumsGeneral->PcbType_2V ) {
@@ -87,7 +87,7 @@ sub __BuildRow1 {
 	}
 
 	if ( $pcbType eq EnumsGeneral->PcbType_1VFLEX ) {
-		$titleStr .= "One sided flex";
+		$titleStr .= "Single sided flex";
 	}
 
 	if ( $pcbType eq EnumsGeneral->PcbType_2VFLEX ) {

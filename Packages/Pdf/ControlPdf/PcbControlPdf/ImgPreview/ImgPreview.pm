@@ -458,6 +458,31 @@ sub __DefineSurfaces {
 	my $stiffClr = LayerColor->new( PrevEnums->Surface_COLOR, "185,193,123" );
 	$clrs{ Enums->Type_STIFFENER } = $stiffClr;
 
+	# Stiffener depth
+
+	my $stiffDepthClr = LayerColor->new();
+	$clrs{ Enums->Type_STIFFDEPTHNC } = $stiffDepthClr;
+
+	$stiffDepthClr->SetType( $stiffClr->GetType() );
+	$stiffDepthClr->SetBrightness( $stiffClr->GetBrightness() + 5 );
+
+	if ( $stiffClr->GetType() eq PrevEnums->Surface_COLOR ) {
+
+		$stiffDepthClr->SetColor( $stiffClr->GetColor() );
+		$stiffDepthClr->SetOverlayTexture( Enums->TextureOverlay_MILLING );
+	}
+	else {
+
+		$stiffDepthClr->SetTexture( $stiffClr->GetTexture() );
+	}
+
+	# Al if Al core and depth milling from top, set AL texture
+	if ( $mat =~ /al_core/i && $self->{"viewType"} eq Enums->View_FROMTOP ) {
+
+		$npltDepthClr->SetType( PrevEnums->Surface_TEXTURE );
+		$npltDepthClr->SetTexture( Enums->Texture_CHEMTINALU );
+	}
+
 	# PLT Through NC
 
 	my $pltThroughNcClr = LayerColor->new( PrevEnums->Surface_COLOR );
@@ -472,12 +497,9 @@ sub __DefineSurfaces {
 
 	my $tapeClr = LayerColor->new( PrevEnums->Surface_TEXTURE, Enums->Texture_TAPE );
 	$clrs{ Enums->Type_TAPE } = $tapeClr;
-	
+
 	my $tapeBackClr = LayerColor->new( PrevEnums->Surface_COLOR, "228,195,150" );
 	$clrs{ Enums->Type_TAPEBACK } = $tapeBackClr;
-	
-
-
 
 	return \%clrs;
 

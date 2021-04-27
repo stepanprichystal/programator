@@ -27,8 +27,8 @@ my $inCAM = InCAM->new();
 #my $jobId = "d275162"; # standard 2v
 
 
-my $jobId = "x72111"; # standard vv 4V
-my $step = "panel";
+my $jobId = "d317363"; # standard vv 4V
+my $step = "o+1";
 
 # 1) Init customer stackup class
 my $newCustStckp = CustStackup->new($inCAM, $jobId,$step);
