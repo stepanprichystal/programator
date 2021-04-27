@@ -457,8 +457,8 @@ sub __AddFiducCircle {
 		# When tenting, fiducial holes are plated => smaller
 		if ( $etchingTIF eq "tenting" ) {
 			$diameter               = 2.87;
-			$upper_tolerance_factor = 0.075;
-			$lower_tolerance_factor = -0.075;
+			$upper_tolerance_factor = 0.070;
+			$lower_tolerance_factor = -0.070;
 
 		}
 		else {
@@ -466,8 +466,8 @@ sub __AddFiducCircle {
 			# When pattern + flash, fiducial holes are plated => smaller
 			if ( $self->{"nifFile"}->GetValue("flash") > 0 ) {
 				$diameter               = 2.87;
-				$upper_tolerance_factor = 0.075;
-				$lower_tolerance_factor = -0.075;
+				$upper_tolerance_factor = 0.070;
+				$lower_tolerance_factor = -0.070;
 
 			}
 			else {
