@@ -12,7 +12,7 @@
 	<job>
 		<creation/>
 		<process_parameters>
-			<multi_table_sequential_usage>0</multi_table_sequential_usage>
+			<multi_table_sequential_usage>2</multi_table_sequential_usage>
 			<part_size x="0" y="0" z="0" unit="Length.Millimeter" />
 			<part_offset x="0" y="0" unit="Length.Millimeter" />
 			<slipsheet_size x="0" y="0" unit="Length.Millimeter" />
