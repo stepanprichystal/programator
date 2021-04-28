@@ -248,9 +248,7 @@ sub __GetPcb2Export {
 		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
 		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
 
-		if ( $jobId =~ /d235893/i ) {
-			print "Test";
-		}
+ 
 
 		if ( scalar(@xml) == 0 ) {
 

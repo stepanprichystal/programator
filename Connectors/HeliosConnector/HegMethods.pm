@@ -178,7 +178,8 @@ sub GetInfoAfterStartProduce {
 	my $cmd = "select top 1
 			 	 z.kusy_pozadavek,
 				 z.pocet_prirezu,
-				 z.prirezu_navic
+				 z.prirezu_navic,
+				 z.stav
 				 
 				 from lcs.desky_22 d with (nolock)
 				 left outer join lcs.subjekty c with (nolock) on c.cislo_subjektu=d.zakaznik

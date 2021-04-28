@@ -115,12 +115,18 @@ sub AddPrimarySide {
 	my $info     = HegMethods->GetInfoAfterStartProduce( $jobId . "-" . $orderNum );
 	my $parts    = 0;
 
-	if ( defined $info->{'pocet_prirezu'} && $info->{'pocet_prirezu'} > 0 ) {
-		$parts += $info->{'pocet_prirezu'};
-	}
+	# Total panel count is known only if PCB is in production
+	# If last order is not in production, do not set panel count
+	# Ve výrobì (4)
+	if ( $info->{'stav'} eq 4 ) {
 
-	if ( defined $info->{'prirezu_navic'} && $info->{'prirezu_navic'} > 0 ) {
-		$parts += $info->{'prirezu_navic'};
+		if ( defined $info->{'pocet_prirezu'} && $info->{'pocet_prirezu'} > 0 ) {
+			$parts += $info->{'pocet_prirezu'};
+
+			if ( defined $info->{'prirezu_navic'} && $info->{'prirezu_navic'} > 0 ) {
+				$parts += $info->{'prirezu_navic'};
+			}
+		}
 	}
 
 	my $elPartsTotal  = ( $self->{"jobConfigXML"}->findnodes('/jobconfig/job_layer/process_parameters/parts_total') )[0];
@@ -216,6 +222,11 @@ sub Export {
 
 	my $primaryXML = undef;
 
+	# if total parts is unknown, set temporaray file name: .jobconfig_uncomplete.xml
+	# In this case JobEditor do not process files and will wait to proper file name .jobconfig.xml
+	my $partCnt = ( $self->{"jobConfigXML"}->findnodes('/jobconfig/job_layer/process_parameters/parts_total') )[0]->textContent();
+	my $xmlUncomplete = !defined $partCnt || $partCnt == 0 ? 1 : 0;
+
 	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
 		my $gerName = $layers[$i]->textContent();
@@ -225,11 +236,21 @@ sub Export {
 
 		if ( $i == 0 ) {
 
-			# export primary XML
-
 			$primaryXML = $gerName . ".jobconfig.xml";
 
-			$finalFile = EnumsPaths->Jobs_PCBMDITT . $primaryXML;
+			# export primary XML
+
+			my $elPartsTotal = ( $self->{"jobConfigXML"}->findnodes('/jobconfig/job_layer/process_parameters/parts_total') )[0];
+			my $partCnt      = $elPartsTotal->textContent();
+			if ($xmlUncomplete) {
+
+				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig_uncomplete.xml";
+
+			}
+			else {
+
+				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig.xml";
+			}
 
 			my $xmlString = $self->{"jobConfigXML"}->toString();
 
@@ -248,7 +269,16 @@ sub Export {
 			# export secondary reference XML
 			die "Primart xml file name is not defined" unless ( defined $primaryXML );
 
-			$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig.xml";
+			if ($xmlUncomplete) {
+
+				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig_uncomplete.xml";
+
+			}
+			else {
+
+				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig.xml";
+
+			}
 
 			my $templPath = GeneralHelper->Root() . "\\Packages\\Gerbers\\Mditt\\ExportFiles\\jobconfigsec_templ.xml";
 			$self->{"jobConfigXML"} = XML::LibXML->load_xml( "location" => $templPath );
@@ -480,7 +510,7 @@ sub __AddFiducCircle {
 
 	# Solder mask layer mc, ms, mcflex, msflex
 	elsif ( $layerName =~ /^m[cs]2?$/ ) {
-		
+
 		$diameter               = 2.85;
 		$upper_tolerance_factor = 0.08;
 		$lower_tolerance_factor = -0.08;

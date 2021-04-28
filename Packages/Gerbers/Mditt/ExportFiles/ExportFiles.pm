@@ -784,7 +784,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d318043";
+	my $jobId    = "d318536";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -795,7 +795,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my %type = (
 				 Enums->Type_SIGNAL => "1",
-				 Enums->Type_MASK   => "1",
+				 Enums->Type_MASK   => "0",
 				 Enums->Type_PLUG   => "0",
 				 Enums->Type_GOLD   => "0"
 	);

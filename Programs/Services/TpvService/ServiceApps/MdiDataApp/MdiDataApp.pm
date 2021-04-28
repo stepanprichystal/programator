@@ -178,7 +178,7 @@ sub __ProcessJob {
 	my %mdiInfo = MdiHelper->GetDefaultLayerTypes( $inCAM, $jobId );
 
 	# remove all job files
-	my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId );
+	my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId );
 
 	foreach (@f) {
 		unless ( unlink($_) ) {

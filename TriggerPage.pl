@@ -159,7 +159,7 @@ sub __PcbToProduce {
 	# Process only if order go to produce first time
 	if ( !defined $extraId || $extraId == 0 ) {
 
-		# 2) change some lines in MDI xml files eval
+		# 2) change some lines in old MDI xml files eval
 		eval {
 
 			$logger->debug( "Before process MDI files --" . $orderId . "--" );
@@ -172,6 +172,23 @@ sub __PcbToProduce {
 			$processed = 0;
 			$logger->error( "\n Error when processing \"MDI files\" job: $orderId.\n" . $@, 1 );
 		}
+		
+		
+		# 2) change some lines in MDI TT xml files eval
+		eval {
+
+			$logger->debug( "Before process MDITT files --" . $orderId . "--" );
+			MDIFiles->AddPartsNumberMDITT($orderId);
+			$logger->debug( "After process MDITT files --" . $orderId . "--" );
+
+		};
+		if ($@) {
+
+			$processed = 0;
+			$logger->error( "\n Error when processing \"MDITT files\" job: $orderId.\n" . $@, 1 );
+		}
+		
+		
 
 		# 3) change drilled number in NC files
 		eval {
