@@ -210,24 +210,24 @@ sub __DeleteOldFiles {
 
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . '^[csv]\d*' );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . '^[csv]\d*' );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . '[csv]\d*' );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . '[csv]\d*' );
 
 		push( @file2del, ( @f, @f2 ) );
 	}
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^m[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^m[cs]_mdi" );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "m[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "m[cs]_mdi" );
 
 		push( @file2del, ( @f, @f2 ) );
 	}
 
 	if ( $layerTypes->{ Enums->Type_PLUG } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^plg[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^plg[cs]_mdi" );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "plg[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "plg[cs]_mdi" );
 
 		push( @file2del, ( @f, @f2 ) );
 
@@ -235,8 +235,8 @@ sub __DeleteOldFiles {
 
 	if ( $layerTypes->{ Enums->Type_GOLD } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "^gold[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "^gold[cs]_mdi" );
+		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    $jobId . "gold[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, $jobId . "gold[cs]_mdi" );
 
 		push( @file2del, ( @f, @f2 ) );
 
@@ -640,7 +640,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d312990";
+	my $jobId    = "d318043";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -649,9 +649,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
-				 Enums->Type_SIGNAL => "0",
-				 Enums->Type_MASK   => "0",
-				 Enums->Type_PLUG   => "1",
+				 Enums->Type_SIGNAL => "1",
+				 Enums->Type_MASK   => "1",
+				 Enums->Type_PLUG   => "0",
 				 Enums->Type_GOLD   => "0"
 	);
 

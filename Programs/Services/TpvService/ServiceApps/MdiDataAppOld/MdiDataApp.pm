@@ -233,9 +233,13 @@ sub __GetPcb2Export {
 
 	my @pcbInProduc = $self->__GetPcbsInProduc();
 
-	# all files from MDI folder
-	my @xmlAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.xml' );
-	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, '.ger' );
+	# all files from MDI "JobEditor" folder + MDI "main" folder
+	my @xmlAll = ();
+	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    '.xml' ) );
+
+	my @gerAll = ();
+	push( @gerAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI,    '.ger' ) );
+	push( @gerAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDI, '.ger' ) );
 
 	foreach my $jobId (@pcbInProduc) {
 
@@ -243,6 +247,10 @@ sub __GetPcb2Export {
 
 		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
 		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
+
+		if ( $jobId =~ /d235893/i ) {
+			print "Test";
+		}
 
 		if ( scalar(@xml) == 0 ) {
 
@@ -259,10 +267,20 @@ sub __GetPcb2Export {
 				if ( $created + 15 * 60 < time() ) {
 
 					# chek if exist relevant gerber file
-					my $gerFile = $xmlFile;
+					my $gerFile = basename($xmlFile);
 					$gerFile =~ s/\.xml/\.ger/;
 
-					unless ( -e $gerFile ) {
+					# Try to find gerber in existing gerber
+					my $gerExist = 0;
+					foreach my $ger (@ger) {
+
+						if ( $ger =~ /$gerFile/i ) {
+							$gerExist = 1;
+							last;
+						}
+					}
+
+					unless ($gerExist) {
 						push( @pcb2Export, $jobId );
 						last;
 					}

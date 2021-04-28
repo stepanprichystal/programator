@@ -230,35 +230,47 @@ sub __DeleteOldFiles {
 
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . '^[csv]\d*' );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . '^[csv]\d*' );
+		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . '[csv]\d*' );
 
-		push( @file2del, ( @f, @f2 ) );
+		#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . '[csv]\d*' ); # Do not delete source file for jobediotr => cause crash
+
+		#push( @file2del, ( @f, @f2 ) );
+
+		push( @file2del, @f );
 	}
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . "^m[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "^m[cs]_mdi" );
+		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "m[cs]_mdi" );
 
-		push( @file2del, ( @f, @f2 ) );
+		#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "m[cs]_mdi" );
+
+		#push( @file2del, ( @f, @f2 ) );
+
+		push( @file2del, @f );
 	}
 
 	if ( $layerTypes->{ Enums->Type_PLUG } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . "^plg[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "^plg[cs]_mdi" );
+		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "plg[cs]_mdi" );
 
-		push( @file2del, ( @f, @f2 ) );
+		#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "plg[cs]_mdi" );
+
+		#push( @file2del, ( @f, @f2 ) );
+
+		push( @file2del, @f );
 
 	}
 
 	if ( $layerTypes->{ Enums->Type_GOLD } ) {
 
-		my @f  = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    $jobId . "^gold[cs]_mdi" );
-		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "^gold[cs]_mdi" );
+		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "gold[cs]_mdi" );
 
-		push( @file2del, ( @f, @f2 ) );
+		#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "gold[cs]_mdi" );
+
+		#push( @file2del, ( @f, @f2 ) );
+
+		push( @file2del, @f );
 
 	}
 
@@ -772,7 +784,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d271439";
+	my $jobId    = "d318043";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -782,7 +794,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	my %type = (
-				 Enums->Type_SIGNAL => "0",
+				 Enums->Type_SIGNAL => "1",
 				 Enums->Type_MASK   => "1",
 				 Enums->Type_PLUG   => "0",
 				 Enums->Type_GOLD   => "0"

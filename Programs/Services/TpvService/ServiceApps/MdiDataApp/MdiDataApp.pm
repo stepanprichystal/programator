@@ -196,9 +196,9 @@ sub __ProcessJob {
 	$self->{"errResults"} = \@result;
 
 	$export->Run( \%mdiInfo );
-	
-	FakeLayers->RemoveFakeLayers( $inCAM, $jobId  );
-	
+
+	FakeLayers->RemoveFakeLayers( $inCAM, $jobId );
+
 	$self->{"logger"}->debug("After export mdi files: $jobId");
 
 	# 3) save job
@@ -233,9 +233,14 @@ sub __GetPcb2Export {
 
 	my @pcbInProduc = $self->__GetPcbsInProduc();
 
-	# all files from MDI folder
-	my @xmlAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, '.xml' );
-	my @gerAll = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, '.ger' );
+	# all files from MDI "JobEditor" folder + MDI "main" folder
+	my @xmlAll = ();
+	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    '.xml' ) );
+	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, '.xml' ) );
+
+	my @gerAll = ();
+	push( @gerAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    '.ger' ) );
+	push( @gerAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, '.ger' ) );
 
 	foreach my $jobId (@pcbInProduc) {
 
@@ -243,6 +248,7 @@ sub __GetPcb2Export {
 
 		my @xml = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @xmlAll;
 		my @ger = grep { $_ =~ /($jobId)[\w\d]+_mdi/i } @gerAll;
+ 
 
 		if ( scalar(@xml) == 0 ) {
 
@@ -259,10 +265,22 @@ sub __GetPcb2Export {
 				if ( $created + 15 * 60 < time() ) {
 
 					# chek if exist relevant gerber file
-					my $gerFile = $xmlFile;
-					$gerFile =~ s/\.jobconfig\.xml/\.ger/;
+					my $gerFile = basename($xmlFile);
+					$gerFile =~ s/\.jobconfig//;
+					$gerFile =~ s/\.joblayer//;
+					$gerFile =~ s/\.xml/\.ger/;
 
-					unless ( -e $gerFile ) {
+					# Try to find gerber in existing gerber
+					my $gerExist = 0;
+					foreach my $ger (@ger) {
+
+						if ( $ger =~ /$gerFile/i ) {
+							$gerExist = 1;
+							last;
+						}
+					}
+
+					unless ($gerExist) {
 						push( @pcb2Export, $jobId );
 						last;
 					}
@@ -272,8 +290,8 @@ sub __GetPcb2Export {
 	}
 
 	# limit if more than 30jobs, in order don't block  another service apps
-	if ( scalar(@pcb2Export) > 10 ) {
-		@pcb2Export = @pcb2Export[ 0 .. 9 ];    # oricess max 9 jobs
+	if ( scalar(@pcb2Export) > 15 ) {
+		@pcb2Export = @pcb2Export[ 0 .. 14 ];    # oricess max 9 jobs
 	}
 
 	return @pcb2Export;
