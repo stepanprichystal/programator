@@ -289,9 +289,13 @@ sub __GetPcb2Export {
 		}
 	}
 
+	use constant MAXJOBCNT => 10;
+
+	$self->{"logger"}->debug("Job count which need to be exported: ".scalar(@pcb2Export). ", script will take first: ".MAXJOBCNT);
+
 	# limit if more than 30jobs, in order don't block  another service apps
-	if ( scalar(@pcb2Export) > 10 ) {
-		@pcb2Export = @pcb2Export[ 0 .. 9 ];    # oricess max 9 jobs
+	if ( scalar(@pcb2Export) > MAXJOBCNT ) {
+		@pcb2Export = @pcb2Export[ 0 .. MAXJOBCNT ];    # oricess max 9 jobs
 	}
 
 	return @pcb2Export;
