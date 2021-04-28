@@ -134,12 +134,17 @@ sub AddPartsNumberMDITT {
 
 		# Rename file to let JobEditor process xml
 		my $newName = $filename;
-
 		$newName =~ s/jobconfig_uncomplete/jobconfig/i;
 
 		unless ( move( $filename, $newName ) ) {
 
 			$logger->debug( "Error during rename file:" . $filename );
+		
+		}
+		else {
+
+			$logger->debug("Rename file to: $newName");
+
 		}
 	}
 
