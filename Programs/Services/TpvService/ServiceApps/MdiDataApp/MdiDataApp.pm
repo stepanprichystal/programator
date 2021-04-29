@@ -235,8 +235,8 @@ sub __GetPcb2Export {
 
 	# all files from MDI "JobEditor" folder + MDI "main" folder
 	my @xmlAll = ();
-	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    '.xml' ) );
-	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, '.xml' ) );
+	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    '.joblayer.xml' ) );
+	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, '.jobconfig.xml' ) );
 
 	my @gerAll = ();
 	push( @gerAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    '.ger' ) );
