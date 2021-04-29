@@ -101,6 +101,7 @@ sub Build {
 	push( @req, "2814075" );                   #maska 0,1mm
 	push( @req, "19031137" );                  # BGA
 	push( @req, "19031138" );                  # Coverlay template
+	push( @req, "23524474" );                  # Annular ring < 75
 	push( @req, "mereni_presfittu" );
 	push( @req, "mereni_tolerance_vrtani" );
 	push( @req, "prerusovana_drazka" );

@@ -250,8 +250,10 @@ sub Build {
 				}
 			}
 
-			$section->AddRow( "rel(22305,L)", $ring );
+			
 		}
+		
+		$section->AddRow( "rel(22305,L)", $ring );
 	}
 
 	#mereni_presfittu
