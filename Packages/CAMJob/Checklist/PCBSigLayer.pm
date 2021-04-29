@@ -41,10 +41,10 @@ sub ExistAnularRingLess75 {
 	$$existRing           = 0;
 
 	# Directly defined existing checklist
-	my $checklistName   = "checks";
+	my $checklistName   = "control";
 	my $checklistAction = 3;
 
-	use constant MINAR => 77;
+	use constant MINAR => 80;
 
 	my $resultChecklist = 1;
 
@@ -101,7 +101,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d318483";
+	my $jobId = "d318828";
 	my $step  = "o+1";
 
 	my $mess = "";

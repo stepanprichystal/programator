@@ -40,6 +40,43 @@ use aliased 'CamHelpers::CamStepRepeatPnl';
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
+
+# Remove Out_scale attribute from technical frame
+# Only Flex with double sided solder mask.
+# Reason: Flex with soldermask is shrinked so much during production, it is difficult than
+# place PCB to pins during stiffener registration
+# (Standard flex has attribute out_scale on register hole in order panlel was tighten
+# on registration pins during stiffener placement)
+sub RemoveOutScaleAttr {
+	my $self     = shift;
+	my $inCAM    = shift;
+	my $jobId    = shift;
+	my $stepName = shift;
+
+	return 0 if ( $stepName ne "panel" );
+
+	if ( JobHelper->GetIsFlex($jobId) ) {
+
+		my @board = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+
+		my $cvrl = scalar( grep { $_->{"gROWlayer_type"} eq "coverlay" } @board );
+		my $sm   = scalar( grep { $_->{"gROWlayer_type"} eq "solder_mask" } @board );
+
+		if ( !$cvrl && $sm >= 2 ) {
+
+			CamHelper->SetStep( $inCAM, $stepName );
+
+			CamLayer->WorkLayer( $inCAM, "v" );
+
+			CamAttributes->DelFeatuesAttribute( $inCAM, ".out_scale", "" );
+
+			CamLayer->ClearLayers($inCAM);
+
+		}
+	}
+
+}
+
 # Set depth to technical frame holes, because all holes in depth mill layer have to contain depth
 # 1.5mm depth is because thicker PCB si no need to be inside special frame in production
 #sub AdjustFlexiHolesCoreMill {
@@ -70,7 +107,7 @@ use aliased 'CamHelpers::CamStepRepeatPnl';
 #			CamDTM->SetDTMTools( $inCAM, $jobId, "panel", $layer, \@DTMTools, $defDTMType );
 #
 #		}
-#		
+#
 #		CamLayer->ClearLayers($inCAM);
 #	}
 #
