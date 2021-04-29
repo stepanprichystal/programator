@@ -11,6 +11,7 @@ use Class::Interface;
 &implements('Packages::Export::NifExport::SectionBuilders::ISectionBuilder');
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
@@ -26,6 +27,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::Stackup::StackupCode';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => "StackEnums";
+use aliased 'Packages::CAMJob::Checklist::PCBSigLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -70,7 +72,7 @@ sub Build {
 			my @semiProd = map { $_->GetData() } $stackup->GetLastPress()->GetLayers( StackEnums->ProductL_PRODUCT );
 
 			# Stackup contains  semiproducts with pressing
-			if (  !$stackup->GetSequentialLam() && scalar( grep { scalar( $_->GetLayers() ) > 1 } @semiProd ) ) {
+			if ( !$stackup->GetSequentialLam() && scalar( grep { scalar( $_->GetLayers() ) > 1 } @semiProd ) ) {
 
 				# Flag description
 
@@ -123,10 +125,9 @@ sub Build {
 
 							foreach my $c (@cores) {
 
-								my @coreDepthStart = grep {
-									     $_->{"gROWdrl_start"} eq $c->GetTopCopperLayer()
-									  || $_->{"gROWdrl_start"} eq $c->GetBotCopperLayer()
-								} @coreDepth;
+								my @coreDepthStart =
+								  grep { $_->{"gROWdrl_start"} eq $c->GetTopCopperLayer() || $_->{"gROWdrl_start"} eq $c->GetBotCopperLayer() }
+								  @coreDepth;
 
 								if ( scalar(@coreDepthStart) ) {
 
@@ -224,6 +225,33 @@ sub Build {
 		}
 
 		$section->AddRow( "rel(22305,L)", $templ );
+	}
+
+	# Anular ring 75µm: 2814075
+
+	if ( $self->_IsRequire("23524474") ) {
+
+		$section->AddComment("Annular ring < 75um");
+
+		my $ring = "-23524474";
+
+		my $ringEexist = 0;
+		my $verifyErrMess;
+
+		foreach my $s ( CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId ) ) {
+
+			my $res = PCBSigLayer->ExistAnularRingLess75( $inCAM, $jobId, $s->{"stepName"}, \$ringEexist, \$verifyErrMess );
+
+			if ($res) {
+
+				if ($ringEexist) {
+					$ring =~ s/-//;
+					last;
+				}
+			}
+
+			$section->AddRow( "rel(22305,L)", $ring );
+		}
 	}
 
 	#mereni_presfittu
