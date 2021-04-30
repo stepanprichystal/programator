@@ -51,7 +51,8 @@ sub ExistAnularRingLess75 {
 	if ( !CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $checklistName ) ) {
 		
 		
-		CamChecklist->CopyChecklistFromLib( $inCAM, $step, $checklistName )
+		CamChecklist->CopyChecklistFromLib( $inCAM, $step, $checklistName );
+		CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklistName );
 	 
 
 	}
@@ -59,7 +60,8 @@ sub ExistAnularRingLess75 {
 
 		$inCAM->COM( "chklist_delete", "chklist" => $checklistName );
 		
-		CamChecklist->CopyChecklistFromLib( $inCAM, $step, $checklistName )
+		CamChecklist->CopyChecklistFromLib( $inCAM, $step, $checklistName );
+		CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklistName );
 
 	}
 
@@ -108,7 +110,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d192218";
+	my $jobId = "d319071";
 	my $step  = "o+1";
 
 	my $mess = "";

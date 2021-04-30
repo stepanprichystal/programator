@@ -48,7 +48,7 @@ sub Run {
 	my $checklist = $self->{"checklist"};
 	my $action    = $self->{"action"};
 
-	die "Checklist:" . $self->{"checklist"} . "doesn't esists"
+	die "Checklist: " . $self->{"checklist"} . "doesn't esists"
 	  unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $checklist ) );
 
 	CamChecklist->ActionRun( $inCAM, $jobId, $step, $checklist, $action );
