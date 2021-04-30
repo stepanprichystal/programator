@@ -58,6 +58,7 @@ sub ActionRun {
 }
 
 # Copy checklist from job to specific step
+# It assume checklist is already imported in job from global library
 sub CopyChecklistToStep {
 	my $self         = shift;
 	my $inCAM        = shift;
@@ -68,6 +69,21 @@ sub CopyChecklistToStep {
 	$inCAM->COM( "chklist_copy", "dst_chk" => $checklistDst, "dst_stp" => $step, "src_chk" => $checklistSrc );
 
 }
+
+# Copy checklist from job to specific step
+# It assume checklist is already imported in job from global library
+sub CopyChecklistFromLib {
+	my $self         = shift;
+	my $inCAM        = shift;
+	my $step         = shift;
+	my $checklistSrc = shift;
+	my $checklistDst = shift // $checklistSrc;
+ 
+	$inCAM->COM( "chklist_from_lib", "chklist" => $checklistSrc );
+ 
+}
+
+
 
 # Store action summarz report to file
 sub OutputActionTxtReport {
@@ -147,6 +163,27 @@ sub ChecklistExists {
 	my $val = $inCAM->{doinfo}{gEXISTS};
 
 	return ( $val =~ /yes/i ) ? 1 : 0;
+}
+
+# Return number of checklist action
+sub GetChecklistActionCnt {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $checklist = shift;
+
+	$inCAM->INFO(
+		"units"       => 'mm',
+		"entity_type" => 'check',
+		"entity_path" => "$jobId/$step/$checklist",
+		"data_type"   => "NUM_ACT"
+
+	);
+
+	my $val = $inCAM->{doinfo}{gNUM_ACT};
+
+	return $val;
 }
 
 # Check if checklist exist in Global library

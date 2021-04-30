@@ -48,9 +48,19 @@ sub ExistAnularRingLess75 {
 
 	my $resultChecklist = 1;
 
-	unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $checklistName ) ) {
+	if ( !CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $checklistName ) ) {
+		
+		
+		CamChecklist->CopyChecklistFromLib( $inCAM, $step, $checklistName )
+	 
 
-		CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklistName );
+	}
+	elsif ( CamChecklist->GetChecklistActionCnt( $inCAM, $jobId, $step, $checklistName ) < $checklistAction ) {
+
+		$inCAM->COM( "chklist_delete", "chklist" => $checklistName );
+		
+		CamChecklist->CopyChecklistFromLib( $inCAM, $step, $checklistName )
+
 	}
 
 	my $a = Action->new( $inCAM, $jobId, $step, $checklistName, $checklistAction );    # action number = 1;
@@ -71,8 +81,6 @@ sub ExistAnularRingLess75 {
 			my $cat = $r->GetCategory($catName);
 			next unless ( defined $cat );
 
-		 
-
 			my @minAr = grep { $_->GetValue() < MINAR } $cat->GetCatValues();
 
 			if ( scalar(@minAr) ) {
@@ -87,7 +95,6 @@ sub ExistAnularRingLess75 {
 	return $resultChecklist;
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -101,7 +108,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d318828";
+	my $jobId = "d192218";
 	my $step  = "o+1";
 
 	my $mess = "";
@@ -113,20 +120,20 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	if ($res) {
 
 		# Function ended OK
-#
-#		if (@resData) {
-#
-#			# ...but PCB class verification failed
-#
-#			foreach my $r (@resData) {
-#
-#				print "Layer: " . $r->{"layer"} . "\n";
-#				print "Problem category: " . $r->{"cat"} . "\n";
-#				print "Problem value: " . $r->{"value"} . "\n";
-#				print "\n\n";
-#
-#			}
-#		}
+		#
+		#		if (@resData) {
+		#
+		#			# ...but PCB class verification failed
+		#
+		#			foreach my $r (@resData) {
+		#
+		#				print "Layer: " . $r->{"layer"} . "\n";
+		#				print "Problem category: " . $r->{"cat"} . "\n";
+		#				print "Problem value: " . $r->{"value"} . "\n";
+		#				print "\n\n";
+		#
+		#			}
+		#		}
 	}
 	else {
 
