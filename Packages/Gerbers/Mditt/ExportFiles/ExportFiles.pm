@@ -242,34 +242,35 @@ sub __DeleteOldFiles {
 	if ( $layerTypes->{ Enums->Type_SIGNAL } ) {
 
 		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . '[csv]\d*' );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITTWAIT, $jobId . '[csv]\d*' ); # Do not delete source file for jobediotr => cause crash
+		
+		#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . '[csv]\d*' ); # Do not delete source file for jobediotr => cause crash
 
-#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . '[csv]\d*' ); # Do not delete source file for jobediotr => cause crash
+		push( @file2del, ( @f, @f2 ) );
 
-		#push( @file2del, ( @f, @f2 ) );
-
-		push( @file2del, @f );
+		#push( @file2del, @f );
 	}
 
 	if ( $layerTypes->{ Enums->Type_MASK } ) {
 
 		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "m[cs]_mdi" );
 
-		#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "m[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITTWAIT, $jobId . "m[cs]_mdi" );
 
-		#push( @file2del, ( @f, @f2 ) );
+		push( @file2del, ( @f, @f2 ) );
 
-		push( @file2del, @f );
+		#push( @file2del, @f );
 	}
 
 	if ( $layerTypes->{ Enums->Type_PLUG } ) {
 
 		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "plg[cs]_mdi" );
 
-		#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "plg[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITTWAIT, $jobId . "plg[cs]_mdi" );
 
-		#push( @file2del, ( @f, @f2 ) );
+		push( @file2del, ( @f, @f2 ) );
 
-		push( @file2del, @f );
+		#push( @file2del, @f );
 
 	}
 
@@ -277,11 +278,11 @@ sub __DeleteOldFiles {
 
 		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . "gold[cs]_mdi" );
 
-		#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . "gold[cs]_mdi" );
+		my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITTWAIT, $jobId . "gold[cs]_mdi" );
 
-		#push( @file2del, ( @f, @f2 ) );
+		push( @file2del, ( @f, @f2 ) );
 
-		push( @file2del, @f );
+		#push( @file2del, @f );
 
 	}
 

@@ -237,10 +237,12 @@ sub __GetPcb2Export {
 	my @xmlAll = ();
 	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    '.joblayer.xml' ) );
 	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, '.jobconfig.xml' ) );
+	push( @xmlAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITTWAIT, '.jobconfig.xml' ) );
 
 	my @gerAll = ();
 	push( @gerAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT,    '.ger' ) );
 	push( @gerAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, '.ger' ) );
+	push( @gerAll, FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITTWAIT, '.ger' ) );
 
 	foreach my $jobId (@pcbInProduc) {
 
