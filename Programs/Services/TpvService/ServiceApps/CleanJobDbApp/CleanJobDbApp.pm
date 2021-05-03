@@ -65,6 +65,9 @@ sub Run {
 
 		# 1) delete mdi files of pcb which are not in produce
 		$self->__DeleteOldMDIFiles();
+		
+		# 1) delete mdi files of pcb which are not in produce
+		$self->__DeleteOldMDITTFiles();
 
 		# 2) delete mdi files of pcb which are not in produce
 		$self->__DeleteOldJetFiles();
