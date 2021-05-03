@@ -11,6 +11,7 @@ use warnings;
 use Path::Tiny qw(path);
 use Log::Log4perl qw(get_logger :levels);
 use File::Copy qw(move);
+use File::Basename;
 
 #loading of locale modules
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -90,9 +91,9 @@ sub AddPartsNumberMDITT {
 	my $jobId = $orderId;
 	$jobId =~ s/-.*$//;
 
-	my $reg = $jobId . ".*_mdi.jobconfig_uncomplete.xml";
+	my $reg = $jobId . ".*_mdi.jobconfig.xml";
 
-	my @xmlFiles = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $reg );
+	my @xmlFiles = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITTWAIT, $reg );
 
 	unless ( scalar(@xmlFiles) ) {
 
@@ -131,19 +132,26 @@ sub AddPartsNumberMDITT {
 			$file->spew_utf8($data);
 
 		}
+	}
+
+	# Move all job id files to target folder
+	my @sourceFiles = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITTWAIT, $jobId );
+	foreach my $filename (@sourceFiles) {
 
 		# Rename file to let JobEditor process xml
-		my $newName = $filename;
-		$newName =~ s/jobconfig_uncomplete/jobconfig/i;
 
-		unless ( move( $filename, $newName ) ) {
+		my $pTarger = EnumsPaths->Jobs_PCBMDITT . basename($filename);
 
-			$logger->debug( "Error during rename file:" . $filename );
-		
+		#$newPath =~ s/$pWait/$pInProduc/i;
+
+		unless ( move( $filename, $pTarger ) ) {
+
+			$logger->debug( "Error during move file:" . $filename . " to: " . $pTarger );
+
 		}
 		else {
 
-			$logger->debug("Rename file to: $newName");
+			$logger->debug("Move file to: $pTarger");
 
 		}
 	}
@@ -159,7 +167,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::TriggerFunction::MDIFiles';
 
-	my $test = MDIFiles->AddPartsNumberMDITT("d318536-01");
+	my $test = MDIFiles->AddPartsNumberMDITT("d318539-01");
 
 	print $test;
 

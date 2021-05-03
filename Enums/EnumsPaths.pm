@@ -29,13 +29,14 @@ use constant {
 # Disc R
 use constant {
 
-	Jobs_ARCHIV          => "\\\\gatema.cz\\fs\\r\\Archiv\\",
-	Jobs_ARCHIVOLD       => "\\\\gatema.cz\\fs\\p\\Archiv_old\\",
-	Jobs_ARCHIVREMOVED   => "\\\\gatema.cz\\fs\\r\\Archiv_removed\\",
-	Jobs_STACKUPS        => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_slozeni\\",
-	Jobs_COUPONS         => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_InStackCoupon\\",
-	Jobs_PCBMDI          => "\\\\gatema.cz\\fs\\r\\pcb\\mdi\\",
-	Jobs_PCBMDITT          => "\\\\gatema.cz\\fs\\r\\pcb\\mditt\\",
+	Jobs_ARCHIV        => "\\\\gatema.cz\\fs\\r\\Archiv\\",
+	Jobs_ARCHIVOLD     => "\\\\gatema.cz\\fs\\p\\Archiv_old\\",
+	Jobs_ARCHIVREMOVED => "\\\\gatema.cz\\fs\\r\\Archiv_removed\\",
+	Jobs_STACKUPS      => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_slozeni\\",
+	Jobs_COUPONS       => "\\\\gatema.cz\\fs\\r\\PCB\\pcb\\VV_InStackCoupon\\",
+	Jobs_PCBMDI        => "\\\\gatema.cz\\fs\\r\\pcb\\mdi\\",
+	Jobs_PCBMDITT      => "\\\\gatema.cz\\fs\\r\\pcb\\mditt\\",
+	Jobs_PCBMDITTWAIT  => "\\\\gatema.cz\\fs\\r\\pcb\\mditt\\WaitToProduction\\",
 	Jobs_MDI             => "\\\\gatema.cz\\fs\\r\\mdi\\",
 	Jobs_MDITT           => "\\\\gatema.cz\\fs\\r\\mditt\\",
 	Jobs_JETPRINT        => "\\\\gatema.cz\\fs\\r\\potisk\\",

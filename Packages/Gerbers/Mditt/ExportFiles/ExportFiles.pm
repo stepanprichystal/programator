@@ -89,7 +89,11 @@ sub new {
 	$self->{"fiducMark"} = FiducMark->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"units"} );
 
 	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"} );
-
+	
+	my $orderNum = HegMethods->GetPcbOrderNumber($self->{"jobId"});
+	my $info     = HegMethods->GetInfoAfterStartProduce( $self->{"jobId"} . "-" . $orderNum );
+	$self->{"inProduction"} = $info->{'stav'} eq 4 ? 1 : 0;
+ 
 	return $self;
 }
 
@@ -121,6 +125,8 @@ sub __ExportLayers {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	
+ 
 
 	# Go through layer couples
 	foreach my $couples (@lCouples) {
@@ -131,7 +137,7 @@ sub __ExportLayers {
 		my %dataLim = $self->__GetLayerLimit( $couples->[0]->{"gROWname"} );
 		my %pnlDim = ( "w" => $dataLim{"xMax"} - $dataLim{"xMin"}, "h" => $dataLim{"yMax"} - $dataLim{"yMin"} );
 
-		$self->{"exportXml"}->Create( \%pnlDim );
+		$self->{"exportXml"}->Create( \%pnlDim, $self->{"inProduction"} );
 
 		# Go through Primary/Secondary layer
 		for ( my $i = 0 ; $i < scalar( @{$couples} ) ; $i++ ) {
@@ -205,7 +211,13 @@ sub __ExportLayers {
 			}
 
 			#9 ) Copy file to mdi folder after exportig xml template
-			my $finalName = EnumsPaths->Jobs_PCBMDITT . $fileName . ".ger";
+			my $finalName = undef;
+			if($self->{"inProduction"}){
+				$finalName = EnumsPaths->Jobs_PCBMDITT . $fileName . ".ger";
+			}else{
+				$finalName = EnumsPaths->Jobs_PCBMDITTWAIT . $fileName . ".ger";
+			}
+			 
 			copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
 			unlink($tmpFile);
 
@@ -784,7 +796,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d318536";
+	my $jobId    = "d314303";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -795,7 +807,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my %type = (
 				 Enums->Type_SIGNAL => "1",
-				 Enums->Type_MASK   => "0",
+				 Enums->Type_MASK   => "1",
 				 Enums->Type_PLUG   => "0",
 				 Enums->Type_GOLD   => "0"
 	);

@@ -66,12 +66,17 @@ sub new {
 
 	$self->{"jobConfigXML"} = undef;    # Final job config XML
 
+	$self->{"inProduction"} = undef;    # indicate if job is in poroduction
+
 	return $self;
 }
 
 sub Create {
-	my $self   = shift;
-	my $pnlDim = shift;                 # real limits of physical layer data / panel dimension
+	my $self         = shift;
+	my $pnlDim       = shift;           # real limits of physical layer data / panel dimension
+	my $inProduction = shift;
+
+	$self->{"inProduction"} = $inProduction;
 
 	# Load job config template
 	my $templPath = GeneralHelper->Root() . "\\Packages\\Gerbers\\Mditt\\ExportFiles\\jobconfig_templ.xml";
@@ -118,7 +123,7 @@ sub AddPrimarySide {
 	# Total panel count is known only if PCB is in production
 	# If last order is not in production, do not set panel count
 	# Ve výrobì (4)
-	if ( $info->{'stav'} eq 4 ) {
+	if ( $self->{"inProduction"} ) {
 
 		if ( defined $info->{'pocet_prirezu'} && $info->{'pocet_prirezu'} > 0 ) {
 			$parts += $info->{'pocet_prirezu'};
@@ -222,11 +227,6 @@ sub Export {
 
 	my $primaryXML = undef;
 
-	# if total parts is unknown, set temporaray file name: .jobconfig_uncomplete.xml
-	# In this case JobEditor do not process files and will wait to proper file name .jobconfig.xml
-	my $partCnt = ( $self->{"jobConfigXML"}->findnodes('/jobconfig/job_layer/process_parameters/parts_total') )[0]->textContent();
-	my $xmlUncomplete = !defined $partCnt || $partCnt == 0 ? 1 : 0;
-
 	for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
 
 		my $gerName = $layers[$i]->textContent();
@@ -240,16 +240,11 @@ sub Export {
 
 			# export primary XML
 
-			my $elPartsTotal = ( $self->{"jobConfigXML"}->findnodes('/jobconfig/job_layer/process_parameters/parts_total') )[0];
-			my $partCnt      = $elPartsTotal->textContent();
-			if ($xmlUncomplete) {
-
-				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig_uncomplete.xml";
-
+			if ( $self->{"inProduction"} ) {
+				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig.xml";
 			}
 			else {
-
-				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig.xml";
+				$finalFile = EnumsPaths->Jobs_PCBMDITTWAIT . $gerName . ".jobconfig.xml";
 			}
 
 			my $xmlString = $self->{"jobConfigXML"}->toString();
@@ -269,15 +264,11 @@ sub Export {
 			# export secondary reference XML
 			die "Primart xml file name is not defined" unless ( defined $primaryXML );
 
-			if ($xmlUncomplete) {
-
-				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig_uncomplete.xml";
-
+			if ( $self->{"inProduction"} ) {
+				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig.xml";
 			}
 			else {
-
-				$finalFile = EnumsPaths->Jobs_PCBMDITT . $gerName . ".jobconfig.xml";
-
+				$finalFile = EnumsPaths->Jobs_PCBMDITTWAIT . $gerName . ".jobconfig.xml";
 			}
 
 			my $templPath = GeneralHelper->Root() . "\\Packages\\Gerbers\\Mditt\\ExportFiles\\jobconfigsec_templ.xml";
