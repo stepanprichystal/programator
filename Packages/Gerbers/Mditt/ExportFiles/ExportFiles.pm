@@ -89,11 +89,11 @@ sub new {
 	$self->{"fiducMark"} = FiducMark->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"units"} );
 
 	$self->{"exportXml"} = ExportXml->new( $self->{"inCAM"}, $self->{"jobId"} );
-	
-	my $orderNum = HegMethods->GetPcbOrderNumber($self->{"jobId"});
+
+	my $orderNum = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
 	my $info     = HegMethods->GetInfoAfterStartProduce( $self->{"jobId"} . "-" . $orderNum );
 	$self->{"inProduction"} = $info->{'stav'} eq 4 ? 1 : 0;
- 
+
 	return $self;
 }
 
@@ -125,8 +125,6 @@ sub __ExportLayers {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
-	
- 
 
 	# Go through layer couples
 	foreach my $couples (@lCouples) {
@@ -201,7 +199,19 @@ sub __ExportLayers {
 
 			$fileName = "${jobId}${fileName}_mdi";
 
-			# 8) Add exposition settings for specific layers to XML
+			#8 ) Copy file to mdi folder after exportig xml template
+			my $finalName = undef;
+			if ( $self->{"inProduction"} ) {
+				$finalName = EnumsPaths->Jobs_PCBMDITT . $fileName . ".ger";
+			}
+			else {
+				$finalName = EnumsPaths->Jobs_PCBMDITTWAIT . $fileName . ".ger";
+			}
+
+			copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
+			unlink($tmpFile);
+
+			# 9) Add exposition settings for specific layers to XML
 			if ( $i == 0 ) {
 
 				$self->{"exportXml"}->AddPrimarySide( $l->{"gROWname"}, $fiducDCode, $fileName );
@@ -209,17 +219,6 @@ sub __ExportLayers {
 			elsif ( $i == 1 ) {
 				$self->{"exportXml"}->AddSecondarySide( $l->{"gROWname"}, $fiducDCode, $fileName );
 			}
-
-			#9 ) Copy file to mdi folder after exportig xml template
-			my $finalName = undef;
-			if($self->{"inProduction"}){
-				$finalName = EnumsPaths->Jobs_PCBMDITT . $fileName . ".ger";
-			}else{
-				$finalName = EnumsPaths->Jobs_PCBMDITTWAIT . $fileName . ".ger";
-			}
-			 
-			copy( $tmpFile, $finalName ) or die "Unable to copy mdi gerber file from: $tmpFile.\n";
-			unlink($tmpFile);
 
 		}
 
@@ -244,7 +243,7 @@ sub __DeleteOldFiles {
 
 		my @f = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDITT, $jobId . '[csv]\d*' );
 
-		#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . '[csv]\d*' ); # Do not delete source file for jobediotr => cause crash
+#my @f2 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_PCBMDITT, $jobId . '[csv]\d*' ); # Do not delete source file for jobediotr => cause crash
 
 		#push( @file2del, ( @f, @f2 ) );
 
