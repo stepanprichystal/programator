@@ -22,6 +22,7 @@ use aliased 'Packages::Scoring::ScoreOptimize::ScoreOptimize';
 use aliased 'Packages::Export::ScoExport::ProgCreator::ProgCreator';
 use aliased 'Packages::Export::ScoExport::Enums';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Scoring::ScoreChecker::Enums' => "ScoEnums";
