@@ -102,8 +102,8 @@ sub __GetPanelOrientation {
 	my $matKind = shift;
 
 	my %pnlOrient = ();
-	$pnlOrient{"PYRALUX"} = "transverse";
-	$pnlOrient{"THINFLEX"} = "transverse";
+	$pnlOrient{"PYRALUX"} = "machine"; # Pyralux AP - produced as sheets 600x900mm
+	$pnlOrient{"THINFLEX"} = "transverse"; # Twhiflex W - produced as rolles with 500mm width
 
 	my $ori = $pnlOrient{$matKind};
 	$ori = "machine" unless ( defined $ori );

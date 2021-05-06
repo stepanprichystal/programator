@@ -9,7 +9,8 @@ package Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand
 use strict;
 use warnings;
 use Log::Log4perl qw(get_logger);
-use Mail::Sender;
+use MIME::Lite;
+use Encode qw(decode encode);
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -64,24 +65,26 @@ sub Run {
 	my $errorStr = shift;    # ref on error string, where error message is stored
 	my $type     = shift;    # Data_COOPERATION, Data_CONTROL
 	my $inserted = shift;    # time of inserting request
-	my $loginId  = shift;	 # login of user which requested control data
+	my $loginId  = shift;    # login of user which requested control data
 
 	my $result = 1;
 
-	eval {
+		eval {
+	
+			$self->__Run( \$result, $errorStr, $type );
+	
+		};
+		if ($@) {
+	
+			my $eStr = $@;
+			$$errorStr .= "\n\n" . $eStr;
+			$result = 0;
+	
+		}
 
-		$self->__Run( \$result, $errorStr, $type );
-
-	};
-	if ($@) {
-
-		my $eStr = $@;
-		$$errorStr .= "\n\n" . $eStr;
+	unless ( $self->SendMail( $errorStr, $type, $inserted, $loginId ) ) {
 		$result = 0;
-
 	}
-
-	$self->SendMail( $result, $errorStr, $type, $inserted, $loginId );
 
 	return $result;
 }
@@ -100,7 +103,7 @@ sub __Run {
 	# Open job
 	$self->{"taskDataApp"}->_OpenJob($jobId);
 
-	$self->{"defaultInfo"} = DefaultInfo->new($jobId );
+	$self->{"defaultInfo"} = DefaultInfo->new($jobId);
 	$self->{"defaultInfo"}->Init($inCAM);
 
 	# Check data - Group PRE (if we export some group,
@@ -123,7 +126,6 @@ sub __Run {
 	}
 
 	# Close job
-	
 
 }
 
@@ -215,21 +217,32 @@ sub ItemResultHandler {
 
 sub SendMail {
 	my $self     = shift;
-	my $result   = shift;
 	my $errorStr = shift;
 	my $type     = shift;
 	my $inserted = shift;
-	my $loginId = shift;
+	my $loginId  = shift;
 	
-	
+	my $result = 1;
 
 	$self->{"taskDataApp"}->{"logger"}->debug("send mail result $result, $errorStr, $inserted, $loginId");
 
 	my $jobId = $self->{"jobId"};
-	
+
 	# Get info about user
-	my $userInfo = HegMethods->GetEmployyInfo(undef, $loginId);
- 
+	my $userInfo = HegMethods->GetEmployyInfo( undef, $loginId );
+
+	my @addres   = ();
+	my @addresCC = ();
+
+	if ( defined $userInfo && defined $userInfo->{"e_mail"} =~ /^[a-z0-9.]+\@[a-z0-9.-]+$/i ) {
+
+		push( @addres, $userInfo->{"e_mail"} );
+	}
+	else {
+
+		push( @addres, EnumsPaths->MAIL_GATSALES );
+	}
+
 	# fill templkey with data
 	my $templKey = TemplateKey->new();
 
@@ -246,17 +259,17 @@ sub SendMail {
 	}
 
 	$templKey->SetAppName( EnumsApp->GetTitle( EnumsApp->App_TASKONDEMAND ) );
-	$templKey->SetMessageType( $result    ? "SUCCESS"  : "FAILED" );
+	$templKey->SetMessageType( $result    ? "SUCCESS" : "FAILED" );
 	$templKey->SetMessageTypeClr( $result ? "#BFE89B" : "#FF8080" );
 	$templKey->SetTaskType( $t . " (requested at $inserted)" );
 	$templKey->SetJobId($jobId);
-	
+
 	my $author = "";
 	my $nif    = NifFile->new( $self->{"jobId"} );
 	if ( $nif->Exist() ) {
 		$author = $nif->GetPcbAuthor();
 	}
-	$templKey->SetJobAuthor( $author);
+	$templKey->SetJobAuthor($author);
 
 	my $str = "<br/>";
 
@@ -267,6 +280,7 @@ sub SendMail {
 	else {
 
 		$str .= "Please contact TPV\n\n Error detail:\n" . $$errorStr;
+		push( @addresCC, EnumsPaths->MAIL_GATTPV );
 	}
 
 	$str =~ s/\n/<br>/g;
@@ -288,36 +302,32 @@ sub SendMail {
 		my $htmlFileStr = FileHelper->ReadAsString($htmlFile);
 		unlink($htmlFile);
 
-		my $sender = new Mail::Sender { smtp => $self->{"smtp"}, port => 25, from => $self->{"from"} };
+		my $msg = MIME::Lite->new(
+			From => $self->{"from"},
+			To   => join( ", ", @addres ),
 
-		my @addres = ();
-		
-		if(defined $userInfo && defined $userInfo->{"e_mail"} =~ /^[a-z0-9.]+\@[a-z0-9.-]+$/i){
-			
-			push(@addres,$userInfo->{"e_mail"});
-		}else{
-			
-			push(@addres,'pcb@gatema.cz');
-		}
-	 
-		$sender->Open(
-			{
-			   to      => \@addres,
-			   subject => "Task on demand - " . $t . " ($jobId)",
+			Cc => join( ", ", @addresCC ),
 
-			   #msg     => "I'm sending you the list you wanted.",
-			   #file    => 'filename.txt'
-			   ctype    => "text/html",
-			   encoding => "7bit",
+			Bcc => ['stepan.prichystal@gatema.cz'],    #TODO temporary,
 
-			  # bcc => ( !$result ? 'stepan.prichystal@gatema.cz' : undef )    #TODO temporary
-			  bcc =>  ['stepan.prichystal@gatema.cz']   #TODO temporary
-			}
+			Subject => encode( "UTF-8", "Task on demand - " . $t . " ($jobId)" ),    # Encode must by use if subject with diacritics
+
+			Type => 'multipart/related'
 		);
 
-		$sender->SendEx($htmlFileStr);
+		# Add your text message.
+		$msg->attach( Type => 'text/html',
+					  Data => encode( "UTF-8", $htmlFileStr ) );
+
+		my $resSend = $msg->send( 'smtp', $self->{"smtp"} );
+
+		if ( $resSend ne 1 ) {
+
+			$result = 0;
+		}
 	}
 
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#

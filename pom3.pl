@@ -10,90 +10,109 @@ use strict;
 use warnings;
 use Path::Tiny qw(path);
 use Log::Log4perl qw(get_logger :levels);
+use aliased 'Helpers::JobHelper';
+use aliased 'CamHelpers::CamJob';
 
+use aliased 'Enums::EnumsPaths';
+use aliased 'Enums::EnumsApp';
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Helpers::GeneralHelper';
+use aliased 'Packages::Events::Event';
+use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+use aliased 'Managers::MessageMngr::MessageMngr';
+use aliased 'CamHelpers::CamAttributes';
+use aliased "Programs::Exporter::ExportChecker::Groups::PreExport::Presenter::PreUnit";
+use aliased "Programs::Exporter::ExportChecker::Groups::OutExport::Presenter::OutUnit";
+use aliased "Programs::Exporter::ExportUtility::Groups::OutExport::OutWorkUnit" => "UnitExport";
+use aliased 'Helpers::FileHelper';
+use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
+use aliased 'Packages::ItemResult::ItemResultMngr';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::Enums';
+use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::MailTemplate::TemplateKey';
+use aliased 'Packages::Other::HtmlTemplate::HtmlTemplate';
+use aliased 'Packages::NifFile::NifFile';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased "Enums::EnumsPaths";
 
-my $p = EnumsPaths->Jobs_MDITT;
+use MIME::Lite;
+use File::Basename;
+use Encode qw(decode encode);
 
-#my $p  = "c:\\Export\\test\\test\\";
+my $smtp = "127.0.0.1";      #testing server paper-cut
+my $from = "test\@test.cz";
 
-my $dir;
-opendir( $dir, $p ) or die $!;
+ SendMail();
 
-my $exist = 0;
+sub SendMail {
+	my $loginId = "000328";
 
-my $i = 0;
-my $total = 0;
-while ( my $filename = readdir($dir) ) {
+	my $jobId = "D123456";
 
-	next unless($filename =~ /joblayer\.xml/);
-	
-	
-		my $file = path($p.$filename);
+	# Get info about user
+	my $userInfo = HegMethods->GetEmployyInfo( undef, $loginId );
 
-		my $data = $file->slurp_utf8;
+	# fill templkey with data
+	my $templKey = TemplateKey->new();
 
-			#lower_tolerance_factor="-0.75"
+	# compose message
+	my $t = "";
 
-		if ( $data =~ /lower_tolerance_factor="-0.75"/ ) {
-			
-			$data =~ s/lower_tolerance_factor="-0.75"/lower_tolerance_factor="-0.075"/i;
-			
-		 
-			$file->spew_utf8($data);
-			
-			$i++;
-			
-			print "$i: ".$file."\n";
+	my $str = "<br/>";
+
+	$templKey->SetMessage($str);
+
+	# Fill template with values
+
+	my $htmlTempl = HtmlTemplate->new("en");
+
+	my $oriTemplPath =
+	  GeneralHelper->Root() . "\\Programs\\Services\\TpvService2\\ServiceApps\\TaskOnDemand\\TaskOnDemand\\MailTemplate\\template.html";
+
+	if ( $htmlTempl->ProcessTemplate( $oriTemplPath, $templKey ) ) {
+
+		# send email
+
+		my $htmlFile    = $htmlTempl->GetOutFile();
+		my $htmlFileStr = FileHelper->ReadAsString($htmlFile);
+		unlink($htmlFile);
+
+		my @addres = ();
+
+		if ( defined $userInfo && defined $userInfo->{"e_mail"} =~ /^[a-z0-9.]+\@[a-z0-9.-]+$/i ) {
+
+			push( @addres, $userInfo->{"e_mail"} );
+		}
+		else {
+
+			push( @addres, 'pcb@gatema.cz' );
 		}
 
-	$total++;
+		my $msg = MIME::Lite->new(
+			From => $from,
+			To   => join( ", ", @addres ),
+
+			#Cc   => join( ", ", @{$cc} ),
+
+			Bcc => ['stepan.prichystal@gatema.cz'],    #TODO temporary,
+
+			Subject => encode( "UTF-8", "Task on demand - " . $t . " ($jobId)" ),    # Encode must by use if subject with diacritics
+
+			Type => 'multipart/related'
+		);
+
+		# Add your text message.
+		$msg->attach( Type => 'text/html',
+					  Data => encode( "UTF-8", $htmlFileStr ) );
+
+		my $result = $msg->send( 'smtp', $smtp );
+
+		if ( $result ne 1 ) {
+
+			print STDERR $result;
+			$result = 0;
+
+		}
+	}
 
 }
-
-print "Total:".$total;
-
-#	foreach my $filename (@xmlFiles) {
-#
-#		$logger->debug("update file: $filename");
-#
-#		my $file = path($filename);
-#
-#		my $data = $file->slurp_utf8;
-#
-#		if ( $data =~ /(<parts_remaining>)(\d*)(<\/parts_remaining>)/ ) {
-#			$logger->debug("parts_remaining found ok");
-#		}
-#
-#		$data =~ s/(<parts_remaining>)(\d*)(<\/parts_remaining>)/$1$parts$3/i;
-#		$data =~ s/(<parts_total>)(\d*)(<\/parts_total>)/$1$parts$3/i;
-#		$file->spew_utf8($data);
-#
-#	}
-
-1;
-
-die;
-
-# $jobconfig->insertAfter( $eleml );
-#  my  $jobconfig2= ( $doc->findnodes('/jobconfig/job_layer') )[-1];
-#   $jobconfig2->addSibling( $eleml2 );
-#
-#
-#
-#my $outPath =  "c:\\Export\\test\\Final\\script\\out.xml";
-### save
-#open my $out, '>', $outPath;
-#binmode $out; # as above
-#$doc->toFH($out, 2);
-### or
-##print {$out} $doc->toString();
-#
-##use XML::LibXML::PrettyPrint;
-##
-##my $document = XML::LibXML->new->parse_file($outPath);
-##my $pp = XML::LibXML::PrettyPrint->new(indent_string => "  ");
-###$pp->pretty_print($document); # modified in-place
-###
-###
-##die;

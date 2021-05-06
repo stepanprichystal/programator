@@ -12,6 +12,8 @@ use Log::Log4perl qw(get_logger);
 use Mail::Sender;
 use List::Util qw(first);
 use File::Basename;
+use MIME::Lite;
+use Encode qw(decode encode);
 
 #local library
 use aliased 'Helpers::JobHelper';
@@ -82,7 +84,9 @@ sub Run {
 
 	}
 
-	$self->SendMail( $result, $errorStr, $type, $inserted, $loginId );
+	unless ( $self->SendMail( $errorStr, $type, $inserted, $loginId ) ) {
+		$result = 0;
+	}
 
 	return $result;
 }
@@ -171,21 +175,30 @@ sub ItemResultHandler {
 
 sub SendMail {
 	my $self     = shift;
-	my $result   = shift;
 	my $errorStr = shift;
 	my $type     = shift;
 	my $inserted = shift;
 	my $loginId  = shift;
 
-	$self->{"taskDataApp"}->{"logger"}->debug("send mail result $result, $$errorStr, $inserted, $loginId");
+	my $result = 1;
+
+	$self->{"taskDataApp"}->{"logger"}->debug("send mail result $result, $errorStr, $inserted, $loginId");
 
 	my $jobId = $self->{"jobId"};
 
 	# Get info about user
-	my $userInfo = undef;
+	my $userInfo = HegMethods->GetEmployyInfo( undef, $loginId );
 
-	if ( $loginId =~ /\d+/i ) {
-		$userInfo = HegMethods->GetEmployyInfo( undef, $loginId );
+	my @addres   = ();
+	my @addresCC = ();
+
+	if ( defined $userInfo && defined $userInfo->{"e_mail"} =~ /^[a-z0-9.]+\@[a-z0-9.-]+$/i ) {
+
+		push( @addres, $userInfo->{"e_mail"} );
+	}
+	else {
+
+		push( @addres, EnumsPaths->MAIL_GATSALES );
 	}
 
 	# fill templkey with data
@@ -194,9 +207,13 @@ sub SendMail {
 	# compose message
 	my $t = "";
 
-	if ( $type eq Enums->Data_AOI ) {
+	if ( $type eq Enums->Data_COOPERATION ) {
 
-		$t = "AOI repair data";
+		$t = "Cooperation data";
+	}
+	elsif ( $type eq Enums->Data_CONTROL ) {
+
+		$t = "Control data";
 	}
 
 	$templKey->SetAppName( EnumsApp->GetTitle( EnumsApp->App_TASKONDEMAND ) );
@@ -215,12 +232,13 @@ sub SendMail {
 	my $str = "<br/>";
 
 	if ($result) {
-		my $url = JobHelper->GetJobArchive($jobId) . "Zdroje\\ot";
+		my $url = JobHelper->GetJobArchive($jobId) . "Zdroje";
 		$str .= "Archiv: <a " . "href=\"" . $url . "\" >" . $url . "</a>";
 	}
 	else {
 
 		$str .= "Please contact TPV\n\n Error detail:\n" . $$errorStr;
+		push( @addresCC, EnumsPaths->MAIL_GATTPV );
 	}
 
 	$str =~ s/\n/<br>/g;
@@ -242,26 +260,32 @@ sub SendMail {
 		my $htmlFileStr = FileHelper->ReadAsString($htmlFile);
 		unlink($htmlFile);
 
-		my $sender = new Mail::Sender { smtp => $self->{"smtp"}, port => 25, from => $self->{"from"} };
+		my $msg = MIME::Lite->new(
+			From => $self->{"from"},
+			To   => join( ", ", @addres ),
 
-		$sender->Open(
-			{
-			   to      => ['stepan.prichystal@gatema.cz'],
-			   subject => "Task on demand - " . $t . " ($jobId)",
+			Cc => join( ", ", @addresCC ),
 
-			   #msg     => "I'm sending you the list you wanted.",
-			   #file    => 'filename.txt'
-			   ctype    => "text/html",
-			   encoding => "7bit",
+			Bcc => ['stepan.prichystal@gatema.cz'],    #TODO temporary,
 
-			   # bcc => ( !$result ? 'stepan.prichystal@gatema.cz' : undef )    #TODO temporary
+			Subject => encode( "UTF-8", "Task on demand - " . $t . " ($jobId)" ),    # Encode must by use if subject with diacritics
 
-			}
+			Type => 'multipart/related'
 		);
 
-		$sender->SendEx($htmlFileStr);
+		# Add your text message.
+		$msg->attach( Type => 'text/html',
+					  Data => encode( "UTF-8", $htmlFileStr ) );
+
+		my $resSend = $msg->send( 'smtp', $self->{"smtp"} );
+
+		if ( $resSend ne 1 ) {
+
+			$result = 0;
+		}
 	}
 
+	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#

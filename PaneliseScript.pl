@@ -71,6 +71,7 @@ use aliased 'Packages::CAMJob::SolderMask::UnMaskNC';
 use aliased 'Packages::GuideSubs::Drilling::BlindDrilling::BlindDrillTools';
 use aliased 'Packages::GuideSubs::Drilling::BlindDrilling::CheckDrillTools';
 use aliased 'Packages::GuideSubs::Routing::DoRoutOptimalization';
+use aliased 'Packages::GuideSubs::Scoring::DoScoreLayer';
 
 use aliased 'Widgets::Forms::SimpleInput::SimpleInputFrm';
 
@@ -100,7 +101,7 @@ unless ($ENV{JOB}) {
 	$jobName = "$ENV{JOB}";
 }
 
-#$jobName= "d298520";
+#$jobName= "d319756";
 
 my $inCAM = InCAM->new();
 my @errorMessageArr = ();
@@ -1339,6 +1340,12 @@ sub _Panelize {
 									   	    
 								}
 					}
+			}
+			
+			# Create score layer
+			if ( CamHelper->LayerExists( $inCAM, $jobName, "score" ) ) {
+
+				my $res = DoScoreLayer->CreateScoreLayer( $inCAM, $jobName );
 			}
 			
 			exit;
