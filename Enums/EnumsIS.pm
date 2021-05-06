@@ -36,4 +36,22 @@ use constant {
 			   MatType_PREPREGFLEX => "Prepreg Flex"
 };
 
+# Operation ID - attribut which is able to fill with additional information
+# (by arbitrary number of pairs: key + value)
+use constant {
+	
+#	# Main PCB operation
+#	OpId_galvanicke_medeni_tenting_1    => "galvanicke_medeni_tenting_1",
+#	OpId_galvanicke_medeni_tenting_2    => "galvanicke_medeni_tenting_2",
+#	OpId_galvanicke_medeni_tenting_3    => "galvanicke_medeni_tenting_3",
+#	OpId_galvanicke_medeni_a_cinovani_1 => "galvanicke_medeni_a_cinovani_1",
+#	OpId_galvanicke_medeni_a_cinovani_2 => "galvanicke_medeni_a_cinovani_2",
+#	OpId_galvanicke_medeni_a_cinovani_3 => "galvanicke_medeni_a_cinovani_3",
+
+	# Core operatioon
+	OpId_galvanicke_medeni_tenting   => "galvanicke_medeni_tenting",
+	OpId_galvanike_medeni_a_cinovani => "galvanike_medeni_a_cinovani"
+
+};
+
 1;

@@ -22,6 +22,8 @@ use aliased 'CamHelpers::CamDTM';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Enums::EnumsChecklist';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamChecklist';
+
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
@@ -45,12 +47,25 @@ sub ActionRun {
 		$async = "no";
 	}
 
+	CamHelper->SetStep( $inCAM, $step );
+
 	# Copy checklist from global library
 	if ( !$self->ChecklistExists( $inCAM, $jobId, $step, $checklist ) && $copyFromLib ) {
 		$inCAM->COM( "chklist_from_lib", "chklist" => $checklist );
 	}
+	
+	if ( CamChecklist->GetChecklistActionCnt( $inCAM, $jobId, $step, $checklist ) < $action ) {
 
-	CamHelper->SetStep( $inCAM, $step );
+		#$inCAM->COM( "chklist_delete", "chklist" => $checklistName );
+		
+		CamChecklist->CopyChecklistFromLib( $inCAM, $checklist );
+		#CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklistName );
+
+	}
+	
+	#CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklist );
+
+	
 
 	$inCAM->COM( "chklist_run", "chklist" => $checklist, "nact" => $action, "area" => "global", "async_run" => $async );
 
@@ -75,7 +90,6 @@ sub CopyChecklistToStep {
 sub CopyChecklistFromLib {
 	my $self         = shift;
 	my $inCAM        = shift;
-	my $step         = shift;
 	my $checklistSrc = shift;
 	my $checklistDst = shift // $checklistSrc;
  
