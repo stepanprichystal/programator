@@ -435,7 +435,7 @@ sub __DeleteOldMDITTFiles {
 
 				push( @deletedJobs, $fileJobId );
 
-				if ( $file =~ /\.(gbr|xml)/i ) {
+				if ( $file =~ /\.(ger|xml)/i ) {
 
 					unlink $p . $file;
 					$deletedFiles++;
@@ -453,7 +453,7 @@ sub __DeleteOldMDITTFiles {
 		$self->{"logger"}->debug("Deleted MDITT job: $pcbId - $state");
 	}
 
-	$self->{"logger"}->info("Number of deleted job from MDI TT folder: $deletedFiles");
+	$self->{"logger"}->info("Number of deleted files from MDI TT folder: $deletedFiles");
 }
 
 sub __DeleteOldJetFiles {
