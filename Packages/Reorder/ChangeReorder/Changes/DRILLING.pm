@@ -30,6 +30,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Reorder::Enums';
 use aliased 'Packages::CAMJob::Drilling::MoveDrillHoles';
 use aliased 'Packages::CAMJob::Drilling::NPltDrillCheck';
+use aliased 'Packages::Other::CustomerNote';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -96,34 +97,40 @@ sub Run {
 		my $maxTool  = 1000;
 		my $pltLayer = "m";
 
-		if ( CamHelper->LayerExists( $inCAM, $jobId, $pltLayer ) ) {
+		my $customer = HegMethods->GetCustomerInfo($jobId);
+		my $note     = CustomerNote->new( $customer->{"reference_subjektu"} );
 
-			my @childs = CamStep->GetJobEditSteps( $inCAM, $jobId );
-			my @nplt =
-			  map { $_->{"gROWname"} }
-			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
+		if ( !( defined $note->SmallNpth2Pth() && $note->SmallNpth2Pth() == 0 ) ) {
 
-			foreach my $s (@childs) {
+			if ( CamHelper->LayerExists( $inCAM, $jobId, $pltLayer ) ) {
 
-				foreach my $npltLayer (@nplt) {
+				my @childs = CamStep->GetJobEditSteps( $inCAM, $jobId );
+				my @nplt =
+				  map { $_->{"gROWname"} }
+				  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
 
-					my $checkRes = {};
-					unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
+				foreach my $s (@childs) {
 
-						my $movedHoleCntRef     = -1;
-						my $movedHoleAttrValRef = -1;
-						my $res = MoveDrillHoles->MoveSmallNpth2Pth( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, \$movedHoleCntRef,
-																	 \$movedHoleAttrValRef );						 
-						unless($res){
-							$$mess .= "Error during move small npth holes from: $npltLayer to plated layer: $pltLayer";
-							$result = 0;
-						}										 
+					foreach my $npltLayer (@nplt) {
+
+						my $checkRes = {};
+						unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
+
+							my $movedHoleCntRef     = -1;
+							my $movedHoleAttrValRef = -1;
+							my $res = MoveDrillHoles->MoveSmallNpth2Pth( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, \$movedHoleCntRef,
+																		 \$movedHoleAttrValRef );
+							unless ($res) {
+								$$mess .= "Error during move small npth holes from: $npltLayer to plated layer: $pltLayer";
+								$result = 0;
+							}
+						}
 					}
 				}
 			}
 		}
 	}
-	
+
 	return $result;
 }
 
@@ -135,15 +142,17 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::Reorder::ChangeReorder::Changes::DRILLING' => "Change";
 	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::Reorder::Enums';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d298152";
-
-	my $check = Change->new( "key", $inCAM, $jobId );
+	my $jobId = "d134574";
+	my $orderId = "d134574-01";
+ 
+	my $check = Change->new( "DRILLING", $inCAM, $jobId, $orderId, Enums->ReorderType_STD );
 
 	my $mess = "";
 	print "Change result: " . $check->Run( \$mess );
-	print "Mess:". $mess;
+	print "Mess:" . $mess;
 }
 
 1;

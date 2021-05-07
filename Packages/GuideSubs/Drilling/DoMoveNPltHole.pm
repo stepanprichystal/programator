@@ -24,6 +24,8 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStep';
+use aliased 'Packages::Other::CustomerNote';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -40,6 +42,12 @@ sub MoveSmallNpth2Pth {
 	my $messMngr = MessageMngr->new($jobId);
 
 	my $step = "o+1";
+
+	# Check if costomer allow moveing npth 2 pth layer
+	my $customer = HegMethods->GetCustomerInfo($jobId);
+	my $note     = CustomerNote->new( $customer->{"reference_subjektu"} );
+
+	return 0 if ( defined $note->SmallNpth2Pth() && $note->SmallNpth2Pth() == 0 );
 
 	my $unMaskedCntRef   = 0;
 	my $unMaskAttrValRef = "";
@@ -78,7 +86,7 @@ sub MoveSmallNpth2Pth {
 
 							$inCAM->COM( "sel_change_sym", "symbol" => "cross3500x3500x500x500x50x50xr" );
 
-							CamLayer->DisplayLayers( $inCAM, [ $lTmp, $pltLayer  ] );
+							CamLayer->DisplayLayers( $inCAM, [ $lTmp, $pltLayer ] );
 
 							my @mess = ();
 							push( @mess,
@@ -97,7 +105,7 @@ sub MoveSmallNpth2Pth {
 							push( @mess, " - neobsahující toleranci v DTM" );
 							push( @mess, "" );
 
-							$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );        #  Script se zastavi
+							$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );    #  Script se zastavi
 							$inCAM->PAUSE("Zkontroluj presunute neprokovene otvory. Vrstva: $lTmp ");
 
 							CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
@@ -131,7 +139,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d298152";
+	my $jobId = "d317363";
 
 	my $notClose = 0;
 

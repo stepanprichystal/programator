@@ -782,31 +782,36 @@ sub OnCheckGroupData {
 		my $maxTool  = 1000;
 		my $pltLayer = "m";
 
-		if ( $defaultInfo->LayerExist($pltLayer) ) {
+		my $note = $defaultInfo->GetCustomerNote();
 
-			my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
-			my @nplt =
-			  map { $_->{"gROWname"} }
-			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
+		if ( !( defined $note->SmallNpth2Pth() && $note->SmallNpth2Pth() == 0 ) ) {
 
-			foreach my $s (@childs) {
+			if ( $defaultInfo->LayerExist($pltLayer) ) {
 
-				foreach my $npltLayer (@nplt) {
+				my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+				my @nplt =
+				  map { $_->{"gROWname"} }
+				  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill, EnumsGeneral->LAYERTYPE_nplt_nDrill ] );
 
-					my $checkRes = {};
-					unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
+				foreach my $s (@childs) {
 
-						$dataMngr->_AddWarningResult(
-													  "Malé otvory v neprokovené NC vrstvě",
-													  "Step: $s, NC vrstva: $npltLayer obsahuje nástroje menší jak "
-														. $maxTool
-														. "µm, které by měly být přesunuty do prokovené vrtačky. "
-														. "\n- Seznam použitých nástrojů indikovaných otvorů: "
-														. join( "; ", map { $_ . "µm" } uniq( @{ $checkRes->{"padTools"} } ) )
-														. "\n- Seznam \"features Id\" padů, které mají být přesunuty: "
-														. join( "; ", @{ $checkRes->{"padFeatures"} } )
-														. "\nPozor, otvory obsahující atribut \".pilot_hole\" a otvory s nastavenou tolerancí v DTM se nepřesouvají!"
-						);
+					foreach my $npltLayer (@nplt) {
+
+						my $checkRes = {};
+						unless ( NPltDrillCheck->SmallNPltHoleCheck( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, $checkRes ) ) {
+
+							$dataMngr->_AddWarningResult(
+														  "Malé otvory v neprokovené NC vrstvě",
+														  "Step: $s, NC vrstva: $npltLayer obsahuje nástroje menší jak "
+															. $maxTool
+															. "µm, které by měly být přesunuty do prokovené vrtačky. "
+															. "\n- Seznam použitých nástrojů indikovaných otvorů: "
+															. join( "; ", map { $_ . "µm" } uniq( @{ $checkRes->{"padTools"} } ) )
+															. "\n- Seznam \"features Id\" padů, které mají být přesunuty: "
+															. join( "; ", @{ $checkRes->{"padFeatures"} } )
+															. "\nPozor, otvory obsahující atribut \".pilot_hole\" a otvory s nastavenou tolerancí v DTM se nepřesouvají!"
+							);
+						}
 					}
 				}
 			}
@@ -1064,11 +1069,8 @@ sub OnCheckGroupData {
 				# a) if tp[cs] layer exist not exist and stiffener thickness is greater than $maxStiffH
 				# b) if tp[cs] layer exist not exist and stiffener is from top side
 
-				if (
-					( !$defaultInfo->LayerExist( $tapeLName, 1 ) && $stiffThick >= $maxStiffH )
-						||
-					( !$defaultInfo->LayerExist( $tapeLName, 1 ) && $stiffSide eq "top" )
-				  )
+				if (    ( !$defaultInfo->LayerExist( $tapeLName, 1 ) && $stiffThick >= $maxStiffH )
+					 || ( !$defaultInfo->LayerExist( $tapeLName, 1 ) && $stiffSide eq "top" ) )
 				{
 					$dataMngr->_AddErrorResult(
 						"Hloubková fréza lepidla stiffeneru ${stiffSide}",

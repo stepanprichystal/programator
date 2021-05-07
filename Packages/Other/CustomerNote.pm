@@ -243,6 +243,20 @@ sub GlobalEQEmail {
 }
 
 
+# Return if customer doesn't mine/ doesn't want
+# move small npth holes to pth layer
+sub SmallNpth2Pth {
+	my $self = shift;
+
+	if ( !$self->Exist() ) {
+		return undef;
+	}
+
+	return $self->{"notes"}->{"SmallNpth2Pth"};
+
+}
+
+
 
  
 
