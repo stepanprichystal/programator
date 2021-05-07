@@ -374,9 +374,14 @@ sub __AddJobLayerSett {
 	$elPolarity->appendText($polarity);
 
 	# Set exposure energy
-	my $energy = 27;    # Default energy for resist = 25
+	my $energy = 0;    # Default energy for resist = 25
 
-	if ( $layerName =~ /^m[cs]2?$/ ) {
+	if ( $layerName =~ /^(plg)?[csv]\d*$/ ) {
+
+		$energy = 27;                            # Default energy for resist = 25
+
+	}
+	elsif ( $layerName =~ /^m[cs]2?$/ ) {
 
 		#  power by mask color
 		my %mask = ();
@@ -412,6 +417,13 @@ sub __AddJobLayerSett {
 			die "Energy for color: $clr is not defined";
 		}
 	}
+	elsif ( $layerName =~ /^gold[cs]$/ ) {
+
+		$energy = 10;
+
+	}
+
+	die "Energy is 0 for layer: ${layerName}" if ( !defined $energy || $energy == 0 );
 
 	my $elEnergy = ( $layerXML->findnodes('/job_layer/process_parameters/exposure/exposure_energy') )[0];
 	$elEnergy->removeChildNodes();

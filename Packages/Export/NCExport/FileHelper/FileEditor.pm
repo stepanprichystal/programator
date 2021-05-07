@@ -207,9 +207,9 @@ sub EditAfterOpen {
 				if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlycMill
 					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cvrlysMill
 					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
-					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill 
+					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
 					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
-					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill)
+					 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill )
 				{
 
 					my ( $pre, $suf ) = $dn =~ m/^(.*M97,\w\d{6})(.*)$/;
@@ -226,8 +226,9 @@ sub EditAfterOpen {
 					{
 
 						($sigLayer) = $ncStart =~ /^stiff(.*)/;
-					
-					}elsif (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
+
+					}
+					elsif (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
 							|| $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill )
 					{
 
@@ -337,35 +338,28 @@ sub EditBeforeSave {
 	}
 
 	# ================================================================
-	# 2) EDIT: if operation item contains only layers type of:
-	# LAYERTYPE_plt_nDrill
+	# 2) EDIT: if operation item contains not only LAYERTYPE_plt_nMill layers:
+	# Thus program is merged from more layers
 	# LAYERTYPE_plt_nMill
-	# Put M47, Frezovani pred prokovem (2nd mess in program) into brackets (M47 stop machine, brackets no)
-	# 18.3. LBA - pozadavek zrusit zavorky, aby se masina zastavila
+	# Remove bracket from M47, Frezovani pred prokovem (2nd mess in program) (M47 stop machine, brackets no)
+	# 6.5. LBA - pozadavek zrusit zavorky, aby se masina zastavila
 
-#	my @l2 =
-#	  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_nMill } $opItem->GetSortedLayers();
-#
-#	unless ( scalar(@l2) ) {
-#
-#		# put M47, Message to brackets
-#		my $messageCnt = 0;
-#		for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
-#
-#			if ( $parseFile->{"body"}->[$i]->{"line"} =~ /m47/i ) {
-#
-#				$messageCnt++;
-#
-#				if ( $messageCnt == 2 ) {
-#					$parseFile->{"body"}->[$i]->{"line"} =~ s/\n//;
-#					$parseFile->{"body"}->[$i]->{"line"} = "(" . $parseFile->{"body"}->[$i]->{"line"} . ")\n";
-#					last;
-#				}
-#
-#			}
-#
-#		}
-#	}
+	my @nDrill = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nDrill } $opItem->GetSortedLayers();
+	my @nMill  = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill } $opItem->GetSortedLayers();
+
+	if ( scalar(@nDrill) && scalar(@nMill) ) {
+
+		for ( my $i = 0 ; $i < scalar( @{ $parseFile->{"body"} } ) ; $i++ ) {
+
+			if ( $parseFile->{"body"}->[$i]->{"line"} =~ /m47.*frezovani/i ) {
+
+				$parseFile->{"body"}->[$i]->{"line"} =~ s/[\(\)]//g;
+
+				last;
+			}
+
+		}
+	}
 
 	# =============================================================
 	# 3) EDIT: Renumber tool numbers ASC if program is merged from more layers
@@ -396,7 +390,8 @@ sub EditBeforeSave {
 				 || $self->{"pcbType"} eq EnumsGeneral->PcbType_MULTIFLEX )
 			{
 
-				my @depthMill = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot }
+				my @depthMill =
+				  grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot }
 				  $opItem->GetSortedLayers();
 
 				if (@depthMill) {

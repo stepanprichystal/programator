@@ -1042,8 +1042,8 @@ sub OnCheckGroupData {
 
 			die "Stiffener $stiffSide thickness is not defined in IS" unless ( defined $stiffThick );
 			$stiffThick =~ s/,/\./;
-			$stiffThick *= 1000000;                                                       # µm
-			my $maxStiffH = 250;    # 250µm is max stiffener height withou depth milling of adehesive stiffener
+			$stiffThick *= 1000000;    # µm
+			my $maxStiffH = 250;       # 250µm is max stiffener height withou depth milling of adehesive stiffener
 
 			# Do checks if LAYERTYPE_nplt_stiffcAdhMill exists
 			if ( scalar( grep { $_->{"type"} eq $stiffAdhLType } $defaultInfo->GetNCLayers() ) ) {
@@ -1060,16 +1060,21 @@ sub OnCheckGroupData {
 			else {
 				# Do checks if LAYERTYPE_nplt_stiffcAdhMill not  exists
 
-				# tp[cs] layer must exist OR stiffener thickness must be less than $maxStiffH
+				# Not allowed state is
+				# a) if tp[cs] layer exist not exist and stiffener thickness is greater than $maxStiffH
+				# b) if tp[cs] layer exist not exist and stiffener is from top side
 
-				if (   !$defaultInfo->LayerExist( $tapeLName, 1 )
-					 && $stiffThick >= $maxStiffH )
+				if (
+					( !$defaultInfo->LayerExist( $tapeLName, 1 ) && $stiffThick >= $maxStiffH )
+						||
+					( !$defaultInfo->LayerExist( $tapeLName, 1 ) && $stiffSide eq "top" )
+				  )
 				{
 					$dataMngr->_AddErrorResult(
 						"Hloubková fréza lepidla stiffeneru ${stiffSide}",
 						"Deska obsahuje stiffener ${stiffSide}, ale neexistuje hloubková fréza lepidla stiffeneru: ${stiffAdhLName}. "
 						  . "Jedinné tři výjimky, kdy tato vrstva nemusí existovat jsou:\n\n"
-						  . "a) Pokud tloušťka stiffeneru (bez lepidla) je menší jak ${maxStiffH}µm.\n"
+						  . "a) Pokud tloušťka stiffeneru (bez lepidla) je menší jak ${maxStiffH}µm a jedná se o BOT stiffener.\n"
 						  . "b) Pokud pružná oblast bez stiffeneru má tak malou plochu, do které se pojezd hloubkové frézy lepidla již nevleze. "
 						  . "Respektive veškeré frézování stiffeneru i jeho lepidla je ve frézovací vrstvě: $stiffLName.\n"
 						  . "c) Pokud je na straně stiffenru zároveň umístěná oboustranná páska pro zákazníka "
