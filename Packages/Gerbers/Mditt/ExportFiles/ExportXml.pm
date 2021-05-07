@@ -376,7 +376,7 @@ sub __AddJobLayerSett {
 	# Set exposure energy
 	my $energy = 0;    # Default energy for resist = 25
 
-	if ( $layerName =~ /^(plg)?[csv]\d*$/ ) {
+	if ( $layerName =~ /^(plg)?(outer)?[csv]\d*$/ ) {
 
 		$energy = 27;                            # Default energy for resist = 25
 
