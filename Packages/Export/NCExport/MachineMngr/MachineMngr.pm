@@ -4,7 +4,7 @@
 # Each machine, can procces only some type of nc task such as drill/mill/depth drill with camreas etc..
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::MachineMngr;
+package Packages::Export::NCExport::MachineMngr::MachineMngr;
 
 #3th party library
 use strict;
@@ -14,7 +14,7 @@ use List::Util qw[max];
 #use File::Copy;
 
 #local library
-use aliased 'Packages::Export::NCExport::Enums';
+use aliased 'Packages::Export::NCExport::MachineMngr::Enums';
 use aliased 'Enums::EnumsMachines';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';

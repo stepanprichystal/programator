@@ -3,11 +3,11 @@
 # Description: Special class, allow export layer as are. No group operations, no merging layers
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::OperationBuilder::SimpleOperationBuilder;
+package Packages::Export::NCExport::OperationMngr::OperationBuilder::SimpleOperationBuilder;
 
 use Class::Interface;
 
-&implements('Packages::Export::NCExport::OperationBuilder::IOperationBuilder');
+&implements('Packages::Export::NCExport::OperationMngr::OperationBuilder::IOperationBuilder');
 
 #3th party library
 use strict;
@@ -17,7 +17,7 @@ use warnings;
 
 #local library
 #use aliased 'Packages::Export::NCExport::NCExportHelper';
-use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
+use aliased 'Packages::Export::NCExport::OperationMngr::DrillingHelper';
 
 
 #-------------------------------------------------------------------------------------------#

@@ -24,7 +24,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::TifFile::TifNCOperations';
 use aliased 'Packages::CAMJob::Drilling::DrillDuration::DrillDuration';
 use aliased 'Packages::CAMJob::Routing::RoutDuration::RoutDuration';
-use aliased 'Packages::Export::NCExport::ExportMngr';
+use aliased 'Packages::Export::NCExport::ExportMngr::ExportPanelAllMngr';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::TifFile::TifET';
 
@@ -53,7 +53,7 @@ sub Build {
 	$section->AddComment("Doba NC operace na jeden kus [min]");
 
 	my $materialName = HegMethods->GetMaterialKind($jobId);
-	my $export       = ExportMngr->new( $inCAM, $jobId, $stepName );
+	my $export       = ExportPanelAllMngr->new( $inCAM, $jobId, $stepName );
 	my @opItems      = ();
 
 	my @oriOpitems = $export->GetOperationMngr()->GetOperationItems();

@@ -3,18 +3,18 @@
 # Description: Class, allow build multilayer "operations" for technical procedure
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::OperationBuilder::SLOperationBuilder;
+package Packages::Export::NCExport::OperationMngr::OperationBuilder::SLOperationBuilder;
 
 use Class::Interface;
 
-&implements('Packages::Export::NCExport::OperationBuilder::IOperationBuilder');
+&implements('Packages::Export::NCExport::OperationMngr::OperationBuilder::IOperationBuilder');
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
+use aliased 'Packages::Export::NCExport::OperationMngr::DrillingHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Helpers::JobHelper';

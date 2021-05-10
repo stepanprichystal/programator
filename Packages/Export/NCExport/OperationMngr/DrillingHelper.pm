@@ -2,7 +2,7 @@
 # Description:  Script slouzi pro vypocet hlubky vybrusu pri navadeni na vrtackach.
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::Helpers::DrillingHelper;
+package Packages::Export::NCExport::OperationMngr::DrillingHelper;
 
 #3th party library
 use strict;

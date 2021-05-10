@@ -15,7 +15,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsMachines';
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::Export::NCExport::FileHelper::Parser';
+use aliased 'Packages::Export::NCExport::MergeFileMngr::FileHelper::Parser';
 use aliased 'Packages::Events::Event';
 
 

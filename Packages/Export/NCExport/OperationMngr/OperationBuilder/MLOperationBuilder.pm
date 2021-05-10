@@ -3,10 +3,10 @@
 # Description: Class, allow build multilayer "operations" for technical procedure
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::OperationBuilder::MLOperationBuilder;
+package Packages::Export::NCExport::OperationMngr::OperationBuilder::MLOperationBuilder;
 
 use Class::Interface;
-&implements('Packages::Export::NCExport::OperationBuilder::IOperationBuilder');
+&implements('Packages::Export::NCExport::OperationMngr::OperationBuilder::IOperationBuilder');
 
 #3th party library
 use strict;
@@ -14,7 +14,7 @@ use warnings;
 use List::Util qw(first);
 
 #local library
-use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
+use aliased 'Packages::Export::NCExport::OperationMngr::DrillingHelper';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
 use aliased 'Enums::EnumsGeneral';

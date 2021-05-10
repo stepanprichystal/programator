@@ -1,35 +1,30 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Structure represent group of operation on technical procedure
-# Tell which operation will be merged, thus which layer will be merged to one file
+# Description: Interface, allow build "operations" for technical procedure
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::Operation::OperationGroup;
+package Packages::Export::NCExport::OperationMngr::OperationBuilder::IOperationBuilder;
 
 #3th party library
 use strict;
 use warnings;
+#use File::Copy;
 
 #local library
 
 
 #-------------------------------------------------------------------------------------------#
-#  Package methods
+#  Interface
 #-------------------------------------------------------------------------------------------#
 
-sub new {
+use Class::Interface;
+&interface;    
 
-	my $self = shift;
-	$self = {};
-	bless $self;
-
-	$self->{"name"} = shift; #name od exported nc file
-	$self->{"operations"} = shift;	#grouped operation
-
-	return $self;
-}
+sub DefineOperations;     
+ 
 
 
+ 
  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -37,8 +32,7 @@ sub new {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-
-
+	 
 }
 
 1;

@@ -27,7 +27,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::Pdf::DrawingPdf::NCSpecialPdf::Drawing';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
-use aliased 'Packages::Export::NCExport::ExportMngr';
+use aliased 'Packages::Export::NCExport::ExportMngr::ExportPanelAllMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -52,9 +52,9 @@ sub new {
 
 	$self->{"step"}     = $step;
 	$self->{"stepFlat"} = $step . "_ncpdf";
-	$self->{"pcbThick"} = CamJob->GetFinalPcbThick($self->{"inCAM"}, $self->{"jobId"} ) / 1000;    # in mm
-	
-	$self->{"drawingCnt"} = 0; # total drawing count prepared from data
+	$self->{"pcbThick"} = CamJob->GetFinalPcbThick( $self->{"inCAM"}, $self->{"jobId"} ) / 1000;    # in mm
+
+	$self->{"drawingCnt"} = 0;                                                                      # total drawing count prepared from data
 
 	$self->{"pdfOutput"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";
 
@@ -63,7 +63,7 @@ sub new {
 
 sub Create {
 	my $self = shift;
-	
+
 	my $result = 0;
 
 	my $jobId = $self->{"jobId"};
@@ -71,7 +71,7 @@ sub Create {
 
 	my @preparedLayers = ();
 
-	my $export = ExportMngr->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
+	my $export = ExportPanelAllMngr->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
 	$self->{"operationMngr"} = $export->GetOperationMngr();
 
 	# 1) flatten step in order parse countersink layers
@@ -91,8 +91,7 @@ sub Create {
 	push( @types, @counterSinkTypes );
 
 	my @layers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, \@types );
-	
-	
+
 	# ''
 	CamStep->CreateFlattenStep( $inCAM, $jobId, $self->{"step"}, $self->{"stepFlat"}, 1, [ map { $_->{"gROWname"} } @layers ], "c" );
 
@@ -106,7 +105,7 @@ sub Create {
 
 		my $side = $l->{"gROWname"} =~ /c/ ? "top" : "bot";
 
-		my $result = $control->Prepare($l, 0); # 0 - do not final layer check after parsing. Layer can contain not only z-axis with angle tool
+		my $result = $control->Prepare( $l, 0 );    # 0 - do not final layer check after parsing. Layer can contain not only z-axis with angle tool
 
 		foreach my $classRes ( $result->GetClassResults(1) ) {
 
@@ -122,17 +121,16 @@ sub Create {
 
 	}
 
-	if(scalar(@preparedLayers)){
+	if ( scalar(@preparedLayers) ) {
 		$result = 1;
-		
+
 		$self->__ImgPreviewOut( \@preparedLayers );
 	}
 
-	
 	$control->Clear();
-	
-	CamStep->DeleteStep($inCAM, $jobId, $self->{"stepFlat"});
-	
+
+	CamStep->DeleteStep( $inCAM, $jobId, $self->{"stepFlat"} );
+
 	return $result;
 
 }
@@ -154,7 +152,7 @@ sub __ProcessLayerData {
 	my $jobId = $self->{"jobId"};
 
 	foreach my $layerRes ( $classRes->GetLayers() ) {
-		
+
 		$self->{"drawingCnt"}++;
 
 		# ----------------------------------------------------------------
@@ -222,10 +220,12 @@ sub __ProcessDrawing {
 
 		my $imgToolDepth = cotan( deg2rad( ( $imgToolAngle / 2 ) ) ) * $rCounterSink;
 
-		$draw->CreateDetailCountersinkDrilled( $rCounterSink, $layerRes->GetDataVal("drillTool"), $imgToolDepth, $layerRes->GetDataVal("exceededDepth"), $imgToolAngle, "hole" );
+		$draw->CreateDetailCountersinkDrilled( $rCounterSink, $layerRes->GetDataVal("drillTool"),
+											   $imgToolDepth, $layerRes->GetDataVal("exceededDepth"),
+											   $imgToolAngle, "hole" );
 
 		#CamLayer->WorkLayer( $inCAM, $lTmp );
-		my %limDraw = CamJob->GetLayerLimits2( $inCAM, $jobId, $step, $lTmp);    # limits of pcb outline
+		my %limDraw = CamJob->GetLayerLimits2( $inCAM, $jobId, $step, $lTmp );    # limits of pcb outline
 		$inCAM->COM( "sel_move", "dx" => $lim{"xMax"} + 10, "dy" => $limDraw{"yMax"} - $limDraw{"yMin"} );    # drawing 10 mm above profile data
 
 		CamLayer->WorkLayer( $inCAM, $lTmp );
@@ -259,8 +259,8 @@ sub __ProcessOther {
 
 		CamLayer->WorkLayer( $inCAM, $layerRes->GetLayerName() );
 
-		my $txt = uc($jobId)." - vykres ".$self->{"drawingCnt"}.". Operace \"$operationName\" ";
-		$txt .= " (zahloubeni z " . uc($side) . " " . ( $l->{"plated"} ? "pred prokovem" : "po prokovu".")" );
+		my $txt = uc($jobId) . " - vykres " . $self->{"drawingCnt"} . ". Operace \"$operationName\" ";
+		$txt .= " (zahloubeni z " . uc($side) . " " . ( $l->{"plated"} ? "pred prokovem" : "po prokovu" . ")" );
 
 		CamSymbol->AddLine( $inCAM, Point->new( 0, $yPos - 3 ), Point->new( length($txt) * 3, $yPos - 3 ), "r300" );
 		CamSymbol->AddLine( $inCAM, Point->new( 0, $yPos - 4 ), Point->new( length($txt) * 3, $yPos - 4 ), "r300" );

@@ -4,11 +4,11 @@
 # moved from output folder to archive
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::FileHelper::FileEditor;
+package Packages::Export::NCExport::MergeFileMngr::FileHelper::FileEditor;
 
 use Class::Interface;
 
-&implements('Packages::Export::NCExport::FileHelper::IFileEditor');
+&implements('Packages::Export::NCExport::MergeFileMngr::FileHelper::IFileEditor');
 
 #3th party library
 use strict;
@@ -17,7 +17,7 @@ use List::Util qw(first);
 
 #local library
 
-use aliased 'Packages::Export::NCExport::Helpers::NCHelper';
+use aliased 'Packages::Export::NCExport::MergeFileMngr::Helper' => 'NCHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::ProductionPanel::Helper';
 use aliased 'Packages::Stackup::Stackup::Stackup';
@@ -36,11 +36,11 @@ sub new {
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}        = shift;
-	$self->{"jobId"}        = shift;
-	$self->{"stepName"}     = shift;
-	$self->{"layerCnt"}     = shift;
-	$self->{"exportSingle"} = shift;
+	$self->{"inCAM"}       = shift;
+	$self->{"jobId"}       = shift;
+	$self->{"stepName"}    = shift;
+	$self->{"layerCnt"}    = shift;
+	$self->{"feedAsUndef"} = shift;
 
 	$self->{"pcbType"} = JobHelper->GetPcbType( $self->{"jobId"} );
 
@@ -287,7 +287,7 @@ sub EditAfterOpen {
 	# 6) EDIT: If export single set F_<guid> definition to F_not_defined
 
 	# Remove F_<guid>, if export single
-	if ( $self->{"exportSingle"} && $isRout ) {
+	if ( $self->{"feedAsUndef"} && $isRout ) {
 
 		my @b = @{ $parseFile->{"body"} };
 

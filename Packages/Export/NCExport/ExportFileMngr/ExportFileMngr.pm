@@ -3,7 +3,7 @@
 # Description: Cover exporting layers for particular machine, which can procces given nc file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::ExportFileMngr;
+package Packages::Export::NCExport::ExportFileMngr::ExportFileMngr;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -34,11 +34,11 @@ sub new {
 	my $self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"}        = shift;
-	$self->{"jobId"}        = shift;
-	$self->{"stepName"}     = shift;
-	$self->{"exportSingle"} = shift;
-	$self->{"resBuilder"}   = shift;
+	$self->{"inCAM"}      = shift;
+	$self->{"jobId"}      = shift;
+	$self->{"stepName"}   = shift;
+	$self->{"path"}       = shift;
+	$self->{"resBuilder"} = shift;
 
 	# Helper properties
 	$self->{"routSeq"} = RoutOutline->GetDefRoutSeq( $self->{"jobId"} );
@@ -319,24 +319,13 @@ sub __GetExportCombination {
 sub __DeleteOldFiles {
 	my $self = shift;
 
-	my $path;
-
-	if ( $self->{"exportSingle"} ) {
-
-		$path = JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc_single\\";
-	}
-	else {
-
-		$path = JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\";
-	}
-
 	my $dir;
-	if ( opendir( $dir, $path ) ) {
+	if ( opendir( $dir, $self->{"path"} ) ) {
 		while ( my $file = readdir($dir) ) {
 
 			next if ( $file =~ /^\.$/ );
 			next if ( $file =~ /^\.\.$/ );
-			unlink $path . $file;
+			unlink $self->{"path"} . $file;
 
 		}
 

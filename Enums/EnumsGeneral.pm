@@ -125,7 +125,8 @@ use constant {
 	Coupon_IMPEDANCE => 'coupon_impedance',    # coupon for impedance measurement
 	Coupon_DRILL     => 'coupon_drill',        # coupon for drill hole measrument
 	Coupon_IPC3MAIN  => 'coupon_ipc3main',     # coupon for IPC class 3 - contain holes + lines
-	Coupon_IPC3DRILL => 'coupon_drill'         # coupon for IPC class 3 - through hole measurement (Warning - same step name as coupon_drill)
+	Coupon_IPC3DRILL => 'coupon_drill',        # coupon for IPC class 3 - through hole measurement (Warning - same step name as coupon_drill)
+	Coupon_ZAXIS     => 'coupon_zaxis_',       # coupon for zaxis rout testing. Real coupon has always number behind name.
 
 };
 
