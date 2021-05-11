@@ -378,8 +378,8 @@ sub __PrepareFLEXLAYERS {
 	my @stiffLayers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "stiffener" } @layers;
 
 	foreach my $stiffL (@stiffLayers) {
-		
-		my $side = ($stiffL->{"gROWname"} =~ m/([cs])/)[0];
+
+		my $side = ( $stiffL->{"gROWname"} =~ m/([cs])/ )[0];
 
 		# 1) Create full surface by profile
 		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 1000, $self->{"profileLim"} );
@@ -404,6 +404,15 @@ sub __PrepareFLEXLAYERS {
 			);
 			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 		}
+		
+		CamLayer->Contourize( $inCAM, $lNeg, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		$inCAM->COM(
+					 "merge_layers",
+					 "source_layer" => $lNeg,
+					 "dest_layer"   => $lName,
+					 "invert"       => "no"
+		);
+
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $lNeg );
 
 		# 3) Helper stiff layer, which help to define stiffener shape - copy negatively to surface
@@ -433,6 +442,9 @@ sub __PrepareFLEXLAYERS {
 			my @tapeBrRoutL = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_tapebrMill ] );
 			push( @stiffRoutLHelper, @tapeBrRoutL ) if ( scalar(@tapeBrRoutL) );
 		}
+
+		# add also main stiffener layer (wee need to close shape for next contourize)
+		push( @stiffRoutLHelper, @stiffRoutL );
 
 		foreach my $stiffRoutL (@stiffRoutLHelper) {
 			my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );

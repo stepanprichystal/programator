@@ -281,6 +281,9 @@ sub __PrepareStiffLayer {
 				push( @stiffRoutLHelper, @tapeL ) if ( scalar(@tapeL) );
 			}
 
+			# add also main stiffener layer (wee need to close shape for next contourize)
+			push( @stiffRoutLHelper, $thickInf->{"sourceL"} );
+
 			foreach my $stiffRoutL (@stiffRoutLHelper) {
 				my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
 				$inCAM->COM(

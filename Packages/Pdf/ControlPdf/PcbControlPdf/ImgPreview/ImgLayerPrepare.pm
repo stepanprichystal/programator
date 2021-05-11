@@ -1104,7 +1104,6 @@ sub __PrepareSTIFFENER {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	 
 	# layers can contain also tp layer and NC layer tpbr which define stiffener area too
 	my $stiffL = ( grep { $_->{"gROWlayer_type"} eq "stiffener" } $layer->GetSingleLayers() )[0];
 	return 0 unless ( defined $stiffL );
@@ -1112,12 +1111,10 @@ sub __PrepareSTIFFENER {
 	# 1) Create full surface by profile
 	my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 7000, $self->{"profileLim"} );
 
-
-
 	my $lNeg = GeneralHelper->GetGUID();
 	CamMatrix->CreateLayer( $inCAM, $jobId, $lNeg, "document", "positive", 0 );
 
-	# 2) Main stiff layer - copy negatively to surface
+	# 2) Define shape by main stiff layer - copy negatively to surface
 	my @stiffRoutL =
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill, ] );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutL );
@@ -1133,9 +1130,19 @@ sub __PrepareSTIFFENER {
 		);
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 	}
+
+	CamLayer->Contourize( $inCAM, $lNeg, "x_or_y", "203200" )
+	  ;    # 203200 = max size of emptz space in InCAM which can be filled by surface
+	$inCAM->COM(
+				 "merge_layers",
+				 "source_layer" => $lNeg,
+				 "dest_layer"   => $lName,
+				 "invert"       => "no"
+	);
+
 	CamMatrix->DeleteLayer( $inCAM, $jobId, $lNeg );
 
-	# 3) Helper stiff layer, which help to define stiffener shape - copy negatively to surface
+	# 3) Define shape by helper stiff layer, which help to define stiffener shape - copy negatively to surface
 	my $lNegHelp = GeneralHelper->GetGUID();
 	CamMatrix->CreateLayer( $inCAM, $jobId, $lNegHelp, "document", "positive", 0 );
 	my @stiffRoutLHelper = CamDrilling->GetNCLayersByTypes(
@@ -1161,6 +1168,9 @@ sub __PrepareSTIFFENER {
 		push( @stiffRoutLHelper, @tapeBrRoutL ) if ( scalar(@tapeBrRoutL) );
 	}
 
+	# add also main stiffener layer (wee need to close shape for next contourize)
+	push( @stiffRoutLHelper, @stiffRoutL );
+
 	foreach my $stiffRoutL (@stiffRoutLHelper) {
 		my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
 		$inCAM->COM(
@@ -1173,7 +1183,7 @@ sub __PrepareSTIFFENER {
 	}
 
 	CamLayer->Contourize( $inCAM, $lNegHelp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
-	# change helper rout size to minimum, otherwise stiffener shape is wrong                                                                  # Resize helper routs by 2mm (get rif of compensation in order real image)
+	    # change helper rout size to minimum, otherwise stiffener shape is wrong                                                                  # Resize helper routs by 2mm (get rif of compensation in order real image)
 	CamLayer->WorkLayer( $inCAM, $lNegHelp );
 	CamLayer->ResizeFeatures( $inCAM, -2000 );
 	$inCAM->COM(
