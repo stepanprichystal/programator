@@ -1181,7 +1181,7 @@ sub OnCheckGroupData {
 	# Check if all routs in ftpbr are outside of profile
 	if ($ftpbr) {
 
-		my @uniqueSteps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+		my @uniqueSteps = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 
 		foreach my $step (@uniqueSteps) {
 

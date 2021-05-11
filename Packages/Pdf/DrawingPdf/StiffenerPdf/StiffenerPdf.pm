@@ -105,7 +105,7 @@ sub CreateStiffPdf {
 	my @stiffL = CamDrilling->GetNCLayersByTypes(
 												  $inCAM, $jobId,
 												  [
-													 EnumsGeneral->LAYERTYPE_nplt_bstiffcMill, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill,
+													 EnumsGeneral->LAYERTYPE_nplt_bstiffcMill, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill,
 													 EnumsGeneral->LAYERTYPE_nplt_stiffcMill,  EnumsGeneral->LAYERTYPE_nplt_stiffsMill
 												  ]
 	);
@@ -247,59 +247,62 @@ sub __PrepareStiffLayer {
 			CamLayer->WorkLayer( $inCAM, $lOut );
 
 			# 2) Copy negative of stiffener rout
-
-			my @stiffRoutLs =
-			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill ] );
-			CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
+			my $lNegHelp = GeneralHelper->GetGUID();
+			CamMatrix->CreateLayer( $inCAM, $jobId, $lNegHelp, "document", "positive", 0 );
 
 			my $lTmp = CamLayer->RoutCompensation( $inCAM, $thickInf->{"sourceL"}->{"gROWname"}, "document" );
+			$inCAM->COM(
+						 "merge_layers",
+						 "source_layer" => $lTmp,
+						 "dest_layer"   => $lNegHelp,
+						 "invert"       => "yes"
+			);
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+			my @stiffRoutLHelper = ();
 
 			# consider adhesive stiffener depth milling
 			if ( $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill ) {
 
 				my $stiffAdh = ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill ] ) )[0];
-				if ( defined $stiffAdh ) {
+				push( @stiffRoutLHelper, $stiffAdh ) if ( defined $stiffAdh );
 
-					my $lTmpAdh = CamLayer->RoutCompensation( $inCAM, $stiffAdh->{"gROWname"}, "document" );
-					$inCAM->COM(
-								 "merge_layers",
-								 "source_layer" => $lTmpAdh,
-								 "dest_layer"   => $lTmp,
-								 "invert"       => "no"
-					);
-
-					CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmpAdh );
-				}
+				my @tapeL = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId,
+															 [ EnumsGeneral->LAYERTYPE_nplt_tapecMill, EnumsGeneral->LAYERTYPE_nplt_tapebrMill ] );
+				push( @stiffRoutLHelper, @tapeL ) if ( scalar(@tapeL) );
 			}
+
 			if ( $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill ) {
 
 				my $stiffAdh = ( CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill ] ) )[0];
-				if ( defined $stiffAdh ) {
+				push( @stiffRoutLHelper, $stiffAdh ) if ( defined $stiffAdh );
 
-					my $lTmpAdh = CamLayer->RoutCompensation( $inCAM, $stiffAdh->{"gROWname"}, "document" );
-					$inCAM->COM(
-								 "merge_layers",
-								 "source_layer" => $lTmpAdh,
-								 "dest_layer"   => $lTmp,
-								 "invert"       => "no"
-					);
-
-					CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmpAdh );
-				}
+				my @tapeL = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId,
+															 [ EnumsGeneral->LAYERTYPE_nplt_tapesMill, EnumsGeneral->LAYERTYPE_nplt_tapebrMill ] );
+				push( @stiffRoutLHelper, @tapeL ) if ( scalar(@tapeL) );
 			}
 
-			CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );     # 203200 = max size of emptz space in InCAM which can be filled by surface
+			foreach my $stiffRoutL (@stiffRoutLHelper) {
+				my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
+				$inCAM->COM(
+							 "merge_layers",
+							 "source_layer" => $lTmp,
+							 "dest_layer"   => $lNegHelp,
+							 "invert"       => "yes"
+				);
+				CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+			}
+
+			CamLayer->Contourize( $inCAM, $lNegHelp, "x_or_y", "203200" );  # 203200 = max size of emptz space in InCAM which can be filled by surface
 			$inCAM->COM(
 						 "merge_layers",
-						 "source_layer" => $lTmp,
+						 "source_layer" => $lNegHelp,
 						 "dest_layer"   => $lOut,
-						 "invert"       => "yes"
+						 "invert"       => "no"
 			);
 
 			#
 
-			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
-
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lNegHelp );
 			$thickInf->{"outputL"} = $lOut;
 
 		}
@@ -573,7 +576,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d312164";
+	my $jobId = "d320240";
 	my $map = StiffenerPdf->new( $inCAM, $jobId );
 	$map->CreateStiffPdf();
 

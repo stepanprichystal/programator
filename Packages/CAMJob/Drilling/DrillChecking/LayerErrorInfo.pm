@@ -392,7 +392,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_prepregMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
 
 
@@ -466,7 +466,7 @@ sub CheckDirBot2Top {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_soldsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill );
-	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapesMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
 
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 

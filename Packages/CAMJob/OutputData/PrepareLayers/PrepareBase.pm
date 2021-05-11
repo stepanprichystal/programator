@@ -378,59 +378,84 @@ sub __PrepareFLEXLAYERS {
 	my @stiffLayers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "stiffener" } @layers;
 
 	foreach my $stiffL (@stiffLayers) {
+		
+		my $side = ($stiffL->{"gROWname"} =~ m/([cs])/)[0];
 
 		# 1) Create full surface by profile
 		my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $self->{"pdfStep"}, 1000, $self->{"profileLim"} );
 		CamLayer->ClipAreaByProf( $inCAM, $lName, 0, 0, 1 );
-		CamLayer->WorkLayer( $inCAM, $lName );
 
-		# 2) Copy all negative of stiffener rout
+		my $lNeg = GeneralHelper->GetGUID();
+		CamMatrix->CreateLayer( $inCAM, $jobId, $lNeg, "document", "positive", 0 );
 
-		my @stiffRoutLs =
-		  CamDrilling->GetNCLayersByTypes(
-										   $inCAM, $jobId,
-										   [
-											  EnumsGeneral->LAYERTYPE_nplt_stiffcMill,    EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
-											  EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill, EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill
-										   ]
-		  );
-		CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLs );
+		# 2) Main stiff layer - copy negatively to surface
+		my @stiffRoutL =
+		  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill, ] );
+		CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutL );
+		@stiffRoutL = grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutL;
 
-		@stiffRoutLs = grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLs;
-
-		my $lTmp = GeneralHelper->GetGUID();
-
-		foreach my $s (@stiffRoutLs) {
-
-			my $lTmpComp = CamLayer->RoutCompensation( $inCAM, $s->{"gROWname"}, "document" );
+		foreach my $stiffRoutL (@stiffRoutL) {
+			my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
 			$inCAM->COM(
 						 "merge_layers",
-						 "source_layer" => $lTmpComp,
-						 "dest_layer"   => $lTmp,
-						 "invert"       => "no"
+						 "source_layer" => $lTmp,
+						 "dest_layer"   => $lNeg,
+						 "invert"       => "yes"
 			);
-			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmpComp );
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
 		}
-		
-		CamLayer->Contourize( $inCAM, $lTmp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lNeg );
+
+		# 3) Helper stiff layer, which help to define stiffener shape - copy negatively to surface
+		my $lNegHelp = GeneralHelper->GetGUID();
+		CamMatrix->CreateLayer( $inCAM, $jobId, $lNegHelp, "document", "positive", 0 );
+		my @stiffRoutLHelper = CamDrilling->GetNCLayersByTypes(
+																$inCAM, $jobId,
+																[
+																   EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill,
+																   EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill
+																]
+		);
+		CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLHelper );
+		@stiffRoutLHelper = grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLHelper;
+
+		my $tapeL = ( grep { $_->{"gROWlayer_type"} eq "psa" && $_->{"gROWname"} =~ /$side/ } @layers )[0];
+
+		if ( defined $tapeL ) {
+
+			my @stiffRoutLTape =
+			  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_tapecMill, EnumsGeneral->LAYERTYPE_nplt_tapesMill ] );
+			CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLTape );
+
+			@stiffRoutLTape = grep { $_->{"gROWdrl_start"} eq $tapeL->{"gROWname"} && $_->{"gROWdrl_end"} eq $tapeL->{"gROWname"} } @stiffRoutLTape;
+			push( @stiffRoutLHelper, @stiffRoutLTape ) if ( scalar(@stiffRoutLTape) );
+
+			my @tapeBrRoutL = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_tapebrMill ] );
+			push( @stiffRoutLHelper, @tapeBrRoutL ) if ( scalar(@tapeBrRoutL) );
+		}
+
+		foreach my $stiffRoutL (@stiffRoutLHelper) {
+			my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
+			$inCAM->COM(
+						 "merge_layers",
+						 "source_layer" => $lTmp,
+						 "dest_layer"   => $lNegHelp,
+						 "invert"       => "yes"
+			);
+			CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+		}
+
+		CamLayer->Contourize( $inCAM, $lNegHelp, "x_or_y", "203200" );    # 203200 = max size of emptz space in InCAM which can be filled by surface
+		    # change helper rout size to minimum, otherwise stiffener shape is wrong                                                                  # Resize helper routs by 2mm (get rif of compensation in order real image)
+		CamLayer->WorkLayer( $inCAM, $lNegHelp );
+		CamLayer->ResizeFeatures( $inCAM, -2000 );
 		$inCAM->COM(
 					 "merge_layers",
-					 "source_layer" => $lTmp,
+					 "source_layer" => $lNegHelp,
 					 "dest_layer"   => $lName,
-					 "invert"       => "yes"
+					 "invert"       => "no"
 		);
-		CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
-
-		# 3) Copy negatife NPLT mill to stiffener to acheive final stiffener shape
-
-		my @NPLTNClayers = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nMill ] );
-
-		foreach my $npltL (@NPLTNClayers) {
-
-			my $routL = CamLayer->RoutCompensation( $inCAM, $npltL->{"gROWname"}, "document" );
-			$inCAM->COM( "merge_layers", "source_layer" => $routL, "dest_layer" => $lName, "invert" => "yes" );
-			CamMatrix->DeleteLayer( $inCAM, $jobId, $routL );
-		}
+		CamMatrix->DeleteLayer( $inCAM, $jobId, $lNegHelp );
 
 		my $enTit = Helper->GetJobLayerTitle( $stiffL, $type );
 		my $czTit = Helper->GetJobLayerTitle( $stiffL, $type, 1 );

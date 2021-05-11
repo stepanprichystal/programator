@@ -474,13 +474,8 @@ sub __InitLayers {
 	my $LDTapeBOT = LayerData->new( Enums->Type_TAPE, Enums->Visible_FROMBOT );
 	$LDTapeBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tps$/ } @boardL );
 	push( @pdfLayers, $LDTapeBOT );
-	
-	# POS 29: Type_STIFFDEPTHNC from BOT
-	my $LDStiffDepthBOT = LayerData->new( Enums->Type_STIFFDEPTHNC, Enums->Visible_FROMBOT );
-	$LDStiffDepthBOT->AddSingleLayers( grep { $_->{"type"} && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ) } @boardL );
-	push( @pdfLayers, $LDStiffDepthBOT );
 
-	# POS 30: Type_STIFFENER from BOT
+	# POS 29: Type_STIFFENER from BOT
 	my $LDStiffenerBOT = LayerData->new( Enums->Type_STIFFENER, Enums->Visible_FROMBOT );
 	$LDStiffenerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^stiffs$/ } @boardL );    # t stiffener
 	$LDStiffenerBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tps$/ } @boardL );       # tape also define stiffener
@@ -489,12 +484,17 @@ sub __InitLayers {
 	$LDStiffenerBOT->AddSingleLayers( grep { defined $_->{"type"} && $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } @boardL );
 	push( @pdfLayers, $LDStiffenerBOT );
 
-	# POS 2: Type_TAPE from TOP
+	# POS 30: Type_TAPE from TOP
 	my $LDTapestiffBOT = LayerData->new( Enums->Type_TAPE, Enums->Visible_FROMBOT );
 	$LDTapestiffBOT->AddSingleLayers( grep { $_->{"gROWname"} =~ /^tpstiffs$/ } @boardL );
 	push( @pdfLayers, $LDTapestiffBOT );
 
-	# POS 29: Type_NPLTDEPTHNC from BOT
+	# POS 31: Type_STIFFDEPTHNC from BOT
+	my $LDStiffDepthBOT = LayerData->new( Enums->Type_STIFFDEPTHNC, Enums->Visible_FROMBOT );
+	$LDStiffDepthBOT->AddSingleLayers( grep { $_->{"type"} && ( $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ) } @boardL );
+	push( @pdfLayers, $LDStiffDepthBOT );
+
+	# POS 32: Type_NPLTDEPTHNC from BOT
 	my $LDNPltDepthBOT = LayerData->new( Enums->Type_NPLTDEPTHNC, Enums->Visible_FROMBOT );
 	$LDNPltDepthBOT->AddSingleLayers(
 		grep {
