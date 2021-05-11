@@ -48,16 +48,29 @@ sub GetLayer {
 
 sub GetSignalLayers {
 	my $self = shift;
+	my $asArray = shift // 0;    # return layers as array
 
 	my $layers = $self->{"tifData"}->{ $self->{"keySig"} };
 
 	if ( defined $layers ) {
-		return %{$layers};
+
+		if ($asArray) {
+			return values %{$layers};
+		}
+		else {
+			return %{$layers};
+		}
 	}
 	else {
 
-		my %h;
-		return %h;
+		if ($asArray) {
+			my @a = ();
+			return @a;
+		}
+		else {
+			my %h;
+			return %h;
+		}
 	}
 }
 

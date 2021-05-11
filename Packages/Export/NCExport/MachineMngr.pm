@@ -23,6 +23,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Packages::TifFile::TifLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,6 +39,7 @@ sub new {
 	$self->{"jobId"}    = shift;
 	$self->{"stepName"} = shift;
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
+	$self->{"tifSigLayers"} = TifLayers->new( $self->{"jobId"} );
 
 	$self->{"machines"}  = ();
 	$self->{"propTable"} = ();
@@ -343,9 +345,17 @@ sub __SetStaticPropertyTable {
 	my $isFlex  = JobHelper->GetIsFlex( $self->{"jobId"} );
 	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 
-	# temporary solution
-	my $note = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, ".comment" );
-	my $coreStretch = $note =~ /tpv-kompenzace/i ? 1 : 0;
+	# Determine if use camera is necessary
+	# - flex always
+	# - PCB which contain at least one stretched signal layers
+	my $coreStretch  = 0;
+	if ( $self->{"tifSigLayers"}->TifFileExist() ) {
+
+		# Check if some signal layer was stretched
+		my @stretchL = grep { $_->{"stretchX"} != 0 || $_->{"stretchY"} != 0 } $self->{"tifSigLayers"}->GetSignalLayers(1);
+
+		$coreStretch = 1 if ( scalar(@stretchL) );
+	}
 
 	# Header is:
 	# 1) DRILL
