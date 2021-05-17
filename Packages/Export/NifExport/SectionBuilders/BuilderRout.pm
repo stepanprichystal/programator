@@ -57,7 +57,7 @@ sub Build {
 	#freza_pred_leptanim
 	if ( $self->_IsRequire("freza_pred_leptanim") ) {
 
-		my $rsExist = $self->__RoutExists( EnumsGeneral->LAYERTYPE_nplt_rsMill );
+		my $rsExist = $self->__RoutExists( [EnumsGeneral->LAYERTYPE_nplt_rsMill ]);
 
 		$section->AddRow( "freza_pred_leptanim", $rsExist );
 	}
@@ -68,21 +68,21 @@ sub Build {
 	#freza_pred (freza pred prokovem)
 	if ( $self->_IsRequire("frezovani_pred") ) {
 
-		my $existPltMill = $self->__RoutExists( EnumsGeneral->LAYERTYPE_plt_nMill );
+		my $existPltMill = $self->__RoutExists( [EnumsGeneral->LAYERTYPE_plt_nMill] );
 		$section->AddRow( "frezovani_pred", $existPltMill );
 	}
 
 	#freza_pred_delka
 	if ( $self->_IsRequire("freza_pred_delka") ) {
 
-		my $dist = $self->__GetRoutDistance( $stepName, EnumsGeneral->LAYERTYPE_plt_nMill );
+		my $dist = $self->__GetRoutDistance( $stepName, [EnumsGeneral->LAYERTYPE_plt_nMill] );
 		$section->AddRow( "freza_pred_delka", $dist );
 	}
 
 	#min_freza_pred
 	if ( $self->_IsRequire("min_freza_pred") ) {
 
-		my $minTool = $self->__GetMinSlotTool( $stepName, EnumsGeneral->LAYERTYPE_plt_nMill );
+		my $minTool = $self->__GetMinSlotTool( $stepName, [EnumsGeneral->LAYERTYPE_plt_nMill] );
 
 		$section->AddRow( "min_freza_pred", $minTool );
 	}
@@ -93,7 +93,7 @@ sub Build {
 	#freza_po (freza po prokovu)
 	if ( $self->_IsRequire("frezovani_po") ) {
 
-		my $existNPltMill = $self->__RoutExists( EnumsGeneral->LAYERTYPE_nplt_nMill );
+		my $existNPltMill = $self->__RoutExists( [EnumsGeneral->LAYERTYPE_nplt_nMill ]);
 
 		$section->AddRow( "frezovani_po", $existNPltMill );
 	}
@@ -101,14 +101,14 @@ sub Build {
 	#freza_po_delka
 	if ( $self->_IsRequire("freza_po_delka") ) {
 
-		my $dist = $self->__GetRoutDistance( $stepName, EnumsGeneral->LAYERTYPE_nplt_nMill );
+		my $dist = $self->__GetRoutDistance( $stepName, [ EnumsGeneral->LAYERTYPE_nplt_nMill ]);
 		$section->AddRow( "freza_po_delka", $dist );
 	}
 
 	#min_freza_po
 	if ( $self->_IsRequire("min_freza_po") ) {
 
-		my $minTool = $self->__GetMinSlotTool( $stepName, EnumsGeneral->LAYERTYPE_nplt_nMill );
+		my $minTool = $self->__GetMinSlotTool( $stepName, [EnumsGeneral->LAYERTYPE_nplt_nMill ]);
 
 		$section->AddRow( "min_freza_po", $minTool );
 	}
@@ -122,21 +122,21 @@ sub Build {
 	#freza_hloubkova_pred_c
 	if ( $self->_IsRequire("frezovani_hloubkove_pred_c") ) {
 
-		my $exist = $self->__RoutExists( EnumsGeneral->LAYERTYPE_plt_bMillTop );
+		my $exist = $self->__RoutExists( [EnumsGeneral->LAYERTYPE_plt_bMillTop] );
 		$section->AddRow( "frezovani_hloubkove_pred_c", $exist );
 	}
 
 	#freza_hloubkova_pred_delka_c
 	if ( $self->_IsRequire("freza_hloubkova_pred_delka_c") ) {
 
-		my $dist = $self->__GetRoutDistance( $stepName, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+		my $dist = $self->__GetRoutDistance( $stepName, [EnumsGeneral->LAYERTYPE_plt_bMillTop] );
 		$section->AddRow( "freza_hloubkova_pred_delka_c", $dist );
 	}
 
 	#min_freza_hloubkova_pred_c
 	if ( $self->_IsRequire("min_freza_hloubkova_pred_c") ) {
 
-		my $minTool = $self->__GetMinSlotTool( $stepName, EnumsGeneral->LAYERTYPE_plt_bMillTop );
+		my $minTool = $self->__GetMinSlotTool( $stepName, [EnumsGeneral->LAYERTYPE_plt_bMillTop ]);
 		$section->AddRow( "min_freza_hloubkova_pred_c", $minTool );
 	}
 
@@ -146,21 +146,21 @@ sub Build {
 	#freza_hloubkova_pred_s
 	if ( $self->_IsRequire("frezovani_hloubkove_pred_s") ) {
 
-		my $exist = $self->__RoutExists( EnumsGeneral->LAYERTYPE_plt_bMillBot );
+		my $exist = $self->__RoutExists([ EnumsGeneral->LAYERTYPE_plt_bMillBot] );
 		$section->AddRow( "frezovani_hloubkove_pred_s", $exist );
 	}
 
 	#freza_hloubkova_pred_delka_s
 	if ( $self->_IsRequire("freza_hloubkova_pred_delka_s") ) {
 
-		my $dist = $self->__GetRoutDistance( $stepName, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+		my $dist = $self->__GetRoutDistance( $stepName, [EnumsGeneral->LAYERTYPE_plt_bMillBot] );
 		$section->AddRow( "freza_hloubkova_pred_delka_s", $dist );
 	}
 
 	#min_freza_hloubkova_pred_s
 	if ( $self->_IsRequire("min_freza_hloubkova_pred_s") ) {
 
-		my $minTool = $self->__GetMinSlotTool( $stepName, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+		my $minTool = $self->__GetMinSlotTool( $stepName, [ EnumsGeneral->LAYERTYPE_plt_bMillBot ]);
 		$section->AddRow( "min_freza_hloubkova_pred_s", $minTool );
 	}
 
@@ -170,21 +170,21 @@ sub Build {
 	#freza_hloubkova_po_c
 	if ( $self->_IsRequire("frezovani_hloubkove_po_c") ) {
 
-		my $exist = $self->__RoutExists( EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+		my $exist = $self->__RoutExists( [ EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ] );
 		$section->AddRow( "frezovani_hloubkove_po_c", $exist );
 	}
 
 	#freza_hloubkova_po_delka_c
 	if ( $self->_IsRequire("freza_hloubkova_po_delka_c") ) {
 
-		my $dist = $self->__GetRoutDistance( $stepName, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+		my $dist = $self->__GetRoutDistance( $stepName, [ EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ] );
 		$section->AddRow( "freza_hloubkova_po_delka_c", $dist );
 	}
 
 	#min_freza_hloubkova_po_c
 	if ( $self->_IsRequire("min_freza_hloubkova_po_c") ) {
 
-		my $minTool = $self->__GetMinSlotTool( $stepName, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
+		my $minTool = $self->__GetMinSlotTool( $stepName, [ EnumsGeneral->LAYERTYPE_nplt_bMillTop, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill ] );
 		$section->AddRow( "min_freza_hloubkova_po_c", $minTool );
 	}
 
@@ -194,34 +194,46 @@ sub Build {
 	#freza_hloubkova_po_s
 	if ( $self->_IsRequire("frezovani_hloubkove_po_s") ) {
 
-		my $exist = $self->__RoutExists( EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+		my $exist = $self->__RoutExists( [ EnumsGeneral->LAYERTYPE_nplt_bMillBot, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ] );
 		$section->AddRow( "frezovani_hloubkove_po_s", $exist );
 	}
 
 	#freza_hloubkova_po_delka_s
 	if ( $self->_IsRequire("freza_hloubkova_po_delka_s") ) {
 
-		my $dist = $self->__GetRoutDistance( $stepName, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+		my $dist = $self->__GetRoutDistance( $stepName, [ EnumsGeneral->LAYERTYPE_nplt_bMillBot, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ] );
 		$section->AddRow( "freza_hloubkova_po_delka_s", $dist );
 	}
 
 	#min_freza_hloubkova_po_s
 	if ( $self->_IsRequire("min_freza_hloubkova_po_s") ) {
 
-		my $minTool = $self->__GetMinSlotTool( $stepName, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
+		my $minTool = $self->__GetMinSlotTool( $stepName, [ EnumsGeneral->LAYERTYPE_nplt_bMillBot, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill ] );
 		$section->AddRow( "min_freza_hloubkova_po_s", $minTool );
 	}
 
 }
 
 sub __GetMinSlotTool {
-	my $self      = shift;
-	my $stepName  = shift;
-	my $layerType = shift;
-	my $inCAM     = $self->{"inCAM"};
-	my $jobId     = $self->{"jobId"};
+	my $self       = shift;
+	my $stepName   = shift;
+	my $layerTypes = shift;
+	my $inCAM      = $self->{"inCAM"};
+	my $jobId      = $self->{"jobId"};
 
-	my $minTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $stepName, $layerType );
+	my $minTool = undef;
+	
+	
+	foreach my $layerType  (@{$layerTypes}){
+	
+		my $curTool = CamRouting->GetMinSlotTool( $inCAM, $jobId, $stepName, $layerType );
+		
+		if(!defined $minTool || $curTool < $minTool){
+			
+			$minTool = $curTool;
+		}
+	}
+ 
 
 	if ( defined $minTool ) {
 		$minTool = sprintf "%0.2f", ( $minTool / 1000 );
@@ -234,13 +246,23 @@ sub __GetMinSlotTool {
 }
 
 sub __RoutExists {
-	my $self      = shift;
-	my $layerType = shift;
-	my $inCAM     = $self->{"inCAM"};
-	my $jobId     = $self->{"jobId"};
+	my $self       = shift;
+	my $layerTypes = shift;
+	my $inCAM      = $self->{"inCAM"};
+	my $jobId      = $self->{"jobId"};
 
-	my $existRout = CamDrilling->NCLayerExists( $inCAM, $jobId, $layerType );
-	if ($existRout) {
+	my $exist = 0;
+
+	foreach my $layerType ( @{$layerTypes} ) {
+
+		if ( CamDrilling->NCLayerExists( $inCAM, $jobId, $layerType ) ) {
+			$exist = 1;
+			last;
+		}
+	}
+
+	my $existRout = undef;
+	if ($exist) {
 		$existRout = "A";
 	}
 	else {
@@ -250,17 +272,16 @@ sub __RoutExists {
 	return $existRout;
 }
 
- 
 sub __GetRoutDistance {
-	my $self      = shift;
-	my $stepName  = shift;
-	my $layerType = shift;
-	my $inCAM     = $self->{"inCAM"};
-	my $jobId     = $self->{"jobId"};
+	my $self       = shift;
+	my $stepName   = shift;
+	my $layerTypes = shift;
+	my $inCAM      = $self->{"inCAM"};
+	my $jobId      = $self->{"jobId"};
 
 	my $total = undef;
 
-	my @res = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $layerType );
+	my @res = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, $layerTypes );
 
 	# If Exist fsch, then compute only f length, not f + fsch
 	@res = grep { $_->{"gROWname"} ne "fsch" } @res;
@@ -397,7 +418,6 @@ sub __GetRoutLen {
 
 	return $chTotal;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
