@@ -286,7 +286,7 @@ sub GetPressProgramInfo {
 	}
 	elsif ( $lamType eq Enums->LamType_TAPEPRODUCT || $lamType eq Enums->LamType_TAPESTIFFPRODUCT ) {
 
-		$pInfo{"name"} = "Tape";
+		$pInfo{"name"} = "Adhesive_tape";
 
 	}
 	elsif ( $lamType eq Enums->LamType_CVRLBASE ) {
