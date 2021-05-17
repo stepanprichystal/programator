@@ -313,14 +313,14 @@ sub MinHoleDataDist {
 	return $self->{"notes"}->{"MinHoleDataDist"};
 }
 
-sub NoHalfHoles {
+sub HalfHoles {
 	my $self = shift;
 
 	if ( !$self->Exist() ) {
 		return undef;
 	}
 
-	return $self->{"notes"}->{"NoHalfHoles"};
+	return $self->{"notes"}->{"HalfHoles"};
 }
 
 sub NoFiducial {

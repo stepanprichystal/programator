@@ -878,9 +878,13 @@ sub __SetLayoutCustomerInfo {
 
 		push( @request, "- Minimal distance of paste data to holes: " . $custNote->MinHoleDataDist() . "mm" );
 	}
-	if ( defined $custNote->NoHalfHoles() ) {
+	if ( defined $custNote->HalfHoles() && $custNote->HalfHoles() == 0 ) {
 
 		push( @request, "- No holes on edges of stencil (no halfholes)" );
+	}
+	if ( defined $custNote->HalfHoles() && $custNote->HalfHoles() == 1 ) {
+
+		push( @request, "- Holes are required on edges of stencil (halfholes)" );
 	}
 	if ( defined $custNote->NoFiducial() ) {
 

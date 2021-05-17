@@ -152,9 +152,9 @@ sub Check {
 
 	}
 
-	# check halfholes in standard schema type
-	my $noHalfHoles = $self->{"customerNote"}->NoHalfHoles();
-	if ( defined $noHalfHoles && $noHalfHoles == 1 && $self->{"dataMngr"}->GetSchemaType() eq Enums->Schema_STANDARD ) {
+	# check if there are no halfholes
+	my $halfHoles = $self->{"customerNote"}->HalfHoles();
+	if ( defined $halfHoles && $halfHoles == 0 && $self->{"dataMngr"}->GetSchemaType() eq Enums->Schema_STANDARD ) {
 
 		my @holesX = sort { $a <=> $b } uniq( map { $_->{"x"} } $self->{"stencilMngr"}->GetSchema()->GetHolePositions() );
 
@@ -172,6 +172,25 @@ sub Check {
 			$self->__AddError(
 						  "Zákazník si nepřeje mít upínací otvory na hranách desky " . "(otvory na pozicích: " . join( ", ", @holes ) . ")" );
 
+		}
+	}
+	
+	# check if there are halfholes
+	if ( defined $halfHoles && $halfHoles == 1 && $self->{"dataMngr"}->GetSchemaType() eq Enums->Schema_STANDARD ) {
+
+		my @holesX = sort { $a <=> $b } uniq( map { $_->{"x"} } $self->{"stencilMngr"}->GetSchema()->GetHolePositions() );
+
+		# Check if some hole lay on "stencil edge"
+		my $r = $self->{"dataMngr"}->GetHoleSize() / 2;
+
+		my $lEdge = 0;
+		my $rEdge = $self->{"dataMngr"}->GetStencilSizeX();
+		my @holes = grep { ( $_ - $r < $lEdge && $_ + $r > $lEdge ) || ( $_ - $r < $rEdge && $_ + $r > $rEdge ) } @holesX;
+
+		unless (@holes) {
+ 
+			$self->__AddError(
+						  "Zákazník si PŘEJE mít upínací otvory na hranách desky - halfholes");
 		}
 	}
 
