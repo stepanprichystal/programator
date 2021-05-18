@@ -550,6 +550,23 @@ sub __GetBaseCuThick {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+#	Packages::CAMJob::Technology::LayerSettings
+	
+		use aliased 'Packages::CAMJob::Technology::LayerSettings';
+		use aliased 'Packages::InCAM::InCAM';
+	
+		my $inCAM = InCAM->new();
+	
+		my $jobId     = "d320380";
+		my $stepName  = "o+1";
+		my $layerName = "c";
+	
+		my $d = LayerSettings->new($jobId);
+		$d->Init($inCAM);
+		my $tech = $d->GetDefSignalLSett("c");
+	
+		print $tech;
+
 }
 
 1;

@@ -396,8 +396,10 @@ sub __BuildProductInput {
 			splice @{$pars}, $i, 1 if ( defined $pars->[$i]->{"pId"} && $pars->[$i]->{"pId"} eq $pIdOri );
 		}
 
-		# Prepare NC which are not core and start/stop at product
+		# Prepare NC which are not core and start/stop at product (when sequential lamination: blind through, blind)
+		# Must not start in first/last copper layer (eg 4vv from 2cores with blind drill)
 		my @NCNoCore =
+		   grep {$_->{"NCSigStartOrder"} != 1 && $_->{"NCSigStartOrder"} != $self->{"stackup"}->GetCuLayerCnt() }
 		  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NCAffect;
 
 		my @pNClayers =
