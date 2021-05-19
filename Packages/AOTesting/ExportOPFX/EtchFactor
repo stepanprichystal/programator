@@ -2,6 +2,7 @@
 
 # Base cu thickness in µm = Etch factor in µm
 
+5   = 0
 9   = 12
 12  = 12
 18  = 15
