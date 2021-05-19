@@ -76,7 +76,7 @@ sub ExistAnularRingLess75 {
 
 	}
 	else {
-		my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED ] );
+		my $r = $a->GetFullReport( undef, undef, [ EnumsChecklist->Sev_RED, EnumsChecklist->Sev_YELLOW ] );
 
 		foreach my $catName ( ( EnumsChecklist->Cat_PTHCOMPANNULARRING, EnumsChecklist->Cat_VIAANNULARRING ) ) {
 
@@ -110,7 +110,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d319071";
+	my $jobId = "d320319";
 	my $step  = "o+1";
 
 	my $mess = "";

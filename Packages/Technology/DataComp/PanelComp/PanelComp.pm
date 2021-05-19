@@ -132,7 +132,7 @@ sub GetBaseMatComp {
 
 		if ( !$cvrl && $sm >= 2 ) {
 
-			use constant EXTRA_SM_STRETCH => 0.045;    # 0.045%
+			use constant EXTRA_SM_STRETCH => 0.035;    # 0.035%
 			$comp[0] += EXTRA_SM_STRETCH;
 			$comp[1] += EXTRA_SM_STRETCH;
 		}
