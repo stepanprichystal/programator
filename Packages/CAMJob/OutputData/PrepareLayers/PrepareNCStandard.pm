@@ -6,6 +6,7 @@
 package Packages::CAMJob::OutputData::PrepareLayers::PrepareNCStandard;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use List::Util qw[max min];
@@ -355,7 +356,7 @@ sub __CreateDrillMaps {
 
 	my $lDataMap = LayerData->new( $type, $oriLayer,
 								   "Drill map: " . $enTit,
-								   "Mapa vrt�n�: " . $czTit,
+								   "Mapa vrtání: " . $czTit,
 								   "Units [mm] " . $enInf,
 								   "Jednotky [mm] " . $czInf, $lNameMap );
 

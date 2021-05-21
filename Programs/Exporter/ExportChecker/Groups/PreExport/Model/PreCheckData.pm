@@ -1029,11 +1029,14 @@ sub __CheckGroupDataExtend {
 	}
 
 	# 23) Check scaling settings if match scale of signal layer and NC layers
+	# Reason - Signal layers can be registrated by plated drilling layers by cameras
 	my @stretchCpls = ();
 	if ( $layerCnt <= 2 ) {
 
-		my @NCLayers = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
-
+		my @NCLayers =
+		  grep { $_->{"plated"} }
+		  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
+	
 		foreach my $NClInfo (@NCLayers) {
 			my $topCu = $NClInfo->{"NCSigStart"};
 			my $botCu = $NClInfo->{"NCSigEnd"};
@@ -1047,7 +1050,7 @@ sub __CheckGroupDataExtend {
 
 		foreach my $p (@products) {
 
-			foreach my $NC ( $p->GetNCLayers() ) {
+			foreach my $NC ( grep { $_->{"plated"} } $p->GetNCLayers() ) {
 
 				my $topCu = JobHelper->BuildSignalLayerName( $p->GetTopCopperLayer(), $p->GetOuterCoreTop(), $p->GetPlugging() );
 				my $botCu = JobHelper->BuildSignalLayerName( $p->GetBotCopperLayer(), $p->GetOuterCoreBot(), $p->GetPlugging() );
@@ -1073,7 +1076,7 @@ sub __CheckGroupDataExtend {
 
 				$dataMngr->_AddErrorResult(
 											"Stretch settings signal layers",
-											"Signálové vrstvy:"
+											"Signálové vrstvy: "
 											  . $SCuScale->{"name"}
 											  . " (stretchX="
 											  . $SCuScale->{"stretchX"}
@@ -1094,7 +1097,7 @@ sub __CheckGroupDataExtend {
 
 				$dataMngr->_AddErrorResult(
 											"Stretch settings signal/NC layers",
-											"Signálová vrstva:"
+											"Signálová vrstva: "
 											  . $SCuScale->{"name"}
 											  . " (stretchX="
 											  . $SCuScale->{"stretchX"}
@@ -1115,13 +1118,13 @@ sub __CheckGroupDataExtend {
 
 				$dataMngr->_AddErrorResult(
 											"Stretch settings signal/NC layers",
-											"Signálová vrstva:"
+											"Signálová vrstva: "
 											  . $ECuScale->{"name"}
 											  . " (stretchX="
 											  . $ECuScale->{"stretchX"}
 											  . "; stretchY="
 											  . $ECuScale->{"stretchY"}
-											  . ") a NC vrstva:"
+											  . ") a NC vrstva: "
 											  . $NCLScale->{"name"}
 											  . " (stretchX="
 											  . $NCLScale->{"stretchX"}
@@ -1173,207 +1176,205 @@ sub __CheckGroupDataExtend {
 		}
 	}
 
+	# 16) If customer has required scheme, check if scheme in mpanel is ok
+	my $usedScheme = undef;
+	unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
 
+		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
 
-		# 16) If customer has required scheme, check if scheme in mpanel is ok
-		my $usedScheme = undef;
-		unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
-
-			my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
-
-			$dataMngr->_AddWarningResult( "Customer schema",
+		$dataMngr->_AddWarningResult( "Customer schema",
 						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
-		}
+	}
 
-		# X) Check production panel schema
-		my $usedPnlScheme = undef;
-		unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme ) ) {
+	# X) Check production panel schema
+	my $usedPnlScheme = undef;
+	unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme ) ) {
+
+		$dataMngr->_AddErrorResult(
+									"Špatné schéma",
+									"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
+									  . " Vlož do panelu správné schéma"
+		);
+
+	}
+
+	# 10) Check if dimension of panel are ok, depand on finish surface
+
+	my $pcbThick = $defaultInfo->GetPcbThick($jobId);
+	my %profLim  = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+	my $cutPnl   = $defaultInfo->GetJobAttrByName('technology_cut');
+
+	# if HAL PB , and thisck < 1.5mm, dim must be max 355mm height
+	my $maxThinHALPB = 355;
+	if (    $surface =~ /A/i
+		 && $pcbThick < 1500
+		 && $layerCnt <= 2 )
+	{
+		my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+		if ( $h > $maxThinHALPB ) {
+			$dataMngr->_AddErrorResult(
+										"Panel dimension - thin PBC",
+										"Nelze použít velký rozměr panelu ("
+										  . $h
+										  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu je: $maxThinHALPB mm"
+			);
+		}
+	}
+	elsif (    $surface =~ /A/i
+			&& $pcbThick < 1500
+			&& $layerCnt > 2 )
+	{
+
+		my $pnl = StandardBase->new( $inCAM, $jobId );
+		if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
+			 && $pnl->HFr() > $maxThinHALPB )
+		{
+			$dataMngr->_AddErrorResult(
+										"Panel dimension - thin PBC",
+										"Nelze použít velký rozměr panelu ("
+										  . $pnl->HFr()
+										  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu (fr rámečku) je: $maxThinHALPB mm"
+			);
+		}
+	}
+
+	# X) If HAL PB and physical size of panel is larger than 460
+	my $maxHALPB = 460;    # max panel height for PB HAL
+
+	if ( $surface =~ /A/i && $layerCnt <= 2 ) {
+
+		if ( abs( $profLim{"yMax"} - $profLim{"yMin"} ) > $maxHALPB
+			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
+		{
 
 			$dataMngr->_AddErrorResult(
-										"Špatné schéma",
-										"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
-										  . " Vlož do panelu správné schéma"
+										"Panel dimension",
+										"Nelze použít panel s výškou: "
+										  . abs( $profLim{"yMax"} - $profLim{"yMin"} )
+										  . "mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
 			);
-
 		}
+	}
+	elsif ( $surface =~ /A/i && $layerCnt > 2 ) {
 
-		# 10) Check if dimension of panel are ok, depand on finish surface
-
-		my $pcbThick = $defaultInfo->GetPcbThick($jobId);
-		my %profLim  = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
-		my $cutPnl   = $defaultInfo->GetJobAttrByName('technology_cut');
-
-		# if HAL PB , and thisck < 1.5mm, dim must be max 355mm height
-		my $maxThinHALPB = 355;
-		if (    $surface =~ /A/i
-			 && $pcbThick < 1500
-			 && $layerCnt <= 2 )
+		my $pnl = StandardBase->new( $inCAM, $jobId );
+		if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
+			 && $pnl->HFr() > $maxHALPB
+			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
 		{
-			my $h = abs( $profLim{"yMax"} - $profLim{"yMin"} );
-			if ( $h > $maxThinHALPB ) {
-				$dataMngr->_AddErrorResult(
-											"Panel dimension - thin PBC",
-											"Nelze použít velký rozměr panelu ("
-											  . $h
-											  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu je: $maxThinHALPB mm"
-				);
-			}
+			$dataMngr->_AddErrorResult(
+										"Panel dimension",
+										"Nelze použít panel s výškou (po ofrézování rámečku): "
+										  . $pnl->HFr()
+										  . " mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
+			);
 		}
-		elsif (    $surface =~ /A/i
-				&& $pcbThick < 1500
-				&& $layerCnt > 2 )
-		{
+	}
 
-			my $pnl = StandardBase->new( $inCAM, $jobId );
-			if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
-				 && $pnl->HFr() > $maxThinHALPB )
-			{
-				$dataMngr->_AddErrorResult(
-											"Panel dimension - thin PBC",
-											"Nelze použít velký rozměr panelu ("
-											  . $pnl->HFr()
-											  . "mm) protože surface je olovnatý HAL a zároveň tl. desky je menší 1,5mm. Max výška panelu (fr rámečku) je: $maxThinHALPB mm"
-				);
-			}
+	# If panel will be cut during production, check if there is proper set active area
+	if ( $cutPnl !~ /^no$/i ) {
+
+		my $pnl = StandardBase->new( $inCAM, $jobId );
+		if ( $pnl->HArea() > 470 ) {
+			$dataMngr->_AddErrorResult(
+				"Výška aktivní plochy panelu",
+				"Výška aktivní plochy neodpovídá střihu. Zkontroluj, jestli kusy nejsou panelizované za hranicí střihu panelu."
+
+			);
 		}
+	}
 
-		# X) If HAL PB and physical size of panel is larger than 460
-		my $maxHALPB = 460;    # max panel height for PB HAL
+	# Grafit panelise to smaller panel due to screenprinting problems
+	{
+		my @grafitL = grep { $_->{"gROWname"} =~ /^g[cs]$/i } $defaultInfo->GetBoardBaseLayers();
 
-		if ( $surface =~ /A/i && $layerCnt <= 2 ) {
+		if ( scalar(@grafitL) ) {
+			my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, "panel" );
 
-			if ( abs( $profLim{"yMax"} - $profLim{"yMin"} ) > $maxHALPB
-				 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
-			{
+			my $h = abs( $limActive{"yMax"} - $limActive{"yMin"} );
+
+			my $maxPnlH = 400;    # 400mm
+			if ( $h > $maxPnlH ) {
 
 				$dataMngr->_AddErrorResult(
 											"Panel dimension",
-											"Nelze použít panel s výškou: "
-											  . abs( $profLim{"yMax"} - $profLim{"yMin"} )
-											  . "mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
+											"Příliš velká aktivní oblast (${h}mm).  Pokud job obsahuje grafit aktivní oblast"
+											  . " musí mýt vysoká maximálně ${maxPnlH}mm."
+											  . " Důvodem jsou problémy se sítotiskovým stolem a dlouhými přířezy"
 				);
 			}
 		}
-		elsif ( $surface =~ /A/i && $layerCnt > 2 ) {
+	}
 
-			my $pnl = StandardBase->new( $inCAM, $jobId );
-			if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
-				 && $pnl->HFr() > $maxHALPB
-				 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
+	# If there are impedance coupons, check if there are place in the middle of PCB
+	if ( $defaultInfo->StepExist( EnumsGeneral->Coupon_IMPEDANCE ) ) {
+
+		my @repeats = grep { $_->{"stepName"} eq EnumsGeneral->Coupon_IMPEDANCE } CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" );
+
+		my %lim = $defaultInfo->GetProfileLimits();
+
+		# Check center area of panel (area of 50% width/height of panel)
+
+		my $w = $lim{"xMax"} - $lim{"xMin"};
+		my $h = $lim{"yMax"} - $lim{"yMin"};
+
+		my %centerArea = ();
+
+		$centerArea{"xMin"} = $lim{"xMin"} + $w / 4;
+		$centerArea{"xMax"} = $lim{"xMax"} - $w / 4;
+		$centerArea{"yMin"} = $lim{"yMin"} + $h / 4;
+		$centerArea{"yMax"} = $lim{"yMax"} - $h / 4;
+
+		my $inMiddle = 0;
+		foreach my $step (@repeats) {
+
+			my $xMidCpn = $step->{"gREPEATxmin"} + ( $step->{"gREPEATxmax"} - $step->{"gREPEATxmin"} ) / 2;
+			my $yMidCpn = $step->{"gREPEATymin"} + ( $step->{"gREPEATymax"} - $step->{"gREPEATymin"} ) / 2;
+
+			if (    $xMidCpn > $centerArea{"xMin"}
+				 && $xMidCpn < $centerArea{"xMax"}
+				 && $yMidCpn > $centerArea{"yMin"}
+				 && $yMidCpn < $centerArea{"yMax"} )
 			{
-				$dataMngr->_AddErrorResult(
-											"Panel dimension",
-											"Nelze použít panel s výškou (po ofrézování rámečku): "
-											  . $pnl->HFr()
-											  . " mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
-				);
+
+				$inMiddle = 1;
+				last;
 			}
 		}
 
-		# If panel will be cut during production, check if there is proper set active area
-		if ( $cutPnl !~ /^no$/i ) {
+		unless ($inMiddle) {
 
-			my $pnl = StandardBase->new( $inCAM, $jobId );
-			if ( $pnl->HArea() > 470 ) {
-				$dataMngr->_AddErrorResult(
-					"Výška aktivní plochy panelu",
-					"Výška aktivní plochy neodpovídá střihu. Zkontroluj, jestli kusy nejsou panelizované za hranicí střihu panelu."
+			$dataMngr->_AddWarningResult(
+				"Impedanční kupon",
+				"Na přířezu jsou impedanční kupony, ale ani jeden není uprostřed přířezu "
+				  . "(ideální umístějí kuponů je mít alespoň jeden uprostřed z důvodu nerovnoměrného nakovení)"
 
-				);
-			}
-		}
-
-		# Grafit panelise to smaller panel due to screenprinting problems
-		{
-			my @grafitL = grep { $_->{"gROWname"} =~ /^g[cs]$/i } $defaultInfo->GetBoardBaseLayers();
-
-			if ( scalar(@grafitL) ) {
-				my %limActive = CamStep->GetActiveAreaLim( $inCAM, $jobId, "panel" );
-
-				my $h = abs( $limActive{"yMax"} - $limActive{"yMin"} );
-
-				my $maxPnlH = 400;    # 400mm
-				if ( $h > $maxPnlH ) {
-
-					$dataMngr->_AddErrorResult(
-												"Panel dimension",
-												"Příliš velká aktivní oblast (${h}mm).  Pokud job obsahuje grafit aktivní oblast"
-												  . " musí mýt vysoká maximálně ${maxPnlH}mm."
-												  . " Důvodem jsou problémy se sítotiskovým stolem a dlouhými přířezy"
-					);
-				}
-			}
-		}
-
-		# If there are impedance coupons, check if there are place in the middle of PCB
-		if ( $defaultInfo->StepExist( EnumsGeneral->Coupon_IMPEDANCE ) ) {
-
-			my @repeats = grep { $_->{"stepName"} eq EnumsGeneral->Coupon_IMPEDANCE } CamStepRepeat->GetRepeatStep( $inCAM, $jobId, "panel" );
-
-			my %lim = $defaultInfo->GetProfileLimits();
-
-			# Check center area of panel (area of 50% width/height of panel)
-
-			my $w = $lim{"xMax"} - $lim{"xMin"};
-			my $h = $lim{"yMax"} - $lim{"yMin"};
-
-			my %centerArea = ();
-
-			$centerArea{"xMin"} = $lim{"xMin"} + $w / 4;
-			$centerArea{"xMax"} = $lim{"xMax"} - $w / 4;
-			$centerArea{"yMin"} = $lim{"yMin"} + $h / 4;
-			$centerArea{"yMax"} = $lim{"yMax"} - $h / 4;
-
-			my $inMiddle = 0;
-			foreach my $step (@repeats) {
-
-				my $xMidCpn = $step->{"gREPEATxmin"} + ( $step->{"gREPEATxmax"} - $step->{"gREPEATxmin"} ) / 2;
-				my $yMidCpn = $step->{"gREPEATymin"} + ( $step->{"gREPEATymax"} - $step->{"gREPEATymin"} ) / 2;
-
-				if (    $xMidCpn > $centerArea{"xMin"}
-					 && $xMidCpn < $centerArea{"xMax"}
-					 && $yMidCpn > $centerArea{"yMin"}
-					 && $yMidCpn < $centerArea{"yMax"} )
-				{
-
-					$inMiddle = 1;
-					last;
-				}
-			}
-
-			unless ($inMiddle) {
-
-				$dataMngr->_AddWarningResult(
-					"Impedanční kupon",
-					"Na přířezu jsou impedanční kupony, ale ani jeden není uprostřed přířezu "
-					  . "(ideální umístějí kuponů je mít alespoň jeden uprostřed z důvodu nerovnoměrného nakovení)"
-
-				);
-			}
-
+			);
 		}
 
 	}
 
-	#-------------------------------------------------------------------------------------------#
-	#  Place for testing..
-	#-------------------------------------------------------------------------------------------#
-	my ( $package, $filename, $line ) = caller;
-	if ( $filename =~ /DEBUG_FILE.pl/ ) {
+}
 
-		#	use aliased 'Packages::Export::NCExport::NCExportGroup';
-		#
-		#	my $jobId    = "F13608";
-		#	my $stepName = "panel";
-		#
-		#	my $inCAM = InCAM->new();
-		#
-		#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
-		#
-		#	$ncgroup->Run();
+#-------------------------------------------------------------------------------------------#
+#  Place for testing..
+#-------------------------------------------------------------------------------------------#
+my ( $package, $filename, $line ) = caller;
+if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-		#print $test;
+	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
+	#
+	#	my $jobId    = "F13608";
+	#	my $stepName = "panel";
+	#
+	#	my $inCAM = InCAM->new();
+	#
+	#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
+	#
+	#	$ncgroup->Run();
 
-	}
-	1;
+	#print $test;
+
+}
+1;
 

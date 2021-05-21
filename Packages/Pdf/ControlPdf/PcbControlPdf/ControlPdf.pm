@@ -533,7 +533,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $jobId = "x69801"; # RigidFlex Outer + cvrl
 #	my $jobId = "d298176"; # RigidFlex Outer + flexmask
- 	my $jobId = "d319991"; 
+ 	my $jobId = "d314452"; 
 
 	my $mess = "";
 
@@ -543,7 +543,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#my $nested = $SR;
 	my $detailPrev = 0;
 
-	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $detailPrev, "en", 1 );
+	my $control = ControlPdf->new( $inCAM, $jobId, $step, 0, $detailPrev, "cz", 1 );
 
 	my $f = sub {
 		my $item = $_[0];
@@ -556,8 +556,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#$control->AddInfoPreview( \$mess );
 	#$control->AddStackupPreview( \$mess );
-	$control->AddImagePreview( \$mess, 0, 1 );
-	#$control->AddLayersPreview( \$mess );
+	#$control->AddImagePreview( \$mess, 0, 1 );
+	$control->AddLayersPreview( \$mess );
 	my $reuslt = $control->GeneratePdf( \$mess );
 
 	unless ($reuslt) {

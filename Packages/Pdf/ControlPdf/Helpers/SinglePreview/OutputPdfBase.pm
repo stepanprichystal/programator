@@ -773,6 +773,15 @@ sub __DrawInfoTable {
 
 	my $txtSize   = 3 / mm;
 	my $txtMargin = 1.5 / mm;
+	
+	
+	if ( ($txtSize * length( $data->{"title"} ) + 2*$txtMargin) > $tabWidth ) {
+
+		my $newTxtSize = ($tabWidth - 2*$txtMargin) / length( $data->{"title"} ) * 2.1;
+		
+		$txtSize = $newTxtSize if($newTxtSize < $txtSize);
+	}
+	
 
 	# add text title
 

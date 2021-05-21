@@ -18,6 +18,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamCopperArea';
+use aliased 'CamHelpers::CamDrilling';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -120,7 +121,9 @@ sub GetBaseMatComp {
 
 	my @comp = $self->__GetPanelXYScale( $matKind, $matThick, $cuThick, $cuUsage );
 
-	# If pcb is flexible and PCB contain TOP + BOT soldermask without any coverlay
+	# Stretch/shrink Exceptions
+
+	# 1) If pcb is flexible and PCB contain TOP + BOT soldermask without any coverlay
 	# add extra stretch, beasuce PCB are empirically more shrinked
 
 	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
@@ -132,9 +135,30 @@ sub GetBaseMatComp {
 
 		if ( !$cvrl && $sm >= 2 ) {
 
-			use constant EXTRA_SM_STRETCH => 0.035;    # 0.035%
-			$comp[0] += EXTRA_SM_STRETCH;
-			$comp[1] += EXTRA_SM_STRETCH;
+			use constant EXTRA_SM_STRETCH => 1.2;    # 1.35%
+			$comp[0] *= EXTRA_SM_STRETCH;
+			$comp[1] *= EXTRA_SM_STRETCH;
+		}
+	}
+
+	# 2) If pcb is flexible 1-2V + coverlay and without plating
+	# add extra shrink, beasuce PCB are empirically same at the begining of production as in the end
+	# ( maybe even little stretched during production, but it is not proven)
+
+	if ( JobHelper->GetIsFlex( $self->{"jobId"} ) && $self->{"layerCnt"} <= 2 ) {
+
+		my @pltNC = grep { !$_->{"technical"} } CamDrilling->GetPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
+
+		my @board = CamJob->GetBoardBaseLayers( $self->{"inCAM"}, $self->{"jobId"} );
+
+		my $cvrl = scalar( grep { $_->{"gROWlayer_type"} eq "coverlay" } @board );
+		my $sm   = scalar( grep { $_->{"gROWlayer_type"} eq "solder_mask" } @board );
+
+		if ( $cvrl > 0 && $sm == 0 && scalar(@pltNC) == 0 ) {
+
+			use constant EXTRA_NPLT_CVRL_SHRINK => 0.40;    # Reduce original shrink by 60%
+			$comp[0] *= EXTRA_NPLT_CVRL_SHRINK;
+			$comp[1] *= EXTRA_NPLT_CVRL_SHRINK;
 		}
 	}
 

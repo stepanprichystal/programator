@@ -40,12 +40,10 @@ sub RoutPocketCheckDir {
 
 	my $result = 1;
 
-	
-
 	my @layers = CamDrilling->GetNCLayersByType( $inCAM, $jobId, $ncLayerType );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
 
-	CamHelper->SetStep( $inCAM, $step ) if(scalar(@layers));
+	CamHelper->SetStep( $inCAM, $step ) if ( scalar(@layers) );
 
 	foreach my $l (@layers) {
 
@@ -101,21 +99,23 @@ sub RoutPocketCheckDirAllLayers {
 	my $result = 1;
 
 	my @types = (
-				  EnumsGeneral->LAYERTYPE_plt_bMillTop,
-				  EnumsGeneral->LAYERTYPE_plt_bMillBot,
-				  EnumsGeneral->LAYERTYPE_nplt_bMillTop,
-				  EnumsGeneral->LAYERTYPE_nplt_bMillBot,
-				  EnumsGeneral->LAYERTYPE_nplt_lcMill,
-				  EnumsGeneral->LAYERTYPE_nplt_lsMill,
-				  EnumsGeneral->LAYERTYPE_nplt_cbMillTop,
-				  EnumsGeneral->LAYERTYPE_nplt_cbMillBot,
-				  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill,
-				  EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
-				  EnumsGeneral->LAYERTYPE_nplt_prepregMill,
-				  EnumsGeneral->LAYERTYPE_nplt_stiffcMill,
-				  EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
-				  EnumsGeneral->LAYERTYPE_nplt_soldcMill,
-				  EnumsGeneral->LAYERTYPE_nplt_soldsMill
+		EnumsGeneral->LAYERTYPE_plt_bMillTop,
+		EnumsGeneral->LAYERTYPE_plt_bMillBot,
+		EnumsGeneral->LAYERTYPE_nplt_bMillTop,
+		EnumsGeneral->LAYERTYPE_nplt_bMillBot,
+		EnumsGeneral->LAYERTYPE_nplt_lcMill,
+		EnumsGeneral->LAYERTYPE_nplt_lsMill,
+		EnumsGeneral->LAYERTYPE_nplt_cbMillTop,
+		EnumsGeneral->LAYERTYPE_nplt_cbMillBot,
+		EnumsGeneral->LAYERTYPE_nplt_cvrlycMill,
+		EnumsGeneral->LAYERTYPE_nplt_cvrlysMill,
+		EnumsGeneral->LAYERTYPE_nplt_prepregMill,
+		EnumsGeneral->LAYERTYPE_nplt_stiffcMill,
+		EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
+		EnumsGeneral->LAYERTYPE_nplt_bstiffcMill,
+		EnumsGeneral->LAYERTYPE_nplt_bstiffsMill,
+		EnumsGeneral->LAYERTYPE_nplt_soldcMill,
+		EnumsGeneral->LAYERTYPE_nplt_soldsMill
 	);
 
 	foreach my $t (@types) {
