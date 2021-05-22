@@ -41,10 +41,10 @@ sub new {
 	my $self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"}         = shift;
-	$self->{"jobId"}         = shift;
-	$self->{"stepName"}      = shift;
-	$self->{"NCLayers"} = shift;
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"stepName"} = shift;
+	$self->{"NCLayers"} = shift; # information about layer stretch value
 
 	return $self;
 }
@@ -65,8 +65,6 @@ sub Run {
 	# move nptp holes back
 
 	NpltDrillHelper->RestoreNpltDrill( $self->{"inCAM"}, $self->{"jobId"}, $cnt );
-
- 
 
 }
 
@@ -124,13 +122,14 @@ sub __Init {
 	$self->{"machineMngr"} = MachineMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"} );
 
 	#create manager for exporting files
- 
-	
-	$self->{"exportFileMngr"} = ExportFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\" );
+
+	$self->{"exportFileMngr"} =
+	  ExportFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\" );
 	$self->{"exportFileMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	#create manager for merging and moving files to archiv
-	$self->{"mergeFileMngr"} = MergeFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\"  );
+	$self->{"mergeFileMngr"} =
+	  MergeFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\" );
 	$self->{"mergeFileMngr"}->{"fileEditor"} =
 	  FileEditor->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, $self->{"layerCnt"}, 0 );
 	$self->{"mergeFileMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
@@ -174,10 +173,10 @@ sub __Run {
 
 		# 3) update tif file
 		# Add information about nc operations (time consuming operation, this is reason why store to tif for later useage)
-		NCHelper->StoreOperationInfoTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"operationMngr"} );
+		Helper->StoreOperationInfoTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"operationMngr"} );
 
 		# Add output settings info for nc layers
-		NCHelper->StoreNClayerSettTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"NCLayers"}, $self->{"operationMngr"} );
+		Helper->StoreNClayerSettTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"NCLayers"}, $self->{"operationMngr"} );
 
 		# 4) Export physical nc files
 		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
@@ -235,7 +234,7 @@ sub __UpdateNCInfo {
 	my $result = 0;
 	foreach my $attempt ( 1 .. 3 ) {
 
-		$result = NCHelper->UpdateNCInfo( $self->{"jobId"}, \@info, \$resultMess );
+		$result = Helper->UpdateNCInfo( $self->{"jobId"}, \@info, \$resultMess );
 
 		last if ($result);
 		sleep(5);

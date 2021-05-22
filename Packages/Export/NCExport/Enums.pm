@@ -1,5 +1,5 @@
 
-package Packages::Export::NCExport::::Enums;
+package Packages::Export::NCExport::Enums;
 
 use constant {
 			   ExportMode_ALL        => "ExportMode_ALL",

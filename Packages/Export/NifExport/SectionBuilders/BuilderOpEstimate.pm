@@ -24,7 +24,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::TifFile::TifNCOperations';
 use aliased 'Packages::CAMJob::Drilling::DrillDuration::DrillDuration';
 use aliased 'Packages::CAMJob::Routing::RoutDuration::RoutDuration';
-use aliased 'Packages::Export::NCExport::ExportMngr::ExportPanelAllMngr';
+use aliased 'Packages::Export::NCExport::ExportPanelAllMngr';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'Packages::TifFile::TifET';
 

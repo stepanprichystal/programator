@@ -71,11 +71,13 @@ sub SortLayersByRules {
 
 	# nplted layer are merged together
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }      = 2010;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrillBot }      = 2010;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }    = 2020;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }    = 2030;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } = 2040;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } = 2050;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nMill }       = 2060;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_nMillBot }       = 2060;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_rsMill }      = 2070;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_frMill }      = 2080;
 
@@ -178,9 +180,11 @@ sub GetHeaderLayer {
 
 	# nplated layer are merged together
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrill }   = 2060;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_nDrillBot }   = 2060;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } = 2020;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } = 2030;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_nMill }    = 2010;
+	$priority{ EnumsGeneral->LAYERTYPE_nplt_nMillBot }    = 2010;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_rsMill }   = 2040;
 	$priority{ EnumsGeneral->LAYERTYPE_nplt_frMill }   = 2050;
 

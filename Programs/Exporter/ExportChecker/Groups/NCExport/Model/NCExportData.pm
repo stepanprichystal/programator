@@ -40,12 +40,14 @@ sub OnExportGroupData {
 	my $stepName = "panel";
 
 	my $exportData = NCData->new();
- 
-	$exportData->SetExportSingle( $groupData->GetExportSingle() );
+
+	$exportData->SetExportMode( $groupData->GetExportMode() );
 	$exportData->SetAllModeLayers( $groupData->GetAllModeLayers() );
+	$exportData->SetAllModeExportPnl( $groupData->GetAllModeExportPnl() );
+	$exportData->SetAllModeExportPnlCpn( $groupData->GetAllModeExportPnlCpn() );
 	$exportData->SetSingleModePltLayers( $groupData->GetSingleModePltLayers() );
 	$exportData->SetSingleModeNPltLayers( $groupData->GetSingleModeNPltLayers() );
-	 
+
 	return $exportData;
 
 }

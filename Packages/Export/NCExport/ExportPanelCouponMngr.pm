@@ -22,11 +22,15 @@ use aliased 'Packages::Export::NCExport::MachineMngr::MachineMngr';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Export::NCExport::Helpers::Helper';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'CamHelpers::CamStep';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -39,19 +43,37 @@ sub new {
 	my $self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"}        = shift;
-	$self->{"jobId"}        = shift;
-	$self->{"stepName"}     = shift;
-	
+	$self->{"inCAM"}    = shift;
+	$self->{"jobId"}    = shift;
+	$self->{"stepName"} = shift;
+
 	return $self;
 }
 
 sub Run {
 	my $self = shift;
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	# Check if exist panel coupon
+	die "Panel coupon step (" . $self->{"stepName"} . ") is not created" unless ( CamHelper->StepExists( $inCAM, $jobId, $self->{"stepName"} ) );
+	# Check if therea are prepared Zaxis coupons
+	my $cpnName = EnumsGeneral->Coupon_ZAXIS;
+	my @zAxisCpn =
+	  grep { $_->{"stepName"} =~ /^$cpnName\d+$/i } CamStepRepeat->GetUniqueDeepestSR( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"} );
+
+	die "No z-axis coupon in panel step: " . $self->{"stepName"} unless ( scalar(@zAxisCpn) );
+
+	# We want do coupon outline mill/drill from both sides.
+	# So if there is some mill from BOT, duplicate outline mill
+	my $outlLayer = $self->__DuplicateOutlineFromBot();
+
 	$self->__Init();
 
 	$self->__Run();
+
+	$self->__RemoveOutlineFromBot($outlLayer);
 
 }
 
@@ -78,8 +100,7 @@ sub __Init {
 
 	my @nplt = CamDrilling->GetNPltNCLayers( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"npltLayers"} = \@nplt;
-	
- 
+
 	# 3) Add layer attributes
 	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"pltLayers"} );
 	CamDrilling->AddHistogramValues( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"npltLayers"} );
@@ -99,12 +120,12 @@ sub __Init {
 
 	#create manager for exporting files
 	$self->{"exportFileMngr"} =
-	  ExportFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc_coupon\\" );
+	  ExportFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\coupon\\" );
 	$self->{"exportFileMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	#create manager for merging and moving files to archiv
 	$self->{"mergeFileMngr"} =
-	  MergeFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc_coupon\\" );
+	  MergeFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\coupon\\" );
 	$self->{"mergeFileMngr"}->{"fileEditor"} =
 	  FileEditor->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, $self->{"layerCnt"}, 1 );
 	$self->{"mergeFileMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
@@ -121,27 +142,88 @@ sub __Init {
 sub __Run {
 	my $self = shift;
 
-	get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 1\n " );
+	# 1) Do final check of drill/rout layer
+	if ( $self->__CheckNCLayers() ) {
 
-	# 2) create sequence of dps operation
-	$self->{"operationMngr"}->CreateOperations();
+		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 1\n " );
 
-	get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 2\n " );
+		# 2) create sequence of dps operation
+		$self->{"operationMngr"}->CreateOperations();
 
-	# 3) for every operation filter suitable machines
-	$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
+		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 2\n " );
 
-	get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 3\n " );
+		# 3) for every operation filter suitable machines
+		$self->{"machineMngr"}->AssignMachines( $self->{"operationMngr"} );
 
-	# 4) Export physical nc files
-	$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
+		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 3\n " );
 
-	# 5) Merge an move files to archive
-	$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
+		# 5) Export physical nc files
+		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
+
+		# 6) Merge an move files to archive
+		$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
+	}
 
 }
 
- 
+# Do final check of drill/rout layer
+sub __CheckNCLayers {
+	my $self = shift;
+
+	my $res = 1;
+
+	my $checkRes = $self->_GetNewItem("Checking NC layers");
+
+	my $mess = "";    # errors
+
+	unless ( LayerErrorInfo->CheckNCLayers( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, undef, \$mess ) ) {
+
+		$checkRes->AddError($mess);
+		$res = 0;     # don't continue, because of check fail
+	}
+
+	$self->_OnItemResult($checkRes);
+
+	return $res;
+}
+
+# If exist depth milling from BOT, duplicate outline layer and set direction from bot
+sub __DuplicateOutlineFromBot {
+	my $self = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $outlineL = undef;
+	my @l = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+	CamDrilling->AddHistogramValues( $inCAM, $jobId, $self->{"stepName"}, \@l );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@l );
+
+	@l = grep { defined $_->{"minTool"}} @l; # Filter only non empty layers
+
+	if ( scalar( grep { $_->{"gROWdrl_dir"} eq "bot2top" } @l ) ) {
+
+		$outlineL = "fs";
+
+		die "Layer $outlineL already exist, something is broken" if ( CamHelper->LayerExists( $inCAM, $jobId, $outlineL ) );
+
+		CamMatrix->DuplicateLayer( $inCAM, $jobId, "f", $outlineL );
+
+		CamMatrix->SetLayerDirection( $inCAM, $jobId, $outlineL, "bottom_to_top" );
+	}
+
+	return $outlineL;
+}
+
+sub __RemoveOutlineFromBot {
+	my $self    = shift;
+	my $outline = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	CamMatrix->DeleteLayer( $inCAM, $jobId, $outline );
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

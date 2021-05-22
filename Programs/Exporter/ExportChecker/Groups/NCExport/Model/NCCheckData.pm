@@ -53,6 +53,7 @@ use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
 use aliased 'Packages::CAM::FeatureFilter::Enums' => 'FiltrEnums';
 use aliased 'Packages::CAMJob::Drilling::NPltDrillCheck';
 use aliased 'Packages::CAMJob::Routing::RoutStiffener';
+use aliased 'Packages::Export::NCExport::Enums' => 'EnumsNC';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -79,12 +80,12 @@ sub OnCheckGroupData {
 	my $jobId     = $dataMngr->{"jobId"};
 	my $stepName  = "panel";
 
-	my $exportSingle = $groupData->GetExportSingle();
-	my $pltLayers    = $groupData->GetSingleModePltLayers();
-	my $npltLayers   = $groupData->GetSingleModeNPltLayers();
+	my $exportMode = $groupData->GetExportMode();
+	my $pltLayers  = $groupData->GetSingleModePltLayers();
+	my $npltLayers = $groupData->GetSingleModeNPltLayers();
 
 	# 1) Check inf export single and no layers selected
-	if ($exportSingle) {
+	if ( $exportMode eq EnumsNC->ExportMode_SINGLE ) {
 
 		if ( scalar( @{$pltLayers} ) + scalar( @{$npltLayers} ) == 0 ) {
 
@@ -109,7 +110,7 @@ sub OnCheckGroupData {
 	}
 
 	# Check if special layers are created (v; v1; fr)
-	unless ($exportSingle) {
+	unless ( $exportMode eq EnumsNC->ExportMode_ALL ) {
 
 		unless ( CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_plt_fDrill ) ) {
 			$dataMngr->_AddErrorResult( "Special NC layer", "Special NC layer: \"v\" doesn't exist." );
@@ -449,12 +450,12 @@ sub OnCheckGroupData {
 	}
 
 	# 13) Check if exist layer D. This layer is permited so far (but will be probablz alowed in feature) 27.2.2018
-	if ( $defaultInfo->LayerExist("d") ) {
+	if ( $defaultInfo->LayerExist("d") || $defaultInfo->LayerExist("ds")) {
 		$dataMngr->_AddErrorResult(
-									"NC vrstva D",
-									"Něco se rozbilo. V matrixu je NC vrstva D. "
+									"NC vrstva D/DS",
+									"Něco se rozbilo. V matrixu je NC vrstva D/DS. "
 									  . "Tato vrstva pravděpodobně obsahuje neprokovené otvory z vrstvy f. "
-									  . "Zkontroluj a vrať otovory v každého stepu do vrstvy f a smaž vrstvu d."
+									  . "Zkontroluj a vrať otovory v každého stepu do vrstvy f a smaž vrstvu d/ds."
 		);
 	}
 

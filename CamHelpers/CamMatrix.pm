@@ -8,6 +8,7 @@ package CamHelpers::CamMatrix;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #loading of locale modules
 use aliased 'CamHelpers::CamHelper';
@@ -19,6 +20,7 @@ use aliased 'Packages::Stackup::StackupOperation';
 #-------------------------------------------------------------------------------------------#
 
 # Duplicate layer
+# Do not copy lazer data in step and repeat steps
 sub CopyLayer {
 	my $self        = shift;
 	my $inCAM       = shift;
@@ -43,6 +45,65 @@ sub CopyLayer {
 				 "mode"         => $mode,
 				 "invert"       => $invert
 	);
+
+	return 1;
+
+}
+
+# Duplicate layer
+# Copy layer data in step and repeat steps
+sub DuplicateLayer {
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $jobId       = shift;
+	my $sourceLayer = shift;
+	my $targetLayer = shift;
+
+	die "Layer $sourceLayer already exist" if ( CamHelper->LayerExists( $inCAM, $jobId, $targetLayer ) );
+
+	my @all = CamJob->GetAllLayers( $inCAM, $jobId );
+	my @alreadyDupl = grep { $_ =~ /$sourceLayer\+\d+$/ } map { $_->{"gROWname"} } @all;
+
+	my $maxIdx = undef;
+	for ( my $i = 0 ; $i < scalar(@alreadyDupl) ; $i++ ) {
+
+		my $curIdx = ( $alreadyDupl[$i] =~ m/(\d+)$/ )[0];
+		$maxIdx = $curIdx if ( !defined $maxIdx || $maxIdx < $curIdx );
+	}
+
+	# new name
+	my $duplName = $sourceLayer . "+";
+	if ( defined $maxIdx ) {
+
+		for ( my $i = 1 ; $i <= $maxIdx + 1 ; $i++ ) {
+
+			my $exist = first { $_ eq $sourceLayer . "+$i"; } map { $_->{"gROWname"} } @all;
+
+			unless ($exist) {
+				$duplName .= "$i";
+				last;
+			}
+		}
+	}
+	else {
+
+		$duplName .= "1";
+	}
+
+	my $matrixL = first { $_->{"gROWname"} eq $sourceLayer } CamJob->GetAllLayers( $inCAM, $jobId );
+
+	$inCAM->COM(
+		'matrix_copy_row',
+		"job"     => $jobId,
+		"matrix"  => "matrix",
+		"row"     => $matrixL->{"gROWrow"},
+		"ins_row" => $matrixL->{"gROWrow"},
+
+	);
+
+	# Rename generated laye to required layer
+
+	$self->RenameLayer( $inCAM, $jobId, $duplName, $targetLayer );
 
 	return 1;
 
@@ -266,10 +327,10 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "f13608";
+	my $jobId    = "d317363";
 	my $stepName = "panel";
 
-	my $workLayer = CamMatrix->GetWorkLayer($inCAM);
+	my $workLayer = CamMatrix->DuplicateLayer( $inCAM, $jobId, "c", "t" );
 	die;
 
 }

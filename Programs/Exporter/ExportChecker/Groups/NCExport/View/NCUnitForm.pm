@@ -28,6 +28,9 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCLayerList::NCLayerList';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::Export::NCExport::Enums' => 'EnumsNC';
+use aliased 'CamHelpers::CamStep';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -105,14 +108,14 @@ sub __SetLayout {
 
 	my $notebook = CustomNotebook->new( $self, -1 );
 
-	my $singlePage            = $notebook->AddPage(1, 0);
+	my $singlePage = $notebook->AddPage( 1, 0 );
 	my $singleModeSettStatBox = $self->__SetLayoutSingleMode( $singlePage->GetParent() );
 	$singlePage->AddContent($singleModeSettStatBox);
 
-	my $allPage            = $notebook->AddPage(2, 0);
+	my $allPage = $notebook->AddPage( 2, 0 );
 	my $allModeSettStatBox = $self->__SetLayoutAllMode( $allPage->GetParent() );
 	$allPage->AddContent($allModeSettStatBox);
-	
+
 	$notebook->ShowPage(2);
 
 	# SET EVENTS
@@ -143,7 +146,7 @@ sub __SetLayoutModeBox {
 	# DEFINE CONTROLS
 	my $rbAll = Wx::RadioButton->new( $statBox, -1, "All", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
 	my $rbSingle = Wx::RadioButton->new( $statBox, -1, "Single", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
- 
+
 	# SET EVENTS
 	Wx::Event::EVT_RADIOBUTTON( $rbAll,    -1, sub { $self->__OnModeChangeHandler(@_) } );
 	Wx::Event::EVT_RADIOBUTTON( $rbSingle, -1, sub { $self->__OnModeChangeHandler(@_) } );
@@ -212,22 +215,32 @@ sub __SetLayoutAllMode {
 
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'All mode settings' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
-	my @NC =  ( @{ $self->{"plt"} }, @{ $self->{"nplt"} } );
+	my $exportPnlLayersChb = Wx::CheckBox->new( $statBox, -1, "Main NC programs", &Wx::wxDefaultPosition );
+
+	my @NC = ( @{ $self->{"plt"} }, @{ $self->{"nplt"} } );
 	my $NCLayerList = NCLayerList->new( $statBox, $self->{"inCAM"}, $self->{"jobId"}, \@NC );
+
+	my $exportPnlCpnLayersChb = Wx::CheckBox->new( $statBox, -1, "Z-axis coupon programs", &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 	$NCLayerList->{"NCLayerSettChangedEvt"}->Add( sub { $self->{"layerScaleSettChangedEvt"}->Do(@_) } );
- 
-	# SET EVENTS
+
+	Wx::Event::EVT_CHECKBOX( $exportPnlLayersChb, -1, sub { $self->__OnExportPnlLayersChange(@_) } );
+	Wx::Event::EVT_COMBOBOX( $exportPnlCpnLayersChb, -1, sub { $self->__OnStepChange(@_) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szStatBox->Add( $NCLayerList, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->Add( $exportPnlLayersChb,    0, &Wx::wxEXPAND | &Wx::wxTOP, 2 );
+	$szStatBox->Add( $NCLayerList,           0, &Wx::wxEXPAND | &Wx::wxTOP, 4 );
+	$szStatBox->Add( $exportPnlCpnLayersChb, 1, &Wx::wxEXPAND | &Wx::wxTOP, 10 );
 
-	$self->{"NCLayerList"} = $NCLayerList;
-	$self->{"statBoxAll"}  = $statBox;
+	$self->{"exportPnlLayersChb"}    = $exportPnlLayersChb;
+	$self->{"NCLayerList"}           = $NCLayerList;
+	$self->{"exportPnlCpnLayersChb"} = $exportPnlCpnLayersChb;
+	$self->{"statBoxAll"}            = $statBox;
+
 	return $szStatBox;
 }
 
@@ -281,11 +294,40 @@ sub __OnModeChangeHandler {
 	}
 }
 
+sub __OnExportPnlLayersChange {
+	my $self = shift;
+
+	if ( $self->{"exportPnlLayersChb"}->IsChecked() ) {
+
+		$self->{"NCLayerList"}->Enable();
+
+	}
+	else {
+
+		$self->{"NCLayerList"}->Disable();
+
+	}
+
+}
+
 # =====================================================================
 # DISABLING CONTROLS
 # =====================================================================
 
 sub DisableControls {
+	my $self = shift;
+
+	my $cpnName = EnumsGeneral->Coupon_ZAXIS;
+	my @steps = grep { $_ =~ /$cpnName/ } CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
+
+	if ( scalar(@steps) > 0 ) {
+
+		$self->{"exportPnlCpnLayersChb"}->Enable();
+	}
+	else {
+		
+		$self->{"exportPnlCpnLayersChb"}->Disable();
+	}
 
 }
 
@@ -296,19 +338,81 @@ sub DisableControls {
 # Dimension ========================================================
 
 # single_x
-sub SetExportSingle {
+sub SetExportMode {
 	my $self  = shift;
 	my $value = shift;
 
-	$self->{"rbSingle"}->SetValue($value);
-	$self->{"rbAll"}->SetValue( !$value );
+	if ( $value eq EnumsNC->ExportMode_SINGLE ) {
+		$self->{"rbSingle"}->SetValue(1);
+		$self->{"rbAll"}->SetValue(0);
+	}
+	elsif ( $value eq EnumsNC->ExportMode_ALL ) {
+		$self->{"rbSingle"}->SetValue(0);
+		$self->{"rbAll"}->SetValue(1);
+	}
+
 	$self->__OnModeChangeHandler();
 
 }
 
-sub GetExportSingle {
+sub GetExportMode {
 	my $self = shift;
-	return $self->{"rbSingle"}->GetValue();
+
+	my $mode = undef;
+
+	if ( $self->{"rbSingle"}->GetValue() ) {
+		$mode = EnumsNC->ExportMode_SINGLE;
+	}
+	else {
+		$mode = EnumsNC->ExportMode_ALL;
+	}
+
+	return $mode;
+}
+
+sub GetAllModeExportPnl {
+	my $self = shift;
+
+	my $export = undef;
+
+	if ( $self->{"exportPnlLayersChb"}->IsChecked() ) {
+		$export = 1;
+	}
+	else {
+		$export = 0;
+	}
+
+	return $export;
+}
+
+sub SetAllModeExportPnlCpn {
+	my $self   = shift;
+	my $export = shift;
+
+	$self->{"exportPnlCpnLayersChb"}->SetValue($export);
+
+	$self->__OnExportPnlLayersChange();
+}
+
+sub GetAllModeExportPnlCpn {
+	my $self   = shift;
+	my $export = undef;
+
+	if ( $self->{"exportPnlCpnLayersChb"}->IsChecked() ) {
+		$export = 1;
+	}
+	else {
+		$export = 0;
+	}
+
+	return $export;
+}
+
+sub SetAllModeExportPnl {
+	my $self   = shift;
+	my $export = shift;
+
+	$self->{"exportPnlLayersChb"}->SetValue($export);
 }
 
 sub GetAllModeLayers {

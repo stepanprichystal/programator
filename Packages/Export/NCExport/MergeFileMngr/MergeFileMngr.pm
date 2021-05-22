@@ -137,7 +137,7 @@ sub __SaveOperation {
 		$fileName .= "_1";
 	}
 
-	my $path = $self->{'archive'} . $jobName . $fileName . "." . $suffix;
+	my $path = $self->{'archivePath'} . $jobName . $fileName . "." . $suffix;
 
 	$fileEditor->EditBeforeSave( $parseFile, $opItem );
 

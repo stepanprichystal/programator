@@ -23,17 +23,21 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'CamHelpers::CamRouting';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::CAMJob::Dim::JobDim';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
+use aliased 'Packages::CAMJob::Panelization::SRStep';
+use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
-#----- 
- 
+#-----
 
 sub UpdateNCInfo {
 	my $self      = shift;
@@ -286,24 +290,94 @@ sub StoreNClayerSettTif {
 	$tif->SetNCLayerSett($layerSett);
 }
 
-
+# Move z-axis coupon steps to temporary panel step
+# Return number of removed/moved z-axis coupons
 sub SeparateCouponZaxis {
-	my $self         = shift;
-	my $inCAM        = shift;
-	my $jobId        = shift;
- 
-
-}
-
-sub RestoreCouponZaxis {
 	my $self      = shift;
 	my $inCAM     = shift;
 	my $jobId     = shift;
-	 
+	my $sourcePnl = shift;
+	my $cpnPnl    = shift;
 
-	 
+	# If exist coupon depth steps, copy main panel and separate coupn steps
+	my $cpnName = EnumsGeneral->Coupon_ZAXIS;
+
+	# 1) Create coupon panel + copy coupon steps
+	my $sr = SRStep->new( $inCAM, $jobId, $cpnPnl );
+
+	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $sourcePnl );
+
+	my $aPnl = ActiveArea->new( $inCAM, $jobId, $sourcePnl );
+	$sr->Create( ( $lim{"xMax"} - $lim{"xMin"} ),
+				 ( $lim{"yMax"} - $lim{"yMin"} ),
+				 $aPnl->BorderT(), $aPnl->BorderB(), $aPnl->BorderL(), $aPnl->BorderR(), { "x" => $lim{"xMin"}, "y" => $lim{"yMin"} } );
+
+	my @repeats = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $sourcePnl );
+	@repeats = grep { $_->{"stepName"} =~ /^$cpnName\d+$/i } @repeats;
+
+	foreach my $r (@repeats) {
+		$sr->AddSRStep( $r->{"stepName"}, $r->{"gSRxa"}, $r->{"gSRya"}, $r->{"gSRangle"}, $r->{"gSRnx"}, $r->{"gSRny"}, $r->{"gSRdx"},
+						$r->{"gSRdy"} );
+	}
+	
+	# Copy signal layer c + v - need fiducials
+	CamMatrix->CopyLayer( $inCAM, $jobId, "c", $sourcePnl, "c", $cpnPnl );
+	CamMatrix->CopyLayer( $inCAM, $jobId, "v", $sourcePnl, "v", $cpnPnl );
+
+	# 2) Remove coupons from source panel step
+	CamHelper->SetStep( $inCAM, $sourcePnl );
+	my @repeatsSrc = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $sourcePnl );
+	@repeatsSrc = grep { $_->{"stepName"} =~ /^$cpnName\d+$/i } @repeatsSrc;
+	foreach my $r (@repeatsSrc) {
+		CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $sourcePnl, $r->{"stepName"} );
+	}
+
+	return scalar(@repeats);
+
 }
 
+# Get back  z-axis coupon steps from temporary panel to source panel
+sub RestoreCouponZaxis {
+	my $self            = shift;
+	my $inCAM           = shift;
+	my $jobId           = shift;
+	my $sourcePnl       = shift;
+	my $cpnPnl          = shift;
+	my $removedStepsCnt = shift;
+
+	if ( $removedStepsCnt > 0 ) {
+
+		# If exist coupon depth steps, copy main panel and separate coupn steps
+		my $cpnName = EnumsGeneral->Coupon_ZAXIS;
+		
+		my @zAxisCpn = grep { $_->{"stepName"} =~ /^$cpnName\d+$/i } CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $cpnPnl );
+		
+		 
+		die "No z-axis coupon in panel step: " . $self->{"stepName"} unless ( scalar(@zAxisCpn) );
+
+		my $sr = SRStep->new( $inCAM, $jobId, $sourcePnl );
+
+		my @repeats = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $cpnPnl );
+		@repeats = grep { $_->{"stepName"} =~ /^$cpnName\d+$/i } @repeats;
+
+		foreach my $r (@repeats) {
+			$sr->AddSRStep( $r->{"stepName"}, $r->{"gSRxa"}, $r->{"gSRya"}, $r->{"gSRangle"},
+							$r->{"gSRnx"},    $r->{"gSRny"}, $r->{"gSRdx"}, $r->{"gSRdy"} );
+		}
+
+		# Final check if z-axis coupon steps count is same as before separation
+		my @repeatsSrc = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $sourcePnl );
+		@repeatsSrc = grep { $_->{"stepName"} =~ /^$cpnName\d+$/i } @repeatsSrc;
+
+		if ( scalar(@repeatsSrc) != $removedStepsCnt ) {
+
+			die "Error during restore z-axis steps to panel step. Removed steps: $removedStepsCnt, Restored steps: " . scalar(@repeatsSrc);
+		}
+
+		# Remove temporary panel
+		CamStep->DeleteStep( $inCAM, $jobId, $cpnPnl );
+	}
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

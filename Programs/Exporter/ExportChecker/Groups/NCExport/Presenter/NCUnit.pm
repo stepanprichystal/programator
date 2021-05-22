@@ -29,7 +29,6 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroup
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -73,7 +72,7 @@ sub InitForm {
 
 	my $parent = $groupWrapper->GetParentForGroup();
 	$self->{"form"} = NCUnitForm->new( $parent, $inCAM, $self->{"jobId"} );
-	
+
 	# init base class with event class
 	$self->{"eventClass"} = NCUnitFormEvt->new( $self->{"form"} );
 
@@ -87,11 +86,12 @@ sub RefreshGUI {
 	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
-	$self->{"form"}->SetExportSingle( $groupData->GetExportSingle() );
+	$self->{"form"}->SetExportMode( $groupData->GetExportMode() );
 	$self->{"form"}->SetAllModeLayers( $groupData->GetAllModeLayers() );
+	$self->{"form"}->SetAllModeExportPnl( $groupData->GetAllModeExportPnl() );
+	$self->{"form"}->SetAllModeExportPnlCpn( $groupData->GetAllModeExportPnlCpn() );
 	$self->{"form"}->SetSingleModePltLayers( $groupData->GetSingleModePltLayers() );
 	$self->{"form"}->SetSingleModeNPltLayers( $groupData->GetSingleModeNPltLayers() );
-	
 
 }
 
@@ -106,13 +106,15 @@ sub UpdateGroupData {
 
 	if ($frm) {
 		my $groupData = $self->{"dataMngr"}->GetGroupData();
-		$groupData->SetExportSingle( $frm->GetExportSingle() );
+		$groupData->SetExportMode( $frm->GetExportMode() );
 		$groupData->SetAllModeLayers( $frm->GetAllModeLayers() );
+		$groupData->SetAllModeExportPnl( $frm->GetAllModeExportPnl() );
+		$groupData->SetAllModeExportPnlCpn( $frm->GetAllModeExportPnlCpn() );
 		$groupData->SetSingleModePltLayers( $frm->GetSingleModePltLayers() );
 		$groupData->SetSingleModeNPltLayers( $frm->GetSingleModeNPltLayers() );
-		
+
 	}
- 
+
 }
 
 #-------------------------------------------------------------------------------------------#

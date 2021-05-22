@@ -190,13 +190,16 @@ sub __ExportNcSet {
 			else {
 
 				# there can by more steps in panel (coupons). Look line number in S&R of o+1 step
-				my $lNum = undef;
+				my $lNum = 1;
 
-				for ( my $i = 0 ; $i < scalar(@sr) ; $i++ ) {
+				if ( scalar( grep { $_->{"gSRstep"} eq "o+1" } @sr ) ) {
 
-					if ( $sr[$i]->{"gSRstep"} eq "o+1" ) {
-						$lNum = $i + 1;
-						last;
+					for ( my $i = 0 ; $i < scalar(@sr) ; $i++ ) {
+
+						if ( $sr[$i]->{"gSRstep"} eq "o+1" ) {
+							$lNum = $i + 1;
+							last;
+						}
 					}
 				}
 
@@ -323,9 +326,9 @@ sub __DeleteOldFiles {
 	if ( opendir( $dir, $self->{"path"} ) ) {
 		while ( my $file = readdir($dir) ) {
 
-			next if ( $file =~ /^\.$/ );
-			next if ( $file =~ /^\.\.$/ );
-			unlink $self->{"path"} . $file;
+			next                           if ( $file =~ /^\.$/ );
+			next                           if ( $file =~ /^\.\.$/ );
+			unlink $self->{"path"} . $file if ( -f $self->{"path"} . $file );    # only file
 
 		}
 

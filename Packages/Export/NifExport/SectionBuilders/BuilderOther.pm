@@ -250,10 +250,68 @@ sub Build {
 				}
 			}
 
-			
 		}
-		
+
 		$section->AddRow( "rel(22305,L)", $ring );
+	}
+
+	# Z-axis coupon TOP + BOT
+
+	if ( $self->_IsRequire("23978375") || $self->_IsRequire("23978376") ) {
+
+		my $existTOP = "-23978373";
+		my $existBOT = "-23978374";
+
+		my $cpnEexist = 0;
+
+		my $cpnName = EnumsGeneral->Coupon_ZAXIS;
+		my @zAxisCpn =
+		  grep { $_->{"stepName"} =~ /^$cpnName\d+$/i }
+		  CamStepRepeatPnl->GetUniqueDeepestSR( $self->{"inCAM"}, $self->{"jobId"}, 1, [ EnumsGeneral->Coupon_ZAXIS ] );
+
+		if ( scalar(@zAxisCpn) ) {
+
+			# Take first and check if there are depth mill from TOP
+
+			my @layers = CamDrilling->GetNCLayersByTypes(
+				$inCAM, $jobId,
+				[
+				   EnumsGeneral->LAYERTYPE_nplt_bMillTop,
+				   EnumsGeneral->LAYERTYPE_nplt_bMillBot,
+				   EnumsGeneral->LAYERTYPE_nplt_bstiffcMill,
+				   EnumsGeneral->LAYERTYPE_nplt_bstiffsMill,
+
+				]
+			);
+
+			for ( my $i = scalar(@layers) -1; $i >= 0 ; $i-- ) {
+				my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $zAxisCpn[0]->{"stepName"}, $layers[$i]->{"gROWname"}, 0 );
+				splice @layers, $i, 1 if($hist{"total"} == 0);
+			}
+
+			CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
+
+			foreach my $l (@layers) {
+
+				if ( $l->{"gROWdrl_dir"} eq "top2bot" ) {
+					$existTOP =~ s/-//;
+				}
+
+				if ( $l->{"gROWdrl_dir"} eq "bot2top" ) {
+					$existBOT =~ s/-//;
+				}
+			}
+
+			if ( $self->_IsRequire("23978375") ) {
+				$section->AddComment("Z-axis coupon from TOP");
+				$section->AddRow( "rel(22305,L)", $existTOP );
+			}
+
+			if ( $self->_IsRequire("23978376") ) {
+				$section->AddComment("Z-axis coupon from BOT");
+				$section->AddRow( "rel(22305,L)", $existBOT );
+			}
+		}
 	}
 
 	#mereni_presfittu

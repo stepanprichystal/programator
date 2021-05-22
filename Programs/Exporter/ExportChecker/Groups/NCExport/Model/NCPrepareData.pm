@@ -16,6 +16,8 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCGroup
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'Packages::Export::NCExport::Enums' => 'EnumsNC';
+use aliased 'CamHelpers::CamStep';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -53,7 +55,15 @@ sub OnPrepareGroupData {
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
-	$groupData->SetExportSingle(0);
+	$groupData->SetExportMode( EnumsNC->ExportMode_ALL );
+	$groupData->SetAllModeExportPnl(1);
+
+	# Check if there are some zaxis coupons
+	 
+	my $cpnName              = EnumsGeneral->Coupon_ZAXIS;
+	my @steps                = grep { $_ =~ /$cpnName/ } CamStep->GetAllStepNames( $inCAM, $jobId );
+
+	$groupData->SetAllModeExportPnlCpn( scalar(@steps) > 0 ? 1 : 0 );
 
 	my @plt = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
 	@plt = map { $_->{"gROWname"} } @plt;
@@ -75,8 +85,7 @@ sub __GetNCLayersSett {
 	my $self        = shift;
 	my $defaultInfo = shift;
 
-	my @NCLayers = grep {$_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
-	
+	my @NCLayers = grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
 
 	my @prepared = ();
 	foreach my $l (@NCLayers) {

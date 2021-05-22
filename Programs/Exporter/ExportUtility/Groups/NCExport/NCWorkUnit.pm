@@ -46,12 +46,16 @@ sub Init {
 
 	my $taskData = $self->{"taskData"};
 
-	my $exportSingle  = $taskData->GetExportSingle();
-	my $pltLayers     = $taskData->GetSingleModePltLayers();
-	my $npltLayers    = $taskData->GetSingleModeNPltLayers();
-	my $modeAllLayers = $taskData->GetAllModeLayers();
+	my $exportMode             = $taskData->GetExportMode();
+	my $exportModeExportPnl    = $taskData->GetAllModeExportPnl();
+	my $exportModeExportPnlCpn = $taskData->GetAllModeExportPnlCpn();
+	my $pltLayers              = $taskData->GetSingleModePltLayers();
+	my $npltLayers             = $taskData->GetSingleModeNPltLayers();
+	my $modeAllLayers          = $taskData->GetAllModeLayers();
 
-	my $mngr = ExportMngr->new( $inCAM, $jobId, "panel", $exportSingle, $modeAllLayers, $pltLayers, $npltLayers );
+	my $mngr =
+	  ExportMngr->new( $inCAM, $jobId, "panel", $exportMode, $exportModeExportPnl, $exportModeExportPnlCpn, $modeAllLayers, $pltLayers, $npltLayers )
+	  ;
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 
 	$self->{"taskMngr"} = $mngr;

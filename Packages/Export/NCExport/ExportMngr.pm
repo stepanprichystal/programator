@@ -22,11 +22,12 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::Export::NCExport::::Enums';
+use aliased 'Packages::Export::NCExport::Enums';
 use aliased 'Packages::Export::NCExport::Helpers::Helper';
 
 use aliased 'Packages::Export::NCExport::ExportPanelAllMngr';
 use aliased 'Packages::Export::NCExport::ExportPanelSingleMngr';
+use aliased 'Packages::Export::NCExport::ExportPanelCouponMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -45,9 +46,9 @@ sub new {
 	$self->{"exportMode"} = shift;    # Enums->ExportMode_SINGLE/ Enums->ExportMode_ALL
 
 	# Mode all
-	$self->{"modeAllExportPanel"}       = shift;
-	$self->{"modeAllExportPanelCoupon"} = shift;
-	$self->{"modeAllLayersSett"}        = shift;
+	$self->{"modeAllExportPanel"}           = shift;
+	$self->{"modeAllExportPanelCoupon"}     = shift;
+	$self->{"modeAllExportPanelLayersSett"} = shift;    # information about layer stretch value
 
 	# Mode single sett
 	$self->{"modeSinglePltL"}  = shift;
@@ -55,15 +56,19 @@ sub new {
 
 	# PROPERTIES
 
-	$self->{"exportPanelAllMngr"} = ExportPanelAllMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"modeAllLayersSett"} );
+	$self->{"cpnStepName"} = $self->{"stepName"} . "_coupon";
+
+	$self->{"exportPanelAllMngr"} =
+	  ExportPanelAllMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"modeAllExportPanelLayersSett"} );
 	$self->{"exportPanelAllMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	$self->{"exportPanelSingleMngr"} =
-	  ExportPanelSingleMngr->new( $self->{"inCAM"}, $self->{"jobId"},
-								  $self->{"stepName"} . "_coupon",
-								  $self->{"modeSinglePltL"},
-								  $self->{"modeSingleNPltL"} );
+	  ExportPanelSingleMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stepName"}, $self->{"modeSinglePltL"}, $self->{"modeSingleNPltL"} );
 	$self->{"exportPanelSingleMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
+
+	$self->{"exportPanelCouponMngr"} =
+	  ExportPanelCouponMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cpnStepName"} );
+	$self->{"exportPanelCouponMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	return $self;
 }
@@ -84,10 +89,11 @@ sub Run {
 
 		# If exist coupon depth steps, copy main panel and separate coupn steps
 		my $cpnName = EnumsGeneral->Coupon_ZAXIS;
-		my @zAxisCpn = grep { $_ =~ /^$cpnName\d+$/i } CamStep->GetAllStepNames( $inCAM, $jobId );
+		my @zAxisCpn = grep { $_ =~ /^${cpnName}\d+$/i } CamStep->GetAllStepNames( $inCAM, $jobId );
 
+		my $separatedCnt = 0;
 		if ( scalar(@zAxisCpn) ) {
-			Helper->SeparateCouponZaxis( $inCAM, $jobId, $self->{"stepName"} );
+			$separatedCnt = Helper->SeparateCouponZaxis( $inCAM, $jobId, $self->{"stepName"}, $self->{"cpnStepName"} );
 		}
 
 		if ( $self->{"modeAllExportPanel"} ) {
@@ -97,12 +103,12 @@ sub Run {
 
 		if ( $self->{"modeAllExportPanelCoupon"} ) {
 
-			$self->{"exportPanelAllMngr"}->Run();
+			$self->{"exportPanelCouponMngr"}->Run();
 		}
 
 		# Restore coupon steps
-		if ( scalar(@zAxisCpn) ) {
-			Helper->RestoreCouponZaxis( $inCAM, $jobId, $self->{"stepName"} );
+		if ($separatedCnt) {
+			Helper->RestoreCouponZaxis( $inCAM, $jobId, $self->{"stepName"}, $self->{"cpnStepName"}, $separatedCnt );
 		}
 
 	}
@@ -143,7 +149,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d293788";
+	my $jobId = "d314368";
 
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
@@ -158,11 +164,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	# Pokud se bude exportovat jednotlive po vrstvach, tak vrstvz dotahnout nejaktakhle:
 	#@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
-	my @npltLayers = ( "ftapes", "ftapebr" );
+	#my @npltLayers = ( "ftapes", "ftapebr" );
 
-	my $export = ExportMngr->new( $inCAM, $jobId, $step, $exportSingle, undef, \@pltLayers, \@npltLayers );
-
-	#my $mngr = $export->GetOperationMngr();
+	my $export = ExportMngr->new( $inCAM, $jobId, $step, Enums->ExportMode_ALL, 1, 0, [], [], [] );
 
 	$export->Run();
 	die;

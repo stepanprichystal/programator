@@ -43,15 +43,17 @@ sub SeparateNpltDrill {
 
 	my $movedPads = 0;
 
+	my $bot2top = scalar( CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_bMillBot ) ) ? 1 : 0;
+
 	# f layer => d
 
 	my $step = "panel";
 
-	$movedPads += $self->__CreateNpltDrill( $inCAM, $jobId, "f", "d", undef, $NCLayersSett );
+	$movedPads += $self->__SplitNpltDrill( $inCAM, $jobId, "f", "d" . ( $bot2top ? "s" : "" ), $bot2top, undef, $NCLayersSett );
 
 	# fsch layer => pom
 
-	$movedPads += $self->__CreateNpltDrill( $inCAM, $jobId, "fsch", "fsch_d", 1, $NCLayersSett );
+	$movedPads += $self->__SplitNpltDrill( $inCAM, $jobId, "fsch", "fsch_d" . ( $bot2top ? "s" : "" ), $bot2top, 1, $NCLayersSett );
 
 	return $movedPads;
 
@@ -65,21 +67,24 @@ sub RestoreNpltDrill {
 
 	my $restoredPads = 0;
 
-	$restoredPads += $self->__RemoveNpltDrill( $inCAM, $jobId, "d", "f" );
+	my $bot2top = scalar( CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_bMillBot ) ) ? 1 : 0;
 
-	$restoredPads += $self->__RemoveNpltDrill( $inCAM, $jobId, "fsch_d", "fsch", 1 );
+	$restoredPads += $self->__MergeNpltDrill( $inCAM, $jobId, "d" . ( $bot2top ? "s" : "" ), "f" );
+
+	$restoredPads += $self->__MergeNpltDrill( $inCAM, $jobId, "fsch_d" . ( $bot2top ? "s" : "" ), "fsch", 1 );
 
 	if ( $movedPads != $restoredPads ) {
-		die "Spearete pad cnt ($movedPads) != resoted pad cnt ($restoredPads)";
+		die "Separated pad cnt ($movedPads) != restored pad cnt ($restoredPads)";
 	}
 }
 
-sub __CreateNpltDrill {
+sub __SplitNpltDrill {
 	my $self         = shift;
 	my $inCAM        = shift;
 	my $jobId        = shift;
 	my $from         = shift;
 	my $to           = shift;
+	my $bot2top      = shift;
 	my $nonStandard  = shift;
 	my $NCLayersSett = shift;
 
@@ -98,7 +103,7 @@ sub __CreateNpltDrill {
 	CamMatrix->CreateLayer( $inCAM, $jobId, $to, "drill", "positive", 1 );
 
 	# if direction is top2bot but, there is z-axis from bot, change dir b2t
-	if ( scalar( CamDrilling->GetNCLayersByType( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_bMillBot ) ) ) {
+	if ($bot2top) {
 		CamMatrix->SetLayerDirection( $inCAM, $jobId, $to, "bottom_to_top" );
 	}
 
@@ -126,7 +131,7 @@ sub __CreateNpltDrill {
 	return $movedPads;
 }
 
-sub __RemoveNpltDrill {
+sub __MergeNpltDrill {
 	my $self        = shift;
 	my $inCAM       = shift;
 	my $jobId       = shift;
