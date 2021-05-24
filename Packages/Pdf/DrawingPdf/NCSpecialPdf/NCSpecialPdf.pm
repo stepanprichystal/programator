@@ -27,7 +27,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'Packages::Pdf::DrawingPdf::NCSpecialPdf::Drawing';
 use aliased 'Packages::CAM::SymbolDrawing::Point';
-use aliased 'Packages::Export::NCExport::ExportMngr::ExportPanelAllMngr';
+use aliased 'Packages::Export::NCExport::ExportPanelAllMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

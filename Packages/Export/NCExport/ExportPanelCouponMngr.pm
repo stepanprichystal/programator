@@ -58,6 +58,7 @@ sub Run {
 
 	# Check if exist panel coupon
 	die "Panel coupon step (" . $self->{"stepName"} . ") is not created" unless ( CamHelper->StepExists( $inCAM, $jobId, $self->{"stepName"} ) );
+
 	# Check if therea are prepared Zaxis coupons
 	my $cpnName = EnumsGeneral->Coupon_ZAXIS;
 	my @zAxisCpn =
@@ -120,12 +121,12 @@ sub __Init {
 
 	#create manager for exporting files
 	$self->{"exportFileMngr"} =
-	  ExportFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\coupon\\" );
+	  ExportFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\" );
 	$self->{"exportFileMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	#create manager for merging and moving files to archiv
 	$self->{"mergeFileMngr"} =
-	  MergeFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\coupon\\" );
+	  MergeFileMngr->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\" );
 	$self->{"mergeFileMngr"}->{"fileEditor"} =
 	  FileEditor->new( $self->{'inCAM'}, $self->{'jobId'}, $self->{"stepName"}, $self->{"layerCnt"}, 1 );
 	$self->{"mergeFileMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
@@ -158,7 +159,7 @@ sub __Run {
 		get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG ExportMngr 3\n " );
 
 		# 5) Export physical nc files
-		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
+		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"}, 0 );
 
 		# 6) Merge an move files to archive
 		$self->{"mergeFileMngr"}->MergeFiles( $self->{"operationMngr"} );
@@ -199,7 +200,7 @@ sub __DuplicateOutlineFromBot {
 	CamDrilling->AddHistogramValues( $inCAM, $jobId, $self->{"stepName"}, \@l );
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@l );
 
-	@l = grep { defined $_->{"minTool"}} @l; # Filter only non empty layers
+	@l = grep { defined $_->{"minTool"} } @l;    # Filter only non empty layers
 
 	if ( scalar( grep { $_->{"gROWdrl_dir"} eq "bot2top" } @l ) ) {
 

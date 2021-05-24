@@ -95,12 +95,16 @@ sub EditAfterOpen {
 	# 2) EDIT:  edit z-axis millin top and bot (plated and nonplated)
 	# Reason: InCam can't add G82
 	# Put message M47, on the right place, before start new tool
-	if (    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+	if (
+		    $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillTop
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_plt_bMillBot
 		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillTop
-		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot )
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_cbMillBot
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+		 || $layer->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill
+	  )
 	{
 		NCHelper->AddG83WhereMissing($parseFile);
 		NCHelper->PutMessRightPlace($parseFile);

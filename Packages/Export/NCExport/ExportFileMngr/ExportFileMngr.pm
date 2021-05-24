@@ -47,16 +47,17 @@ sub new {
 }
 
 sub ExportFiles {
-	my $self      = shift;
-	my $opManager = shift;
+	my $self           = shift;
+	my $opManager      = shift;
+	my $clearTargetDir = shift // 1;
 
 	get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG stop ExportFiles sub - 1 \n " );
 
 	$self->__DeleteLogs();    #delete log information about job
 
-	$self->__DeleteOldFiles();    #delete old files in archive
+	$self->__DeleteOldFiles() if ($clearTargetDir);    #delete old files in archive
 
-	$self->__DeleteOutputFiles(); #delete job output files before start export
+	$self->__DeleteOutputFiles();                      #delete job output files before start export
 
 	my @exportFiles = $self->__GetExportCombination($opManager);
 
