@@ -6,7 +6,7 @@
 # - units, which contain info which layer merge, what is name of final nc file etc (OperationItem.pm)
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::OperationMngr;
+package Packages::Export::NCExport::OperationMngr::OperationMngr;
 
 #3th party library
 use strict;
@@ -15,9 +15,9 @@ use warnings;
 #use File::Copy;
 
 #local library
-use aliased 'Packages::Export::NCExport::Operation::OperationItem';
-use aliased 'Packages::Export::NCExport::Operation::OperationDef';
-use aliased 'Packages::Export::NCExport::Operation::OperationGroup';
+use aliased 'Packages::Export::NCExport::OperationMngr::Operation::OperationItem';
+use aliased 'Packages::Export::NCExport::OperationMngr::Operation::OperationDef';
+use aliased 'Packages::Export::NCExport::OperationMngr::Operation::OperationGroup';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

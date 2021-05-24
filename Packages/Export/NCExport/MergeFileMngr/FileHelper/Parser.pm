@@ -3,7 +3,7 @@
 # Description: Cover merging, spliting and checking before exporting NC files
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::FileHelper::Parser;
+package Packages::Export::NCExport::MergeFileMngr::FileHelper::Parser;
 
 #3th party library
 use strict;

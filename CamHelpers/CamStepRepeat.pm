@@ -486,7 +486,8 @@ sub RemoveCouponSteps {
 		else {
 			if ( $steps->[$i]->{$keyStepName} =~ /^coupon_?/ && defined $includeSteps ) {
 
-				if ( !scalar( grep { $_ eq $steps->[$i]->{$keyStepName} } @{$includeSteps} ) ) {
+				# Some coupon steps can contain index number suffix
+				if ( !scalar( grep {  $steps->[$i]->{$keyStepName} =~ /^$_/} @{$includeSteps} ) ) {
 					splice @{$steps}, $i, 1;
 				}
 

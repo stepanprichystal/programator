@@ -307,9 +307,23 @@ sub AddNCLayerType {
 			$l->{"technical"} = 0;
 
 		}
+		elsif ( $l->{"gROWname"} =~ /^ds[0-9]*$/ || $l->{"gROWname"} =~ /^fsch_ds$/) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_nDrillBot;
+			$l->{"plated"}    = 0;
+			$l->{"technical"} = 0;
+
+		}
 		elsif ( $l->{"gROWname"} =~ /^f[0-9]*$/ || $l->{"gROWname"} =~ /^f(sch)?(lm)?$/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_nMill;
+			$l->{"plated"}    = 0;
+			$l->{"technical"} = 0;
+
+		}
+		elsif ( $l->{"gROWname"} =~ /^fs[0-9]*$/ ) {
+
+			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_nMillBot;
 			$l->{"plated"}    = 0;
 			$l->{"technical"} = 0;
 
@@ -922,11 +936,11 @@ sub GetToolOperation {
 
 	}
 	elsif (
-		$processType eq EnumsDrill->TypeProc_CHAIN
-		&& (    $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
-			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill
-			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill
-			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill )
+			$processType eq EnumsDrill->TypeProc_CHAIN
+			&& (    $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapecMill
+				 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_tapesMill
+				 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill
+				 || $l{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill )
 	  )
 	{
 

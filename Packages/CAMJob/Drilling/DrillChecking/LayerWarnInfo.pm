@@ -253,6 +253,7 @@ sub CheckToolDiameter {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrillBot );
 
 	my @layersDrill = $self->__GetLayersByType( \@layers, \@t );
 
@@ -269,6 +270,7 @@ sub CheckToolDiameter {
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	push( @t2, EnumsGeneral->LAYERTYPE_nplt_nMillBot );
 	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_lcMill );
 	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_lsMill );
 	push( @t2,  EnumsGeneral->LAYERTYPE_nplt_cvrlycMill );

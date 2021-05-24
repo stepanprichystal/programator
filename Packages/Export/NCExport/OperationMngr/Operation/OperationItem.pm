@@ -4,14 +4,14 @@
 # Class can be created from one operation definitin or from group operation
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::Operation::OperationItem;
+package Packages::Export::NCExport::OperationMngr::Operation::OperationItem;
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Export::NCExport::Helpers::NCHelper';
+use aliased 'Packages::Export::NCExport::OperationMngr::Helper' => 'NCHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods

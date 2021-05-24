@@ -31,12 +31,12 @@ sub new {
 }
 
 # exportSingle
-sub SetExportSingle {
+sub SetExportMode {
 	my $self = shift;
 	$self->{"data"}->{"exportSingle"} = shift;
 }
 
-sub GetExportSingle {
+sub GetExportMode {
 	my $self = shift;
 	return $self->{"data"}->{"exportSingle"};
 }
@@ -50,6 +50,28 @@ sub SetAllModeLayers {
 sub GetAllModeLayers {
 	my $self = shift;
 	return $self->{"data"}->{"allModeLayers"};
+}
+
+# All mode export panel NC layers
+sub SetAllModeExportPnl {
+	my $self = shift;
+	$self->{"data"}->{"allModeExportPnlLayers"} = shift;
+}
+
+sub GetAllModeExportPnl {
+	my $self = shift;
+	return $self->{"data"}->{"allModeExportPnlLayers"};
+}
+
+# All mode export panel coupon NC layers
+sub SetAllModeExportPnlCpn {
+	my $self = shift;
+	$self->{"data"}->{"allModeExportPnlCpnLayers"} = shift;
+}
+
+sub GetAllModeExportPnlCpn {
+	my $self = shift;
+	return $self->{"data"}->{"allModeExportPnlCpnLayers"};
 }
 
 # Plt layers

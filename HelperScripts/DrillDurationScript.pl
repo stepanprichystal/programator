@@ -28,7 +28,8 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::TifFile::TifNCOperations';
 use aliased 'Packages::CAMJob::Drilling::DrillDuration::DrillDuration';
 use aliased 'Packages::CAMJob::Routing::RoutDuration::RoutDuration';
-use aliased 'Packages::Export::NCExport::ExportMngr';
+use aliased 'Packages::Export::NCExport::ExportMngr::ExportPanelAllMngr';
+
 use aliased 'Packages::CAMJob::Dim::JobDim';
 
 my @jobs = ();
@@ -92,7 +93,7 @@ sub __ComputeDuration {
 	#:, duration = " . sprintf( "%02d:%02d:%02d", $duration / 3600, $duration / 60 % 60, $duration % 60 ) . "\n";
 
 	my $materialName = HegMethods->GetMaterialKind($jobId);
-	my $export       = ExportMngr->new( $inCAM, $jobId, $stepName );
+	my $export       = ExportPanelAllMngr->new( $inCAM, $jobId, $stepName );
 	my @opItems      = ();
 
 	foreach my $opItem ( $export->GetOperationMngr()->GetOperationItems() ) {

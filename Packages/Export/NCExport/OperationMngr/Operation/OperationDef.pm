@@ -1,20 +1,20 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Inteface, which  allow classes to modify nc files, before ther are mmerged and
-# moved from output folder to archive
+# Description: Cover merging, spliting and checking before exporting NC files
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::FileHelper::IFileEditor;
+package Packages::Export::NCExport::OperationMngr::Operation::OperationDef;
 
 #3th party library
 use strict;
 use warnings;
+
 #use File::Copy;
 
 #local library
 #use aliased 'Packages::Export::NCExport::NCExportHelper';
 #use aliased 'Packages::Stackup::StackupHelper';
-#use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
+#use aliased 'Packages::Export::NCExport::OperationMngr::DrillingHelper';
 #use aliased 'CamHelpers::CamJob';
 #use aliased 'Enums::EnumsPaths';
 #use aliased 'Helpers::JobHelper';
@@ -24,24 +24,58 @@ use warnings;
 #use aliased 'Packages::Export::NCExport::Parser';
 
 #-------------------------------------------------------------------------------------------#
-#  Interface
+#  Package methods
 #-------------------------------------------------------------------------------------------#
 
-use Class::Interface;
-&interface;     
+sub new {
 
-sub EditAfterOpen;     
-sub EditBeforeSave;     
+	my $self = shift;
+	$self = {};
+	bless $self;
 
-1;
- 
+	$self->{"name"}       = shift;
+	$self->{"layers"}     = shift;
+	$self->{"pressOrder"} = shift;  #if operation after pressing, order of pressing
+	
+	#my %extraInfo = ();
+	#$self->{"extraInfo"} = \%extraInfo;
+
+	return $self;
+}
+
+sub GetName {
+	my $self = shift;
+
+	return $self->{"name"};
+
+}
+
+sub GetLayers {
+	my $self = shift;
+
+	return $self->{"layers"};
+
+}
+
+#sub SetExtraInfo {
+#	my $self  = shift;
+#	my $name  = shift;
+#	my $value = shift;
+#
+#	$self->{"extraInfo"}->{$name} = $value;
+#
+#}
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	 
+	#use aliased 'Packages::Export::NCExport::NCExportGroup';
+
+	#print $test;
+
 }
 
 1;

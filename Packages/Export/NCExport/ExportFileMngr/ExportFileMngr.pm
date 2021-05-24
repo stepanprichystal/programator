@@ -3,7 +3,7 @@
 # Description: Cover exporting layers for particular machine, which can procces given nc file
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::ExportFileMngr;
+package Packages::Export::NCExport::ExportFileMngr::ExportFileMngr;
 use base('Packages::ItemResult::ItemEventMngr');
 
 #3th party library
@@ -34,11 +34,11 @@ sub new {
 	my $self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"inCAM"}        = shift;
-	$self->{"jobId"}        = shift;
-	$self->{"stepName"}     = shift;
-	$self->{"exportSingle"} = shift;
-	$self->{"resBuilder"}   = shift;
+	$self->{"inCAM"}      = shift;
+	$self->{"jobId"}      = shift;
+	$self->{"stepName"}   = shift;
+	$self->{"path"}       = shift;
+	$self->{"resBuilder"} = shift;
 
 	# Helper properties
 	$self->{"routSeq"} = RoutOutline->GetDefRoutSeq( $self->{"jobId"} );
@@ -47,16 +47,17 @@ sub new {
 }
 
 sub ExportFiles {
-	my $self      = shift;
-	my $opManager = shift;
+	my $self           = shift;
+	my $opManager      = shift;
+	my $clearTargetDir = shift // 1;
 
 	get_logger("abstractQueue")->error( "Finding  " . $self->{"jobId"} . " BUG stop ExportFiles sub - 1 \n " );
 
 	$self->__DeleteLogs();    #delete log information about job
 
-	$self->__DeleteOldFiles();    #delete old files in archive
+	$self->__DeleteOldFiles() if ($clearTargetDir);    #delete old files in archive
 
-	$self->__DeleteOutputFiles(); #delete job output files before start export
+	$self->__DeleteOutputFiles();                      #delete job output files before start export
 
 	my @exportFiles = $self->__GetExportCombination($opManager);
 
@@ -190,13 +191,16 @@ sub __ExportNcSet {
 			else {
 
 				# there can by more steps in panel (coupons). Look line number in S&R of o+1 step
-				my $lNum = undef;
+				my $lNum = 1;
 
-				for ( my $i = 0 ; $i < scalar(@sr) ; $i++ ) {
+				if ( scalar( grep { $_->{"gSRstep"} eq "o+1" } @sr ) ) {
 
-					if ( $sr[$i]->{"gSRstep"} eq "o+1" ) {
-						$lNum = $i + 1;
-						last;
+					for ( my $i = 0 ; $i < scalar(@sr) ; $i++ ) {
+
+						if ( $sr[$i]->{"gSRstep"} eq "o+1" ) {
+							$lNum = $i + 1;
+							last;
+						}
 					}
 				}
 
@@ -319,24 +323,13 @@ sub __GetExportCombination {
 sub __DeleteOldFiles {
 	my $self = shift;
 
-	my $path;
-
-	if ( $self->{"exportSingle"} ) {
-
-		$path = JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc_single\\";
-	}
-	else {
-
-		$path = JobHelper->GetJobArchive( $self->{"jobId"} ) . "nc\\";
-	}
-
 	my $dir;
-	if ( opendir( $dir, $path ) ) {
+	if ( opendir( $dir, $self->{"path"} ) ) {
 		while ( my $file = readdir($dir) ) {
 
-			next if ( $file =~ /^\.$/ );
-			next if ( $file =~ /^\.\.$/ );
-			unlink $path . $file;
+			next                           if ( $file =~ /^\.$/ );
+			next                           if ( $file =~ /^\.\.$/ );
+			unlink $self->{"path"} . $file if ( -f $self->{"path"} . $file );    # only file
 
 		}
 

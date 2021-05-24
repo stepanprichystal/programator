@@ -3,18 +3,18 @@
 # Description: Class, allow build multilayer "operations" for technical procedure
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Export::NCExport::OperationBuilder::SLOperationBuilder;
+package Packages::Export::NCExport::OperationMngr::OperationBuilder::SLOperationBuilder;
 
 use Class::Interface;
 
-&implements('Packages::Export::NCExport::OperationBuilder::IOperationBuilder');
+&implements('Packages::Export::NCExport::OperationMngr::OperationBuilder::IOperationBuilder');
 
 #3th party library
 use strict;
 use warnings;
 
 #local library
-use aliased 'Packages::Export::NCExport::Helpers::DrillingHelper';
+use aliased 'Packages::Export::NCExport::OperationMngr::DrillingHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'Helpers::JobHelper';
@@ -215,25 +215,27 @@ sub __DefineNPlatedOperations {
 	my %npltDrillInfo = %{ $self->{"npltDrillInfo"} };    #contain array of hashes of all NC layers with info (start/stop drill layer)
 
 	#non plated
-	my @nplt_nDrill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };           #normall nplt drill
-	my @nplt_nMill         = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };            #normall mill slits
-	my @nplt_bMillTop      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };         #z-axis top mill
-	my @nplt_bMillBot      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };         #z-axis bot mill
-	my @nplt_rsMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_rsMill } };           #rs mill before plating
-	my @nplt_frMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };           #milling frame
-	my @nplt_kMill         = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };            #milling conneector
-	my @nplt_lcMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };           #milling template snim lak c
-	my @nplt_lsMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };           #milling template snim lak s
-	my @nplt_cvrlycMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };       #top coverlay mill
-	my @nplt_cvrlysMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };       #bot coverlay mill
-	my @nplt_stiffcMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };       # milling for stiffener from side c
-	my @nplt_stiffsMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };       # milling for stiffener from side s
-	my @nplt_stiffcAdhMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } };    # depth milling of top stiffener adhesive from top
-	my @nplt_stiffsAdhMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } };    # depth milling of bot stiffener adhesive from top
-	my @nplt_bstiffcMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } };      # depth milling of stiffener from side c
-	my @nplt_bstiffsMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } };      # depth milling of stiffener from side s
-	my @nplt_tapecMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapecMill } };        # milling of doublesided tape sticked from top
-	my @nplt_tapesMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapesMill } };        # milling of doublesided tape sticked from bot
+	my @nplt_nDrill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrill } };          #normall nplt drill
+	my @nplt_nMill         = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMill } };           #normall mill slits
+	my @nplt_nDrillBot     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nDrillBot } };       #normall nplt drill from BOT
+	my @nplt_nMillBot      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_nMillBot } };        #normall mill slits from BOT
+	my @nplt_bMillTop      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillTop } };        #z-axis top mill
+	my @nplt_bMillBot      = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bMillBot } };        #z-axis bot mill
+	my @nplt_rsMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_rsMill } };          #rs mill before plating
+	my @nplt_frMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_frMill } };          #milling frame
+	my @nplt_kMill         = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_kMill } };           #milling conneector
+	my @nplt_lcMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lcMill } };          #milling template snim lak c
+	my @nplt_lsMill        = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_lsMill } };          #milling template snim lak s
+	my @nplt_cvrlycMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlycMill } };      #top coverlay mill
+	my @nplt_cvrlysMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_cvrlysMill } };      #bot coverlay mill
+	my @nplt_stiffcMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcMill } };      # milling for stiffener from side c
+	my @nplt_stiffsMill    = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsMill } };      # milling for stiffener from side s
+	my @nplt_stiffcAdhMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill } };   # depth milling of top stiffener adhesive from top
+	my @nplt_stiffsAdhMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill } };   # depth milling of bot stiffener adhesive from top
+	my @nplt_bstiffcMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffcMill } };     # depth milling of stiffener from side c
+	my @nplt_bstiffsMill   = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_bstiffsMill } };     # depth milling of stiffener from side s
+	my @nplt_tapecMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapecMill } };       # milling of doublesided tape sticked from top
+	my @nplt_tapesMill     = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapesMill } };       # milling of doublesided tape sticked from bot
 	my @nplt_tapebrMill = @{ $npltDrillInfo{ EnumsGeneral->LAYERTYPE_nplt_tapebrMill } };  # milling of doublesided tape bridges after tape is pressed
 
 	#Define operation:
@@ -251,16 +253,15 @@ sub __DefineNPlatedOperations {
 	}
 
 	# add all @nplt_nDrill which has dir from top2bot
-	my @nplt_nDrill_t2b = grep { $_->{"gROWdrl_dir"} ne "bot2top" } @nplt_nDrill;
 
 	# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
 	# fsch_d contain nplt drills from layer fsch
-	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_t2b ) > 0 ) {
-		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless ( grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_t2b );
-		@nplt_nDrill_t2b = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_t2b;
+	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill ) > 0 ) {
+		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless ( grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill );
+		@nplt_nDrill = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill;
 	}
 
-	my @layers1 = ( @nplt_nMill, @nplt_nDrill_t2b );
+	my @layers1 = ( @nplt_nMill, @nplt_nDrill );
 
 	$opManager->AddOperationDef( "fc", \@layers1, -1 );
 
@@ -270,18 +271,15 @@ sub __DefineNPlatedOperations {
 
 	# 3) Operation name = fzs - can contain layer
 	# - @nplt_bMillBot
-	# - @nplt_nDrill
+	# - @nplt_nDrillBot
 
-	# add all @nplt_nDrill which has dir from bot2top
-	my @nplt_nDrill_b2t = grep { $_->{"gROWdrl_dir"} eq "bot2top" } @nplt_nDrill;
-
-	# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
+	# Exception, if "fsch_ds" layer is created. Remove "ds" and use instead only "fsch_ds" layer
 	# fsch_d contain nplt drills from layer fsch
-	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill_b2t ) > 0 ) {
-		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless ( grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill_b2t );
-		@nplt_nDrill_b2t = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill_b2t;
+	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_ds/i } @nplt_nDrillBot ) > 0 ) {
+		die "Layer \"ds\" must exist if exist layer \"fsch_ds\"" unless ( grep { $_->{"gROWname"} =~ /^ds$/i } @nplt_nDrillBot );
+		@nplt_nDrillBot = grep { $_->{"gROWname"} !~ /^ds$/i } @nplt_nDrillBot;
 	}
-	my @layers2 = ( @nplt_bMillBot, @nplt_nDrill_b2t );
+	my @layers2 = ( @nplt_bMillBot, @nplt_nDrillBot );
 
 	$opManager->AddOperationDef( "fzs", \@layers2, -1 );
 

@@ -164,6 +164,7 @@ sub CheckNCLayers {
 
 	return $result;
 }
+
 sub CheckIsNotEmpty {
 	my $self     = shift;
 	my @layers   = @{ shift(@_) };
@@ -218,6 +219,7 @@ sub CheckAttributes {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
@@ -284,6 +286,7 @@ sub CheckInvalidSymbols {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrillBot );
 
 	my @layersDrill = $self->__GetLayersByType( \@layers, \@t );
 
@@ -379,6 +382,7 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
@@ -394,7 +398,6 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapecMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_tapebrMill );
-
 
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 
@@ -458,6 +461,8 @@ sub CheckDirBot2Top {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrillBot );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_bMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lsMill );
@@ -488,8 +493,7 @@ sub CheckDirBot2Top {
 		if ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_cDrill && $dir && $dir eq "bot2top" ) {
 
 			$result = 0;
-			$$mess .=
-"Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
+			$$mess .= "Vrstva: $lName má špatně nastavený vrták v metrixu u vrtání jádra. Vrták musí mít vždy směr TOP-to-BOT.\n";
 
 		}
 	}
@@ -699,7 +703,6 @@ sub CheckDrillStartStop {
 		}
 	}
 
-	 
 	return $result;
 }
 
@@ -777,7 +780,6 @@ sub CheckContainDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillTop );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_cbMillBot );
 
-
 	my @layers1 = $self->__GetLayersByType( \@layers, \@t );
 
 	# 1) Check if layer start/stop/go through signal layer
@@ -831,7 +833,9 @@ sub CheckContainNoDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_frMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );
@@ -876,6 +880,7 @@ sub CheckDiamterDiff {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
+	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_lcMill );

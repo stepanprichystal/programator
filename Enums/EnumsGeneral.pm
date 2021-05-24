@@ -72,8 +72,10 @@ use constant {
 	LAYERTYPE_plt_fDrill         => "plt_fDrill",            # frame drilling "v"
 	LAYERTYPE_plt_fcDrill        => "plt_fcDrill",           # core frame drilling "v1"
 	LAYERTYPE_plt_fcPressDrill   => "plt_fcPressDrill",      # core frame drilling - press holes "v1p1; v2p2; ..."
-	LAYERTYPE_nplt_nDrill        => "nplt_nDril",            # normall drill without slots
-	LAYERTYPE_nplt_nMill         => "nplt_nMill",            # normall mill slits
+	LAYERTYPE_nplt_nDrill        => "nplt_nDril",            # normall drill without slots from TOP
+	LAYERTYPE_nplt_nDrillBot     => "nplt_nDrilBot",         # normall drill without slots from BOT
+	LAYERTYPE_nplt_nMill         => "nplt_nMill",            # normall mill slots
+	LAYERTYPE_nplt_nMillBot         => "nplt_nMillBot",            # normall mill slots
 	LAYERTYPE_nplt_bMillTop      => "nplt_bMillTop",         # z-axis mill top
 	LAYERTYPE_nplt_bMillBot      => "nplt_bMillBot",         # z-axis mill bot
 	LAYERTYPE_nplt_rsMill        => "nplt_rsMill",           # rs mill before plating
@@ -125,7 +127,8 @@ use constant {
 	Coupon_IMPEDANCE => 'coupon_impedance',    # coupon for impedance measurement
 	Coupon_DRILL     => 'coupon_drill',        # coupon for drill hole measrument
 	Coupon_IPC3MAIN  => 'coupon_ipc3main',     # coupon for IPC class 3 - contain holes + lines
-	Coupon_IPC3DRILL => 'coupon_drill'         # coupon for IPC class 3 - through hole measurement (Warning - same step name as coupon_drill)
+	Coupon_IPC3DRILL => 'coupon_drill',        # coupon for IPC class 3 - through hole measurement (Warning - same step name as coupon_drill)
+	Coupon_ZAXIS     => 'coupon_zaxis_',       # coupon for zaxis rout testing. Real coupon has always number behind name.
 
 };
 

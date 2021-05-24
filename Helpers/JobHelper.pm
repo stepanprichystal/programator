@@ -187,7 +187,8 @@ sub GetNetlistStepNames {
 sub GetCouponStepNames {
 	my $self = shift;
 
-	my @s = ( EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_DRILL );
+	my @s = ( EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_DRILL, EnumsGeneral->Coupon_IPC3MAIN, EnumsGeneral->Coupon_IPC3DRILL, EnumsGeneral->Coupon_ZAXIS );
+	 
 	return @s;
 }
 
