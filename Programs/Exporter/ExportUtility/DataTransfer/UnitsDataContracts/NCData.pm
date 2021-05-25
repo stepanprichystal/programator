@@ -32,12 +32,12 @@ sub new {
 # exportSingle
 sub SetExportMode {
 	my $self = shift;
-	$self->{"data"}->{"exportSingle"} = shift;
+	$self->{"data"}->{"exportMode"} = shift;
 }
 
 sub GetExportMode {
 	my $self = shift;
-	return $self->{"data"}->{"exportSingle"};
+	return $self->{"data"}->{"exportMode"};
 }
 
 # All mode NC layers

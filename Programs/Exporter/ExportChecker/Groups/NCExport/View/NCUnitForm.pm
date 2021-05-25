@@ -360,7 +360,7 @@ sub GetExportMode {
 
 	my $mode = undef;
 
-	if ( $self->{"rbSingle"}->GetValue() ) {
+	if ( $self->{"rbSingle"}->GetValue() == 1 ) {
 		$mode = EnumsNC->ExportMode_SINGLE;
 	}
 	else {
