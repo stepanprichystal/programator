@@ -386,7 +386,7 @@ sub GetPressPadYOMFLEX200Info {
 sub GetPresspad5500Info {
 	my $self = shift;
 
-	my $isId = "0319000029";
+	my $isId = "0319000064";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
