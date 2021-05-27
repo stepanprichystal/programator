@@ -18,6 +18,7 @@ use warnings;
 use aliased 'Packages::Export::NCExport::OperationMngr::DrillingHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
@@ -48,9 +49,27 @@ sub DefineOperations {
 	my $self      = shift;
 	my $opManager = shift;
 
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
 	#nplated nc layers
 	my %npltDrillInfo = DrillingHelper->GetNPltNCLayerInfo( $self->{"jobId"}, $self->{"stepName"}, $self->{"inCAM"}, $self->{"npltLayers"} );
 	$self->{"npltDrillInfo"} = \%npltDrillInfo;
+
+	# Filter out layers which are empty - do not contain any symbols. Panel with has filled only some layers
+
+	foreach my $lType ( keys %npltDrillInfo ) {
+
+		my @l = @{ $npltDrillInfo{$lType} };
+
+		for ( my $i = scalar(@l) - 1 ; $i >= 0 ; $i-- ) {
+
+			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"stepName"}, $l[$i]->{"gROWname"}, 1 );
+			splice @l, $i, 1 if ( $hist{"total"} == 0 );
+		}
+
+		$npltDrillInfo{$lType} = \@l;
+	}
 
 	$self->__DefineNPlatedOperations($opManager);
 
@@ -101,7 +120,6 @@ sub __DefineNPlatedOperations {
 
 	push( @botLayers, @nplt_bMillBot )    if ( scalar(@nplt_bMillBot) );
 	push( @botLayers, @nplt_bstiffsMill ) if ( scalar(@nplt_bstiffsMill) );
-	;
 
 	push( @botLayers, @nplt_nMillBot )  if ( scalar(@nplt_nMillBot) );
 	push( @botLayers, @nplt_nDrillBot ) if ( scalar(@nplt_nDrillBot) );

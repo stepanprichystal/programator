@@ -259,8 +259,8 @@ sub Build {
 
 	if ( $self->_IsRequire("23978375") || $self->_IsRequire("23978376") ) {
 
-		my $existTOP = "-23978373";
-		my $existBOT = "-23978374";
+		my $existTOP = "-23978375";
+		my $existBOT = "-23978376";
 
 		my $cpnEexist = 0;
 
