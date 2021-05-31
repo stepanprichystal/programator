@@ -43,9 +43,9 @@ push( @messHead, "<g>==========================================================<
 push( @messHead, "<g>Průvodce vytvořením vrstev pro zahloubení v tranzitní zóně</g>" );
 push( @messHead, "<g>==========================================================</g>\n" );
 
-my $ROUTOVERLAP       = 0.30;     # 0.2mm Overlap of routs whcich go from top and from bot during routing PCB flexible part
+my $ROUTOVERLAP       = 0.25;    # 0.25mm Overlap of routs whcich go from top and from bot during routing PCB flexible part
 my $EXTENDTRANZONE    = 1.5;     # 1.5mm transition rout slots will be exteneded on both ends
-my $DEFROUTPART1DEPTH = 0.18;    #  0.19mm Default depth for first routing (part 1) Rout overlap is not considered
+my $DEFROUTPART1DEPTH = 0.33;    #  0.33mm Default depth for first routing (part 1) 
 
 # Set impedance lines
 sub PrepareRoutLayers {
@@ -147,21 +147,22 @@ sub __CreateRoutTransitionPart1 {
 		push( @mess, "----------------------------------------------------\n" );
 		push( @mess, "\nZkotroluj, popřípadě uprav parametry" );
 
-		my $parTool   = $messMngr->GetTextParameter( "Velikost frézovacího nástroje [mm]",          2 );                    #2mm
-		my $parExtend = $messMngr->GetTextParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
-		my $parDepth  = $messMngr->GetTextParameter( "Základ pro výpočet hloubky nástroje  [mm]",  $DEFROUTPART1DEPTH );
+		my $parTool        = $messMngr->GetTextParameter( "Velikost frézovacího nástroje [mm]",           2 );                    #2mm
+		my $parExtend      = $messMngr->GetTextParameter( "Délka přejezdu frézy traznitní zóny  [mm]",  $EXTENDTRANZONE );
+		my $parDepth       = $messMngr->GetTextParameter( "Hloubka nástroje frézy traznitní zóny   [mm]",   $DEFROUTPART1DEPTH );
+		
 
 		my @params = ( $parTool, $parExtend, $parDepth );
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
 
 		my %resPrepare = FlexiBendArea->PrepareRoutTransitionZone(
-																   $inCAM,                      $jobId,
-																   $step,                       1,
-																   $parTool->GetResultValue(1), $toolMagazineInfo,
-																   $toolComp,                   $recreate,
-																   $ROUTOVERLAP,                $parExtend->GetResultValue(1),
-																   $parDepth->GetResultValue(1)
+															   $inCAM,                             $jobId,
+															   $step,                              1,
+															   $parTool->GetResultValue(1),        $toolMagazineInfo,
+															   $toolComp,                          $recreate,
+															   undef, $parExtend->GetResultValue(1),
+															   $parDepth->GetResultValue(1)
 		);
 
 		if ( $resPrepare{"result"} ) {
@@ -178,7 +179,7 @@ sub __CreateRoutTransitionPart1 {
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, [ "Vytvořit znovu", "Ok" ] );
 
 			# Change used routh depth part 1 for creating rout depth part 2 (which depands on this value)
-			$DEFROUTPART1DEPTH =  $parDepth->GetResultValue(1);
+			$DEFROUTPART1DEPTH = $parDepth->GetResultValue(1);
 
 			$routLayerOk = 1 if ( $messMngr->Result() == 1 );
 		}
@@ -261,14 +262,16 @@ sub __CreateRoutTransitionPart2 {
 
 		my $parTool   = $messMngr->GetTextParameter( "Velikost frézovacího nástroje [mm]",          $routSize );         #2mm
 		my $parExtend = $messMngr->GetTextParameter( "Délka přejezdu frézy traznitní zóny  [mm]", $EXTENDTRANZONE );
+		my $parRoutOverlap = $messMngr->GetTextParameter( "Překryv fréz (top/bot) tranzitní zóny  [mm]", $ROUTOVERLAP );
 
-		my @params = ( $parTool, $parExtend );
+		my @params = ( $parTool, $parExtend, $parRoutOverlap );
 
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
 
 		my %resPrepare = FlexiBendArea->PrepareRoutTransitionZone( $inCAM, $jobId, $step, 2, $parTool->GetResultValue(1),
-																   $toolMagazineInfo, $toolComp, $recreate, $ROUTOVERLAP,
-																   $parExtend->GetResultValue(1) );
+																   $toolMagazineInfo, $toolComp, $recreate, $parRoutOverlap->GetResultValue(1),
+																   $parExtend->GetResultValue(1),
+																   $DEFROUTPART1DEPTH );
 
 		if ( $resPrepare{"result"} ) {
 			@newRoutLayers = @{ $resPrepare{"routLayers"} };
@@ -286,7 +289,7 @@ sub __CreateRoutTransitionPart2 {
 		}
 		else {
 			my @mess = (@messHead);
-			push( @mess, "Chyba při vytvoření první hloubkové frézy tranzitní zóny" );
+			push( @mess, "Chyba při vytvoření druhé hloubkové frézy tranzitní zóny" );
 			push( @mess, "----------------------------------------------------\n" );
 			push( @mess, "\nDetail chyby:" );
 			push( @mess, "\n\n" . $resPrepare{"errMess"} );
@@ -426,7 +429,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d306663";
+	my $jobId = "d322237";
 
 	my $notClose = 0;
 

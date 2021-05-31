@@ -2,6 +2,7 @@
 #-------------------------------------------------------------------------------------------#
 # Description: Create temporarz nplt drill layer "d". Thus "f" layer data are before export
 # separated. Holes are in new layer "d". After export are data returned back
+# Goal is, if there is countersing from bot and need to be pre-drilled first
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::Export::NCExport::Helpers::NpltDrillHelper;
@@ -25,7 +26,8 @@ use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'CamHelpers::CamFilter';
+use aliased 'Packages::CAM::FeatureFilter::FeatureFilter';
+use aliased 'Packages::CAM::FeatureFilter::Enums' => "FiltrEnums";
 use aliased 'CamHelpers::CamLayer';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
@@ -98,6 +100,7 @@ sub __SplitNpltDrill {
 
 		#CamMatrix->DeleteLayer( $inCAM, $jobId, $to );
 	}
+	
 
 	#CamMatrix->CreateLayer( $inCAM, $jobId, $to, "drill", "positive", ( $nonStandard ? 0 : 1 ) );
 	CamMatrix->CreateLayer( $inCAM, $jobId, $to, "drill", "positive", 1 );
@@ -127,7 +130,7 @@ sub __SplitNpltDrill {
 		push( @{$NCLayersSett}, $lSet );
 
 	}
-
+  
 	return $movedPads;
 }
 
@@ -184,7 +187,14 @@ sub __MovePads {
 		}
 		my @uniDTMTools = grep { $_->GetSource() eq EnumsDTM->Source_DTM } $unitDTM->GetTools();
 
-		my $sel = CamFilter->ByTypes( $inCAM, ["pad"] );
+		# Select only holes which are not pilot holes for rout slots
+
+		my $f = FeatureFilter->new( $inCAM, $jobId, $layerName );
+		$f->SetFeatureTypes( "pad" => 1 );
+		$f->AddExcludeAtt(".pilot_hole"); # Exclude pilot holes for rout slots
+		$f->AddExcludeSymbols(["r0"]); # Exclude rout bridges special pads
+		
+		my $sel = $f->Select();
 
 		if ($sel) {
 

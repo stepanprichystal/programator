@@ -1,26 +1,34 @@
-#!/usr/bin/perl
-
-#-------------------------------------------------------------------------------------------#
-# Description: Do final routing = 2mm with compensation left and suitable start of chain
-# Author:SPR
-#-------------------------------------------------------------------------------------------#
+#!/usr/bin/perl -w
 
 #3th party library
 use strict;
 use warnings;
-use Path::Tiny qw(path);
-use Log::Log4perl qw(get_logger :levels);
-use aliased 'Helpers::JobHelper';
-use aliased 'CamHelpers::CamJob';
+
+use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
+
+use aliased 'CamHelpers::CamHelper';
+use aliased 'Packages::InCAM::InCAM';
+
+my $jobId = "d322016";
+
+my $inCAM = InCAM->new();
+
+$inCAM->COM("get_step_name");
+print STDERR "Step:".$inCAM->GetReply()."\n";
+
+CamHelper->SetStep( $inCAM,  "o+1" );
+
+CamHelper->SetStep( $inCAM,  "o+1" );
+
+$inCAM->COM("get_step_name");
  
-my %t = get();
+print STDERR "Step:".$inCAM->GetReply()."\n";
 
-my @v = values(%t);
+CamHelper->SetStep( $inCAM,  "panel" );
 
-die "test";
+$inCAM->COM("get_step_name");
+ 
+print STDERR "Step:".$inCAM->GetReply()."\n";
 
-sub get{
-	my %test = ( "t" => 1, "t2" => 3 );
+die;
 
-	return %test;
-}

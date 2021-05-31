@@ -592,12 +592,17 @@ sub PrepareRoutTransitionZone {
 	my $toolMagazineInfo  = shift;
 	my $toolComp          = shift;            # right / left / none
 	my $recreate          = shift // 1;       # recreate rout layer with used name
-	my $roolOverlap       = shift // 0.25;    # 0,25mm # define depth  overlap of rout tool in transition zone
+	my $routOverlapPart2  = shift // 0.25;    # 0,25mm # define depth  overlap of rout tool in transition zone
 	my $extendZone        = shift // 1.0;     # 1.0mm transition rout slots will be exteneded on both ends
-	my $defDepthRoutPart1 = shift // 0.23;    # Default depth for first routing (part 1) Rout overlap is not considered
-	my $minMatRest        = shift // 0.17;    # 170µm is minimal material thickness after routing
+	my $defDepthRoutPart1 = shift // 0.33;    # Default depth for first routing (part 1)
+	my $minMatRestPart1   = shift // 0.17;    # 170µm is minimal material thickness after routing
+	my $minMatRestPart2   = shift // 0.08;    # 80µm is minimal material thickness after routing
+
+	my $minRoutOverlap = 0.12;                # minimal overlap of rout 100
 
 	die "Rout part is not defined" if ( $routPart != 1 && $routPart != 2 );
+	die "Default depth of rout part 1 is not defined" if ( !defined $defDepthRoutPart1 );
+	die "Rout overlap has to be at least ${minRoutOverlap}mm" if ( $routOverlapPart2 < $minRoutOverlap );
 
 	my $parser = BendAreaParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW );
 	my $errMess = "";
@@ -673,6 +678,7 @@ sub PrepareRoutTransitionZone {
 
 				$top2BotOrder++;
 			}
+
 		}
 		else {
 
@@ -769,30 +775,30 @@ sub PrepareRoutTransitionZone {
 		my $depth = 0;
 		if ( $routPart == 1 ) {
 
-			$depth = $defDepthRoutPart1 + $roolOverlap / 2;
+			$depth = $defDepthRoutPart1;
 		}
 		elsif ( $routPart == 2 ) {
-			$depth = $packageThick / 1000 - $defDepthRoutPart1 + $roolOverlap / 2;
+			$depth = $packageThick / 1000 - $defDepthRoutPart1 + $routOverlapPart2;
 		}
 
 		if ( $routPart == 1 ) {
 
 			# Check material rest
-			if ( ( $packageThick / 1000 - $depth ) < $minMatRest ) {
+			if ( ( $packageThick / 1000 - $depth ) < $minMatRestPart1 ) {
 
 				my $matRest = sprintf( "%.2f", $packageThick / 1000 - $depth );
-				my $computed = $packageThick / 1000 - $minMatRest - $roolOverlap / 2;
+				my $computed = $packageThick / 1000 - $minMatRestPart1;
 
 				$result{"result"} = 0;
 				$result{"errMess"} =
 				    "Too large rout depth ("
 				  . sprintf( "%.2f", $depth ) . "mm). "
-				  . "Rest of material thickness after routing would be: $matRest mm. Minimal allowed material rest is: ${minMatRest}mm. "
+				  . "Rest of material thickness after routing would be: $matRest mm. Minimal allowed material rest is: ${minMatRestPart1}mm. "
 				  . "Maximal default depth should be: ${computed}mm (now is: ${defDepthRoutPart1}mm).";
 			}
 
 			# Check minimal depth
-			if ( $depth < $roolOverlap / 2 ) {
+			if ( $depth < $routOverlapPart2 / 2 ) {
 
 				$result{"result"} = 0;
 				$result{"errMess"} =
@@ -803,13 +809,23 @@ sub PrepareRoutTransitionZone {
 		if ( $routPart == 2 ) {
 
 			# Check too large depth
-			if ( $depth > $packageThick / 1000 ) {
+
+			my $noFlowThick  = $joinPackgs->{"lNoflow"}->GetThick();
+			my $matThickness = ( $packageThick / 1000 + $noFlowThick / 1000 );
+
+			if ( $depth > ( $matThickness - $minMatRestPart2 ) ) {
+
+				my $newToolDepth = $matThickness - $minMatRestPart2;
+				my $suggestedOverlap = $newToolDepth - ( $packageThick / 1000 - $defDepthRoutPart1 );
 
 				$result{"result"} = 0;
 				$result{"errMess"} =
-				    "Too deep rout depth. Routed material thickness is thinnner ("
-				  . sprintf( "%.2f", $packageThick / 1000 )
-				  . "mm) than rout depth (${depth}mm)";
+				    "Too deep rout depth. Rigid material thickness is thinnner ("
+				  . sprintf( "%.2f", $matThickness )
+				  . "mm - reserve depth: "
+				  . sprintf( "%.2f", $minMatRestPart2 )
+				  . "mm to prevent rout through flex core) than rout depth (${depth}mm). "
+				  . "Try to set rout overlap on value: ${suggestedOverlap}mm";
 			}
 
 		}

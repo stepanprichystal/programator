@@ -130,6 +130,7 @@ sub OuterCore {
 # - pTopCoreType =  type of cores inside each product
 # - pBot = bot stackup product
 # - pBotCoreType =  type of cores inside each product
+# - lNoflow = layer data of noflow prepreg between packages
 sub GetJoinedFlexRigidProducts {
 	my $self    = shift;
 	my $inCAM   = shift;
@@ -194,6 +195,9 @@ sub GetJoinedFlexRigidProducts {
 					my $frstInput = ( $botP->GetLayers( StackEnums->ProductL_PRODUCT ) )[0];
 					$infJoin{"pBotCoreType"} = $frstInput->GetCoreRigidType();
 				}
+				
+				# Noflow Material layer
+				$infJoin{"lNoflow"} = $lData;
 
 				push( @laminatePckgsInf, \%infJoin );
 

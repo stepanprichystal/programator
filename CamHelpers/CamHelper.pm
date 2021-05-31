@@ -17,7 +17,7 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::FileHelper';
-
+ 
 #-------------------------------------------------------------------------------------------#
 #   Package methods
 #-------------------------------------------------------------------------------------------#
@@ -72,7 +72,7 @@ sub OpenStep {
 	my $inCAM    = shift;
 	my $jobName  = shift;
 	my $stepName = shift;
-
+ 
 	$inCAM->COM(
 				 "open_entity",
 				 job  => "$jobName",
@@ -86,17 +86,32 @@ sub OpenStep {
 
 	return $groupId;
 }
- 
 
 # Set step
 # Use when work with one job  at script
+# NOTE: Do not read step value from ENV{STEP}, it do not work correctly
 sub SetStep {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $stepName = shift;
 
-	$inCAM->COM( "set_step", "name" => $stepName );
+	if ( $self->GetCurrentStep($inCAM) ne $stepName )
+	{
 
+		$inCAM->COM( "set_step", "name" => $stepName );
+	}
+
+}
+
+# Return current step set from incam editor
+sub GetCurrentStep {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	$inCAM->COM("get_step_name");
+	my $step = $inCAM->GetReply();
+
+	return $step;
 }
 
 sub SetGroupId {

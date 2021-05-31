@@ -89,7 +89,8 @@ sub SetStage {
 
 		foreach my $nestStep ( @steps, $stepName ) {
 
-			$inCAM->COM( "set_step", "name" => $nestStep );
+			CamHelper->CamHelper($inCAM, $nestStep);
+			 
 
 			foreach my $l (@routLayer) {
 
@@ -141,8 +142,9 @@ sub SetStage {
 
 		push( @drillLayer, $lTmpName );
 	}
-
-	$inCAM->COM( "set_step", "name" => $stepName );
+	
+	CamHelper->CamHelper($inCAM, $stepName);
+	 
 
 	my $drill = join( "\;", @drillLayer );
 	$inCAM->COM(

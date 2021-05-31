@@ -205,7 +205,7 @@ sub __GetImageDPIQuality {
 
 	$dpi *= $reducedQuality / 100;
 
-	Diag("PcbSize: $pcbSize; input log value: $inputVal; Log val:= $logVal; DPI: $dpi (Reduced by: $reducedQuality %)");
+	DiagSTDERR("PcbSize: $pcbSize; input log value: $inputVal; Log val:= $logVal; DPI: $dpi (Reduced by: $reducedQuality %)");
 
 	return int($dpi);
 }
@@ -242,7 +242,7 @@ sub __GetResolution {
 		$resY = max( $x, $y ) / min( $x, $y ) * $resX;
 	}
 
-	Diag("Resolution for PCB is: $resX x $resY mm");
+	DiagSTDERR("Resolution for PCB is: $resX x $resY mm");
 
 	my %res = ( "x" => int($resX), "y" => int($resY) );
 
@@ -300,7 +300,7 @@ sub __GetResolution {
 #
 #	my %res = ( "x" => $pcbResX, "y" => $pcbResY );
 #
-#	Diag("Resolution for PCB is: $pcbResX x $pcbResY mm");
+#	DiagSTDERR("Resolution for PCB is: $pcbResX x $pcbResY mm");
 #
 #	return %res;
 #}

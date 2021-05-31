@@ -157,12 +157,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d298824";
+	my $jobId = "d322394";
 
 	my $notClose = 0;
 
 	my $res = DoUnmaskNC->UnMaskSMDThroughHole( $inCAM, $jobId );
-	#my $res2 = DoUnmaskNC->UnMaskBGAThroughHole( $inCAM, $jobId );
+	my $res2 = DoUnmaskNC->UnMaskBGAThroughHole( $inCAM, $jobId );
 
 }
 
