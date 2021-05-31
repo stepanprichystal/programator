@@ -461,7 +461,7 @@ sub __CreatePlotStep {
 	#CamHelper->OpenJob( $inCAM, $jobId );
 	# Set step panel
  
-	CamHelper->CamHelper($inCAM,  "panel");
+	CamHelper->SetStep($inCAM,  "panel");
 
 	#delete if step already exist
 	if ( CamHelper->StepExists( $inCAM, $jobId, $plotPanel ) ) {
@@ -482,7 +482,7 @@ sub __CreatePlotStep {
 
 	# Set step panel ploter
  
-	CamHelper->CamHelper($inCAM,  $plotPanel);
+	CamHelper->SetStep($inCAM,  $plotPanel);
 
 }
 
