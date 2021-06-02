@@ -31,13 +31,13 @@ use aliased 'CamHelpers::CamStepRepeat';
 
 # Add pilot hole to layer and step
 sub AddPilotHole {
-	my $self         = shift;
-	my $inCAM        = shift;
-	my $jobId        = shift;
-	my $stepName     = shift;
-	my $layer        = shift;
-	my $reducedSize  = shift // 100;
-	my $minReducedSize = shift // 500; # Minimal pilot holes 500um
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $jobId          = shift;
+	my $stepName       = shift;
+	my $layer          = shift;
+	my $reducedSize    = shift // 70;     # Pilot holes are 70% diameter of rout size
+	my $minReducedSize = shift // 500;    # Minimal pilot holes 500um
 
 	CamHelper->SetStep( $inCAM, $stepName );
 
@@ -58,12 +58,12 @@ sub AddPilotHole {
 		my $chainSize = $chain->{".tool_size"} / 1000;                              # in mm
 		my $pilotSize = $self->GetPilotHole( \@tools, $chainSize, $reducedSize );
 
-		if ( $pilotSize < $minReducedSize/1000 ) {
+		if ( $pilotSize < $minReducedSize / 1000 ) {
 			$pilotSize = $self->GetPilotHole( \@tools, $chainSize, 100 );
 		}
-		
-		die "No pilot holes found for rout tool: ${chainSize}um" unless(defined $pilotSize);
-		
+
+		die "No pilot holes found for rout tool: ${chainSize}um" unless ( defined $pilotSize );
+
 		$inCAM->COM("chain_list_reset");
 		$inCAM->COM( "chain_list_add",  "chain" => $chainNum );
 		$inCAM->COM( "chain_del_pilot", "layer" => $layer );                        # delete pilot if exist

@@ -26,6 +26,7 @@ use aliased 'CamHelpers::CamChecklist';
 #-------------------------------------------------------------------------------------------#
 
 # Return if there is via or pth annular ring less than 75µm
+# (and geater than "0" - if ring is cut by rout, checklist can return annular ring 0)
 # Return value:
 # - 0, if some problems occur during running checklist
 # - 1, if checklist run succesfully
@@ -83,7 +84,8 @@ sub ExistAnularRingLess75 {
 			my $cat = $r->GetCategory($catName);
 			next unless ( defined $cat );
 
-			my @minAr = grep { $_->GetValue() < MINAR } $cat->GetCatValues();
+			# note - > 0 means, there could be annular ring cut by rout and checklist return 0 width of ring
+			my @minAr = grep { $_->GetValue() < MINAR &&  $_->GetValue() > 0} $cat->GetCatValues();
 
 			if ( scalar(@minAr) ) {
 
