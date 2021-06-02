@@ -44,7 +44,7 @@ sub new {
 	$self->{"inCAM"}    = shift;
 	$self->{"jobId"}    = shift;
 	$self->{"stepName"} = shift;
-	$self->{"NCLayers"} = shift; # information about layer stretch value
+	$self->{"NCLayers"} = shift;    # information about layer stretch value
 
 	return $self;
 }
@@ -288,10 +288,23 @@ sub __GetNCInfo {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#use aliased 'Packages::Export::NCExport::NCExportGroup';
+	use aliased 'Packages::Export::NCExport::ExportPanelAllMngr';
 
-	#print $test;
+	use aliased 'Packages::InCAM::InCAM';
 
+	my $jobId = "d322106";
+
+	my $step  = "panel";
+	my $inCAM = InCAM->new();
+
+	
+
+	my $export = ExportPanelAllMngr->new( $inCAM, $jobId, $step );
+	my @opItems = ();
+
+	my $t = $export->Run();
+
+	die;
 }
 
 1;

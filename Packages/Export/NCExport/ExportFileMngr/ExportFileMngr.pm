@@ -95,7 +95,7 @@ sub __ExportNcSet {
 		die "Left-down profile corner is not placed in \"zero point\".\n";
 	}
 
-	$inCAM->COM( 'set_step', "name" => $stepName );
+	CamHelper->SetStep( $inCAM, $stepName );
 
 	get_logger("abstractQueue")->error("Finding  $jobId layer: $layerName, machine: $machine, __ExportNcSet 2\n ");
 

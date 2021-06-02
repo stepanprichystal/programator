@@ -35,7 +35,7 @@ push( @messHead, "<g>=====================================</g>" );
 push( @messHead, "<g>Průvodce vytvořením prepreg vrstev</g>" );
 push( @messHead, "<g>=====================================</g>\n" );
 
-my $CLEARANCEP1 = 800;     # Default clearance of first (closer to flex core) prepreg from rigin/flex transition
+my $CLEARANCEP1 = 1100;    # Default clearance of first (closer to flex core) prepreg from rigin/flex transition
 my $CLEARANCEP2 = 300;     # Default clearance of second (closer to rigid core) prepreg from rigin/flex transition. Overlap with coverlay 200µm
 my $PINRADIUS   = 1000;    # 2000 µm radius of coveraly pins
 my $ROUTTOOL    = 2000;    # default prepreg rout tool

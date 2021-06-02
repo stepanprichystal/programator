@@ -193,7 +193,7 @@ sub CreateAOIRepairJob {
 			# taht we work in proper job ($jobIdOut)
 			CamHelper->OpenJob( $inCAM, $jobIdOut, 0 );
 			CamHelper->OpenStep( $inCAM, $jobIdOut, $step ); 
-			$inCAM->COM( "set_step", "name" => $step );
+			$inCAM->COM( "set_step", "name" => $step ); # without this it do not work
 			
 			$outStep->AddSRStep( $r->{"stepName"}, $r->{"gSRxa"}, $r->{"gSRya"}, $r->{"gSRangle"},
 								 $r->{"gSRnx"},    $r->{"gSRny"}, $r->{"gSRdx"}, $r->{"gSRdy"} );

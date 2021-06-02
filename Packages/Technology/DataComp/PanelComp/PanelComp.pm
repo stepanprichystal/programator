@@ -105,6 +105,18 @@ sub GetCoreMatComp {
 
 	my @comp = $self->__GetPanelXYScale( $matKind, $matThick, $cuThick, $cuUsage );
 
+	# Stretch/shrink Exceptions
+
+	# 1) if one side top/bot has ussage 100% (outer cores in stackup), do not consider this side and devide stretch by 2
+	# We assume, core with one side full covered with copper is shrinked less, because copper prevent shrink
+
+	if ( $core->GetTopCopperLayer()->GetUssage() == 1 || $core->GetBotCopperLayer()->GetUssage() == 1 ) {
+
+		use constant EXTRA_OUTERCORE => 0.5;    # reduce stretch 50 % percent
+		$comp[0] *= EXTRA_OUTERCORE;
+		$comp[1] *= EXTRA_OUTERCORE;
+	}
+
 	return ( "x" => $comp[0], "y" => $comp[1] );
 
 }

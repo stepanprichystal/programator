@@ -23,6 +23,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'Packages::TifFile::TifLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,6 +39,7 @@ sub new {
 	$self->{"jobId"}    = shift;
 	$self->{"stepName"} = shift;
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
+	$self->{"tifFile"}  = TifLayers->new( $self->{"jobId"} );
 
 	$self->{"machines"}  = ();
 	$self->{"propTable"} = ();
@@ -343,9 +345,8 @@ sub __SetStaticPropertyTable {
 	my $isFlex  = JobHelper->GetIsFlex( $self->{"jobId"} );
 	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 
-	# temporary solution
-	my $note = CamAttributes->GetJobAttrByName( $self->{"inCAM"}, $self->{"jobId"}, ".comment" );
-	my $coreStretch = $note =~ /tpv-kompenzace/i ? 1 : 0;
+	# Check if signla lazers was stretched
+	my $sigLStretch = scalar( grep { $_->{"stretchX"} != 0 || $_->{"stretchY"} != 0 } $self->{"tifFile"}->GetSignalLayers(1) ) ? 1 : 0;
 
 	# Header is:
 	# 1) DRILL
@@ -356,10 +357,10 @@ sub __SetStaticPropertyTable {
 	# 6) CAMERAS
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, ( $isFlex || $viaFill || $coreStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, ( $isFlex || $viaFill || $sigLStretch ) ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"sl"} = [ 1, 0, 0, 0, 0, ( $isFlex || $viaFill || $sigLStretch ) ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillTop }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillBot }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
@@ -374,7 +375,7 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_plt_cFillDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, ( $isFlex || $viaFill || $sigLStretch ) ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
@@ -382,7 +383,7 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_plt_bMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_dcDrill }{"ml"} = [ 0, 0, 0, 0, 1, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_dcDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_dcDrill }{"sl"} = [ 0, 0, 0, 0, 0, ( $isFlex || $viaFill || $sigLStretch ) ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_fDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_fDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
@@ -393,13 +394,19 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, ( $isFlex || $coreStretch ) ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, ( $isFlex || $coreStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrillBot }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nDrillBot }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, ( $isFlex || $coreStretch ) ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, ( $isFlex || $coreStretch ) ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"ml"} = [ 0, 0, 0, 1, 0, ( $isFlex || $coreStretch ) ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"sl"} = [ 0, 0, 0, 1, 0, ( $isFlex || $coreStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, ( $isFlex || $sigLStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, ( $isFlex || $sigLStretch ) ];
+
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nMillBot }{"ml"} = [ 0, 0, 1, 0, 0, ( $isFlex || $sigLStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_nMillBot }{"sl"} = [ 0, 0, 1, 0, 0, ( $isFlex || $sigLStretch ) ];
+
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, ( $isFlex || $sigLStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, ( $isFlex || $sigLStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"ml"} = [ 0, 0, 0, 1, 0, ( $isFlex || $sigLStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_bMillBot }{"sl"} = [ 0, 0, 0, 1, 0, ( $isFlex || $sigLStretch ) ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_rsMill }{"ml"} = [ 0, 0, 1, 0, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_rsMill }{"sl"} = [ 0, 0, 1, 0, 0, 1 ];
@@ -407,14 +414,14 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_frMill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, ( $isFlex || $coreStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"ml"} = [ 0, 0, 0, 1, 0, ( $isFlex || $sigLStretch ) ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, ( $isFlex || $coreStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"ml"} = [ 0, 0, 0, 1, 0, ( $isFlex || $sigLStretch ) ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_cbMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
-	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"ml"} = [ 0, 0, 1, 0, 0, ( $isFlex || $sigLStretch ) ];
+	$t{ EnumsGeneral->LAYERTYPE_nplt_kMill }{"sl"} = [ 0, 0, 1, 0, 0, ( $isFlex || $sigLStretch ) ];
 
 	$t{ EnumsGeneral->LAYERTYPE_nplt_lcMill }{"ml"} = [ 0, 0, 1, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_nplt_lcMill }{"sl"} = [ 0, 0, 1, 0, 0, 0 ];

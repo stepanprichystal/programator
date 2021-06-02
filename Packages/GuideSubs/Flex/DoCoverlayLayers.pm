@@ -31,7 +31,7 @@ push( @messHead, "<g>=====================================</g>" );
 push( @messHead, "<g>Průvodce vytvořením coverlay vrstev</g>" );
 push( @messHead, "<g>=====================================</g>\n" );
 
-my $COVERLAYOVERLAP = 700;     # Ovelrap of coverlay to rigid area
+my $COVERLAYOVERLAP = 1000;     # Ovelrap of coverlay to rigid area
 my $ROUTOOL         = 2000;    # 2000µm rout tool
 my $REGPINSIZE      = 1500;    # 1500µm or register pin hole
 my $PINRADIUS       = 1000;    # 2000 µm radius of coveraly pins

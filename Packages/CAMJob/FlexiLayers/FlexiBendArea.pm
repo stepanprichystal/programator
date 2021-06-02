@@ -198,7 +198,7 @@ sub PrepareFlexMask {
 	my $jobId   = shift;
 	my $step    = shift;
 	my $layer   = shift;
-	my $overlap = shift // 750;    # Overlap of flexible mask torigid part
+	my $overlap = shift // 900;    # Overlap of flexible mask torigid part
 
 	my $result = 1;
 
@@ -318,7 +318,7 @@ sub PrepareRoutCoverlay {
 	my $pins       = shift;            # 0/1
 	my $addRegPins = shift // $pins;
 
-	my $coverlayOverlap = shift // 500;     # Ovelrap of coverlay to rigid area
+	my $coverlayOverlap = shift // 1000;     # Ovelrap of coverlay to rigid area
 	my $routTool        = shift // 2000;    # 2000µm rout tool
 	my $regPinSize      = shift // 1800;    # 1800µm or register pin hole
 	my $pinRadius       = shift // 2000;    # Radius between PinString_SIDELINE1 and PinString_SIDELINE2

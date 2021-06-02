@@ -41,7 +41,7 @@ sub UnMaskNpltRout {
 
 	CamLayer->ClearLayers($inCAM);
 
-	$inCAM->COM( 'set_step', name => $stepId );
+	CamHelper->SetStep($inCAM, $stepId );
 
 	my @res = ();
 
