@@ -4,6 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::AOIData::AOIData;
+use base("Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::TaskOnDemandBase");
 
 #3th party library
 use strict;
@@ -45,17 +46,19 @@ use aliased 'Packages::NifFile::NifFile';
 
 sub new {
 	my $class = shift;
-	my $self  = {};
-	bless $self;
 
-	$self->{"taskDataApp"} = shift;
-	$self->{"inCAM"}       = shift;
-	$self->{"jobId"}       = shift;
+	my $appName = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $self    = $class->SUPER::new( $appName, $inCAM, $jobId );
+
+	#my $self = {};
+	bless $self;
 
 	# Sender attributes
 	#$self->{"smtp"} = "127.0.0.1"; #testing server paper-cut
 
-	$self->{"smtp"} = 'gatema-cz.mail.protection.outlook.com';    # new servr from 29.1.2019
+	$self->{"smtp"} = EnumsPaths->URL_GATEMASMTP;
 	$self->{"from"} = 'tpvserver@gatema.cz';
 
 	return $self;
@@ -64,10 +67,10 @@ sub new {
 # Export control data
 sub Run {
 	my $self     = shift;
-	my $errorStr = shift;                                         # ref on error string, where error message is stored
-	my $type     = shift;                                         # Data_AOI
-	my $inserted = shift;                                         # time of inserting request
-	my $loginId  = shift;                                         # login of user which requested control data
+	my $errorStr = shift;    # ref on error string, where error message is stored
+	my $type     = shift;    # Data_AOI
+	my $inserted = shift;    # time of inserting request
+	my $loginId  = shift;    # login of user which requested control data
 
 	my $result = 1;
 
@@ -84,7 +87,7 @@ sub Run {
 
 	}
 
-	unless ( $self->SendMail( $errorStr, $type, $inserted, $loginId ) ) {
+	unless ( $self->__SendMail( $result, $errorStr, $type, $inserted, $loginId ) ) {
 		$result = 0;
 	}
 
@@ -97,7 +100,8 @@ sub __Run {
 	my $result   = shift;
 	my $errorStr = shift;    # ref on error string, where error message is stored
 	my $type     = shift;    # Data_AOI
-	$self->{"taskDataApp"}->{"logger"}->debug("HERE");
+
+	$self->{"logger"}->debug("HERE");
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -114,7 +118,7 @@ sub __Run {
 	else {
 
 		# Open job
-		$self->{"taskDataApp"}->_OpenJob($jobId);
+		$self->_OpenJob();
 
 		# if check are ok, prepare data
 		if ($$result) {
@@ -173,21 +177,26 @@ sub ItemResultHandler {
 	}
 }
 
-sub SendMail {
+sub __SendMail {
 	my $self     = shift;
+	my $result   = shift;
 	my $errorStr = shift;
 	my $type     = shift;
 	my $inserted = shift;
 	my $loginId  = shift;
 
-	my $result = 1;
+	my $resultMail = 1;
 
-	$self->{"taskDataApp"}->{"logger"}->debug("send mail result $result, $errorStr, $inserted, $loginId");
+	$self->{"logger"}->debug("send mail result $result, $errorStr, $inserted, $loginId");
 
 	my $jobId = $self->{"jobId"};
 
 	# Get info about user
-	my $userInfo = HegMethods->GetEmployyInfo( undef, $loginId );
+	my $userInfo = undef;
+	if ( defined $loginId && $loginId !~ /temp/i ) {
+
+		$userInfo = HegMethods->GetEmployyInfo( undef, $loginId );
+	}
 
 	my @addres   = ();
 	my @addresCC = ();
@@ -196,25 +205,12 @@ sub SendMail {
 
 		push( @addres, $userInfo->{"e_mail"} );
 	}
-	else {
-
-		push( @addres, EnumsPaths->MAIL_GATSALES );
-	}
 
 	# fill templkey with data
 	my $templKey = TemplateKey->new();
 
 	# compose message
-	my $t = "";
-
-	if ( $type eq Enums->Data_COOPERATION ) {
-
-		$t = "Cooperation data";
-	}
-	elsif ( $type eq Enums->Data_CONTROL ) {
-
-		$t = "Control data";
-	}
+	my $t = "AOI Repair";
 
 	$templKey->SetAppName( EnumsApp->GetTitle( EnumsApp->App_TASKONDEMAND ) );
 	$templKey->SetMessageType( $result    ? "SUCCESS" : "FAILED" );
@@ -260,15 +256,18 @@ sub SendMail {
 		my $htmlFileStr = FileHelper->ReadAsString($htmlFile);
 		unlink($htmlFile);
 
+		# Temporary if no adress, add SPR
+		push( @addres, 'stepan.prichystal@gatema.cz' ) unless ( scalar(@addres) );
+
 		my $msg = MIME::Lite->new(
 			From => $self->{"from"},
 			To   => join( ", ", @addres ),
 
 			Cc => join( ", ", @addresCC ),
 
-			Bcc => ['stepan.prichystal@gatema.cz'],    #TODO temporary,
+			#Bcc => ['stepan.prichystal@gatema.cz'],    #TODO temporary,
 
-			Subject => encode( "UTF-8", "Task on demand - " . $t . " ($jobId)" ),    # Encode must by use if subject with diacritics
+			Subject => encode( "UTF-8", "Task on demand - " . $t . " ($jobId)" ),     # Encode must by use if subject with diacritics
 
 			Type => 'multipart/related'
 		);
@@ -281,11 +280,11 @@ sub SendMail {
 
 		if ( $resSend ne 1 ) {
 
-			$result = 0;
+			$resultMail = 0;
 		}
 	}
 
-	return $result;
+	return $resultMail;
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -294,22 +293,20 @@ sub SendMail {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData';
-	#	use aliased 'Packages::InCAM::InCAM';
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	# 1) # zkontroluje jestli jib existuje v InCAM, pokud ne odarchivuje a nahraje do InCAM
-	#	# 2) # pokud se jedna o job ze stareho archivu, tak nahraje job do InCAMu z neho
-	#
-	#	my $jobId = "d152456";
-	#	my $d = ControlData->new( $inCAM, $jobId );
-	#
-	#	my $errMess = "";
-	#
-	#	my $result = $d->Run( \$errMess, Enums->Data_COOPERATION );
-	#
-	#	print $result;
+	use aliased 'Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::AOIData::AOIData';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId = "d322016";
+
+	my $d = AOIData->new( EnumsApp->App_TASKONDEMAND, $inCAM, $jobId );
+
+	my $errMess = "";
+
+	my $result = $d->Run( \$errMess, Enums->Data_AOI );
+
+	print $result;
 
 }
 

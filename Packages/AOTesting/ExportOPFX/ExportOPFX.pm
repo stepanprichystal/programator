@@ -27,8 +27,9 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::ItemResult::Enums' => "ItemResEnums";
 use aliased 'Packages::AOTesting::BasicHelper::AOSet';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Packages::CAMJob::Technology::LayerSettings';
+use aliased 'Packages::TifFile::TifLayers';
 use aliased 'Helpers::FileHelper';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -151,13 +152,19 @@ sub Export {
 	}
 
 	# 4) Axport OPFX
-	my $layerSett = LayerSettings->new( $self->{"jobId"}, $self->{"step"} );
-	$layerSett->Init($inCAM);
+
+	my $tif = TifLayers->new( $self->{"jobIdSource"} );
+
+	unless ( $tif->TifFileExist() ) {
+		die "Dif file (".$self->{"jobIdSource"}.") must exist when AOI data are exported.\n";
+	}
+	
+	my %layerSett = $tif->GetSignalLayers();
 
 	foreach my $layer (@signalLayers) {
 
 		# For each layer export AOI
-		$self->__ExportAOI( $exportPath, $layer, $setName, $incldMpanelFrm, $layerSett );
+		$self->__ExportAOI( $exportPath, $layer, $setName, $incldMpanelFrm, \%layerSett );
 	}
 
 	# For each layer export AOI
@@ -244,7 +251,7 @@ sub __ExportAOI {
 		$pcbThick = sprintf( "%.3f", $self->{"stackup"}->GetThickByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} ) );
 	}
 
-	my $etchFactor = $self->__GetEtchFactor( $layerSett->GetDefaultEtchType($layerName), $baseCuThick );
+	my $etchFactor = $self->__GetEtchFactor( $layerSett->{$layerName}->{"etchingType"}, $baseCuThick );
 
 	AOSet->SetStage( $inCAM, $jobId, $stepToTest, $layerName, $cuThick, $pcbThick, $etchFactor );
 

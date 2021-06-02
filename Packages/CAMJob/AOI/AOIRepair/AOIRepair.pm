@@ -188,6 +188,13 @@ sub CreateAOIRepairJob {
 		my $outStep = SRStep->new( $inCAM, $jobIdOut, $step );
 
 		foreach my $r (@repeats) {
+			
+			# Add extra command OpenStep, becase AddSRStep use set_step and we needto ensure
+			# taht we work in proper job ($jobIdOut)
+			CamHelper->OpenJob( $inCAM, $jobIdOut, 0 );
+			CamHelper->OpenStep( $inCAM, $jobIdOut, $step ); 
+			$inCAM->COM( "set_step", "name" => $step );
+			
 			$outStep->AddSRStep( $r->{"stepName"}, $r->{"gSRxa"}, $r->{"gSRya"}, $r->{"gSRangle"},
 								 $r->{"gSRnx"},    $r->{"gSRny"}, $r->{"gSRdx"}, $r->{"gSRdy"} );
 		}

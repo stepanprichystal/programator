@@ -4,6 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::ControlData::ControlData;
+use base("Programs::Services::TpvService2::ServiceApps::TaskOnDemand::TaskOnDemand::TaskOnDemandBase");
 
 #3th party library
 use strict;
@@ -43,12 +44,13 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 
 sub new {
 	my $class = shift;
-	my $self  = {};
-	bless $self;
 
-	$self->{"taskDataApp"} = shift;
-	$self->{"inCAM"}       = shift;
-	$self->{"jobId"}       = shift;
+	my $appName = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $self    = $class->SUPER::new( $appName, $inCAM, $jobId );
+
+	bless $self;
 
 	# Sender attributes
 	#$self->{"smtp"} = "127.0.0.1"; #testing server paper-cut
@@ -69,20 +71,20 @@ sub Run {
 
 	my $result = 1;
 
-		eval {
-	
-			$self->__Run( \$result, $errorStr, $type );
-	
-		};
-		if ($@) {
-	
-			my $eStr = $@;
-			$$errorStr .= "\n\n" . $eStr;
-			$result = 0;
-	
-		}
+	eval {
 
-	unless ( $self->SendMail( $errorStr, $type, $inserted, $loginId ) ) {
+		$self->__Run( \$result, $errorStr, $type );
+
+	};
+	if ($@) {
+
+		my $eStr = $@;
+		$$errorStr .= "\n\n" . $eStr;
+		$result = 0;
+
+	}
+
+	unless ( $self->__SendMail( $result, $errorStr, $type, $inserted, $loginId ) ) {
 		$result = 0;
 	}
 
@@ -95,13 +97,14 @@ sub __Run {
 	my $result   = shift;
 	my $errorStr = shift;    # ref on error string, where error message is stored
 	my $type     = shift;    # Data_COOPERATION, Data_CONTROL
-	$self->{"taskDataApp"}->{"logger"}->debug("HERE");
+	
+	$self->{"logger"}->debug("HERE");
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	# Open job
-	$self->{"taskDataApp"}->_OpenJob($jobId);
+	$self->_OpenJob();
 
 	$self->{"defaultInfo"} = DefaultInfo->new($jobId);
 	$self->{"defaultInfo"}->Init($inCAM);
@@ -215,16 +218,17 @@ sub ItemResultHandler {
 	}
 }
 
-sub SendMail {
+sub __SendMail {
 	my $self     = shift;
+	my $result = shift;;
 	my $errorStr = shift;
 	my $type     = shift;
 	my $inserted = shift;
 	my $loginId  = shift;
-	
-	my $result = 1;
 
-	$self->{"taskDataApp"}->{"logger"}->debug("send mail result $result, $errorStr, $inserted, $loginId");
+	my $resultMail = 1;
+
+	$self->{"logger"}->debug("send mail result $result, $errorStr, $inserted, $loginId");
 
 	my $jobId = $self->{"jobId"};
 
@@ -323,11 +327,11 @@ sub SendMail {
 
 		if ( $resSend ne 1 ) {
 
-			$result = 0;
+			$resultMail = 0;
 		}
 	}
 
-	return $result;
+	return $resultMail;
 }
 
 #-------------------------------------------------------------------------------------------#

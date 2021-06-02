@@ -359,7 +359,7 @@ sub GetPressPad01FGKInfo {
 sub GetPressPadTB317KInfo {
 	my $self = shift;
 
-	my $isId = "0318000019";
+	my $isId = "0318000021";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
@@ -368,7 +368,7 @@ sub GetPressPadTB317KInfo {
 sub GetPressPadFF10NInfo {
 	my $self = shift;
 
-	my $isId = "0318000018";
+	my $isId = "0318000020";
 	my $inf  = $self->__GetPresspadInfo($isId);
 
 	return $inf;
