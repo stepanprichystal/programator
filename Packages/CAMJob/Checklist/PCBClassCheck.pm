@@ -133,6 +133,7 @@ sub __VerifyMinIsol {
 
 	unless ( CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $checklistName ) ) {
 
+		CamChecklist->CopyChecklistFromLib( $inCAM, $checklistName );
 		CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklistName );
 	}
 

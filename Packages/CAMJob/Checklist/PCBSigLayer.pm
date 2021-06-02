@@ -48,22 +48,22 @@ sub ExistAnularRingLess75 {
 
 	my $resultChecklist = 1;
 
-	if ( !CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $checklistName ) ) {
-		
-		
-		CamChecklist->CopyChecklistFromLib( $inCAM, $step, $checklistName );
-		CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklistName );
-	 
-
-	}
-	elsif ( CamChecklist->GetChecklistActionCnt( $inCAM, $jobId, $step, $checklistName ) < $checklistAction ) {
-
-		$inCAM->COM( "chklist_delete", "chklist" => $checklistName );
-		
-		CamChecklist->CopyChecklistFromLib( $inCAM, $step, $checklistName );
-		CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklistName );
-
-	}
+#	if ( !CamChecklist->ChecklistExists( $inCAM, $jobId, $step, $checklistName ) ) {
+#		
+#		
+#		CamChecklist->CopyChecklistFromLib( $inCAM, $checklistName );
+#		CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklistName );
+#	 
+#
+#	}
+#	elsif ( CamChecklist->GetChecklistActionCnt( $inCAM, $jobId, $step, $checklistName ) < $checklistAction ) {
+#
+#		$inCAM->COM( "chklist_delete", "chklist" => $checklistName );
+#		
+#		CamChecklist->CopyChecklistFromLib( $inCAM, $checklistName );
+#		CamChecklist->CopyChecklistToStep( $inCAM, $step, $checklistName );
+#
+#	}
 
 	my $a = Action->new( $inCAM, $jobId, $step, $checklistName, $checklistAction );    # action number = 1;
 

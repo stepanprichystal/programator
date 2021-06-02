@@ -25,8 +25,10 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Stackup::Enums';
+use aliased 'Enums::EnumsIS';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::StackupNC::StackupNC';
+use aliased 'Packages::TifFile::TifLayers';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -51,9 +53,11 @@ sub Build {
 	my $stepName = "panel";
 
 	my $cuThickness = JobHelper->GetBaseCuThick( $jobId, "c" );
-	my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId );
-	my $surface  = HegMethods->GetPcbSurface($jobId);
-	my $pcbClass = CamJob->GetJobPcbClass( $inCAM, $jobId );
+	my $pcbThick      = CamJob->GetFinalPcbThick( $inCAM, $jobId );
+	my $surface       = HegMethods->GetPcbSurface($jobId);
+	my $pcbClass      = CamJob->GetJobPcbClass( $inCAM, $jobId );
+	my $pcbClassInner = CamJob->GetJobPcbClassInner( $inCAM, $jobId );
+	my $tif           = TifLayers->new($jobId);
 
 	my $stackup;
 	my $stackupNC;
@@ -245,7 +249,7 @@ sub Build {
 	if ( $self->_IsRequire("plg_plocha") ) {
 
 		foreach my $layer ( map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "via_plug" } CamJob->GetBoardBaseLayers( $inCAM, $jobId ) ) {
-		
+
 			my %result = ();
 
 			if ( $self->{"layerCnt"} > 2 && $layer !~ /v\d+/ ) {
@@ -261,21 +265,21 @@ sub Build {
 			$section->AddRow( "plg_plocha_$sigL", $result{"area"} );
 		}
 	}
-	     #
-	     #		if ( CamHelper->LayerExists( $inCAM, $jobId, "plgc" ) ) {
-	     #
-	     #			my %result = ();
-	     #
-	     #			if ( $self->{"layerCnt"} > 2 ) {
-	     #
-	     #				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, \%frLim, 1, 1 );
-	     #			}
-	     #			else {
-	     #				%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, 1, 1 );
-	     #			}
-	     #
-	     #			$section->AddRow( "plg_plocha_c", $result{"area"} );
-	     #		}
+	#
+	#		if ( CamHelper->LayerExists( $inCAM, $jobId, "plgc" ) ) {
+	#
+	#			my %result = ();
+	#
+	#			if ( $self->{"layerCnt"} > 2 ) {
+	#
+	#				%result = CamCopperArea->GetCuAreaByBox( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, \%frLim, 1, 1 );
+	#			}
+	#			else {
+	#				%result = CamCopperArea->GetCuArea( $cuThickness, $pcbThick, $inCAM, $jobId, "panel", "plgc", undef, 1, 1 );
+	#			}
+	#
+	#			$section->AddRow( "plg_plocha_c", $result{"area"} );
+	#		}
 
 	#	#plg_plocha_s
 	#	if ( $self->_IsRequire("plg_plocha") ) {
@@ -307,15 +311,21 @@ sub Build {
 			my $pressOrder = $i + 1;
 			my $press      = $stackupNC->GetNCPressProduct($pressOrder);
 
-			my $existTopPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			my $existTopPlt_nDrill     = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 			my $existTopPlt_nFillDrill = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
-			my $existPlt_bDrillTop = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
+			my $existPlt_bDrillTop     = $press->ExistNCLayers( Enums->SignalLayer_TOP, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop );
 
-			my $existBotPlt_nDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
+			my $existBotPlt_nDrill     = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nDrill );
 			my $existBotPlt_nFillDrill = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_nFillDrill );
-			my $existPlt_bDrillBot = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
+			my $existPlt_bDrillBot     = $press->ExistNCLayers( Enums->SignalLayer_BOT, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot );
 
-			if ( $existTopPlt_nDrill || $existTopPlt_nFillDrill || $existPlt_bDrillTop || $existBotPlt_nDrill || $existBotPlt_nFillDrill ||$existPlt_bDrillBot ) {
+			if (    $existTopPlt_nDrill
+				 || $existTopPlt_nFillDrill
+				 || $existPlt_bDrillTop
+				 || $existBotPlt_nDrill
+				 || $existBotPlt_nFillDrill
+				 || $existPlt_bDrillBot )
+			{
 
 				my $actualThick = $stackup->GetThickByCuLayer( $press->GetTopCopperLayer() );        #in µm
 				my $baseCuThick = $stackup->GetCuLayer( $press->GetTopCopperLayer() )->GetThick();
@@ -399,29 +409,7 @@ sub Build {
 
 	#flash
 	if ( $self->_IsRequire("flash") ) {
-
-		my $prog;
-
-		###=> Zruseno DS 24.5.2017 ###
-		#my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;  # b je hal
-		#my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
-
-		#		if ( $noNcOperation || (!$noNcOperation && $cuThickness > 70 )) {
-		#
-		#			$prog = 0;
-		#		}
-		#		else {
-		#			$prog = 1;
-		#		}
-
-		if ( !$rsMillExist && !$blindDrillExist && $pcbClass < 9 ) {
-
-			$prog = 0;
-		}
-		else {
-
-			$prog = 1;
-		}
+		my $prog = $self->__GetFlashProgram( $rsMillExist, $blindDrillExist, $pcbClass );
 
 		$section->AddRow( "flash", $prog );
 	}
@@ -429,51 +417,164 @@ sub Build {
 	#pattern
 	if ( $self->_IsRequire("pattern") ) {
 
-		my $prog;
-
-		###=> Zruseno DS 24.5.2017 ###
-		#		my $condMill_hal = $pltMillExist && $surface =~ /^b$/i;
-		#		my $noNcOperation = !$condMill_hal && !$rsMillExist && !$blindDrillExist;
-		#
-		#		if ( $noNcOperation || ( !$noNcOperation && $cuThickness > 70 ) ) {
-		#
-		#			$prog = 1;
-		#		}
-		#		else {
-		#			$prog = 3;
-		#		}
-
-		if ( !$rsMillExist && !$blindDrillExist && $pcbClass < 9 ) {
-
-			$prog = 1;
-		}
-		else {
-
-			$prog = 3;
-		}
+		my $prog = $self->__GetPatternProgram( $rsMillExist, $blindDrillExist, $pcbClass );
 
 		$section->AddRow( "pattern", $prog );
 	}
 
-	#prog_tenting
+	#prog_tenting - Valeu placed on info box
 	if ( $self->_IsRequire("prog_tenting") ) {
-
-		my $prog;
 
 		my ( $minHole, $minAr ) = $self->__GetInfoDrill( $stepName, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
 
-		# If min hole < 150µm OR Aspect ratio > 9 => tenting 2
-		if ( $minHole <= 150 || $minAr > 9 ) {
-
-			$prog = 2;
-		}
-		else {
-
-			$prog = 3;
-		}
+		my $prog = $self->__GetTentingProgram( $minHole, $minAr );
 
 		$section->AddRow( "prog_tenting", $prog );
+
 	}
+
+	# Additional operation info for cores - galvanicke_medeni_tenting ||  galvanike_medeni_a_cinovani
+	if ( $self->_IsRequire("prog_tenting") || $self->_IsRequire("pattern") ) {
+		if ( $self->{"layerCnt"} > 2 && $pressCnt > 0 ) {
+
+			my %sigLayers = $tif->GetSignalLayers();
+
+			# comment
+			$section->AddComment(" Additional TP operation data for core TP");
+
+			for ( my $i = 0 ; $i < $coreCnt ; $i++ ) {
+
+				my $coreNum = $i + 1;
+
+				my $coreNC = $stackupNC->GetNCCoreProduct($coreNum);
+
+				my $corePlating = $coreNC->GetIProduct()->GetIsPlated();
+
+				if ($corePlating) {
+
+					# Decide between patter/flash
+
+					my $lSett = $sigLayers{ $coreNC->GetTopCopperLayer() };
+
+					die "Etching type is not defined in TIF for layer:" if ( !defined $lSett || !defined $lSett->{"etchingType"} );
+
+					# Get information from tiffile
+
+					if ( $lSett->{"etchingType"} eq EnumsGeneral->Etching_TENTING ) {
+
+						my $platingType = EnumsIS->OpId_galvanicke_medeni_tenting;
+
+						# Return minimal hole for given side and type of NC layers
+						my $minHole = $coreNC->GetMinHoleTool( undef, undef, undef, 1 );
+						my $minAr = $coreNC->GetMaxAspectRatio( undef, undef, undef, 1 );
+						$section->AddRow( "operation.${coreNum}.${platingType}.program", "Tenting ".$self->__GetTentingProgram( $minHole, $minAr ) );
+
+					}
+					elsif ( $lSett->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
+
+						my $platingType = EnumsIS->OpId_galvanike_medeni_a_cinovani;
+						$section->AddRow( "operation.${coreNum}.${platingType}.program", "Pattern ".$self->__GetPatternProgram( 0, 0, $pcbClassInner ) );
+					}
+
+				}
+			}
+		}
+	}
+
+	# Additional operation info for main TP - galvanicke_medeni_tenting_<\d> ||  galvanike_medeni_a_cinovani_<\d>
+	if ( $self->_IsRequire("prog_tenting") || $self->_IsRequire("pattern") ) {
+		if ( $self->{"layerCnt"} > 2 && $pressCnt > 0 ) {
+
+			my %sigLayers = $tif->GetSignalLayers();
+
+			# comment
+			$section->AddComment(" Additional TP operation data for main TP");
+			for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
+
+				my $pressOrder = $i + 1;
+				my $pressNC    = $stackupNC->GetNCPressProduct($pressOrder);
+
+				my $plating = $pressNC->GetIProduct()->GetIsPlated();
+
+				if ($plating) {
+
+					# Decide between patter/flash
+
+					my $lSett = $sigLayers{ $pressNC->GetTopCopperLayer() };
+
+					die "Etching type is not defined in TIF for layer:" if ( !defined $lSett || !defined $lSett->{"etchingType"} );
+
+					# Get information from tiffile
+
+					if ( $lSett->{"etchingType"} eq EnumsGeneral->Etching_TENTING ) {
+
+						my $platingType = EnumsIS->OpId_galvanicke_medeni_tenting . "_${pressOrder}";
+
+						# Return minimal hole for given side and type of NC layers
+						my $minHole = $pressNC->GetMinHoleTool( undef, undef, undef, 1 );
+						my $minAr = $pressNC->GetMaxAspectRatio( undef, undef, undef, 1 );
+						$section->AddRow( "operation.0.${platingType}.program", "Tenting ".$self->__GetTentingProgram( $minHole, $minAr ) );
+
+					}
+					elsif ( $lSett->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
+
+						my $platingType = EnumsIS->OpId_galvanike_medeni_a_cinovani . "_${pressOrder}";
+
+						my $rsMillExist = $pressNC->ExistNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_nplt_rsMill, 1 );
+
+						my @bDrillTop     = $pressNC->GetNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bDrillTop,     1 );
+						my @bDrillBot     = $pressNC->GetNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bDrillBot,     1 );
+						my @bFillDrillTop = $pressNC->GetNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillTop, 1 );
+						my @bFillDrillBot = $pressNC->GetNCLayers( undef, undef, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot, 1 );
+						my $blindDrillExist =
+						  scalar(@bDrillTop) + scalar(@bDrillBot) + scalar(@bFillDrillTop) + scalar(@bFillDrillBot) ? 1 : 0;
+						my $pcbClass = $pressOrder < $pressCnt ? $pcbClassInner : $pcbClass;
+
+						$section->AddRow( "operation.0.${platingType}.program",
+										  "Pattern ".$self->__GetPatternProgram( $rsMillExist, $blindDrillExist, $pcbClass ) );
+					}
+				}
+			}
+		}
+	}
+
+	# Additional operation info for main TP - galvanicke_medeni_tenting ||  galvanike_medeni_a_cinovani
+	if ( $self->_IsRequire("prog_tenting") || $self->_IsRequire("pattern") ) {
+		if ( $self->{"layerCnt"} <= 2 ) {
+
+			my %sigLayers = $tif->GetSignalLayers();
+
+			# comment
+			$section->AddComment(" Additional TP operation data for main TP 2v");
+
+			# Decide between patter/flash
+
+			my $lSett = $sigLayers{"c"};
+
+			die "Etching type is not defined in TIF for layer: c" if ( !defined $lSett || !defined $lSett->{"etchingType"} );
+
+			# Get information from tiffile
+
+			if ( $lSett->{"etchingType"} eq EnumsGeneral->Etching_TENTING ) {
+
+				my $platingType = EnumsIS->OpId_galvanicke_medeni_tenting;
+
+				# Return minimal hole for given side and type of NC layers
+				my ( $minHole, $minAr ) = $self->__GetInfoDrill( $stepName, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
+				$section->AddRow( "operation.0.${platingType}.program", "Tenting ".$self->__GetTentingProgram( $minHole, $minAr ) );
+
+			}
+			elsif ( $lSett->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
+
+				my $platingType = EnumsIS->OpId_galvanike_medeni_a_cinovani;
+				my $rsMillExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_rsMill );
+
+				$section->AddRow( "operation.0.${platingType}.program", "Pattern ".$self->__GetPatternProgram( $rsMillExist, 0, $pcbClass ) );
+			}
+		}
+	}
+
+	#}
 
 }
 
@@ -495,7 +596,13 @@ sub __GetInfoDrill {
 		my $lName = $layers[$i]->{"gROWname"};
 
 		#nuber of hole types
-		$inCAM->INFO( units => 'mm', entity_type => 'layer', entity_path => "$jobId/$stepName/$lName", data_type => 'TOOL', options => "break_sr" );
+		$inCAM->INFO(
+					  units       => 'mm',
+					  entity_type => 'layer',
+					  entity_path => "$jobId/$stepName/$lName",
+					  data_type   => 'TOOL',
+					  options     => "break_sr"
+		);
 		my @drillSizes = @{ $inCAM->{doinfo}{gTOOLdrill_size} };
 
 		foreach my $t (@drillSizes) {
@@ -517,6 +624,65 @@ sub __GetInfoDrill {
 	}
 
 	return ( min(@holeTypes), $aspectRatio );
+}
+
+# Return Tenting program based on miniial hole diameter and minimal hole aspect ratio
+sub __GetTentingProgram {
+	my $self      = shift;
+	my $minHole   = shift;
+	my $minHoleAR = shift;
+
+	my $prog = undef;
+
+	# If min hole < 150µm OR Aspect ratio > 9 => tenting 2
+	if ( $minHole <= 150 || $minHoleAR > 9 ) {
+
+		$prog = 2;
+	}
+	else {
+
+		$prog = 3;
+	}
+
+	return $prog;
+}
+
+sub __GetPatternProgram {
+	my $self            = shift;
+	my $rsMillExist     = shift;
+	my $blindDrillExist = shift;
+	my $pcbClass        = shift;
+
+	my $prog = undef;
+	if ( !$rsMillExist && !$blindDrillExist && $pcbClass < 9 ) {
+
+		$prog = 1;
+	}
+	else {
+
+		$prog = 3;
+	}
+
+	return $prog;
+}
+
+sub __GetFlashProgram {
+	my $self            = shift;
+	my $rsMillExist     = shift;
+	my $blindDrillExist = shift;
+	my $pcbClass        = shift;
+
+	my $prog = undef;
+	if ( !$rsMillExist && !$blindDrillExist && $pcbClass < 9 ) {
+
+		$prog = 0;
+	}
+	else {
+
+		$prog = 1;
+	}
+
+	return $prog;
 }
 
 #-------------------------------------------------------------------------------------------#
