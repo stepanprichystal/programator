@@ -409,9 +409,44 @@ sub Build {
 
 	#flash
 	if ( $self->_IsRequire("flash") ) {
-		my $prog = $self->__GetFlashProgram( $rsMillExist, $blindDrillExist, $pcbClass );
+		my $progFlash = $self->__GetFlashProgram( $rsMillExist, $blindDrillExist, $pcbClass );
 
-		$section->AddRow( "flash", $prog );
+		$section->AddRow( "flash", $progFlash );
+
+		if ( $progFlash == 1 ) {
+
+			# comment
+			$section->AddComment(" Additional TP operation data");
+
+			if ( $self->{"layerCnt"} > 2 && $pressCnt > 0 ) {
+
+				for ( my $i = 0 ; $i < $pressCnt ; $i++ ) {
+
+					my $pressOrder = $i + 1;
+					my $pressNC    = $stackupNC->GetNCPressProduct($pressOrder);
+
+					my $plating = $pressNC->GetIProduct()->GetIsPlated();
+
+					if ($plating) {
+
+						# Get information from tiffile
+
+						my $opId = EnumsIS->OpId_chemicka_med . "_${pressOrder}";
+
+						$section->AddRow( "operation.0.${opId}.program", "Chemicka med + Flash " );
+
+					}
+				}
+			}
+			elsif ( $self->{"layerCnt"} <= 2 ) {
+
+				my $opId = EnumsIS->OpId_chemicka_med;
+				$section->AddRow( "operation.0.${opId}.program", "Chemicka med + Flash " );
+			}
+
+			$section->AddRow( "operation.0." . EnumsIS->OpId_chemicka_med_pred_zaplnenim . ".program", "Chemicka med + Flash " );
+			$section->AddRow( "operation.0." . EnumsIS->OpId_chemicka_med_dovrt_otvory . ".program",   "Chemicka med + Flash " );
+		}
 	}
 
 	#pattern
@@ -467,13 +502,15 @@ sub Build {
 						# Return minimal hole for given side and type of NC layers
 						my $minHole = $coreNC->GetMinHoleTool( undef, undef, undef, 1 );
 						my $minAr = $coreNC->GetMaxAspectRatio( undef, undef, undef, 1 );
-						$section->AddRow( "operation.${coreNum}.${platingType}.program", "Tenting ".$self->__GetTentingProgram( $minHole, $minAr ) );
+						$section->AddRow( "operation.${coreNum}.${platingType}.program",
+										  "Tenting " . $self->__GetTentingProgram( $minHole, $minAr ) );
 
 					}
 					elsif ( $lSett->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
 
 						my $platingType = EnumsIS->OpId_galvanike_medeni_a_cinovani;
-						$section->AddRow( "operation.${coreNum}.${platingType}.program", "Pattern ".$self->__GetPatternProgram( 0, 0, $pcbClassInner ) );
+						$section->AddRow( "operation.${coreNum}.${platingType}.program",
+										  "Pattern " . $self->__GetPatternProgram( 0, 0, $pcbClassInner ) );
 					}
 
 				}
@@ -513,7 +550,7 @@ sub Build {
 						# Return minimal hole for given side and type of NC layers
 						my $minHole = $pressNC->GetMinHoleTool( undef, undef, undef, 1 );
 						my $minAr = $pressNC->GetMaxAspectRatio( undef, undef, undef, 1 );
-						$section->AddRow( "operation.0.${platingType}.program", "Tenting ".$self->__GetTentingProgram( $minHole, $minAr ) );
+						$section->AddRow( "operation.0.${platingType}.program", "Tenting " . $self->__GetTentingProgram( $minHole, $minAr ) );
 
 					}
 					elsif ( $lSett->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
@@ -531,7 +568,7 @@ sub Build {
 						my $pcbClass = $pressOrder < $pressCnt ? $pcbClassInner : $pcbClass;
 
 						$section->AddRow( "operation.0.${platingType}.program",
-										  "Pattern ".$self->__GetPatternProgram( $rsMillExist, $blindDrillExist, $pcbClass ) );
+										  "Pattern " . $self->__GetPatternProgram( $rsMillExist, $blindDrillExist, $pcbClass ) );
 					}
 				}
 			}
@@ -561,7 +598,7 @@ sub Build {
 
 				# Return minimal hole for given side and type of NC layers
 				my ( $minHole, $minAr ) = $self->__GetInfoDrill( $stepName, [ EnumsGeneral->LAYERTYPE_plt_nDrill ] );
-				$section->AddRow( "operation.0.${platingType}.program", "Tenting ".$self->__GetTentingProgram( $minHole, $minAr ) );
+				$section->AddRow( "operation.0.${platingType}.program", "Tenting " . $self->__GetTentingProgram( $minHole, $minAr ) );
 
 			}
 			elsif ( $lSett->{"etchingType"} eq EnumsGeneral->Etching_PATTERN ) {
@@ -569,7 +606,7 @@ sub Build {
 				my $platingType = EnumsIS->OpId_galvanike_medeni_a_cinovani;
 				my $rsMillExist = CamDrilling->NCLayerExists( $inCAM, $jobId, EnumsGeneral->LAYERTYPE_nplt_rsMill );
 
-				$section->AddRow( "operation.0.${platingType}.program", "Pattern ".$self->__GetPatternProgram( $rsMillExist, 0, $pcbClass ) );
+				$section->AddRow( "operation.0.${platingType}.program", "Pattern " . $self->__GetPatternProgram( $rsMillExist, 0, $pcbClass ) );
 			}
 		}
 	}

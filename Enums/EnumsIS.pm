@@ -39,18 +39,14 @@ use constant {
 # Operation ID - attribut which is able to fill with additional information
 # (by arbitrary number of pairs: key + value)
 use constant {
-	
-#	# Main PCB operation
-#	OpId_galvanicke_medeni_tenting_1    => "galvanicke_medeni_tenting_1",
-#	OpId_galvanicke_medeni_tenting_2    => "galvanicke_medeni_tenting_2",
-#	OpId_galvanicke_medeni_tenting_3    => "galvanicke_medeni_tenting_3",
-#	OpId_galvanicke_medeni_a_cinovani_1 => "galvanicke_medeni_a_cinovani_1",
-#	OpId_galvanicke_medeni_a_cinovani_2 => "galvanicke_medeni_a_cinovani_2",
-#	OpId_galvanicke_medeni_a_cinovani_3 => "galvanicke_medeni_a_cinovani_3",
 
-	# Core operatioon
+	# Operation Id contain also suffix in real (press number)
 	OpId_galvanicke_medeni_tenting   => "galvanicke_medeni_tenting",
-	OpId_galvanike_medeni_a_cinovani => "galvanike_medeni_a_cinovani"
+	OpId_galvanike_medeni_a_cinovani => "galvanike_medeni_a_cinovani",
+
+	OpId_chemicka_med                 => "chemicka_med",
+	OpId_chemicka_med_pred_zaplnenim  => "chemicka_med_pred_zaplnenim",
+	OpId_chemicka_med_dovrt_otvory => "chemicka_med_dovrt_otvory",
 
 };
 
