@@ -170,6 +170,40 @@ sub AddSurfaceLinePattern {
 	);
 }
 
+sub AddSurfaceDotPattern {
+	my $self           = shift;
+	my $inCAM          = shift;
+	my $outline_draw   = shift;
+	my $outline_width  = shift;    # outline width in µm
+	my $outline_invert = shift;
+	my $dots_shape     = shift;    # square/circle
+	my $dots_diameter  = shift;
+	my $dots_grid      = shift;
+	my $indentation    = shift;    # odd/even
+
+	$outline_draw = $outline_draw ? "yes" : 'no';
+
+	unless ( defined $outline_width ) {
+		$outline_width = 0;
+	}
+
+	$outline_invert = $outline_invert ? "yes" : 'no';
+
+	$inCAM->COM(
+				 "add_surf_fill",
+				 "type"                    => "predefined_pattern",
+				 "cut_prims"               => "no",
+				 "outline_draw"            => $outline_draw,
+				 "outline_width"           => $outline_width,
+				 "outline_invert"          => $outline_invert,
+				 "predefined_pattern_type" => "dots",
+				 "indentation"             => $indentation,
+				 "dots_shape"              => $dots_shape,
+				 "dots_diameter"           => $dots_diameter,
+				 "dots_grid"               => $dots_grid
+	);
+}
+
 # Surface symbol patter
 sub AddSurfaceSymbolPattern {
 	my $self           = shift;
@@ -186,48 +220,50 @@ sub AddSurfaceSymbolPattern {
 	$outline_invert = $outline_invert ? "yes" : 'no';
 	$cut_prims      = $cut_prims      ? "yes" : 'no';
 
-#	$inCAM->COM(
-#		'add_surf_fill',
-#		"type"           => "pattern",
-#		"cut_prims"      => $cut_prims,
-#		"outline_draw"   => $outline_draw,
-#		"outline_width"  => $outline_width,
-#		"outline_invert" => $outline_invert,
-#
-#		"indentation"   => "even",
-#		"symbol"        => $symbol,
-#		"dx"            => $dx,
-#		"dy"            => $dy,
-#		"x_off"         => "0",
-#		"y_off"         => "0",
-#		"break_partial" => "yes",
-#		"origin_type"   => "datum",
-#
-#	);
+	#	$inCAM->COM(
+	#		'add_surf_fill',
+	#		"type"           => "pattern",
+	#		"cut_prims"      => $cut_prims,
+	#		"outline_draw"   => $outline_draw,
+	#		"outline_width"  => $outline_width,
+	#		"outline_invert" => $outline_invert,
+	#
+	#		"indentation"   => "even",
+	#		"symbol"        => $symbol,
+	#		"dx"            => $dx,
+	#		"dy"            => $dy,
+	#		"x_off"         => "0",
+	#		"y_off"         => "0",
+	#		"break_partial" => "yes",
+	#		"origin_type"   => "datum",
+	#
+	#	);
 
-	$inCAM->COM( "add_surf_fill",
-		"type"                    => "pattern",
-		"origin_type"             => "datum",
-		"symbol"                  => $symbol,
-		"dx"            => $dx,
-		"dy"            => $dy,
-		"x_off"                   => "0",
-		"y_off"                   => "0",
-		"break_partial"           => "yes",
-		"cut_prims"      => $cut_prims,
-		"outline_draw"   => $outline_draw,
-		"outline_width"  => $outline_width,
-		"outline_invert" => $outline_invert,
-		"predefined_pattern_type" => "dots",
-		"indentation"             => "even")
-		 
+	$inCAM->COM(
+				 "add_surf_fill",
+				 "type"                    => "pattern",
+				 "origin_type"             => "datum",
+				 "symbol"                  => $symbol,
+				 "dx"                      => $dx,
+				 "dy"                      => $dy,
+				 "x_off"                   => "0",
+				 "y_off"                   => "0",
+				 "break_partial"           => "yes",
+				 "cut_prims"               => $cut_prims,
+				 "outline_draw"            => $outline_draw,
+				 "outline_width"           => $outline_width,
+				 "outline_invert"          => $outline_invert,
+				 "predefined_pattern_type" => "dots",
+				 "indentation"             => "even"
+	  )
+
 }
 
 # surface cross_hatch pattern
 # $setToExisting:
 # - 1 - set surface pattern to existing selected surface
 # - 0 - activate surface pattern, when new surface will be created
-sub SurfaceCrossHatchPattern {
+sub AddSurfaceCrossHatchPattern {
 	my $self              = shift;
 	my $inCAM             = shift;
 	my $setToExisting     = shift;
@@ -364,6 +400,68 @@ sub AddSurfaceFillSymbol {
 		"polarity"       => $polarity,
 		"step_margin_x"  => $step_margin_x,
 		"step_margin_y"  => $step_margin_y,
+
+		"sr_margin_x"   => $sr_margin_x,
+		"sr_margin_y"   => $sr_margin_y,
+		"sr_max_dist_x" => "0",
+		"sr_max_dist_y" => "0",
+		"nest_sr"       => "yes",
+		"consider_feat" => $consider_feat,
+		"feat_margin"   => $feat_margin,
+
+		"dest"       => "affected_layers",
+		"layer"      => ".affected",
+		"attributes" => 'yes'
+	);
+
+}
+
+sub AddSurfaceFillDot {
+	my $self  = shift;
+	my $inCAM = shift;
+
+	# solid pattern parameters
+
+	my $outline_draw   = shift;
+	my $outline_width  = shift;        # outline width in µm
+	my $outline_invert = shift // 0;
+
+	my $dots_shape    = shift;         # square/circle
+	my $dots_diameter = shift;
+	my $dots_grid     = shift;
+	my $indentation   = shift;         # odd/even
+
+	$outline_draw   = $outline_draw   ? "yes" : 'no';
+	$outline_invert = $outline_invert ? "yes" : 'no';
+
+	# surface fill parameters
+	my $step_margin_x = shift;
+	my $step_margin_y = shift;
+	my $sr_margin_x   = shift;
+	my $sr_margin_y   = shift;
+	my $consider_feat = shift;
+	my $feat_margin   = shift;
+
+	my $polarity = shift // "positive";    #
+
+	$consider_feat = $consider_feat ? "yes" : 'no';
+
+	$inCAM->COM(
+		"sr_fill",
+		"type"                    => "predefined_pattern",
+		"predefined_pattern_type" => "dots",
+		"indentation"             => $indentation,
+		"dots_shape"              => $dots_shape,
+		"dots_diameter"           => $dots_diameter,
+		"dots_grid"               => $dots_grid,
+		"break_partial"           => "yes",
+		"cut_prims"               => "no",
+		"outline_draw"            => $outline_draw,
+		"outline_width"           => $outline_width,
+		"outline_invert"          => $outline_invert,
+		"polarity"                => $polarity,
+		"step_margin_x"           => $step_margin_x,
+		"step_margin_y"           => $step_margin_y,
 
 		"sr_margin_x"   => $sr_margin_x,
 		"sr_margin_y"   => $sr_margin_y,

@@ -268,6 +268,7 @@ sub __DrawPad {
 	if ( $self->{"mirrorX"} ) {
 
 		$p->MirrorX( $self->{"mirrorXPoint"} );
+
 		#$p->Move( 0, -$t->GetHeight() );
 
 		if ( $mirror == 1 ) {
@@ -350,13 +351,23 @@ sub __DrawSurfPoly {
 	}
 	elsif ( $patt->GetPredefined_pattern_type() eq "cross_hatch" ) {
 
-		CamSymbolSurf->SurfaceCrossHatchPattern( $self->{"inCAM"}, 0,
-												 $patt->GetOutline_draw(),
-												 $patt->GetOutline_width(),
-												 $patt->GetLines_angle(),
-												 $patt->GetOutline_invert(),
-												 $patt->GetLines_width(),
-												 $patt->GetLines_dist() );
+		CamSymbolSurf->AddSurfaceCrossHatchPattern( $self->{"inCAM"}, 0,
+													$patt->GetOutline_draw(),
+													$patt->GetOutline_width(),
+													$patt->GetLines_angle(),
+													$patt->GetOutline_invert(),
+													$patt->GetLines_width(),
+													$patt->GetLines_dist() );
+
+	}elsif ( $patt->GetPredefined_pattern_type() eq "dots" ) {
+
+		CamSymbolSurf->AddSurfaceDotPattern(
+											 $self->{"inCAM"},          $patt->GetOutline_draw(),
+											 $patt->GetOutline_width(), $patt->GetOutline_invert(),
+											 $patt->GetDots_shape(),    $patt->GetDots_diameter(),
+											 $patt->GetDots_grid(),     $patt->GetIndentation(),
+											
+		);
 
 	}
 	elsif ( $patt->GetPredefined_pattern_type() eq "symbol" ) {
@@ -385,21 +396,25 @@ sub __DrawSurfFill {
 
 	if ( $patt->GetPredefined_pattern_type() eq "lines" ) {
 
-		CamSymbolSurf->AddSurfaceLinePattern(
-											  $self->{"inCAM"},           $patt->GetOutline_draw(),
-											  $patt->GetOutline_width(),  $patt->GetLines_angle(),
-											  $patt->GetOutline_invert(), $patt->GetLines_width(),
-											  $patt->GetLines_dist()
-		);
+		die "Surface fill ".$patt->GetPredefined_pattern_type()." is not implemented";
 
 	}
 	elsif ( $patt->GetPredefined_pattern_type() eq "cross_hatch" ) {
 
-		CamSymbolSurf->SurfaceCrossHatchPattern(
-			$self->{"inCAM"}, 0, $patt->GetOutline_draw(),
-			$patt->GetOutline_width(),  $patt->GetLines_angle(),
-			$patt->GetOutline_invert(), $patt->GetLines_width(),
-			$patt->GetLines_dist()
+		die "Surface fill ".$patt->GetPredefined_pattern_type()." is not implemented";
+
+	}
+	elsif ( $patt->GetPredefined_pattern_type() eq "dots" ) {
+
+		CamSymbolSurf->AddSurfaceFillDot(
+											 $self->{"inCAM"},          $patt->GetOutline_draw(),
+											 $patt->GetOutline_width(), $patt->GetOutline_invert(),
+											 $patt->GetDots_shape(),    $patt->GetDots_diameter(),
+											 $patt->GetDots_grid(),     $patt->GetIndentation(),
+											 $surf->GetMarginX(),
+											 $surf->GetMarginY(),       $surf->GetSRMarginX(),
+											 $surf->GetSRMarginY(),     $surf->GetConsiderFeat(),
+											 $surf->GetFeatMargin(),    $surf->GetPolarity()
 		);
 
 	}
