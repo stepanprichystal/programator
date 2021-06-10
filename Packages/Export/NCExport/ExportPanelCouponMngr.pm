@@ -22,6 +22,7 @@ use aliased 'Packages::Export::NCExport::MachineMngr::MachineMngr';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Export::NCExport::Helpers::Helper';
 use aliased 'CamHelpers::CamDrilling';
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
@@ -196,11 +197,16 @@ sub __DuplicateOutlineFromBot {
 	my $jobId = $self->{"jobId"};
 
 	my $outlineL = undef;
-	my @l = ( CamJob->GetLayerByType( $inCAM, $jobId, "drill" ), CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
-	CamDrilling->AddHistogramValues( $inCAM, $jobId, $self->{"stepName"}, \@l );
+	my @l = ( CamJob->GetLayerByType( $inCAM, $jobId, "rout" ) );
+
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@l );
 
-	@l = grep { defined $_->{"minTool"} } @l;    # Filter only non empty layers
+	for ( my $i = scalar(@l) - 1 ; $i >= 0 ; $i-- ) {
+
+		my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $self->{"stepName"}, $l[$i]->{"gROWname"}, 1 );
+		splice @l, $i, 1 if( $hist{"total"} == 0 );
+	}
+ 
 
 	if ( scalar( grep { $_->{"gROWdrl_dir"} eq "bot2top" } @l ) ) {
 

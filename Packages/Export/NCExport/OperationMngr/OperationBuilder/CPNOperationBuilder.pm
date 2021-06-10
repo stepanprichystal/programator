@@ -105,10 +105,13 @@ sub __DefineNPlatedOperations {
 	push( @topLayers, @nplt_bMillTop )    if ( scalar(@nplt_bMillTop) );
 	push( @topLayers, @nplt_bstiffcMill ) if ( scalar(@nplt_bstiffcMill) );
 
-	push( @topLayers, @nplt_nMill )  if ( scalar(@nplt_nMill) );
-	push( @topLayers, @nplt_nDrill ) if ( scalar(@nplt_nDrill) );
+	if ( scalar(@topLayers) ) {
 
-	$opManager->AddOperationDef( "fcouponc", \@topLayers, -1 );
+		push( @topLayers, @nplt_nMill )  if ( scalar(@nplt_nMill) );
+		push( @topLayers, @nplt_nDrill ) if ( scalar(@nplt_nDrill) );
+
+		$opManager->AddOperationDef( "fcouponc", \@topLayers, -1 );
+	}
 
 	# 2) Operation name = fcoupons - can contain layer
 	# - @nplt_nDrill
@@ -121,10 +124,14 @@ sub __DefineNPlatedOperations {
 	push( @botLayers, @nplt_bMillBot )    if ( scalar(@nplt_bMillBot) );
 	push( @botLayers, @nplt_bstiffsMill ) if ( scalar(@nplt_bstiffsMill) );
 
-	push( @botLayers, @nplt_nMillBot )  if ( scalar(@nplt_nMillBot) );
-	push( @botLayers, @nplt_nDrillBot ) if ( scalar(@nplt_nDrillBot) );
+	if ( scalar(@botLayers) ) {
 
-	$opManager->AddOperationDef( "fcoupons", \@botLayers, -1 );
+		push( @botLayers, @nplt_nMillBot )  if ( scalar(@nplt_nMillBot) );
+		push( @botLayers, @nplt_nDrillBot ) if ( scalar(@nplt_nDrillBot) );
+
+		$opManager->AddOperationDef( "fcoupons", \@botLayers, -1 );
+
+	}
 }
 
 #-------------------------------------------------------------------------------------------#

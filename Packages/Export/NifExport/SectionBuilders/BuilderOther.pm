@@ -84,7 +84,8 @@ sub Build {
 				my $semiproduct_maincore = "semiproduct_maincore";
 
 				# Flag contain core, which is "semiproduct_maincore" and should be drilled before final PCB pressing
-				my $semiproduct_press = "semiproduct_press";
+				my $semiproduct_press_prepreg  = "semiproduct_press_prepreg";
+				my $semiproduct_press_coverlay = "semiproduct_press_coverlay";
 
 				# 1) Init note for each core
 				my %noteCores = ();
@@ -97,6 +98,7 @@ sub Build {
 				foreach my $p (@semiProd) {
 
 					my @layers = map { $_->GetData() } $p->GetLayers();
+					my @layersMat = map { $_->GetData() } $p->GetLayers(StackEnums->ProductL_MATERIAL);
 					my @cores  = map { $_->GetData() } $p->GetLayers( StackEnums->ProductL_PRODUCT );
 
 					# a) If semiproduct contains more cores, set flag "main core" to specify core
@@ -112,7 +114,14 @@ sub Build {
 							# Case when 1 flex core  + coverlay/prepreg OR 1 rigid core  +  prepreg
 
 							push( @{ $noteCores{ $cores[0]->GetCoreNumber() } }, $semiproduct_maincore );
-							push( @{ $noteCores{ $cores[0]->GetCoreNumber() } }, $semiproduct_press );
+
+							if ( scalar( grep { $_->GetType() eq StackEnums->MaterialType_PREPREG }  @layersMat ) ) {
+								push( @{ $noteCores{ $cores[0]->GetCoreNumber() } }, $semiproduct_press_prepreg );
+							}
+							elsif ( scalar( grep { $_->GetType() eq StackEnums->MaterialType_COVERLAY } @layersMat ) ) {
+								push( @{ $noteCores{ $cores[0]->GetCoreNumber() } }, $semiproduct_press_coverlay );
+							}
+
 						}
 						else {
 
@@ -132,7 +141,17 @@ sub Build {
 								if ( scalar(@coreDepthStart) ) {
 
 									push( @{ $noteCores{ $c->GetCoreNumber() } }, $semiproduct_maincore );
-									push( @{ $noteCores{ $c->GetCoreNumber() } }, $semiproduct_press );
+
+									if ( scalar( grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } @layersMat ) ) {
+										
+										push( @{ $noteCores{ $c->GetCoreNumber() } }, $semiproduct_press_prepreg );
+									}
+									elsif ( scalar( grep { $_->GetType() eq StackEnums->MaterialType_COVERLAY } @layersMat ) ) {
+										
+										push( @{ $noteCores{ $c->GetCoreNumber() } }, $semiproduct_press_coverlay );
+									}
+
+									 
 								}
 								else {
 									push( @{ $noteCores{ $c->GetCoreNumber() } }, $semiproduct_core );
@@ -284,9 +303,9 @@ sub Build {
 				]
 			);
 
-			for ( my $i = scalar(@layers) -1; $i >= 0 ; $i-- ) {
+			for ( my $i = scalar(@layers) - 1 ; $i >= 0 ; $i-- ) {
 				my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $zAxisCpn[0]->{"stepName"}, $layers[$i]->{"gROWname"}, 0 );
-				splice @layers, $i, 1 if($hist{"total"} == 0);
+				splice @layers, $i, 1 if ( $hist{"total"} == 0 );
 			}
 
 			CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );

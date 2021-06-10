@@ -149,7 +149,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $jobId = "d317363";
+	my $jobId = "d322952";
 
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
@@ -166,6 +166,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#@pltLayers = CamDrilling->GetPltNCLayers( $inCAM, $jobId );
 	#my @npltLayers = ( "ftapes", "ftapebr" );
 
+	#my $export = ExportMngr->new( $inCAM, $jobId, $step, Enums->ExportMode_ALL, 0, 1, [], [], [] );
 	my $export = ExportMngr->new( $inCAM, $jobId, $step, Enums->ExportMode_ALL, 0, 1, [], [], [] );
 
 	$export->Run();

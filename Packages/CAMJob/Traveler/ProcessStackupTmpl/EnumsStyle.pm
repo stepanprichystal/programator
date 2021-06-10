@@ -57,7 +57,7 @@ use constant {
 	BoxMainClmnWidth_STCKOVRLP   => 4.5,
 	BoxMainClmnWidth_STCKOVRLPIN => 1,
 	BoxMainClmnWidth_TYPE        => 22,
-	BoxMainClmnWidth_ID          => 4,
+	BoxMainClmnWidth_ID          => 5,
 	BoxMainClmnWidth_KIND        => 23,
 	BoxMainClmnWidth_NAME        => 49,
 	BoxMainClmnWidth_THICK       => 8,

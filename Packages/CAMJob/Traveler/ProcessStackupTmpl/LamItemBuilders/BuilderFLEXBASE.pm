@@ -52,10 +52,10 @@ sub Build {
 	my $cvrlTopInfo = {};
 
 	my $prpgTopExist = $pLayers[0]->GetType() eq StackEnums->ProductL_MATERIAL
-	  && $pLayers[0]->GetData()->GetType() eq StackEnums->MaterialType_PREPREG ? 1 : 0;
+	  && $pLayers[0]->GetData()->GetType() eq StackEnums->MaterialType_COVERLAY ? 1 : 0;
 
 	my $prpgBotExist = $pLayers[-1]->GetType() eq StackEnums->ProductL_MATERIAL
-	  && $pLayers[-1]->GetData()->GetType() eq StackEnums->MaterialType_PREPREG ? 1 : 0;
+	  && $pLayers[-1]->GetData()->GetType() eq StackEnums->MaterialType_COVERLAY ? 1 : 0;
 
 	#	my $cvrlTopExist = $prpgTopExist && $pLayers[0]->GetIsNoFlow() && $pLayers[0]->GetIsCoverlayIncl() ? 1 : 0;
 	#	my $cvrlBotExist = $prpgTopExist && $pLayers[-1]->GetIsNoFlow() && $pLayers[-1]->GetIsCoverlayIncl() ? 1 : 0;

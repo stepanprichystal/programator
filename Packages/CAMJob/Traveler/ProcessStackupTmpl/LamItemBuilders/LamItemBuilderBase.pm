@@ -106,7 +106,7 @@ sub _ProcessStckpMatLayer {
 
 				$itemType = Enums->ItemType_MATFLEXPREPREG;
 				if ( $stckpLayer->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 ) {
-					$valExtraId = "P1";
+					$valExtraId = "P1!!"; # Add exlamation as warining for operators
 				}
 				elsif ( $stckpLayer->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P2 ) {
 					$valExtraId = "P2";

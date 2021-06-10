@@ -307,45 +307,45 @@ sub __SetStackupLayers {
 
 			}
 
-			# 2) Determine if no flow prepreg is laminated on flex core
-			# Only if next NoFlow is FlexCore, which contain "not entirely etched out copper"
-			# Thus if copper has ussage > 0% (this has impact on PCB pressing amount)
-			my $flexPress = 0;
-
-			# Flex above prepreg
-			$flexPress = 1
-			  if (    defined $parsedLayers[ $i - 2 ]
-				   && $parsedLayers[ $i - 2 ]->GetType() eq Enums->MaterialType_CORE
-				   && $parsedLayers[ $i - 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
-				   && defined $parsedLayers[ $i - 1 ]
-				   && $parsedLayers[ $i - 1 ]->GetType() eq Enums->MaterialType_COPPER
-				   && $parsedLayers[ $i - 1 ]->GetUssage() > 0 );
-
-			# Flex below prepreg
-			$flexPress = 1
-			  if (    defined $parsedLayers[ $i + 2 ]
-				   && $parsedLayers[ $i + 2 ]->GetType() eq Enums->MaterialType_CORE
-				   && $parsedLayers[ $i + 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
-				   && defined $parsedLayers[ $i + 1 ]
-				   && $parsedLayers[ $i + 1 ]->GetType() eq Enums->MaterialType_COPPER
-				   && $parsedLayers[ $i + 1 ]->GetUssage() > 0 );
-
-			# If flex core is inside stackup
-			$flexPress = 1
-			  if (
-				   (
-					    defined $parsedLayers[ $i - 2 ]
-					 && $parsedLayers[ $i - 2 ]->GetType() eq Enums->MaterialType_CORE
-					 && $parsedLayers[ $i - 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
-					 && $parsedLayers[ $i - 2 ]->GetCoreNumber() > 1
-					 && $parsedLayers[ $i - 2 ]->GetCoreNumber() < scalar( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers )
-				   )
-				   || (    defined $parsedLayers[ $i + 2 ]
-						&& $parsedLayers[ $i + 2 ]->GetType() eq Enums->MaterialType_CORE
-						&& $parsedLayers[ $i + 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
-						&& $parsedLayers[ $i + 2 ]->GetCoreNumber() > 1
-						&& $parsedLayers[ $i + 2 ]->GetCoreNumber() < scalar( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers ) )
-			  );
+#			# 2) Determine if no flow prepreg is laminated on flex core
+#			# Only if next NoFlow is FlexCore, which contain "not entirely etched out copper"
+#			# Thus if copper has ussage > 0% (this has impact on PCB pressing amount)
+#			my $flexPress = 0;
+#
+#			# Flex above prepreg
+#			$flexPress = 1
+#			  if (    defined $parsedLayers[ $i - 2 ]
+#				   && $parsedLayers[ $i - 2 ]->GetType() eq Enums->MaterialType_CORE
+#				   && $parsedLayers[ $i - 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
+#				   && defined $parsedLayers[ $i - 1 ]
+#				   && $parsedLayers[ $i - 1 ]->GetType() eq Enums->MaterialType_COPPER
+#				   && $parsedLayers[ $i - 1 ]->GetUssage() > 0 );
+#
+#			# Flex below prepreg
+#			$flexPress = 1
+#			  if (    defined $parsedLayers[ $i + 2 ]
+#				   && $parsedLayers[ $i + 2 ]->GetType() eq Enums->MaterialType_CORE
+#				   && $parsedLayers[ $i + 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
+#				   && defined $parsedLayers[ $i + 1 ]
+#				   && $parsedLayers[ $i + 1 ]->GetType() eq Enums->MaterialType_COPPER
+#				   && $parsedLayers[ $i + 1 ]->GetUssage() > 0 );
+#
+#			# If flex core is inside stackup
+#			$flexPress = 1
+#			  if (
+#				   (
+#					    defined $parsedLayers[ $i - 2 ]
+#					 && $parsedLayers[ $i - 2 ]->GetType() eq Enums->MaterialType_CORE
+#					 && $parsedLayers[ $i - 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
+#					 && $parsedLayers[ $i - 2 ]->GetCoreNumber() > 1
+#					 && $parsedLayers[ $i - 2 ]->GetCoreNumber() < scalar( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers )
+#				   )
+#				   || (    defined $parsedLayers[ $i + 2 ]
+#						&& $parsedLayers[ $i + 2 ]->GetType() eq Enums->MaterialType_CORE
+#						&& $parsedLayers[ $i + 2 ]->GetCoreRigidType() eq Enums->CoreType_FLEX
+#						&& $parsedLayers[ $i + 2 ]->GetCoreNumber() > 1
+#						&& $parsedLayers[ $i + 2 ]->GetCoreNumber() < scalar( grep { $_->GetType() eq Enums->MaterialType_CORE } @parsedLayers ) )
+#			  );
 
 			# 3) Decide if create new prepreg parent
 			my $newParent = 0;
@@ -364,7 +364,7 @@ sub __SetStackupLayers {
 			  if (    defined $curParentPrpg
 				   && $curParentPrpg->GetIsNoFlow()
 				   && $parsedLayers[$i]->GetIsNoFlow()
-				   && $curParentPrpg->GetFlexPress != $flexPress );
+				  );
 
 			if ($newParent) {
 
@@ -383,7 +383,7 @@ sub __SetStackupLayers {
 				$curParentPrpg->{"parent"}   = 1;
 				$curParentPrpg->{"noFlow"}   = $parsedLayers[$i]->GetIsNoFlow();
 				$curParentPrpg->{"noFlowType"} = $noFlowType if ( $parsedLayers[$i]->GetIsNoFlow() );
-				$curParentPrpg->{"flexPress"}  = $flexPress  if ( $parsedLayers[$i]->GetIsNoFlow() );
+				#$curParentPrpg->{"flexPress"}  = $flexPress  if ( $parsedLayers[$i]->GetIsNoFlow() );
 
 			}
 
@@ -391,7 +391,7 @@ sub __SetStackupLayers {
 			my $childPrpgInfo = $parsedLayers[$i];
 
 			$childPrpgInfo->{"noFlowType"} = $noFlowType if ( $childPrpgInfo->GetIsNoFlow() );
-			$childPrpgInfo->{"flexPress"}  = $flexPress  if ( $childPrpgInfo->GetIsNoFlow() );
+			#$childPrpgInfo->{"flexPress"}  = $flexPress  if ( $childPrpgInfo->GetIsNoFlow() );
 
 			$curParentPrpg->AddChildPrepreg($childPrpgInfo);
 

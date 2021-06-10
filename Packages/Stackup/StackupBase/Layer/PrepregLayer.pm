@@ -83,13 +83,13 @@ sub GetNoFlowType {
 	return $self->{"noFlowType"};
 }
 
-sub GetFlexPress {
-	my $self = shift;
-
-	die "Prepreg is not NoFLow " unless ( $self->GetIsNoFlow() );
-
-	return $self->{"flexPress"};
-}
+#sub GetFlexPress {
+#	my $self = shift;
+#
+#	die "Prepreg is not NoFLow " unless ( $self->GetIsNoFlow() );
+#
+#	return $self->{"flexPress"};
+#}
 
 
 
@@ -118,7 +118,7 @@ sub AddCoverlay {
 	
 	$self->{"noFlowType"} = Enums->NoFlowPrepreg_P1; # Change type of prepregs to P1
 
-	$self->{"inclCoverlay"} = $cvrl;
+	#$self->{"inclCoverlay"} = $cvrl;
 }
 
 sub SetThickCuUsage{

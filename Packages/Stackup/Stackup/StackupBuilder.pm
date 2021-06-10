@@ -271,7 +271,16 @@ sub __AddCoverlayLayers {
 					die "Above copper:$sigL has to be NoFlow prepreg to include coverlay layer: " . $cvrL[$i];
 				}
 
+				# Set prepreg type 1
 				$self->{"stackup"}->{"layers"}->[$prprgIdx]->AddCoverlay($layerInfo);
+
+				# Put covelray next by core copper
+				if ( $cvrlPos eq "above" ) {
+					splice @{ $self->{"stackup"}->{"layers"} }, $idx, 0, $layerInfo;
+				}
+				elsif ( $cvrlPos eq "below" ) {
+					splice @{ $self->{"stackup"}->{"layers"} }, $idx + 1, 0, $layerInfo;
+				}
 			}
 
 		}
@@ -399,7 +408,7 @@ sub __BuildProductInput {
 		# Prepare NC which are not core and start/stop at product (when sequential lamination: blind through, blind)
 		# Must not start in first/last copper layer (eg 4vv from 2cores with blind drill)
 		my @NCNoCore =
-		   grep {$_->{"NCSigStartOrder"} != 1 && $_->{"NCSigStartOrder"} != $self->{"stackup"}->GetCuLayerCnt() }
+		  grep { $_->{"NCSigStartOrder"} != 1 && $_->{"NCSigStartOrder"} != $self->{"stackup"}->GetCuLayerCnt() }
 		  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cDrill && $_->{"type"} ne EnumsGeneral->LAYERTYPE_plt_cFillDrill } @NCAffect;
 
 		my @pNClayers =
@@ -743,14 +752,14 @@ sub __IdentifyFlexCoreProduct {
 			# Add coverlay to product if is defined OR
 			# Add prepreg to product if is defined and copper usage > 0
 			# (prepreg can missing when Outer RigidFlex if flex core is placed top)
-			if (
-				( defined $prpgP1Top && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_COVERLAY )
-				|| (    defined $prpgP1Top
-					 && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_PREPREG
-					 && $pars->[ $i - 1 ]->{"l"}->GetUssage() > 0 )
-
-			  )
-			{
+			#			if (
+			#				( defined $prpgP1Top && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_COVERLAY )
+			#				|| (    defined $prpgP1Top
+			#					 && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_PREPREG
+			#					 && $pars->[ $i - 1 ]->{"l"}->GetUssage() > 0 )
+			#
+			#			  )
+			if ( defined $prpgP1Top && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_COVERLAY ) {
 				$prpgP1Top->{"pId"} = $$currPId;
 			}
 
@@ -761,29 +770,32 @@ sub __IdentifyFlexCoreProduct {
 			# Add coverlay to product if is defined OR
 			# Add prepreg to product if is defined and copper usage > 0
 			# (prepreg can missing when Outer RigidFlex if flex core is placed bottom)
+			#			if (
+			#				( defined $prpgP1Bot && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_COVERLAY )
+			#				|| (    defined $prpgP1Bot
+			#					 && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_PREPREG
+			#					 && $pars->[ $i + 1 ]->{"l"}->GetUssage() > 0 )
+			#
+			#			  )
 			if (
-				( defined $prpgP1Bot && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_COVERLAY )
-				|| (    defined $prpgP1Bot
-					 && $prpgP1Top->{"l"}->GetType() eq Enums->MaterialType_PREPREG
-					 && $pars->[ $i + 1 ]->{"l"}->GetUssage() > 0 )
-
+				defined $prpgP1Bot && $prpgP1Bot->{"l"}->GetType() eq Enums->MaterialType_COVERLAY
 			  )
 			{
 				$prpgP1Bot->{"pId"} = $$currPId;
 			}
 
-			# Do check, if flex core is inner, prepreg souhld be from both side of flex core
-			# (even if Copper ussage is 0%)
-			if (    $pars->[$i]->{"l"}->GetCoreNumber() > 1
-				 && $pars->[$i]->{"l"}->GetCoreNumber() < scalar( $self->{"stackup"}->GetAllCores() ) )
-			{
+#			# Do check, if flex core is inner, prepreg souhld be from both side of flex core
+#			# (even if Copper ussage is 0%)
+#			if (    $pars->[$i]->{"l"}->GetCoreNumber() > 1
+#				 && $pars->[$i]->{"l"}->GetCoreNumber() < scalar( $self->{"stackup"}->GetAllCores() ) )
+#			{
+#
+#				$prpgP1Top->{"pId"} = $$currPId;
+#				$prpgP1Bot->{"pId"} = $$currPId;
+#
+#			}
 
-				$prpgP1Top->{"pId"} = $$currPId;
-				$prpgP1Bot->{"pId"} = $$currPId;
-
-			}
-
-			$$currPId++;                            # increment product id
+			$$currPId++;    # increment product id
 		}
 	}
 

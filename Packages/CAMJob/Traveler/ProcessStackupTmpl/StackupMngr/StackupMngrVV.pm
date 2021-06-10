@@ -104,7 +104,7 @@ sub GetAllLamination {
 			$lamType = Enums->LamType_ORIGIDFLEXFINAL;
 		}
 
-		my $lam = StackupLam->new( $lamOrder, $lamType,"DPS". $pressP->GetId(), $pressP );
+		my $lam = StackupLam->new( $lamOrder, $lamType, "DPS" . $pressP->GetId(), $pressP );
 		push( @lamintaions, $lam );
 
 		$lamOrder++;
@@ -112,7 +112,7 @@ sub GetAllLamination {
 		# Check if press contain extra lamination
 		if ( $pressP->GetExistExtraPress() ) {
 
-			my $lam = StackupLam->new( $lamOrder, Enums->LamType_CVRLPRODUCT,  "DPS".$pressP->GetId() , $pressP );
+			my $lam = StackupLam->new( $lamOrder, Enums->LamType_CVRLPRODUCT, "DPS" . $pressP->GetId(), $pressP );
 			push( @lamintaions, $lam );
 
 			$lamOrder++;
@@ -207,15 +207,17 @@ sub GetPressProgramInfo {
 		$pInfo{"name"} = "Stiffener_tape";
 
 	}
-	elsif (    $lamType eq Enums->LamType_FLEXBASE
-			|| $lamType eq Enums->LamType_ORIGIDFLEXFINAL
-			|| $lamType eq Enums->LamType_IRIGIDFLEXFINAL )
+	elsif ( $lamType eq Enums->LamType_ORIGIDFLEXFINAL
+			|| $lamType eq Enums->LamType_IRIGIDFLEXFINAL
+	  )
 	{
 
 		$pInfo{"name"} = "Flex";
 
 	}
-	elsif ( $lamType eq Enums->LamType_CVRLPRODUCT ) {
+	elsif (    $lamType eq Enums->LamType_CVRLPRODUCT
+			|| $lamType eq Enums->LamType_FLEXBASE )
+	{
 
 		$pInfo{"name"} = "Flex_coverlay";
 
@@ -225,13 +227,13 @@ sub GetPressProgramInfo {
 		# Choose proper program by prepreg material kind
 		# $IProduct should by tzpe of Product_INPUT
 		my @matLayers = grep { $_->GetType() eq StackEnums->ProductL_MATERIAL } $IProduct->GetLayers();
-		my @prpgs = grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } map {$_->GetData() } @matLayers;
+		my @prpgs = grep { $_->GetType() eq StackEnums->MaterialType_PREPREG } map { $_->GetData() } @matLayers;
 		my $matKind = uc( $prpgs[0]->GetTextType() );
 		$matKind =~ s/\s//g;
- 
+
 		$pInfo{"name"} = $matKind;
-		 
-	} 
+
+	}
 
 	$pInfo{"name"} .= "_$h";
 

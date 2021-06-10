@@ -109,7 +109,7 @@ sub GetCoreMatComp {
 
 	# 1) if one side top/bot has ussage 100% (outer cores in stackup), do not consider this side and devide stretch by 2
 	# We assume, core with one side full covered with copper is shrinked less, because copper prevent shrink
-
+	# TODO - add condition if core do not contain inner coverlay (pressing)
 	if ( $core->GetTopCopperLayer()->GetUssage() == 1 || $core->GetBotCopperLayer()->GetUssage() == 1 ) {
 
 		use constant EXTRA_OUTERCORE => 0.5;    # reduce stretch 50 % percent
