@@ -217,7 +217,7 @@ sub Run {
 						"Ve stepu: \"${s}\", vrstvě: \"" . $l->{"gROWname"}
 						  . "\" byla nalezena hloubková fréza surfacem, ale není požadováno vytvoření Z-axis kuponu."
 						  . "Opravdu nepožaduješ vytvoření zaxis kuponu, které zaručí požadovanou hloubku od zákazníka?"
-						  . "Pokud požaduješ, spusť průvodce na vytvoření z-axis kuponu"
+						  . "Pokud požaduješ, spusť průvodce na vytvoření z-axis kuponu (ZaxisCouponScript.pl)"
 					);
 
 				}
