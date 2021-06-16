@@ -86,6 +86,8 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::NifExport::NifExportTmpP
 
 use aliased 'Managers::MessageMngr::MessageMngr';
 use aliased 'Packages::CAMJob::Microsection::CouponIPC3Main';
+
+use aliased 'Packages::GuideSubs::Coupons::DoZaxisCoupon';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::Polygon::Features::Features::Features';
 
@@ -1151,6 +1153,9 @@ sub _Panelize {
 			 	$inCAM->PAUSE("Vloz 3x IPC3 coupon. Step: coupon_IPC3main");
 			}
 			
+			
+			# zaxis coupon
+			my $resZaxis = DoZaxisCoupon->GenerateZaxisCoupons($inCAM, $jobName );
 			
 			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
 					my ($xPanelSize,$yPanelSize) = _GetSizeOfPcb($jobName, 'panel');

@@ -137,7 +137,7 @@ sub __PreparePreregNo1 {
 		if ($pins) {
 
 			my $clearance = $CLEARANCEP1;
-			my $bendParser = CoverlayPinParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, 2 * $clearance );
+			my $bendParser = BendAreaParser->new( $inCAM, $jobId, $step, PolyEnums->Dir_CW, 2 * $clearance );
 
 			my @mess = (@messHead);
 			push( @mess, "Vytvoření frézovací vrstvy: $prereglName" );

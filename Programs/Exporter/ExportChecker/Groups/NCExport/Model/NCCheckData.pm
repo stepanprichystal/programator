@@ -54,6 +54,7 @@ use aliased 'Packages::CAM::FeatureFilter::Enums' => 'FiltrEnums';
 use aliased 'Packages::CAMJob::Drilling::NPltDrillCheck';
 use aliased 'Packages::CAMJob::Routing::RoutStiffener';
 use aliased 'Packages::Export::NCExport::Enums' => 'EnumsNC';
+use aliased 'Packages::CAMJob::Microsection::CouponZaxisMill';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -450,7 +451,7 @@ sub OnCheckGroupData {
 	}
 
 	# 13) Check if exist layer D. This layer is permited so far (but will be probablz alowed in feature) 27.2.2018
-	if ( $defaultInfo->LayerExist("d") || $defaultInfo->LayerExist("ds")) {
+	if ( $defaultInfo->LayerExist("d") || $defaultInfo->LayerExist("ds") ) {
 		$dataMngr->_AddErrorResult(
 									"NC vrstva D/DS",
 									"Něco se rozbilo. V matrixu je NC vrstva D/DS. "
@@ -1245,6 +1246,89 @@ sub OnCheckGroupData {
 
 			}
 
+		}
+	}
+
+	# X) Check if there is surface depth rout and coupon is not required
+
+	{
+		my @depthLayers = grep {
+			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
+		} $defaultInfo->GetNCLayers();
+
+		my @steps = CamStep->GetJobEditSteps( $inCAM, $jobId );
+
+		foreach my $l (@depthLayers) {
+
+			foreach my $s (@steps) {
+
+				# Check if there is surface, if not, skip
+				my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s, $l->{"gROWname"}, 0 );
+				last if ( $hist{"surf"} == 0 );
+				my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $l->{"gROWname"} );
+				if ( !defined $pnlLAtt{"zaxis_rout_calibration_coupon"} || $pnlLAtt{"zaxis_rout_calibration_coupon"} =~ /none/i ) {
+
+					$dataMngr->_AddWarningResult(
+											"Z-axis kupon",
+											"Ve stepu: \"${s}\", vrstvě: \""
+											  . $l->{"gROWname"}
+											  . "\" byla nalezena hloubková fréza surfacem, ale není požadováno vytvoření Z-axis kuponu."
+											  . "Opravdu nepožaduješ vytvoření zaxis kuponu, které zaručí požadovanou hloubku od zákazníka?"
+											  . "Pokud požaduješ, spusť průvodce na vytvoření z-axis kuponu"
+					);
+				}
+			}
+		}
+
+	}
+
+	# Check if there is requierd coupon, but do not exist in panel
+
+	{
+		my $cpnRequired = 0;
+		my @depthLayers = grep {
+			     $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
+			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+			  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
+		} $defaultInfo->GetNCLayers();
+
+		my @steps = CamStep->GetJobEditSteps( $inCAM, $jobId );
+
+		foreach my $l (@depthLayers) {
+
+			foreach my $s (@steps) {
+
+				my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $l->{"gROWname"} );
+				if ( defined $pnlLAtt{"zaxis_rout_calibration_coupon"} && $pnlLAtt{"zaxis_rout_calibration_coupon"} !~ /none/i ) {
+					$cpnRequired = 1;
+					last;
+				}
+			}
+
+			last if ($cpnRequired);
+		}
+
+		# Check if
+		if ($cpnRequired) {
+
+			my @allSteps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
+			my $cpn = CouponZaxisMill->new( $inCAM, $jobId );
+			my @cpnStep = map { $_->{"stepName"} } $cpn->GetAllCpnSteps();
+
+			my $cpnExist = 1;
+			foreach my $cpnStep (@cpnStep) {
+
+				my $exist = first { $_ eq $cpnStep } @allSteps;
+
+				unless ($exist) {
+					$dataMngr->_AddErrorResult( "Z-axis kupon", "Ve stepu panel není umístěn z-axis kupon step: \"" . $cpnStep . "\"" );
+					last;
+				}
+			}
 		}
 	}
 

@@ -51,7 +51,6 @@ sub SortLayersByRules {
 	my %priority = ();
 
 	# plated layer are merged together
-	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill }    = 0;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }     = 0;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_cFillDrill } = 0;
 
@@ -157,7 +156,6 @@ sub GetHeaderLayer {
 	my %priority = ();
 
 	# plated layer are merged together
-	$priority{ EnumsGeneral->LAYERTYPE_plt_dcDrill }    = 0;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_cDrill }     = 0;
 	$priority{ EnumsGeneral->LAYERTYPE_plt_cFillDrill } = 0;
 

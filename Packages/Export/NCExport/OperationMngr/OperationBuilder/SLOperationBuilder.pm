@@ -164,7 +164,6 @@ sub __DefinePlatedOperations {
 	my @plt_nMill      = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_nMill } };         # normall mill slits
 	my @plt_bMillTop   = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillTop } };      # z-axis top mill slits
 	my @plt_bMillBot   = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_bMillBot } };      # z-axis bot mill slits
-	my @plt_dcDrill    = @{ $pltDrillInfo{ EnumsGeneral->LAYERTYPE_plt_dcDrill } };       # drill crosses
 
 	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
 

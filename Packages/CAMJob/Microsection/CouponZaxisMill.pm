@@ -49,8 +49,8 @@ use aliased 'Packages::CAM::FeatureFilter::Enums' => "FiltrEnums";
 
 # Measurement typy
 
-use constant CPNTYPE_MATERIALRESTVA  => "CouponType_materialRestValue";
-use constant CPNTYPE_DEPTHMILLINGVAL => "CouponType_depthMillingValue";
+use constant CPNTYPE_MATERIALRESTVAL => "MaterialRestValue";
+use constant CPNTYPE_DEPTHMILLINGVAL => "DepthMillValue";
 
 # General step settings, coupon steps, coupon count
 
@@ -133,13 +133,34 @@ sub CheckSpecifications {
 		my $cpnRequired = 0;
 		foreach my $s (@childSteps) {
 			my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
-			if ( defined $pnlLAtt{"depth_rout_calibration_coupon"} && $pnlLAtt{"depth_rout_calibration_coupon"} eq "yes" ) {
+			if ( defined $pnlLAtt{"zaxis_rout_calibration_coupon"} && $pnlLAtt{"zaxis_rout_calibration_coupon"} !~ /none/i ) {
 				$cpnRequired = 1;
 				last;
 			}
 		}
 
 		next unless ($cpnRequired);
+
+		# 2) Check if coupon depth type is equal through all steps in this layer
+		my @cpnTypes = ();
+		foreach my $s (@childSteps) {
+			my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+			if ( defined $pnlLAtt{"zaxis_rout_calibration_coupon"} && $pnlLAtt{"zaxis_rout_calibration_coupon"} !~ /none/i ) {
+				push( @cpnTypes, $pnlLAtt{"zaxis_rout_calibration_coupon"} );
+			}
+		}
+
+		if ( scalar( uniq(@cpnTypes) ) > 1 ) {
+
+			$result = 0;
+			$$errMess .=
+			    "Only one Zaxis coupon type (layer attribute: zaxis_rout_calibration_coupon ) is alowed for NC layer:"
+			  . $l->{"gROWname"}
+			  . " through all steps.";
+			$$errMess .= "All found zaxis coupon types:" . join( ",", @cpnTypes );
+
+			return $result;
+		}
 
 		# 2) Check all total pcb thickness value per layer, there should be one if coupon request
 		my @allTotPCBThick = ();
@@ -150,19 +171,35 @@ sub CheckSpecifications {
 			next if ( $hist{"total"} == 0 );
 
 			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+			my $matRest = CPNTYPE_MATERIALRESTVAL;
+			if ( defined $att{"zaxis_rout_calibration_coupon"} && $att{"zaxis_rout_calibration_coupon"} =~ /$matRest/i ) {
 
-			my $pcbThick = $att{"final_pcb_thickness"};
+				my $pcbThick = $att{"final_pcb_thickness"};
+				if ( defined $pcbThick && $pcbThick ne "" && $pcbThick > 0 ) {
 
-			if ( defined $pcbThick && $pcbThick ne "" && $pcbThick > 0 ) {
+					push( @allTotPCBThick, $pcbThick );
+				}
+				else {
 
-				push( @allTotPCBThick, $pcbThick );
+					$result = 0;
+					$$errMess .=
+					    "Final PCB thickness (layer attribute: final_pcb_thickness) is not set for layer: "
+					  . $l->{"gROWname"}
+					  . ", step: "
+					  . $s->{"stepName"};
+					return $result;
+				}
 			}
 		}
 
 		if ( scalar( uniq(@allTotPCBThick) ) > 1 ) {
 
 			$result = 0;
-			$$errMess .= "Only one PCB thickness is alowed for specific NC layer (through all steps) if zaxis coupon is required";
+			$$errMess .=
+			    "Only one PCB thickness (layer attribute: final_pcb_thickness) is alowed for NC layer: "
+			  . $l->{"gROWname"}
+			  . " through all steps  if zaxis coupon is required. ";
+			$$errMess .= "All found PCB thickness: " . join( ",", @allTotPCBThick );
 
 			return $result;
 		}
@@ -183,7 +220,7 @@ sub CheckSpecifications {
 		if ( scalar( uniq(@allToolDepths) ) > 1 ) {
 
 			$result = 0;
-			$$errMess .= "Only one tool depth is alowed for specific NC layer (through all steps) if zaxis coupon is required";
+			$$errMess .= "Only one tool depth is alowed for specific NC layer( through all steps ) if zaxis coupon is required";
 
 			return $result;
 		}
@@ -193,10 +230,10 @@ sub CheckSpecifications {
 }
 
 # Return array of all depth routing which sould be measured
-# Request for measure is indicated by layer attribute: depth_rout_calibration_coupon
+# Request for measure is indicated by layer attribute: zaxis_rout_calibration_coupon
 # Each array item contains:
 # - layer: NC layer
-# - type: CPNTYPE_MATERIALRESTVA/CPNTYPE_DEPTHMILLINGVAL
+# - type: CPNTYPE_MATERIALRESTVAL/CPNTYPE_DEPTHMILLINGVAL
 # - toolDepth: real tool depth    [um]
 # - side: which side is PCB routed from
 # - measureValue: value which has to be measured on final PCB
@@ -212,7 +249,7 @@ sub GetAllSpecifications {
 
 	unless ( $self->CheckSpecifications( \$errMess ) ) {
 
-		die "Check before generate coupon specifications: " . $errMess;
+		die "Check before generate coupon specifications :" . $errMess;
 	}
 
 	my @depthLayers = CamDrilling->GetNCLayersByTypes(
@@ -223,7 +260,6 @@ sub GetAllSpecifications {
 													   ]
 	);
 
-	 
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@depthLayers );
 	my @childSteps = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
 
@@ -233,7 +269,7 @@ sub GetAllSpecifications {
 		my $cpnRequired = 0;
 		foreach my $s (@childSteps) {
 			my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
-			if ( defined $pnlLAtt{"depth_rout_calibration_coupon"} && $pnlLAtt{"depth_rout_calibration_coupon"} eq "yes" ) {
+			if ( defined $pnlLAtt{"zaxis_rout_calibration_coupon"} && $pnlLAtt{"zaxis_rout_calibration_coupon"} !~ /none/i ) {
 				$cpnRequired = 1;
 				last;
 			}
@@ -280,10 +316,10 @@ sub GetAllSpecifications {
 		my %specInf = ();
 
 		$specInf{"layer"}        = $l;
-		$specInf{"type"}         = defined $pcbThickValue ? CPNTYPE_MATERIALRESTVA : CPNTYPE_DEPTHMILLINGVAL;
-		$specInf{"toolDepth"}    = $depthValue * 1000;                                                          # in [um]
-		$specInf{"side"}         = $l->{"gROWdrl_dir"} eq "bot2top" ? "bot" : "top";                            # which side is PCB routed from
-		$specInf{"measureValue"} = defined $pcbThickValue ? $pcbThickValue : $depthValue*1000;                       # in [um]
+		$specInf{"type"}         = defined $pcbThickValue ? CPNTYPE_MATERIALRESTVAL : CPNTYPE_DEPTHMILLINGVAL;
+		$specInf{"toolDepth"}    = $depthValue * 1000;                                                           # in [um]
+		$specInf{"side"}         = $l->{"gROWdrl_dir"} eq "bot2top" ? "bot" : "top";                             # which side is PCB routed from
+		$specInf{"measureValue"} = defined $pcbThickValue ? $pcbThickValue : $depthValue * 1000;                 # in [um]
 
 		push( @specs, \%specInf );
 
@@ -293,7 +329,7 @@ sub GetAllSpecifications {
 }
 
 # Return array of all depth routing which sould be measured
-# Request for measure is indicated by layer attribute: depth_rout_calibration_coupon
+# Request for measure is indicated by layer attribute: zaxis_rout_calibration_coupon
 # Each array item contains:
 # - id: order id of coupon, starts from 1
 # - stepName: full coupon step name which include depth increase as suffix
@@ -377,8 +413,10 @@ sub CreateCoupons {
 		# Draw coupon
 
 		$self->__DrawCoupon( $cpnName, $cpnW, $cpnH, \@specs, $cpnId, $oriDepth );
-		 
+
 	}
+
+	return map { $_->{"stepName"} } @allCPns;
 
 }
 
@@ -523,7 +561,7 @@ sub __DrawCoupon {
 
 		my @routAreaLim = ();
 
-		if ( $specInf->{"type"} eq CPNTYPE_MATERIALRESTVA ) {
+		if ( $specInf->{"type"} eq CPNTYPE_MATERIALRESTVAL ) {
 
 			push( @routAreaLim, Point->new( 0,                      0 ) );
 			push( @routAreaLim, Point->new( 0,                      $CPN_SEC_ROUT_H / 1000 ) );
@@ -582,7 +620,7 @@ sub __DrawCoupon {
 
 		my $drawTexts = SymbolDrawing->new( $inCAM, $jobId, Point->new( 0, $hCpn / 1000 ) );
 
-		my $pIdText =   $oriDepth ? "ORI" : $cpnNumber ;
+		my $pIdText = $oriDepth ? "ORI" : $cpnNumber;
 		my $pIdOriX =
 		    $mirror == 1
 		  ? $wCpn / 1000 - ( $wCpn / 1000 - length($pIdText) * $CPN_ID_SIZE / 1000 ) / 2
@@ -608,7 +646,7 @@ sub __DrawCoupon {
 
 			#$measureTypyTxt =~ s/\./,/;
 
-			$measureTypyTxt = "Z" . $measureTypyTxt if ( $specInf->{"type"} eq CPNTYPE_MATERIALRESTVA );
+			$measureTypyTxt = "Z" . $measureTypyTxt if ( $specInf->{"type"} eq CPNTYPE_MATERIALRESTVAL );
 			$measureTypyTxt = "H" . $measureTypyTxt if ( $specInf->{"type"} eq CPNTYPE_DEPTHMILLINGVAL );
 
 			my $measureTypOriX =
@@ -645,7 +683,8 @@ sub __DrawCoupon {
 	# ------------------------------------------------------------------------------------------------
 
 	# Copy prepared mask to existing solder mask layer
-	my @masksL = grep { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} =~ /^m[cs]\d*$/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	my @masksL =
+	  grep { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} =~ /^m[cs]\d*$/ } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
 	# UnMask title text
 
@@ -847,12 +886,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d322952";
+	my $jobId = "d322953";
 	my $step  = "panel";
 
 	#my $m = CouponZaxisMill->new( $inCAM, $jobId );
 
-	#my $cpn = EnumsGeneral->Coupon_ZAXIS . "1050";
+	#my $cpn = EnumsGeneral->Coupon_ZAXIS ."1050";
 
 	my $c = CouponZaxisMill->new( $inCAM, $jobId );
 	$c->CreateCoupons();

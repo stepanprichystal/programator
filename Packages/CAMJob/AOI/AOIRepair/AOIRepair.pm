@@ -204,8 +204,10 @@ sub CreateAOIRepairJob {
 
 	# Add necessary NC layers
 	my @sigL =
-	  grep { $_->{"gROWlayer_type"} =~ /(signal)|(power_ground)|(mixed)/i } CamJob->GetBoardLayers( $inCAM, $jobIdSrc );
+	  grep { $_->{"gROWlayer_type"} =~ /(signal)|(power_ground)|(mixed)|(bend_area)/i } CamJob->GetBoardLayers( $inCAM, $jobIdSrc );
 
+	 
+	
 	my @NCL = CamDrilling->GetNCLayersByTypes(
 											   $inCAM,
 											   $jobIdSrc,
@@ -222,7 +224,7 @@ sub CreateAOIRepairJob {
 
 	CamHelper->OpenJob( $inCAM, $jobIdOut, 0 );    # Set output job contextOut
 	CamHelper->OpenStep( $inCAM, $jobIdOut, "panel" );    # Switch to step o+1 in order set group
-
+	
 	my @lToCreate = ( @sigL, @NCL );
 
 	foreach my $l (@lToCreate) {

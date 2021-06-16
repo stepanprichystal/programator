@@ -32,7 +32,7 @@ use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
-#----- 
+#-----
 # Helper function which move M47 messsage on right place in rout files
 # Reason: for rout file, we request for every tool with G83 display info
 # message, but messages are placed together above "body" lines after export
@@ -137,49 +137,89 @@ sub RenumberToolASC {
 	my $self = shift;
 	my $file = shift;
 
-	my %t      = ();      #translate table
+	my %th     = ();      #translate table for head tools
+	my %tb     = ();      #translate table for body tools
 	my $prefix = "@%";    # helper substitute symbol for renumbering tool
+
+	my $startNumber = 1;
+
+	# Check if there are tools in header
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"header"} } ) ; $i++ ) {
+
+		my $l = @{ $file->{"header"} }[$i];
+
+		my $tool = ( $l =~ m/^T(\d+)$/gm )[0];    # gm ignore new lines
+
+		if ( defined $tool && !exists $tb{ int($tool) } ) {
+
+			my $tNew = $startNumber + scalar( keys %tb );
+			$tb{ int($tool) } = $tNew;
+		}
+	}
 
 	# 1) Build translate table
 	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) ; $i++ ) {
 
 		my $l = @{ $file->{"body"} }[$i];
 
-		if ( $l->{"tool"} && !exists $t{ $l->{"tool"} } ) {
+		if ( $l->{"tool"} && !exists $tb{ $l->{"tool"} } ) {
 
-			my $tNew = scalar( keys %t ) + 1;
-			$t{ $l->{"tool"} } = $tNew;
+			my $tNew = scalar( keys %tb ) + 1;
+			$tb{ $l->{"tool"} } = $tNew;
 		}
 	}
 
-	# 2) Renumber tools in "body" and "footer"
+	# 2) Renumber tools in "header"
+
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"header"} } ) ; $i++ ) {
+
+		my $l = @{ $file->{"header"} }[$i];
+
+		my $tool = ( $l =~ m/^T(\d+)$/gm )[0];
+
+		if ( defined $tool && defined $tb{ int($tool) } ) {
+
+			my $new = sprintf( "%02d", $tb{ int($tool) } );
+
+			$file->{"header"}->[$i] =~ s/T$tool/$prefix$new/;
+		}
+	}
+
+	# 3) Renumber tools in "body"
 
 	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) ; $i++ ) {
 
 		if ( $file->{"body"}->[$i]->{"tool"} ) {
 
 			my $old = sprintf( "%02d", $file->{"body"}->[$i]->{"tool"} );
-			my $new = sprintf( "%02d", $t{ $file->{"body"}->[$i]->{"tool"} } );
+			my $new = sprintf( "%02d", $tb{ $file->{"body"}->[$i]->{"tool"} } );
 
 			$file->{"body"}->[$i]->{"line"} =~ s/T$old/$prefix$new/;
 
 			# update tool in parsed file
-			$file->{"body"}->[$i]->{"tool"} = $t{ $file->{"body"}->[$i]->{"tool"} };
+			$file->{"body"}->[$i]->{"tool"} = $tb{ $file->{"body"}->[$i]->{"tool"} };
 		}
 	}
 
+	# 4) Renumber tools in  "footer"
 	for ( my $i = 0 ; $i < scalar( @{ $file->{"footer"} } ) ; $i++ ) {
 
 		my $old = sprintf( "%02d", $file->{"footer"}->[$i]->{"tool"} );
-		my $new = sprintf( "%02d", $t{ $file->{"footer"}->[$i]->{"tool"} } );
+		my $new = sprintf( "%02d", $tb{ $file->{"footer"}->[$i]->{"tool"} } );
 
 		$file->{"footer"}->[$i]->{"line"} =~ s/T$old/$prefix$new/;
 
 		# update tool in parsed file
-		$file->{"footer"}->[$i]->{"tool"} = $t{ $file->{"footer"}->[$i]->{"tool"} };
+		$file->{"footer"}->[$i]->{"tool"} = $tb{ $file->{"footer"}->[$i]->{"tool"} };
 	}
 
 	#  sustitute prefix with "T"
+
+	for ( my $i = 0 ; $i < scalar( @{ $file->{"header"} } ) ; $i++ ) {
+
+		$file->{"header"}->[$i] =~ s/$prefix/T/;
+
+	}
 
 	for ( my $i = 0 ; $i < scalar( @{ $file->{"body"} } ) ; $i++ ) {
 
@@ -246,7 +286,7 @@ sub RemoveDrilledNumber {
 		}
 	}
 }
- 
+
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

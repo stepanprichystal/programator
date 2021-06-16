@@ -306,7 +306,6 @@ sub GetDTMDefaultType {
 		if (    $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_fcPressDrill
-			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_dcDrill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_nMill
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillTop
 			 || $l{"type"} eq EnumsGeneral->LAYERTYPE_plt_bDrillBot )

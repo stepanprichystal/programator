@@ -385,7 +385,7 @@ sub __WriteMessages() {
 					$richTxt->BeginBold();
 				}
 				elsif ( $1 eq "i" ) {
-					$richTxt->BeginBold();
+					$richTxt->BeginItalic();
 				}
 
 				#$richTxt->Remove( $richTxt->GetLastPosition() - 1, $richTxt->GetLastPosition() )

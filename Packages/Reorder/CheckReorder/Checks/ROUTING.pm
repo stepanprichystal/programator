@@ -19,6 +19,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniRTM::UniRTM';
 use aliased 'Enums::EnumsRout';
 use aliased 'Enums::EnumsDrill';
+use aliased 'CamHelpers::CamHistogram';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
@@ -189,6 +190,42 @@ sub Run {
 			}
 		}
 	}
+
+	# Check if rout doesn't contain tool size smaller than 1000
+	# (do not consider rout pilot holes)
+	{
+		my @depthLayers = CamDrilling->GetNCLayersByTypes(
+														   $inCAM, $jobId,
+														   [
+															  EnumsGeneral->LAYERTYPE_nplt_bstiffcMill, EnumsGeneral->LAYERTYPE_nplt_bstiffcMill,
+															  EnumsGeneral->LAYERTYPE_nplt_bMillTop,    EnumsGeneral->LAYERTYPE_nplt_bMillBot
+														   ]
+		);
+
+		my @steps = CamStep->GetJobEditSteps( $inCAM, $jobId );
+
+		foreach my $l (@depthLayers) {
+
+			foreach my $s (@steps) {
+
+				my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s, $l->{"gROWname"}, 0 );
+				last if ( $hist{"surf"} == 0 );
+				my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $l->{"gROWname"} );
+				if ( !defined $pnlLAtt{"zaxis_rout_calibration_coupon"} || $pnlLAtt{"zaxis_rout_calibration_coupon"} =~ /none/i ) {
+
+					$self->_AddChange(
+						"Ve stepu: \"${s}\", vrstvě: \"" . $l->{"gROWname"}
+						  . "\" byla nalezena hloubková fréza surfacem, ale není požadováno vytvoření Z-axis kuponu."
+						  . "Opravdu nepožaduješ vytvoření zaxis kuponu, které zaručí požadovanou hloubku od zákazníka?"
+						  . "Pokud požaduješ, spusť průvodce na vytvoření z-axis kuponu"
+					);
+
+				}
+
+			}
+
+		}
+	}
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -200,18 +237,16 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Reorder::CheckReorder::Checks::ROUTING' => "Change";
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $inCAM = InCAM->new();
-	my $jobId = "d298152";
-	my $orderId = "d298152-01";
+	my $inCAM   = InCAM->new();
+	my $jobId   = "d322953";
+	my $orderId = "d322953-01";
 
 	my $check = Change->new( "key", $inCAM, $jobId, $orderId, Enums->ReorderType_STD );
 
 	my $mess = "";
 	print "Change result: " . $check->Run( \$mess );
-	
-	die;
-	 
 
+	die;
 
 }
 

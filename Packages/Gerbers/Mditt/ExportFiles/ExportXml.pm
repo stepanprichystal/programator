@@ -419,7 +419,7 @@ sub __AddJobLayerSett {
 	}
 	elsif ( $layerName =~ /^gold[cs]$/ ) {
 
-		$energy = 10;
+		$energy = 27;
 
 	}
 

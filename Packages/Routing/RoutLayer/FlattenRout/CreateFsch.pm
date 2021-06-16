@@ -19,6 +19,7 @@ use aliased 'Enums::EnumsRout';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'Helpers::JobHelper';
 use aliased 'Packages::Routing::RoutOutline';
+use aliased 'CamHelpers::CamStepRepeatPnl';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,7 +42,9 @@ sub new {
 sub Create {
 	my $self = shift;
 
-	my @excludeSteps = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE } JobHelper->GetCouponStepNames();
+	my @cpnSteps = CamStepRepeatPnl->GetAllCouponSteps( $self->{"inCAM"}, $self->{"jobId"} );
+	my @excludeSteps = grep { $_ ne EnumsGeneral->Coupon_IMPEDANCE } @cpnSteps;
+
 	my $flatten = FlattenPanel->new( $self->{"inCAM"}, $self->{"jobId"}, "panel", \@excludeSteps );
 
 	$flatten->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
@@ -93,9 +96,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::Routing::RoutLayer::FlattenRout::CreateFsch';
 	use aliased 'Packages::InCAM::InCAM';
 
-	my $inCAM = InCAM->new(  );
+	my $inCAM = InCAM->new();
 
-	my $jobId = "d300451";
+	my $jobId = "d322953";
 
 	my $fsch = CreateFsch->new( $inCAM, $jobId );
 

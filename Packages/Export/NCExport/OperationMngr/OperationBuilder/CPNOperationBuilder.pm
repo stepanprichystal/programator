@@ -95,7 +95,7 @@ sub __DefineNPlatedOperations {
 
 	#Define operation:
 
-	# 1) Operation name = fcouponc - can contain layer
+	# 1) Operation name = fcpnc - can contain layer
 	# - @nplt_nDrill
 	# - @nplt_nMill
 	# - @nplt_bMillTop
@@ -110,10 +110,10 @@ sub __DefineNPlatedOperations {
 		push( @topLayers, @nplt_nMill )  if ( scalar(@nplt_nMill) );
 		push( @topLayers, @nplt_nDrill ) if ( scalar(@nplt_nDrill) );
 
-		$opManager->AddOperationDef( "fcouponc", \@topLayers, -1 );
+		$opManager->AddOperationDef( "fcpnc", \@topLayers, -1 );
 	}
 
-	# 2) Operation name = fcoupons - can contain layer
+	# 2) Operation name = fcpns - can contain layer
 	# - @nplt_nDrill
 	# - @nplt_nMill
 	# - @nplt_bMillBot
@@ -129,7 +129,7 @@ sub __DefineNPlatedOperations {
 		push( @botLayers, @nplt_nMillBot )  if ( scalar(@nplt_nMillBot) );
 		push( @botLayers, @nplt_nDrillBot ) if ( scalar(@nplt_nDrillBot) );
 
-		$opManager->AddOperationDef( "fcoupons", \@botLayers, -1 );
+		$opManager->AddOperationDef( "fcpns", \@botLayers, -1 );
 
 	}
 }

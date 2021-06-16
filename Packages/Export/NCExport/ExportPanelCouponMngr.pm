@@ -174,7 +174,7 @@ sub __CheckNCLayers {
 
 	my $res = 1;
 
-	my $checkRes = $self->_GetNewItem("Checking NC layers");
+	my $checkRes = $self->_GetNewItem("Checking NC layers - coupon");
 
 	my $mess = "";    # errors
 

@@ -36,7 +36,7 @@ sub AddPilotHole {
 	my $jobId          = shift;
 	my $stepName       = shift;
 	my $layer          = shift;
-	my $reducedSize    = shift // 70;     # Pilot holes are 70% diameter of rout size
+	my $reducedSize    = shift // 80;     # Pilot holes are 70% diameter of rout size
 	my $minReducedSize = shift // 500;    # Minimal pilot holes 500um
 
 	CamHelper->SetStep( $inCAM, $stepName );

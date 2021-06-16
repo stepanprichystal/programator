@@ -68,7 +68,6 @@ use constant {
 	LAYERTYPE_plt_nMill          => "plt_nMill",             # normall mill slits
 	LAYERTYPE_plt_bMillTop       => "plt_bMillTop",          # z-axis mill slits top
 	LAYERTYPE_plt_bMillBot       => "plt_bMillBot",          # z-axis mill slits bot
-	LAYERTYPE_plt_dcDrill        => "plt_dcDrill",           # drill crosses
 	LAYERTYPE_plt_fDrill         => "plt_fDrill",            # frame drilling "v"
 	LAYERTYPE_plt_fcDrill        => "plt_fcDrill",           # core frame drilling "v1"
 	LAYERTYPE_plt_fcPressDrill   => "plt_fcPressDrill",      # core frame drilling - press holes "v1p1; v2p2; ..."

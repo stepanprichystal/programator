@@ -6,7 +6,7 @@
 # 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------
-# GROUP ID	| MACHINES 		|  DRILL 		| DRILL DEPTH	| ROUT  	 | ROUT DEPTH 	| DRILL CROSSES | CAMERAS   | MAX TOOL   |  MIN TOOL  |  MAX DEPTH TOOL 
+# GROUP ID	| MACHINES 		|  DRILL 		| DRILL DEPTH	| ROUT  	 | ROUT DEPTH 	| INNER REGISTR | CAMERAS   | MAX TOOL   |  MIN TOOL  |  MAX DEPTH TOOL 
 # 							|  (bool)		|  (bool)		|  (bool)	 |  (bool)		|  (bool)		|  (bool)	| mm (float) |  mm (float)|  mm (float)
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------
 	A 		| Lenz, vrtacka	|  1 			| 0 			| 0 		 | 0 			| 0 			| 0			|	6.35		 |	0.1		  |	6.35

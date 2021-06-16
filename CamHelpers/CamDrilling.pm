@@ -292,12 +292,7 @@ sub AddNCLayerType {
 			$l->{"technical"} = 1;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^dc$/ ) {
 
-			$l->{"type"}      = EnumsGeneral->LAYERTYPE_plt_dcDrill;
-			$l->{"plated"}    = 1;
-			$l->{"technical"} = 1;
-		}
 
 		# Non plated NC layers
 		elsif ( $l->{"gROWname"} =~ /^d[0-9]*$/ || $l->{"gROWname"} =~ /^fsch_d$/ ) {
@@ -963,12 +958,12 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d264954";
+	my $jobId    = "d322394";
 	my $stepName = "o+1";
 
 	#my $layerName = "fstiffs";
 
-	my $res = CamDrilling->GetViaFillExists( $inCAM, $jobId, EnumsDrill->ViaFill_OUTER );
+	my %res = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, "v", 1, 1 ,1);
 
 	die;
 

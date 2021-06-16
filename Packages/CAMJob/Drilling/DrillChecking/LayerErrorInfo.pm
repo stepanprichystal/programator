@@ -282,7 +282,6 @@ sub CheckInvalidSymbols {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bFillDrillBot );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
-	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
@@ -379,7 +378,6 @@ sub CheckDirTop2Bot {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_bMillTop );
-	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );
@@ -829,7 +827,6 @@ sub CheckContainNoDepth {
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_cFillDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_nMill );
-	push( @t, EnumsGeneral->LAYERTYPE_plt_dcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_plt_fcDrill );
 	push( @t, EnumsGeneral->LAYERTYPE_nplt_nDrill );

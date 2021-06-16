@@ -184,6 +184,8 @@ sub GetNetlistStepNames {
 # Return step names, which are special coupon steps
 # coupon_impedance
 # coupon_drill
+# Warning: some steps contain specific coupon name + underscore and number
+# Example: coupon_zaxis_1050:
 sub GetCouponStepNames {
 	my $self = shift;
 

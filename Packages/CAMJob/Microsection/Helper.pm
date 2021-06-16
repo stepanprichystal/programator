@@ -31,12 +31,11 @@ sub PrepareProfileRoutOnBridges {
 	my $vertical     = shift // 1;
 	my $bridgeCntH   = shift;
 	my $bridgeCntV   = shift;
-	my $bridgesWidth = shift;        # width in µm
-	my $toolSize = shift // 2000; # 200µm tool for routing
+	my $bridgesWidth = shift;            # width in µm
+	my $toolSize     = shift // 2000;    # 200µm tool for routing
 
 	CamMatrix->CreateLayer( $inCAM, $jobId, "f", "rout", "positive", 1 ) unless ( CamHelper->LayerExists( $inCAM, $jobId, "f" ) );
 	CamLayer->WorkLayer( $inCAM, "f" );
-	 
 
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
 	my $h   = $lim{"yMax"} - $lim{"yMin"};
@@ -47,20 +46,24 @@ sub PrepareProfileRoutOnBridges {
 	if ($horizontal) {
 
 		# Draw TOP horizontal edge
-		$featStart = $self->__DrawOutlineRout( $inCAM, { "x" => 0, "y" => $h }, { "x" => $w, "y" => $h }, $bridgeCntH, $bridgesWidth / 1000 );
+		$featStart =
+		  $self->__DrawOutlineRout( $inCAM, { "x" => 0, "y" => $h }, { "x" => $w, "y" => $h }, $bridgeCntH, $bridgesWidth / 1000, $toolSize / 1000 );
 
 		# Draw BOT horizontal edge
-		$featStart = $self->__DrawOutlineRout( $inCAM, { "x" => $w, "y" => 0 }, { "x" => 0, "y" => 0 }, $bridgeCntH, $bridgesWidth / 1000 );
+		$featStart =
+		  $self->__DrawOutlineRout( $inCAM, { "x" => $w, "y" => 0 }, { "x" => 0, "y" => 0 }, $bridgeCntH, $bridgesWidth / 1000, $toolSize / 1000 );
 
 	}
 
 	if ($vertical) {
 
 		# Draw LEFT verticall edge
-		$featStart = $self->__DrawOutlineRout( $inCAM, { "x" => 0, "y" => 0 }, { "x" => 0, "y" => $h }, $bridgeCntV, $bridgesWidth / 1000 );
+		$featStart =
+		  $self->__DrawOutlineRout( $inCAM, { "x" => 0, "y" => 0 }, { "x" => 0, "y" => $h }, $bridgeCntV, $bridgesWidth / 1000, $toolSize / 1000 );
 
 		# Draw RIGHT horizontal edge
-		$featStart = $self->__DrawOutlineRout( $inCAM, { "x" => $w, "y" => $h }, { "x" => $w, "y" => 0 }, $bridgeCntV, $bridgesWidth / 1000 );
+		$featStart =
+		  $self->__DrawOutlineRout( $inCAM, { "x" => $w, "y" => $h }, { "x" => $w, "y" => 0 }, $bridgeCntV, $bridgesWidth / 1000, $toolSize / 1000 );
 
 	}
 
@@ -69,7 +72,7 @@ sub PrepareProfileRoutOnBridges {
 		'chain_add',
 		"layer"          => "f",
 		"chain"          => 1,
-		"size"           => $toolSize/1000,
+		"size"           => $toolSize / 1000,
 		"comp"           => "left",
 		"first"          => defined $featStart ? $featStart - 1 : 0,    # id of edge, which should route start - 1 (-1 is necessary)
 		"chng_direction" => 0
@@ -77,7 +80,7 @@ sub PrepareProfileRoutOnBridges {
 
 	# Set step attribute "rout on bridges"rout_on_b
 	CamAttributes->SetStepAttribute( $inCAM, $jobId, $step, "rout_on_bridges", "yes" );
-	
+
 	return 1;
 
 }
@@ -90,6 +93,7 @@ sub __DrawOutlineRout {
 	my $endP         = shift;
 	my $bridgesCnt   = shift;
 	my $bridgesWidth = shift;
+	my $toolw        = shift;
 
 	my $type;
 
@@ -106,7 +110,6 @@ sub __DrawOutlineRout {
 	}
 
 	my $edgeLen = $type eq "v" ? abs( $startP->{"y"} - $endP->{"y"} ) : abs( $startP->{"x"} - $endP->{"x"} );
-	my $toolw = 2;    # tool size 2mm
 
 	my $slotLen = $edgeLen;
 

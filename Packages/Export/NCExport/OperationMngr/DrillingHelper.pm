@@ -63,7 +63,6 @@ sub GetPltNCLayerInfo {
 	my @nMill         = ();    #normall mill slits
 	my @bMillTop      = ();    #z-axis top mill slits
 	my @bMillBot      = ();    #z-axis bot mill slits
-	my @dcDrill       = ();    #drill corsses
 
 	my @ncPar = ();
 	foreach my $l (@layers) {
@@ -128,9 +127,7 @@ sub GetPltNCLayerInfo {
 			push( @fcPressDrill, $l );
 
 		}
-		elsif ( $l->{"type"} eq EnumsGeneral->LAYERTYPE_plt_dcDrill ) {
-			push( @dcDrill, $l );
-		}
+
 	}
 
 	$info{ EnumsGeneral->LAYERTYPE_plt_nDrill }        = \@nDrill;
@@ -147,7 +144,6 @@ sub GetPltNCLayerInfo {
 	$info{ EnumsGeneral->LAYERTYPE_plt_nMill }         = \@nMill;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bMillTop }      = \@bMillTop;
 	$info{ EnumsGeneral->LAYERTYPE_plt_bMillBot }      = \@bMillBot;
-	$info{ EnumsGeneral->LAYERTYPE_plt_dcDrill }       = \@dcDrill;
 
 	return %info;
 }

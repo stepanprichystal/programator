@@ -24,6 +24,8 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Packages::TifFile::TifLayers';
+use aliased 'Packages::CAMJob::Drilling::InnerLayerRegistration';
+use aliased 'Packages::Stackup::StackupBase::StackupBase';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -40,6 +42,7 @@ sub new {
 	$self->{"stepName"} = shift;
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{'inCAM'}, $self->{'jobId'} );
 	$self->{"tifFile"}  = TifLayers->new( $self->{"jobId"} );
+	$self->{"stackup"}  = StackupBase->new( $self->{"jobId"} ) if ( $self->{"layerCnt"} > 2 );
 
 	$self->{"machines"}  = ();
 	$self->{"propTable"} = ();
@@ -87,14 +90,14 @@ sub __GetPropertyVector {
 	# $a - 1st layer property value
 	# $b - 2nd layer property value
 
-	$comb{ Enums->Property_DRILL }        = sub { my ( $a, $b ) = @_; return $a | $b };
-	$comb{ Enums->Property_DRILLDEPTH }   = sub { my ( $a, $b ) = @_; return $a | $b };
-	$comb{ Enums->Property_ROUT }         = sub { my ( $a, $b ) = @_; return $a | $b };
-	$comb{ Enums->Property_ROUTDEPTH }    = sub { my ( $a, $b ) = @_; return $a | $b };
-	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $a, $b ) = @_; return $a | $b };
-	$comb{ Enums->Property_CAMERAS }      = sub { my ( $a, $b ) = @_; return $a | $b };
-	$comb{ Enums->Property_MAXTOOL }      = sub { my ( $a, $b ) = @_; return max( $a, $b ) };
-	$comb{ Enums->Property_MAXDEPTHTOOL } = sub { my ( $a, $b ) = @_; return max( $a, $b ) };
+	$comb{ Enums->Property_DRILL }         = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_DRILLDEPTH }    = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_ROUT }          = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_ROUTDEPTH }     = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_INNERREGISTER } = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_CAMERAS }       = sub { my ( $a, $b ) = @_; return $a | $b };
+	$comb{ Enums->Property_MAXTOOL }       = sub { my ( $a, $b ) = @_; return max( $a, $b ) };
+	$comb{ Enums->Property_MAXDEPTHTOOL }  = sub { my ( $a, $b ) = @_; return max( $a, $b ) };
 
 	# Result vector - final combination of all layers "property vectors"
 	my %resVector     = ();
@@ -163,15 +166,15 @@ sub __GetMachinesByVector {
 	# $m - "machine"
 	# $o - "operation"
 
-	$comb{ Enums->Property_DRILL }        = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
-	$comb{ Enums->Property_DRILLDEPTH }   = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
-	$comb{ Enums->Property_ROUT }         = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
-	$comb{ Enums->Property_ROUTDEPTH }    = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
-	$comb{ Enums->Property_DRILLCROSSES } = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
-	$comb{ Enums->Property_CAMERAS }      = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
-	$comb{ Enums->Property_MAXTOOL }      = sub { my ( $m, $o ) = @_; return ( defined $o && $m < $o ? 0 : 1 ) };
-	$comb{ Enums->Property_MINTOOL }      = sub { my ( $m, $o ) = @_; return ( defined $o && $m > $o ? 0 : 1 ) };
-	$comb{ Enums->Property_MAXDEPTHTOOL } = sub { my ( $m, $o ) = @_; return ( defined $o && $m < $o ? 0 : 1 ) };
+	$comb{ Enums->Property_DRILL }         = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_DRILLDEPTH }    = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_ROUT }          = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_ROUTDEPTH }     = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_INNERREGISTER } = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_CAMERAS }       = sub { my ( $m, $o ) = @_; return ( !$m        && $o      ? 0 : 1 ) };
+	$comb{ Enums->Property_MAXTOOL }       = sub { my ( $m, $o ) = @_; return ( defined $o && $m < $o ? 0 : 1 ) };
+	$comb{ Enums->Property_MINTOOL }       = sub { my ( $m, $o ) = @_; return ( defined $o && $m > $o ? 0 : 1 ) };
+	$comb{ Enums->Property_MAXDEPTHTOOL }  = sub { my ( $m, $o ) = @_; return ( defined $o && $m < $o ? 0 : 1 ) };
 
 	#my $sumPropVec = 0;
 	#map { $sumPropVec += $_ } @propVec;
@@ -238,15 +241,15 @@ sub __SetMachines {
 		$m{"names"}  = shift @vals;
 
 		my %prop = ();
-		$prop{ Enums->Property_DRILL }        = $vals[0];
-		$prop{ Enums->Property_DRILLDEPTH }   = $vals[1];
-		$prop{ Enums->Property_ROUT }         = $vals[2];
-		$prop{ Enums->Property_ROUTDEPTH }    = $vals[3];
-		$prop{ Enums->Property_DRILLCROSSES } = $vals[4];
-		$prop{ Enums->Property_CAMERAS }      = $vals[5];
-		$prop{ Enums->Property_MAXTOOL }      = $vals[6];
-		$prop{ Enums->Property_MINTOOL }      = $vals[7];
-		$prop{ Enums->Property_MAXDEPTHTOOL } = $vals[8];
+		$prop{ Enums->Property_DRILL }         = $vals[0];
+		$prop{ Enums->Property_DRILLDEPTH }    = $vals[1];
+		$prop{ Enums->Property_ROUT }          = $vals[2];
+		$prop{ Enums->Property_ROUTDEPTH }     = $vals[3];
+		$prop{ Enums->Property_INNERREGISTER } = $vals[4];
+		$prop{ Enums->Property_CAMERAS }       = $vals[5];
+		$prop{ Enums->Property_MAXTOOL }       = $vals[6];
+		$prop{ Enums->Property_MINTOOL }       = $vals[7];
+		$prop{ Enums->Property_MAXDEPTHTOOL }  = $vals[8];
 
 		$m{"properties"} = \%prop;
 
@@ -279,12 +282,12 @@ sub __GetStaticProperty {
 	# create hash of property from this vector
 	my %h = ();
 
-	$h{ Enums->Property_DRILL }        = ${$vec}[0];
-	$h{ Enums->Property_DRILLDEPTH }   = ${$vec}[1];
-	$h{ Enums->Property_ROUT }         = ${$vec}[2];
-	$h{ Enums->Property_ROUTDEPTH }    = ${$vec}[3];
-	$h{ Enums->Property_DRILLCROSSES } = ${$vec}[4];
-	$h{ Enums->Property_CAMERAS }      = ${$vec}[5];
+	$h{ Enums->Property_DRILL }         = ${$vec}[0];
+	$h{ Enums->Property_DRILLDEPTH }    = ${$vec}[1];
+	$h{ Enums->Property_ROUT }          = ${$vec}[2];
+	$h{ Enums->Property_ROUTDEPTH }     = ${$vec}[3];
+	$h{ Enums->Property_INNERREGISTER } = ${$vec}[4];
+	$h{ Enums->Property_CAMERAS }       = ${$vec}[5];
 
 	return %h;
 
@@ -341,9 +344,9 @@ sub __SetStaticPropertyTable {
 	my %t = ();
 	$self->{"propTable"} = \%t;
 
-	my $camera  = 0;
-	my $isFlex  = JobHelper->GetIsFlex( $self->{"jobId"} );
-	my $viaFill = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
+	my $isFlex   = JobHelper->GetIsFlex( $self->{"jobId"} );
+	my $viaFill  = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
+	my $innerReg = InnerLayerRegistration->RequireInnerLayerReg( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stackup"} );
 
 	# Check if signla lazers was stretched
 	my $sigLStretch = scalar( grep { $_->{"stretchX"} != 0 || $_->{"stretchY"} != 0 } $self->{"tifFile"}->GetSignalLayers(1) ) ? 1 : 0;
@@ -353,20 +356,20 @@ sub __SetStaticPropertyTable {
 	# 2) DRILL DEPTH
 	# 3) ROUT
 	# 4) ROUT DEPTH
-	# 5) DRILL CROSSES
+	# 5) INNER LAYER REGISTRATION
 	# 6) CAMERAS
 
-	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"ml"} = [ 1, 0, 0, 0, $innerReg, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_nDrill }{"sl"} = [ 1, 0, 0, 0, 0, ( $isFlex || $viaFill || $sigLStretch ) ];
 
-	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"ml"} = [ 1, 0, 0, 0, $innerReg, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_nFillDrill }{"sl"} = [ 1, 0, 0, 0, 0, ( $isFlex || $viaFill || $sigLStretch ) ];
 
-	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillTop }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillBot }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillTop }{"ml"} = [ 0, 1, 0, 0, $innerReg, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_bDrillBot }{"ml"} = [ 0, 1, 0, 0, $innerReg, 1 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot }{"ml"} = [ 0, 1, 0, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_bFillDrillTop }{"ml"} = [ 0, 1, 0, 0, $innerReg, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_bFillDrillBot }{"ml"} = [ 0, 1, 0, 0, $innerReg, 1 ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_cDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_cDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
@@ -374,16 +377,13 @@ sub __SetStaticPropertyTable {
 	$t{ EnumsGeneral->LAYERTYPE_plt_cFillDrill }{"ml"} = [ 1, 0, 0, 0, 0, 0 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_cFillDrill }{"sl"} = [ 0, 0, 0, 0, 0, 0 ];
 
-	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"ml"} = [ 0, 0, 1, 0, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"ml"} = [ 0, 0, 1, 0, $innerReg, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_nMill }{"sl"} = [ 0, 0, 1, 0, 0, ( $isFlex || $viaFill || $sigLStretch ) ];
 
-	$t{ EnumsGeneral->LAYERTYPE_plt_bMillTop }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_bMillTop }{"ml"} = [ 0, 0, 0, 1, $innerReg, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_bMillTop }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_bMillBot }{"ml"} = [ 0, 0, 0, 1, 0, 1 ];
+	$t{ EnumsGeneral->LAYERTYPE_plt_bMillBot }{"ml"} = [ 0, 0, 0, 1, $innerReg, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_bMillBot }{"sl"} = [ 0, 0, 0, 1, 0, 1 ];
-
-	$t{ EnumsGeneral->LAYERTYPE_plt_dcDrill }{"ml"} = [ 0, 0, 0, 0, 1, 1 ];
-	$t{ EnumsGeneral->LAYERTYPE_plt_dcDrill }{"sl"} = [ 0, 0, 0, 0, 0, ( $isFlex || $viaFill || $sigLStretch ) ];
 
 	$t{ EnumsGeneral->LAYERTYPE_plt_fDrill }{"ml"} = [ 1, 0, 0, 0, 0, 1 ];
 	$t{ EnumsGeneral->LAYERTYPE_plt_fDrill }{"sl"} = [ 1, 0, 0, 0, 0, 0 ];
