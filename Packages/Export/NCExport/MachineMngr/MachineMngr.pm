@@ -346,7 +346,9 @@ sub __SetStaticPropertyTable {
 
 	my $isFlex   = JobHelper->GetIsFlex( $self->{"jobId"} );
 	my $viaFill  = CamDrilling->GetViaFillExists( $self->{"inCAM"}, $self->{"jobId"} );
-	my $innerReg = InnerLayerRegistration->RequireInnerLayerReg( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stackup"} );
+	my $innerReg = 0;
+	$innerReg = InnerLayerRegistration->RequireInnerLayerReg( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stackup"} )
+	  if ( $self->{"layerCnt"} > 2 );
 
 	# Check if signla lazers was stretched
 	my $sigLStretch = scalar( grep { $_->{"stretchX"} != 0 || $_->{"stretchY"} != 0 } $self->{"tifFile"}->GetSignalLayers(1) ) ? 1 : 0;

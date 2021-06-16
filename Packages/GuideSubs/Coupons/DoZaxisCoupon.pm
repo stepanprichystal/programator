@@ -51,8 +51,11 @@ sub GenerateZaxisCoupons {
 														  EnumsGeneral->LAYERTYPE_nplt_bMillTop,    EnumsGeneral->LAYERTYPE_nplt_bMillBot,
 													   ]
 	);
+	
+	return 0 if ( scalar( @depthLayers ) == 0 );
+	
 	my @steps = CamStep->GetJobEditSteps( $inCAM, $jobId );
-
+	
 	foreach my $l (@depthLayers) {
 
 		foreach my $s (@steps) {
@@ -85,14 +88,10 @@ sub GenerateZaxisCoupons {
 
 				my $parCpnRequired = $messMngr->GetCheckParameter( "Požaduji kupón", $parCpnRequiredDefVal );
 
-				my $restValType = Packages::CAMJob::Microsection::CouponZaxisMill::CPNTYPE_MATERIALRESTVAL;
+				my $restValType   = Packages::CAMJob::Microsection::CouponZaxisMill::CPNTYPE_MATERIALRESTVAL;
 				my $depthMillType = Packages::CAMJob::Microsection::CouponZaxisMill::CPNTYPE_DEPTHMILLINGVAL;
 
-				my @cpnType = (
-								"-",
-								$restValType,
-								$depthMillType
-				);
+				my @cpnType = ( "-", $restValType, $depthMillType );
 				my $parCpnTypeDefVal = $cpnType[0];
 				if ( defined $pnlLAtt{"zaxis_rout_calibration_coupon"} && $pnlLAtt{"zaxis_rout_calibration_coupon"} !~ /none/i ) {
 					$parCpnTypeDefVal = $pnlLAtt{"zaxis_rout_calibration_coupon"};
@@ -153,7 +152,7 @@ sub GenerateZaxisCoupons {
 												  $jobId, $s, $l->{"gROWname"} );
 
 				my $finalThick = 0;
-				
+
 				if ( $parCpnType->GetResultValue(1) =~ /^$restValType$/i ) {
 					$finalThick = $parThick->GetResultValue(1);
 
@@ -168,6 +167,25 @@ sub GenerateZaxisCoupons {
 
 	}
 
+	# Do final check before generate coupons
+	my $cpnZAxis = CouponZaxisMill->new( $inCAM, $jobId );
+
+	my $errMess = "";
+	while ( !$cpnZAxis->CheckSpecifications( \$errMess ) ) {
+
+		my @mess = (@messHead);
+		push( @mess, "Chyba při kontrole nastavení Z-axis kupónů pomocí atributů vrstvy. Detail:" );
+		push( @mess, $errMess );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+
+		$errMess = "";
+
+		$inCAM->PAUSE("Oprav chybu");
+	}
+
+	# Exit if no coupon specification
+	return 0 if ( scalar( $cpnZAxis->GetAllSpecifications() ) == 0 );
+
 	# This step require Stackup if vv
 	while (1) {
 
@@ -181,28 +199,12 @@ sub GenerateZaxisCoupons {
 			my @mess = (@messHead);
 			push( @mess, "Při vytvoření kupónu je nutné, aby existovalo složení" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
-			
+
 			$inCAM->PAUSE("Vytvor slozeni");
 		}
 		else {
 			last;
 		}
-	}
-
-	# Do final check before generate coupons
-	my $cpnZAxis = CouponZaxisMill->new( $inCAM, $jobId );
-
-	my $errMess = "";
-	while ( !$cpnZAxis->CheckSpecifications( \$errMess ) ) {
-
-		my @mess = (@messHead);
-		push( @mess, "Chyba při kontrole nastavení Z-axis kupónů pomocí atributů vrstvy. Detail:" );
-		push( @mess, $errMess );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
-
-		$errMess = "";
-		
-		$inCAM->PAUSE("Oprav chybu");
 	}
 
 	while (1) {
