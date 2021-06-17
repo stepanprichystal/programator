@@ -22,6 +22,7 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Reorder::Enums';
+use aliased 'Enums::EnumsCAM';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -37,7 +38,7 @@ sub new {
 
 # Check if mask is not negative in matrix
 sub Run {
-	my $self = shift;
+	my $self    = shift;
 	my $errMess = shift;
 	my $infMess = shift;
 
@@ -146,8 +147,22 @@ sub Run {
 		my $d = ( DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1 ) % 100;
 		CamAttributes->SetJobAttribute( $inCAM, $jobId, "custom_year", $d );
 	}
-	
-	# Move hustejsti from job to layer attribut
+
+	# Move attribute hustejsti from job to layer attribut spec_layer_fill
+	if ( CamHelper->StepExists( $inCAM, $jobId, "panel" ) ) {
+		
+		my $jobFill = CamAttributes->GetJobAttrByName( $inCAM, $jobId, "thickerfilling" );
+
+		if ( $jobFill =~ /yes/i ) {
+
+			my @inn = CamJob->GetSignalLayerNames( $inCAM, $jobId, 1 );
+
+			foreach my $in (@inn) {
+
+				CamAttributes->SetLayerAttribute( $inCAM, "spec_layer_fill", EnumsCAM->AttSpecLayerFill_CIRCLE80PCT, $jobId, "panel", $in );
+			}
+		}
+	}
 
 	return $result;
 }

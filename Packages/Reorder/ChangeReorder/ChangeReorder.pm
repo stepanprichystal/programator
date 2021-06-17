@@ -143,8 +143,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use Data::Dump qw(dump);
 
 	my $inCAM   = InCAM->new();
-	my $jobId   = "d1348";
-	my $orderId = "d238221-03";
+	my $jobId   = "d323657";
+	my $orderId = "d323567-02";
 
 	#my $type = Helper->GetReorderType($inCAM, $orderId);
 
