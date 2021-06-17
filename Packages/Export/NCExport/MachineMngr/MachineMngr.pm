@@ -349,6 +349,9 @@ sub __SetStaticPropertyTable {
 	my $innerReg = 0;
 	$innerReg = InnerLayerRegistration->RequireInnerLayerReg( $self->{"inCAM"}, $self->{"jobId"}, $self->{"stackup"} )
 	  if ( $self->{"layerCnt"} > 2 );
+	  
+	  # TEMPORARY - set no PCB need inner lazer registration in order export programs on all machines
+	  $innerReg = 0;
 
 	# Check if signla lazers was stretched
 	my $sigLStretch = scalar( grep { $_->{"stretchX"} != 0 || $_->{"stretchY"} != 0 } $self->{"tifFile"}->GetSignalLayers(1) ) ? 1 : 0;
