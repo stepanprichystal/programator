@@ -135,8 +135,8 @@ sub GetPltNCLayers {
 # Return all NC layers which start/stop at product
 sub GetNCLayers {
 	my $self = shift;
- 
-	  return @{ $self->{"NCLayers"} };
+
+	return @{ $self->{"NCLayers"} };
 }
 
 sub SetPlugging {
@@ -221,81 +221,88 @@ sub GetProductOuterMatLayer {
 	my $pos          = shift;    # first/last
 	my $sourceProduc = shift;    # reference of source product of returned ProductLayer
 
-	die "Position of IProductLayer layer in IProduct is not defined" unless ( defined $pos );
+	# Optional adjust position of material in product
+	# Eg.: $pos = first; $posOrder = 2: return second material layeer in product stackup from TOP
+	# Eg.: $pos = last; $posOrder = 3: return third material layeer in product stackup from BOT
+	my $posOrder = shift // 1;
 
-	my $idx = ( $pos eq "first" ? 0 : -1 );
+	die "Position of IProductLayer layer in IProduct is not defined" unless ( defined $pos );
+	die "Minimal value of  Optioan lposition parameter is 1" if ( $posOrder < 1 );
+
+	my $idx = ( $pos eq "first" ? $posOrder - 1 : -$posOrder );
 	my $topStackupL;
 
 	if ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_PRODUCT ) {
 
-		$topStackupL = $self->{"layers"}->[$idx]->GetData()->GetProductOuterMatLayer( $pos, $sourceProduc );
+		$topStackupL = $self->{"layers"}->[$idx]->GetData()->GetProductOuterMatLayer(
+			$pos, $sourceProduc, ( $posOrder - 1 >= 1 ? $posOrder - 1 : 1 ));
 
-	}
-	elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
+		}
+		elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
 
-		$topStackupL = $self->{"layers"}->[$idx];
-		$$sourceProduc = $self if ( defined $sourceProduc );
-	}
+			$topStackupL = $self->{"layers"}->[$idx];
+			$$sourceProduc = $self if ( defined $sourceProduc );
+		}
 
-	return $topStackupL;
-}
-
-sub RemoveProductOuterMatLayer {
-	my $self         = shift;
-	my $pos          = shift;    # first/last
-	my $sourceProduc = shift;    # reference of source product of returned ProductLayer
-
-	die "Position of IProductLayer layer in IProduct is not defined" unless ( defined $pos );
-
-	my $lCut;
-	my $idx = ( $pos eq "first" ? 0 : -1 );
-
-	if ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_PRODUCT ) {
-
-		$lCut = $self->{"layers"}->[$idx]->GetData()->RemoveProductOuterMatLayer( $pos, $sourceProduc );
-
-	}
-	elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
-
-		$lCut = splice @{ $self->{"layers"} }, $idx, 1;
-		$$sourceProduc = $self if ( defined $sourceProduc );
+		return $topStackupL;
 	}
 
-	return $lCut;
-}
+	sub RemoveProductOuterMatLayer {
+		my $self         = shift;
+		my $pos          = shift;    # first/last
+		my $sourceProduc = shift;    # reference of source product of returned ProductLayer
+
+		die "Position of IProductLayer layer in IProduct is not defined" unless ( defined $pos );
+
+		my $lCut;
+		my $idx = ( $pos eq "first" ? 0 : -1 );
+
+		if ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_PRODUCT ) {
+
+			$lCut = $self->{"layers"}->[$idx]->GetData()->RemoveProductOuterMatLayer( $pos, $sourceProduc );
+
+		}
+		elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
+
+			$lCut = splice @{ $self->{"layers"} }, $idx, 1;
+			$$sourceProduc = $self if ( defined $sourceProduc );
+		}
+
+		return $lCut;
+	}
 
 ## Return if there is plating of product (top or bot side)
 ## While method GetIsPLated() return if plating exist in current product,
 ## this method go through all outer nested Products and return 1 if exist at least one product with plating
-#sub GetExistOuterPlating{
-#	my $self         = shift;
-#	my $side          = shift;    # top/bot
-#
-#	die "Side of outer plating is not defined" unless ( defined $side );
-#
-# 	my $plating = $self->GetIsPlated();
-#	my $idx = ( $side eq "top" ? 0 : -1 );
-#
-#	if ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_PRODUCT ) {
-#
-#		$plating = $self->{"layers"}->[$idx]->GetData()->GetExistOuterPlating( $side );
-#
-#	}
-#	elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
-#
-#		$plating = 1 if($self->GetIsPlated());
-#	}
-#
-#	return $plating;
-#}
+	#sub GetExistOuterPlating{
+	#	my $self         = shift;
+	#	my $side          = shift;    # top/bot
+	#
+	#	die "Side of outer plating is not defined" unless ( defined $side );
+	#
+	# 	my $plating = $self->GetIsPlated();
+	#	my $idx = ( $side eq "top" ? 0 : -1 );
+	#
+	#	if ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_PRODUCT ) {
+	#
+	#		$plating = $self->{"layers"}->[$idx]->GetData()->GetExistOuterPlating( $side );
+	#
+	#	}
+	#	elsif ( $self->{"layers"}->[$idx]->GetType() eq Enums->ProductL_MATERIAL ) {
+	#
+	#		$plating = 1 if($self->GetIsPlated());
+	#	}
+	#
+	#	return $plating;
+	#}
 
-#-------------------------------------------------------------------------------------------#
-#  Place for testing..
-#-------------------------------------------------------------------------------------------#
-my ( $package, $filename, $line ) = caller;
-if ( $filename =~ /DEBUG_FILE.pl/ ) {
+	#-------------------------------------------------------------------------------------------#
+	#  Place for testing..
+	#-------------------------------------------------------------------------------------------#
+	my ( $package, $filename, $line ) = caller;
+	if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-}
+	}
 
-1;
+	1;
 

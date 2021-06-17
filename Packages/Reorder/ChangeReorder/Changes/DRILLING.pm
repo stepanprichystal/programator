@@ -46,7 +46,8 @@ sub new {
 
 sub Run {
 	my $self = shift;
-	my $mess = shift;
+	my $errMess = shift;
+	my $infMess = shift;
 
 	my $inCAM       = $self->{"inCAM"};
 	my $jobId       = $self->{"jobId"};
@@ -121,7 +122,7 @@ sub Run {
 							my $res = MoveDrillHoles->MoveSmallNpth2Pth( $inCAM, $jobId, $s, $npltLayer, $pltLayer, $maxTool, \$movedHoleCntRef,
 																		 \$movedHoleAttrValRef );
 							unless ($res) {
-								$$mess .= "Error during move small npth holes from: $npltLayer to plated layer: $pltLayer";
+								$$errMess .= "Error during move small npth holes from: $npltLayer to plated layer: $pltLayer";
 								$result = 0;
 							}
 						}

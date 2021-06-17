@@ -46,16 +46,17 @@ sub new {
 
 # Do all automatic changes, which are necessary
 sub RunChanges {
-	my $self    = shift;
-	my $errMess = shift;
-	my $inCAM   = $self->{"inCAM"};
-	my $jobId   = $self->{"jobId"};
+	my $self     = shift;
+	my $errMess  = shift;              # text message when RunChanges return error state 0;
+	my $infoMess = shift;              # text message when there is additional inforamtion;
+	my $inCAM    = $self->{"inCAM"};
+	my $jobId    = $self->{"jobId"};
 
 	my $result = 1;
 
 	foreach my $change ( @{ $self->{"changes"} } ) {
 
-		unless ( $change->Run($errMess) ) {
+		unless ( $change->Run($errMess, $infoMess) ) {
 
 			$result = 0;
 			last;
@@ -115,7 +116,7 @@ sub __LoadChanges {
 			my $module = 'Packages::Reorder::ChangeReorder::Changes::' . $key;
 			eval("use  $module;");
 
-			push( @changes, $module->new( $key, $inCAM, $jobId, $orderId, $reorderType) );
+			push( @changes, $module->new( $key, $inCAM, $jobId, $orderId, $reorderType ) );
 		}
 	}
 
@@ -133,9 +134,9 @@ sub __LoadChanges {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-
 	use aliased 'Packages::Reorder::ChangeReorder::ChangeReorder';
 	use aliased 'Packages::InCAM::InCAM';
+
 	#use aliased 'Packages::Reorder::ChangeReorder::Helper';
 	use aliased 'Packages::Reorder::Enums';
 
@@ -150,7 +151,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $ch = ChangeReorder->new( $inCAM, $jobId, $orderId, Enums->ReorderType_STD );
 
 	my $errMess = "";
-	my @arr     = $ch->RunChanges( \$errMess );
+	my $infoMess = "";
+	my @arr     = $ch->RunChanges( \$errMess, \$infoMess );
 	print $errMess;
 
 }

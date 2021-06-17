@@ -296,14 +296,15 @@ sub __CheckGroupDataBasic {
 	}
 
 	# 5) Check if stackup outer base Cu thickness and IS base Cu thickness match
+	# Check only difference greater than 10µm, because of exception for high class
+	# If in HEG is 18, it could by 9, 12, 18 phzsicaly in stackup. It is possible
 	if ( defined $baseCuThickHelios && $defaultInfo->GetLayerCnt() > 2 ) {
 
-		my $stackupCu = $defaultInfo->GetStackup()->GetCuLayer("c")->GetThick();
-		$stackupCu = 18
-		  if ( $defaultInfo->GetPcbClass() >= 8 && $stackupCu == 9 && $baseCuThickHelios != 9 )
-		  ;    # we use 9µm Cu if 8class in order easier pcb production
+		use constant MINDIFFCU => 10;    # 10µm difference
 
-		if ( $stackupCu != $baseCuThickHelios ) {
+		my $stackupCu = $defaultInfo->GetStackup()->GetCuLayer("c")->GetThick();
+
+		if ( abs( $stackupCu - $baseCuThickHelios ) > MINDIFFCU ) {
 
 			$dataMngr->_AddErrorResult(
 										"Tloušťka Cu",
@@ -1036,7 +1037,7 @@ sub __CheckGroupDataExtend {
 		my @NCLayers =
 		  grep { $_->{"plated"} }
 		  grep { $_->{"type"} ne EnumsGeneral->LAYERTYPE_nplt_score } $defaultInfo->GetNCLayers();
-	
+
 		foreach my $NClInfo (@NCLayers) {
 			my $topCu = $NClInfo->{"NCSigStart"};
 			my $botCu = $NClInfo->{"NCSigEnd"};

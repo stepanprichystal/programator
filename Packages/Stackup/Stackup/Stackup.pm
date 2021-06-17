@@ -265,10 +265,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $inCAM = InCAM->new();
 
 
-	my $jobId = "d322394";
+	my $jobId = "d321505";
 
 	my $stackup = Stackup->new( $inCAM, $jobId );
 
+	print "Final thickness: ".$stackup->GetFinalThick();
  
  	StackupTester->PrintStackupTree($stackup);
  	

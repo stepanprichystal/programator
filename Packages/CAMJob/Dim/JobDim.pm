@@ -261,21 +261,13 @@ sub GetCutPanel {
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
 	# 1) Se atribut "cut panel" according surface and size of panel
-	my $HALMax      = 460;                                                               # max diemsnion for HAL PCB
 	my $HARDGoldMax = 400;                                                               # max diemsnion for hard gold  PCB
 	my $pnlH        = abs( $lim->{"yMax"} - $lim->{"yMin"} );
 	$pnlH -= 2 * 15 if ( $layerCnt > 2 );                                                # 15mm is border before cutting FR frame
 
-	if ( $surface =~ /^a$/i && $pnlH > $HALMax ) {
-
-		$$cutType = 'pb_hal';
-		$$cutHeight = $HALMax;
-		$res      = 1;
-	}
 
 	if ( ( $surface =~ /^g$/i || CamAttributes->GetJobAttrByName( $inCAM, $jobId, 'goldholder' ) eq 'yes' ) && $pnlH > $HARDGoldMax ) {
 
-		# PCB can contain Pb HAL + hard gold (higher priority)
 		$$cutType = 'gold';
 		$$cutHeight = $HARDGoldMax;
 		$res      = 1;

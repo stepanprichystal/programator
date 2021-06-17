@@ -50,7 +50,8 @@ sub new {
 # Check if mask is not negative in matrix
 sub Run {
 	my $self = shift;
-	my $mess = shift;
+	my $errMess = shift;
+	my $infMess = shift;
 
 	my $inCAM       = $self->{"inCAM"};
 	my $jobId       = $self->{"jobId"};
@@ -208,7 +209,7 @@ sub Run {
 	unless ( $self->{"nifCreation"} ) {
 
 		$result = 0;
-		$$mess .= $self->{"nifCreationErr"};
+		$$errMess .= $self->{"nifCreationErr"};
 	}
 
 	return $result;
@@ -243,8 +244,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $check = Change->new( "key", $inCAM, $jobId );
 
-	my $mess = "";
-	print "Change result: " . $check->Run( \$mess );
+	my $errMess = "";
+	print "Change result: " . $check->Run( \$errMess );
 }
 
 1;

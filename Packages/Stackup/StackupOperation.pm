@@ -121,8 +121,6 @@ sub OuterCore {
 	return $result;
 }
 
-
-
 # Return array of packages created from stackup product joined by NoFlwo prepreg
 # Couple contain top + bot stackup products + type of cores inside each product
 # Each item contain keys:
@@ -130,7 +128,7 @@ sub OuterCore {
 # - pTopCoreType =  type of cores inside each product
 # - pBot = bot stackup product
 # - pBotCoreType =  type of cores inside each product
-# - lNoflow = layer data of noflow prepreg between packages
+# - layersNoflow = layers data of noflow prepregs between packages
 sub GetJoinedFlexRigidProducts {
 	my $self    = shift;
 	my $inCAM   = shift;
@@ -152,26 +150,46 @@ sub GetJoinedFlexRigidProducts {
 
 		my @layers = $pressP->GetLayers();
 
-		for ( my $i = 1 ; $i < scalar(@layers) - 1 ; $i++ ) {
-
-			my $lTypePrev = $layers[ $i - 1 ]->GetType();
-			my $lTypeNext = $layers[ $i + 1 ]->GetType();
+		for ( my $i = 0 ; $i < scalar(@layers) - 1 ; $i++ ) {
 
 			my $lType = $layers[$i]->GetType();
-			my $lData = $layers[$i]->GetData();
 
-			# Identify two products between Noflow prepreg
-			if (    $lType eq StackEnums->ProductL_MATERIAL
-				 && $lData->GetType() eq StackEnums->MaterialType_PREPREG
-				 && $lData->GetIsNoFlow()
-				 && $lTypePrev eq StackEnums->ProductL_PRODUCT
-				 && $lTypeNext eq StackEnums->ProductL_PRODUCT )
-			{
+			next unless ( $lType eq StackEnums->ProductL_PRODUCT );
+			
+			my $topP = $layers[$i]->GetData();
+			my $botP = undef;
 
+			last if ( $i + 1 == scalar(@layers) );
+			$i++;
+
+			# 1) Check if next layers up to next product are noflow prepregs
+
+			my $nextProduct = undef;
+			my @noFLow      = ();
+
+			for ( ; $i < scalar(@layers) ; $i++ ) {
+
+				if (    $layers[$i]->GetType() eq StackEnums->ProductL_MATERIAL
+					 && $layers[$i]->GetData()->GetType() eq StackEnums->MaterialType_PREPREG
+					 && $layers[$i]->GetData()->GetIsNoFlow() )
+				{
+					push( @noFLow, $layers[$i]->GetData() );
+				}
+				else {
+					last;
+				}
+			}
+
+			# 2) Check if next layer is product
+			if ( scalar(@noFLow) > 0 && $layers[$i]->GetType() eq StackEnums->ProductL_PRODUCT ) {
+				
+				$botP = $layers[$i]->GetData();
+
+				# We found noflow prepregs between two products
 				my %infJoin = ();
 
 				# top product
-				my $topP = $layers[ $i - 1 ]->GetData();
+				
 				$infJoin{"pTop"} = $topP;
 
 				# search for core
@@ -184,7 +202,7 @@ sub GetJoinedFlexRigidProducts {
 				}
 
 				# Bot product
-				my $botP = $layers[ $i + 1 ]->GetData();
+				
 				$infJoin{"pBot"} = $botP;
 
 				# search for core
@@ -195,11 +213,13 @@ sub GetJoinedFlexRigidProducts {
 					my $frstInput = ( $botP->GetLayers( StackEnums->ProductL_PRODUCT ) )[0];
 					$infJoin{"pBotCoreType"} = $frstInput->GetCoreRigidType();
 				}
-				
+
 				# Noflow Material layer
-				$infJoin{"lNoflow"} = $lData;
+				$infJoin{"layersNoflow"} = \@noFLow;
 
 				push( @laminatePckgsInf, \%infJoin );
+				
+				$i--;
 
 			}
 
@@ -208,6 +228,7 @@ sub GetJoinedFlexRigidProducts {
 
 	return @laminatePckgsInf;
 }
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -216,29 +237,27 @@ sub GetJoinedFlexRigidProducts {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	use aliased 'Packages::Stackup::StackupOperation';
-#	use aliased 'Packages::InCAM::InCAM';
-#	use aliased 'Packages::CAMJob::Dim::JobDim';
-#
-#	my $inCAM = InCAM->new();
-#	my $mes   = "";
-#
-#	#	my $side;
-#	#my @package = StackupOperation->GetJoinedFlexRigidProducts( $inCAM, "d266089" );
-#	#
-#	#	my @package2 = StackupOperation->GetJoinedFlexRigidProducts2("d222777");
-#
-#	my $orderId       = "d272796-01";
-#	my $inf           = HegMethods->GetInfoAfterStartProduce($orderId);
-#	my %dimsPanelHash = JobDim->GetDimension( $inCAM, "d272796" );
-#	my %lim           = CamJob->GetProfileLimits2( $inCAM, "d272796", "panel" );
-#
-#	my $pArea = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
-#	my $area = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
-#
-#	 MaterialInfo->StackupMatInStock( $inCAM, "d272796", undef,$area, \$mes );
-	 
-	 print $mes;
+	use aliased 'Packages::Stackup::StackupOperation';
+	use aliased 'Packages::InCAM::InCAM';
+	use aliased 'Packages::CAMJob::Dim::JobDim';
+
+	my $inCAM = InCAM->new();
+	my $mes   = "";
+
+	my $side;
+	my @packages = StackupOperation->GetJoinedFlexRigidProducts( $inCAM, "d321505" );
+
+	#	my $orderId       = "d272796-01";
+	#	my $inf           = HegMethods->GetInfoAfterStartProduce($orderId);
+	#	my %dimsPanelHash = JobDim->GetDimension( $inCAM, "d272796" );
+	#	my %lim           = CamJob->GetProfileLimits2( $inCAM, "d272796", "panel" );
+	#
+	#	my $pArea = ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} ) / 1000000;
+	#	my $area = $inf->{"kusy_pozadavek"} / $dimsPanelHash{"nasobnost"} * $pArea;
+	#
+	#	 MaterialInfo->StackupMatInStock( $inCAM, "d272796", undef,$area, \$mes );
+
+	print @packages;
 
 }
 

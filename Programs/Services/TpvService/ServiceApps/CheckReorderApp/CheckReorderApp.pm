@@ -207,7 +207,10 @@ sub __ProcessJob {
 
 		my $changeReorder = ChangeReorder->new( $inCAM, $jobId, $orderId, $reorderType );
 		my $errMess       = "";
-		my $res           = $changeReorder->RunChanges( \$errMess );
+		my $infoMess       = "";
+		my $res           = $changeReorder->RunChanges( \$errMess, \$infoMess );
+		push( @tasks, { "text" => $infoMess, "critical" => 1 } ) if($infoMess ne "");
+		
 		$self->{"inCAM"}->COM( "save_job", "job" => "$jobId" );
 
 		die "Error during reorder processing: $errMess" unless ($res);

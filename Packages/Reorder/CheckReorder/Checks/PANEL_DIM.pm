@@ -18,7 +18,9 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::FileHelper';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardExt';
+use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'Enums::EnumsGeneral';
@@ -78,6 +80,38 @@ sub Run {
 			);
 
 		}
+	}
+
+	# Check if there is good panel ussage (at least 40%) in reorder (if reorder amount is more than one panel)
+	if ( $reorderType eq Enums->ReorderType_STD ) {
+
+		my %inf = HegMethods->GetAllByOrderId($orderId);
+		my @inProduc = HegMethods->GetOrdersByState( $jobId, 4 );    # Orders on Ve vyrobe
+
+		if ( scalar(@inProduc) == 0 && $inf{"pocet_prirezu"} > 1 ) {
+
+			# Compute panel active area
+			my $pnl = StandardBase->new( $inCAM, $jobId );
+			my $pnlArea = $pnl->WArea() * $pnl->HArea();
+
+			# Compute area of all nested step in panel
+			my $stepArea = 0;
+			foreach my $s ( CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId ) ) {
+
+				my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $s->{"stepName"} );
+				$stepArea += $s->{"totalCnt"} * ( $lim{"xMax"} - $lim{"xMin"} ) * ( $lim{"yMax"} - $lim{"yMin"} );
+			}
+
+			# compute final panel ussage
+			my $minUsage = 0.4;
+			if ( ( $stepArea / $pnlArea ) < $minUsage ) {
+
+				$self->_AddChange(   "U opakované zakázky je malé využití panelu ("
+								   . sprintf( "%d", $stepArea / $pnlArea * 100 ) . "%."
+								   . " Zkontroluj jestli nelze dosáhnout vyššího využití (pokud možno alespoň 40%)" );
+			}
+		}
+
 	}
 
 }

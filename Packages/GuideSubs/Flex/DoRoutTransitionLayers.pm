@@ -43,7 +43,7 @@ push( @messHead, "<g>==========================================================<
 push( @messHead, "<g>Průvodce vytvořením vrstev pro zahloubení v tranzitní zóně</g>" );
 push( @messHead, "<g>==========================================================</g>\n" );
 
-my $ROUTOVERLAP       = 0.25;    # 0.25mm Overlap of routs whcich go from top and from bot during routing PCB flexible part
+my $ROUTOVERLAP       = 0.28;    # 0.28mm Overlap of routs whcich go from top and from bot during routing PCB flexible part
 my $EXTENDTRANZONE    = 1.5;     # 1.5mm transition rout slots will be exteneded on both ends
 my $DEFROUTPART1DEPTH = 0.33;    #  0.33mm Default depth for first routing (part 1) 
 
@@ -429,7 +429,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d322237";
+	my $jobId = "d321505";
 
 	my $notClose = 0;
 

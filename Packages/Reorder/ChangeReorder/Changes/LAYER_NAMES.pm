@@ -15,6 +15,7 @@ use warnings;
 #local library
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamMatrix';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Reorder::Enums';
 
@@ -32,40 +33,43 @@ sub new {
 
 # Check if mask is not negative in matrix
 sub Run {
-	my $self  = shift;
-	my $mess = shift;
-	
+	my $self    = shift;
+	my $errMess = shift;
+	my $infMess = shift;
+
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $reorderType = $self->{"reorderType"};
-	
+
 	my $result = 1;
- 
-	my @layers = CamJob->GetAllLayers($inCAM, $jobId);
-	
+
+	my @layers = CamJob->GetAllLayers( $inCAM, $jobId );
+
 	# 1) old format of paste files sa_ori, sb_ori
-	
-	my @oldPaste = grep { $_->{"gROWname"} =~ /^s[ab]_(ori)|(made)$/} @layers;
-	
-	foreach my $l (@oldPaste){
+
+	my @oldPaste = grep { $_->{"gROWname"} =~ /^s[ab]_(ori)|(made)$/ } @layers;
+
+	foreach my $l (@oldPaste) {
 		my $newName = $l->{"gROWname"};
 		$newName =~ s/_/-/;
-		
-		$inCAM->COM("matrix_rename_layer","job"=> $jobId,"matrix"=> "matrix","layer"=>$l->{"gROWname"},"new_name"=>$newName);	
+
+		$inCAM->COM( "matrix_rename_layer", "job" => $jobId, "matrix" => "matrix", "layer" => $l->{"gROWname"}, "new_name" => $newName );
 	}
-	
+
 	# 2) Old format of fsch
-	my $fsch = (grep { $_->{"gROWname"} =~ /^f_sch$/} @layers)[0];
-	
-	if(defined $fsch){
-		
-		$inCAM->COM("matrix_rename_layer","job"=> $jobId,"matrix"=> "matrix","layer"=>"f_sch","new_name"=>"fsch");	
-		
+	my $fsch = ( grep { $_->{"gROWname"} =~ /^f_sch$/ } @layers )[0];
+
+	if ( defined $fsch ) {
+
+		$inCAM->COM( "matrix_rename_layer", "job" => $jobId, "matrix" => "matrix", "layer" => "f_sch", "new_name" => "fsch" );
+
 		# set fsch as board layer
-		CamLayer->SetLayerContextLayer($inCAM, $jobId, "fsch", "board");
+		CamLayer->SetLayerContextLayer( $inCAM, $jobId, "fsch", "board" );
 	}
- 
+
+	# 3) Old layer "dc" inner layer drilling do not exist anymore
+	CamMatrix->DeleteLayer( $inCAM, $jobId, "dc" );
 
 	return $result;
 }
@@ -76,17 +80,16 @@ sub Run {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
+	use aliased 'Packages::Reorder::ChangeReorder::Changes::LAYER_NAMES' => "Change";
+	use aliased 'Packages::InCAM::InCAM';
 
- 	use aliased 'Packages::Reorder::ChangeReorder::Changes::LAYER_NAMES' => "Change";
- 	use aliased 'Packages::InCAM::InCAM';
-	
-	my $inCAM    = InCAM->new();
+	my $inCAM = InCAM->new();
 	my $jobId = "f00873";
-	
-	my $check = Change->new("key", $inCAM, $jobId);
-	
-	my $mess = "";
-	print "Change result: ".$check->Run(\$mess);
+
+	my $check = Change->new( "key", $inCAM, $jobId );
+
+	my $errMess = "";
+	print "Change result: " . $check->Run( \$errMess );
 }
 
 1;

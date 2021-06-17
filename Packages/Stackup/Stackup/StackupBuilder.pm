@@ -777,23 +777,20 @@ sub __IdentifyFlexCoreProduct {
 			#					 && $pars->[ $i + 1 ]->{"l"}->GetUssage() > 0 )
 			#
 			#			  )
-			if (
-				defined $prpgP1Bot && $prpgP1Bot->{"l"}->GetType() eq Enums->MaterialType_COVERLAY
-			  )
-			{
+			if ( defined $prpgP1Bot && $prpgP1Bot->{"l"}->GetType() eq Enums->MaterialType_COVERLAY ) {
 				$prpgP1Bot->{"pId"} = $$currPId;
 			}
 
-#			# Do check, if flex core is inner, prepreg souhld be from both side of flex core
-#			# (even if Copper ussage is 0%)
-#			if (    $pars->[$i]->{"l"}->GetCoreNumber() > 1
-#				 && $pars->[$i]->{"l"}->GetCoreNumber() < scalar( $self->{"stackup"}->GetAllCores() ) )
-#			{
-#
-#				$prpgP1Top->{"pId"} = $$currPId;
-#				$prpgP1Bot->{"pId"} = $$currPId;
-#
-#			}
+			#			# Do check, if flex core is inner, prepreg souhld be from both side of flex core
+			#			# (even if Copper ussage is 0%)
+			#			if (    $pars->[$i]->{"l"}->GetCoreNumber() > 1
+			#				 && $pars->[$i]->{"l"}->GetCoreNumber() < scalar( $self->{"stackup"}->GetAllCores() ) )
+			#			{
+			#
+			#				$prpgP1Top->{"pId"} = $$currPId;
+			#				$prpgP1Bot->{"pId"} = $$currPId;
+			#
+			#			}
 
 			$$currPId++;    # increment product id
 		}
@@ -1185,6 +1182,18 @@ sub __AdjustPrepregThickness {
 
 	my @layers = $curProduct->GetLayers();
 
+	#	# Do not consider inner coverlays, because theses are laminated as "bikini method"
+	#	# Otherwise prepreg thickness should be wrongly computed
+	#	for ( my $i = scalar(@layers) - 1 ; $i >= 0 ; $i-- ) {
+	#
+	#		if (    $layers[$i]->GetType() eq Enums->ProductL_MATERIAL
+	#			 && $layers[$i]->GetData()->GetType() eq Enums->MaterialType_COVERLAY )
+	#		{
+	#			splice @layers, $i, 1;
+	#		}
+	#
+	#	}
+
 	for ( my $i = 0 ; $i < scalar( scalar(@layers) ) ; $i++ ) {
 
 		if ( $layers[$i]->GetType() eq Enums->ProductL_PRODUCT ) {
@@ -1202,6 +1211,12 @@ sub __AdjustPrepregThickness {
 
 			if ( $i - 1 >= 0 && $layers[ $i - 1 ]->GetType() eq Enums->ProductL_PRODUCT ) {
 				$topPL = $layers[ $i - 1 ]->GetData()->GetProductOuterMatLayer("last");
+
+				# if coverlay inside stackup, get next layer by coverlay
+				if ( $topPL->GetData()->GetType() eq Enums->MaterialType_COVERLAY ) {
+					$topPL = $layers[ $i - 1 ]->GetData()->GetProductOuterMatLayer( "last", undef, 2 );
+				}
+
 			}
 
 			my $topCopper = undef;
@@ -1218,6 +1233,11 @@ sub __AdjustPrepregThickness {
 			my $botPL = undef;    # Product layer
 			if ( $i + 1 < scalar(@layers) && $layers[ $i + 1 ]->GetType() eq Enums->ProductL_PRODUCT ) {
 				$botPL = $layers[ $i + 1 ]->GetData()->GetProductOuterMatLayer("first");
+
+				# if coverlay inside stackup, get next layer by coverlay
+				if ( $botPL->GetData()->GetType() eq Enums->MaterialType_COVERLAY ) {
+					$botPL = $layers[ $i + 1 ]->GetData()->GetProductOuterMatLayer( "first", undef, 2 );
+				}
 			}
 
 			my $botCopper = undef;
@@ -1232,14 +1252,14 @@ sub __AdjustPrepregThickness {
 			#Theoretical calculation for one prepreg and two Cu is:
 			# Thick = height(prepreg) - (height(topCu* (1-UsageInPer(topCu))  +   height(botCu* (1-UsageInPer(topCu)))
 			my $thick = $layers[$i]->GetData()->GetThick();
-			if ($topCopper) {
+			if ($topCopper && $topCopper->GetUssage() > 0) {
 
 				my $plating = scalar( grep { $_->{"name"} eq $topCopper->GetCopperName() && $_->{"product"}->GetIsPlated() } @{$matrix} );
 
 				$thick -= ( $topCopper->GetThick() + ( $plating ? Enums->Plating_STD : 0 ) ) * ( 1 - $topCopper->GetUssage() );
 			}
 
-			if ($botCopper) {
+			if ($botCopper && $botCopper->GetUssage() > 0) {
 
 				my $plating = scalar( grep { $_->{"name"} eq $botCopper->GetCopperName() && $_->{"product"}->GetIsPlated() } @{$matrix} );
 

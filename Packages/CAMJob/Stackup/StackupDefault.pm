@@ -111,7 +111,7 @@ sub CreateStackup {
 
 	#if pcb is in 8 class, set outer Cu 9µm
 	if ( $pcbClass >= 8 && $outerCuThick <= 18 ) {
-		$outerCuThick = 9;
+		$outerCuThick = 12;
 	}
 	
 	$self->_SetOuterCu( \$xml, $outerCuThick );

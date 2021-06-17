@@ -40,7 +40,8 @@ sub new {
 # Delete and add new schema
 sub Run {
 	my $self = shift;
-	my $mess = shift;
+	my $errMess = shift;
+	my $infMess = shift;
 
 	my $inCAM       = $self->{"inCAM"};
 	my $jobId       = $self->{"jobId"};
@@ -108,7 +109,7 @@ sub Run {
 				}
 				else {
 
-					$$mess .= "Material thickness after scoring was not found in score program files";
+					$$errMess .= "Material thickness after scoring was not found in score program files";
 					$result = 0;
 				}
 			}
@@ -132,8 +133,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $check = Change->new( "key", $inCAM, $jobId );
 
-	my $mess = "";
-	print "Change result: " . $check->Run( \$mess );
+	my $errMess = "";
+	print "Change result: " . $check->Run( \$errMess );
 }
 
 1;
