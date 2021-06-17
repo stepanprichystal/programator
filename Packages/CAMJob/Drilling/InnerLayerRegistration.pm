@@ -33,7 +33,10 @@ sub RequireInnerLayerReg {
 	my @allLayers = $stackup->GetAllLayers();
 
 	# Only not empty inner layer
-	my $innLayerCnt = scalar( grep { $_->GetType() eq StackEnums->MaterialType_COPPER && $_->GetUssage() > 0 } @allLayers );
+	my $innLayerCnt =
+	  scalar( grep { $_->GetType() eq StackEnums->MaterialType_COPPER && $_->GetCopperName() =~ /^v\d+$/ && $_->GetUssage() > 0 }
+			  @allLayers )
+	  ;
 
 	if (    ( $jobClassInner >= 8 && $innLayerCnt >= 3 )
 		 || ( JobHelper->GetIsFlex($jobId) && $innLayerCnt >= 1 ) )
@@ -117,7 +120,6 @@ sub GetInnerLayerDepths {
 
 	return @depths;
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
@@ -132,11 +134,11 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d322953";
+	my $jobId = "d321505";
 
 	my $mess = "";
 
-	my @d = InnerLayerRegistration->GetInnerLayerDepths( $inCAM, $jobId );
+	my @d = InnerLayerRegistration->RequireInnerLayerReg( $inCAM, $jobId );
 
 	print STDERR "Result is: @d, error \n";
 
