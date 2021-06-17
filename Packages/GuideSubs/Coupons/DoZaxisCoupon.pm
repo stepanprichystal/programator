@@ -51,11 +51,13 @@ sub GenerateZaxisCoupons {
 														  EnumsGeneral->LAYERTYPE_nplt_bMillTop,    EnumsGeneral->LAYERTYPE_nplt_bMillBot,
 													   ]
 	);
-	
-	return 0 if ( scalar( @depthLayers ) == 0 );
-	
+
+	return 0 if ( scalar(@depthLayers) == 0 );
+
 	my @steps = CamStep->GetJobEditSteps( $inCAM, $jobId );
-	
+
+	my $cpnRequired = 0;    # indicatior if user require cpn
+
 	foreach my $l (@depthLayers) {
 
 		foreach my $s (@steps) {
@@ -108,6 +110,10 @@ sub GenerateZaxisCoupons {
 				my @params = ( $parCpnRequired, $parCpnType, $parThick );
 
 				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_QUESTION, \@mess, undef, undef, \@params );
+
+				if ( $parCpnRequired->GetResultValue(1) ) {
+					$cpnRequired = 1;
+				}
 
 				# Check if coupo is not required
 				unless ( $parCpnRequired->GetResultValue(1) ) {
@@ -167,24 +173,7 @@ sub GenerateZaxisCoupons {
 
 	}
 
-	# Do final check before generate coupons
-	my $cpnZAxis = CouponZaxisMill->new( $inCAM, $jobId );
-
-	my $errMess = "";
-	while ( !$cpnZAxis->CheckSpecifications( \$errMess ) ) {
-
-		my @mess = (@messHead);
-		push( @mess, "Chyba při kontrole nastavení Z-axis kupónů pomocí atributů vrstvy. Detail:" );
-		push( @mess, $errMess );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
-
-		$errMess = "";
-
-		$inCAM->PAUSE("Oprav chybu");
-	}
-
-	# Exit if no coupon specification
-	return 0 if ( scalar( $cpnZAxis->GetAllSpecifications() ) == 0 );
+	return 0 unless ($cpnRequired);
 
 	# This step require Stackup if vv
 	while (1) {
@@ -206,6 +195,25 @@ sub GenerateZaxisCoupons {
 			last;
 		}
 	}
+
+	# Do final check before generate coupons
+	my $cpnZAxis = CouponZaxisMill->new( $inCAM, $jobId );
+
+	my $errMess = "";
+	while ( !$cpnZAxis->CheckSpecifications( \$errMess ) ) {
+
+		my @mess = (@messHead);
+		push( @mess, "Chyba při kontrole nastavení Z-axis kupónů pomocí atributů vrstvy. Detail:" );
+		push( @mess, $errMess );
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+
+		$errMess = "";
+
+		$inCAM->PAUSE("Oprav chybu");
+	}
+
+	# Exit if no coupon specification
+	return 0 if ( scalar( $cpnZAxis->GetAllSpecifications() ) == 0 );
 
 	while (1) {
 
@@ -272,7 +280,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d322952";
+	my $jobId = "d323981";
 
 	my $res = DoZaxisCoupon->GenerateZaxisCoupons( $inCAM, $jobId );
 

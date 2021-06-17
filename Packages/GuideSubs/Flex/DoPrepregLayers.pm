@@ -25,6 +25,7 @@ use aliased 'Packages::CAMJob::FlexiLayers::FlexiBendArea';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Polygon::Enums' => 'PolyEnums';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Packages::Routing::PilotHole';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -89,7 +90,6 @@ sub __PreparePreregNo1 {
 		return 0 if ( $messMngr->Result() == 0 );
 	}
 
-
 	# Search for prepreg type 1 in stackup
 	my $stackup = Stackup->new( $inCAM, $jobId );
 	my @P1 = grep { $_->GetType() eq StackEnums->MaterialType_PREPREG && $_->GetIsNoFlow() && $_->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 }
@@ -98,7 +98,7 @@ sub __PreparePreregNo1 {
 	return 0 unless ( scalar(@P1) );
 
 	# When only top coverlay on outer RigidFlex (without pins)
-		my $pins = 1;
+	my $pins = 1;
 	if ( !CamHelper->LayerExists( $inCAM, $jobId, "cvrlpins" ) ) {
 		$pins = 0;
 	}
@@ -182,6 +182,10 @@ sub __PreparePreregNo1 {
 											   $parTool->GetResultValue(1) );
 
 		}
+
+		# Add pilot
+		PilotHole->AddPilotHole( $inCAM, $jobId, $step, $prereglName, 80 );
+
 		CamLayer->WorkLayer( $inCAM, $prereglName );
 		$inCAM->PAUSE("Zkontroluj pripravenou frezovaci vrstvu pro PREPREG 1 a uprav co je treba.");
 

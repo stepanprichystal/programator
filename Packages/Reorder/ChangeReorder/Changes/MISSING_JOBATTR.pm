@@ -146,6 +146,8 @@ sub Run {
 		my $d = ( DateTime->now( "time_zone" => 'Europe/Prague' )->year() + 1 ) % 100;
 		CamAttributes->SetJobAttribute( $inCAM, $jobId, "custom_year", $d );
 	}
+	
+	# Move hustejsti from job to layer attribut
 
 	return $result;
 }

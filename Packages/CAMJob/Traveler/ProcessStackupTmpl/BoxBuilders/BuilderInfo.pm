@@ -271,7 +271,6 @@ sub __BuildPaketInfo {
 	my $pinStr  = "Ne";
 
 	if (
-		$lamType eq Enums->LamType_FLEXBASE
 		|| ( $lamType eq Enums->LamType_RIGIDBASE
 			 && scalar( $lamData->GetLayers( StackEnums->ProductL_PRODUCT ) ) > 1 )
 		|| $lamType eq Enums->LamType_ORIGIDFLEXFINAL

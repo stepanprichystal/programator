@@ -21,6 +21,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::CAMJob::FlexiLayers::CoverlayPinParser::CoverlayPinParser';
 use aliased 'Packages::CAMJob::FlexiLayers::FlexiBendArea';
 use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Routing::PilotHole';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -31,7 +32,7 @@ push( @messHead, "<g>=====================================</g>" );
 push( @messHead, "<g>Průvodce vytvořením coverlay vrstev</g>" );
 push( @messHead, "<g>=====================================</g>\n" );
 
-my $COVERLAYOVERLAP = 1000;     # Ovelrap of coverlay to rigid area
+my $COVERLAYOVERLAP = 1000;    # Ovelrap of coverlay to rigid area
 my $ROUTOOL         = 2000;    # 2000µm rout tool
 my $REGPINSIZE      = 1500;    # 1500µm or register pin hole
 my $PINRADIUS       = 1000;    # 2000 µm radius of coveraly pins
@@ -49,8 +50,8 @@ sub PrepareCoverlayLayers {
 
 	CamHelper->SetStep( $inCAM, $step );
 
-	my $type    = JobHelper->GetPcbType($jobId);
-	my $stackup = Stackup->new($inCAM, $jobId);
+	my $type = JobHelper->GetPcbType($jobId);
+	my $stackup = Stackup->new( $inCAM, $jobId );
 
 	my %coverlayType   = HegMethods->GetCoverlayType($jobId);
 	my @coverSigLayers = JobHelper->GetCoverlaySigLayers($jobId);
@@ -76,7 +77,7 @@ sub PrepareCoverlayLayers {
 		# find flexible inner layers
 		my $core     = ( $stackup->GetAllCores(1) )[0];
 		my $sigLayer = $core->GetTopCopperLayer()->GetCopperName();
- 
+
 		$self->__PrepareCoverlay( $inCAM, $jobId, $step, "top", $pins, $sigLayer, $messMngr );
 	}
 
@@ -160,7 +161,7 @@ sub __PrepareCoverlay {
 
 			my $errMess = "";
 
-			while ( !$pinParser->CheckBendArea(\$errMess) ) {
+			while ( !$pinParser->CheckBendArea( \$errMess ) ) {
 
 				$messMngr->ShowModal( -1,
 									  EnumsGeneral->MessageType_ERROR,
@@ -212,6 +213,9 @@ sub __PrepareCoverlay {
 			$routLayer = FlexiBendArea->PrepareRoutCoverlay( $inCAM, $jobId, $step, $sigLayer, $pins, $pins, undef, $parTool->GetResultValue(1) );
 
 		}
+
+		# Add pilot
+		PilotHole->AddPilotHole( $inCAM, $jobId, $step, $routLayer, 80 );
 
 		CamLayer->WorkLayer( $inCAM, $routLayer );
 		$inCAM->PAUSE("Zkontroluj pripravenou coverlay frezovaci vrstvu a uprav co je treba.");
