@@ -145,6 +145,24 @@ sub __CreateFakeSMLayers {
 
 				my ($source) = $fl =~ m/(m[cs])/;
 				$inCAM->COM( "merge_layers", "source_layer" => $source, "dest_layer" => $fl );
+
+				# change text MASKA => MASKA 2
+				my $f = FeatureFilter->new( $inCAM, $jobId, $fl );
+
+				$f->SetFeatureTypes( "text" => 1 );
+				$f->SetText("*MASKA*");
+
+				if ( $f->Select() > 0 ) {
+
+					my $f = Features->new();
+					$f->Parse( $inCAM, $jobId, $s, $fl, 0, 1 );
+					my @feats = $f->GetFeatures();
+					if ( scalar(@feats) == 1 ) {
+
+						$inCAM->COM( 'sel_change_txt', "text" => $feats[0]->{"text"} . " 2" );
+					}
+
+				}
 			}
 		}
 
@@ -501,10 +519,9 @@ sub __CreateCoreDrillLayers {
 
 		foreach my $coreProdut ( sort { $b->GetCoreNumber() <=> $a->GetCoreNumber() } @products ) {
 
-			 
 			my $l = JobHelper->BuildSignalLayerName( $coreProdut->GetTopCopperLayer(), $coreProdut->GetOuterCoreTop(), 0 );
-	 
-			my %matComp = $comp->GetLayerCompensation( $l );
+
+			my %matComp = $comp->GetLayerCompensation($l);
 
 			if ( $matComp{"x"} > 0 || $matComp{"y"} > 0 ) {
 
@@ -599,7 +616,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d322394";
+	my $jobId    = "d237722";
 	my $stepName = "panel";
 
 	my @types = FakeLayers->CreateFakeLayers( $inCAM, $jobId, "panel" );

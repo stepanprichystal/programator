@@ -21,6 +21,7 @@ use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAMJob::OutputData::Enums' => "EnumsOutput";
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
 
 #-------------------------------------------------------------------------------------------#
@@ -47,17 +48,13 @@ sub Output {
 
 	$self->__PrepareStackup();
 
+	$self->__PrepareImpReport();
+
 }
 
 # Preapare stackup PDF if pcb is multilayer
 sub __PrepareStackup {
 	my $self = shift;
-
-	#		my $stackup      = StackupPdf->new( $self->{"inCAM"}, $self->{"jobId"} );
-	#		my $resultCreate = $stackup->Create(0,1,0);
-	#
-	#		my $path = $stackup->GetStackupPath();
-	#		move( $path, $self->{"filesDir"} . "\\" . $self->{"jobId"} . "stackup.pdf" );
 
 	if ( $self->{"layerCnt"} > 2 || JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
 
@@ -76,6 +73,28 @@ sub __PrepareStackup {
 			die "Error during create stackup PDF. Detail: $mess";
 		}
 
+	}
+}
+
+# Preapare  impedance report if exist
+sub __PrepareImpReport {
+	my $self = shift;
+
+	if ( $self->{"layerCnt"} > 2 ) {
+
+		my @steps = CamStep->GetAllStepNames( $self->{"inCAM"}, $self->{"jobId"} );
+
+		my $impStep = EnumsGeneral->Coupon_IMPEDANCE;
+		my $impExist = scalar( grep { $_ =~ /$impStep/i } @steps );
+
+		if ($impExist) {
+
+			my $impReport = JobHelper->GetJobArchive( $self->{"jobId"} ) . "zdroje\\" . $self->{"jobId"} . "_imp_report.pdf";
+
+			die "Unable to copy imp report to cooperation data. Impedance report doesn't exist at: $impReport" unless ( -e $impReport );
+
+			copy( $impReport, $self->{"filesDir"} . "\\" . $self->{"jobId"} . "_imp_report.pdf" );
+		}
 	}
 }
 

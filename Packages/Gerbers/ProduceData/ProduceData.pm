@@ -47,9 +47,8 @@ sub new {
 
 	$self->{"layerList"}    = LayerDataList->new( $self->{"jobId"} );
 	$self->{"outputLayers"} = OutputLayers->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
-	$self->{"outputInfo"}   = OutputInfo->new( $self->{"inCAM"}, $self->{"jobId"},$self->{"step"}, $filesDir );
-	$self->{"outputPdf"}   = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
-	
+	$self->{"outputInfo"}   = OutputInfo->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, $filesDir );
+	$self->{"outputPdf"}    = OutputPdf->new( $self->{"inCAM"}, $self->{"jobId"}, $filesDir );
 
 	$self->{"outputLayers"}->{"onItemResult"}->Add( sub { $self->__OnLayersResult(@_) } );
 
@@ -85,11 +84,11 @@ sub Create {
 	# Prepare layers for export
 	$self->{"outputLayers"}->Output( $self->{"layerList"} );
 
+	# Prepare  pdf files
+	$self->{"outputPdf"}->Output( $self->{"layerList"} );
+
 	# Prepare info file readme.txt
 	$self->{"outputInfo"}->Output( $self->{"layerList"} );
-	
-	# Prepare stackup pdf
-	$self->{"outputPdf"}->Output( $self->{"layerList"} );
 
 	$self->__ZipFiles();
 
@@ -115,7 +114,7 @@ sub __OnLayersResult {
 	if ( $item->Result() eq EnumsResult->ItemResult_Fail ) {
 
 		my @errors = $item->GetErrors();
-		$self->{"produceDataResult"}->AddErrors(\@errors);
+		$self->{"produceDataResult"}->AddErrors( \@errors );
 	}
 }
 
@@ -162,7 +161,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d303358";
+	my $jobId = "d322394";
 
 	my $mess = "";
 

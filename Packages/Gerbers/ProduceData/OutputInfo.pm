@@ -135,10 +135,26 @@ sub Output {
 
 	}
 
-	# Add info about extra files (stackup etc)
-	if ( $self->{"layerCnt"} > 2 || JobHelper->GetIsFlex( $self->{"jobId"} ) ) {
-		push( @lines, $self->__CompleteLine( " - " . $self->{"jobId"} . "_stackup.pdf", "Pcb stackup" ) );
+	# Add info about extra files
+	my $dir;
+	opendir( $dir, $self->{"filesDir"} ) or die $!;
+
+	while ( my $file = readdir($dir) ) {
+
+		# Stackup file
+		if ( $file =~ /stackup/i ) {
+
+			push( @lines, $self->__CompleteLine( " - " . $file, "Pcb stackup" ) );
+		}
+
+		# Imp report file 
+		if ( $file =~ /imp_report/i ) {
+
+			push( @lines, $self->__CompleteLine( " - " . $file, "Impedance report" ) );
+		}
+
 	}
+	close($dir);
 
 	push( @lines, "" );
 

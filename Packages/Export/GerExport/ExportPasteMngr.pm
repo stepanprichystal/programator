@@ -133,7 +133,7 @@ sub __Export {
 
 	# Remove empty layers (do not export)
 	for ( my $i = scalar(@layers) - 1 ; $i >= 0 ; $i-- ) {
-		
+
 		my %h = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $layers[$i] );
 		if ( $h{"total"} == 0 ) {
 			splice @layers, $i, 1;
@@ -141,6 +141,12 @@ sub __Export {
 	}
 
 	CamHelper->SetStep( $inCAM, $step );
+
+	# 0) Clip all behind profile
+	foreach my $l (@layers) {
+
+		CamLayer->ClipAreaByProf( $inCAM, $l, 0, 0, 0 );
+	}
 
 	# 1) add profile from  to step
 	if ($addProfile) {
