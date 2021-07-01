@@ -32,6 +32,7 @@ use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceSolidPatter
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceSymbolPattern';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceLinePattern';
 use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceCrossHatchPattern';
+use aliased 'Packages::CAM::SymbolDrawing::Primitive::Helper::SurfaceSolidPattern';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -138,11 +139,17 @@ sub DrawRectangle {
 	my $backgStyle = shift;
 
 	my $surfPattern = undef;
+	my $polar = DrawingEnums->Polar_POSITIVE;
 
 	if ( $backgStyle->GetBackgStyle() eq TblDrawEnums->BackgStyle_SOLIDCLR ) {
+		
 		my $val = $backgStyle->GetBackgColor()->GetGrayScale();
 
-		if ( $val < 50 ) {
+		if ( $val == 0  ) {
+			
+			$surfPattern = SurfaceSolidPattern->new(0, 0, 0);
+		}	
+		elsif ( $val < 50 ) {
 
 			$surfPattern = SurfaceCrossHatchPattern->new( 0, 0, 45, 0, 50, 700 );
 
@@ -163,9 +170,14 @@ sub DrawRectangle {
 
 			$surfPattern = SurfaceSymbolPattern->new( 1, 100, 0, "r50", 0.7, 0.7 );
 		}
-		else {
-			 
+		if ( $val == 255  ) {
+			
+			$surfPattern = SurfaceSolidPattern->new(0, 0, 0);
+			
+			$polar = DrawingEnums->Polar_NEGATIVE; # Negative bcause negative background can overlap (clear) outher features
+ 
 		}
+		 
 	}
 
 	my @rectLim = ();
@@ -175,7 +187,7 @@ sub DrawRectangle {
 	push( @rectLim, Point->new( $sX / $self->{"unitConv"}, ( $sY + $height ) / $self->{"unitConv"} ) );
 	push( @rectLim, Point->new( $sX / $self->{"unitConv"}, $sY / $self->{"unitConv"} ) );
 
-	my $areaP = PrimitiveSurfPoly->new( \@rectLim, $surfPattern, DrawingEnums->Polar_POSITIVE );
+	my $areaP = PrimitiveSurfPoly->new( \@rectLim, $surfPattern, $polar );
 
 	$self->{"drawing"}->AddPrimitive($areaP);
 

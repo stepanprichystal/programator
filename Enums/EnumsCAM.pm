@@ -7,7 +7,6 @@ package Enums::EnumsCAM;
 use constant {
 	AttSpecLayerFill_NONE        => "none",
 	AttSpecLayerFill_EMPTY       => "empty",
-	AttSpecLayerFill_CIRCLE30PCT => "circle_30pct",
 	AttSpecLayerFill_CIRCLE80PCT => "circle_80pct",
 	AttSpecLayerFill_SOLID100PCT => "solid_100pct",
 

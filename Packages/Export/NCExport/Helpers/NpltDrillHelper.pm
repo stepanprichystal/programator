@@ -53,7 +53,7 @@ sub SeparateNpltDrill {
 
 	$movedPads += $self->__SplitNpltDrill( $inCAM, $jobId, "f", "d" . ( $bot2top ? "s" : "" ), $bot2top, undef, $NCLayersSett );
 
-	# fsch layer => pom
+	# fsch layer => fsch_d
 
 	$movedPads += $self->__SplitNpltDrill( $inCAM, $jobId, "fsch", "fsch_d" . ( $bot2top ? "s" : "" ), $bot2top, 1, $NCLayersSett );
 

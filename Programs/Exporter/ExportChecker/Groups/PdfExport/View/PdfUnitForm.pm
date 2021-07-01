@@ -222,7 +222,7 @@ sub __SetLayoutDrawings {
 	my $exportNCChb         = Wx::CheckBox->new( $statBox, -1, "NC countersing",    &Wx::wxDefaultPosition );
 	my $exportDrillIPC3Chb  = Wx::CheckBox->new( $statBox, -1, "Customer IPC3 cpn", &Wx::wxDefaultPosition );
 	my $exportCustIPC3Chb   = Wx::CheckBox->new( $statBox, -1, "Internal IPC3 cpn", &Wx::wxDefaultPosition );
-	my $exportStiffThickChb = Wx::CheckBox->new( $statBox, -1, "Stiffener thick.",  &Wx::wxDefaultPosition );
+	my $exportPCBThickChb = Wx::CheckBox->new( $statBox, -1, "PCB thickness.",  &Wx::wxDefaultPosition );
 
 	# SET EVENTS
 
@@ -233,7 +233,7 @@ sub __SetLayoutDrawings {
 	$szStatBox->Add( $exportNCChb,         1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $exportDrillIPC3Chb,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $exportCustIPC3Chb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $exportStiffThickChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $exportPCBThickChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# Set References
 	$self->{"exportPressfitChb"}   = $exportPressfitChb;
@@ -241,7 +241,7 @@ sub __SetLayoutDrawings {
 	$self->{"exportNCSpecialChb"}  = $exportNCChb;
 	$self->{"exportDrillIPC3Chb"}  = $exportDrillIPC3Chb;
 	$self->{"exportCustIPC3Chb"}   = $exportCustIPC3Chb;
-	$self->{"exportStiffThickChb"} = $exportStiffThickChb;
+	$self->{"exportPCBThickChb"} = $exportPCBThickChb;
 
 	return $szStatBox;
 }
@@ -376,15 +376,17 @@ sub DisableControls {
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
 		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+		  || $_->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot
 	  } $self->{"defaultInfo"}->GetNCLayers();
 
 	if ( scalar(@NCStiff) ) {
 
-		$self->{"exportStiffThickChb"}->Enable();
+		$self->{"exportPCBThickChb"}->Enable();
 	}
 	else {
 
-		$self->{"exportStiffThickChb"}->Disable();
+		$self->{"exportPCBThickChb"}->Disable();
 	}
 
 }
@@ -592,17 +594,17 @@ sub GetExportDrillCpnIPC3Map {
 	}
 }
 
-sub SetExportStiffThick {
+sub SetExportPCBThick {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"exportStiffThickChb"}->SetValue($val);
+	$self->{"exportPCBThickChb"}->SetValue($val);
 }
 
-sub GetExportStiffThick {
+sub GetExportPCBThick {
 	my $self = shift;
 
-	if ( $self->{"exportStiffThickChb"}->IsChecked() ) {
+	if ( $self->{"exportPCBThickChb"}->IsChecked() ) {
 
 		return 1;
 	}

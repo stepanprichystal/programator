@@ -34,9 +34,7 @@ sub RequireInnerLayerReg {
 
 	# Only not empty inner layer
 	my $innLayerCnt =
-	  scalar( grep { $_->GetType() eq StackEnums->MaterialType_COPPER && $_->GetCopperName() =~ /^v\d+$/ && $_->GetUssage() > 0 }
-			  @allLayers )
-	  ;
+	  scalar( grep { $_->GetType() eq StackEnums->MaterialType_COPPER && $_->GetCopperName() =~ /^v\d+$/ && $_->GetUssage() > 0 } @allLayers );
 
 	if (    ( $jobClassInner >= 8 && $innLayerCnt >= 3 )
 		 || ( JobHelper->GetIsFlex($jobId) && $innLayerCnt >= 1 ) )
@@ -53,15 +51,16 @@ sub RequireInnerLayerReg {
 # Do consider plating and cu usage
 # Array of hash with keys: thick (in mm); type (cu/isol	)
 sub GetInnerLayerDepths {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $jobId   = shift;
-	my $stackup = shift // Stackup->new( $inCAM, $jobId );
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $layerName = shift;
+	my $stackup   = shift // Stackup->new( $inCAM, $jobId );
 
 	my @thicks = $stackup->GetAllLayers();
 
 	my @depths       = ();
-	my $curType      = undef;    # cu/isol
+	my $curType      = undef;                                  # cu/isol
 	my $curIsolThick = 0;
 	for ( my $i = 0 ; $i < scalar(@thicks) ; $i++ ) {
 

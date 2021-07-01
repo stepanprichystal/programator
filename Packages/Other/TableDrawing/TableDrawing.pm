@@ -112,6 +112,12 @@ sub GetScaleLimits {
 	return %lim;
 }
 
+sub GetTableCnt {
+	my $self = shift;
+
+	return scalar( $self->{"tables"}->GetAllTables() );
+}
+
 # Store whole drawing to JSON and return string
 # Later is possoble draw JSON by
 sub DrawingToJSON {

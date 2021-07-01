@@ -54,7 +54,7 @@ sub Init {
 	my $exportNCSpecial       = $taskData->GetExportNCSpecial();
 	my $exportCustCpnIPC3Map  = $taskData->GetExportCustCpnIPC3Map();
 	my $exportDrillCpnIPC3Map = $taskData->GetExportDrillCpnIPC3Map();
-	my $exportStiffThick      = $taskData->GetExportStiffThick();
+	my $exportStiffThick      = $taskData->GetExportPCBThick();
 	my $exportCvrlStencil     = $taskData->GetExportCvrlStencil();
 	my $exportPeelStencil     = $taskData->GetExportPeelStencil();
 

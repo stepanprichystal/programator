@@ -185,13 +185,13 @@ sub GetExportCvrlStencil {
 	return $self->{"data"}->{"exportCvrlStencil"};
 }
 
-sub SetExportStiffThick {
+sub SetExportPCBThick {
 	my $self  = shift;
 	my $value = shift;
 	$self->{"data"}->{"exportStiffThick"} = $value;
 }
 
-sub GetExportStiffThick {
+sub GetExportPCBThick {
 	my $self  = shift;
 	my $value = shift;
 	return $self->{"data"}->{"exportStiffThick"};

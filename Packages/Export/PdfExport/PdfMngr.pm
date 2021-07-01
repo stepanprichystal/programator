@@ -28,7 +28,7 @@ use aliased 'Packages::Pdf::TravelerPdf::PeelStencilPdf::PeelStencilPdf';
 use aliased 'Packages::Pdf::ControlPdf::PcbControlPdf::ControlPdf';
 use aliased 'Packages::Pdf::DrawingPdf::DrillMapPdf::DrillMapPdf';
 use aliased 'Packages::Pdf::DrawingPdf::NCSpecialPdf::NCSpecialPdf';
-use aliased 'Packages::Pdf::DrawingPdf::StiffenerPdf::StiffenerPdf';
+use aliased 'Packages::Pdf::DrawingPdf::PCBThicknessPdf::PCBThicknessPdf';
 use aliased 'Packages::CAMJob::Traveler::ProcessStackupTmpl::ProcessStackupTmpl';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Pdf::DrawingPdf::DrillMapDrillCpnPdf::DrillMapCouponPdf';
@@ -57,7 +57,7 @@ sub new {
 	$self->{"exportNCSpecial"}       = shift;    # if export NC special pdf
 	$self->{"exportCustCpnIPC3Map"}  = shift;    # Export drill map for customer IPC3 coupon
 	$self->{"exportDrillCpnIPC3Map"} = shift;    # Export drill map for drill IPC3 coupon
-	$self->{"exportStiffThick"}      = shift;    # if export stiffener thicknessdrawing pdf
+	$self->{"exportPCBThick"}      = shift;    # if export stiffener thicknessdrawing pdf
 	$self->{"exportCvrlStencil"}     = shift;    # if export coverlay stencil pdf
 	$self->{"exportPeelStencil"}     = shift;    # if export peelable stencil pdf
 
@@ -99,8 +99,8 @@ sub Run {
 		$self->__ExportIPC3CouponDrillMap();
 	}
 
-	if ( $self->{"exportStiffThick"} ) {
-		$self->__ExportStiffThick();
+	if ( $self->{"exportPCBThick"} ) {
+		$self->__ExportPCBThick();
 	}
 
 	if ( $self->{"exportCvrlStencil"} ) {
@@ -562,28 +562,28 @@ sub __ExportIPC3CouponDrillMap {
 
 }
 
-sub __ExportStiffThick {
+sub __ExportPCBThick {
 	my $self = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my $pdf = StiffenerPdf->new( $inCAM, $jobId );
+	my $pdf = PCBThicknessPdf->new( $inCAM, $jobId );
 
-	if ( $pdf->CreateStiffPdf() ) {
+	if ( $pdf->CreatePdf() ) {
 
-		my $resultStiff = $self->_GetNewItem("Stiffener thickness pdf");
+		my $resultStiff = $self->_GetNewItem("PCB thickness pdf");
 
 		my $tmpPath = $pdf->GetPdfPath();
 
 		if ( -e $tmpPath ) {
 			
 
-			my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_StiffenerThick.pdf";
+			my $pdfPath = JobHelper->GetJobArchive($jobId) . "pdf\\" . $jobId . "_PCBThickness.pdf";
 
 			if ( -e $pdfPath ) {
 				unless ( unlink($pdfPath) ) {
-					die "Can not delete old Stiffener thickness pdf drawing. File (" . $pdfPath . "). Maybe file is still open.\n";
+					die "Can not delete old PCB thickness pdf drawing. File (" . $pdfPath . "). Maybe file is still open.\n";
 				}
 			}
 
@@ -591,7 +591,7 @@ sub __ExportStiffThick {
 			unlink($tmpPath);
 		}
 		else {
-			$resultStiff->AddError("Failed to create pdf Stiffener thickness");
+			$resultStiff->AddError("Failed to create pdf PCB thickness");
 		}
 
 		$self->_OnItemResult($resultStiff);
@@ -836,7 +836,7 @@ sub TaskItemsCount {
 		$totalCnt += 1;                                        # drill map for drill IPC3 coupon
 	}
 
-	if ( $self->{"exportStiffThick"} ) {
+	if ( $self->{"exportPCBThick"} ) {
 		$totalCnt += 1;                                        # export stiffener thickness pdf
 	}
 

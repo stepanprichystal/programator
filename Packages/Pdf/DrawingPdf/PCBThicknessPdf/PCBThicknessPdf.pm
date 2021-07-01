@@ -3,13 +3,15 @@
 # Description: Creation Stiffener thicnkess drawing for final PCB check
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Packages::Pdf::DrawingPdf::StiffenerPdf::StiffenerPdf;
+package Packages::Pdf::DrawingPdf::PCBThicknessPdf::PCBThicknessPdf;
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 use English;
 use List::Util qw[first];
+use List::MoreUtils qw(uniq);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -26,6 +28,7 @@ use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHistogram';
+use aliased 'Packages::CAM::UniDTM::UniDTM';
 
 use aliased 'Packages::Other::TableDrawing::TableDrawing';
 use aliased 'Packages::Other::TableDrawing::Enums' => 'TblDrawEnums';
@@ -43,7 +46,7 @@ use aliased 'Packages::Other::TableDrawing::TableLayout::StyleLayout::TextStyle'
 #-------------------------------------------------------------------------------------------#
 
 # Text settings
-my $magicConstant    = 0.00328;                # InCAM need text width converted with this constant , took keep required width in µm
+my $magicConstant    = 0.00328;                # InCAM need text width converted with this constant , took keep required width in Âµm
 my $TITLE_TEXT_SIZE  = 5000;
 my $TITLE_TEXT_WIDTH = 600 * $magicConstant;
 my $TABLE_TEXT_SIZE  = 3000;
@@ -77,6 +80,8 @@ $thickBorderStyle->AddEdgeStyle( "bot",   TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0
 $thickBorderStyle->AddEdgeStyle( "left",  TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
 $thickBorderStyle->AddEdgeStyle( "right", TblDrawEnums->EdgeStyle_SOLIDSTROKE, 0.2 );
 
+my $backgStyle = BackgStyle->new( TblDrawEnums->BackgStyle_SOLIDCLR, Color->new("255, 255, 255") );
+
 # Other const
 use constant STIFF_TOL => 5;    # Stiffener tolerance +-5%
 
@@ -94,7 +99,7 @@ sub new {
 }
 
 # Create PDF drawing
-sub CreateStiffPdf {
+sub CreatePdf {
 	my $self = shift;
 
 	my $result = 1;
@@ -102,18 +107,19 @@ sub CreateStiffPdf {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my @stiffL = CamDrilling->GetNCLayersByTypes(
-												  $inCAM, $jobId,
-												  [
-													 EnumsGeneral->LAYERTYPE_nplt_bstiffcMill, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill,
-													 EnumsGeneral->LAYERTYPE_nplt_stiffcMill,  EnumsGeneral->LAYERTYPE_nplt_stiffsMill
-												  ]
+	my @NCLayer = CamDrilling->GetNCLayersByTypes(
+												   $inCAM, $jobId,
+												   [
+													  EnumsGeneral->LAYERTYPE_nplt_bstiffcMill, EnumsGeneral->LAYERTYPE_nplt_bstiffsMill,
+													  EnumsGeneral->LAYERTYPE_nplt_stiffcMill,  EnumsGeneral->LAYERTYPE_nplt_stiffsMill,
+													  EnumsGeneral->LAYERTYPE_nplt_bMillTop,    EnumsGeneral->LAYERTYPE_nplt_bMillBot
+												   ]
 	);
 
 	# Test if stiffener exist
-	die "No stiffener layer exist" unless ( scalar(@stiffL) );
+	die "No stiffener layer exist" unless ( scalar(@NCLayer) );
 
-	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffL );
+	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@NCLayer );
 
 	# Choose background layer (display in gray as background for important information)
 	my $backgroundL = "c";
@@ -129,45 +135,84 @@ sub CreateStiffPdf {
 	}
 
 	# Get all stiffener depths and its ref layers
-	my @thickness = ();
-	my @editSteps = CamStep->GetJobEditSteps( $inCAM, $jobId );
+	my @matRestValues   = ();
+	my @routDepthValues = ();
+	my @editSteps       = CamStep->GetJobEditSteps( $inCAM, $jobId );
 
-	foreach my $stiffL (@stiffL) {
+	foreach my $NCLayer (@NCLayer) {
 
 		foreach my $s (@editSteps) {
 
-			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s, $stiffL->{"gROWname"}, 0 );
+			# Get tool depth
+			my $dtm = UniDTM->new( $inCAM, $jobId, $s, $NCLayer->{"gROWname"}, 0, 0, 0 );
+
+			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s, $NCLayer->{"gROWname"}, 0 );
 			next if ( $hist{"total"} == 0 );
 
-			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $stiffL->{"gROWname"} );
+			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $NCLayer->{"gROWname"} );
 
-			my $pcbThick = $att{"final_pcb_thickness"};
+			if (    defined $att{"final_pcb_thickness"}
+				 && $att{"final_pcb_thickness"} ne ""
+				 && $att{"final_pcb_thickness"} > 0 )
+			{
 
-			if ( defined $pcbThick && $pcbThick ne "" && $pcbThick > 0 ) {
+				# Final material thickness is importatnt
 
 				push(
-					@thickness,
+					@matRestValues,
 					{
-					  "thick"   => $pcbThick,
-					  "sourceL" => $stiffL,          # source layer, which define shape of stiffener
-					  "outputL" => $stiffL,          # outputl layer, which display how stiffener looks like in real
+					  "value"   => $att{"final_pcb_thickness"},
+					  "sourceL" => $NCLayer,                      # source layer, which define shape of stiffener
+					  "outputL" => $NCLayer,                      # outputl layer, which display how stiffener looks like in real
 					  "step"    => $s,
-					  "color"   => shift(@colors)    # each stiffener thicknes has specific color on PDF
+					  "color"   => shift(@colors)                 # each stiffener thicknes has specific color on PDF
 					}
 				);
+
+			}
+			elsif ( defined $att{"zaxis_rout_calibration_coupon"}
+					&& $att{"zaxis_rout_calibration_coupon"} !~ /none/i )
+			{
+
+				# Rout depth is important
+				# Require measurement only if zaxis coupon is required
+
+				my @depth = uniq( map { $_->GetDepth() } grep { !$_->GetSpecial() && $_->GetDepth() } $dtm->GetUniqueTools() );
+
+				foreach my $d (@depth) {
+
+					push(
+						@routDepthValues,
+						{
+						  "value"   => $d * 1000,
+						  "sourceL" => $NCLayer,         # source layer, which define shape of stiffener
+						  "outputL" => $NCLayer,         # outputl layer, which display how stiffener looks like in real
+						  "step"    => $s,
+						  "color"   => shift(@colors)    # each stiffener thicknes has specific color on PDF
+						}
+					);
+				}
+
 			}
 
 		}
 	}
 
 	# Sort thickness from  thickest to thinnest
-	@thickness = sort { $b->{"thick"} <=> $a->{"thick"} } @thickness;
+	@matRestValues   = sort { $b->{"value"} <=> $a->{"value"} } @matRestValues;
+	@routDepthValues = sort { $b->{"value"} <=> $a->{"value"} } @routDepthValues;
+
+	if ( scalar(@matRestValues) == 0 && scalar(@routDepthValues) == 0 ) {
+
+		$result = 0;
+		return $result;
+	}
 
 	# Create inCAM step (flatten if main step contain S$R )
-	my $pdfStep = $step . "_stiff_pdf";
+	my $pdfStep = $step . "_pcbthick_pdf";
 
 	# Get all layers which will be usefull
-	my @l2Flat = ( map { $_->{"gROWname"} } @stiffL );
+	my @l2Flat = ( map { $_->{"gROWname"} } @NCLayer );
 	push( @l2Flat, $backgroundL );
 	my @npltF = map { $_->{"gROWname"} }
 	  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_nDrill, EnumsGeneral->LAYERTYPE_nplt_nMill ] );
@@ -182,13 +227,13 @@ sub CreateStiffPdf {
 	CamStep->ProfileToLayer( $inCAM, $pdfStep, $lBase, "500" );
 
 	# 1) Prepare stiffener output layer
-	$self->__PrepareStiffLayer( $pdfStep, $lBase, \@thickness, $backgroundL );
+	$self->__PrepareNCLayers( $pdfStep, $lBase, \@matRestValues, \@routDepthValues, $backgroundL );
 
 	# 2) Prepare stiffener thickness table
-	$self->__PrepareTable( $pdfStep, $lBase, \@thickness );
+	$self->__PrepareTables( $pdfStep, $lBase, \@matRestValues, \@routDepthValues );
 
 	# Add Title
-	my $title = uc( $self->{"jobId"} ) . ": PCB + Stiffener thickness";
+	my $title = uc( $self->{"jobId"} ) . ": Mereni tloustek DPS ve specifickych mistech";
 	my %lim = CamJob->GetLayerLimits2( $inCAM, $jobId, $pdfStep, $lBase );
 
 	CamSymbol->AddText( $inCAM, $title,
@@ -201,10 +246,10 @@ sub CreateStiffPdf {
 	CamLayer->Contourize( $inCAM, $backgroundL, "x_or_y", 0 );
 
 	# Output PDF
-	$result = $self->__PdfOutput( $lBase, $backgroundL, \@thickness );
+	$result = $self->__PdfOutput( $lBase, $backgroundL, [ @matRestValues, @routDepthValues ] );
 
 	# Do clean up
-	foreach my $thickInf (@thickness) {
+	foreach my $thickInf ( ( @matRestValues, @routDepthValues ) ) {
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $thickInf->{"outputL"} );
 	}
 
@@ -222,12 +267,13 @@ sub GetPdfPath {
 	return $self->{"outputPath"};
 }
 
-sub __PrepareStiffLayer {
-	my $self        = shift;
-	my $pdfStep     = shift;
-	my $drawLayer   = shift;
-	my @thickInfos  = @{ shift(@_) };    # sorted by stiffener thickness from thickest
-	my $backgroundL = shift;
+sub __PrepareNCLayers {
+	my $self            = shift;
+	my $pdfStep         = shift;
+	my $drawLayer       = shift;
+	my @matRestValues   = @{ shift(@_) };
+	my @routDepthValues = @{ shift(@_) };
+	my $backgroundL     = shift;
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -235,7 +281,7 @@ sub __PrepareStiffLayer {
 	my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, $pdfStep );
 
 	# Create ouptu layer for each stiff layer
-	foreach my $thickInf (@thickInfos) {
+	foreach my $thickInf ( @matRestValues, @routDepthValues ) {
 
 		if (    $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffcMill
 			 || $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_stiffsMill )
@@ -310,7 +356,9 @@ sub __PrepareStiffLayer {
 
 		}
 		elsif (    $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffcMill
-				|| $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill )
+				|| $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bstiffsMill
+				|| $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillTop
+				|| $thickInf->{"sourceL"}->{"type"} eq EnumsGeneral->LAYERTYPE_nplt_bMillBot )
 		{
 
 			my $lOut = CamLayer->RoutCompensation( $inCAM, $thickInf->{"sourceL"}->{"gROWname"}, "document" );
@@ -322,6 +370,7 @@ sub __PrepareStiffLayer {
 	# Stiffener layer may overlap eachother.
 	# Final shape/thickness is given always by stiffener layer + can be defined by depth milling layer
 	# Copy all "thinner stiffener" depth layer to stiffener layer
+	my @thickInfos = ( @matRestValues, @routDepthValues );
 	for ( my $i = 0 ; $i < scalar(@thickInfos) ; $i++ ) {
 
 		for ( my $j = $i + 1 ; $j < scalar(@thickInfos) ; $j++ ) {
@@ -398,42 +447,89 @@ sub __PrepareStiffLayer {
 	return 1;
 }
 
-sub __PrepareTable {
-	my $self       = shift;
-	my $pdfStep    = shift;
-	my $drawLayer  = shift;
-	my @thickInfos = @{ shift(@_) };    # sorted by stiffener thickness from thickest
+sub __PrepareTables {
+	my $self            = shift;
+	my $pdfStep         = shift;
+	my $drawLayer       = shift;
+	my @matRestValues   = @{ shift(@_) };    # sorted by material rest thickness from thickest
+	my @routDepthValues = @{ shift(@_) };
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
 	my $tDrawing = TableDrawing->new( TblDrawEnums->Units_MM );
 
-	my $tMain = $tDrawing->AddTable( "Main", { "x" => 0, "y" => 0 }, $thickBorderStyle );
+	$self->__PrepareTable( \@matRestValues, ( $tDrawing->GetTableCnt() + 1 ) . ") Mereni celkove tloustky DPS", "Tloustka zbytku", $tDrawing )
+	  if ( scalar(@matRestValues) );
+
+	$self->__PrepareTable( \@routDepthValues,
+						   ( $tDrawing->GetTableCnt() + 1 ) . ") Mereni zahloubeni po odfrezovani",
+						   "Hloubka zahloubeni", $tDrawing )
+	  if ( scalar(@routDepthValues) );
+
+	# Init Draw Builder
+	my @media = ( 500, 500 );
+	my $margin = 0;
+
+	my $drawBuilder = InCAMDrawing->new( $inCAM, $jobId, $pdfStep, $drawLayer, TblDrawEnums->Units_MM, \@media, $margin );
+
+	#my  = $tDrawing->FitToCanvas( $w, $h );
+
+	my %tblLim = $tDrawing->GetOriLimits();
+
+	my $oriX = 0;
+	my $oriY = $tblLim{"yMax"} - $tblLim{"yMin"};
+
+	my $tblCpnGap = 10;    # 15mm gap between table and coupon
+
+	$tDrawing->Draw( $drawBuilder, 1, 1, 0, -( $oriY + $PCB_TABLE_GAP / 1000 ) );
+}
+
+sub __PrepareTable {
+	my $self        = shift;
+	my @thickValues = @{ shift(@_) };    # sorted by material rest thickness from thickest
+	my $tableTitle  = shift;
+	my $valueTitle  = shift;
+	my $tDrawing    = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my %tblLim = $tDrawing->GetOriLimits();
+
+	my $oriX = 0;
+	my $oriY = $tblLim{"yMax"} - $tblLim{"yMin"};
+	$oriY += 20 if ( $oriY != 0 );
+
+	my $tMain = $tDrawing->AddTable( "Main" . $tDrawing->GetTableCnt(), { "x" => $oriX, "y" => $oriY }, $thickBorderStyle );
 
 	# Add columns
 
 	$tMain->AddColDef( "col_color",     30, undef, $thinBorderStyle );
-	$tMain->AddColDef( "col_stiffSide", 25, undef, $thinBorderStyle );
-	$tMain->AddColDef( "col_thickness", 60, undef, $thinBorderStyle );
+	$tMain->AddColDef( "col_stiffSide", 30, undef, $thinBorderStyle );
+	$tMain->AddColDef( "col_thickness", 80, undef, $thinBorderStyle );
 
 	#	$tMain->AddColDef( "col_tol",       20, undef, $thinBorderStyle );
 	$tMain->AddColDef( "col_tolVal", 60, undef, $thinBorderStyle );
 
 	# Add rows
 
-	$tMain->AddRowDef( "row_1", 9, undef, $thickBorderStyle );    # Header row
+	$tMain->AddRowDef( "row_0", 10, undef, $thickBorderStyle );    # Table title row
+
+	$tMain->AddCell( $tMain->GetCollByKey("col_color")->GetId(), 0, 4, undef, "$tableTitle", $headTextStyle, $backgStyle, undef );
+
+	$tMain->AddRowDef( "row_1", 8, undef, $thickBorderStyle );     # Column header row
 
 	# Add table header cells
 
-	$tMain->AddCell( $tMain->GetCollByKey("col_color")->GetId(),     0, undef, undef, "Color",                          $headTextStyle, undef );
-	$tMain->AddCell( $tMain->GetCollByKey("col_stiffSide")->GetId(), 0, undef, undef, "Side",                           $headTextStyle, undef );
-	$tMain->AddCell( $tMain->GetCollByKey("col_thickness")->GetId(), 0, undef, undef, "Total thickness",                $headTextStyle, undef );
-	$tMain->AddCell( $tMain->GetCollByKey("col_tolVal")->GetId(),    0, undef, undef, "Tolerance +-" . STIFF_TOL . "%", $headTextStyle, undef );
+	$tMain->AddCell( $tMain->GetCollByKey("col_color")->GetId(),     1, undef, undef, "Barva",                          $headTextStyle, undef );
+	$tMain->AddCell( $tMain->GetCollByKey("col_stiffSide")->GetId(), 1, undef, undef, "Ze strany",                      $headTextStyle, undef );
+	$tMain->AddCell( $tMain->GetCollByKey("col_thickness")->GetId(), 1, undef, undef, $valueTitle,                      $headTextStyle, undef );
+	$tMain->AddCell( $tMain->GetCollByKey("col_tolVal")->GetId(),    1, undef, undef, "Tolerance +-" . STIFF_TOL . "%", $headTextStyle, undef );
 
 	# Add table body cells
 
-	foreach my $thickInf (@thickInfos) {
+	foreach my $thickInf (@thickValues) {
 
 		$tMain->AddRowDef( "row_" . ( $tMain->GetRowCnt() + 1 ), 6, undef, $thickBorderStyle );    # Header row
 
@@ -460,7 +556,7 @@ sub __PrepareTable {
 		$tMain->AddCell( $tMain->GetCollByKey("col_stiffSide")->GetId(), $tMain->GetRowCnt() - 1, undef, undef, $side, $stdTextStyle, undef );
 
 		# Add color cell
-		my $thick = $thickInf->{"thick"} / 1000;
+		my $thick = $thickInf->{"value"} / 1000;
 
 		$tMain->AddCell( $tMain->GetCollByKey("col_thickness")->GetId(),
 						 $tMain->GetRowCnt() - 1,
@@ -475,23 +571,6 @@ sub __PrepareTable {
 						 $stdTextStyle, undef );
 
 	}
-
-	# Init Draw Builder
-	my @media = ( 500, 500 );
-	my $margin = 0;
-
-	my $drawBuilder = InCAMDrawing->new( $inCAM, $jobId, $pdfStep, $drawLayer, TblDrawEnums->Units_MM, \@media, $margin );
-
-	#my  = $tDrawing->FitToCanvas( $w, $h );
-
-	my %tblLim = $tDrawing->GetOriLimits();
-
-	my $oriX = 0;
-	my $oriY = $tblLim{"yMax"} - $tblLim{"yMin"};
-
-	my $tblCpnGap = 10;    # 15mm gap between table and coupon
-
-	$tDrawing->Draw( $drawBuilder, 1, 1, 0, -( $oriY + $PCB_TABLE_GAP / 1000 ) );
 }
 
 sub __PdfOutput {
@@ -574,14 +653,14 @@ sub __TxtColor2PdfColor {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	use aliased 'Packages::Pdf::DrawingPdf::StiffenerPdf::StiffenerPdf';
+	use aliased 'Packages::Pdf::DrawingPdf::PCBThicknessPdf::PCBThicknessPdf';
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d320240";
-	my $map = StiffenerPdf->new( $inCAM, $jobId );
-	$map->CreateStiffPdf();
+	my $jobId = "d322953";
+	my $map = PCBThicknessPdf->new( $inCAM, $jobId );
+	$map->CreatePdf();
 
 }
 

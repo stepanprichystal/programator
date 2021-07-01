@@ -601,7 +601,6 @@ sub __DefineNPlatedOperations {
 	# 2) Operation name = fzs<press order>, can contain layer
 	# - @nplt_bMillBot
 	# - @nplt_nDrill
-
 	foreach my $pressOrder ( keys %pressProducts ) {
 
 		my $press   = $pressProducts{$pressOrder};
@@ -615,15 +614,16 @@ sub __DefineNPlatedOperations {
 		my @blindBot = grep { $_->{"NCSigStartOrder"} == $startBot } @nplt_bMillBot;
 		push( @layers, @blindBot );
 
-		# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
+		# Exception, if "fsch_ds" layer is created. Remove "d" and use instead only "fsch_d" layer
 		# fsch_d contain nplt drills from layer fsch
-		if ( scalar( grep { $_->{"gROWname"} =~ /fsch_ds/i } @nplt_nDrillBot ) > 0 ) {
+		my @nplt_nDrillBotTmp = @nplt_nDrillBot;
+		if ( scalar( grep { $_->{"gROWname"} =~ /fsch_ds/i } @nplt_nDrillBotTmp ) > 0 ) {
 
-			die "Layer \"ds\" must exist if exist layer \"fsch_ds\"" unless ( grep { $_->{"gROWname"} =~ /^ds$/i } @nplt_nDrillBot );
-			@nplt_nDrillBot = grep { $_->{"gROWname"} !~ /^ds$/i } @nplt_nDrillBot;
+			die "Layer \"ds\" must exist if exist layer \"fsch_ds\"" unless ( grep { $_->{"gROWname"} =~ /^ds$/i } @nplt_nDrillBotTmp );
+			@nplt_nDrillBotTmp = grep { $_->{"gROWname"} !~ /^ds$/i } @nplt_nDrillBotTmp;
 		}
 
-		push( @layers, @nplt_nDrillBot );
+		push( @layers, @nplt_nDrillBotTmp );
 
 		$opManager->AddOperationDef( $outFile, \@layers, $pressOrder );
 	}
@@ -661,11 +661,12 @@ sub __DefineNPlatedOperations {
 
 	# Exception, if "fsch_d" layer is created. Remove "d" and use instead only "fsch_d" layer
 	# fsch_d contain nplt drills from layer fsch
-	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrill ) > 0 ) {
-		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless ( grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrill );
-		@nplt_nDrill = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrill;
+	my @nplt_nDrillTmp = @nplt_nDrill;
+	if ( scalar( grep { $_->{"gROWname"} =~ /fsch_d/i } @nplt_nDrillTmp ) > 0 ) {
+		die "Layer \"d\" must exist if exist layer \"fsch_d\"" unless ( grep { $_->{"gROWname"} =~ /^d$/i } @nplt_nDrillTmp );
+		@nplt_nDrillTmp = grep { $_->{"gROWname"} !~ /^d$/i } @nplt_nDrillTmp;
 	}
-	my @layers = ( @nplt_nMill, @nplt_nDrill );
+	my @layers = ( @nplt_nMill, @nplt_nDrillTmp );
 
 	$opManager->AddOperationDef( "fc" . $stackup->GetPressCount(), \@layers, $stackup->GetPressCount() );
 

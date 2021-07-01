@@ -29,6 +29,7 @@ use aliased 'Packages::Export::NCExport::Helpers::NpltDrillHelper';
 use aliased 'Packages::CAMJob::Routing::RoutSpeed::RoutSpeed';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
+use aliased 'Packages::CAMJob::Microsection::CouponZaxisMill';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -177,7 +178,7 @@ sub __Run {
 
 		# Add output settings info for nc layers
 		Helper->StoreNClayerSettTif( $self->{"inCAM"}, $self->{"jobId"}, $self->{"NCLayers"}, $self->{"operationMngr"} );
-
+ 
 		# 4) Export physical nc files
 		$self->{"exportFileMngr"}->ExportFiles( $self->{"operationMngr"} );
 
@@ -227,14 +228,19 @@ sub __UpdateNCInfo {
 	# Save nc info table to database
 	my $resultItem = $self->_GetNewItem("Save NC info");
 
-	my @info       = $self->__GetNCInfo();
+	#Get information about nc files for  technical procedure
+
+	my @operationsTable = $self->{"operationMngr"}->GetInfoTable();
+	my $c = CouponZaxisMill->new( $self->{"inCAM"}, $self->{"jobId"} );
+
 	my $resultMess = "";
+	my $ncInfoStr = Helper->BuildNCInfo( $self->{"jobId"}, \@operationsTable, $c, \$resultMess );
 
 	# 3 attempt to write to HEG (can do problems during heg bil load)
 	my $result = 0;
 	foreach my $attempt ( 1 .. 3 ) {
 
-		$result = Helper->UpdateNCInfo( $self->{"jobId"}, \@info, \$resultMess );
+		$result = Helper->UpdateNCInfo( $self->{"jobId"}, $ncInfoStr, \$resultMess );
 
 		last if ($result);
 		sleep(5);
@@ -273,15 +279,6 @@ sub __CheckNCLayers {
 	return $res;
 }
 
-#Get information about nc files for  technical procedure
-sub __GetNCInfo {
-	my $self = shift;
-
-	my @infoTable = $self->{"operationMngr"}->GetInfoTable();
-
-	return @infoTable;
-}
-
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#
@@ -296,8 +293,6 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $step  = "panel";
 	my $inCAM = InCAM->new();
-
-	
 
 	my $export = ExportPanelAllMngr->new( $inCAM, $jobId, $step );
 	my @opItems = ();

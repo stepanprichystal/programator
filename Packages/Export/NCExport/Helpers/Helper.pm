@@ -34,35 +34,41 @@ use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
+use aliased 'Packages::CAMJob::Microsection::CouponZaxisMill';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-----
 
+sub BuildNCInfo {
+	my $self       = shift;
+	my $jobId      = shift;
+	my @operations = @{ shift(@_) };
+	my $zAxisCpn   = shift;
+
+	my $infoStr = "\n";
+
+	my $operStr = $self->__BuildNCInfoOperations( $jobId, \@operations );
+	my $zaxisStr = $self->__BuildNCInfoZaxis($zAxisCpn);
+
+	$infoStr .= $operStr . "\n"  if ( defined $operStr  && $operStr ne "" );
+	$infoStr .= $zaxisStr . "\n\n" if ( defined $zaxisStr && $zaxisStr ne "" );
+
+	return $infoStr;
+
+}
+
 sub UpdateNCInfo {
 	my $self      = shift;
 	my $jobId     = shift;
-	my @info      = @{ shift(@_) };
+	my $infoStr   = shift;
 	my $errorMess = shift;
 
 	my $result = 1;
 
-	my $infoStr = $self->__BuildNcInfo( \@info );
-
 	eval {
 
-		# TODO this is temporary solution
-		#		my $path = GeneralHelper->Root() . "\\Connectors\\HeliosConnector\\UpdateScript.pl";
-		#		my $ncInfo = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID();
-		#
-		#		print STDERR "path nc info is:".$ncInfo."\n\n";
-		#		print STDERR "path script is :".$path."\n\n";
-		#		my $f;
-		#		open($f, ">", $ncInfo);
-		#		print $f $infoStr;
-		#		close($f);
-		#		system("perl $path $jobId $ncInfo");
-		# TODO this is temporary solution
+
 
 		$result = HegMethods->UpdateNCInfo( $jobId, $infoStr, 1 );
 		unless ($result) {
@@ -85,31 +91,30 @@ sub UpdateNCInfo {
 }
 
 # Build string "nc info" based on information from nc manager
-sub __BuildNcInfo {
-	my $self = shift;
-	my @info = @{ shift(@_) };
+sub __BuildNCInfoOperations {
+	my $self  = shift;
+	my $jobId = shift;
+	my @info  = @{ shift(@_) };
 
-	my $str = "";
+	my $str = "Programy na stroje:\n";
 
 	for ( my $i = 0 ; $i < scalar(@info) ; $i++ ) {
 
 		my %item = %{ $info[$i] };
 
-		my @data = @{ $item{"data"} };
+		my $d = @{ $item{"data"} }[0];
 
-		if ( $item{"group"} ) {
-			$str .= "\nSkupina operaci:\n";
+		my $row = "";
+		if ( $item{"group"} == 1 ) {
+			$row = "- ${jobId}_" . $d->{"groupName"} . ": ";
 		}
 		else {
-			$str .= "\nSamostatna operace:\n";
+			$row = "- ${jobId}_" . $d->{"name"} . ": ";
 		}
 
-		foreach my $item (@data) {
+		my $mach = join( ",", @{ $d->{"machines"} } );
 
-			my $row = "[ " . $item->{"name"} . " ] - ";
-
-			my $mach = join( ", ", @{ $item->{"machines"} } );
-
+		if ( scalar( @{ $d->{"machines"} } ) ) {
 			$row .= uc($mach) . "\n";
 
 			$str .= $row;
@@ -118,6 +123,49 @@ sub __BuildNcInfo {
 	}
 
 	return $str;
+}
+
+# Build string "nc info" based on zaxis coupon
+sub __BuildNCInfoZaxis {
+	my $self     = shift;
+	my $zAxisCpn = shift;
+
+	my $str = "";
+
+	my @spec = $zAxisCpn->GetAllSpecifications();
+
+	if ( scalar(@spec) ) {
+
+		$str = "Hloubkove kupony, realna hloubka:\n";
+
+		my @stepsInfo = sort { $a->{"depthIncrease"} <=> $b->{"depthIncrease"} } $zAxisCpn->GetAllCpnSteps();
+
+		foreach my $stepInf (@stepsInfo) {
+
+			foreach my $specInf (@spec) {
+
+				my $val      = sprintf( "%.2f", $specInf->{"measureValue"} / 1000 );
+				my $step     = $stepInf->{"depthIncrease"} / 1000;
+				my $stepSign = ( $step >= 0 ? "+" : "-" );
+
+				my $toolDepth = sprintf( "%.2f", $val + $step );
+				my $stepAbs   = sprintf( "%.2f", abs($step) );
+
+				my $restValType   = Packages::CAMJob::Microsection::CouponZaxisMill::CPNTYPE_MATERIALRESTVAL;
+				my $depthMillType = Packages::CAMJob::Microsection::CouponZaxisMill::CPNTYPE_DEPTHMILLINGVAL;
+
+				my $type = $specInf->{"type"} eq $restValType ? "Zbytek" : "Hloubka";
+
+				$str .= "" . ( $step == 0 ? "O)" : $stepInf->{"id"} . ")" ) . " ${type}: ${val}${stepSign}${stepAbs} => ${toolDepth}mm\n";
+
+			}
+
+		}
+
+	}
+
+	return $str;
+
 }
 
 sub StoreOperationInfoTif {
@@ -319,7 +367,7 @@ sub SeparateCouponZaxis {
 		$sr->AddSRStep( $r->{"stepName"}, $r->{"gSRxa"}, $r->{"gSRya"}, $r->{"gSRangle"}, $r->{"gSRnx"}, $r->{"gSRny"}, $r->{"gSRdx"},
 						$r->{"gSRdy"} );
 	}
-	
+
 	# Copy signal layer c + v - need fiducials
 	CamMatrix->CopyLayer( $inCAM, $jobId, "c", $sourcePnl, "c", $cpnPnl );
 	CamMatrix->CopyLayer( $inCAM, $jobId, "v", $sourcePnl, "v", $cpnPnl );
@@ -349,10 +397,9 @@ sub RestoreCouponZaxis {
 
 		# If exist coupon depth steps, copy main panel and separate coupn steps
 		my $cpnName = EnumsGeneral->Coupon_ZAXIS;
-		
+
 		my @zAxisCpn = grep { $_->{"stepName"} =~ /^$cpnName\d+$/i } CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $cpnPnl );
-		
-		 
+
 		die "No z-axis coupon in panel step: " . $self->{"stepName"} unless ( scalar(@zAxisCpn) );
 
 		my $sr = SRStep->new( $inCAM, $jobId, $sourcePnl );
