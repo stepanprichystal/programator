@@ -133,13 +133,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'Packages::InCAM::InCAM';
 
 	my $inCAM = InCAM->new();
-	my $jobId = "d321505";
+	my $jobId = "d324934";
 
 	my $mess = "";
 
-	my @d = InnerLayerRegistration->RequireInnerLayerReg( $inCAM, $jobId );
+	my $r = InnerLayerRegistration->RequireInnerLayerReg( $inCAM, $jobId );
 
-	print STDERR "Result is: @d, error \n";
+	print STDERR "Result is: $r, error \n";
 
 }
 

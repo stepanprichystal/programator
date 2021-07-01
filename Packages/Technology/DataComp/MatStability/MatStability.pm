@@ -126,13 +126,13 @@ sub __LoadMatTables {
 	# - <1.usage>        = Cu usage <33%
 	# - <2.usage>        = Cu usage 33%-66%
 	# - <3.usage>        = Cu usage >66%
-	# - <xs>             = Stretch of material at x in PPM
-	# - <ys>             = Stretch of material at y axis in PPM (machine direction?)
+	# - <xs>             = Stretch of material at x in PPM => TRANSVERSAL direction
+	# - <ys>             = Stretch of material at y axis in PPM => MACHINE direction
 	#
 	# File format
 	# Cu     ;<Cu thickness>     ;         ;         ;<Cu thickness>;    ;         ;
 	# Usage  ;<1.usage>;<2.usage>;<3.usage>;<1.usage>;<2.usage>;<3.usage>;<1.usage>;<2.usage>
-	# Core   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;x   ;y   ;
+	# Core   ;tdir;mdir;tdir;mdir;tdir;mdir;tdir;mdir;tdir;mdir;tdir;mdir;tdir;mdir;
 	# <Core> ;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;
 	# <Core> ;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;<xs>;<ys>;
 	# ...
@@ -148,7 +148,7 @@ sub __LoadMatTables {
 
 		die "Wrong formated Cu thickness line at Material stability file: $p" if ( $lines[0] !~ /^cu;(\d+(µm)?;{5};?)+$/i );
 		die "Wrong formated Cu usage line at Material stability file: $p"     if ( $lines[1] !~ /^usage;([<\->\w%]+;;?)+$/i );
-		die "Wrong formated x/y colums line at Material stability file: $p"   if ( $lines[2] !~ /^core;((x;y;?){3})+$/i );
+		die "Wrong formated tdir/mdir colums line at Material stability file: $p"   if ( $lines[2] !~ /^core;((tdir;mdir;?){3})+$/i );
 
 		# 2) Build search structure
 

@@ -16,6 +16,7 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
 use aliased 'Packages::ProductionPanel::StandardPanel::Enums' => 'StdPnlEnums';
+
 #-------------------------------------------------------------------------------------------#
 #  Script methods
 #-------------------------------------------------------------------------------------------#
@@ -100,19 +101,22 @@ sub StackupMatInStock {
 		my $m = $cores{$coreKye}->{"mat"};
 
 		# abs - because copper id can be negative (plated core)
-		my @mat = HegMethods->GetCoreStoreInfoByUDA( $m->GetQId(), $m->GetId(), abs( $m->GetTopCopperLayer()->GetId() ) );
+		my @mat = ();
 
 		if ( $m->GetCoreRigidType() eq StackEnums->CoreType_FLEX ) {
 
-			# Flex material is always cut from dimension 305*456mm, test if panel height is smaller than 456mm
-			# (tolerance +-3mm)
-			@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 3 && $pnl->H() <= $_->{"hloubka"} } @mat;
+			@mat = HegMethods->GetCoreStoreInfoByUDA( $m->GetQId(), $m->GetId(), abs( $m->GetTopCopperLayer()->GetId() ), undef, undef, 1 );
+
+			# Check if material dimension are in tolerance +-3mm (material height must be greater than panel)
+			@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 3 && $pnl->H() - 3 <= $_->{"hloubka"} } @mat;
 
 		}
 		else {
 
-			# Check if material dimension are in tolerance +-2mm
-			@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 2 && abs( $_->{"hloubka"} - $pnl->H() ) <= 2 } @mat;
+			@mat = HegMethods->GetCoreStoreInfoByUDA( $m->GetQId(), $m->GetId(), abs( $m->GetTopCopperLayer()->GetId() ) );
+
+			# Check if material dimension are in tolerance +-3mm (material height must be greater than panel)
+			@mat = grep { abs( $_->{"sirka"} - $pnl->W() ) <= 3 && $pnl->H() - 3 <= $_->{"hloubka"} } @mat;
 
 		}
 
@@ -131,6 +135,10 @@ sub StackupMatInStock {
 
 		}
 		else {
+
+			# sort by hloubka ASC (prioritize same size of material as panel => smallest available)
+			@mat = sort { $a->{"hloubka"} <=> $b->{"hloubka"} } @mat;
+
 			my $amount    = sprintf( "%.2f", $mat[0]->{"stav_skladu"} );
 			my $requested = sprintf( "%.2f", $mat[0]->{"pocet_poptavano_vyroba"} );
 			my $avalaible = sprintf( "%.2f", $amount - $requested - ( defined $orderArea ? $orderArea * $cores{$coreKye}->{"cnt"} : 0 ) );
@@ -174,7 +182,7 @@ sub StackupMatInStock {
 
 		my @mat = ();
 
-		if ( $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD) {
+		if ( $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD ) {
 
 			$prepregW = $pnl->GetStandard()->PrepregW();
 			$prepregH = $pnl->GetStandard()->PrepregH();
@@ -183,9 +191,8 @@ sub StackupMatInStock {
 
 				@mat = HegMethods->GetPrepregStoreInfoByUDA( $m->GetQId(), $m->GetId(), undef, undef, 1 );
 
-				# Flex prepreg material is always cut from dimension 305*456mm, test if panel height is smaller than 456mm
-				# (tolerance +-3mm)
-				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 3 && $prepregH <= $_->{"hloubka"} } @mat;
+				# Check if material dimension are in tolerance +-3mm (material height must be greater than panel)
+				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 3 && ( $prepregH - 3 ) <= $_->{"hloubka"} } @mat;
 
 			}
 			else {
@@ -195,8 +202,7 @@ sub StackupMatInStock {
 				# Check if material dimension are in tolerance +-2mm for width
 				# Check if material dimension are in tolerance +-10mm for height
 				# (we use sometimes shorter version -10mm of standard prepregs because of stretching prepregs by temperature and pressure)
-				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && abs( $_->{"hloubka"} - $prepregH ) <= 10 } @mat;
-
+				@mat = grep { abs( $_->{"sirka"} - $prepregW ) <= 2 && ( $prepregH - 10 ) <= $_->{"hloubka"} } @mat;
 			}
 
 		}
@@ -215,6 +221,9 @@ sub StackupMatInStock {
 
 		}
 		else {
+
+			# sort by hloubka ASC (prioritize same size of material as panel => smallest available)
+			@mat = sort { $a->{"hloubka"} <=> $b->{"hloubka"} } @mat;
 
 			my $amount    = sprintf( "%.2f", $mat[0]->{"stav_skladu"} );
 			my $requested = sprintf( "%.2f", $mat[0]->{"pocet_poptavano_vyroba"} );
@@ -250,8 +259,8 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	use aliased 'CamHelpers::CamJob';
 
 	#my $inCAM = InCAM->new();
-	my $orderId = "d276302-01";
-	my $jobId   = "d276302";
+	my $orderId = "d322953-01";
+	my $jobId   = "d322953";
 	my $inCAM   = InCAM->new();
 
 	my $mess = "";

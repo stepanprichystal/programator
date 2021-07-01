@@ -200,6 +200,10 @@ sub GetStandards {
 			"br"     => 21,
 			"bt"     => 36.5,
 			"bb"     => 36.5,
+			
+			# used prepreg size
+			"pW" => 305,
+			"pH" => 458
 		)
 	);
 

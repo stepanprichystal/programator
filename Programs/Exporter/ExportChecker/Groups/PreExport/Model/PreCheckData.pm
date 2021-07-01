@@ -342,18 +342,26 @@ sub __CheckGroupDataBasic {
 
 	}
 
-	if ( $layerCnt > 2 && $materialKindIS && $pcbThickHelios ) {
+	# Check if material in helios match with multilayer stackup
+
+	if ( $layerCnt > 2 && $materialKindIS ) {
 
 		# Multilayer PCB
 		my $stackup = $defaultInfo->GetStackup();
 
-		# a) test id material in helios, match material in stackup (only non hybrid PCB)
+		# a) If stackup is hybrid, IS kind must be hybrid too
+		if ( $stackup->GetStackupIsHybrid() && $materialKindIS !~ /hybrid/i ) {
+			$dataMngr->_AddErrorResult( "Hybrid stackup material", "Stackup material is Hybrid but IS material not ($materialKindIS)." );
+
+		}
+
+		# b) test id material in helios, match material in stackup (only non hybrid PCB)
 		if ( !$stackup->GetStackupIsHybrid() ) {
 
 			my $stackKindStr = $defaultInfo->GetStackup()->GetStackupType();
 			$stackKindStr =~ s/[\s\t]//g;
 
-			$stackKindStr =~ s/.*DE104.*/FR4/ig;    #exception DE 104 and IS400 eq FR4
+			$stackKindStr =~ s/.*DE104.*/FR4/ig;                                   #exception DE 104 and IS400 eq FR4
 
 			if ( $stackKindStr =~ /.*IS400.*/i && $stackKindStr =~ /PYRALUX/i ) {
 				$stackKindStr = "FR4";
@@ -369,48 +377,51 @@ sub __CheckGroupDataBasic {
 
 		}
 
-		# b) test if created stackup match thickness in helios +-10%
-		my $stackThick = $defaultInfo->GetStackup()->GetFinalThick(0) / 1000;
+		# c) test if created stackup match thickness in helios +-10%
+		if ( defined $pcbThickHelios ) {
 
-		unless ( $pcbThickHelios * 0.90 < $stackThick && $pcbThickHelios * 1.10 > $stackThick ) {
+			my $stackThick = $defaultInfo->GetStackup()->GetFinalThick(0) / 1000;
 
-			$stackThick     = sprintf( "%.2f", $stackThick );
-			$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
+			unless ( $pcbThickHelios * 0.90 < $stackThick && $pcbThickHelios * 1.10 > $stackThick ) {
 
-			$dataMngr->_AddErrorResult(
-										"Tloušťka složení +-10%",
-										"Odhad výsledné tloušťky složení včetně nakovení (${stackThick}mm)"
-										  . " se nerovná požadované tloušťce zákazníka v HEG (${pcbThickHelios}mm) +-10%."
-			);
+				$stackThick     = sprintf( "%.2f", $stackThick );
+				$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
 
-		}
-		else {
-			# Stricter check than +-10%, but only warning
-			# Test if created stackup match thickness in helios +-7%
-			# Only special PCB
-			# - RigidFlex; Multilayer > 8; Sequential lamination; Inner plated layers;
+				$dataMngr->_AddErrorResult(
+											"Tloušťka složení +-10%",
+											"Odhad výsledné tloušťky složení včetně nakovení (${stackThick}mm)"
+											  . " se nerovná požadované tloušťce zákazníka v HEG (${pcbThickHelios}mm) +-10%."
+				);
 
-			if ( $defaultInfo->GetLayerCnt() > 2 ) {
+			}
+			else {
+				# Stricter check than +-10%, but only warning
+				# Test if created stackup match thickness in helios +-7%
+				# Only special PCB
+				# - RigidFlex; Multilayer > 8; Sequential lamination; Inner plated layers;
 
-				my $stckp = $defaultInfo->GetStackup();
-				if (    $defaultInfo->GetIsFlex()
-					 || $defaultInfo->GetLayerCnt() > 8
-					 || $stckp->GetSequentialLam()
-					 || scalar( grep { $_->GetIsPlated() } $stckp->GetInputProducts() ) > 0 )
-				{
+				if ( $defaultInfo->GetLayerCnt() > 2 ) {
 
-					unless ( $pcbThickHelios * 0.93 < $stackThick && $pcbThickHelios * 1.07 > $stackThick ) {
+					my $stckp = $defaultInfo->GetStackup();
+					if (    $defaultInfo->GetIsFlex()
+						 || $defaultInfo->GetLayerCnt() > 8
+						 || $stckp->GetSequentialLam()
+						 || scalar( grep { $_->GetIsPlated() } $stckp->GetInputProducts() ) > 0 )
+					{
 
-						$stackThick     = sprintf( "%.2f", $stackThick );
-						$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
+						unless ( $pcbThickHelios * 0.93 < $stackThick && $pcbThickHelios * 1.07 > $stackThick ) {
 
-						$dataMngr->_AddWarningResult(
-													  "Tloušťka složení +-7% (přísnější varianta kontroly +-10% pro složité DPS)",
-													  "Odhad výsledné tloušťky složení včetně nakovení (${stackThick}mm)"
-														. " se nerovná požadované tloušťce zákazníka v HEG (${pcbThickHelios}mm) +-7% "
-														. "(pozor, podmínka +-10% je splněna, jedná se však vždy pouze o předpokládanou tloušťku po vyrobení DPS!)."
-						);
+							$stackThick     = sprintf( "%.2f", $stackThick );
+							$pcbThickHelios = sprintf( "%.2f", $pcbThickHelios );
 
+							$dataMngr->_AddWarningResult(
+														  "Tloušťka složení +-7% (přísnější varianta kontroly +-10% pro složité DPS)",
+														  "Odhad výsledné tloušťky složení včetně nakovení (${stackThick}mm)"
+															. " se nerovná požadované tloušťce zákazníka v HEG (${pcbThickHelios}mm) +-7% "
+															. "(pozor, podmínka +-10% je splněna, jedná se však vždy pouze o předpokládanou tloušťku po vyrobení DPS!)."
+							);
+
+						}
 					}
 				}
 

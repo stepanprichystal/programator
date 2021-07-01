@@ -32,6 +32,7 @@ use constant {
 use constant {
 			   MatType_COPPER      => "Copper",
 			   MatType_CORE        => "Core",
+			   MatType_COREFLEX    => "Core Flex",
 			   MatType_PREPREG     => "Prepreg",
 			   MatType_PREPREGFLEX => "Prepreg Flex"
 };
@@ -44,9 +45,9 @@ use constant {
 	OpId_galvanicke_medeni_tenting   => "galvanicke_medeni_tenting",
 	OpId_galvanike_medeni_a_cinovani => "galvanike_medeni_a_cinovani",
 
-	OpId_chemicka_med                 => "chemicka_med",
-	OpId_chemicka_med_pred_zaplnenim  => "chemicka_med_pred_zaplnenim",
-	OpId_chemicka_med_dovrt_otvory => "chemicka_med_dovrt_otvory",
+	OpId_chemicka_med                => "chemicka_med",
+	OpId_chemicka_med_pred_zaplnenim => "chemicka_med_pred_zaplnenim",
+	OpId_chemicka_med_dovrt_otvory   => "chemicka_med_dovrt_otvory",
 
 };
 

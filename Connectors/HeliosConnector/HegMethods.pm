@@ -1275,7 +1275,7 @@ sub UpdateNCInfo {
 sub UpdateNote {
 	my $self        = shift;
 	my $pcbId       = shift;
-	my $note      = shift;
+	my $note        = shift;
 	my $childThread = shift;
 
 	if ($childThread) {
@@ -1295,8 +1295,6 @@ sub UpdateNote {
 	}
 
 }
-
- 
 
 sub UpdateMaterialKind {
 	my $self        = shift;
@@ -1535,7 +1533,7 @@ sub UpdateOfferSpecification {
 
 		foreach my $par ( @{$params} ) {
 
-			my $resIn = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $par->[1],  $par->[0] );
+			my $resIn = Connectors::HeliosConnector::HelperWriter->OnlineWrite_pcb( "$pcbId", $par->[1], $par->[0] );
 
 			$res = 0 unless ($resIn);
 
@@ -1979,8 +1977,13 @@ sub GetCoreStoreInfoByUDA {
 	my $id2      = shift;    # copper thick id
 	my $matXsize = shift;    # in mm
 	my $matYsize = shift;    # in mm
+	my $flex     = shift;    # prepreg thick id
 
-	return $self->GetMatStoreInfoByUDA( EnumsIS->MatType_CORE, $qId, $id, $id2, undef, $matXsize, $matYsize );
+	my $type = EnumsIS->MatType_CORE;
+
+	$type = EnumsIS->MatType_COREFLEX if ($flex);
+
+	return $self->GetMatStoreInfoByUDA( $type, $qId, $id, $id2, undef, $matXsize, $matYsize );
 }
 
 # Return infro from actual store from CNC store about material (copper, core, prepreg types only)
@@ -2004,12 +2007,12 @@ sub GetMatStoreInfoByUDA {
 	);
 
 	my $where = "";
-	if ( $matType eq EnumsIS->MatType_PREPREG ) {
+	if ( $matType eq EnumsIS->MatType_PREPREG || $matType eq EnumsIS->MatType_PREPREGFLEX ) {
 
 		$where .= "and uda.dps_qid = __qId"
 
 	}
-	elsif ( $matType eq EnumsIS->MatType_CORE ) {
+	elsif ( $matType eq EnumsIS->MatType_CORE || $matType eq EnumsIS->MatType_COREFLEX ) {
 
 		$where .= "and uda.dps_qid = __qId and uda.dps_id2 = __id2";
 	}
@@ -2223,7 +2226,7 @@ sub GetPcbMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
 
@@ -2256,7 +2259,7 @@ sub GetPcbCoverlayMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
 
@@ -2289,7 +2292,7 @@ sub GetPcbStiffenerMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
 
@@ -2322,10 +2325,9 @@ sub GetPcbStiffenerAdhMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
-
 
 # Return information of tape flex material in PCB
 # Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
@@ -2356,10 +2358,9 @@ sub GetPcbTapeFlexMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
-
 
 # Return information of tape stiffener material in PCB
 # Support price offer (Dxxxxxx - deska, Xxxxxx - deska - price offer)
@@ -2390,7 +2391,7 @@ sub GetPcbTapeStiffMat {
 	if ( defined $matReference ) {
 		$res = $self->GetMatInfo($matReference);
 	}
-	
+
 	return $res;
 }
 
@@ -2725,7 +2726,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	#	my @matTop = HegMethods->GetPrepregStoreInfoByUDA( 10, 1 , undef, undef, 1);
 	#	dump(@matTop);
 
-	my $mat = HegMethods->UpdateNote( "D290377-J2", "test");
+	my $mat = HegMethods->UpdateNote( "D290377-J2", "test" );
 
 	dump($mat);
 	die;
