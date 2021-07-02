@@ -9,10 +9,6 @@ use strict;
 use warnings;
 
 #local library
-use aliased 'CamHelpers::CamDTM';
-use aliased 'Enums::EnumsGeneral';
-use aliased 'Enums::EnumsPaths';
-use aliased 'CamHelpers::CamDTMSurf';
 use aliased 'Enums::EnumsDrill';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::CAM::UniDTM::Enums' => "DTMEnums";

@@ -13,13 +13,9 @@ use warnings;
 
 #loading of locale modules
 
-#use aliased 'Enums::EnumsPaths';
-use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamAttributes';
 
-#use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods

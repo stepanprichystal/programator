@@ -544,13 +544,13 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $f = Features->new();
 
-	my $jobId = "d285828";
+	my $jobId = "d325160";
 	my $inCAM = InCAM->new();
 
-	my $step  = "test";
+	my $step  = "o+1";
 	my $layer = "c";
 
-	$f->Parse( $inCAM, $jobId, $step, $layer );
+	$f->Parse( $inCAM, $jobId, $step, $layer, 0, 0  );
 
 	my @features = $f->GetFeatures();
 

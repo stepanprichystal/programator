@@ -32,7 +32,7 @@ sub new {
 	bless($self);
 
 	$self->{"size"}    = $size;
-	$self->{"state"}    = EnumsGeneral->ResultType_NA;
+	$self->{"status"}    = EnumsGeneral->ResultType_NA;
 	 
 
 	$self->__SetLayout();
@@ -63,8 +63,19 @@ sub SetStatus {
 		$path = Wx::Bitmap->new( $self->{"pathFail"}, &Wx::wxBITMAP_TYPE_PNG );
 	}
 	
+	$self->{"status"} = $status;
+	
 	
 	$self->{"statBtmError"}->SetBitmap($path);
+	
+	$self->{"szMain"}->Layout();
+	 
+}
+
+sub GetStatus {
+	my $self  = shift;
+	 
+	return $self->{"status"};
 }
 
 sub __SetLayout {
@@ -104,6 +115,7 @@ sub __SetLayout {
 
 	# SAVE REFERENCES
 	$self->{"statBtmError"}  = $statBtmError;
+	$self->{"szMain"} = $szMain;
 }
 
 1;

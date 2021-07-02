@@ -654,20 +654,20 @@ sub __Init {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
-	#	use aliased 'Packages::InCAM::InCAM';
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $jobId     = "d266089";
-	#	my $stepName  = "o+1";
-	#	my $layerName = "c";
-	#
-	#	my $d = DefaultInfo->new($jobId);
-	#	$d->Init($inCAM);
-	#	my $tech = $d->GetDefaultTechType("s");
-	#
-	#	print $tech;
+		use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
+		use aliased 'Packages::InCAM::InCAM';
+	
+		my $inCAM = InCAM->new();
+	
+		my $jobId     = "d325160";
+		my $stepName  = "o+1";
+		my $layerName = "c";
+	
+		my $d = DefaultInfo->new($jobId);
+		$d->Init($inCAM);
+		my $tech = $d->GetDefaultTechType("s");
+	
+		print $tech;
 
 }
 

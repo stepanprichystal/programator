@@ -11,9 +11,6 @@ use warnings;
 use List::Util qw[max];
 
 #loading of locale modules
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Polygon::Enums' => 'EnumsPolygon';

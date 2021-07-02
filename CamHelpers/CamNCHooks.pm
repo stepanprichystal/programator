@@ -10,15 +10,12 @@ use warnings;
 
 #local library
 use aliased 'CamHelpers::CamDrilling';
-use aliased 'CamHelpers::CamDTM';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::CAM::UniDTM::Enums' => 'DTMEnums';
 use aliased 'Helpers::JobHelper';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsDrill';
-use aliased 'Packages::Stackup::StackupBase::StackupBase';
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods

@@ -8,10 +8,12 @@ use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::InCAM::InCAM';
+my $pcbName = "abcdefg";
 
 my $jobId = "d322016";
 
 my $inCAM = InCAM->new();
+$pcbName = substr($pcbName, 0, length($pcbName) -1 );
 
 $inCAM->COM("get_step_name");
 print STDERR "Step:".$inCAM->GetReply()."\n";
@@ -32,3 +34,4 @@ print STDERR "Step:".$inCAM->GetReply()."\n";
 
 die;
 
+print $pcbName;

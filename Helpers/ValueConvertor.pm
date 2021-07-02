@@ -15,8 +15,7 @@ use aliased 'Enums::EnumsImp';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Helpers::Translator';
-use aliased 'Connectors::HeliosConnector::HegMethods';
+
 
 #-------------------------------------------------------------------------------------------#
 #   Package methods

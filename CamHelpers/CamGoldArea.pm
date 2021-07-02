@@ -10,17 +10,10 @@ use strict;
 use warnings;
 
 #loading of locale modules
-use aliased 'Helpers::JobHelper';
-use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::InCAM::InCAM';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
-use aliased 'CamHelpers::CamLayer';
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Packages::Polygon::Features::Features::Features';
-use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamCopperArea';
-use aliased 'Packages::CAMJob::OutputData::Helper';
 use aliased 'Packages::ProductionPanel::ActiveArea::ActiveArea';
 
 #-------------------------------------------------------------------------------------------#
@@ -52,7 +45,6 @@ sub GoldFingersExist {
 		push( @layers, "s" ) if ( CamHelper->LayerExists( $inCAM, $jobId, "s" ) );
 	}
 
-	CamHelper->SetStep( $inCAM, $step );
 
 	foreach my $l (@layers) {
 

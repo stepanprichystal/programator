@@ -225,6 +225,7 @@ sub ClientFinish {
 	my $result = $self->__SpecialServerCmd("CLIENTFINISH PID:$$");
 
 	$self->{"connected"} = 0;
+	 
 
 	return $result;
 }
@@ -621,6 +622,7 @@ sub __Connect {
 
 		#printf( "%.2f\n", $end - $start );
 		$self->{comms} = 'pipe';
+		$self->{socketOpen} = 0;
 		$self->{"connected"} = 1;
 
 	}
@@ -889,6 +891,12 @@ sub COM {
 
 		if ( $self->{"HandleException"} == 0 ) {
 			print STDERR "die when inCAM\n";
+			
+#			# Close connection if Library conencted to server
+#			if($self->IsConnected() && $self->{socketOpen}){
+#				$self->ClientFinish();
+#			}
+			
 			die $self->{"exception"};
 
 		}

@@ -72,7 +72,38 @@ sub Create {
 	# Use openStep in case job is opened from script running in another job
 	CamHelper->OpenStep( $inCAM, $jobId, $stepName );
 
+	$self->Edit($stepWidth, $stepHeight,$margTop, $margBot, $margLeft, $margRight, $profPos)
+
 	 
+
+}
+
+# Assume already created and set step
+sub Edit {
+	my $self = shift;
+	my $stepWidth  = shift;    # request on onlyu some layers
+	my $stepHeight = shift;    # request on onlyu some layers
+	my $margTop    = shift;
+	my $margBot    = shift;
+	my $margLeft   = shift;
+	my $margRight  = shift;
+	my $profPos    = shift;    # position of left bottom profile corner
+	
+	my $stepName = $self->{"step"};
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+	
+	die "Step doesn't exist" unless( CamHelper->StepExists( $inCAM, $jobId, $stepName ));
+
+	# Set default position of left bottom corner of profile
+	unless ( defined $profPos ) {
+
+		my %zero = ( "x" => 0, "y" => 0 );
+		$profPos = \%zero;     # profile_rect
+	}
+	
+
 	my %lb = ( "x" => $profPos->{"x"}, "y" => $profPos->{"y"} );
 	my %rt = ( "x" => $stepWidth + $profPos->{"x"}, "y" => $stepHeight + $profPos->{"y"} );
 

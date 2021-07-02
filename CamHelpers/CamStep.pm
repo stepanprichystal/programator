@@ -11,14 +11,11 @@ use warnings;
 
 #loading of locale modules
 
-use aliased 'Enums::EnumsPaths';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamJob';
-use aliased 'CamHelpers::CamCopperArea';
 use aliased 'CamHelpers::CamLayer';
-use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#

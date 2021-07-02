@@ -116,7 +116,7 @@ sub __CheckAsyncWorker {
 	my $jobId = shift;
 	my $port  = shift;
 	my $units = shift;
-	my $mode = shift;
+	my $mode  = shift;
 
 	$export_thread = 1;
 
@@ -125,7 +125,7 @@ sub __CheckAsyncWorker {
 
 	my $inCAM = InCAM->new( "remote" => 'localhost', "port" => $port );
 	$inCAM->ServerReady();
-
+	
 	$SIG{'KILL'} = sub {
 
 		$self->__CleanUpAndExitThread( 1, $inCAM );
@@ -137,18 +137,18 @@ sub __CheckAsyncWorker {
 
 	try {
 
-		$units->CheckBeforeExport($inCAM, $mode);
+		$units->CheckBeforeExport( $inCAM, $mode );
 
 	}
 	catch {
-		
+
 		my $eMess = "Export checker thread was unexpectedly exited\n\n";
-		my $e = BaseException->new($eMess, $_);
-		
+		my $e = BaseException->new( $eMess, $_ );
+
 		print STDERR $e;
-		
-		$self->__OnCheckErrorHandler($e->Error());
- 
+
+		$self->__OnCheckErrorHandler( $e->Error() );
+
 		$self->__CleanUpAndExitThread( 0, $inCAM );
 	};
 
@@ -293,11 +293,11 @@ sub __CheckerEndMessageHandler {
 }
 
 # this is controlled by main process
-sub __CheckerErrorMessageHandler{
+sub __CheckerErrorMessageHandler {
 	my ( $self, $frame, $event ) = @_;
 
 	my %d = %{ $event->GetData };
- 
+
 	$self->{"popup"}->ErrorChecking( $d{"mess"} );
 }
 
@@ -403,7 +403,7 @@ sub __SetHandlers {
 	# Events when export checker fail
 	$CHECKER_ERROR_EVT = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"popup"}->{"mainFrm"}, -1, $CHECKER_ERROR_EVT, sub { $self->__CheckerErrorMessageHandler(@_) } );
- 
+
 	# Events when user stop checking force
 	$THREAD_FORCEEXIT_EVT = Wx::NewEventType;
 	Wx::Event::EVT_COMMAND( $self->{"popup"}->{"mainFrm"}, -1, $THREAD_FORCEEXIT_EVT, sub { $self->__CheckerForceExitHandler(@_) } );

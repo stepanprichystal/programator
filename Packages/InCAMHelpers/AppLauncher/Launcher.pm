@@ -9,14 +9,17 @@ package Packages::InCAMHelpers::AppLauncher::Launcher;
 
 #3th party library
 use strict;
-
 use Config;
 use Time::HiRes qw (sleep);
-
-#use Try::Tiny;
-
-use aliased 'Packages::InCAM::InCAM';
 use Win32::Process;
+
+# local libraru
+use aliased 'Packages::Events::Event';
+use aliased 'Packages::InCAM::InCAM';
+use aliased 'Packages::InCAMHelpers::AppLauncher::BackgroundWorker::BackgroundWorker';
+use aliased 'Packages::InCAMHelpers::AppLauncher::BackgroundWorker::InCAMWrapper';
+use aliased 'Packages::InCAMHelpers::AppLauncher::PopupChecker::PopupChecker';
+use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
 
 #use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
@@ -39,26 +42,117 @@ sub new {
 	$self->{"server"}->{"inCAM"} = undef;    # InCAM library
 
 	$self->{"waitFrmPid"} = shift;           # PID of waiting frm
-	
-	$self->{"letServerRun"} = 0;
 
+	$self->{"letServerRun"} = 0;             # After closing app, do not exit InCAM server
+
+	$self->{"backgroundWorker"} = undef;     # Support background execution of task
+
+	$self->{"pupupChecker"} = undef;         # Support background checker with error popup window
+
+	# Connect to InCAM server
 	unless ( $self->__Connect() ) {
-		die "Unable to connect to InCAM editor, port: ".$self->{"server"}->{"port"};
+		die "Unable to connect to InCAM editor, port: " . $self->{"server"}->{"port"};
 	}
 
-	return $self;                            # Return the reference to the hash.
+	# EVENTS
+
+	# Only if Background worker is initialized
+	# Raise if InCAM library wants execute command, but InCAM server is busy
+	$self->{"inCAMIsBusyEvt"} = Event->new();
+
+	return $self;    # Return the reference to the hash.
 }
 
 sub GetInCAM {
 	my $self = shift;
 
 	return $self->{"server"}->{"inCAM"};
-
-	
 }
 
+# Init background woker and return "Background worker manager"
+# for execution of asynchrounous background task
+# - Do not forget add handler "inCAMIsBusyEvt", which indicate InCAM server is busy
+sub InitBackgroundWorker {
+	my $self        = shift;
+	my $appMainFrm  = shift;        # app main frame
+	my $MAX_THREADS = shift // 1;
+	my $MIN_THREADS = shift // 1;
+	my $loger       = shift;
 
+	die "App main frame is not defined" unless ( defined $appMainFrm );
 
+	#die "Async worker function is not defined" unless ( defined $asyncWorkerSub );
+
+	if ( !defined $self->{"backgroundWorker"} ) {
+
+		# Change standard InCAM library for InCAM Wrapper,
+		# which support Events, which raise if InCAM server is busy
+		# (it means, child thread is using inCAM server)
+
+		# add handler for inCAM server busy
+		$self->{"server"}->{"inCAM"}->SetWaitWhenBusy(1);
+		$self->{"server"}->{"inCAM"}->{"inCAMServerBusyEvt"}->Add( sub { $self->{"inCAMIsBusyEvt"}->Do(@_) } );
+
+		my $worker = BackgroundWorker->new();
+		$worker->Init( $appMainFrm, $self->{"server"}->{"inCAM"}, $MAX_THREADS, $MIN_THREADS, $loger );
+
+		$self->{"backgroundWorker"} = $worker;
+
+	}
+
+	return 1;
+
+}
+
+# Init background woker and return "Background worker manager"
+# for execution of asynchrounous background task
+# - Do not forget add handler "inCAMIsBusyEvt", which indicate InCAM server is busy
+sub GetBackgroundWorker {
+	my $self = shift;
+
+	if ( !defined $self->{"backgroundWorker"} ) {
+
+		die "Background worker is not inited";
+	}
+
+	return $self->{"backgroundWorker"};
+}
+
+sub InitPopupChecker {
+	my $self          = shift;
+	my $jobId         = shift;
+	my $appMainFrm    = shift;    # app main frame
+	my $titleName     = shift;
+	my $commitBtnName = shift;
+
+	if ( !defined $self->{"pupupCheckers"} ) {
+
+		# Firstly create background worker for PopupChecker with one thread
+
+		# Get background worker
+		$self->InitBackgroundWorker($appMainFrm) if ( !defined $self->{"backgroundWorker"} );
+
+		my $checker = PopupChecker->new( $jobId, $appMainFrm, $titleName, $commitBtnName );
+
+		$checker->Init( $self->{"backgroundWorker"} );
+
+		$self->{"pupupCheckers"} = $checker;
+	}
+
+	return 1;
+}
+
+sub GetPopupChecker {
+	my $self = shift;
+
+	if ( !defined $self->{"pupupCheckers"} ) {
+
+		die "Popup checker in not inited";
+	}
+
+	return $self->{"pupupCheckers"};
+
+}
 
 sub GetServerPort {
 	my $self = shift;
@@ -66,15 +160,15 @@ sub GetServerPort {
 	return $self->{"server"}->{"port"};
 }
 
-sub SetLetServerRun{
+sub SetLetServerRun {
 	my $self = shift;
-	
+
 	$self->{"letServerRun"} = 1;
 }
 
-sub GetLetServerRun{
+sub GetLetServerRun {
 	my $self = shift;
-	
+
 	return $self->{"letServerRun"};
 }
 
@@ -83,17 +177,14 @@ sub CloseWaitFrm {
 
 	if ( $self->{"waitFrmPid"} ) {
 
-		Win32::Process::KillProcess( $self->{"waitFrmPid"}, 0 );
+		Helper->CloseWaitFrm( $self->{"waitFrmPid"} );
 	}
 
 }
 
-
-
 # First connection of InCAM library
 sub __Connect {
-	my $self    = shift;
-	my $jobGUID = shift;
+	my $self = shift;
 
 	my $inCAM = $self->{"server"}->{"inCAM"};
 	my $port  = $self->{"server"}->{"port"};
@@ -115,13 +206,13 @@ sub __Connect {
 			return 0;
 		}
 
-		if ($inCAM) {
+		if ( $inCAM && $tryCnt > 0 ) {
 
 			print STDERR "CLIENT(parent): PID: $$  try connect to server port: $port....failed\n";
 			sleep(0.2);
 		}
 
-		$inCAM = InCAM->new( "remote" => 'localhost', "port" => $self->{"server"}->{"port"} );
+		$inCAM = InCAMWrapper->new( "remote" => 'localhost', "port" => $self->{"server"}->{"port"} );
 
 		$tryCnt++;
 	}
@@ -163,7 +254,6 @@ sub __Connect {
 #	#${$serverRef}[$idx]{"pidInCAM"}  = -1;
 #	#${$serverRef}[$idx]{"pidServer"} = -1;
 #}
-
 
 ## Used when InCAMe need to be connected in child thread
 ## 1. Call Disconnect

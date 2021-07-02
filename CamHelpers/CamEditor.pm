@@ -13,7 +13,6 @@ use warnings;
 
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::GeneralHelper';
-use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
 
 #-------------------------------------------------------------------------------------------#

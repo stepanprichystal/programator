@@ -7,8 +7,7 @@ use warnings;
 
 
 # ============ INPUT LINE =================
-my $inputLine ="sel_fill,type=predefined_pattern,cut_prims=no,outline_draw=yes,outline_width=200,outline_invert=no,predefined_pattern_type=lines,indentation=even,lines_angle=45,lines_witdh=300,lines_dist=600 (0)";
-
+my $inputLine ="auto_part_place,step=o+1,unitsInPanel=automatic,minUtilization=1,minResults=1,goldTab=gold_none,autoSelectBest=no,goldMode=minimize_scoring,goldScoringDist=0,spacingAlign=keep_in_center,numMaxSteps=no_limit,transformation=rotation,rotation=any_rotation,pattern=no_pattern,flip=no_flip,interlock=none,xmin=0,ymin=0,base_rotation=0";
 my $output = "\$inCAM->COM(";
 my @splitted = split( ",", $inputLine );
 
