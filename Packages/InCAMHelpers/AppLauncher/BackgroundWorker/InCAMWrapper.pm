@@ -55,9 +55,11 @@ sub VON {
 	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
 
-	$self->SUPER::VON(@params);
+	my $result = $self->SUPER::VON(@params);
 
 	$self->ClientFinish() if ($reconnect);
+
+	return $result;
 }
 
 sub VOF {
@@ -69,9 +71,11 @@ sub VOF {
 	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
 
-	$self->SUPER::VOF(@params);
+	my $result = $self->SUPER::VOF(@params);
 
 	$self->ClientFinish() if ($reconnect);
+
+	return $result;
 }
 
 sub SU_ON {
@@ -83,9 +87,11 @@ sub SU_ON {
 	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
 
-	$self->SUPER::SU_ON(@params);
+	my $result = $self->SUPER::SU_ON(@params);
 
 	$self->ClientFinish() if ($reconnect);
+
+	return $result;
 }
 
 sub SU_OFF {
@@ -96,9 +102,11 @@ sub SU_OFF {
 	my ($command) = @_;
 	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
-	$self->SUPER::SU_OFF(@params);
+	my $result = $self->SUPER::SU_OFF(@params);
 
 	$self->ClientFinish() if ($reconnect);
+
+	return $result;
 }
 
 sub PAUSE {
@@ -110,9 +118,11 @@ sub PAUSE {
 	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
 
-	$self->SUPER::PAUSE(@params);
+	my $result = $self->SUPER::PAUSE(@params);
 
 	$self->ClientFinish() if ($reconnect);
+
+	return $result;
 }
 
 sub MOUSE {
@@ -124,24 +134,27 @@ sub MOUSE {
 	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
 
-	$self->SUPER::MOUSE(@params);
+	my $result = $self->SUPER::MOUSE(@params);
 
 	$self->ClientFinish() if ($reconnect);
+
+	return $result;
 }
 
 sub COM {
 	my ($self) = shift;
 
-	my @params = @_;
+	my @params = @_;    # Command
 
 	my ($command) = @_;
-	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
+	my $reconnect = 0;  # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
 
-	$self->SUPER::COM(@params);
+	my $result = $self->SUPER::COM(@params);
 
 	$self->ClientFinish() if ($reconnect);
 
+	return $result;
 }
 
 sub AUX {
@@ -153,38 +166,39 @@ sub AUX {
 	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
 
-	$self->SUPER::AUX(@params);
+	my $result = $self->SUPER::AUX(@params);
 
 	$self->ClientFinish() if ($reconnect);
+
+	return $result;
 }
 
 sub DO_INFO {
 	my ($self) = shift;
 
-	my @params = @_;
-
-	my ($command) = @_;
+	my @params = ( shift(@_), %{@_} );
 	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
 
-	$self->SUPER::DO_INFO(@params);
+	my $result = $self->SUPER::DO_INFO(@params);
 
 	$self->ClientFinish() if ($reconnect);
-}
 
+	return $result;
+}
 
 sub INFO {
 	my ($self) = shift;
 
-	my @params = @_;
-
-	my ($command) = @_;
+	my @params    = @_;
 	my $reconnect = 0;    # InCAM conenction stealed from background Worker, just after background worker finish
 	$self->__CheckIsServerBusy( \$reconnect );
 
-	$self->SUPER::INFO(@params);
+	my $result = $self->SUPER::INFO(@params);
 
 	$self->ClientFinish() if ($reconnect);
+
+	return $result;
 }
 
 sub __CheckIsServerBusy {
@@ -198,8 +212,6 @@ sub __CheckIsServerBusy {
 	# it means, InCAM is used bz background worker
 	if ( !$self->{"connected"} && $self->{"waitWhenBusy"} ) {
 
-		
-
 		# Wait until InCAM library is connected
 		my $i = 0;
 
@@ -207,11 +219,11 @@ sub __CheckIsServerBusy {
 		my $evtRaised = 0;
 		$self->Reconnect();
 		while ( !$self->ServerReady() ) {
-			
+
 			# raise event, server busy. Just after first incam connection test, not unnecessarily earlier
-			unless($evtRaised){
-			$self->{"inCAMServerBusyEvt"}->Do(1);    
-			$evtRaised = 1;
+			unless ($evtRaised) {
+				$self->{"inCAMServerBusyEvt"}->Do(1);
+				$evtRaised = 1;
 			}
 
 			print STDERR "\nWait on INCAM\n";
