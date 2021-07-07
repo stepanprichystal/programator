@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse information from InCAM global Library Panel classes
+# Description:  
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlCreator::Helpers::PnlToJSON;

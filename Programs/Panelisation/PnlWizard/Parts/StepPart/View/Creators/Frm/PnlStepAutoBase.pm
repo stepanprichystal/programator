@@ -268,7 +268,7 @@ sub __SetLayoutSpacing {
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $pnlClassSpaceCB, -1, sub { $self->__OnPnlClassSpacingChanged( $pnlClassSpaceCB->GetValue() ) } );
-	Wx::Event::EVT_TEXT( $pnlClassSpaceCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	#Wx::Event::EVT_TEXT( $pnlClassSpaceCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $spaceXValTxt,    -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $spaceYValTxt,    -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $spacingTypeCb,   -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -420,7 +420,7 @@ sub __SetLayoutCreatePnl {
 	my $szManual = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	my $pnlPicker = ManualPlacement->new( $placementManualPage->GetParent(),
-										   $self->{"jobId"}, $self->GetStep(), "Pick panel",
+										  $self->{"jobId"}, $self->GetStep(), "Pick panel",
 										  "Accept best panel (+ adjust if needed) and press Continue.",
 										  1, "Clear" );
 
@@ -503,11 +503,13 @@ sub __OnPnlClassChanged {
 	my $self      = shift;
 	my $className = shift;
 
+	return 0 unless ( scalar( @{ $self->{"classes"} } ) );
+
 	my $class = first { $_->GetName() eq $className } @{ $self->{"classes"} };
 
 	# Set cb classes size
 	$self->{"pnlClassSpaceCB"}->Freeze();
-	
+
 	$self->{"pnlClassSpaceCB"}->Clear();
 	foreach my $classSpace ( $class->GetAllClassSpacings() ) {
 
@@ -528,6 +530,8 @@ sub __OnPnlClassChanged {
 sub __OnPnlClassSpacingChanged {
 	my $self           = shift;
 	my $classSpaceName = shift;
+
+	return 0 unless ( scalar( @{ $self->{"classes"} } ) );
 
 	my $class      = first { $_->GetName() eq $self->{"pnlClassCB"}->GetValue() } @{ $self->{"classes"} };
 	my $classSpace = first { $_->GetName() eq $classSpaceName } $class->GetAllClassSpacings();
@@ -733,7 +737,7 @@ sub SetSpaceX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spaceXValTxt"}->SetValue($val)
+	$self->{"spaceXValTxt"}->SetValue( sprintf("%.1f", $val))
 
 }
 
@@ -748,7 +752,7 @@ sub SetSpaceY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spaceYValTxt"}->SetValue($val);
+	$self->{"spaceYValTxt"}->SetValue( sprintf("%.1f", $val));
 }
 
 sub GetSpaceY {

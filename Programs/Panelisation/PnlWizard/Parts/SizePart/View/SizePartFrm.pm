@@ -112,17 +112,20 @@ sub SetCreators {
 		if ( defined $model ) {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+			
+				$creatorFrm->SetStep( $model->GetStep() );
 
 			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER || $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 				# Base property
+				 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
 				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
 				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
 				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
-				$creatorFrm->SetStep( $model->GetStep() );
+				
 
 				if ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
@@ -135,7 +138,7 @@ sub SetCreators {
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
 				# Base property
-				$creatorFrm->SetStep( $model->GetStep() );
+				 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
@@ -147,13 +150,14 @@ sub SetCreators {
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER || $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
 
 				# Base property
+				 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
 				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
 				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
 				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
-				$creatorFrm->SetStep( $model->GetStep() );
+				 
 
 				# Specific for class
 				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
@@ -172,13 +176,14 @@ sub SetCreators {
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 
 				# Base property
+			
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
 				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
 				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
 				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
-				$creatorFrm->SetStep( $model->GetStep() );
+				 
 
 				# Specific for class
 				$creatorFrm->SetSrcJobId( $model->GetSrcJobId() );
@@ -208,6 +213,8 @@ sub GetCreators {
 		next if ( defined $creatorKey && $creatorKey ne $modelKey );
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+		
+		$model->SetStep( $creatorFrm->GetStep() );
 
 		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER || $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
@@ -218,7 +225,7 @@ sub GetCreators {
 			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
 			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
-			$model->SetStep( $creatorFrm->GetStep() );
+		 
 
 			# Sepcific class property
 			if ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
@@ -231,7 +238,7 @@ sub GetCreators {
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
 			# Base property
-			$model->SetStep( $creatorFrm->GetStep() );
+		 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
 			$model->SetBorderLeft( $creatorFrm->GetBorderLeft() );
@@ -249,7 +256,7 @@ sub GetCreators {
 			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
 			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
-			$model->SetStep( $creatorFrm->GetStep() );
+			 
 
 			# Specific for class
 			$model->SetPnlClasses( $creatorFrm->GetPnlClasses() );
@@ -272,7 +279,7 @@ sub GetCreators {
 			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
 			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
-			$model->SetStep( $creatorFrm->GetStep() );
+			 
 
 			# Specific for class
 			$model->SetSrcJobId( $creatorFrm->GetSrcJobId() );

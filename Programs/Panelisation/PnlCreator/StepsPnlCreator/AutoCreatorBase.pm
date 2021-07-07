@@ -488,6 +488,7 @@ sub _Process {
 			$self->__ClearSteps($inCAM);
 
 			$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
+			CamHelper->SetStep( $inCAM, $self->GetStep() );
 
 			# Add specific width + height
 			$autoPart->AutoPartAddPnlSize( $w, $h );

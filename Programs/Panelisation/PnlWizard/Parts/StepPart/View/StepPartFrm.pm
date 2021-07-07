@@ -117,6 +117,7 @@ sub SetCreators {
 		if ( defined $model ) {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+			$creatorFrm->SetStep( $model->GetStep() );
 
 			if (    $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
 				 || $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG )
@@ -186,6 +187,8 @@ sub GetCreators {
 		next if ( defined $creatorKey && $creatorKey ne $modelKey );
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+		
+		$model->SetStep( $creatorFrm->GetStep() );
 
 		if (    $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
 			 || $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG )

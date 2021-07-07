@@ -19,7 +19,6 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::View::Creators::LibraryFrm';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -108,6 +107,7 @@ sub SetCreators {
 		if ( defined $model ) {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+			$creatorFrm->SetStep( $model->GetStep() );
 
 			print STDERR $model->GetWidth() . "\n";
 
@@ -115,14 +115,12 @@ sub SetCreators {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
-				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
-				$creatorFrm->SetStep( $model->GetStep() );
 
 			}
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
@@ -159,18 +157,18 @@ sub GetCreators {
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
+		$model->SetStep( $creatorFrm->GetStep() );
+
 		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
-			$model->SetStep( $creatorFrm->GetStep() );
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
-			$model->SetStep( $creatorFrm->GetStep() );
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
