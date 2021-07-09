@@ -27,6 +27,9 @@ use constant {
 	StepPnlCreator_MATRIX   => "StepPnlCreator_Matrix",
 	StepPnlCreator_SET      => "StepPnlCreator_Set",
 	StepPnlCreator_PREVIEW  => "StepPnlCreator_Preview",
+	
+	# Coupon placement creaotrs
+	CpnPnlCreator_SEMIAUTO => "CpnPnlCreator_Semiauto",
 
 	# Scheme sreators
 	SchemePnlCreator_LIBRARY => "SchemaPnlCreator_Library",
@@ -43,8 +46,24 @@ use constant {
 	StepPlacementMode_AUTO   => "StepPlacementMode_Auto",
 	StepPlacementMode_MANUAL => "StepPlacementMode_Manual",
 	
- 
+};
 
+# Cpn creator setting enums
+use constant {
+ 
+ 	ImpCpnType_7 => "ImpCpnType_7",
+ 	ImpCpnType_5 => "ImpCpnType_5",
+ 	
+ 	IPC3CpnType_4 => "IPC3CpnType_4",
+ 	IPC3CpnType_3 => "IPC3CpnType_3",
+ 	
+ 	ZAxisCpnType_1x => "ZAxisCpnType_1x",
+ 	ZAxisCpnType_2x => "ZAxisCpnType_2x",
+ 
+ 
+	CpnPlacementMode_AUTO   => "CpnPlacementMode_Auto",
+	CpnPlacementMode_MANUAL => "CpnPlacementMode_Manual",
+	
 };
 
 1;
