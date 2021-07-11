@@ -160,9 +160,9 @@ sub _Init {
 
 	}
 
-	# Set min utilization 30%
+	# Set min utilization 5%
 
-	$self->SetMinUtilization(30);
+	$self->SetMinUtilization(5);
 
 	# Set amount settings
 	$self->SetAmountType( Enums->StepAmount_AUTO );
@@ -480,7 +480,7 @@ sub _Process {
 		if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
 
 			my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
-			$pnlToJSON->CreatePnlByJSON( $self->GetManualPlacementJSON() );
+			$pnlToJSON->CreatePnlByJSON( $self->GetManualPlacementJSON(), 1, 1, 0 );
 
 		}
 		elsif ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_NA ) {

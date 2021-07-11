@@ -132,7 +132,7 @@ sub AddSRStep {
 
 	my $inCAM = $self->{"inCAM"};
 
-	CamStepRepeat->AddStepAndRepeat( $inCAM, $self->{"step"}, $srName, $posX, $posY, $angle, $nx, $ny, $dx, $dy );
+	CamStepRepeat->AddStepAndRepeat( $inCAM, $self->{"step"}, $srName, $posX, $posY, $angle, $nx, $ny, $dx, $dy, "ccw" );
 }
 
 sub AddSchema {

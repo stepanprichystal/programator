@@ -16,8 +16,10 @@ use warnings;
 
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePart';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPart';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::CpnPart::Control::CpnPart';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use aliased 'Packages::Events::Event';
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -51,8 +53,16 @@ sub Init {
 
 	my @parts = ();
 
+	# Select suitable parts
+
 	push( @parts, SizePart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
 	push( @parts, StepPart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
+
+	# Only production panel and onlz if contain  coupons
+	if ( $pnlType eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+
+		push( @parts, CpnPart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
+	}
 
 	foreach my $part (@parts) {
 

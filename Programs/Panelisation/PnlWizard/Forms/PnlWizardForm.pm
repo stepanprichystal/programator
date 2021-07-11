@@ -77,107 +77,7 @@ sub new {
 
 	return $self;
 }
-#
-#sub GetToProduce {
-#	my $self = shift;
-#
-#	return $self->{"chbProduce"}->GetValue();
-#}
-#
-## Disable all controls on form
-#sub DisableForm {
-#	my $self    = shift;
-#	my $disable = shift;
-#
-#	if ($disable) {
-#
-#		$self->{"mainPnl"}->Disable();
-#		$self->{"nb"}->Disable();
-#
-#	}
-#	else {
-#
-#		$self->{"mainPnl"}->Enable();
-#		$self->{"nb"}->Enable();
-#	}
-#
-#}
-#
-## Disable all controls on form
-#sub DisableExportBtn {
-#	my $self    = shift;
-#	my $disable = shift;
-#
-#	if ($disable) {
-#
-#		$self->{"btnSync"}->Disable();
-#		$self->{"btnASync"}->Disable();
-#		$self->{"btnASyncServer"}->Disable();
-#	}
-#	else {
-#
-#		$self->{"btnSync"}->Enable();
-#		$self->{"btnASync"}->Enable();
-#		$self->{"btnASyncServer"}->Enable();
-#	}
-#
-#}
-#
-## Set "Load last" button visibility
-#sub SetLoadLastBtn {
-#	my $self   = shift;
-#	my $enable = shift;
-#
-#	if ($enable) {
-#		$self->{"btnLoadLast"}->Enable();
-#	}
-#	else {
-#		$self->{"btnLoadLast"}->Disable();
-#	}
-#}
-#
-#sub OnInit {
-#	my $self = shift;
-#
-#	return 1;
-#}
-#
-## Return group builder, which is responsible for building
-## groups gui and adding groups to form
-#sub GetGroupBuilder {
-#	my $self = shift;
-#	return $self->{"groupBuilder"};
-#}
-#
-## Add new page in nootebook
-#sub AddPage {
-#	my ( $self, $title ) = @_;
-#	my $count = $self->{"nb"}->GetPageCount();
-#	my $page = MyWxBookCtrlPage->new( $self->{"nb"}, $count );
-#
-#	$self->{"nb"}->AddPage( $page, $title . "    ", 0, $count );
-#	$self->{"nb"}->SetPageImage( $count, 0 );
-#
-#	#row height is 10px. When we get total height of panel in scrollwindow
-#	# then we compute number of rows as: totalHeight/10px
-#	my $rowHeight = 10;
-#	my $scrollPnl = ScrollPanel->new( $page, $rowHeight );
-#
-#	my $szTab = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-#
-#	$szTab->Add( $scrollPnl, 1, &Wx::wxEXPAND );
-#
-#	$page->SetSizer($szTab);
-#
-#	$page->{"scrollPnl"} = $scrollPnl;
-#
-#	#$self->{"scrollPnl"} = $scrollPnl;
-#
-#	Wx::Event::EVT_PAINT( $scrollPnl, sub { $self->__OnScrollPaint(@_) } );
-#
-#	return $page;
-#}
-#
+
 
 sub SetInCAMBusyLayout {
 	my $self   = shift;
@@ -371,91 +271,26 @@ sub SetPreview {
 	$self->{"previewChb"}->SetValue($value);
 }
 
-#
-## Create event/handler connection between groups by binding handlers to evnets
-## provided by groups
-#sub BuildGroupEventConn {
-#	my $self = shift;
-#
-#	# class keep rows structure and group instances
-#	my $groupTables = shift;
-#
-#	# 1) Do conenction between units events/handlers
-#	my @units = $groupTables->GetAllUnits();
-#
-#	foreach my $unitA (@units) {
-#
-#		my $evtClassA = $unitA->GetEventClass();
-#
-#		unless ($evtClassA) {
-#			next;
-#		}
-#
-#		my @unitEvents = $unitA->GetEventClass()->GetEvents();
-#
-#		# search handler for this event type in all units
-#		foreach my $unitB (@units) {
-#
-#			my $evtClassB = $unitB->GetEventClass();
-#
-#			if ($evtClassB) {
-#				$unitB->GetEventClass()->ConnectEvents( \@unitEvents );
-#			}
-#
-#		}
-#	}
-#
-#
-#}
-#
-#sub __OnExportSync {
-#	my $self = shift;
-#
-#	#raise events
-#	$self->{"onExportSync"}->Do();
-#
-#}
-#
-#sub __OnExportASync {
-#	my $self     = shift;
-#	my $onServer = shift;
-#
-#	#raise events
-#	$self->{"onExportASync"}->Do($onServer);
-#
-#}
-#
-#sub __OnCloseHandler {
-#	my $self = shift;
-#
-#	#raise events
-#	$self->{"onClose"}->Do();
-#
-#}
-#
-#sub __OnLoadDefaultClick {
-#	my $self = shift;
-#
-#	#raise events
-#	$self->{"onLoadDefault"}->Do();
-#
-#}
-#
-#sub __OnUncheckAllClick {
-#	my $self = shift;
-#
-#	#raise events
-#	$self->{"onUncheckAll"}->Do();
-#
-#}
-#
-#sub __OnLoadLastClick {
-#	my $self = shift;
-#
-#	#raise events
-#	$self->{"onLoadLast"}->Do();
-#
-#}
+sub GetFlatten {
+	my $self = shift;
+
+	if ( $self->{"flattenChb"}->IsChecked() ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
+
+sub SetFlatten {
+	my $self  = shift;
+	my $value = shift;
+
+	$self->{"flattenChb"}->SetValue($value);
+}
+
 
 sub __SetLayout {
 	my $self = shift;
@@ -471,54 +306,7 @@ sub __SetLayout {
 	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
 	$szMain->Add( $partLayout, 1, &Wx::wxEXPAND );
 
-	# InCAM busy panel
-
-	#main formDefain forms
-	#	my $flags = &Wx::wxCAPTION;
-	#	my $pnlInCAMBusy = MyWxFrame->new(
-	#		$self->{"mainFrm"},                     # parent window
-	#		-1,                                     # ID -1 means any
-	#		"test",                                 # title
-	#		[ -1,  -1 ],                            # window position
-	#		[ 200, 200 ],
-	#		$flags
-	#	);
-	#
-	#	$pnlInCAMBusy->CentreOnParent(&Wx::wxBOTH);
-	#Wx::InitAllImageHandlers();
-
-  #	my $titleTxt =
-  #	  Wx::StaticText->new( $pnlInCAMBusy, -1, "Waiting for InCAM conenction, until background process finish.", &Wx::wxDefaultPosition, [ 260, -1 ] );
-  #
-  #	#my $pnlBtns = Wx::Panel->new( $mainFrm, -1 );
-  #	#$pnlInCAMBusy
-  #	my $szPnlInCAM = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-  #	$pnlInCAMBusy->SetSizer($szPnlInCAM);
-  #	$szPnlInCAM->Add( $statBtmClose, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-
-#	my $pnlInCAMBusy = Wx::PopupWindow->new( $self->{"mainFrm"} );
-#
-#	$pnlInCAMBusy->Move( 200, 200 );
-#	$pnlInCAMBusy->SetSize( 300, 200 );
-#
-#	my $iconPath     = GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . "table" . ".png";
-#	my $iconBtmp     = Wx::Bitmap->new( $iconPath, &Wx::wxBITMAP_TYPE_PNG );
-#	my $statBtmClose = Wx::StaticBitmap->new( $pnlInCAMBusy, -1, $iconBtmp );
-#
-#  #$popup->Show;
-#  #    	my $titleTxt =
-#  #	  Wx::StaticText->new( $pnlInCAMBusy, -1, "Waiting for InCAM conenction, until background process finish.", &Wx::wxDefaultPosition, [ 260, -1 ] );
-#	my $szPnlInCAM = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-#	$pnlInCAMBusy->SetSizer($szPnlInCAM);
-#	$szPnlInCAM->Add( $statBtmClose, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-#
-#	$self->{"InCAMBusy"} = $pnlInCAMBusy;
-
-	#$pnlInCAMBusy->Show();
-
-	#
-	#	$self->{"InCAMBusy"} =  Wx::SplashScreen->new( $iconBtmp, &Wx::wxSPLASH_CENTRE_ON_SCREEN, 0,  $self->{"mainFrm"}, -1 );
-	#	$self->{"InCAMBusy"}->Hide();
+	 
 
 	$self->AddContent($szMain);
 	$self->SetButtonHeight(30);
@@ -557,6 +345,7 @@ sub __SetLayoutHeader {
 	my $szSettCol2     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szSettCol3     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szSettCol1Row1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szSettCol1Row2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szSettCol2Row1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	my $szQuickBtn = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -590,6 +379,14 @@ sub __SetLayoutHeader {
 	my $stepTxt = Wx::StaticText->new( $pnlSett, -1, "Step name:", &Wx::wxDefaultPosition, [ 70, 24 ] );
 	my $stepValTxt = Wx::TextCtrl->new( $pnlSett, -1, "mpanel", &Wx::wxDefaultPosition );
 
+	my $flattenTxt = Wx::StaticText->new( $pnlSett, -1, "Flatten:", &Wx::wxDefaultPosition, [ 70, 22 ] );
+	my $flattenChb = Wx::CheckBox->new( $pnlSett, -1, "", &Wx::wxDefaultPosition, [ -1, 24 ] );
+	if ( $self->{"pnlType"} ne PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+		$flattenTxt->Hide();
+		$flattenChb->Hide();
+	}
+
 	#my $previewTxt = Wx::StaticText->new( $pnlSett, -1, "Preview:", &Wx::wxDefaultPosition, [ 70, 22 ] );
 	my $previewChb = Wx::CheckBox->new( $pnlSett, -1, "Preview", &Wx::wxDefaultPosition, [ -1, 24 ] );
 
@@ -602,11 +399,15 @@ sub __SetLayoutHeader {
 	$szSettCol1Row1->Add( $stepTxt,    0, &Wx::wxALL, 0 );
 	$szSettCol1Row1->Add( $stepValTxt, 0, &Wx::wxALL, 0 );
 
+	$szSettCol1Row2->Add( $flattenTxt, 0, &Wx::wxALL, 0 );
+	$szSettCol1Row2->Add( $flattenChb, 0, &Wx::wxALL, 0 );
+
 	$szSettCol2Row1->Add( $previewChb,     0, &Wx::wxALL, 0 );
 	$szSettCol2Row1->Add( $dockWindowsBtn, 0, &Wx::wxALL, 0 );
 
 	$szSettCol1->Add( 10, 10, 1 );
 	$szSettCol1->Add( $szSettCol1Row1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol1->Add( $szSettCol1Row2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	#$szSettCol1->Add( 5, 5, 1);
 
@@ -640,8 +441,6 @@ sub __SetLayoutHeader {
 	Wx::Event::EVT_BUTTON( $loadLastBtn,    -1, sub { $self->{"loadLastClickEvt"}->Do() } );
 	Wx::Event::EVT_BUTTON( $loadDefaultBtn, -1, sub { $self->{"loadDefaultClickEvt"}->Do() } );
 	Wx::Event::EVT_BUTTON( $dockWindowsBtn, -1, sub { $self->__OnDockWindows(@_) } );
-	
-	
 
 	#$szRow1->Add( $defaultTxt,   1, &Wx::wxEXPAND );
 	#	$szRow1->Add( $noteTxt, 1, &Wx::wxEXPAND );
@@ -659,6 +458,8 @@ sub __SetLayoutHeader {
 	$self->{"stepValTxt"} = $stepValTxt;
 
 	$self->{"previewChb"} = $previewChb;
+	$self->{"flattenChb"} = $flattenChb;
+	
 
 	return $pnlMain;
 }
@@ -880,23 +681,23 @@ sub __OnDockWindows {
 
 	if ( defined $pnlWizard && defined $pnlWizardInCAM ) {
 
-		SendMessage( $pnlWizard, 0x0112, 0xF030, 0 ); # Maximize window
- 
- 		#  Dock to left half of screen
+		SendMessage( $pnlWizard, 0x0112, 0xF030, 0 );    # Maximize window
+
+		#  Dock to left half of screen
 		SetFocus($pnlWizard);
 		SendRawKey( VK_LWIN, 0 );
 		SendKeys("{LEFT}");
 		SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
 
-		SendMessage( $pnlWizardInCAM, 0x0112, 0xF030, 0 ); # Maximize window
+		SendMessage( $pnlWizardInCAM, 0x0112, 0xF030, 0 );    # Maximize window
 
 		#  Dock to right half of screen
 		SetFocus($pnlWizardInCAM);
 		SendRawKey( VK_LWIN, 0 );
 		SendKeys("{RIGHT}");
 		SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
-		
-		$self->{"previewChb"}->SetValue(1); # Activate preview if docking window
+
+		$self->{"previewChb"}->SetValue(1);                   # Activate preview if docking window
 		$self->{"previewChangedEvt"}->Do(1);
 
 	}

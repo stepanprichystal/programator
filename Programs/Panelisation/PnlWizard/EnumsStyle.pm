@@ -27,6 +27,9 @@ sub GetPartTitle {
 	}
 	elsif ( $part eq Enums->Part_PNLSTEPS ) {
 		$tit = "Steps";
+	
+	}elsif ( $part eq Enums->Part_PNLCPN ) {
+		$tit = "Coupons";
 	}
 	elsif ( $part eq Enums->Part_PNLSCHEME ) {
 		$tit = "Scheme";

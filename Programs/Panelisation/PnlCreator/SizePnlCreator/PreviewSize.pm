@@ -213,7 +213,7 @@ sub Init {
 
 				if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
 
-					my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 1, 1 );
+					my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 1, 1,1 );
 					$self->SetPanelJSON($JSON);
 
 				}
@@ -299,7 +299,7 @@ sub Process {
  
 
 	my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
-	$pnlToJSON->CreatePnlByJSON( $self->GetPanelJSON(), 1, 0 );
+	$pnlToJSON->CreatePnlByJSON( $self->GetPanelJSON(), 1, 1 );
 
 	return $result;
 }

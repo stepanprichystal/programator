@@ -144,6 +144,9 @@ sub __TaskBackgroundFunc {
 	my $inCAM             = shift;
 	my $thrPogressInfoEvt = shift;
 	my $thrMessageInfoEvt = shift;
+	
+	# Turn disp of in order quicker processing
+	$inCAM->SetDisplay(0);
 
 	my $jsonStorable = JsonStorable->new();
 
@@ -212,6 +215,9 @@ sub __TaskBackgroundFunc {
 		$thrMessageInfoEvt->Do( $taskId, $JSONMess );
 
 	}
+	
+	# Turn back disp on 
+	$inCAM->SetDisplay(1);
 
 }
 

@@ -122,7 +122,7 @@ sub Process {
 	my $step  = $self->GetStep();
 
 	my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
-	$pnlToJSON->CreatePnlByJSON( $self->GetPanelJSON(), 0, 1 );
+	$pnlToJSON->CreatePnlByJSON( $self->GetPanelJSON(), 0, 1, 0 );
 
 	return $result;
 }

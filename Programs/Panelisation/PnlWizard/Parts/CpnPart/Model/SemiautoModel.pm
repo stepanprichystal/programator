@@ -15,7 +15,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-
+use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -37,7 +37,7 @@ sub new {
 	$self->{"settings"}->{"zAxisCpnRequired"} = 0;
 	$self->{"settings"}->{"zAxisCpnSett"}     = {};
 
-	$self->{"settings"}->{"placementType"}         = Enums->CpnPlacementMode_AUTO;
+	$self->{"settings"}->{"placementType"}         = PnlCreEnums->CpnPlacementMode_AUTO;
 	$self->{"settings"}->{"manualPlacementJSON"}   = undef;
 	$self->{"settings"}->{"manualPlacementStatus"} = EnumsGeneral->ResultType_NA;
 

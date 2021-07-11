@@ -4,7 +4,7 @@
 # Import/Export settings method are meant for using class in bacground
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlCreator::SchemePnlCreator::LibraryScheme;
+package Programs::Panelisation::PnlCreator::SchemePnlCreator::SchemeBase;
 use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
 
 use Class::Interface;

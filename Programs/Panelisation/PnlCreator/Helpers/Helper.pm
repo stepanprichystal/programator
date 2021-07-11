@@ -1,15 +1,13 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: 
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlCreator::Helpers::Helper;
 
-
 #3th party library
 use strict;
 use warnings;
-
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
@@ -26,12 +24,14 @@ use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::MatrixSteps';
 use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::SetSteps';
 use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::PreviewSteps';
 
+use aliased 'Programs::Panelisation::PnlCreator::CpnPnlCreator::SemiautoCpn';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub GetPnlCreatorByKey {
-	my $self = shift;
+	my $self       = shift;
 	my $jobId      = shift;
 	my $pnlType    = shift;
 	my $creatorKey = shift;
@@ -70,6 +70,10 @@ sub GetPnlCreatorByKey {
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
 		$creator = PreviewSteps->new( $jobId, $pnlType );
+
+	}
+	elsif ( $creatorKey eq PnlCreEnums->CpnPnlCreator_SEMIAUTO ) {
+		$creator = SemiautoCpn->new( $jobId, $pnlType );
 	}
 	else {
 
@@ -85,7 +89,6 @@ sub GetPnlCreatorByKey {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
- 
 }
 
 1;

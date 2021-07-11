@@ -56,11 +56,5 @@ sub Check {
 		print STDERR "check";
 		sleep(1);
 	}
-	#die "chyba scriptu.";
-	
-	 
-	#if ( $model->GetWidth() > 10 ) {
-
-		#$self->_AddError( "Velikost", "Nelze".$inCAM->GetReply() );
-	#}
+	# If manual step placement, checj if JSON i set !!!!!!
 }

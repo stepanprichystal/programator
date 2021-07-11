@@ -38,7 +38,8 @@ sub new {
 
 	# PROPERTIES
 
-	# DEFINE EVENTS
+# DEFINE EVENTS
+	$self->{"manualPlacementEvt"} = Event->new();
 
 	return $self;
 }
@@ -61,10 +62,15 @@ sub OnGetCreatorLayout {
 	my $parent     = shift;
 
 	my $content = undef;
+	
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
 
 	if ( $creatorKey eq PnlCreEnums->CpnPnlCreator_SEMIAUTO ) {
 
-		$content = SemiautoFrm->new($parent);
+		$content = SemiautoFrm->new($parent, $inCAM, $jobId );
+		
+		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
 
 	return $content;
