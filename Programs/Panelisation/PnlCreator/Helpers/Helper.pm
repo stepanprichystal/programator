@@ -26,6 +26,8 @@ use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::PreviewSteps';
 
 use aliased 'Programs::Panelisation::PnlCreator::CpnPnlCreator::SemiautoCpn';
 
+use aliased 'Programs::Panelisation::PnlCreator::SchemePnlCreator::LibraryScheme';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -74,6 +76,9 @@ sub GetPnlCreatorByKey {
 	}
 	elsif ( $creatorKey eq PnlCreEnums->CpnPnlCreator_SEMIAUTO ) {
 		$creator = SemiautoCpn->new( $jobId, $pnlType );
+	}
+	elsif ( $creatorKey eq PnlCreEnums->SchemePnlCreator_LIBRARY ) {
+		$creator = LibraryScheme->new( $jobId, $pnlType );
 	}
 	else {
 

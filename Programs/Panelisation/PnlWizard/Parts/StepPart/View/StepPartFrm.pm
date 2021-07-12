@@ -33,8 +33,9 @@ sub new {
 	my $inCAM  = shift;
 	my $jobId  = shift;
 	my $model  = shift;    # model for initial inittialization
+	my $pnlType = shift;
 
-	my $self = $class->SUPER::new( $parent, $inCAM, $jobId, $model );
+	my $self = $class->SUPER::new( $parent, $inCAM, $jobId, $model, $pnlType );
 
 	bless($self);
 
@@ -67,6 +68,7 @@ sub OnGetCreatorLayout {
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
+	my $pnlType = $self->{"pnlType"};
 
 	my $content = undef;
 

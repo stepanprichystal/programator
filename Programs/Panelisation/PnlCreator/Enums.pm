@@ -29,8 +29,8 @@ use constant {
 	CpnPnlCreator_SEMIAUTO => "CpnPnlCreator_Semiauto",
 
 	# Scheme sreators
-	SchemePnlCreator_LIBCUSTPNL => "SchemaPnlCreator_LibCustPnl",
-	SchemePnlCreator_LIBPRODUCPNL => "SchemaPnlCreator_LibProducPnl"
+	SchemePnlCreator_LIBRARY => "SchemaPnlCreator_Library",
+	 
 
 };
 

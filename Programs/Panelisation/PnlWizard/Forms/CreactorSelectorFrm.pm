@@ -25,11 +25,12 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class  = shift;
-	my $parent = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
-	my $model  = shift;    # model forfrist form inittialization
+	my $class   = shift;
+	my $parent  = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $model   = shift;    # model forfrist form inittialization
+	my $pnlType = shift;
 
 	my $self = $class->SUPER::new($parent);
 
@@ -40,13 +41,13 @@ sub new {
 	$self->{"inCAM"}         = $inCAM;
 	$self->{"jobId"}         = $jobId;
 	$self->{"creatorModels"} = $model->GetCreators();
+	$self->{"pnlType"}       = $pnlType;
 
 	# DEFINE EVENTS
 
 	$self->{"creatorSelectionChangedEvt"} = Event->new();
 	$self->{"creatorSettingsChangedEvt"}  = Event->new();
-	$self->{"creatorInitRequestEvt"}  = Event->new();
-	
+	$self->{"creatorInitRequestEvt"}      = Event->new();
 
 	return $self;
 }
@@ -121,7 +122,7 @@ sub __SetLayoutCreatorView {
 
 	foreach my $creator ( @{$creators} ) {
 
-		my $page = $notebook->AddPage( $creator->GetModelKey(), 1 );
+		my $page = $notebook->AddPage( $creator->GetModelKey(), 0 );
 
 		$page->GetParent()->SetBackgroundColour($stepBackg);
 
@@ -135,7 +136,6 @@ sub __SetLayoutCreatorView {
 
 		$content->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do( $content->GetCreatorKey(), @_ ) } );
 		$content->{"creatorInitRequestEvt"}->Add( sub { $self->{"creatorInitRequestEvt"}->Do( $content->GetCreatorKey(), @_ ) } );
-		
 
 		$page->AddContent( $content, 0 );
 
@@ -216,8 +216,11 @@ sub __OncreatorSelectionChangedEvt {
 	my $creatorKey = $listItem->GetItemId();
 
 	$self->{"notebook"}->ShowPage($creatorKey);
+	
 
-	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey)
+	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey);
+	
+   
 
 }
 

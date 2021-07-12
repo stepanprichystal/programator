@@ -17,6 +17,7 @@ use warnings;
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePart';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPart';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::CpnPart::Control::CpnPart';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::Control::SchemePart';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
@@ -63,6 +64,8 @@ sub Init {
 
 		push( @parts, CpnPart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
 	}
+
+	push( @parts, SchemePart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
 
 	foreach my $part (@parts) {
 

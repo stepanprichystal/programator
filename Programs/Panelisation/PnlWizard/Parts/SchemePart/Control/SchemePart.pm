@@ -3,7 +3,7 @@
 # Description: Controler for creating profile size
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePart;
+package Programs::Panelisation::PnlWizard::Parts::SchemePart::Control::SchemePart;
 use base 'Programs::Panelisation::PnlWizard::Parts::PartBase';
 
 use Class::Interface;
@@ -15,9 +15,9 @@ use warnings;
 
 #local library
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::SizePartModel'   => 'PartModel';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm'      => 'PartFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePartCheck' => 'PartCheckClass';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::Model::SchemePartModel'   => 'PartModel';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::View::SchemePartFrm'      => 'PartFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::Control::SchemePartCheck' => 'PartCheckClass';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -27,7 +27,7 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 
-	$self = $class->SUPER::new( Enums->Part_PNLSIZE, @_ );
+	$self = $class->SUPER::new( Enums->Part_PNLSCHEME, @_ );
 	bless $self;
 
 	# PROPERTIES
@@ -48,10 +48,11 @@ sub InitForm {
 	my $self        = shift;
 	my $partWrapper = shift;
 	my $inCAM       = shift;
+	my $pnlType = shift;
 
 	my $parent = $partWrapper->GetParentForPart();
 
-	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"model"} );
+	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"model"}, $pnlType );
 
 	$self->SUPER::_InitForm($partWrapper);
 

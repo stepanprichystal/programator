@@ -475,7 +475,7 @@ sub __SetLayoutParts {
 
 	# Define panels
 
-	my $partContainer = PartContainerForm->new( $parent, -1 );
+	my $partContainer = PartContainerForm->new( $parent, $self->{"pnlType"} );
 
 	#$pnlMain->SetBackgroundColour( Wx::Colour->new( 240, 240, 240 ) );
 
@@ -649,24 +649,7 @@ sub __SetLayoutParts {
 #
 #}
 
-sub __OnScrollPaint {
-	my $self      = shift;
-	my $scrollPnl = shift;
-	my $event     = shift;
-
-	$self->{"mainFrm"}->Layout();
-	$scrollPnl->FitInside();
-}
-
-# It is important do layout and refresh, when resize,
-# for correct "size changing" of sizers placed in inside VScrolledWindow
-sub __OnResize {
-	my $self = shift;
-
-	$self->{"mainFrm"}->Layout();
-	$self->{"mainFrm"}->Refresh();
-
-}
+ 
 
 sub __OnDockWindows {
 	my $self = shift;

@@ -46,6 +46,7 @@ sub new {
 	$self->{"maximizeChangedEvt"} = Event->new();
 	$self->{"previewChangedEvt"}  = Event->new();
 	$self->{"errIndClickEvent"}   = Event->new();
+	
 
 	return $self;
 }

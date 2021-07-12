@@ -5,7 +5,7 @@
 # Class must implement ICheckClass
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePartCheck;
+package Programs::Panelisation::PnlWizard::Parts::SchemePart::Control::SchemePartCheck;
 use base 'Packages::InCAMHelpers::AppLauncher::PopupChecker::CheckClassBase';
 
 use Class::Interface;

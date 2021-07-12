@@ -10,6 +10,8 @@ use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
+use File::Basename;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
@@ -23,6 +25,8 @@ use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::Stackup::StackupBase::StackupBase';
 use aliased 'CamHelpers::CamAttributes';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamJob';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -57,6 +61,7 @@ sub new {
 sub _Init {
 	my $self  = shift;
 	my $inCAM = shift;
+	my $stepName = shift;
 
 	my $jobId = $self->{"jobId"};
 
@@ -64,21 +69,24 @@ sub _Init {
 
 	my $layerCnt  = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 	my $pSch      = EnumsPaths->InCAM_server . "\\site_data\\library\\panel_schemes\\";
-	my @allScheme = grep { $_ =~ /^\w/ } glob( $pSch . '/*' );
+	my @allScheme = map { basename($_) } grep { $_ =~ /^\w/ } glob( $pSch . '/*' );
 
 	my @stdSchemes  = ();
 	my @specSchemes = ();
 	my $schemeType  = "standard";
 	my $scheme      = undef;
 
+
+	$self->SetStep($stepName);
+
 	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
 
 		# Get standard schemes - customers
 
-		my $custInfo = HegMethods->GetCustomerInfo( $self->{"jobId"} );
+		my $custInfo = HegMethods->GetCustomerInfo($jobId);
 		my $custNote = CustomerNote->new( $custInfo->{"reference_subjektu"} );
 
-		my $custScheme = $custInfo->RequiredSchema();
+		my $custScheme = $custNote->RequiredSchema();
 
 		if ( defined $custScheme ) {
 
@@ -177,7 +185,7 @@ sub _Init {
 
 			my $stackup = Stackup->new( $inCAM, $jobId );
 
-			my @inner = grep { $_->GetType() eq StackEnums->MaterialType_COPPER && !$_->GetIsFoil() } $stackup->GetAllLayers();
+			my @inner = grep { $_->GetType() eq StackEnums->MaterialType_COPPER && !$_->GetIsFoil() && $_->GetCopperName() =~ /^v\d+/ } $stackup->GetAllLayers();
 
 			foreach my $cuLayer (@inner) {
 
@@ -265,21 +273,40 @@ sub _Process {
 	my $errMess = shift;    # reference to err message
 
 	my $result = 1;
-	
-	
-	# Set special inner layer
+
+	my $jobId = $self->{"jobId"};
+	my $step  = $self->GetStep();
+
+	# 1) Set special inner layer
 	my %specFill = %{ $self->GetInnerLayerSpecFill() };
-	
-	foreach my $layerName  (keys %specFill){
-	
-	
-			CamAttributes->SetLayerAttribute( $inCAM, "spec_layer_fill", $specAttr, $jobId, $stepName, $cuLayer->GetCopperName() );
-	
+
+	foreach my $layerName ( keys %specFill ) {
+
+		CamAttributes->SetLayerAttribute( $inCAM, "spec_layer_fill", $specFill{$layerName}, $jobId, $step, $layerName );
 	}
-	
 
+	# 2) Run schema
 
-	# Run schema
+	my $nestedStep = undef;
+	my @childs = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
+
+	# prioritize mpanel/o+1
+	my $mpanel = first { $_->{"stepName"} eq "mpanel" } @childs;
+	if ($mpanel) {
+		$nestedStep = "mpanel";
+	}
+	else {
+		my $o1 = first { $_->{"stepName"} eq "o+1" } @childs;
+		if ($o1) {
+			$nestedStep = "o+1";
+		}
+		else {
+
+			die "Panel doesn't contain proper nested step (mpanel or o+1)";
+		}
+	}
+
+	$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => $step, "pcb" => $nestedStep, "scheme" => $self->GetScheme() );
 
 	return $result;
 }

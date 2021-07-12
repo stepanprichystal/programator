@@ -4,8 +4,8 @@
 # Import/Export settings method are meant for using class in bacground
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlCreator::SchemePnlCreator::SchemeBase;
-use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
+package Programs::Panelisation::PnlCreator::SchemePnlCreator::LibraryScheme;
+use base('Programs::Panelisation::PnlCreator::SchemePnlCreator::SchemeCreatorBase');
 
 use Class::Interface;
 &implements('Programs::Panelisation::PnlCreator::SchemePnlCreator::IScheme');
@@ -22,16 +22,15 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class = shift;
-	my $jobId = shift;
+	my $class   = shift;
+	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key   = Enums->SchemePnlCreator_LIBRARY;
+	my $key     = Enums->SchemePnlCreator_LIBRARY;
 
-	my $self = $class->SUPER::new( $jobId, $pnlType,  $key );
+	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
 
-	# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{""} = undef;
+	# Setting
 
 	return $self;    #
 }
@@ -46,23 +45,12 @@ sub new {
 sub Init {
 	my $self  = shift;
 	my $inCAM = shift;
+	my $stepName = shift;
 
 	my $result = 1;
 
-	$self->{"settings"}->{"w"} = 20;
-	$self->{"settings"}->{"h"} = 20;
-
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nHEG !! $name \n";
-
-		sleep(1);
-
-	}
+	# Set default settings
+	$self->SUPER::_Init($inCAM, $stepName);
 
 	return $result;
 
@@ -78,20 +66,7 @@ sub Check {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nChecking  HEG !! $name \n";
-
-		sleep(1);
-
-	}
-
-	$result = 0;
-	$$errMess .= "Nelze vytvorit";
+	$result = $self->SUPER::_Check( $inCAM, $errMess );
 
 	return $result;
 
@@ -105,17 +80,7 @@ sub Process {
 
 	my $result = 1;
 
-	for ( my $i = 0 ; $i < 1 ; $i++ ) {
-
-		$inCAM->COM("get_user_name");
-
-		my $name = $inCAM->GetReply();
-
-		print STDERR "\nProcessing  HEG !! $name \n";
-		die "test";
-		sleep(1);
-
-	}
+	$result = $self->SUPER::_Process( $inCAM, $errMess );
 
 	return $result;
 }
@@ -123,21 +88,6 @@ sub Process {
 #-------------------------------------------------------------------------------------------#
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
-
-sub Set {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{""} = $val;
-
-}
-
-sub Get {
-	my $self = shift;
-
-	return $self->{"settings"}->{""};
-
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
