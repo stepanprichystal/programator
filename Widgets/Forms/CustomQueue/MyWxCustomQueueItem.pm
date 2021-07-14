@@ -23,13 +23,14 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 	my $itemId = shift;
-	my $style = shift;
+	my $style  = shift;
 
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ], $style );
 
 	bless($self);
 
 	$self->{"selected"} = 0;
+	$self->{"disabled"} = 0;
 	$self->{"itemId"}   = $itemId;
 	$self->{"position"} = -1;
 
@@ -57,10 +58,9 @@ sub GetPosition {
 	return $self->{"position"};
 }
 
-
 # This method register handler LEFT_DOWN on every ("Wx::Panel", "Wx::StaticSizer", "Wx::StaticText")
 # child controls of this control
-# Thus, every child control will react on left button click 
+# Thus, every child control will react on left button click
 sub RecursiveHandler {
 	my $self    = shift;
 	my $control = shift;
@@ -97,18 +97,31 @@ sub GetItemHeight {
 
 }
 
-
-sub SetSelected{
+sub SetSelected {
 	my $self = shift;
 
 	$self->{"selected"} = shift;
 }
 
-sub GetSelected{
+sub GetSelected {
 	my $self = shift;
 
 	return $self->{"selected"};
 }
+
+sub SetDisabled {
+	my $self     = shift;
+	my $disabled = shift;    # 1 = disabled / 0 = enabled
+
+	$self->{"disabled"} = $disabled;
+}
+
+sub GetDisabled {
+	my $self = shift;
+
+	return $self->{"disabled"};
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Private methods
 #-------------------------------------------------------------------------------------------#
@@ -117,7 +130,6 @@ sub __SetLayout {
 	my $self = shift;
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
- 
 
 	#Wx::Event::EVT_BUTTON( $btnDefault, -1, sub { $self->__OnClick() } );
 
@@ -131,15 +143,14 @@ sub __SetLayout {
 
 }
 
- 
-
 sub __MouseDown {
 	my ( $self, $item, $c, $d ) = @_;
- 
+
 	if ( $d->ButtonDown() ) {
 
- 
-		$self->{"onItemClick"}->Do($self);
+		if ( !$self->GetDisabled() ) {
+			$self->{"onItemClick"}->Do($self);
+		}
 
 	}
 }

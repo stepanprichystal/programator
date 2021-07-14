@@ -4,7 +4,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutoUserFrm;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::ClassHEGFrm;
 use base qw(Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::PnlStepAutoBase);
 
 #3th party library
@@ -16,6 +16,7 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -27,7 +28,7 @@ sub new {
 	my $inCAM  = shift;
 	my $jobId  = shift;
 
-	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_AUTOUSER, $parent, $inCAM, $jobId );
+	my $self = $class->SUPER::new( PnlCreEnums->StepPnlCreator_CLASSHEG, $parent, $inCAM, $jobId );
 
 	bless($self);
 
@@ -43,18 +44,45 @@ sub __SetLayout {
 	my $self = shift;
 
 	# DEFINE CONTROLS
+	
+	my $indicator = $self->_SetLayoutISMultipl("HEG multiplicity fileld");
 
 	# DEFINE EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
 	# SAVE REFERENCES
+	
+	$self->{"ISMultiplFilled"} = $indicator;
 
 }
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
+
+sub SetISMultiplFilled {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"ISMultiplFilled"}->SetStatus( ( $val ? EnumsGeneral->ResultType_OK : EnumsGeneral->ResultType_FAIL ) );
+
+}
+
+sub GetISMultiplFilled {
+	my $self = shift;
+
+	my $stat = $self->{"ISMultiplFilled"}->GetStatus();
+
+	if ( $stat eq EnumsGeneral->ResultType_OK ) {
+
+		return 1;
+	}
+	else {
+
+		return 0;
+	}
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

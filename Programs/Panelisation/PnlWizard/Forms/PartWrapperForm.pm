@@ -19,6 +19,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
+use aliased 'Packages::Other::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -27,7 +28,7 @@ use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 sub new {
 	my ( $class, $parent, $partType, $title, $messMngr ) = @_;
 
-	my $self = $class->SUPER::new($parent);
+	my $self = $class->SUPER::new( $parent, -1, [ -1, - 1 ], [ -1, -1] );
 
 	bless($self);
 
@@ -46,7 +47,6 @@ sub new {
 	$self->{"maximizeChangedEvt"} = Event->new();
 	$self->{"previewChangedEvt"}  = Event->new();
 	$self->{"errIndClickEvent"}   = Event->new();
-	
 
 	return $self;
 }
@@ -75,21 +75,20 @@ sub SetErrIndicator {
 
 }
 
-
 sub SetFinalProcessLayout {
 	my $self = shift;
 	my $val  = shift;    # start/end
 
-	 if($val){
-	 	
-	 	$self->{"previewChb"}->Disable();
-	 	$self->{"pnlBody"}->Disable();
-	 }else{
-	 	
-	 	
-	 	$self->{"previewChb"}->Enable();
-	 	$self->{"pnlBody"}->Enable();
-	 }
+	if ($val) {
+
+		$self->{"previewChb"}->Disable();
+		$self->{"pnlBody"}->Disable();
+	}
+	else {
+
+		$self->{"previewChb"}->Enable();
+		$self->{"pnlBody"}->Enable();
+	}
 
 }
 
@@ -104,9 +103,9 @@ sub __SetLayout {
 	my $pnlHeader = Wx::Panel->new( $self, -1 );
 	my $pnlBody   = Wx::Panel->new( $self, -1 );
 
-	$self->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
-	$pnlHeader->SetBackgroundColour( EnumsStyle->BACKGCLR_LEFTPNLBLUE );
-	$pnlBody->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	$self->SetBackgroundColour( AppConf->GetColor("clrWrapperBackground") );
+	$pnlHeader->SetBackgroundColour( AppConf->GetColor("clrWrapperHeaderBackground"));
+	$pnlBody->SetBackgroundColour( AppConf->GetColor("clrWrapperBodyBackground"));
 
 	# DEFINE CONTROLS
 	Wx::InitAllImageHandlers();
@@ -118,14 +117,14 @@ sub __SetLayout {
 	my $titleTxt     = Wx::StaticText->new( $pnlHeader, -1, $self->{"title"}, &Wx::wxDefaultPosition );
 	my $f            = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 	$titleTxt->SetFont($f);
-	$titleTxt->SetForegroundColour( EnumsStyle->TXTCLR_LEFTPNL );
+	$titleTxt->SetForegroundColour( AppConf->GetColor("clrWrapperTitle"));
 	my $gauge = Wx::Gauge->new( $pnlHeader, -1, 100, &Wx::wxDefaultPosition, [ 80, 5 ], &Wx::wxGA_HORIZONTAL );
 	$gauge->SetValue(100);
 	$gauge->Pulse();
 	$gauge->Hide();
 
 	my $previewChb = Wx::CheckBox->new( $pnlHeader, -1, "Preview", &Wx::wxDefaultPosition );
-	$previewChb->SetForegroundColour( Wx::Colour->new( 187, 187, 196 ) );
+	$previewChb->SetForegroundColour(AppConf->GetColor("clrWrapperPreview") );
 
 	my $errInd = ErrorIndicator->new( $pnlHeader, EnumsGeneral->MessageType_ERROR, 15, undef, $self->{"jobId"} );
 	$errInd->{"onClick"}->Add( sub { $self->{"errIndClickEvent"}->Do( EnumsGeneral->MessageType_ERROR ) } );
@@ -192,8 +191,7 @@ sub SetPreview {
 
 sub GetPreview {
 	my $self = shift;
-	
-	
+
 	if ( $self->{"previewChb"}->IsChecked() ) {
 
 		return 1;
@@ -202,7 +200,7 @@ sub GetPreview {
 
 		return 0;
 	}
-	 
+
 }
 
 sub ShowLoading {

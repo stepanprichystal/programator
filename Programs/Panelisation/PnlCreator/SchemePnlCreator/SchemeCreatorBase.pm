@@ -59,8 +59,8 @@ sub new {
 # (instead of Init method is possible init by import JSON settings)
 # Return 1 if succes 0 if fail
 sub _Init {
-	my $self  = shift;
-	my $inCAM = shift;
+	my $self     = shift;
+	my $inCAM    = shift;
 	my $stepName = shift;
 
 	my $jobId = $self->{"jobId"};
@@ -75,7 +75,6 @@ sub _Init {
 	my @specSchemes = ();
 	my $schemeType  = "standard";
 	my $scheme      = undef;
-
 
 	$self->SetStep($stepName);
 
@@ -185,7 +184,8 @@ sub _Init {
 
 			my $stackup = Stackup->new( $inCAM, $jobId );
 
-			my @inner = grep { $_->GetType() eq StackEnums->MaterialType_COPPER && !$_->GetIsFoil() && $_->GetCopperName() =~ /^v\d+/ } $stackup->GetAllLayers();
+			my @inner = grep { $_->GetType() eq StackEnums->MaterialType_COPPER && !$_->GetIsFoil() && $_->GetCopperName() =~ /^v\d+/ }
+			  $stackup->GetAllLayers();
 
 			foreach my $cuLayer (@inner) {
 
@@ -278,11 +278,14 @@ sub _Process {
 	my $step  = $self->GetStep();
 
 	# 1) Set special inner layer
-	my %specFill = %{ $self->GetInnerLayerSpecFill() };
+	my @inLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId, 1 );
+	if ( scalar(@inLayers) ) {
+		my %specFill = %{ $self->GetInnerLayerSpecFill() };
 
-	foreach my $layerName ( keys %specFill ) {
+		foreach my $layerName ( keys %specFill ) {
 
-		CamAttributes->SetLayerAttribute( $inCAM, "spec_layer_fill", $specFill{$layerName}, $jobId, $step, $layerName );
+			CamAttributes->SetLayerAttribute( $inCAM, "spec_layer_fill", $specFill{$layerName}, $jobId, $step, $layerName );
+		}
 	}
 
 	# 2) Run schema

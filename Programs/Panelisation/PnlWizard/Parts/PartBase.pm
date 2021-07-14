@@ -139,6 +139,15 @@ sub IsPartFullyInited {
 	$self->{"isPartFullyInited"};
 }
 
+# Set indicator that part/crators are not inited and init them on first acces to crator
+# This method is called by Load default action
+sub SetPartNotInited {
+	my $self = shift;
+
+	$self->{"isPartFullyInited"} = 0;     # state indicator if part is fully loaded (assync loading)
+	$self->{"creatorInited"}     = {};
+}
+
 #-------------------------------------------------------------------------------------------#
 #  Other public  method
 #-------------------------------------------------------------------------------------------#
@@ -192,6 +201,12 @@ sub _InitForm {
 	$self->{"form"}->{"creatorSelectionChangedEvt"}->Add( sub { $self->__OnCreatorSelectionChangedHndl(@_) } );
 	$self->{"form"}->{"creatorInitRequestEvt"}->Add( sub      { $self->__OnCreatorInitRequestHndl(@_) } );
 
+}
+
+sub _GetPnlType {
+	my $self = shift;
+
+	return $self->{"pnlType"};
 }
 
 # Do init specific creator asynchronously
@@ -358,10 +373,11 @@ sub __OnCreatorSettingsChangedHndl {
 sub __OnCreatorSelectionChangedHndl {
 	my $self       = shift;
 	my $creatorKey = shift;
-	
-	 
 
 	return 0 if ( $self->{"frmHandlersOff"} );
+
+	# Reise imidiatelly after creator changed
+	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );
 
 	# Change model
 	$self->{"model"}->SetSelectedCreator($creatorKey);

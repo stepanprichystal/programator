@@ -4,8 +4,8 @@
 # Import/Export settings method are meant for using class in bacground
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoHEGSteps;
-use base('Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoCreatorBase');
+package Programs::Panelisation::PnlCreator::StepsPnlCreator::ClassUserSteps;
+use base('Programs::Panelisation::PnlCreator::StepsPnlCreator::ClassCreatorBase');
 
 use Class::Interface;
 &implements('Programs::Panelisation::PnlCreator::StepsPnlCreator::ISteps');
@@ -20,8 +20,6 @@ use Try::Tiny;
 use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
-use aliased 'Connectors::HeliosConnector::HegMethods';
-
 #use aliased 'Packages::CAM::PanelClass::Enums' => "PnlClassEnums";
 #use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlClassParser';
 #use aliased 'CamHelpers::CamHelper';
@@ -39,13 +37,10 @@ sub new {
 	my $class   = shift;
 	my $jobId   = shift;
 	my $pnlType = shift;
-	my $key     = Enums->StepPnlCreator_AUTOHEG;
+	my $key     = Enums->StepPnlCreator_CLASSUSER;
 
 	my $self = $class->SUPER::new( $jobId, $pnlType, $key );
 	bless $self;
-
-	# Properties
-	$self->{"settings"}->{"ISMultiplFilled"} = undef;
 
 	return $self;    #
 }
@@ -68,44 +63,13 @@ sub Init {
 
 	# Set default settings
 	$self->SUPER::_Init( $inCAM, $stepName );
+	
 
-	# Set amount settings from HEG
-
-	my $dim = HegMethods->GetInfoDimensions($jobId);
-
-	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
-
-		my $multiplIS = $dim->{"nasobnost_panelu"};
-
-		if ( defined $multiplIS && $multiplIS > 0 ) {
-
-			$self->SetExactQuantity($multiplIS);
-			$self->SetISMultiplFilled(1);
-		}
-		else {
-
-			$self->SetExactQuantity(0);
-			$self->SetISMultiplFilled(0);
-		}
-
-	}    # Load panel size from HEG
-	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
-
-		my $multiplIS = $dim->{"nasobnost"};
-
-		if ( defined $multiplIS && $multiplIS > 0 ) {
-
-			$self->SetExactQuantity($multiplIS);
-			$self->SetISMultiplFilled(1);
-		}
-		else {
-
-			$self->SetExactQuantity(0);
-			$self->SetISMultiplFilled(0);
-		}
-	}
-
-	$self->SetAmountType( Enums->StepAmount_EXACT );
+	
+	# Set amount settings
+	$self->SetAmountType( Enums->StepAmount_AUTO );
+	
+	
 
 	return $result;
 
@@ -149,18 +113,8 @@ sub Process {
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
 
-sub SetISMultiplFilled {
-	my $self = shift;
-	my $val  = shift;
 
-	$self->{"settings"}->{"ISMultiplFilled"} = $val;
-}
 
-sub GetISMultiplFilled {
-	my $self = shift;
-
-	return $self->{"settings"}->{"ISMultiplFilled"};
-}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

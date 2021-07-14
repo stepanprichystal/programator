@@ -17,8 +17,8 @@ use List::Util qw(first);
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutoHegFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutoUserFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::ClassHEGFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::ClassUserFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::MatrixFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::SetFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::PreviewFrm';
@@ -35,7 +35,8 @@ sub new {
 	my $model  = shift;    # model for initial inittialization
 	my $pnlType = shift;
 
-	my $self = $class->SUPER::new( $parent, $inCAM, $jobId, $model, $pnlType );
+	my $frmHeight = 250; # height of part, constant for all creators
+	my $self = $class->SUPER::new( $parent, $frmHeight, $inCAM, $jobId, $model, $pnlType );
 
 	bless($self);
 
@@ -72,15 +73,15 @@ sub OnGetCreatorLayout {
 
 	my $content = undef;
 
-	if ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+	if ( $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
 
-		$content = AutoHegFrm->new( $parent, $inCAM, $jobId );
+		$content = ClassHEGFrm->new( $parent, $inCAM, $jobId );
 
 		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER ) {
 
-		$content = AutoUserFrm->new( $parent, $inCAM, $jobId );
+		$content = ClassUserFrm->new( $parent, $inCAM, $jobId );
 
 		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
@@ -121,8 +122,8 @@ sub SetCreators {
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 			$creatorFrm->SetStep( $model->GetStep() );
 
-			if (    $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
-				 || $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG )
+			if (    $modelKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
+				 || $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG )
 			{
 
 				$creatorFrm->SetPCBStepsList( $model->GetPCBStepsList() );
@@ -146,7 +147,7 @@ sub SetCreators {
 				$creatorFrm->SetMinUtilization( $model->GetMinUtilization() );
 				$creatorFrm->SetExactQuantity( $model->GetExactQuantity() );
 
-				if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+				if ( $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
 
 					$creatorFrm->SetISMultiplFilled( $model->GetISMultiplFilled() );
 				}
@@ -192,8 +193,8 @@ sub GetCreators {
 		
 		$model->SetStep( $creatorFrm->GetStep() );
 
-		if (    $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
-			 || $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG )
+		if (    $modelKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
+			 || $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG )
 		{
 
 			$model->SetPnlClasses( $creatorFrm->GetPnlClasses() );
@@ -218,13 +219,13 @@ sub GetCreators {
 			$model->SetMinUtilization( $creatorFrm->GetMinUtilization() );
 			$model->SetExactQuantity( $creatorFrm->GetExactQuantity() );
 
-			if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+			if ( $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
 
 				$model->SetISMultiplFilled( $creatorFrm->GetISMultiplFilled() );
 			}
 
 		}
-		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
 
 			#			$model->SetWidth( $creatorFrm->GetWidth() );
 			#			$model->SetHeight( $creatorFrm->GetHeight() );

@@ -19,8 +19,8 @@ use constant {
 	SizePnlCreator_PREVIEW   => "SizePnlCreator_Preview",      # panel + mpanel
 
 	# Step placement creaotrs
-	StepPnlCreator_AUTOUSER => "StepPnlCreator_AutoUser",
-	StepPnlCreator_AUTOHEG  => "StepPnlCreator_AutoHeg",
+	StepPnlCreator_CLASSUSER => "StepPnlCreator_ClassUser",
+	StepPnlCreator_CLASSHEG  => "StepPnlCreator_ClassHeg",
 	StepPnlCreator_MATRIX   => "StepPnlCreator_Matrix",
 	StepPnlCreator_SET      => "StepPnlCreator_Set",
 	StepPnlCreator_PREVIEW  => "StepPnlCreator_Preview",

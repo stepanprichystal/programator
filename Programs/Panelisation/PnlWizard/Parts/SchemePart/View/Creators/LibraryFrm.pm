@@ -300,7 +300,7 @@ sub GetSpecSchemeList {
 
 sub SetSchemeType {
 	my $self = shift;
-	my $type = shift;                                  # standard/special
+	my $type = shift;    # standard/special
 
 	if ( $self->{"pnlType"} eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 
@@ -387,17 +387,22 @@ sub GetScheme {
 }
 
 sub SetInnerLayerSpecFill {
-	my $self = shift;
-	my $specFill  = shift; # hah layer name + spec fill
+	my $self     = shift;
+	my $specFill = shift;    # hah layer name + spec fill
 
-	$self->{"innerLayerList"}->SetLayersSpecFill($specFill);
+	if ( scalar( @{ $self->{"innerSigL"} } ) ) {
+		$self->{"innerLayerList"}->SetLayersSpecFill($specFill);
+
+	}
 
 }
 
 sub GetInnerLayerSpecFill {
 	my $self = shift;
 
-	return $self->{"innerLayerList"}->GetLayersSpecFill();
+	if ( scalar( @{ $self->{"innerSigL"} } ) ) {
+		return $self->{"innerLayerList"}->GetLayersSpecFill();
+	}
 
 }
 

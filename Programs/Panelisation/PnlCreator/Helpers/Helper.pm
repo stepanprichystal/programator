@@ -18,8 +18,8 @@ use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassUserSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::ClassHEGSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::PreviewSize';
 
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoUserSteps';
-use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoHEGSteps';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::ClassUserSteps';
+use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::ClassHEGSteps';
 use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::MatrixSteps';
 use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::SetSteps';
 use aliased 'Programs::Panelisation::PnlCreator::StepsPnlCreator::PreviewSteps';
@@ -58,11 +58,11 @@ sub GetPnlCreatorByKey {
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 		$creator = PreviewSize->new( $jobId, $pnlType );
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
-		$creator = AutoUserSteps->new( $jobId, $pnlType );
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER ) {
+		$creator = ClassUserSteps->new( $jobId, $pnlType );
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
-		$creator = AutoHEGSteps->new( $jobId, $pnlType );
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
+		$creator = ClassHEGSteps->new( $jobId, $pnlType );
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
 		$creator = MatrixSteps->new( $jobId, $pnlType );

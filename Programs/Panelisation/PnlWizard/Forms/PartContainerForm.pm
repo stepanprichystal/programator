@@ -111,14 +111,11 @@ sub __SetLayout {
 		# Add this rappet to group table
 		#my $w = $part->GetCellWidth();
 		my $expand = ( $i < ( scalar( @{$parts} ) - 1 ) ? 1 : 0 );
-		$containerSz->Add( $partWrapper, $expand, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+		$containerSz->Add( $partWrapper, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 
 		push( @{ $self->{"partWrappers"} }, $partWrapper );
-		
-		$partWrapper->Layout();
-		$part->{"form"}->Layout();
 
-		 
+
 	}
 
 	Wx::Event::EVT_PAINT( $scrollPnl, sub { $self->__OnScrollPaint(@_) } );
@@ -126,12 +123,14 @@ sub __SetLayout {
 	$containerPnl->SetSizer($containerSz);
 	$scrollSizer->Add( $containerPnl, 1, &Wx::wxEXPAND );
 	$scrollPnl->SetSizer($scrollSizer);
-	$szMain->Add( $scrollPnl, 1, &Wx::wxEXPAND );
+	$szMain->Add( $scrollPnl, 0, &Wx::wxEXPAND );
+	
+ 
 
 	$self->SetSizer($szMain);
 
 	# get height of group table, for init scrollbar panel
-	$scrollPnl->Layout();
+
 	#$containerPnl->Layout();
 
 	#	$containerPnl->InvalidateBestSize();
@@ -144,50 +143,32 @@ sub __SetLayout {
 
 	#$self->{"mainFrm"}->Layout();
 	$scrollPnl->Layout();
-	my ( $width, $height ) =$containerPnl->GetSizeWH();
-#
-#	#
-	$scrollPnl->SetRowCount( ($height) / 10 );
+	$self->InvalidateBestSize();
+	$scrollPnl->FitInside();
+	$scrollPnl->Layout();
+	
+	
+	my ( $width, $height ) = $containerPnl->GetSizeWH();
 
 	#compute number of rows. One row has height 10 px
 	$scrollPnl->SetRowCount( ($height) / 10 );
 
 	$self->{"scrollPnl"}    = $scrollPnl;
 	$self->{"containerPnl"} = $containerPnl;
+	$self->{"szMain"}      = $szMain;
 
 	$self->Thaw();
 
 }
 
-#sub UpdateScrollPnl {
-#	my $self = shift;
-#	
-#		$scrollPnl->FitInside();
-##	$scrollPnl->Refresh();
-##
-##	#$self->{"containerPnl"}->Layout();
-##	#
-#	my ( $width, $height ) = $self->{"containerPnl"}->GetSizeWH();
-##
-##	#
-#	$self->{"scrollPnl"}->SetRowCount( ($height) / 10 );
-#
-#}
-
 sub __OnScrollPaint {
-	my $self      = shift;
+	my $self = shift;
+
 	my $scrollPnl = shift;
 	my $event     = shift;
-
-	#$self->{"parent"}->Layout();
-
-	$scrollPnl->Layout();
-	#$scrollPnl->FitInside();
-	 
-#
-	#$self->{"containerPnl"}->FitInside();
-	$self->{"containerPnl"}->Layout();
-#	#
+	#$self->{"containerPnl"}->Layout();
+	#$self->Refresh();
+ 
 
 }
 

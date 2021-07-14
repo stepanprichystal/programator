@@ -2,7 +2,7 @@
 # Description: Creator model
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::StepPart::Model::AutoHEGModel;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::Model::ClassHEGModel;
 use base('Programs::Panelisation::PnlWizard::Core::WizardModelBase');
 
 use Class::Interface;
@@ -27,7 +27,7 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"modelKey"} = PnlCreEnums->StepPnlCreator_AUTOHEG;
+	$self->{"modelKey"} = PnlCreEnums->StepPnlCreator_CLASSHEG;
 
 	$self->{"settings"}->{"pnlClasses"}            = [];
 	$self->{"settings"}->{"defPnlClass"}           = undef;

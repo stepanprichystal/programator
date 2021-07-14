@@ -101,7 +101,7 @@ sub SetSrcJobId {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"jobSrcValTxt"}->SetValue($val) if ( defined $val );
+	$self->{"jobSrcValTxt"}->SetValue($val) if ( defined $val && $val ne "");
 }
 
 sub GetSrcJobId {

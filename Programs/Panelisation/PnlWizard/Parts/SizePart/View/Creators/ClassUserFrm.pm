@@ -169,9 +169,9 @@ sub SetDefPnlClass {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassCB"}->SetValue($val) if ( defined $val );;
+	$self->{"pnlClassCB"}->SetValue($val) if ( defined $val && $val ne "" );;
 
-	$self->__OnPnlClassChanged($val) if ( defined $val );
+	$self->__OnPnlClassChanged($val) if ( defined $val && $val ne "");
 }
 
 sub GetDefPnlClass {
@@ -184,9 +184,9 @@ sub SetDefPnlSize {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassSizeCB"}->SetValue($val) if ( defined $val );;
+	$self->{"pnlClassSizeCB"}->SetValue($val) if ( defined $val && $val ne "");;
 
-	$self->__OnPnlClassSizeChanged($val) if ( defined $val );
+	$self->__OnPnlClassSizeChanged($val) if ( defined $val && $val ne "");
 }
 
 sub GetDefPnlSize {
@@ -199,9 +199,9 @@ sub SetDefPnlBorder {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassBorderCB"}->SetValue($val) if ( defined $val );;
+	$self->{"pnlClassBorderCB"}->SetValue($val) if ( defined $val && $val ne "");;
 
-	$self->__OnPnlClassBorderChanged($val) if ( defined $val );
+	$self->__OnPnlClassBorderChanged($val) if ( defined $val && $val ne "");
 }
 
 sub GetDefPnlBorder {

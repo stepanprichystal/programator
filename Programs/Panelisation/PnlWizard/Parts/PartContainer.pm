@@ -121,12 +121,15 @@ sub InitPartModel {
 
 			my $partModel = $restoredModel->GetPartModelById( $part->GetPartId() );
 			$part->InitPartModel( $inCAM, $partModel );
+
 		}
+ 
 	}
 	else {
 
 		foreach my $part ( @{ $self->{"parts"} } ) {
 
+			$part->SetPartNotInited();
 			$part->InitPartModel( $inCAM, undef );
 		}
 	}
@@ -205,10 +208,21 @@ sub SetPreview {
 
 }
 
-# Get previre option
+# Return if at least one part has preview activce
 sub GetPreview {
 	my $self = shift;
 
+	my $preview = 0;
+
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		if ( $part->GetPreview() ) {
+			$preview = 1;
+			last;
+		}
+	}
+
+	return $preview;
 }
 
 # If all asynchronous init calling are done for all parts, return 1

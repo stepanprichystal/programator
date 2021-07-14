@@ -41,6 +41,8 @@ sub new {
 
 	$self->{"model"}      = PartModel->new();         # Data model for view
 	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
+	
+	$self->__SetActiveCreators();
 
 	return $self;
 }
@@ -189,11 +191,11 @@ sub __OnManualPlacementHndl {
 }
 
 # Handler which catch change of creatores in other parts
+# Reise imidiatelly after slection change, do not wait on asznchrounous task
 sub OnOtherPartCreatorSelChangedHndl {
 	my $self            = shift;
 	my $partId          = shift;
 	my $creatorKey      = shift;
-	my $creatorSettings = shift;    # creator model
 
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
@@ -210,6 +212,33 @@ sub OnOtherPartCreatorSettChangedHndl {
 	my $jobId = $self->{"jobId"};
 
 	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Private method
+#-------------------------------------------------------------------------------------------#
+
+# Disable creators which are not needed for specific panelisation type
+sub __SetActiveCreators {
+	my $self = shift;
+
+	my @currCreators   = @{ $self->GetModel(1)->GetCreators() };
+	my @activeCreators = ();
+
+	if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+ 
+
+	}
+	elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+		foreach my $c (@currCreators) {
+
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->CpnPnlCreator_SEMIAUTO );
+
+		}
+	}
+
+	$self->GetModel(1)->SetCreators( \@activeCreators );
 
 }
 

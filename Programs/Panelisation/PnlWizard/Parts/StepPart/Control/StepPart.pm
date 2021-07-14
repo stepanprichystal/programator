@@ -45,6 +45,8 @@ sub new {
 	$self->{"model"}      = PartModel->new();         # Data model for view
 	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
 
+	$self->__SetActiveCreators();
+
 	return $self;
 }
 
@@ -87,6 +89,7 @@ sub InitPartModel {
 
 		# Init default
 		# Init default
+		
 		my $defCreator = @{ $self->{"model"}->GetCreators() }[0];
 		$self->{"model"}->SetSelectedCreator( $defCreator->GetModelKey() );
 	}
@@ -128,8 +131,8 @@ sub __OnManualPlacementHndl {
 		my $step = $creatorModel->GetStep();
 
 		# Remove steps
-		if (    $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
-			 || $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG
+		if (    $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
+			 || $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG
 			 || $creatorKey eq PnlCreEnums->StepPnlCreator_SET )
 		{
 
@@ -151,7 +154,7 @@ sub __OnManualPlacementHndl {
 
 		if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
 
-			my $JSON = $pnlToJSON->ParsePnlToJSON(1, 1, 0, 0);
+			my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 1, 0, 0 );
 
 			if ( defined $JSON ) {
 
@@ -201,22 +204,93 @@ sub __OnManualPlacementHndl {
 }
 
 # Handler which catch change of creatores in other parts
-# Creator settings changed riase in following situations:
-
+# Reise imidiatelly after slection change, do not wait on asznchrounous task
 sub OnOtherPartCreatorSelChangedHndl {
-	my $self            = shift;
-	my $partId          = shift;
-	my $creatorKey      = shift;
-	my $creatorSettings = shift;    # creator model
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
 
-	#	# process creator if Part size was changed
-	#	if ( $partId eq Enums->Part_PNLSIZE ) {
-	#
-	#		if ( $self->GetPreview() ) {
-	#			$self->AsyncProcessSelCreatorModel();
-	#		}
-	#
-	#	}
+	# Disable specific creators depand on preview part (size creator)
+	if ( $partId eq Enums->Part_PNLSIZE ) {
+
+		my @enableCreators  = ();
+		my $selectedCreator = undef;
+
+		if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+			if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_MATRIX );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_MATRIX;
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_PREVIEW );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_PREVIEW;
+			}
+
+		}
+		elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+
+			if ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+			}
+		}
+
+		# Select creator
+		$self->{"form"}->SetSelectedCreator($selectedCreator);
+
+		# Enable/diasble step cretors
+		$self->{"form"}->EnableCreators( \@enableCreators );
+
+	}
 
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
@@ -259,6 +333,43 @@ sub OnOtherPartCreatorSettChangedHndl {
 	}
 
 	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Private method
+#-------------------------------------------------------------------------------------------#
+
+# Disable creators which are not needed for specific panelisation type
+sub __SetActiveCreators {
+	my $self = shift;
+
+	my @currCreators   = @{ $self->GetModel(1)->GetCreators() };
+	my @activeCreators = ();
+
+	if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+		foreach my $c (@currCreators) {
+
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_MATRIX );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_SET );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_PREVIEW );
+
+		}
+
+	}
+	elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+		foreach my $c (@currCreators) {
+
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
+
+		}
+	}
+
+	$self->GetModel(1)->SetCreators( \@activeCreators );
 
 }
 

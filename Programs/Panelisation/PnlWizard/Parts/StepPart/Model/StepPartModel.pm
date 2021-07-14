@@ -16,8 +16,8 @@ use List::Util qw(first);
 
 #local library
 
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::AutoUserModel';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::AutoHEGModel';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::ClassUserModel';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::ClassHEGModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::MatrixModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::SetModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::PreviewModel';
@@ -35,8 +35,8 @@ sub new {
 	$self->{"creators"} = [];
 	$self->{"selected"} = undef;
 
-	push( @{ $self->{"creators"} }, AutoUserModel->new() );
-	push( @{ $self->{"creators"} }, AutoHEGModel->new() );
+	push( @{ $self->{"creators"} }, ClassUserModel->new() );
+	push( @{ $self->{"creators"} }, ClassHEGModel->new() );
 	push( @{ $self->{"creators"} }, MatrixModel->new() );
 	#push( @{ $self->{"creators"} }, SetModel->new() );
 	push( @{ $self->{"creators"} }, PreviewModel->new() );

@@ -23,7 +23,12 @@ sub new {
 
 	$self->{"__CLASS__"} = caller();
 
+
+	$self->{"preview"} = 0;
+
 	$self->{"settings"} = {};
+	$self->{"settings"}->{"step"} = undef;
+
 
 	return $self;
 
@@ -39,7 +44,7 @@ sub SetPreview {
 sub GetPreview {
 	my $self = shift;
 
-	return $self->{"preview"};
+	$self->{"preview"};
 
 }
 
@@ -103,6 +108,10 @@ sub SetStep {
 	$self->{"settings"}->{"step"} = $val;
 
 }
+
+
+
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

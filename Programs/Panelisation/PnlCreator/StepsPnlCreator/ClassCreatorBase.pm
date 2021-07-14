@@ -4,7 +4,7 @@
 # Import/Export settings method are meant for using class in bacground
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlCreator::StepsPnlCreator::AutoCreatorBase;
+package Programs::Panelisation::PnlCreator::StepsPnlCreator::ClassCreatorBase;
 use base('Programs::Panelisation::PnlCreator::PnlCreatorBase');
  
 #3th party library

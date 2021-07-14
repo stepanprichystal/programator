@@ -25,14 +25,15 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class   = shift;
-	my $parent  = shift;
-	my $inCAM   = shift;
-	my $jobId   = shift;
-	my $model   = shift;    # model forfrist form inittialization
-	my $pnlType = shift;
+	my $class     = shift;
+	my $parent    = shift;
+	my $frmHeight = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $model     = shift;    # model forfrist form inittialization
+	my $pnlType   = shift;
 
-	my $self = $class->SUPER::new($parent);
+	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, $frmHeight ] );
 
 	bless($self);
 
@@ -216,79 +217,21 @@ sub __OncreatorSelectionChangedEvt {
 	my $creatorKey = $listItem->GetItemId();
 
 	$self->{"notebook"}->ShowPage($creatorKey);
-	
 
 	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey);
-	
-   
 
 }
 
-# CREATOR - user defined
+sub EnableCreators {
+	my $self        = shift;
+	my $creatorKeys = shift;
+	
+	
+	
 
-# CREATOR - heg info
-
-#sub SetComm {
-#	my $self       = shift;
-#	my $commId     = shift;
-#	my $commLayout = shift;
-#
-#	$self->{"commList"}->SetCommentLayout( $commId, $commLayout );
-#
-#}
-#
-#sub SetCommList {
-#	my $self           = shift;
-#	my $commListLayout = shift;
-#
-#	$self->{"setCommList"} = 1;    #
-#
-#	$self->{"commList"}->SetCommentsLayout($commListLayout);
-#
-#	if ( scalar( @{$commListLayout} ) ) {
-#
-#		$self->{"btnRemove"}->Enable();
-#
-#	}
-#	else {
-#		$self->{"btnRemove"}->Disable();
-#
-#	}
-#
-#	if ( scalar( @{$commListLayout} ) > 1 ) {
-#		$self->{"btnMoveUp"}->Enable();
-#		$self->{"btnMoveDown"}->Enable();
-#	}
-#	else {
-#		$self->{"btnMoveUp"}->Disable();
-#		$self->{"btnMoveDown"}->Disable();
-#	}
-#
-#	$self->{"setCommList"} = 0;    #
-#
-#}
-#
-#sub SetCommSelected {
-#	my $self   = shift;
-#	my $commId = shift;
-#
-#	$self->{"commList"}->SetSelectedItem($commId);
-#
-#}
-#
-#sub GetSelectedComm {
-#	my $self = shift;
-#
-#	my $comm = $self->{"commList"}->GetSelectedItem();
-#
-#	if ( defined $comm ) {
-#		return $comm->GetPosition();
-#	}
-#	else {
-#		return undef;
-#	}
-#
-#}
+	$self->{"creatorList"}->EnableCreators($creatorKeys);
+}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -579,9 +579,9 @@ sub SetDefPnlClass {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassCB"}->SetValue($val) if ( defined $val );
+	$self->{"pnlClassCB"}->SetValue($val) if ( defined $val && $val ne "");
 
-	$self->__OnPnlClassChanged($val) if ( defined $val );
+	$self->__OnPnlClassChanged($val) if ( defined $val && $val ne "");
 }
 
 sub GetDefPnlClass {
@@ -594,9 +594,9 @@ sub SetDefPnlSpacing {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassSpaceCB"}->SetValue($val) if ( defined $val );
+	$self->{"pnlClassSpaceCB"}->SetValue($val) if ( defined $val && $val ne "");
 
-	$self->__OnPnlClassSpacingChanged($val) if ( defined $val );
+	$self->__OnPnlClassSpacingChanged($val) if ( defined $val && $val ne "");
 }
 
 sub GetDefPnlSpacing {
@@ -636,7 +636,7 @@ sub SetPCBStep {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pcbStepCB"}->SetValue($val) if ( defined $val );
+	$self->{"pcbStepCB"}->SetValue($val) if ( defined $val && $val ne "");
 
 }
 
@@ -696,7 +696,7 @@ sub SetRotationType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"rotTypeCb"}->SetValue($val) if ( defined $val );
+	$self->{"rotTypeCb"}->SetValue($val) if ( defined $val && $val ne "");
 }
 
 sub GetRotationType {
@@ -709,7 +709,7 @@ sub SetPatternType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pattTypeCb"}->SetValue($val) if ( defined $val );
+	$self->{"pattTypeCb"}->SetValue($val) if ( defined $val && $val ne "");
 }
 
 sub GetPatternType {
@@ -722,7 +722,7 @@ sub SetInterlockType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"interlockCb"}->SetValue($val) if ( defined $val );
+	$self->{"interlockCb"}->SetValue($val) if ( defined $val && $val ne "");
 }
 
 sub GetInterlockType {
@@ -765,7 +765,7 @@ sub SetAlignType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spacingTypeCb"}->SetValue($val) if ( defined $val );
+	$self->{"spacingTypeCb"}->SetValue($val) if ( defined $val && $val ne "");
 
 }
 

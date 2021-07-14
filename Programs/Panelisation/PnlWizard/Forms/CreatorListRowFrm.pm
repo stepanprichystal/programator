@@ -84,31 +84,7 @@ sub __SetLayout {
 # ==============================================
 # PUBLIC FUNCTION
 # ==============================================
-sub SetCommentLayout {
-	my $self       = shift;
-	my $commLayout = shift;
-
-	$self->{"commStoredTxt"}->SetLabel( !$commLayout->GetStoredOnDisc()?"*": "" );
-	$self->{"commIdValTxt"}->SetLabel( $self->GetPosition() +1 );
-
-	$self->{"commTypeValTxt"}->SetLabel( Enums->GetTypeTitle( $commLayout->GetType() ) );
-
-	# first 15 char without new lines
-	my $note = $commLayout->GetText();
-	
-	if($note eq ""){
-		
-		$note = "-"
-	}else{
-		$note =~ s/\n/ /ig;
-		$note =  substr($note, 0, 20)." ...";
-	}
-	
-	$self->{"commTextValTxt"}->SetLabel($note);
-	$self->{"commFilesValTxt"}->SetLabel( scalar( $commLayout->GetAllFiles() ) );
-	$self->{"commSuggValTxt"}->SetLabel( scalar( $commLayout->GetAllSuggestions() ) );
-
-}
+ 
 
 # ==============================================
 # HELPER FUNCTION

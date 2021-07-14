@@ -12,6 +12,7 @@ use Wx qw( :brush :font :pen :colour );
 
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 use aliased 'Programs::Panelisation::PnlWizard::Forms::CreatorListRowFrm';
@@ -82,8 +83,11 @@ sub __SetLayout {
 
 	$self->SetItemGap(5);
 
-	$self->SetItemUnselectColor( Wx::Colour->new( 226, 238, 249 ) );
-	$self->SetItemSelectColor( Wx::Colour->new( 191, 209, 238 ) );
+	$self->SetItemUnselectColor(AppConf->GetColor("clrCreatorListUnSelect") );
+	$self->SetItemSelectColor( AppConf->GetColor("clrCreatorListSelect") );
+	$self->SetItemDisabledColor( AppConf->GetColor("clrCreatorListDisable") );
+	
+ 
 
 }
 
@@ -93,6 +97,39 @@ sub GetAllCreatorKeys {
 	return map { $_->GetItemId() } @{ $self->{"jobItems"} };
 
 }
+
+sub EnableCreators {
+	my $self        = shift;
+	my $creatorKeys = shift;
+
+	my @allCreators = @{ $self->{"jobItems"} };
+
+	foreach my $creator (@allCreators) {
+
+		# Set  Item as disable
+		my $enable = (defined first { $_ eq $creator->GetItemId() } @{$creatorKeys}) ? 1 : 0;
+
+		if ( $enable && $creator->GetDisabled() ) {
+
+			# Disable item
+			$creator->SetDisabled(0 );
+
+			# Get appearance back
+			$creator->Enable();
+
+		}
+		elsif ( !$enable && !$creator->GetDisabled() ) {
+
+			# Disable item
+			$creator->SetDisabled(1);
+
+			# Adjust appearence
+			$creator->Disable();
+		}
+
+	}
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -123,14 +123,6 @@ sub ShowPage {
 	my $page = $self->{"pages"}->{$pageId};
 
 	$page->Show(1);
-	
-	$page->Layout();
-	if(defined $page->GetPageContent()){
-		
-		$page->GetPageContent()->Layout();
-		$page->GetPageContent()->FitInside();
-		
-	}
 
 	$self->Layout();
 }
