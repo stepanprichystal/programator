@@ -27,6 +27,7 @@ use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAM::InStackJob::InStackJob';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Helpers::ValueConvertor';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,6 +42,12 @@ sub new {
 
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
+
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+	if ( $self->{"layerCnt"} > 2 ) {
+
+		$self->{"stackup"} = Stackup->new($self->{"inCAM"}, $self->{"jobId"} );
+	}
 
 	$self->{"outputPath"} = EnumsPaths->Client_INCAMTMPOTHER . GeneralHelper->GetGUID() . ".pdf";    # place where pdf is created
 
@@ -57,7 +64,6 @@ sub Create {
 
 	# Impedance job
 	my $inStackJob = InStackJob->new($jobId);
-	my $stackup    = Stackup->new($inCAM, $jobId);
 
 	# get impedance steps
 
@@ -74,25 +80,24 @@ sub Create {
 			my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $step->{"stepName"}, $c->GetTrackLayer(1), 0 );
 
 			if ( $attHist{".imp_constraint_id"} ) {
-				
-				my $resultItem = $self->_GetNewItem( "Impedance id: ".$c->GetId() );
+
+				my $resultItem = $self->_GetNewItem( "Impedance id: " . $c->GetId() );
 				$resultItem->SetGroup("Impedance pdf:");
 
 				CamHelper->SetStep( $inCAM, $step->{"stepName"} );
 
 				my $dataLayer = $self->__PrepareDataLayer($c);
-				my $impLayer = $self->__PrepareImpLayer( $step->{"stepName"}, $c, $i + 1, scalar(@constr), $stackup );
+				my $impLayer = $self->__PrepareImpLayer( $step->{"stepName"}, $c, $i + 1, scalar(@constr) );
 
 				push( @outputPaths, $self->__ImgPreviewOut( $step->{"stepName"}, $dataLayer, $impLayer ) );
-				
+
 				$self->_OnItemResult($resultItem);
 			}
 		}
 	}
 
 	# Merge all pdf file
-	$self->__MergeAndImgPreviewOut(\@outputPaths);
-
+	$self->__MergeAndImgPreviewOut( \@outputPaths );
 
 	return 1;
 }
@@ -129,7 +134,6 @@ sub __PrepareImpLayer {
 	my $constraint     = shift;
 	my $constrOrder    = shift;
 	my $constraintsCnt = shift;
-	my $stackup        = shift;
 
 	my $trackLayer = $constraint->GetTrackLayer(1);
 
@@ -162,7 +166,18 @@ sub __PrepareImpLayer {
 	my $l1Text = " Impedance measurement $constrOrder/$constraintsCnt";
 	CamSymbol->AddText( $inCAM, $l1Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 24 }, 4, undef, 1.5 );
 
-	my $l2Text = "Layer     : $trackLayer; base Cu = " . $stackup->GetCuLayer($trackLayer)->GetThick() . "um";
+	my $cuThick = undef;
+	if ( HegMethods->GetBasePcbInfo($jobId)->{"pocet_vrstev"} > 2 ) {
+
+		my $cuLayer = $self->{"stackup"}->GetCuLayer($trackLayer);
+		$cuThick = $cuLayer->GetThick();
+	}
+	else {
+
+		$cuThick = HegMethods->GetOuterCuThick($jobId);
+	}
+
+	my $l2Text = "Layer     : $trackLayer; base Cu = " . $cuThick . "um";
 	CamSymbol->AddText( $inCAM, $l2Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 18 }, 2, undef, 1.0 );
 
 	my $l3Text = "Type      : " . ValueConvertor->GetImpedanceType( $constraint->GetType() );
@@ -175,8 +190,8 @@ sub __PrepareImpLayer {
 		$l4Text .= "; s = " . sprintf( "%.0f", $constraint->GetParamDouble("S") ) . "um";
 	}
 	CamSymbol->AddText( $inCAM, $l4Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 10 }, 2, undef, 1.0 );
-	
-	my $l5Text = "InStack id: " .  ( $constraint->GetId() );
+
+	my $l5Text = "InStack id: " . ( $constraint->GetId() );
 	CamSymbol->AddText( $inCAM, $l5Text, { "x" => $lim{"xMin"}, "y" => $lim{"yMax"} + 6 }, 2, undef, 1.0 );
 
 	return $lName;
@@ -227,13 +242,11 @@ sub __ImgPreviewOut {
 	return $pdfFile;
 }
 
-
 sub __MergeAndImgPreviewOut {
 	my $self    = shift;
 	my @inFiles = @{ shift(@_) };
-	 
-	my $resultItem = $self->_GetNewItem( "Impedance pdf merge" ); 
-	 
+
+	my $resultItem = $self->_GetNewItem("Impedance pdf merge");
 
 	# the output file
 	my $pdf_out = PDF::API2->new( -file => $self->{"outputPath"} );
@@ -274,23 +287,21 @@ sub __MergeAndImgPreviewOut {
 				0, 0,    # x y
 				1
 			);           # scale
- 
+
 			$pagesTotal++;
 
 		}
 	}
 
 	$pdf_out->save();
-	
-	
+
 	# remove tmp files
-	foreach my $f ( @inFiles ) {
+	foreach my $f (@inFiles) {
 		unlink($f);
 	}
-	
+
 	$self->_OnItemResult($resultItem);
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -50,7 +50,7 @@ sub __SetLayout {
 
 	# SAVE REFERENCES
 
-	$self->{"ISDimensionFilled"} = $self->_SetLayoutISSize( "HEG dimension filled", 0 );
+	$self->{"ISDimensionFilled"} = $self->_SetLayoutISSize( "HEG dimensions filled:",  40, 10, 50 );
 
 }
 

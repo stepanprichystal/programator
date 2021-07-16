@@ -38,7 +38,7 @@ sub new {
 	my $jobId   = shift;
 	my $pnlType = shift;
 
-	my @dimension = ( 1000, 800 );
+	my @dimension = ( 960, 900 );
 	my $flags     = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
 	my $title     = "Panelisation - $jobId";
 
@@ -430,14 +430,14 @@ sub __SetLayoutHeader {
 	}
 
 	#my $previewTxt = Wx::StaticText->new( $pnlSett, -1, "Preview:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $dockWindowsBtn = Wx::Button->new( $pnlSett, -1, "Dock windows", &Wx::wxDefaultPosition, [ 160, 24 ] );
+	my $dockWindowsBtn = Wx::Button->new( $pnlSett, -1, "Dock windows", &Wx::wxDefaultPosition, [ -1, 24 ] );
 	my $previewChb = Wx::CheckBox->new( $pnlSett, -1, "Preview", &Wx::wxDefaultPosition, [ -1, 24 ] );
 
-	my $showSigLBtn = Wx::Button->new( $pnlSett, -1, "Show SIG layers", &Wx::wxDefaultPosition, [ 160, 24 ] );
-	my $showNCLBtn  = Wx::Button->new( $pnlSett, -1, "Show NC layers",  &Wx::wxDefaultPosition, [ 160, 24 ] );
+	my $showSigLBtn = Wx::Button->new( $pnlSett, -1, "Show SIG layers", &Wx::wxDefaultPosition, [ -1, 24 ] );
+	my $showNCLBtn  = Wx::Button->new( $pnlSett, -1, "Show NC layers",  &Wx::wxDefaultPosition, [ -1, 24 ] );
 
-	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [ 160, 24 ] );
-	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [ 120, 24 ] );
+	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [ -1, 24 ] );
+	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [ -1, 24 ] );
 
 	# BUILD LAYOUT STRUCTURE
 
@@ -465,7 +465,7 @@ sub __SetLayoutHeader {
 	$szMainSett->Add( $pnlSepar,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 	$szMainSett->Add( $szSettCol2, 0, &Wx::wxLEFT,                 2 );
 	$szMainSett->Add( $szSettCol3, 0, &Wx::wxLEFT,                 2 );
-	$szMainSett->Add( 10, 10, 1, );
+	$szMainSett->Add( 10, 10, 0, );
 	$szMainSett->Add( $szSettCol4, 0, &Wx::wxLEFT, 2 );
 
 	$pnlMain->SetSizer($szMain);
@@ -721,8 +721,8 @@ sub __OnDockWindows {
 		SendKeys("{RIGHT}");
 		SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
 
-		$self->{"previewChb"}->SetValue(1);                   # Activate preview if docking window
-		$self->{"previewChangedEvt"}->Do(1);
+#		$self->{"previewChb"}->SetValue(1);                   # Activate preview if docking window
+#		$self->{"previewChangedEvt"}->Do(1);
 
 	}
 	else {

@@ -89,7 +89,7 @@ sub InitPartModel {
 
 		# Init default
 		# Init default
-		
+
 		my $defCreator = @{ $self->{"model"}->GetCreators() }[0];
 		$self->{"model"}->SetSelectedCreator( $defCreator->GetModelKey() );
 	}
@@ -210,6 +210,94 @@ sub OnOtherPartCreatorSelChangedHndl {
 	my $partId     = shift;
 	my $creatorKey = shift;
 
+	$self->__EnableCreators( $partId, $creatorKey );
+
+	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
+
+}
+
+# Handler which catch change of selected creatores settings in other parts
+# Event is raised alwazs after AsyncCreatorProcess if specific part has active Preview
+sub OnOtherPartCreatorSettChangedHndl {
+	my $self            = shift;
+	my $partId          = shift;
+	my $creatorKey      = shift;
+	my $creatorSettings = shift;    # creator model
+
+	my $currCreatorKey = $self->{"model"}->GetSelectedCreator();
+
+	if ( $partId eq Enums->Part_PNLSIZE ) {
+
+		if ( $self->GetPreview() ) {
+
+			if ( $creatorKey ne PnlCreEnums->SizePnlCreator_MATRIX ) {
+
+				$self->AsyncProcessSelCreatorModel();
+
+			}
+		}
+
+	}
+
+	# Update creator Step Preview according Creator Size Preview
+	if ( $partId eq Enums->Part_PNLSIZE && $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+
+		# Update creator
+		my $model = $self->{"model"}->GetCreatorModelByKey( PnlCreEnums->StepPnlCreator_PREVIEW );
+
+		$model->SetSrcJobId( $creatorSettings->GetSrcJobId() );
+		$model->SetPanelJSON( $creatorSettings->GetPanelJSON() );
+
+		$self->{"form"}->SetCreators( [$model] );
+
+	}
+
+	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Private method
+#-------------------------------------------------------------------------------------------#
+
+# Disable creators which are not needed for specific panelisation type
+sub __SetActiveCreators {
+	my $self = shift;
+
+	my @currCreators   = @{ $self->GetModel(1)->GetCreators() };
+	my @activeCreators = ();
+
+	if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+		foreach my $c (@currCreators) {
+
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_MATRIX );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_SET );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_PREVIEW );
+
+		}
+
+	}
+	elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+		foreach my $c (@currCreators) {
+
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
+
+		}
+	}
+
+	$self->GetModel(1)->SetCreators( \@activeCreators );
+
+}
+
+sub __EnableCreators {
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
+
 	# Disable specific creators depand on preview part (size creator)
 	if ( $partId eq Enums->Part_PNLSIZE ) {
 
@@ -291,86 +379,6 @@ sub OnOtherPartCreatorSelChangedHndl {
 		$self->{"form"}->EnableCreators( \@enableCreators );
 
 	}
-
-	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
-
-}
-
-# Handler which catch change of selected creatores settings in other parts
-# Event is raised alwazs after AsyncCreatorProcess if specific part has active Preview
-sub OnOtherPartCreatorSettChangedHndl {
-	my $self            = shift;
-	my $partId          = shift;
-	my $creatorKey      = shift;
-	my $creatorSettings = shift;    # creator model
-
-	my $currCreatorKey = $self->{"model"}->GetSelectedCreator();
-
-	if ( $partId eq Enums->Part_PNLSIZE ) {
-
-		if ( $self->GetPreview() ) {
-
-			if ( $creatorKey ne PnlCreEnums->SizePnlCreator_MATRIX ) {
-
-				$self->AsyncProcessSelCreatorModel();
-
-			}
-		}
-
-	}
-
-	# Update creator Step Preview according Creator Size Preview
-	if ( $partId eq Enums->Part_PNLSIZE && $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
-
-		# Update creator
-		my $model = $self->{"model"}->GetCreatorModelByKey( PnlCreEnums->StepPnlCreator_PREVIEW );
-
-		$model->SetSrcJobId( $creatorSettings->GetSrcJobId() );
-		$model->SetPanelJSON( $creatorSettings->GetPanelJSON() );
-
-		$self->{"form"}->SetCreators( [$model] );
-
-	}
-
-	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
-
-}
-
-#-------------------------------------------------------------------------------------------#
-#  Private method
-#-------------------------------------------------------------------------------------------#
-
-# Disable creators which are not needed for specific panelisation type
-sub __SetActiveCreators {
-	my $self = shift;
-
-	my @currCreators   = @{ $self->GetModel(1)->GetCreators() };
-	my @activeCreators = ();
-
-	if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
-
-		foreach my $c (@currCreators) {
-
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_MATRIX );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_SET );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_PREVIEW );
-
-		}
-
-	}
-	elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
-		foreach my $c (@currCreators) {
-
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
-
-		}
-	}
-
-	$self->GetModel(1)->SetCreators( \@activeCreators );
-
 }
 
 #-------------------------------------------------------------------------------------------#

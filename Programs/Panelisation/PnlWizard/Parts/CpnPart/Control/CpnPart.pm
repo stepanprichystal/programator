@@ -22,9 +22,8 @@ use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::CpnPart::Model::CpnPartModel'   => 'PartModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::CpnPart::View::CpnPartFrm'      => 'PartFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::CpnPart::Control::CpnPartCheck' => 'PartCheckClass';
-use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper'                        => "CreatorHelper";
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper'                      => "CreatorHelper";
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
-
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,7 +40,7 @@ sub new {
 
 	$self->{"model"}      = PartModel->new();         # Data model for view
 	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
-	
+
 	$self->__SetActiveCreators();
 
 	return $self;
@@ -123,7 +122,6 @@ sub __OnManualPlacementHndl {
 
 	if ( $creator->Check( $inCAM, \$errMess ) ) {
 
-		
 		my $step = $creatorModel->GetStep();
 		$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
 		CamHelper->SetStep( $inCAM, $step );
@@ -141,7 +139,7 @@ sub __OnManualPlacementHndl {
 
 		if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
 
-			my $JSON = $pnlToJSON->ParsePnlToJSON(1, 0, 1, 0);
+			my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 0, 1, 0 );
 
 			if ( defined $JSON ) {
 
@@ -193,9 +191,11 @@ sub __OnManualPlacementHndl {
 # Handler which catch change of creatores in other parts
 # Reise imidiatelly after slection change, do not wait on asznchrounous task
 sub OnOtherPartCreatorSelChangedHndl {
-	my $self            = shift;
-	my $partId          = shift;
-	my $creatorKey      = shift;
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
+
+	$self->__EnableCreators( $partId, $creatorKey );
 
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
@@ -227,7 +227,6 @@ sub __SetActiveCreators {
 	my @activeCreators = ();
 
 	if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
- 
 
 	}
 	elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
@@ -239,6 +238,13 @@ sub __SetActiveCreators {
 	}
 
 	$self->GetModel(1)->SetCreators( \@activeCreators );
+
+}
+
+sub __EnableCreators {
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
 
 }
 

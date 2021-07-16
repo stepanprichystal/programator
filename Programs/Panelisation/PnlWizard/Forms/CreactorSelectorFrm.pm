@@ -19,6 +19,7 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlWizard::Forms::CreatorListFrm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Packages::Other::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -67,9 +68,9 @@ sub _SetLayout {
 	# DEFINE EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $creatorListLayout, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $creatorListLayout, 20, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $creatorViewLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $creatorViewLayout, 80, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
 
@@ -88,9 +89,9 @@ sub __SetLayoutCreatorList {
 
 	$creatorList->SetCreatorsLayout($creators);
 
-	my $listCrl = Wx::Colour->new( 230, 230, 230 );
-	$self->SetBackgroundColour($listCrl);
-	$creatorList->SetBackgroundColour($listCrl);
+	 
+	$self->SetBackgroundColour( AppConf->GetColor("clrCreatorListBackground"));
+	$creatorList->SetBackgroundColour( AppConf->GetColor("clrCreatorListBackground"));
 
 	# DEFINE EVENTS
 
@@ -108,14 +109,14 @@ sub __SetLayoutCreatorView {
 	my $self   = shift;
 	my $parent = shift;
 
-	my $stepBackg = Wx::Colour->new( 215, 215, 215 );
+	 
 
 	#define staticboxes
 
 	#my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $pnlMain = Wx::Panel->new( $parent, -1 );
-	$pnlMain->SetBackgroundColour($stepBackg);
+	$pnlMain->SetBackgroundColour(AppConf->GetColor("clrCreatorViewBackground"));
 
 	my $notebook = CustomNotebook->new( $pnlMain, -1 );
 
@@ -125,7 +126,7 @@ sub __SetLayoutCreatorView {
 
 		my $page = $notebook->AddPage( $creator->GetModelKey(), 0 );
 
-		$page->GetParent()->SetBackgroundColour($stepBackg);
+		$page->GetParent()->SetBackgroundColour(AppConf->GetColor("clrCreatorViewBackground"));
 
 		# Get Frm by calling inherit class method
 		my $content = undef;

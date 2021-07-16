@@ -14,7 +14,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-
+use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -26,15 +26,17 @@ sub new {
 
 	$self->{"modelKey"} = PnlCreEnums->StepPnlCreator_MATRIX;
 
-		$self->{"settings"}->{"pcbStepsList"}      = [];
-	$self->{"settings"}->{"pcbStep"}      = undef;
-	$self->{"settings"}->{"stepMultiX"}   = undef;
-	$self->{"settings"}->{"stepMultiX"}   = undef;
-	$self->{"settings"}->{"stepMultiY"}   = undef;
-	$self->{"settings"}->{"stepSpaceX"}   = undef;
-	$self->{"settings"}->{"stepSpaceY"}   = undef;
-	$self->{"settings"}->{"stepRotation"} = undef;
-
+	$self->{"settings"}->{"pcbStepsList"}          = [];
+	$self->{"settings"}->{"pcbStep"}               = undef;
+	$self->{"settings"}->{"pcbStepProfile"}        = PnlCreEnums->PCBStepProfile_STANDARD;
+	$self->{"settings"}->{"stepMultiX"}            = undef;
+	$self->{"settings"}->{"stepMultiX"}            = undef;
+	$self->{"settings"}->{"stepMultiY"}            = undef;
+	$self->{"settings"}->{"stepSpaceX"}            = undef;
+	$self->{"settings"}->{"stepSpaceY"}            = undef;
+	$self->{"settings"}->{"stepRotation"}          = undef;
+	$self->{"settings"}->{"manualPlacementJSON"}   = undef;
+	$self->{"settings"}->{"manualPlacementStatus"} = EnumsGeneral->ResultType_NA;
 
 	return $self;
 }
@@ -73,6 +75,21 @@ sub GetPCBStep {
 	my $self = shift;
 
 	return $self->{"settings"}->{"pcbStep"};
+
+}
+
+sub SetPCBStepProfile {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"pcbStepProfile"} = $val;
+
+}
+
+sub GetPCBStepProfile {
+	my $self = shift;
+
+	return $self->{"settings"}->{"pcbStepProfile"};
 
 }
 
@@ -140,7 +157,48 @@ sub GetStepRotation {
 	return $self->{"settings"}->{"stepRotation"};
 }
 
+sub SetPanelJSON {
+	my $self = shift;
+	my $val  = shift;
 
+	$self->{"settings"}->{"panelJSON"} = $val;
+}
+
+sub GetPanelJSON {
+	my $self = shift;
+
+	return $self->{"settings"}->{"panelJSON"};
+}
+
+sub SetManualPlacementJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementJSON"} = $val;
+
+}
+
+sub GetManualPlacementJSON {
+	my $self = shift;
+
+	return $self->{"settings"}->{"manualPlacementJSON"};
+
+}
+
+sub SetManualPlacementStatus {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementStatus"} = $val;
+
+}
+
+sub GetManualPlacementStatus {
+	my $self = shift;
+
+	return $self->{"settings"}->{"manualPlacementStatus"};
+
+}
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

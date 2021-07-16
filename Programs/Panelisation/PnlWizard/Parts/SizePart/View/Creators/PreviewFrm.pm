@@ -52,7 +52,8 @@ sub __SetLayout {
 
 	my $mainSz = $self->_GetMainSizer();
 
-	$mainSz->Prepend( $statBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$mainSz->Hide(1);    # Remove expander which is last item in sizer
+	$mainSz->Prepend( $statBox, 50, &Wx::wxEXPAND | &Wx::wxALL, 3 );
 
 	$self->_EnableLayoutSize(0);
 	$self->_EnableLayoutBorder(0);
@@ -93,6 +94,7 @@ sub __SetLayoutJobList {
 
 	# Load data, for filling form by values
 
+	my $szRow0 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);    # row for custom control, which are added by inherit class
 	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
@@ -100,16 +102,17 @@ sub __SetLayoutJobList {
 
 	# DEFINE CONTROLS
 
-	my $jobSrcTxt = Wx::StaticText->new( $statBox, -1, "Source job:", &Wx::wxDefaultPosition, [ -1, 25 ] );
-	my $jobSrcValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ -1, 25 ] );
+	my $jobSrcTxt = Wx::StaticText->new( $statBox, -1, "Source job:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $jobSrcValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
-	my $jobListByNoteTxt = Wx::StaticText->new( $statBox, -1, "Jobs by TPV note", &Wx::wxDefaultPosition, [ -1, 25 ] );
-	my $jobListByNoteBox = Wx::ListBox->new( $statBox, -1, [ -1, -1 ], [ -1, 25 ], [], &Wx::wxLB_SINGLE | &Wx::wxLB_NEEDED_SB );
+	my $foundJobsTxt     = Wx::StaticText->new( $statBox, -1, "Found jobs by:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $jobListByNoteTxt = Wx::StaticText->new( $statBox, -1, "HEG tpv note:",  &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $jobListByNoteBox = Wx::ListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [ 10, 23 ], [], &Wx::wxLB_SINGLE | &Wx::wxLB_NEEDED_SB );
 	my $ISJobByNoteIndicator = ResultIndicator->new( $statBox, 20 );
 	$ISJobByNoteIndicator->SetStatus( EnumsGeneral->ResultType_NA );
 
-	my $jobListByNameTxt = Wx::StaticText->new( $statBox, -1, "Jobs by similar name", &Wx::wxDefaultPosition, [ -1, 25 ] );
-	my $jobListByNameBox = Wx::ListBox->new( $statBox, -1, [ -1, -1 ], [ -1, -1 ], [], &Wx::wxLB_SINGLE | &Wx::wxLB_NEEDED_SB );
+	my $jobListByNameTxt = Wx::StaticText->new( $statBox, -1, "HEG pcb name:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $jobListByNameBox = Wx::ListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [ 10, 23 ], [], &Wx::wxLB_SINGLE | &Wx::wxLB_NEEDED_SB );
 	my $ISJobByNameIndicator = ResultIndicator->new( $statBox, 20 );
 	$ISJobByNameIndicator->SetStatus( EnumsGeneral->ResultType_NA );
 
@@ -125,20 +128,28 @@ sub __SetLayoutJobList {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRow1->Add( $jobSrcTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow1->Add( $jobSrcValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow0->Add( $jobSrcTxt,    30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow0->Add( $jobSrcValTxt, 60, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow0->AddStretchSpacer(10);
 
-	$szRow2->Add( $jobListByNoteTxt,     0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $jobListByNoteBox,     0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $ISJobByNoteIndicator, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $foundJobsTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow3->Add( $jobListByNameTxt,     0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow3->Add( $jobListByNameBox,     0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow3->Add( $ISJobByNameIndicator, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $jobListByNoteTxt,     30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $jobListByNoteBox,     60, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $ISJobByNoteIndicator, 10,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
+	$szRow3->Add( $jobListByNameTxt,     30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow3->Add( $jobListByNameBox,     60, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow3->Add( $ISJobByNameIndicator, 10,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND );
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
+	$szStatBox->AddSpacer(10);
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND );
-	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND );
+	$szStatBox->AddSpacer(2);
+	$szStatBox->Add( $szRow3, 1, &Wx::wxEXPAND );
 
 	# save control references
 
@@ -197,7 +208,7 @@ sub SetSrcJobId {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"jobSrcValTxt"}->SetValue($val) if ( defined $val && $val ne "");
+	$self->{"jobSrcValTxt"}->SetValue($val) if ( defined $val && $val ne "" );
 }
 
 sub GetSrcJobId {

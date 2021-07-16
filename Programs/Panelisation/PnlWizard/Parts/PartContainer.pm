@@ -13,7 +13,8 @@ use strict;
 use warnings;
 
 #local library
-
+use aliased 'CamHelpers::CamStep';
+use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePart';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPart';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::CpnPart::Control::CpnPart';
@@ -62,7 +63,20 @@ sub Init {
 	# Only production panel and onlz if contain  coupons
 	if ( $pnlType eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
 
-		push( @parts, CpnPart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
+		# if there are specific coupon
+		my @step = CamStep->GetAllStepNames( $inCAM, $jobId );
+
+		# Impedance coupon default settings
+		my $impCpnBaseName   = EnumsGeneral->Coupon_IMPEDANCE;
+		my $ipc3CpnBaseName  = EnumsGeneral->Coupon_IPC3MAIN;
+		my $zAxisCpnBaseName = EnumsGeneral->Coupon_ZAXIS;
+		
+		my @cpnSteps =
+		  grep { $_ =~ /$impCpnBaseName/i || $_ =~ /$ipc3CpnBaseName/i || $_ =~ /$zAxisCpnBaseName/i } @step;
+
+		if ( scalar(@cpnSteps) > 0 ) {
+			push( @parts, CpnPart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
+		}
 	}
 
 	push( @parts, SchemePart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
@@ -123,7 +137,7 @@ sub InitPartModel {
 			$part->InitPartModel( $inCAM, $partModel );
 
 		}
- 
+
 	}
 	else {
 

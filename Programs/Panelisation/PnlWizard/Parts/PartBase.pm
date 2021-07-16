@@ -88,6 +88,9 @@ sub RefreshGUI {
 	$self->{"partWrapper"}->SetPreview( $self->{"model"}->GetPreview() );
 
 	$self->{"frmHandlersOff"} = 0;
+
+	# Enable/disable creators by similate click on creator item
+	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $self->{"model"}->GetSelectedCreator() );
 }
 
 # Asynchronously process selected creator for this part
@@ -144,7 +147,7 @@ sub IsPartFullyInited {
 sub SetPartNotInited {
 	my $self = shift;
 
-	$self->{"isPartFullyInited"} = 0;     # state indicator if part is fully loaded (assync loading)
+	$self->{"isPartFullyInited"} = 0;    # state indicator if part is fully loaded (assync loading)
 	$self->{"creatorInited"}     = {};
 }
 
@@ -294,6 +297,10 @@ sub __OnCreatorProcessedHndl {
 	return 0 if ( $partId ne $self->{"partId"} );    # Catch only event from for this specific part
 
 	$self->{"partWrapper"}->ShowLoading(0);
+
+	if ( $self->{"form"}->can("OnCreatorProcessedHndl") ) {
+		$self->{"form"}->OnCreatorProcessedHndl( $partId, $creatorKey, $self->{"model"}->GetPreview() );
+	}
 
 	$self->{"processErrMess"} = undef;
 

@@ -10,6 +10,8 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'CamHelpers::CamStepRepeat';
+
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::HEGSize';
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::UserSize';

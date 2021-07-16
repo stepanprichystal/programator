@@ -43,6 +43,9 @@ use constant {
 
 	StepPlacementMode_AUTO   => "StepPlacementMode_Auto",
 	StepPlacementMode_MANUAL => "StepPlacementMode_Manual",
+	
+	PCBStepProfile_STANDARD => "PCBStepProfile_Standard",
+	PCBStepProfile_CVRLPINS => "PCBStepProfile_Cvrlpins",
 
 };
 

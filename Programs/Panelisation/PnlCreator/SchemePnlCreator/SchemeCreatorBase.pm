@@ -290,6 +290,44 @@ sub _Process {
 
 	# 2) Run schema
 
+	# Set attributes regarding layer side
+
+	my @sigLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
+
+	my $stackupBase = undef;
+
+	if ( scalar(@sigLayers) > 2 ) {
+
+		$stackupBase = StackupBase->new($jobId);
+	}
+
+	foreach my $layer (@sigLayers) {
+
+		my $side = undef;
+
+		if ( $layer =~ /c/ ) {
+			$side = "top";
+		}
+		elsif ( $layer =~ /s/ ) {
+			$side = "bot";
+		}
+		elsif ( $layer =~ /^v\d+$/ ) {
+
+			my $core = $stackupBase->GetCoreByCuLayer($layer);
+
+			if ( $layer eq $core->GetTopCopperLayer()->GetCopperName() ) {
+				$side = "top";
+			}
+			else {
+				$side = "bot";
+			}
+		}
+
+		CamAttributes->SetLayerAttribute( $inCAM, "layer_side", $side, $jobId, $step, $layer );
+		CamAttributes->SetLayerAttribute( $inCAM, ".cdr_mirror", ( $side eq "top" ? "no" : "yes" ), $jobId, $step, $layer );
+
+	}
+	
 	my $nestedStep = undef;
 	my @childs = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
 

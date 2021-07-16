@@ -7,9 +7,12 @@ clrMainHeaderSeparator =  200, 200, 200
 
 clrTitleText =  255, 255, 255  
 
+clrCreatorListBackground =  233,233,233
 clrCreatorListSelect =  191, 209, 238  
 clrCreatorListUnSelect =  226, 238, 249  
 clrCreatorListDisable =   233, 233, 233  
+
+clrCreatorViewBackground =  255, 255,255
  
 clrWrapperBackground =   233, 233, 233  
 clrWrapperHeaderBackground =   51, 52, 74   

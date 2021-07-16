@@ -14,8 +14,11 @@ use Wx;
 
 #local library
 use Widgets::Style;
+use aliased 'CamHelpers::CamLayer';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::ManualPlacement';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -38,11 +41,11 @@ sub new {
 	$self->__SetLayout();
 
 	# PROPERTIES
-	
-		$self->{"pcbStepsList"}      = [];
 
+	$self->{"pcbStepsList"} = [];
 
 	# DEFINE EVENTS
+	$self->{"manualPlacementEvt"} = Event->new();
 
 	return $self;
 }
@@ -52,24 +55,36 @@ sub __SetLayout {
 
 	#define panels
 
-	my $szMain   = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szCustom = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
+	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szRow0 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	my $szColLeft  = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szColRight = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
 
 	my $pcbStepTxt = Wx::StaticText->new( $self, -1, "PCB step:", &Wx::wxDefaultPosition, [ 70, 25 ] );
 	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
-	 
+
+	my $stepProfileTxt = Wx::StaticText->new( $self, -1, "Profile:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+
+	my @profile = ("Standard");
+
+	push( @profile, "Coverlay pins" ) if ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "cvrlpins" ) );
+
+	my $pcbStepProfileCB = Wx::ComboBox->new( $self, -1, $profile[0], &Wx::wxDefaultPosition, [ 10, 23 ], \@profile, &Wx::wxCB_READONLY );
+
 	my $multiplicityStatBox   = $self->__SetLayoutMultipl($self);
 	my $spacesStatBox         = $self->__SetLayoutSpaces($self);
 	my $transformationStatBox = $self->__SetLayoutTransformation($self);
+	my $manualAdjustStatBox   = $self->__SetLayoutManualAdjust($self);
 
 	#$richTxt->Layout();
 
 	# SET EVENTS
-	Wx::Event::EVT_TEXT( $pcbStepCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $pcbStepCB,        -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $pcbStepProfileCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -77,21 +92,26 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRow0->Add( $pcbStepTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow0->Add( $pcbStepCB, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow0->Add( $pcbStepTxt,       20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow0->Add( $pcbStepCB,        20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow0->Add( $stepProfileTxt,   20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow0->Add( $pcbStepProfileCB, 20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szColLeft->Add( $multiplicityStatBox,   0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szColLeft->Add( $spacesStatBox,         0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szColLeft->Add( $transformationStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szColRight->Add( $manualAdjustStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow1->Add( $szColLeft,  50, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow1->Add( $szColRight, 50, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$szMain->Add( $szRow0, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-
-	$szMain->Add( $multiplicityStatBox,   0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szMain->Add( $spacesStatBox,         0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szMain->Add( $transformationStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$self->SetSizer($szMain);
 
 	# save control references
-	$self->{"pcbStepCB"}  = $pcbStepCB;
-	$self->{"szCustomCBMain"} = $szCustom;
-	$self->{"szCustomCBMain"} = $szCustom;
+	$self->{"pcbStepCB"}        = $pcbStepCB;
+	$self->{"pcbStepProfileCB"} = $pcbStepProfileCB;
 
 }
 
@@ -115,8 +135,8 @@ sub __SetLayoutMultipl {
 	my $multiYValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $multiXValTxt, -1, sub {   $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $multiYValTxt, -1, sub {   $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $multiXValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $multiYValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	$szStatBox->Add( $multiXTxt,    1, &Wx::wxEXPAND );
 	$szStatBox->Add( $multiXValTxt, 1, &Wx::wxEXPAND );
@@ -217,6 +237,33 @@ sub __SetLayoutTransformation {
 	return $szStatBox;
 }
 
+sub __SetLayoutManualAdjust {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Manual adjustment' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+
+	# Load data, for filling form by values
+
+	# DEFINE CONTROLS
+
+	my $pnlPicker = ManualPlacement->new( $statBox, $self->{"jobId"}, $self->GetStep(), "Adjust panel", "Adjust panel settings.", 1, "Clear" );
+
+	# DEFINE EVENTS
+
+	$pnlPicker->{"placementEvt"}->Add( sub      { $self->{"manualPlacementEvt"}->Do(@_) } );
+	$pnlPicker->{"clearPlacementEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+
+	$szStatBox->Add( $pnlPicker, 0, &Wx::wxEXPAND );
+
+	# save control references
+
+	$self->{"pnlPicker"} = $pnlPicker;
+
+	return $szStatBox;
+}
 
 sub __ActiveAreaChanged {
 	my $self = shift;
@@ -263,6 +310,23 @@ sub __OnQuickSpaceChanged {
 
 }
 
+sub DisplayCvrlpinLayer {
+	my $self = shift;
+
+	my $type = $self->GetPCBStepProfile();
+
+	if ( $type eq PnlCreEnums->PCBStepProfile_CVRLPINS ) {
+
+		CamLayer->DisplayLayers( $self->{"inCAM"}, ["cvrlpins"], 1, 0 );
+		$self->{"inCAM"}->COM( "display_sr", "display" => "yes" );
+
+	}
+	else {
+
+		CamLayer->DisplayLayers( $self->{"inCAM"}, ["cvrlpins"], 0, 0 );
+	}
+}
+
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
@@ -290,13 +354,11 @@ sub GetPCBStepsList {
 
 }
 
-
-
 sub SetPCBStep {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pcbStepCB"}->SetValue($val) if(defined $val);
+	$self->{"pcbStepCB"}->SetValue($val) if ( defined $val );
 
 }
 
@@ -307,11 +369,52 @@ sub GetPCBStep {
 
 }
 
+sub SetPCBStepProfile {
+	my $self = shift;
+	my $val  = shift;
+
+	if ( defined $val && $val ne "" ) {
+		my $cbValue = undef;
+
+		if ( $val eq PnlCreEnums->PCBStepProfile_STANDARD ) {
+
+			$self->{"pcbStepProfileCB"}->SetValue("Standard");
+
+		}
+		elsif ( $val eq PnlCreEnums->PCBStepProfile_CVRLPINS ) {
+
+			$self->{"pcbStepProfileCB"}->SetValue("Coverlay pins");
+
+		}
+
+	}
+
+}
+
+sub GetPCBStepProfile {
+	my $self = shift;
+
+	my $val = undef;
+
+	if ( $self->{"pcbStepProfileCB"}->GetValue() eq "Standard" ) {
+
+		$val = PnlCreEnums->PCBStepProfile_STANDARD;
+
+	}
+	elsif ( $self->{"pcbStepProfileCB"}->GetValue() eq "Coverlay pins" ) {
+		$val = PnlCreEnums->PCBStepProfile_CVRLPINS;
+
+	}
+
+	return $val;
+
+}
+
 sub SetStepMultiplX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"multiXValTxt"}->SetValue($val)if(defined $val);;
+	$self->{"multiXValTxt"}->SetValue($val) if ( defined $val );
 }
 
 sub GetStepMultiplX {
@@ -324,7 +427,7 @@ sub SetStepMultiplY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"multiYValTxt"}->SetValue($val)if(defined $val);;
+	$self->{"multiYValTxt"}->SetValue($val) if ( defined $val );
 }
 
 sub GetStepMultiplY {
@@ -337,7 +440,7 @@ sub SetStepSpaceX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spaceValXTxt"}->SetValue($val) if(defined $val);;
+	$self->{"spaceValXTxt"}->SetValue($val) if ( defined $val );
 }
 
 sub GetStepSpaceX {
@@ -350,7 +453,7 @@ sub SetStepSpaceY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spaceValYTxt"}->SetValue($val) if(defined $val);;
+	$self->{"spaceValYTxt"}->SetValue($val) if ( defined $val );
 }
 
 sub GetStepSpaceY {
@@ -363,13 +466,42 @@ sub SetStepRotation {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"rotationCb"}->SetValue($val) if(defined $val);;
+	$self->{"rotationCb"}->SetValue($val) if ( defined $val );
 }
 
 sub GetStepRotation {
 	my $self = shift;
 
 	return $self->{"rotationCb"}->GetValue();
+}
+
+
+sub SetManualPlacementJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnlPicker"}->SetManualPlacementJSON($val);
+
+}
+
+sub GetManualPlacementJSON {
+	my $self = shift;
+
+	return $self->{"pnlPicker"}->GetManualPlacementJSON();
+
+}
+
+sub SetManualPlacementStatus {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"pnlPicker"}->SetManualPlacementStatus($val);
+}
+
+sub GetManualPlacementStatus {
+	my $self = shift;
+
+	return $self->{"pnlPicker"}->GetManualPlacementStatus();
 }
 
 #-------------------------------------------------------------------------------------------#

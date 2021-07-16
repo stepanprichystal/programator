@@ -89,6 +89,8 @@ sub OnOtherPartCreatorSelChangedHndl {
 	my $self            = shift;
 	my $partId          = shift;
 	my $creatorKey      = shift;
+	
+	$self->__EnableCreators($partId, $creatorKey);
 
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
@@ -178,6 +180,14 @@ sub __SetActiveCreators {
 
 	$self->GetModel(1)->SetCreators( \@activeCreators );
 
+}
+
+sub __EnableCreators {
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
+	
+	
 }
  
 #-------------------------------------------------------------------------------------------#

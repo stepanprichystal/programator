@@ -92,6 +92,12 @@ sub Init {
 	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
 
 		my $multiplIS = $dim->{"nasobnost"};
+		my $multiplPnlIS =  $dim->{"nasobnost_panelu"};
+		if(defined $multiplPnlIS && $multiplPnlIS > 0){
+			
+			$multiplIS /= $multiplPnlIS;
+			
+		}
 
 		if ( defined $multiplIS && $multiplIS > 0 ) {
 

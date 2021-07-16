@@ -34,6 +34,7 @@ sub new {
 	$self->{"settings"}->{"defPnlSpacing"}         = undef;
 	$self->{"settings"}->{"pcbStepsList"}          = [];
 	$self->{"settings"}->{"pcbStep"}               = undef;
+	$self->{"settings"}->{"pcbStepProfile"}        = PnlCreEnums->PCBStepProfile_STANDARD;
 	$self->{"settings"}->{"placementType"}         = PnlClassEnums->PnlClassTransform_ROTATION;
 	$self->{"settings"}->{"rotationType"}          = undef;
 	$self->{"settings"}->{"patternType"}           = undef;
@@ -129,6 +130,22 @@ sub GetPCBStep {
 	my $self = shift;
 
 	return $self->{"settings"}->{"pcbStep"};
+
+}
+
+
+sub SetPCBStepProfile {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"pcbStepProfile"} = $val;
+
+}
+
+sub GetPCBStepProfile {
+	my $self = shift;
+
+	return $self->{"settings"}->{"pcbStepProfile"};
 
 }
 

@@ -7,17 +7,18 @@
 #-------------------------------------------------------------------------------------------#
 package Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpPrepareData;
 
-
 #3th party library
 use strict;
 use warnings;
-
 
 #local library
 use aliased 'Programs::Exporter::ExportChecker::Groups::ImpExport::Model::ImpGroupData';
 use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Enums::EnumsGeneral';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -36,21 +37,26 @@ sub new {
 sub OnGetGroupState {
 	my $self     = shift;
 	my $dataMngr = shift;    #instance of GroupDataMngr
-	
-	 
+
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
 
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
 
 	my $state = Enums->GroupState_DISABLE;
- 
- 	# Active only if stackup source is from InSTACK
-	if ( $defaultInfo->GetLayerCnt() > 2 && $defaultInfo->GetStackup()->GetStackupSource() eq StackEnums->StackupSource_INSTACK ) {
+
+	# Active only ifexist impedance steps
+	my @step = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $defaultInfo->GetStep() );
+
+	# Impedance coupon default settings
+	my $impCpnBaseName = EnumsGeneral->Coupon_IMPEDANCE;
+	my @impSteps = grep { $_ =~ /$impCpnBaseName/i } map { $_->{"stepName"} } @step;
+
+	if ( scalar(@impSteps) ) {
 
 		$state = Enums->GroupState_ACTIVEON;
 
-	} 
+	}
 
 	return $state;
 }
@@ -64,19 +70,21 @@ sub OnPrepareGroupData {
 
 	my $inCAM = $dataMngr->{"inCAM"};
 	my $jobId = $dataMngr->{"jobId"};
-	
+
 	my $defaultInfo = $dataMngr->GetDefaultInfo();
- 
 
 	$groupData->SetExportMeasurePdf(1);
- 
-	$groupData->SetBuildMLStackup(1);
-	
-	 
- 	return $groupData;
+
+	if ( $defaultInfo->GetLayerCnt() > 2 ) {
+		$groupData->SetBuildMLStackup(1);
+	}
+	else {
+		$groupData->SetBuildMLStackup(0);
+	}
+
+	return $groupData;
 }
 
- 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

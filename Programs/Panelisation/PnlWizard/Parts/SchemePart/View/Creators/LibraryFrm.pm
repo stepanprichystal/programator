@@ -210,7 +210,7 @@ sub __SetLayoutSpecialSett {
 			$lInf{"name"}    = $layer;
 			$lInf{"cuThick"} = $cuLayer->GetThick();
 			$lInf{"cuThick"} .= " + " . StackEnums->Plating_STD if ( $IProduct->GetIsPlated() );
-			$lInf{"cuUsage"} += $cuLayer->GetUssage();
+			$lInf{"cuUsage"} = int($cuLayer->GetUssage()*100). "%";
 
 			push( @layersInfo, \%lInf );
 

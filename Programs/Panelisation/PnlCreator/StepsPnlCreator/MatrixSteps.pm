@@ -22,6 +22,11 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::StepProfile';
+use aliased 'Enums::EnumsGeneral';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
+
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -37,13 +42,16 @@ sub new {
 	bless $self;
 
 	# Setting values necessary for procesing panelisation
-	$self->{"settings"}->{"pcbStepsList"} = [];
-	$self->{"settings"}->{"pcbStep"}      = undef;
-	$self->{"settings"}->{"stepMultiX"}   = 0;
-	$self->{"settings"}->{"stepMultiY"}   = 0;
-	$self->{"settings"}->{"stepSpaceX"}   = 0;
-	$self->{"settings"}->{"stepSpaceY"}   = 0;
-	$self->{"settings"}->{"stepRotation"} = 0;
+	$self->{"settings"}->{"pcbStepsList"}          = [];
+	$self->{"settings"}->{"pcbStep"}               = undef;
+	$self->{"settings"}->{"pcbStepProfile"}        = Enums->PCBStepProfile_STANDARD;
+	$self->{"settings"}->{"stepMultiX"}            = 0;
+	$self->{"settings"}->{"stepMultiY"}            = 0;
+	$self->{"settings"}->{"stepSpaceX"}            = 0;
+	$self->{"settings"}->{"stepSpaceY"}            = 0;
+	$self->{"settings"}->{"stepRotation"}          = 0;
+	$self->{"settings"}->{"manualPlacementJSON"}   = undef;
+	$self->{"settings"}->{"manualPlacementStatus"} = EnumsGeneral->ResultType_NA;
 
 	return $self;    #
 }
@@ -81,6 +89,13 @@ sub Init {
 
 		die "Not implemnted";
 
+	}
+
+	$self->SetPCBStepProfile( Enums->PCBStepProfile_STANDARD );
+
+	if ( CamHelper->LayerExists( $inCAM, $jobId, "cvrlpins" ) && $self->GetPCBStep() ne "mpanel" ) {
+
+		$self->SetPCBStepProfile( Enums->PCBStepProfile_CVRLPINS );
 	}
 
 	# Load Pnl class
@@ -167,6 +182,18 @@ sub Check {
 		}
 
 	}
+
+	if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
+
+		unless ( defined $self->GetManualPlacementJSON() ) {
+
+			# JSON placement is not defined
+			$result = 0;
+			$$errMess .= "Manual panel step palcement error. Missing JSON panel placement.";
+		}
+
+	}
+
 	return $result;
 
 }
@@ -182,106 +209,117 @@ sub Process {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->GetStep();
 
-	my $nestStep  = $self->GetPCBStep();
-	my %profLim   = CamJob->GetProfileLimits2( $inCAM, $jobId, $nestStep );
-	my $nestStepW = abs( $profLim{"xMax"} - $profLim{"xMin"} );
-	my $nestStepH = abs( $profLim{"yMax"} - $profLim{"yMin"} );
-	my $spaceX    = $self->GetStepSpaceX();
-	my $spaceY    = $self->GetStepSpaceY();
-	my $rotation  = $self->GetStepRotation();
+	if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
 
-	# 1) Get position of datum point with Left Down corner of profile
-	# For all posssible rotations 0,90,180,270
-	# CCW
-	my %datumRot = ( 0 => undef, 90 => undef, 180 => undef, 270 => undef );
-
-	my %dtOri = CamStep->GetDatumPoint( $inCAM, $jobId, $nestStep, 0 );
-
-	foreach my $angle ( keys %datumRot ) {
-
-		if ( $angle == 0 ) {
-
-			$datumRot{"0"}->{"x"} = $dtOri{"x"};
-			$datumRot{"0"}->{"y"} = $dtOri{"y"};
-
-		}
-		elsif ( $angle == 90 ) {
-
-			$datumRot{"90"}->{"x"} = $nestStepH - $dtOri{"y"};
-			$datumRot{"90"}->{"y"} = $dtOri{"x"};
-
-		}
-		elsif ( $angle == 180 ) {
-
-			$datumRot{"180"}->{"x"} = $nestStepW - $dtOri{"x"};
-			$datumRot{"180"}->{"y"} = $nestStepH - $dtOri{"y"};
-
-		}
-		elsif ( $angle == 270 ) {
-
-			$datumRot{"270"}->{"x"} = $dtOri{"y"};
-			$datumRot{"270"}->{"y"} = $nestStepW - $dtOri{"x"};
-		}
+		my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
+		$pnlToJSON->CreatePnlByJSON( $self->GetManualPlacementJSON(), 0, 1, 0 );
 
 	}
+	else {
 
-	# 2) Get step size for all posssible rotations 0,90,180,270
-	my %stepPitchRot = ( 0 => undef, 90 => undef, 180 => undef, 270 => undef );
+		my $nestStep = $self->GetPCBStep();
+		$nestStep .= "_cvrlpins" if ( $self->GetPCBStepProfile() eq Enums->PCBStepProfile_CVRLPINS );
 
-	foreach my $angle ( keys %stepPitchRot ) {
-		if ( $angle == 0 || $angle == 180 ) {
+		my %profLim   = CamJob->GetProfileLimits2( $inCAM, $jobId, $nestStep );
+		my $nestStepW = abs( $profLim{"xMax"} - $profLim{"xMin"} );
+		my $nestStepH = abs( $profLim{"yMax"} - $profLim{"yMin"} );
+		my $spaceX    = $self->GetStepSpaceX();
+		my $spaceY    = $self->GetStepSpaceY();
+		my $rotation  = $self->GetStepRotation();
 
-			$stepPitchRot{"0"}->{"x"}   = $nestStepW + $spaceX;
-			$stepPitchRot{"0"}->{"y"}   = $nestStepH + $spaceY;
-			$stepPitchRot{"180"}->{"x"} = $nestStepW + $spaceX;
-			$stepPitchRot{"180"}->{"y"} = $nestStepH + $spaceY;
+		# 1) Get position of datum point with Left Down corner of profile
+		# For all posssible rotations 0,90,180,270
+		# CCW
+		my %datumRot = ( 0 => undef, 90 => undef, 180 => undef, 270 => undef );
+
+		my %dtOri = CamStep->GetDatumPoint( $inCAM, $jobId, $nestStep, 1 );
+		my %zeroOri = ( "x" => -1 * $profLim{"xMin"}, "y" => -1 * $profLim{"yMin"} );
+
+		foreach my $angle ( keys %datumRot ) {
+
+			if ( $angle == 0 ) {
+
+				$datumRot{"0"}->{"x"} = $dtOri{"x"} + $zeroOri{"x"};
+				$datumRot{"0"}->{"y"} = $dtOri{"y"} + $zeroOri{"y"};
+
+			}
+			elsif ( $angle == 90 ) {
+
+				$datumRot{"90"}->{"x"} = $nestStepH - $dtOri{"y"} - $zeroOri{"y"};
+				$datumRot{"90"}->{"y"} = $dtOri{"x"} + $zeroOri{"x"};
+
+			}
+			elsif ( $angle == 180 ) {
+
+				$datumRot{"180"}->{"x"} = $nestStepW - $dtOri{"x"} - $zeroOri{"x"};
+				$datumRot{"180"}->{"y"} = $nestStepH - $dtOri{"y"} - $zeroOri{"y"};
+
+			}
+			elsif ( $angle == 270 ) {
+
+				$datumRot{"270"}->{"x"} = $dtOri{"y"} + $zeroOri{"y"};
+				$datumRot{"270"}->{"y"} = $nestStepW - $dtOri{"x"} - $zeroOri{"x"};
+			}
 
 		}
-		if ( $angle == 90 || $angle == 270 ) {
 
-			$stepPitchRot{"90"}->{"x"}  = $nestStepH + $spaceX;
-			$stepPitchRot{"90"}->{"y"}  = $nestStepW + $spaceY;
-			$stepPitchRot{"270"}->{"x"} = $nestStepH + $spaceX;
-			$stepPitchRot{"270"}->{"y"} = $nestStepW + $spaceY;
+		# 2) Get step size for all posssible rotations 0,90,180,270
+		my %stepPitchRot = ( 0 => undef, 90 => undef, 180 => undef, 270 => undef );
+
+		foreach my $angle ( keys %stepPitchRot ) {
+			if ( $angle == 0 || $angle == 180 ) {
+
+				$stepPitchRot{"0"}->{"x"}   = $nestStepW + $spaceX;
+				$stepPitchRot{"0"}->{"y"}   = $nestStepH + $spaceY;
+				$stepPitchRot{"180"}->{"x"} = $nestStepW + $spaceX;
+				$stepPitchRot{"180"}->{"y"} = $nestStepH + $spaceY;
+
+			}
+			if ( $angle == 90 || $angle == 270 ) {
+
+				$stepPitchRot{"90"}->{"x"}  = $nestStepH + $spaceX;
+				$stepPitchRot{"90"}->{"y"}  = $nestStepW + $spaceY;
+				$stepPitchRot{"270"}->{"x"} = $nestStepH + $spaceX;
+				$stepPitchRot{"270"}->{"y"} = $nestStepW + $spaceY;
+			}
 		}
+
+		# 3) Get all borders from existin panel
+		my %oriProfLimPnl = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+		my %oriAreaLimPnl = CamStep->GetActiveAreaLim( $inCAM, $jobId, $step );
+
+		my $oriBL = abs( $oriProfLimPnl{"xMin"} - $oriAreaLimPnl{"xMin"} );
+		my $oriBR = abs( $oriProfLimPnl{"xMax"} - $oriAreaLimPnl{"xMax"} );
+		my $oriBT = abs( $oriProfLimPnl{"yMax"} - $oriAreaLimPnl{"yMax"} );
+		my $oriBB = abs( $oriProfLimPnl{"yMin"} - $oriAreaLimPnl{"yMin"} );
+
+		# 4) Create new panel
+		my $SRStep = SRStep->new( $inCAM, $jobId, $step );
+
+		# Compute active area
+		my $multiplX = $self->GetStepMultiplX();
+		my $multiplY = $self->GetStepMultiplY();
+
+		my $areaW = $multiplX * ( ( $rotation / 90 ) % 2 == 0 ? $nestStepW : $nestStepH ) + ( $multiplX - 1 ) * $spaceX;
+		my $areaH = $multiplY * ( ( $rotation / 90 ) % 2 == 0 ? $nestStepH : $nestStepW ) + ( $multiplY - 1 ) * $spaceY;
+
+		my $w = $areaW + $oriBL + $oriBR;
+		my $h = $areaH + $oriBT + $oriBB;
+
+		CamHelper->SetStep( $inCAM, $step );
+		$SRStep->Edit( $w, $h, $oriBT, $oriBB, $oriBL, $oriBR );
+
+		foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
+			CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} );
+		}
+
+		$SRStep->AddSRStep( $self->GetPCBStep(),
+							$datumRot{$rotation}->{"x"} + $oriBL,
+							$datumRot{$rotation}->{"y"} + $oriBB,
+							$rotation, $multiplX, $multiplY,
+							$stepPitchRot{$rotation}->{"x"},
+							$stepPitchRot{$rotation}->{"y"} );
 	}
-
-	# 3) Get all borders from existin panel
-	my %oriProfLimPnl = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
-	my %oriAreaLimPnl = CamStep->GetActiveAreaLim( $inCAM, $jobId, $step );
-
-	my $oriBL = abs( $oriProfLimPnl{"xMin"} - $oriAreaLimPnl{"xMin"} );
-	my $oriBR = abs( $oriProfLimPnl{"xMax"} - $oriAreaLimPnl{"xMax"} );
-	my $oriBT = abs( $oriProfLimPnl{"yMax"} - $oriAreaLimPnl{"yMax"} );
-	my $oriBB = abs( $oriProfLimPnl{"yMin"} - $oriAreaLimPnl{"yMin"} );
-
-	# 4) Create new panel
-	my $SRStep = SRStep->new( $inCAM, $jobId, $step );
-
-	# Compute active area
-	my $multiplX = $self->GetStepMultiplX();
-	my $multiplY = $self->GetStepMultiplY();
-
-	my $areaW = $multiplX * ( ( $rotation / 90 ) % 2 == 0 ? $nestStepW : $nestStepH ) + ( $multiplX - 1 ) * $spaceX;
-	my $areaH = $multiplY * ( ( $rotation / 90 ) % 2 == 0 ? $nestStepH : $nestStepW ) + ( $multiplY - 1 ) * $spaceY;
-
-	my $w = $areaW + $oriBL + $oriBR;
-	my $h = $areaH + $oriBT + $oriBB;
-
-	CamHelper->SetStep( $inCAM, $step );
-	$SRStep->Edit( $w, $h, $oriBT, $oriBB, $oriBL, $oriBR );
-
-	foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
-		CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} );
-	}
-
-	$SRStep->AddSRStep( $nestStep,
-						$datumRot{$rotation}->{"x"} + $oriBL,
-						$datumRot{$rotation}->{"y"} + $oriBB,
-						$rotation, $multiplX, $multiplY,
-						$stepPitchRot{$rotation}->{"x"},
-						$stepPitchRot{$rotation}->{"y"} );
-
 	return $result;
 }
 
@@ -316,6 +354,21 @@ sub GetPCBStep {
 	my $self = shift;
 
 	return $self->{"settings"}->{"pcbStep"};
+
+}
+
+sub SetPCBStepProfile {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"pcbStepProfile"} = $val;
+
+}
+
+sub GetPCBStepProfile {
+	my $self = shift;
+
+	return $self->{"settings"}->{"pcbStepProfile"};
 
 }
 
@@ -381,6 +434,37 @@ sub GetStepRotation {
 	my $self = shift;
 
 	return $self->{"settings"}->{"stepRotation"};
+}
+
+ 
+sub SetManualPlacementJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementJSON"} = $val;
+
+}
+
+sub GetManualPlacementJSON {
+	my $self = shift;
+
+	return $self->{"settings"}->{"manualPlacementJSON"};
+
+}
+
+sub SetManualPlacementStatus {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementStatus"} = $val;
+
+}
+
+sub GetManualPlacementStatus {
+	my $self = shift;
+
+	return $self->{"settings"}->{"manualPlacementStatus"};
+
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -41,7 +41,7 @@ use aliased 'CamHelpers::CamLayer';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTables';
 #use aliased 'Packages::InCAM::InCAM';
-#
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::StepProfile';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
@@ -54,6 +54,7 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 #use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
 #
 use aliased 'Helpers::GeneralHelper';
+
 #use aliased 'Helpers::JobHelper';
 #use aliased 'Widgets::Forms::LoadingForm';
 #use aliased 'CamHelpers::CamHelper';
@@ -61,10 +62,8 @@ use aliased 'Helpers::GeneralHelper';
 #use aliased 'Enums::EnumsPaths';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
+
 #use aliased 'Packages::Export::PreExport::FakeLayers';
-
-
-
 
 # ================================================================================
 # PUBLIC METHOD
@@ -106,6 +105,9 @@ sub new {
 	# Old panel name (backuped step right before run Panelisation. Will be restored if cancel panelisation)
 	$self->{"pnlStepBackup"} = undef;
 
+	# Name of steps with adjusted profile bz cvrlpin layer (created before start and destroyed after close app)
+	$self->{"cvrlpinSteps"} = [];
+
 	return $self;
 }
 
@@ -115,7 +117,7 @@ sub Init {
 	my $pnlType  = shift;    # contain InCAM library conencted to server
 	                         # 1) Get background worker and InCAM library from launcher
 
-	$main::configPath = GeneralHelper->Root() . "\\Programs\\Panelisation\\PnlWizard\\Config\\Config_".$pnlType.".txt";
+	$main::configPath = GeneralHelper->Root() . "\\Programs\\Panelisation\\PnlWizard\\Config\\Config_" . $pnlType . ".txt";
 
 	$self->{"launcher"} = $launcher;
 
@@ -185,13 +187,10 @@ sub Init {
 
 	$self->__InitModel();
 
-	# Backup old panel (restore if cancel panelisation)
-	$self->{"pnlStepBackup"} = $self->{"model"}->GetStep() . "_backup";
-	if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() ) ) {
+	$self->__BackupPanelStep();
 
-		CamStep->CopyStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep(), $self->{"jobId"}, $self->{"pnlStepBackup"} );
-		CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
-	}
+	my @cvrlpinSteps = StepProfile->PrepareCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"cvrlpinSteps"} = \@cvrlpinSteps;
 
 	print STDERR "Init model START\n";
 	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"} );
@@ -293,14 +292,19 @@ sub __OnCancelClickHndl {
 		my $oriName = $self->{"pnlStepBackup"};
 		$oriName =~ s/_backup//i;
 
-		if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $oriName ) ) {
+		if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} ) ) {
 
-			CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $oriName );
+			if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $oriName ) ) {
+				CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $oriName );
+			}
 
 			CamStep->RenameStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"}, $oriName );
 		}
 
 	}
+
+	# Remove cvrlpisn step
+	StepProfile->RemoveCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cvrlpinSteps"} );
 
 	#CamStep->CopyStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep(), $self->{"jobId"}, $self->{"pnlStepBackup"} );
 
@@ -326,10 +330,17 @@ sub __OnLeaveClickHndl {
 		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
 	}
 
+	# Remove backup panel step
 	if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} ) ) {
 
 		CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} );
 	}
+
+	# Replace cvrlpin steps if exist
+	StepProfile->RemoveCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+
+	# Remove cvrlpisn step
+	StepProfile->RemoveCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cvrlpinSteps"} );
 
 	$self->__StoreModelToDisc();
 
@@ -390,7 +401,7 @@ sub __OnLoadLastClickHndl {
 			my $partModel = $restoredModel->GetPartModelById( $parts[$i]->GetPartId() );
 
 			if ( $partModel->GetPreview() ) {
-				 $self->{"partContainer"}->SetPreviewOnAllPart( $parts[$i]->GetPartId() );
+				$self->{"partContainer"}->SetPreviewOnAllPart( $parts[$i]->GetPartId() );
 				last;
 			}
 		}
@@ -434,7 +445,7 @@ sub __OnShowLayersClickHndl {
 
 	if ($showNC) {
 
-		@layers2Disp = grep { $_ =~ /^(f)|(score)$/ } @allLayers;
+		@layers2Disp = grep { $_ =~ /^f$/ || $_ =~ /^score$/ } @allLayers;
 	}
 
 	my @dispLayers    = ();
@@ -451,13 +462,13 @@ sub __OnShowLayersClickHndl {
 	if ( scalar(@dispLayers) > scalar(@notDispLayers) ) {
 
 		# Deactivate all
-		CamLayer->DisplayLayers( $inCAM, \@layers2Disp, 0 );
+		CamLayer->DisplayLayers( $inCAM, \@layers2Disp, 0, 0 );
 
 	}
 	else {
 
 		# Activate all
-		CamLayer->DisplayLayers( $inCAM, \@layers2Disp, 1 );
+		CamLayer->DisplayLayers( $inCAM, \@layers2Disp, 1, 0 );
 		$inCAM->COM( "display_sr", "display" => "yes" );
 
 	}
@@ -505,6 +516,9 @@ sub __OnAsyncPanelCreatedHndl {
 
 			CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} );
 		}
+
+		# Remove cvrlpisn step
+		StepProfile->RemoveCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cvrlpinSteps"} );
 
 		$self->__InCAMEditorPreviewMode(0);
 		if ( $self->{"inCAM"}->IsConnected() ) {
@@ -796,6 +810,18 @@ sub __InCAMEditorPreviewMode {
 
 	$self->{"inCAM"}->COM( "show_component", "component" => "Action_Area", "show" => ( $preview ? "no" : "yes" ) );
 	$self->{"inCAM"}->COM( "show_component", "component" => "Layers_List", "show" => ( $preview ? "no" : "yes" ) );
+}
+
+sub __BackupPanelStep {
+	my $self = shift;
+
+	# Backup old panel (restore if cancel panelisation)
+	$self->{"pnlStepBackup"} = $self->{"model"}->GetStep() . "_backup";
+	if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() ) ) {
+
+		CamStep->CopyStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep(), $self->{"jobId"}, $self->{"pnlStepBackup"} );
+		CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+	}
 }
 
 #
