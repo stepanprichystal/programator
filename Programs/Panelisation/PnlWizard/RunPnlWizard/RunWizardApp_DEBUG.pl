@@ -10,16 +10,16 @@ use aliased 'Packages::InCAM::InCAM';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Launcher';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
-#my $jobId = "d305883";
-my $jobId = "d321505";
+my $jobId = "d325782";
+#my $jobId = "d304342";
 
-my @parameters = (PnlCreEnums->PnlType_CUSTOMERPNL);
-#my @parameters = ( PnlCreEnums->PnlType_PRODUCTIONPNL );
+#my @parameters = (PnlCreEnums->PnlType_CUSTOMERPNL);
+my @parameters = ( PnlCreEnums->PnlType_PRODUCTIONPNL );
 
 my $app = PnlWizard->new($jobId);
 
 my $launcher = Launcher->new(56753);
-
+ 
 $app->Init( $launcher, @parameters );
 
 $app->Run();

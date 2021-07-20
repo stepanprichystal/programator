@@ -17,6 +17,7 @@ use List::Util qw(first);
 #local library
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
+use aliased 'Packages::Other::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -34,12 +35,10 @@ sub new {
 	# PROPERTIES
 	$self->{"cpnTypeRadioBtns"} = [];    # all radiobuttons of all cpn placement types (rb contain key with type value)
 
- 
-	
 	# DEFINE EVENTS
-	 
+
 	$self->{"cpnSettingChangedEvt"} = Event->new();
-	
+
 	$self->__SetLayout($cpnTitle);
 
 	return $self;
@@ -51,43 +50,58 @@ sub __SetLayout {
 
 	my $szMain           = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szPlacementTypes = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szPlacementSett = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szPlacementSett  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szCustomControls = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	
+	my $szTitle          = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+
 	my $szPlacementSettCol = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# Add empty item
 
 	# DEFINE CONTROLS
-	my $cpnTitleTxt = Wx::StaticText->new( $self, -1, $cpnTitle, &Wx::wxDefaultPosition );
-	
+	my $cpnTitleTxt = Wx::StaticText->new( $self, -1, $cpnTitle, &Wx::wxDefaultPosition, [ 60, 23 ] );
+
+	my $pnlSepar = Wx::Panel->new( $self, -1, &Wx::wxDefaultPosition, [ 1, -1 ] );
+	$pnlSepar->SetBackgroundColour( AppConf->GetColor("clrMainHeaderSeparator") );
+	my $pnlSepar2 = Wx::Panel->new( $self, -1, &Wx::wxDefaultPosition, [ 1, -1 ] );
+	$pnlSepar2->SetBackgroundColour( AppConf->GetColor("clrMainHeaderSeparator") );
+
 	my $cpn2stepDistTxt = Wx::StaticText->new( $self, -1, "Cpn to steps dist.:", &Wx::wxDefaultPosition );
 	my $cpn2stepDistValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
- 
+
+	$self->SetBackgroundColour( Wx::Colour->new( 240, 240, 240 ) );
+
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $cpn2stepDistValTxt, -1, sub { $self->{"cpnSettingChangedEvt"}->Do() } );
-	 
 
 	# BUILD STRUCTURE OF LAYOUT
-	
-	
-	$szPlacementSettCol->Add( $cpn2stepDistTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szPlacementSettCol->Add( $cpn2stepDistTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szPlacementSettCol->Add( $cpn2stepDistValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	
-	$szPlacementSett->Add( $szPlacementSettCol, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szPlacementSett->Add( $szPlacementSettCol, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 5 );
+	$szTitle->AddStretchSpacer(1);
+	$szTitle->Add( $cpnTitleTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$szTitle->AddStretchSpacer(1);
 	 
-	$szMain->Add( $cpnTitleTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szMain->Add( $szTitle,          0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $pnlSepar,         0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $szPlacementTypes, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $szPlacementSett, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szMain->AddSpacer(5);
+	$szMain->Add( $pnlSepar2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->AddSpacer(5);
+	$szMain->Add( $szPlacementSett, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
 	$szMain->Add( $szCustomControls, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
-	$self->{"szPlacementTypes"} = $szPlacementTypes;
-	$self->{"szCustomControls"} = $szCustomControls;
+	$self->{"szPlacementTypes"}   = $szPlacementTypes;
+	$self->{"szCustomControls"}   = $szCustomControls;
 	$self->{"cpn2stepDistValTxt"} = $cpn2stepDistValTxt;
-	
 
 }
 
@@ -123,12 +137,10 @@ sub _AddPlacementType {
 	$szMain->Add( $rb,           0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szMain->Add( $szType,       0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$self->{"szPlacementTypes"}->Add( $szMain, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$self->{"szPlacementTypes"}->Add( $szMain, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 10 );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_RADIOBUTTON( $rb, -1, sub { $self->{"cpnSettingChangedEvt"}->Do() } );
-	 
-
 
 	push( @{ $self->{"cpnTypeRadioBtns"} }, $rb );
 
@@ -176,7 +188,6 @@ sub SetSelectedCpntType {
 sub GetCpn2StepDist {
 	my $self = shift;
 
- 
 	return $self->{"cpn2stepDistValTxt"}->GetValue();
 }
 
@@ -184,8 +195,8 @@ sub SetCpn2StepDist {
 	my $self = shift;
 	my $dist = shift;
 
-	 $self->{"cpn2stepDistValTxt"}->SetValue($dist);
- 
+	$self->{"cpn2stepDistValTxt"}->SetValue($dist);
+
 }
 
 #-------------------------------------------------------------------------------------------#

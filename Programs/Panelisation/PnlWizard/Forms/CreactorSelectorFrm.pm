@@ -68,8 +68,8 @@ sub _SetLayout {
 	# DEFINE EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $creatorListLayout, 20, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $creatorListLayout, 20, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	#$szMain->AddSpacer(0);
 	$szMain->Add( $creatorViewLayout, 80, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
@@ -124,7 +124,7 @@ sub __SetLayoutCreatorView {
 
 	foreach my $creator ( @{$creators} ) {
 
-		my $page = $notebook->AddPage( $creator->GetModelKey(), 0 );
+		my $page = $notebook->AddPage( $creator->GetModelKey(), 1 );
 
 		$page->GetParent()->SetBackgroundColour(AppConf->GetColor("clrCreatorViewBackground"));
 

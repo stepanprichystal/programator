@@ -40,7 +40,14 @@ sub new {
 	$self->{"jobId"} = shift;
 
 	$self->{"backgroundTaskMngr"} = shift;
-	$self->{"parts"}              = [];
+
+	# PROPERTIES
+
+	$self->{"parts"} = [];
+
+	$self->{"previewOnAllPartsProcessing"} = 0;     # Helper indicator if preview all parts is running
+	$self->{"finalCreatePanelProcessing"}  = 0;     # Helper indicator if final panel create
+	$self->{"partsInProcessing"}           = [];    # helper array wjhere are parts to processing
 
 	return $self;
 }
@@ -70,7 +77,7 @@ sub Init {
 		my $impCpnBaseName   = EnumsGeneral->Coupon_IMPEDANCE;
 		my $ipc3CpnBaseName  = EnumsGeneral->Coupon_IPC3MAIN;
 		my $zAxisCpnBaseName = EnumsGeneral->Coupon_ZAXIS;
-		
+
 		my @cpnSteps =
 		  grep { $_ =~ /$impCpnBaseName/i || $_ =~ /$ipc3CpnBaseName/i || $_ =~ /$zAxisCpnBaseName/i } @step;
 
@@ -318,18 +325,28 @@ sub SetPreviewOnAllPart {
 	my $self       = shift;
 	my $lastPartId = shift;    # if defined, set preview ON up to this specific partId (this part is excluded). By order from first partId
 
+	$self->{"previewOnAllPartsProcessing"} = 1;
+
+	my @parts = ();
+
 	for ( my $i = 0 ; $i < scalar( @{ $self->{"parts"} } ) ; $i++ ) {
 
-		if ( !$self->{"parts"}->[$i]->GetPreview() ) {
-
-			$self->{"parts"}->[$i]->SetPreview(1);
-		}
-
-		$self->AsyncProcessSelCreatorModel( $self->{"parts"}->[$i]->GetPartId() );
-
+		push( @parts, $self->{"parts"}->[$i] );
 		last if ( defined $lastPartId && $self->{"parts"}->[$i]->GetPartId() eq $lastPartId );
 
 	}
+
+	$self->{"partsInProcessing"} = \@parts;
+
+	for ( my $i = 0 ; $i < scalar(@parts) ; $i++ ) {
+
+		if ( !$parts[$i]->GetPreview() ) {
+
+			$parts[$i]->SetPreview(1);
+		}
+	}
+
+	$self->AsyncProcessSelCreatorModel( $parts[0]->GetPartId() );
 
 }
 
@@ -354,11 +371,11 @@ sub AsyncCreatePanel {
 	my $self = shift;
 
 	# Get creator for every part
-	$self->{"finalProcessing"} = 1;
+	$self->{"finalCreatePanelProcessing"} = 1;
 
-	$self->{"finalCreateParts"} = [ @{ $self->{"parts"} } ];
+	$self->{"partsInProcessing"} = [ @{ $self->{"parts"} } ];
 
-	my $nextPart = shift @{ $self->{"finalCreateParts"} };
+	my $nextPart = shift @{ $self->{"partsInProcessing"} };
 
 	$nextPart->AsyncProcessSelCreatorModel();
 
@@ -396,7 +413,7 @@ sub __OnAsyncCreatorProcessedHndl {
 	my $result     = shift;
 	my $errMess    = shift;
 
-	if ( $self->{"finalProcessing"} ) {
+	if ( $self->{"finalCreatePanelProcessing"} || $self->{"previewOnAllPartsProcessing"} ) {
 
 		$self->__OnAsyncProcessSelCreatorModelHndl( $creatorKey, $result, $errMess );
 	}
@@ -419,23 +436,48 @@ sub __OnAsyncProcessSelCreatorModelHndl {
 	my $result     = shift;
 	my $errMess    = shift;
 
-	if ($result) {
+	if ( $self->{"previewOnAllPartsProcessing"} ) {
 
-		my $nextPart = shift @{ $self->{"finalCreateParts"} };
+		if ($result) {
 
-		if ( defined $nextPart ) {
+			my $nextPart = shift @{ $self->{"partsInProcessing"} };
 
-			$nextPart->AsyncProcessSelCreatorModel();
+			if ( defined $nextPart ) {
+
+				$nextPart->AsyncProcessSelCreatorModel();
+			}
+			else {
+
+				$self->{"previewOnAllPartsProcessing"} = 0;
+
+			}
 		}
 		else {
-
-			$self->{"finalProcessing"} = 0;
-			$self->{"asyncPanelCreatedEvt"}->Do(1);
+			$self->{"previewOnAllPartsProcessing"} = 0;
 		}
+
 	}
-	else {
-		$self->{"finalProcessing"} = 0;
-		$self->{"asyncPanelCreatedEvt"}->Do( 0, $errMess );
+	elsif ( $self->{"finalCreatePanelProcessing"} ) {
+
+		if ($result) {
+
+			my $nextPart = shift @{ $self->{"partsInProcessing"} };
+
+			if ( defined $nextPart ) {
+
+				$nextPart->AsyncProcessSelCreatorModel();
+			}
+			else {
+
+				$self->{"finalCreatePanelProcessing"} = 0;
+				$self->{"asyncPanelCreatedEvt"}->Do(1);
+			}
+		}
+		else {
+			$self->{"finalCreatePanelProcessing"} = 0;
+			$self->{"asyncPanelCreatedEvt"}->Do( 0, $errMess );
+		}
+
 	}
 
 	return 1;

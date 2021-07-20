@@ -2,7 +2,7 @@
 # Description: Simple list, based on ControlList, which display inner layer spec fill
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::SchemePart::View::Creators::Frm::LayerSpecFillList;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetStepList;
 use base qw(Widgets::Forms::CustomControlList::ControlList);
 
 #3th party library
@@ -16,10 +16,11 @@ use List::Util qw[max];
 #local library
 
 use Widgets::Style;
-use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::View::Creators::Frm::LayerSpecFillRow';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetStepRow';
 use aliased 'Widgets::Forms::CustomControlList::Enums';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Events::Event';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -28,11 +29,11 @@ sub new {
 
 	my $class  = shift;
 	my $parent = shift;
-	my @layers = @{ shift(@_) };
+	my @steps  = @{ shift(@_) };
 
 	# Specify column widths
-	my @widths = ( 40,           70,             70,         80 );
-	my @titles = ( "Layer ", "Cu thickness", "Cu usage", "Special fill" );
+	my @widths = ( 149, 149 );
+	my @titles = ( "Step name", "Step amount in one set" );
 
 	my $columnCnt    = scalar(@widths);
 	my $columnWidths = \@widths;
@@ -43,45 +44,44 @@ sub new {
 	bless($self);
 
 	$self->{"titles"} = \@titles;
-	$self->{"layers"} = \@layers;
+	$self->{"steps"}  = \@steps;
 
 	$self->__SetLayout();
 
 	# EVENTS
 
-	$self->{"specialFillChangedEvt"} = Event->new();
+	$self->{"stepCountChangedEvt"} = Event->new();
 
 	return $self;
 }
 
-sub SetLayersSpecFill {
-	my $self      = shift;
-	my $layerFill = shift;    # hash with pairs - layer name => special fill
+sub SetStepCounts {
+	my $self       = shift;
+	my $stepCounts = shift;    # hash with pairs - layer name => special fill
 
-	foreach my $layerName ( keys %{$layerFill} ) {
+	foreach my $stepCount ( @{$stepCounts} ) {
 
-		my $row = $self->GetRowById($layerName);
+		my $row = $self->GetRowById( $stepCount->{"stepName"} );
 
-		$row->SetLayerSpecFill( $layerFill->{$layerName} );
+		$row->SetStepCount( $stepCount->{"stepCount"} );
 
 	}
 
 }
 
-sub GetLayersSpecFill {
+sub GetStepCounts {
 	my $self = shift;
 
-	my %layerFill = ();
-	my @rows      = $self->GetAllRows();
+	my @stepCounts = ();
+	my @rows       = $self->GetAllRows();
 
 	foreach my $row (@rows) {
 
-		my $specFill = $row->GetLayerSpecFill( $row->GetRowText() );
-		$layerFill{ $row->GetRowText() } = $specFill;
+		push( @stepCounts, { "stepName" => $row->GetRowId(), "stepCount" => $row->GetStepCount() } );
 
 	}
 
-	return \%layerFill;
+	return \@stepCounts;
 }
 
 sub __SetLayout {
@@ -98,12 +98,12 @@ sub __SetLayout {
 
 	# Define notes
 
-	foreach my $layer ( @{ $self->{"layers"} } ) {
-		
-		my $row = LayerSpecFillRow->new( $self, $layer->{"name"}, $layer->{"cuThick"}, $layer->{"cuUsage"}   );
+	foreach my $stepName ( @{ $self->{"steps"} } ) {
+
+		my $row = SetStepRow->new( $self, $stepName );
 		$self->AddRow($row);
 
-		$row->{"specialFillChangedEvt"}->Add( sub { $self->{"specialFillChangedEvt"}->Do() } );
+		$row->{"stepCountChangedEvt"}->Add( sub { $self->{"stepCountChangedEvt"}->Do() } );
 	}
 
 	# REGISTER EVENTS

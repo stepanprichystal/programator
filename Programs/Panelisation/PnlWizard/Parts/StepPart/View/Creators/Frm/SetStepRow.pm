@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Panelisation::PnlWizard::Parts::SchemePart::View::Creators::Frm::LayerSpecFillRow;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetStepRow;
 use base qw(Widgets::Forms::CustomControlList::ControlListRow);
 
 #3th party library
@@ -23,68 +23,55 @@ use aliased 'Enums::EnumsCAM';
 #-------------------------------------------------------------------------------------------#
 sub new {
 
-	my $class     = shift;
-	my $parent    = shift;
-	my $layerName = shift;
-	my $cuThick   = shift;
-	my $cuUsage   = shift;
+	my $class    = shift;
+	my $parent   = shift;
+	my $stepName = shift;
 
-	my $rowHeight = 23;
+	my $rowHeight = 20;
 
-	my $self = $class->SUPER::new( $layerName, $parent, $layerName, $rowHeight );
+	my $self = $class->SUPER::new( $stepName, $parent, $stepName );
 
 	bless($self);
 
-	$self->__SetLayout($cuThick, $cuUsage);
+	$self->__SetLayout();
 
 	# EVENTS
-	$self->{"specialFillChangedEvt"} = Event->new();
+	$self->{"stepCountChangedEvt"} = Event->new();
 
 	return $self;
 }
 
-sub SetLayerSpecFill {
+sub SetStepCount {
 	my $self        = shift;
-	my $specialFill = shift;
+	my $stepCount = shift;
 
 	my @cells = $self->GetCells();
 
-	$cells[3]->SetValue($specialFill);
+	$cells[1]->SetValue($stepCount);
 
 }
 
-sub GetLayerSpecFill {
+sub GetStepCount {
 	my $self = shift;
 
-	my $cbSpecFill = $self->GetCellsByPos(3);
+	my $cell = $self->GetCellsByPos(1);
 
-	return $cbSpecFill->GetValue();
+	return $cell->GetValue();
 
 }
 
 sub __SetLayout {
-	my $self = shift;
-	my $cuThick   = shift;
-	my $cuUsage   = shift;
-	
+	my $self    = shift;
+	my $cuThick = shift;
+	my $cuUsage = shift;
 
 	# DEFINE CELLS
 
-	my $cuThickTxt = Wx::StaticText->new( $self->{"parent"}, -1, $cuThick, [ -1, -1 ], [ 10, $self->{"rowHeight"} ] );
-	my $cuUsageTxt = Wx::StaticText->new( $self->{"parent"}, -1, $cuUsage, [ -1, -1 ], [ 10, $self->{"rowHeight"} ] );
+	my $stepCount = Wx::TextCtrl->new( $self->{"parent"}, -1, $cuThick, [ -1, -1 ], [ 10, $self->{"rowHeight"} ] );
 
-	my @options = (
-					EnumsCAM->AttSpecLayerFill_NONE,        EnumsCAM->AttSpecLayerFill_EMPTY,
-					EnumsCAM->AttSpecLayerFill_SOLID100PCT, EnumsCAM->AttSpecLayerFill_CIRCLE80PCT
-	);
-	my $specialFillCB =
-	  Wx::ComboBox->new( $self->{"parent"}, -1, $options[0], [ -1, -1 ], [ 10, $self->{"rowHeight"} ], \@options, &Wx::wxCB_READONLY );
+	Wx::Event::EVT_TEXT( $stepCount, -1, sub { $self->{"stepCountChangedEvt"}->Do() } );
 
-	Wx::Event::EVT_TEXT( $specialFillCB, -1, sub { $self->{"specialFillChangedEvt"}->Do() } );
-
-	$self->_AddCell($cuThickTxt);
-	$self->_AddCell($cuUsageTxt);
-	$self->_AddCell($specialFillCB);
+	$self->_AddCell($stepCount);
 
 	# SET EVENTS
 

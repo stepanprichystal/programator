@@ -53,7 +53,7 @@ sub __SetLayout {
 	my $mainSz = $self->_GetMainSizer();
 
 	$mainSz->Hide(1);    # Remove expander which is last item in sizer
-	$mainSz->Prepend( $statBox, 50, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$mainSz->Prepend( $statBox, 50, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$self->_EnableLayoutSize(0);
 	$self->_EnableLayoutBorder(0);
@@ -144,12 +144,13 @@ sub __SetLayoutJobList {
 
 	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND );
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
-	$szStatBox->AddSpacer(10);
+	$szStatBox->AddSpacer(5);
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
 	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND );
 	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow3, 1, &Wx::wxEXPAND );
+	$szStatBox->AddSpacer(2);
 
 	# save control references
 

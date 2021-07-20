@@ -19,7 +19,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Forms::PartWrapperForm';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use aliased 'Widgets::Forms::MyWxScrollPanel';
 use Widgets::Style;
-
+use aliased 'Packages::Other::AppConf';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -74,7 +74,7 @@ sub __SetLayout {
 	#$groupTable = $self->__DefineTableGroups();
 
 	#my @rows = $groupTable->GetRows();
-	$self->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
+	$self->SetBackgroundColour(  AppConf->GetColor("clrMainFrmBackground")  );
 
 	# ================= NEW ===========================
 
@@ -110,8 +110,8 @@ sub __SetLayout {
 		#$groupWrapperPnl->Disable();
 		# Add this rappet to group table
 		#my $w = $part->GetCellWidth();
-		my $expand = ( $i < ( scalar( @{$parts} ) - 1 ) ? 1 : 0 );
-		$containerSz->Add( $partWrapper, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+		#my $expand = ( $i < ( scalar( @{$parts} ) - 1 ) ? 1 : 0 );
+		$containerSz->Add( $partWrapper, 0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
 
 		push( @{ $self->{"partWrappers"} }, $partWrapper );
 
@@ -123,7 +123,7 @@ sub __SetLayout {
 	$containerPnl->SetSizer($containerSz);
 	$scrollSizer->Add( $containerPnl, 1, &Wx::wxEXPAND );
 	$scrollPnl->SetSizer($scrollSizer);
-	$szMain->Add( $scrollPnl, 0, &Wx::wxEXPAND );
+	$szMain->Add( $scrollPnl, 1, &Wx::wxEXPAND );
 	
  
 

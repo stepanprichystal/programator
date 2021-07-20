@@ -31,7 +31,8 @@ sub new {
 	my $model   = shift;    # model for initial inittialization
 	my $pnlType = shift;
 
-	my $frmHeight = 250; # height of part, constant for all creators
+	my $frmHeight = 170; # height of part, constant for all creators
+	 
 	my $self = $class->SUPER::new( $parent, $frmHeight, $inCAM, $jobId, $model, $pnlType );
 
 	bless($self);

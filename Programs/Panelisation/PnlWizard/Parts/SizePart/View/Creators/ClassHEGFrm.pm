@@ -44,6 +44,8 @@ sub __SetLayout {
 	my $self = shift;
 
 	# DEFINE CONTROLS
+	
+	$self->_EnableLayoutSize(0);
 
 	# DEFINE EVENTS
 
@@ -52,7 +54,7 @@ sub __SetLayout {
 	# SAVE REFERENCES
 
 	# Init combobox class
-	$self->{"pnlClassCB"} = $self->_SetLayoutCBMain( "Class", [],  25, 75,0  );
+	$self->{"pnlClassCB"} = $self->_SetLayoutCBMain( "Panel class:", [],  25, 75,0  );
 
 	$self->{"CBMainChangedEvt"}->Add( sub { $self->__OnPnlClassChanged(@_) } );
 
@@ -60,12 +62,13 @@ sub __SetLayout {
 	$self->{"ISDimensionFilled"} = $self->_SetLayoutISSize( "HEG dimensions set:",  40, 10, 50  );
 
 	# Init combobox class size
-	$self->{"pnlClassSizeCB"} = $self->_SetLayoutCBSize( "Class size", [],  24, 76,0 );
+	$self->{"pnlClassSizeCB"} = $self->_SetLayoutCBSize( "Class size:", [],  24, 76,0 );
+	$self->{"pnlClassSizeCB"}->Disable();
 
 	$self->{"CBSizeChangedEvt"}->Add( sub { $self->__OnPnlClassSizeChanged(@_) } );
 
 	# Init combobox class border
-	$self->{"pnlClassBorderCB"} = $self->_SetLayoutCBBorder( "Class border", [],  24, 76,0 );
+	$self->{"pnlClassBorderCB"} = $self->_SetLayoutCBBorder( "Class border:", [],  24, 76,0 );
 
 	$self->{"CBBorderChangedEvt"}->Add( sub { $self->__OnPnlClassBorderChanged(@_) } );
 

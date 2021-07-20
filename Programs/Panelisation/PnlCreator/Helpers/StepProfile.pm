@@ -17,6 +17,7 @@ use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'Helpers::GeneralHelper';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,8 +37,7 @@ sub PrepareCvrlPinSteps {
 
 		$inCAM->SetDisplay(0);
 
-		my @editSteps = grep { $_ =~ /^\w+\+\d$/ } CamStep->GetAllStepNames( $inCAM, $jobId );
-		@editSteps = grep { $_ !~ /^et_panel.*\+\d$/ } @editSteps;
+		my @editSteps = Helper->GetEditSteps( $inCAM, $jobId );
 
 		my $profL = GeneralHelper->GetGUID();
 		CamMatrix->DeleteLayer( $inCAM, $jobId, $profL );

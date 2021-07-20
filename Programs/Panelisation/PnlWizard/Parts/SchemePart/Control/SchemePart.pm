@@ -19,6 +19,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::Model::SchemePartModel'   => 'PartModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::View::SchemePartFrm'      => 'PartFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::Control::SchemePartCheck' => 'PartCheckClass';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -51,7 +52,7 @@ sub InitForm {
 	my $self        = shift;
 	my $partWrapper = shift;
 	my $inCAM       = shift;
-	my $pnlType = shift;
+	my $pnlType     = shift;
 
 	my $parent = $partWrapper->GetParentForPart();
 
@@ -79,19 +80,19 @@ sub InitPartModel {
 
 		# Init default
 		# Init default
-		my $defCreator = @{$self->{"model"}->GetCreators()}[0];
-		$self->{"model"}->SetSelectedCreator($defCreator->GetModelKey());
+		my $defCreator = @{ $self->{"model"}->GetCreators() }[0];
+		$self->{"model"}->SetSelectedCreator( $defCreator->GetModelKey() );
 	}
 }
 
 # Handler which catch change of creatores in other parts
 # Reise imidiatelly after slection change, do not wait on asznchrounous task
 sub OnOtherPartCreatorSelChangedHndl {
-	my $self            = shift;
-	my $partId          = shift;
-	my $creatorKey      = shift;
-	
-		$self->__EnableCreators($partId, $creatorKey);
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
+
+	$self->__EnableCreators( $partId, $creatorKey );
 
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
@@ -103,10 +104,35 @@ sub OnOtherPartCreatorSettChangedHndl {
 	my $partId     = shift;
 	my $creatorKey = shift;
 
-	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
+	my $currCreatorKey = $self->{"model"}->GetSelectedCreator();
 
+	if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+		if ( $partId eq Enums->Part_PNLSTEPS && $self->GetPreview() ) {
+
+			$self->AsyncProcessSelCreatorModel();
+		}
+	}
+	elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+
+		if ( $partId eq Enums->Part_PNLSTEPS && $self->GetPreview() ) {
+
+			# if there is no coupon part, do process
+			my @pnlStep =
+			  map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+			if ( scalar( grep { $_ =~ /coupon_/ } @pnlStep ) == 0 ) {
+
+				$self->AsyncProcessSelCreatorModel();
+			}
+		}
+		elsif ( $partId eq Enums->Part_PNLCPN && $self->GetPreview() ) {
+
+			# if there is no coupon part, do process
+
+			$self->AsyncProcessSelCreatorModel();
+		}
+	}
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Private method
@@ -140,15 +166,12 @@ sub __SetActiveCreators {
 
 }
 
-
 sub __EnableCreators {
 	my $self       = shift;
 	my $partId     = shift;
 	my $creatorKey = shift;
-	
-	
+
 }
- 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

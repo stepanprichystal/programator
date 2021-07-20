@@ -11,6 +11,7 @@ use warnings;
 
 #local library
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStep';
 
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlCreator::SizePnlCreator::HEGSize';
@@ -88,6 +89,19 @@ sub GetPnlCreatorByKey {
 	}
 
 	return $creator;
+}
+
+# Return all edit steps
+# This steps are steps with suffix +1, except some special cases
+sub GetEditSteps {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+	
+	my @editSteps = grep { $_ =~ /^\w+\+\d$/ } CamStep->GetAllStepNames( $inCAM, $jobId );
+	@editSteps = grep { $_ !~ /^et_panel.*\+\d$/ } @editSteps;
+	
+	return @editSteps;
 }
 
 #-------------------------------------------------------------------------------------------#

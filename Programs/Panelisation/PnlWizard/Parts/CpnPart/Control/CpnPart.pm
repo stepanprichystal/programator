@@ -211,6 +211,20 @@ sub OnOtherPartCreatorSettChangedHndl {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	my $currCreatorKey = $self->{"model"}->GetSelectedCreator();
+
+	if ( $partId eq Enums->Part_PNLSTEPS ) {
+
+		if ( $self->GetPreview() ) {
+
+			
+				$self->AsyncProcessSelCreatorModel();
+
+		}
+
+	}
+
+
 	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
 
 }

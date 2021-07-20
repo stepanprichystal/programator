@@ -16,7 +16,7 @@ use warnings;
 #local library
 use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Comments::Enums';
+use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use Widgets::Style;
 
 
@@ -57,13 +57,15 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 	 
-	my $creatorNameTxt = Wx::StaticText->new( $self, -1, $creatorModel->GetModelKey(), &Wx::wxDefaultPosition );
+	my $tit =  EnumsStyle->GetCreatorTitle($creatorModel->GetModelKey());
+	 
+	my $creatorNameTxt = Wx::StaticText->new( $self, -1, $tit, &Wx::wxDefaultPosition, [-1, -1] );
  
 	#$self->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 
 	# DEFINE LAYOUT
 
-	$szMain->Add( $creatorNameTxt, 4, &Wx::wxALL | &Wx::wxALIGN_CENTER_VERTICAL, 2);
+	$szMain->Add( $creatorNameTxt, 0, &Wx::wxALL | &Wx::wxALIGN_CENTER_VERTICAL, 6);
 	 
 
 	 

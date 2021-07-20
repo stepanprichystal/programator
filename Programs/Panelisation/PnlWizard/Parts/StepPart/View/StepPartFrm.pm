@@ -88,12 +88,14 @@ sub OnGetCreatorLayout {
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
 
 		$content = MatrixFrm->new( $parent, $inCAM, $jobId );
-		
+
 		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_SET ) {
 
 		$content = SetFrm->new( $parent, $inCAM, $jobId );
+
+		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
 
@@ -184,6 +186,13 @@ sub SetCreators {
 				$creatorFrm->SetManualPlacementStatus( $model->GetManualPlacementStatus() );
 
 			}
+			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
+
+				$creatorFrm->SetStepList( $model->GetStepList() );
+				$creatorFrm->SetManualPlacementJSON( $model->GetManualPlacementJSON() );
+				$creatorFrm->SetManualPlacementStatus( $model->GetManualPlacementStatus() );
+
+			}
 			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
 
 				$creatorFrm->SetSrcJobId( $model->GetSrcJobId() );
@@ -267,7 +276,10 @@ sub GetCreators {
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
-			die "not implemented";
+
+			$model->SetStepList( $creatorFrm->GetStepList() );
+			$model->SetManualPlacementJSON( $creatorFrm->GetManualPlacementJSON() );
+			$model->SetManualPlacementStatus( $creatorFrm->GetManualPlacementStatus() );
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {

@@ -64,8 +64,8 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	my $pcbStepTxt = Wx::StaticText->new( $self, -1, "PCB step:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
+	my $pcbStepTxt = Wx::StaticText->new( $self, -1, "PCB step:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition,  [ 10, 23 ], [""], &Wx::wxCB_READONLY );
 
 	my $stepProfileTxt = Wx::StaticText->new( $self, -1, "Profile:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
@@ -92,10 +92,11 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szRow0->Add( $pcbStepTxt,       20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow0->Add( $pcbStepCB,        20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow0->Add( $stepProfileTxt,   20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szRow0->Add( $pcbStepProfileCB, 20, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow0->Add( $pcbStepTxt,       11, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow0->Add( $pcbStepCB,        13, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow0->Add( $stepProfileTxt,   11, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow0->Add( $pcbStepProfileCB, 13, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow0->AddStretchSpacer(50);
 
 	$szColLeft->Add( $multiplicityStatBox,   0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szColLeft->Add( $spacesStatBox,         0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
@@ -128,21 +129,22 @@ sub __SetLayoutMultipl {
 
 	# DEFINE CONTROLS
 
-	my $multiXTxt = Wx::StaticText->new( $statBox, -1, "X", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $multiXValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $multiXTxt = Wx::StaticText->new( $statBox, -1, "X-axis:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $multiXValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
-	my $multiYTxt = Wx::StaticText->new( $statBox, -1, "Y", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $multiYValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $multiYTxt = Wx::StaticText->new( $statBox, -1, "Y-axis:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $multiYValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $multiXValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $multiYValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
-	$szStatBox->Add( $multiXTxt,    1, &Wx::wxEXPAND );
-	$szStatBox->Add( $multiXValTxt, 1, &Wx::wxEXPAND );
-
-	$szStatBox->Add( $multiYTxt,    1, &Wx::wxEXPAND );
-	$szStatBox->Add( $multiYValTxt, 1, &Wx::wxEXPAND );
+	$szStatBox->Add( $multiXTxt,    20, &Wx::wxEXPAND );
+	$szStatBox->Add( $multiXValTxt, 23, &Wx::wxEXPAND );
+	$szStatBox->AddStretchSpacer(6);
+	$szStatBox->Add( $multiYTxt,    20, &Wx::wxEXPAND );
+	$szStatBox->Add( $multiYValTxt, 23, &Wx::wxEXPAND );
+	 
 
 	# save control references
 	$self->{"multiXValTxt"} = $multiXValTxt;
@@ -167,16 +169,16 @@ sub __SetLayoutSpaces {
 	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
-	my $choicesTxt = Wx::StaticText->new( $statBox, -1, "Quick choice:", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $choicesTxt = Wx::StaticText->new( $statBox, -1, "Quick choice:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 	my @choices = ( SPACE0x0, SPACE2x2, SPACE45x45, SPACE10x10 );
 	my $quickSpaceCb =
-	  Wx::ComboBox->new( $statBox, -1, $choices[1], &Wx::wxDefaultPosition, [ 50, 25 ], \@choices, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $statBox, -1, $choices[1], &Wx::wxDefaultPosition, [ 10, 23 ], \@choices, &Wx::wxCB_READONLY );
 
-	my $spaceXTxt = Wx::StaticText->new( $statBox, -1, "Space X:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $spaceValXTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $spaceXTxt = Wx::StaticText->new( $statBox, -1, "Space X:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $spaceValXTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
-	my $spaceYTxt = Wx::StaticText->new( $statBox, -1, "Space Y:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $spaceValYTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $spaceYTxt = Wx::StaticText->new( $statBox, -1, "Space Y:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $spaceValYTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $spaceValXTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -212,23 +214,27 @@ sub __SetLayoutTransformation {
 
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Step transformation' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# Load data, for filling form by values
 
 	# DEFINE CONTROLS
 
-	my $rotationTxt = Wx::StaticText->new( $statBox, -1, "Rotation", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $rotationTxt = Wx::StaticText->new( $statBox, -1, "Rotation:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	my @choices = ( 0, 90, 180, 270 );
 	my $rotationCb =
-	  Wx::ComboBox->new( $statBox, -1, $choices[1], &Wx::wxDefaultPosition, [ 50, 25 ], \@choices, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $statBox, -1, $choices[1], &Wx::wxDefaultPosition, [ 10, 23 ], \@choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $rotationCb, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
-	$szStatBox->Add( $rotationTxt, 0, &Wx::wxEXPAND );
-	$szStatBox->Add( $rotationCb,  0, &Wx::wxEXPAND );
+	$szRow1->Add( $rotationTxt, 50, &Wx::wxEXPAND );
+	$szRow1->Add( $rotationCb,  50, &Wx::wxEXPAND );
+	
+	$szStatBox->Add( $szRow1,  0, &Wx::wxEXPAND );
+	$szStatBox->AddStretchSpacer(1);
 
 	# save control references
 
@@ -243,7 +249,8 @@ sub __SetLayoutManualAdjust {
 
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Manual adjustment' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# Load data, for filling form by values
 
@@ -256,7 +263,9 @@ sub __SetLayoutManualAdjust {
 	$pnlPicker->{"placementEvt"}->Add( sub      { $self->{"manualPlacementEvt"}->Do(@_) } );
 	$pnlPicker->{"clearPlacementEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
-	$szStatBox->Add( $pnlPicker, 0, &Wx::wxEXPAND );
+	$szRow1->Add( $pnlPicker,  1, &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow1,  25, &Wx::wxEXPAND );
+	$szStatBox->AddStretchSpacer(75);
 
 	# save control references
 

@@ -140,14 +140,19 @@ sub ScoreCoreThick {
 
 }
 
-sub RequiredSchema {
+sub RequiredSchemas {
 	my $self = shift;
 
 	if ( !$self->Exist() ) {
 		return undef;
 	}
 
-	return $self->{"notes"}->{"RequiredSchema"};
+	my $schTxt = $self->{"notes"}->{"RequiredSchemas"};
+	$schTxt =~ s/\s//i;
+
+	my @schemas = split(";",$schTxt);
+
+	return @schemas;
 }
 
 # type of plated holes vrtane/vysledne/undef

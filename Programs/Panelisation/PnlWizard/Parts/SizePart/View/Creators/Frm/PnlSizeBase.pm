@@ -72,9 +72,9 @@ sub __Layout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMainWrapper->Add( $szCustom,     0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
-	$szMainWrapper->Add( $sizeStatBox,  0, &Wx::wxEXPAND | &Wx::wxALL, 3 );
-	$szMainWrapper->Add( $frameStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 3 );
+	$szMainWrapper->Add( $szCustom,     0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMainWrapper->Add( $sizeStatBox,  0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMainWrapper->Add( $frameStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	
 	 
 
@@ -148,7 +148,7 @@ sub __SetLayoutFrame {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Border' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Borders' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 	
 	

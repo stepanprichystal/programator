@@ -70,7 +70,7 @@ sub __SetLayout {
 	# BUILD STRUCTURE OF LAYOUT
 
 	$szMain->Add( $cpnsStatBox,      0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szMain->Add( $placementStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $placementStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$self->SetSizer($szMain);
 
@@ -168,9 +168,9 @@ sub __SetLayoutCpns {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szStatBox->Add( $impCpn,   0, &Wx::wxEXPAND );
-	$szStatBox->Add( $IPC3Cpn,  0, &Wx::wxEXPAND );
-	$szStatBox->Add( $zAxisCpn, 0, &Wx::wxEXPAND );
+	$szStatBox->Add( $impCpn,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $IPC3Cpn,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $zAxisCpn, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# save control references
 
@@ -205,7 +205,7 @@ sub __SetLayoutPlacement {
 
 	my $pnlPicker = ManualPlacement->new( $placementManualPage->GetParent(),
 										  $self->{"jobId"}, $self->GetStep(),
-										  "Adjust placement",
+										  "Adjust coupons",
 										  "Adjust coupon placement and press Continue.",
 										  1, "Clear" );
 
@@ -228,6 +228,7 @@ sub __SetLayoutPlacement {
 	$szColLeft->Add( $rbPlacementManual, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szColLeft,         1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $notebook,          1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( 1,50,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 ); # expander 40px heigh of panel picker
 
 	# CONTROL REFERENCES
 	$self->{"notebookPlacement"} = $notebook;

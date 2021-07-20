@@ -22,12 +22,15 @@ use warnings;
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::StepPartModel'   => 'PartModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::StepPartFrm'      => 'PartFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPartCheck' => 'PartCheckClass';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper'                        => "CreatorHelper";
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper' => "PnlCreHelper";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,6 +44,9 @@ sub new {
 	bless $self;
 
 	# PROPERTIES
+
+	my @editSteps =  PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"isCustomerSet"} = scalar(@editSteps) > 1 ? 1 : 0;
 
 	$self->{"model"}      = PartModel->new();         # Data model for view
 	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
@@ -132,14 +138,19 @@ sub __OnManualPlacementHndl {
 
 		# Remove steps
 		if (    $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
-			 || $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG
-			 || $creatorKey eq PnlCreEnums->StepPnlCreator_SET )
+			 || $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG )
 		{
 
 			foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
 				CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} );
 			}
 		}
+
+		
+		$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
+				CamHelper->SetStep( $inCAM, $step );
+ 
+
 
 		# Hide form
 		$self->{"showPnlWizardFrmEvt"}->Do(0);
@@ -271,11 +282,16 @@ sub __SetActiveCreators {
 
 		foreach my $c (@currCreators) {
 
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_MATRIX );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_SET );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_PREVIEW );
+			if ( !$self->{"isCustomerSet"} ) {
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_MATRIX );
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_PREVIEW );
+			}
+			else {
+				# Activate if there is more than one "edit step";
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_SET );
+			}
 
 		}
 
@@ -312,7 +328,12 @@ sub __EnableCreators {
 				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
 				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
 
-				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+				if ( $self->{"isCustomerSet"} ) {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_SET;
+				}
+				else {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+				}
 
 			}
 			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
@@ -321,7 +342,12 @@ sub __EnableCreators {
 				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
 				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
 
-				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+				if ( $self->{"isCustomerSet"} ) {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_SET;
+				}
+				else {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+				}
 
 			}
 			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
@@ -334,15 +360,27 @@ sub __EnableCreators {
 			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
 
 				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
 
-				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+				if ( $self->{"isCustomerSet"} ) {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_SET;
+				}
+				else {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+				}
 			}
 			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
 
 				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
 				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
 
-				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+				if ( $self->{"isCustomerSet"} ) {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_SET;
+				}
+				else {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+				}
 
 			}
 			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {

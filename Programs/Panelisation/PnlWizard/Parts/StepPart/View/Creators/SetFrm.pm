@@ -16,6 +16,9 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetStepList';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper' => "PnlCreHelper";
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::ManualPlacement';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -34,6 +37,7 @@ sub new {
 	$self->__SetLayout();
 
 	# DEFINE EVENTS
+	$self->{"manualPlacementEvt"} = Event->new();
 
 	return $self;
 }
@@ -44,71 +48,109 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-
-	# Add empty item
 
 	# DEFINE CONTROLS
-	my $widthTxt = Wx::StaticText->new( $self, -1, "Width:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $widthValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
+	my $setLayout = $self->__SetLayoutSetSettings($self);
 
-	my $heightTxt = Wx::StaticText->new( $self, -1, "Height:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $heightValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition );
-
-	# DEFINE EVENTS
-	Wx::Event::EVT_TEXT( $widthValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	# EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $widthTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $widthValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow2->Add( $heightTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $heightValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $setLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->AddStretchSpacer(1);
 
 	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
 	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
 
-	$self->{"widthValTxt"}  = $widthValTxt;
-	$self->{"heightValTxt"} = $heightValTxt;
+}
 
+#
+sub __SetLayoutSetSettings {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Multiplicity of steps' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szManual = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# Load data, for filling form by values
+
+	# DEFINE CONTROLS
+	my @editSteps = PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
+	my $stepList = SetStepList->new( $statBox, \@editSteps );
+	my $pnlPicker = ManualPlacement->new( $statBox, $self->{"jobId"}, $self->GetStep(), "Adjust panel", "Adjust panel settings.", 1, "Clear" );
+
+	# EVENTS
+	$stepList->{"stepCountChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	$pnlPicker->{"placementEvt"}->Add( sub       { $self->{"manualPlacementEvt"}->Do(@_) } );
+	$pnlPicker->{"clearPlacementEvt"}->Add( sub  { $self->{"creatorSettingsChangedEvt"}->Do() } );
+
+	# BUILD STRUCTURE OF LAYOUT
+	$szStatBox->Add( $stepList,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->AddSpacer(10);
+	$szManual->Add( $pnlPicker, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szManual->Add( 1,40,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 ); # expander 40px heigh of panel picker
+	$szStatBox->Add( $szManual, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	
+	$szStatBox->AddStretchSpacer(1);
+
+	# SAVE REFERENCES
+
+	$self->{"pnlPicker"} = $pnlPicker;
+	$self->{"stepList"}  = $stepList;
+
+	return $szStatBox;
 }
 
 # =====================================================================
 # SET/GET CONTROLS VALUES
 # =====================================================================
 
-sub SetWidth {
+sub SetStepList {
+	my $self       = shift;
+	my $stepCounts = shift;
+
+	$self->{"stepList"}->SetStepCounts($stepCounts);
+
+}
+
+sub GetStepList {
+	my $self = shift;
+
+	return $self->{"stepList"}->GetStepCounts();
+
+}
+
+sub SetManualPlacementJSON {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"widthValTxt"}->SetValue($val);
+	$self->{"pnlPicker"}->SetManualPlacementJSON($val);
 
 }
 
-sub GetWidth {
+sub GetManualPlacementJSON {
 	my $self = shift;
 
-	return $self->{"widthValTxt"}->GetValue();
+	return $self->{"pnlPicker"}->GetManualPlacementJSON();
 
 }
 
-sub SetHeight {
+sub SetManualPlacementStatus {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"heightValTxt"}->SetValue($val);
-
+	$self->{"pnlPicker"}->SetManualPlacementStatus($val);
 }
 
-sub GetHeight {
+sub GetManualPlacementStatus {
 	my $self = shift;
 
-	return $self->{"heightValTxt"}->GetValue();
-
+	return $self->{"pnlPicker"}->GetManualPlacementStatus();
 }
 
 #-------------------------------------------------------------------------------------------#

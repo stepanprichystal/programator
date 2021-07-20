@@ -38,7 +38,7 @@ sub new {
 	my $jobId   = shift;
 	my $pnlType = shift;
 
-	my @dimension = ( 960, 900 );
+	my @dimension = ( 960, 860 );
 	my $flags     = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
 	my $title     = "Panelisation - $jobId";
 
@@ -347,6 +347,8 @@ sub __SetLayout {
 	my $szMain       = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $headerLayout = $self->__SetLayoutHeader( $self->{"mainFrm"} );
 	my $partLayout   = $self->__SetLayoutParts( $self->{"mainFrm"} );
+	
+	 
 
 	$szMain->Add( $headerLayout, 0, &Wx::wxEXPAND );
 	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
@@ -403,7 +405,7 @@ sub __SetLayoutHeader {
 	my $pnlMain = Wx::Panel->new( $parent, -1 );
 
 	my $pnlSett = Wx::Panel->new( $pnlMain, -1 );
-	my $pnlSepar = Wx::Panel->new( $pnlSett, -1, &Wx::wxDefaultPosition, [ 4, -1 ] );
+	my $pnlSepar = Wx::Panel->new( $pnlSett, -1, &Wx::wxDefaultPosition, [ 2, -1 ] );
 
 	$pnlMain->SetBackgroundColour( AppConf->GetColor("clrMainHeaderBackground"));
 	$pnlSett->SetBackgroundColour( AppConf->GetColor("clrMainHeaderSettBackground") );
@@ -413,7 +415,7 @@ sub __SetLayoutHeader {
 	my $title = AppConf->GetValue("panelTypeTitle");
  
 
-	my $titleTxt = Wx::StaticText->new( $pnlMain, -1, $title, &Wx::wxDefaultPosition, [ 260, -1 ] );
+	my $titleTxt = Wx::StaticText->new( $pnlMain, -1, $title, &Wx::wxDefaultPosition, [ 238, -1 ] );
 	$titleTxt->SetForegroundColour(  AppConf->GetColor("clrTitleText") );
 	my $f = Wx::Font->new( 14, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 	$titleTxt->SetFont($f);
@@ -421,8 +423,8 @@ sub __SetLayoutHeader {
 	my $stepTxt = Wx::StaticText->new( $pnlSett, -1, "Step name:", &Wx::wxDefaultPosition, [ 70, 24 ] );
 	my $stepValTxt = Wx::TextCtrl->new( $pnlSett, -1, "mpanel", &Wx::wxDefaultPosition );
 
-	my $flattenTxt = Wx::StaticText->new( $pnlSett, -1, "Flatten:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $flattenChb = Wx::CheckBox->new( $pnlSett, -1, "", &Wx::wxDefaultPosition, [ -1, 24 ] );
+	my $flattenTxt = Wx::StaticText->new( $pnlSett, -1, "Flatten:", &Wx::wxDefaultPosition, [ 70, 24 ] );
+	my $flattenChb = Wx::CheckBox->new( $pnlSett, -1, "", &Wx::wxDefaultPosition, [ 70, 24 ] );
 	if ( $self->{"pnlType"} ne PnlCreEnums->PnlType_CUSTOMERPNL ) {
 
 		$flattenTxt->Hide();
@@ -430,14 +432,14 @@ sub __SetLayoutHeader {
 	}
 
 	#my $previewTxt = Wx::StaticText->new( $pnlSett, -1, "Preview:", &Wx::wxDefaultPosition, [ 70, 22 ] );
-	my $dockWindowsBtn = Wx::Button->new( $pnlSett, -1, "Dock windows", &Wx::wxDefaultPosition, [ -1, 24 ] );
-	my $previewChb = Wx::CheckBox->new( $pnlSett, -1, "Preview", &Wx::wxDefaultPosition, [ -1, 24 ] );
+	my $dockWindowsBtn = Wx::Button->new( $pnlSett, -1, "Dock windows", &Wx::wxDefaultPosition, [ 100, 24 ] );
+	my $previewChb = Wx::CheckBox->new( $pnlSett, -1, "Preview", &Wx::wxDefaultPosition, [ 100, 24 ] );
 
-	my $showSigLBtn = Wx::Button->new( $pnlSett, -1, "Show SIG layers", &Wx::wxDefaultPosition, [ -1, 24 ] );
-	my $showNCLBtn  = Wx::Button->new( $pnlSett, -1, "Show NC layers",  &Wx::wxDefaultPosition, [ -1, 24 ] );
+	my $showSigLBtn = Wx::Button->new( $pnlSett, -1, "Show SIG layers", &Wx::wxDefaultPosition, [ 100, 24 ] );
+	my $showNCLBtn  = Wx::Button->new( $pnlSett, -1, "Show NC layers",  &Wx::wxDefaultPosition, [ 100, 24 ] );
 
-	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [ -1, 24 ] );
-	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [ -1, 24 ] );
+	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [140, 24 ] );
+	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [140, 24 ] );
 
 	# BUILD LAYOUT STRUCTURE
 
@@ -447,7 +449,7 @@ sub __SetLayoutHeader {
 	$szSettCol1Row2->Add( $flattenTxt, 0, &Wx::wxALL, 0 );
 	$szSettCol1Row2->Add( $flattenChb, 0, &Wx::wxALL, 0 );
 
-	$szSettCol1->Add( 10, 10, 1 );
+	 
 	$szSettCol1->Add( $szSettCol1Row1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szSettCol1->Add( $szSettCol1Row2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
@@ -461,12 +463,12 @@ sub __SetLayoutHeader {
 	$szSettCol4->Add( $loadLastBtn,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMainSett->Add( 10, 10, 0, );
-	$szMainSett->Add( $szSettCol1, 0, &Wx::wxLEFT,                 2 );
-	$szMainSett->Add( $pnlSepar,   0, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
-	$szMainSett->Add( $szSettCol2, 0, &Wx::wxLEFT,                 2 );
-	$szMainSett->Add( $szSettCol3, 0, &Wx::wxLEFT,                 2 );
-	$szMainSett->Add( 10, 10, 0, );
-	$szMainSett->Add( $szSettCol4, 0, &Wx::wxLEFT, 2 );
+	$szMainSett->Add( $szSettCol1, 0, &Wx::wxALL,                 2 );
+	$szMainSett->Add( $pnlSepar,   0, &Wx::wxEXPAND | &Wx::wxLEFT| &Wx::wxRIGHT, 4 );
+	$szMainSett->Add( $szSettCol2, 0, &Wx::wxALL,                 2 );
+	$szMainSett->Add( $szSettCol3, 0, &Wx::wxALL,                 2);
+	$szMainSett->AddStretchSpacer(1);
+	$szMainSett->Add( $szSettCol4, 0, &Wx::wxALL, 2 );
 
 	$pnlMain->SetSizer($szMain);
 	$pnlSett->SetSizer($szMainSett);

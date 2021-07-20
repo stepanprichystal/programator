@@ -85,14 +85,19 @@ sub _Init {
 		my $custInfo = HegMethods->GetCustomerInfo($jobId);
 		my $custNote = CustomerNote->new( $custInfo->{"reference_subjektu"} );
 
-		my $custScheme = $custNote->RequiredSchema();
+		my @custSchemes = $custNote->RequiredSchemas();
 
-		if ( defined $custScheme ) {
+		if ( scalar(@custSchemes) ) {
 
 			# Filter schemes by cust scheme
-			my @cust = grep { $_ =~ /^$custScheme/ } @allScheme;
-			push( @stdSchemes, @cust ) if ( scalar(@cust) );
+			my @cust = ();
 
+			foreach my $custScheme (@custSchemes) {
+				my @s = grep { $_ =~ /^$custScheme/ } @allScheme;
+				push( @cust, @s ) if ( scalar(@s) );
+			}
+			
+			push( @stdSchemes, @cust ) if ( scalar(@cust) );
 		}
 
 		# Get special scheme for customers
@@ -327,7 +332,7 @@ sub _Process {
 		CamAttributes->SetLayerAttribute( $inCAM, ".cdr_mirror", ( $side eq "top" ? "no" : "yes" ), $jobId, $step, $layer );
 
 	}
-	
+
 	my $nestedStep = undef;
 	my @childs = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
 

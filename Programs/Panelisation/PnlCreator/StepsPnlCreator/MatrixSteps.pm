@@ -27,7 +27,6 @@ use aliased 'Programs::Panelisation::PnlCreator::Helpers::StepProfile';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -117,72 +116,6 @@ sub Check {
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->GetStep();
 
-	# Check if panel step exist
-	if ( !CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
-		$result = 0;
-		$$errMess .= "Panel step: $step doesn't exist in job.";
-	}
-	else {
-
-		# 1) Check if nested step exists
-		my $nestStep = $self->GetPCBStep();
-		if ( !defined $nestStep || $nestStep eq "" ) {
-			$result = 0;
-			$$errMess .= "Nested step name is not defined\n";
-
-		}
-
-		# Check if nested step exist in job
-		if ( defined $nestStep && $nestStep ne "" ) {
-
-			if ( !CamHelper->StepExists( $inCAM, $jobId, $nestStep ) ) {
-				$result = 0;
-				$$errMess .= "Nested step: $nestStep doesn't exist in job.\n";
-			}
-		}
-
-		my $multiplX = $self->GetStepMultiplX();
-		my $multiplY = $self->GetStepMultiplY();
-		my $spaceX   = $self->GetStepSpaceX();
-		my $spaceY   = $self->GetStepSpaceY();
-		my $rotation = $self->GetStepRotation();
-
-		# Multiplicity
-		if ( !defined $multiplX || $multiplX eq "" || !looks_like_number($multiplX) || $multiplX <= 0 ) {
-			$result = 0;
-			$$errMess .= "Wrong value of step multiplicity X: $multiplX\n";
-		}
-
-		if ( !defined $multiplY || $multiplY eq "" || !looks_like_number($multiplY) || $multiplY <= 0 ) {
-			$result = 0;
-			$$errMess .= "Wrong value of step multiplicity Y: $multiplY\n";
-		}
-
-		# Space X
-
-		if ( !defined $spaceX || $spaceX eq "" || !looks_like_number($spaceX) ) {
-			$result = 0;
-			$$errMess .= "Wrong value of Space X: $spaceX\n";
-		}
-
-		# Space Y
-		if ( !defined $spaceY || $spaceY eq "" || !looks_like_number($spaceY) ) {
-			$result = 0;
-			$$errMess .= "Wrong value of Space Y: $spaceY\n";
-		}
-
-		# Rotation
-		if (    !defined $rotation
-			 || $rotation eq ""
-			 || !looks_like_number($rotation)
-			 || ( $rotation != 0 && $rotation != 90 && $rotation != 180 && $rotation != 270 ) )
-		{
-			$result = 0;
-			$$errMess .= "Wrong value of pcb rotation Y: $rotation\n";
-		}
-
-	}
-
 	if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
 
 		unless ( defined $self->GetManualPlacementJSON() ) {
@@ -192,6 +125,74 @@ sub Check {
 			$$errMess .= "Manual panel step palcement error. Missing JSON panel placement.";
 		}
 
+	}
+	else {
+
+		# Check if panel step exist
+		if ( !CamHelper->StepExists( $inCAM, $jobId, $step ) ) {
+			$result = 0;
+			$$errMess .= "Panel step: $step doesn't exist in job.";
+		}
+		else {
+
+			# 1) Check if nested step exists
+			my $nestStep = $self->GetPCBStep();
+			if ( !defined $nestStep || $nestStep eq "" ) {
+				$result = 0;
+				$$errMess .= "Nested step name is not defined\n";
+
+			}
+
+			# Check if nested step exist in job
+			if ( defined $nestStep && $nestStep ne "" ) {
+
+				if ( !CamHelper->StepExists( $inCAM, $jobId, $nestStep ) ) {
+					$result = 0;
+					$$errMess .= "Nested step: $nestStep doesn't exist in job.\n";
+				}
+			}
+
+			my $multiplX = $self->GetStepMultiplX();
+			my $multiplY = $self->GetStepMultiplY();
+			my $spaceX   = $self->GetStepSpaceX();
+			my $spaceY   = $self->GetStepSpaceY();
+			my $rotation = $self->GetStepRotation();
+
+			# Multiplicity
+			if ( !defined $multiplX || $multiplX eq "" || !looks_like_number($multiplX) || $multiplX <= 0 ) {
+				$result = 0;
+				$$errMess .= "Wrong value of step multiplicity X: $multiplX\n";
+			}
+
+			if ( !defined $multiplY || $multiplY eq "" || !looks_like_number($multiplY) || $multiplY <= 0 ) {
+				$result = 0;
+				$$errMess .= "Wrong value of step multiplicity Y: $multiplY\n";
+			}
+
+			# Space X
+
+			if ( !defined $spaceX || $spaceX eq "" || !looks_like_number($spaceX) ) {
+				$result = 0;
+				$$errMess .= "Wrong value of Space X: $spaceX\n";
+			}
+
+			# Space Y
+			if ( !defined $spaceY || $spaceY eq "" || !looks_like_number($spaceY) ) {
+				$result = 0;
+				$$errMess .= "Wrong value of Space Y: $spaceY\n";
+			}
+
+			# Rotation
+			if (    !defined $rotation
+				 || $rotation eq ""
+				 || !looks_like_number($rotation)
+				 || ( $rotation != 0 && $rotation != 90 && $rotation != 180 && $rotation != 270 ) )
+			{
+				$result = 0;
+				$$errMess .= "Wrong value of pcb rotation Y: $rotation\n";
+			}
+
+		}
 	}
 
 	return $result;
@@ -436,7 +437,6 @@ sub GetStepRotation {
 	return $self->{"settings"}->{"stepRotation"};
 }
 
- 
 sub SetManualPlacementJSON {
 	my $self = shift;
 	my $val  = shift;

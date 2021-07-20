@@ -50,5 +50,8 @@ sub Check {
 	
  
  	# If manual step placement, checj if JSON i set !!!!!!
+ 	
+ 	# kontrola pokud vice schemat, tak jestli je vzbrano spravne- vaorvani vzdy
+ #my @custSchemes = $custNote->RequiredSchemas();
  
 }

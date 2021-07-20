@@ -1192,10 +1192,11 @@ sub __CheckGroupDataExtend {
 	my $usedScheme = undef;
 	unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
 
-		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
+		my @custSchemas = $defaultInfo->GetCustomerNote()->RequiredSchemas();
+		my $custTxt = join("; ", @custSchemas);
 
 		$dataMngr->_AddWarningResult( "Customer schema",
-						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
+						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custTxt\", ale je vloženo schéma: \"$usedScheme\"." );
 	}
 
 	# X) Check production panel schema

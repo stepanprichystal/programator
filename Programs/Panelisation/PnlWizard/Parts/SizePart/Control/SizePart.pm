@@ -20,7 +20,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::SizePartModel'   => 'PartModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm'      => 'PartFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePartCheck' => 'PartCheckClass';
-
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper' => "PnlCreHelper";
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -36,6 +36,9 @@ sub new {
 
 	$self->{"model"}      = PartModel->new();         # Data model for view
 	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
+	
+	my @editSteps =  PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"isCustomerSet"} = scalar(@editSteps) > 1 ? 1 : 0;
 
 	$self->__SetActiveCreators();
 
@@ -158,12 +161,14 @@ sub __SetActiveCreators {
 
 		foreach my $c (@currCreators) {
 
+			
+
 			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_USER );
 			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_HEG );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_MATRIX );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_MATRIX  && !$self->{"isCustomerSet"});
 			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_CLASSUSER );
 			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_CLASSHEG );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_PREVIEW );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_PREVIEW  && !$self->{"isCustomerSet"});;
 
 		}
 

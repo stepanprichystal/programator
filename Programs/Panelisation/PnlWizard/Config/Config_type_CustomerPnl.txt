@@ -1,13 +1,13 @@
 # colors of main form
 
-clrMainFrmBackground =  233, 233, 233 
+clrMainFrmBackground =  240, 240, 240 
 clrMainHeaderBackground =  112, 146, 190  
 clrMainHeaderSettBackground =  233, 233, 233  
 clrMainHeaderSeparator =  200, 200, 200  
 
 clrTitleText =  255, 255, 255  
 
-clrCreatorListBackground =  233,233,233
+clrCreatorListBackground =  225,225,225
 clrCreatorListSelect =  191, 209, 238  
 clrCreatorListUnSelect =  226, 238, 249  
 clrCreatorListDisable =   233, 233, 233  
@@ -17,7 +17,7 @@ clrCreatorViewBackground =  255, 255,255
 clrWrapperBackground =   233, 233, 233  
 clrWrapperHeaderBackground =   51, 52, 74   
 clrWrapperBodyBackground =   255, 255, 255  
-clrWrapperTitle = 187, 187, 196
+clrWrapperTitle = 203, 203, 209
 clrWrapperPreview = 187, 187, 196
 
 # Name of app in title

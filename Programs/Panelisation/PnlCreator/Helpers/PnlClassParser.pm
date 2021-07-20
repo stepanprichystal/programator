@@ -97,19 +97,24 @@ sub __AdjustBorderSpacingName {
 
 	foreach my $border (@borders) {
 
-		my $str = "Border ";
-		$str .= "TB" . sprintf( "%.1f", $border->GetBorderTop() );
-		$str .= " x LR" . sprintf( "%.1f", $border->GetBorderLeft() );
+		my $str = "";
+		$str .=   sprintf( "%.1f", $border->GetBorderLeft() )."+";
+		$str .=   sprintf( "%.1f", $border->GetBorderRight() )."+";
+		$str .=   sprintf( "%.1f", $border->GetBorderTop() )."+";
+		$str .=   sprintf( "%.1f", $border->GetBorderBot() )." ";
+		$str .= "(".$border->GetName().")";
+  
 
 		$border->SetName($str);
 	}
 
 	foreach my $spacing (@spacings) {
 
-		my $str = "Spacing ";
-		$str .= "X" . sprintf( "%.1f", $spacing->GetSpaceX() );
-		$str .= " x Y" . sprintf( "%.1f", $spacing->GetSpaceY() );
-
+		my $str = "";
+		$str .= "X" . sprintf( "%.1f", $spacing->GetSpaceX() )."/";
+		$str .= "Y" . sprintf( "%.1f", $spacing->GetSpaceY() )." ";
+		$str .= "(".$spacing->GetName().")";
+		
 		$spacing->SetName($str);
 	}
 

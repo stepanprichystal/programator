@@ -337,7 +337,7 @@ sub __OnLeaveClickHndl {
 	}
 
 	# Replace cvrlpin steps if exist
-	StepProfile->RemoveCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+	StepProfile->ReplaceCvrlpinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
 
 	# Remove cvrlpisn step
 	StepProfile->RemoveCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cvrlpinSteps"} );

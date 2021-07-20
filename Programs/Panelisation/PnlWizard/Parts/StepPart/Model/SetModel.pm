@@ -14,7 +14,7 @@ use warnings;
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-
+use aliased 'Enums::EnumsGeneral';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -26,8 +26,9 @@ sub new {
 
 	$self->{"modelKey"}    = PnlCreEnums->StepPnlCreator_SET;
 	 
-	$self->{"settings"}->{"w"} = undef;
-	$self->{"settings"}->{"h"} = undef;
+	$self->{"settings"}->{"setStepList"} = []; 
+	$self->{"settings"}->{"manualPlacementJSON"}   = undef;
+	$self->{"settings"}->{"manualPlacementStatus"} = EnumsGeneral->ResultType_NA;
 	 
 
 	return $self;
@@ -40,32 +41,51 @@ sub GetModelKey {
 
 }
 
-sub SetWidth {
+sub SetStepList {
 	my $self = shift;
+	my $val  = shift;
 
-	$self->{"settings"}->{"w"} = shift;
+	$self->{"settings"}->{"setStepList"} = $val;
 
 }
 
-sub GetWidth {
+sub GetStepList {
 	my $self = shift;
 
-	return $self->{"settings"}->{"w"};
+	return $self->{"settings"}->{"setStepList"};
 
 }
 
-sub SetHeight {
+sub SetManualPlacementJSON {
 	my $self = shift;
+	my $val  = shift;
 
-	$self->{"settings"}->{"h"} = shift;
+	$self->{"settings"}->{"manualPlacementJSON"} = $val;
 
 }
 
-sub GetHeight {
+sub GetManualPlacementJSON {
 	my $self = shift;
 
-	return $self->{"settings"}->{"h"};
+	return $self->{"settings"}->{"manualPlacementJSON"};
+
 }
+
+sub SetManualPlacementStatus {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementStatus"} = $val;
+
+}
+
+sub GetManualPlacementStatus {
+	my $self = shift;
+
+	return $self->{"settings"}->{"manualPlacementStatus"};
+
+}
+
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

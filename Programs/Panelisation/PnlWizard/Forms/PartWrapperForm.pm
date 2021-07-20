@@ -55,7 +55,7 @@ sub Init {
 	my $self     = shift;
 	my $partBody = shift;
 
-	$self->{"szBody"}->Add( $partBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$self->{"szBody"}->Add( $partBody, 1, &Wx::wxEXPAND | &Wx::wxALL,0 );
 
 	#	$self->{"groupHeight"} = $groupBody->{"groupHeight"};
 	#
@@ -111,14 +111,14 @@ sub __SetLayout {
 	Wx::InitAllImageHandlers();
 
 	#my $iconPath     = GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . $self->{"partType"} . ".png";
-	my $iconPath     = GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . "table" . ".png";
+	my $iconPath     = GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . $self->{"partType"} . ".png";
 	my $iconBtmp     = Wx::Bitmap->new( $iconPath, &Wx::wxBITMAP_TYPE_PNG );
 	my $iconStatBtmp = Wx::StaticBitmap->new( $pnlHeader, -1, $iconBtmp );
 	my $titleTxt     = Wx::StaticText->new( $pnlHeader, -1, $self->{"title"}, &Wx::wxDefaultPosition );
 	my $f            = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 	$titleTxt->SetFont($f);
 	$titleTxt->SetForegroundColour( AppConf->GetColor("clrWrapperTitle"));
-	my $gauge = Wx::Gauge->new( $pnlHeader, -1, 100, &Wx::wxDefaultPosition, [ 80, 5 ], &Wx::wxGA_HORIZONTAL );
+	my $gauge = Wx::Gauge->new( $pnlHeader, -1, 100, &Wx::wxDefaultPosition, [ 10, 8 ], &Wx::wxGA_HORIZONTAL );
 	$gauge->SetValue(100);
 	$gauge->Pulse();
 	$gauge->Hide();
@@ -126,20 +126,21 @@ sub __SetLayout {
 	my $previewChb = Wx::CheckBox->new( $pnlHeader, -1, "Preview", &Wx::wxDefaultPosition );
 	$previewChb->SetForegroundColour(AppConf->GetColor("clrWrapperPreview") );
 
-	my $errInd = ErrorIndicator->new( $pnlHeader, EnumsGeneral->MessageType_ERROR, 15, undef, $self->{"jobId"} );
+	my $errInd = ErrorIndicator->new( $pnlHeader, EnumsGeneral->MessageType_ERROR, 20, 0, $self->{"jobId"} );
 	$errInd->{"onClick"}->Add( sub { $self->{"errIndClickEvent"}->Do( EnumsGeneral->MessageType_ERROR ) } );
 
 	$szMain->Add( $pnlHeader, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $pnlBody,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szHeader->Add( 80,            0, 0,                                &Wx::wxEXPAND );    # expander
-	$szHeader->Add( $iconStatBtmp, 0, &Wx::wxEXPAND | &Wx::wxALL,       2 );
+	$szHeader->Add( $iconStatBtmp, 0, &Wx::wxEXPAND | &Wx::wxALL,       6 );
 	$szHeader->Add( $titleTxt,     0, &Wx::wxALIGN_CENTER | &Wx::wxALL, 2 );
-	$szHeader->Add( $gauge,        0, &Wx::wxEXPAND | &Wx::wxALL,       2 );
+	$szHeader->Add( $gauge,        0, &Wx::wxEXPAND | &Wx::wxALL,      4 );
 
 	$szHeader->Add( 1,           1, 1,                          &Wx::wxEXPAND );            # expander
-	$szHeader->Add( $previewChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szHeader->Add( $errInd,     0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szHeader->Add( $errInd,     0,   &Wx::wxALL, 0 );
+	$szHeader->Add( $previewChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 10 );
 
 	$pnlHeader->SetSizer($szHeader);
 	$pnlBody->SetSizer($szBody);

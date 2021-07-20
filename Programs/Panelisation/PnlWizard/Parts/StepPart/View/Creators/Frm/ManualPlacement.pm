@@ -94,12 +94,16 @@ sub __SetLayout {
 	#define panels
 
 	# DEFINE CONTROLS
-
+ 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
-	my $btn       = Wx::Button->new( $self, -1, $actionBtnTitle, &Wx::wxDefaultPosition, [ -1, 24 ] );
-	my $btnStorno = Wx::Button->new( $self, -1, $clearBtnTitle,  &Wx::wxDefaultPosition, [ -1, 24 ] );
+	my $btn       = Wx::Button->new( $self, -1, $actionBtnTitle, &Wx::wxDefaultPosition, [ 5, 24 ] );
+	my $btnStorno = Wx::Button->new( $self, -1, $clearBtnTitle,  &Wx::wxDefaultPosition, [ 5, 24 ] );
+	
+	
 	my $indicator = ResultIndicator->new( $self, 20 );
+	
+	$self->SetBackgroundColour( Wx::Colour->new( 255, 220, 0 ) );   
 
 	$btnStorno->Hide() unless ($showClearBtn);
 
@@ -109,9 +113,9 @@ sub __SetLayout {
 	Wx::Event::EVT_BUTTON( $btnStorno, -1, sub { $self->__BtnStornoClick() } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $btn,       0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szMain->Add( $indicator, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szMain->Add( $btnStorno, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szMain->Add( $btn,       55, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $indicator, 15, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $btnStorno, 30, &Wx::wxEXPAND | &Wx::wxALL, 2);
 
 	$self->SetSizer($szMain);
 

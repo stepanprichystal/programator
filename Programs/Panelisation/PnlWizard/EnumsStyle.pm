@@ -4,6 +4,7 @@ package Programs::Panelisation::PnlWizard::EnumsStyle;
 use Wx;
 
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 use constant {
 	BACKGCLR_LIGHTGRAY => Wx::Colour->new( 233, 233, 233 ),
@@ -38,4 +39,51 @@ sub GetPartTitle {
 	return $tit;
 }
 
+sub GetCreatorTitle {
+	my $self = shift;
+	my $creatorKey = shift;
+
+	my $tit = undef;
+
+	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
+		$tit = "User defined";
+	}
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
+		$tit = "HEG defined";
+	
+	}elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
+		$tit = "Grid of steps";
+	}
+	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+		$tit = "User Panel class";
+	}
+		elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+		$tit = "HEG Panel class";
+	}
+		elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+		$tit = "Existing job";
+	}
+			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER ) {
+		$tit = "User Panel class";
+	}
+			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
+		$tit = "HEG Panel class";
+	}
+			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
+		$tit = "Grid of steps";
+	}
+			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_SET ) {
+		$tit = "Customer set";
+	}
+			elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
+		$tit = "Existing job";
+	}			elsif ( $creatorKey eq PnlCreEnums->CpnPnlCreator_SEMIAUTO ) {
+		$tit = "Automatic placement";
+	}			elsif ( $creatorKey eq PnlCreEnums->SchemePnlCreator_LIBRARY ) {
+		$tit = "From library";
+	}
+
+	return $tit;
+}
+	 
 1;

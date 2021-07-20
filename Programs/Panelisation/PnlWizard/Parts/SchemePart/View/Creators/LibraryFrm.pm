@@ -56,7 +56,8 @@ sub __SetLayout {
 
 	my $pnlType = $self->{"pnlType"};
 
-	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szMain  = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szBoxes = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# Add empty item
 
@@ -80,8 +81,11 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $schemeLayout,     1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $innerLayerLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBoxes->Add( $schemeLayout,     1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szBoxes->Add( $innerLayerLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $szBoxes, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->AddStretchSpacer(1);
+
 	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
@@ -96,20 +100,21 @@ sub __SetLayoutSchemeCustPnl {
 
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Schema selection' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szRow1    = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szColLeft = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
 
-	my $rbStdSchema = Wx::RadioButton->new( $statBox, -1, "Customer", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
-	my $rbSpecSchema = Wx::RadioButton->new( $statBox, -1, "Special", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+	my $rbStdSchema = Wx::RadioButton->new( $statBox, -1, "Customer:", &Wx::wxDefaultPosition, [ 10, 23 ], &Wx::wxRB_GROUP );
+	my $rbSpecSchema = Wx::RadioButton->new( $statBox, -1, "Special:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	my $notebook = CustomNotebook->new( $statBox, -1 );
 	my $stdSchemaPage  = $notebook->AddPage( 1, 0 );
 	my $specSchemaPage = $notebook->AddPage( 2, 0 );
 
-	my $stdCB  = Wx::ComboBox->new( $stdSchemaPage->GetParent(),  -1, "", [ -1, -1 ], [ 200, 22 ], [], &Wx::wxCB_READONLY );
-	my $specCB = Wx::ComboBox->new( $specSchemaPage->GetParent(), -1, "", [ -1, -1 ], [ 200, 22 ], [], &Wx::wxCB_READONLY );
+	my $stdCB  = Wx::ComboBox->new( $stdSchemaPage->GetParent(),  -1, "", [ -1, -1 ], [ 10, 23 ], [], &Wx::wxCB_READONLY );
+	my $specCB = Wx::ComboBox->new( $specSchemaPage->GetParent(), -1, "", [ -1, -1 ], [ 10, 23 ], [], &Wx::wxCB_READONLY );
 
 	my $szStdSchema = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	$szStdSchema->Add( $stdCB, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -131,8 +136,11 @@ sub __SetLayoutSchemeCustPnl {
 
 	$szColLeft->Add( $rbStdSchema,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szColLeft->Add( $rbSpecSchema, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $szColLeft,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $notebook,     1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $szColLeft, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $notebook,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->AddStretchSpacer(1);
 
 	# CONTROL REFERENCES
 	$self->{"notebookScheme"} = $notebook;
@@ -152,12 +160,14 @@ sub __SetLayoutSchemeProducPnl {
 
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Schema selection' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxHORIZONTAL );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szRow1    = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szColLeft = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	# DEFINE CONTROLS
 
-	my $schemeTxt = Wx::StaticText->new( $statBox, -1, "Scheme", &Wx::wxDefaultPosition );
-	my $schemeCB = Wx::ComboBox->new( $statBox, -1, "", [ -1, -1 ], [ 200, 22 ], [], &Wx::wxCB_READONLY );
+	my $schemeTxt = Wx::StaticText->new( $statBox, -1, "Panel scheme:", &Wx::wxDefaultPosition );
+	my $schemeCB = Wx::ComboBox->new( $statBox, -1, "", [ -1, -1 ], [ 10, 23 ], [], &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 
@@ -165,8 +175,10 @@ sub __SetLayoutSchemeProducPnl {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szStatBox->Add( $schemeTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $schemeCB,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $schemeTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $schemeCB,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->AddStretchSpacer(1);
 
 	# CONTROL REFERENCES
 
@@ -185,7 +197,7 @@ sub __SetLayoutSpecialSett {
 	my $jobId = $self->{"jobId"};
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Schema special settings' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Special schema settings' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	# 1) Inner layer special fill
@@ -210,7 +222,7 @@ sub __SetLayoutSpecialSett {
 			$lInf{"name"}    = $layer;
 			$lInf{"cuThick"} = $cuLayer->GetThick();
 			$lInf{"cuThick"} .= " + " . StackEnums->Plating_STD if ( $IProduct->GetIsPlated() );
-			$lInf{"cuUsage"} = int($cuLayer->GetUssage()*100). "%";
+			$lInf{"cuUsage"} = int( $cuLayer->GetUssage() * 100 ) . "%";
 
 			push( @layersInfo, \%lInf );
 
@@ -228,6 +240,11 @@ sub __SetLayoutSpecialSett {
 
 		$self->{"innerLayerList"} = $layerList;
 
+	}else{
+		
+		 
+		
+	$szStatBox->AddStretchSpacer(1);
 	}
 
 	return $szStatBox;

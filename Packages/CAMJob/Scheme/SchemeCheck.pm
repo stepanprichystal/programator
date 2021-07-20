@@ -9,6 +9,7 @@ use utf8;
 use strict;
 use warnings;
 use List::MoreUtils qw(uniq);
+use List::Util qw(first);
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -33,15 +34,17 @@ sub CustPanelSchemeOk {
 
 	my $result = 1;
 
-	my $scheme = $custInfo->RequiredSchema();
-	my $exist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
+	my @schemes = $custInfo->RequiredSchemas();
+	my $mpanelExist = CamHelper->StepExists( $inCAM, $jobId, "mpanel" );
 
 	# check if exist mpanel and check schema
-	if ( defined $scheme && $exist ) {
+	if ( defined scalar(@schemes) && $mpanelExist ) {
 
 		$$usedSchema = CamAttributes->GetStepAttrByName( $inCAM, $jobId, "mpanel", "cust_panelization_scheme" );
 
-		unless ( $$usedSchema =~ /$scheme/i ) {
+		my $exist = first { $$usedSchema =~ /^$_/ } @schemes;
+
+		unless ($exist) {
 
 			$result = 0;
 		}

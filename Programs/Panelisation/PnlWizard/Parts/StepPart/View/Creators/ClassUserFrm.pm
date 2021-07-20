@@ -43,7 +43,8 @@ sub __SetLayout {
 	my $self = shift;
 
 	# DEFINE CONTROLS
-
+	 
+ 
 	# DEFINE EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
