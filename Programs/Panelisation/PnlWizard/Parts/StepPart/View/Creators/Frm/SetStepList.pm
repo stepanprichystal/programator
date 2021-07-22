@@ -39,8 +39,8 @@ sub new {
 	my $columnWidths = \@widths;
 	my $verticalLine = 1;
 
-	my $self = $class->SUPER::new( $parent, Enums->Mode_CHECKBOXLESS, $columnCnt, $columnWidths, $verticalLine );
-
+	my $self = $class->SUPER::new( $parent, Enums->Mode_CHECKBOXLESS, $columnCnt, $columnWidths, $verticalLine, 1, 1 );
+ 
 	bless($self);
 
 	$self->{"titles"} = \@titles;

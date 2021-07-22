@@ -96,7 +96,7 @@ sub _Init {
 				my @s = grep { $_ =~ /^$custScheme/ } @allScheme;
 				push( @cust, @s ) if ( scalar(@s) );
 			}
-			
+
 			push( @stdSchemes, @cust ) if ( scalar(@cust) );
 		}
 
@@ -129,13 +129,29 @@ sub _Init {
 
 		# Get standard schemes - customers
 
-		my $matKind = HegMethods->GetMaterialKind($jobId);
-		my $isFlex  = JobHelper->GetIsFlex($jobId);
+		my $matKind      = HegMethods->GetMaterialKind($jobId);
+		my $isSemiHybrid = 0;
+		my $isHybrid     = JobHelper->GetIsHybridMat( $jobId, $matKind, [], \$isSemiHybrid );
+		my $isFlex = JobHelper->GetIsFlex($jobId);
 
 		my $pcbLayerCntStr = $layerCnt > 2 ? "vv" : "2v";
 		my $pcbMatTypeStr = undef;
 
-		if ( $matKind =~ /^HYBRID$/ ) {
+		
+		if ($isSemiHybrid) {
+
+			# Exception 1 -  if multilayer + coverlay, return hybrid
+			if ( $layerCnt > 2 ) {
+
+				$pcbMatTypeStr = "hybrid";
+			}
+			# Exception 2 -  if doublesided layer + coverlay, return flex
+			if ( $layerCnt <= 2 ) {
+
+				$pcbMatTypeStr = "flex";
+			}
+
+		}elsif ($isHybrid) {
 
 			$pcbMatTypeStr = "hybrid";
 
@@ -150,7 +166,7 @@ sub _Init {
 			$pcbMatTypeStr = "rigid";
 		}
 
-		my $schemeStr = "${pcbLayerCntStr}_${pcbMatTypeStr}";
+		my $schemeStr = "${pcbMatTypeStr}_${pcbLayerCntStr}";
 		my @std = grep { $_ =~ /^$schemeStr/ } @allScheme;
 		push( @stdSchemes, @std ) if ( scalar(@std) );
 

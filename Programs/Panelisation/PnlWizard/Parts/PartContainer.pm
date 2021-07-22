@@ -309,6 +309,18 @@ sub ClearErrors {
 
 }
 
+sub HideLoading {
+	my $self = shift;
+
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		$part->HideLoading();
+	}
+
+}
+
+
+
 # Update step in parts/creators models if changed in main form
 sub UpdateStep {
 	my $self = shift;

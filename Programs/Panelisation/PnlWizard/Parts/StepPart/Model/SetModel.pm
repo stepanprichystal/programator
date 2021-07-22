@@ -27,6 +27,7 @@ sub new {
 	$self->{"modelKey"}    = PnlCreEnums->StepPnlCreator_SET;
 	 
 	$self->{"settings"}->{"setStepList"} = []; 
+	$self->{"settings"}->{"setMultiplicity"}           = 0;
 	$self->{"settings"}->{"manualPlacementJSON"}   = undef;
 	$self->{"settings"}->{"manualPlacementStatus"} = EnumsGeneral->ResultType_NA;
 	 
@@ -53,6 +54,21 @@ sub GetStepList {
 	my $self = shift;
 
 	return $self->{"settings"}->{"setStepList"};
+
+}
+
+sub SetSetMultiplicity {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"setMultiplicity"} = $val;
+
+}
+
+sub GetSetMultiplicity {
+	my $self = shift;
+
+	return $self->{"settings"}->{"setMultiplicity"};
 
 }
 

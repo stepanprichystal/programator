@@ -666,6 +666,8 @@ sub __OnBackgroundTaskDieHndl {
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 
 	$self->{"partContainer"}->ClearErrors();
+	$self->{"partContainer"}->HideLoading();
+
 	$self->{"form"}->SetAsyncTaskRunningLayout( 0, $self->{"partContainer"}->GetPreview() );
 
 }

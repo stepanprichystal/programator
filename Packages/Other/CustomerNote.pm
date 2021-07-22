@@ -144,7 +144,7 @@ sub RequiredSchemas {
 	my $self = shift;
 
 	if ( !$self->Exist() ) {
-		return undef;
+		return ();
 	}
 
 	my $schTxt = $self->{"notes"}->{"RequiredSchemas"};

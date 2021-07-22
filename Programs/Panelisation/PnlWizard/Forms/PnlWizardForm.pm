@@ -360,7 +360,7 @@ sub __SetLayout {
 
 	my $btnLeave     = $self->AddButton( "Leave as it is", sub { $self->{"leaveClickEvt"}->Do() } );
 	my $btnShowInCAM = $self->AddButton( "Show in editor", sub { $self->{"showInCAMClickEvt"}->Do() } );
-	my $btnCreate    = $self->AddButton( "Create",         sub { $self->{"createClickEvt"}->Do() } );
+	my $btnCreate    = $self->AddButton( "Check & Create",         sub { $self->{"createClickEvt"}->Do() } );
 
 	$btnLeave->Disable();
 	$btnShowInCAM->Disable();

@@ -189,6 +189,7 @@ sub SetCreators {
 			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
 
 				$creatorFrm->SetStepList( $model->GetStepList() );
+				$creatorFrm->SetSetMultiplicity( $model->GetSetMultiplicity() );
 				$creatorFrm->SetManualPlacementJSON( $model->GetManualPlacementJSON() );
 				$creatorFrm->SetManualPlacementStatus( $model->GetManualPlacementStatus() );
 
@@ -278,6 +279,7 @@ sub GetCreators {
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
 
 			$model->SetStepList( $creatorFrm->GetStepList() );
+			$model->SetSetMultiplicity( $creatorFrm->GetSetMultiplicity() );
 			$model->SetManualPlacementJSON( $creatorFrm->GetManualPlacementJSON() );
 			$model->SetManualPlacementStatus( $creatorFrm->GetManualPlacementStatus() );
 

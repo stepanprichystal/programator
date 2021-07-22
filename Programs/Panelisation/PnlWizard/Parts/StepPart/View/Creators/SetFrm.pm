@@ -75,6 +75,7 @@ sub __SetLayoutSetSettings {
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Multiplicity of steps' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szManual = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# Load data, for filling form by values
@@ -82,15 +83,26 @@ sub __SetLayoutSetSettings {
 	# DEFINE CONTROLS
 	my @editSteps = PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
 	my $stepList = SetStepList->new( $statBox, \@editSteps );
+	my $setMultiplicityTxt = Wx::StaticText->new($statBox, -1, "Set multiplicity:", [ -1, -1 ], [ 10, 23] );
+	my $setMultiplicityValTxt = Wx::TextCtrl->new($statBox, -1, "", [ -1, -1 ], [ 10, 23] );
 	my $pnlPicker = ManualPlacement->new( $statBox, $self->{"jobId"}, $self->GetStep(), "Adjust panel", "Adjust panel settings.", 1, "Clear" );
 
 	# EVENTS
 	$stepList->{"stepCountChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	
+		Wx::Event::EVT_TEXT( $setMultiplicityValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	$pnlPicker->{"placementEvt"}->Add( sub       { $self->{"manualPlacementEvt"}->Do(@_) } );
 	$pnlPicker->{"clearPlacementEvt"}->Add( sub  { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
+	
+	$szRow1->Add( $setMultiplicityTxt,  49, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $setMultiplicityValTxt,  47, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->AddStretchSpacer(4);
+	
 	$szStatBox->Add( $stepList,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->AddSpacer(10);
+	$szStatBox->Add( $szRow1,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->AddSpacer(10);
 	$szManual->Add( $pnlPicker, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szManual->Add( 1,40,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 ); # expander 40px heigh of panel picker
@@ -102,6 +114,8 @@ sub __SetLayoutSetSettings {
 
 	$self->{"pnlPicker"} = $pnlPicker;
 	$self->{"stepList"}  = $stepList;
+	$self->{"setMultiplicityValTxt"}  = $setMultiplicityValTxt;
+	
 
 	return $szStatBox;
 }
@@ -122,6 +136,29 @@ sub GetStepList {
 	my $self = shift;
 
 	return $self->{"stepList"}->GetStepCounts();
+
+}
+
+sub SetSetMultiplicity {
+	my $self = shift;
+	my $val = shift;
+
+	$self->{"setMultiplicityValTxt"}->SetValue($val);
+
+}
+
+sub GetSetMultiplicity {
+	my $self = shift;
+
+	return  $self->{"setMultiplicityValTxt"}->GetValue();
+
+}
+
+sub SetManualPlacementJSON {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"manualPlacementJSON"} = $val;
 
 }
 

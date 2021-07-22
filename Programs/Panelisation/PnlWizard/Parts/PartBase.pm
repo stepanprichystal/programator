@@ -177,7 +177,15 @@ sub ClearErrors {
 
 	$self->{"processErrMess"} = undef;
 	$self->{"partWrapper"}->SetErrIndicator(0);
+	
 }
+
+sub HideLoading{
+	my $self = shift;
+	
+	$self->{"partWrapper"}->ShowLoading(undef, 1);
+}
+
 
 # Return class for asynchronous checking
 sub GetCheckClass {

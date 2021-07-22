@@ -26,6 +26,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -40,6 +41,7 @@ sub new {
 	bless $self;
 
 	$self->{"settings"}->{"setStepList"}           = [];
+	$self->{"settings"}->{"setMultiplicity"}       = 0;
 	$self->{"settings"}->{"manualPlacementJSON"}   = undef;
 	$self->{"settings"}->{"manualPlacementStatus"} = EnumsGeneral->ResultType_NA;
 
@@ -136,6 +138,31 @@ sub Check {
 
 	}
 
+	# Step multiplicity must be greater than 0
+	my $multipl = $self->GetSetMultiplicity();
+
+	if ( !defined $multipl || $multipl eq "" || !looks_like_number($multipl) || $multipl <= 0 ) {
+		$result = 0;
+		$$errMess .= "Set multicity must be > 0";
+
+	}
+
+	if ( $multipl > 0 ) {
+		foreach my $step ( @{ $self->GetStepList() } ) {
+
+			if ( $step->{"stepCount"} % $multipl != 0 ) {
+
+				$result = 0;
+				$$errMess .=
+				    "Set multiplicity (${multipl}) is wrong. Unable to devide \"Step count: "
+				  . $step->{"stepCount"}
+				  . "\" by \"Set multiplicity: $multipl\" for step: "
+				  . $step->{"stepName"} . "\n";
+			}
+
+		}
+	}
+
 	return $result;
 
 }
@@ -198,6 +225,11 @@ sub Process {
 
 	}
 
+	# Store set attributes
+
+	CamJob->SetJobAttribute( $inCAM, 'cust_set_multipl', $self->GetSetMultiplicity(), $jobId );
+	CamJob->SetJobAttribute( $inCAM, 'customer_set', 'yes', $jobId );
+
 	return $result;
 }
 
@@ -217,6 +249,21 @@ sub GetStepList {
 	my $self = shift;
 
 	return $self->{"settings"}->{"setStepList"};
+
+}
+
+sub SetSetMultiplicity {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"setMultiplicity"} = $val;
+
+}
+
+sub GetSetMultiplicity {
+	my $self = shift;
+
+	return $self->{"settings"}->{"setMultiplicity"};
 
 }
 

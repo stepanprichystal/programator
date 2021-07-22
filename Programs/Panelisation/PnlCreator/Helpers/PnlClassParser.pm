@@ -43,8 +43,12 @@ sub new {
 	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"matKind"}  = HegMethods->GetMaterialKind( $self->{"jobId"} );
 	$self->{"isFlex"}   = JobHelper->GetIsFlex( $self->{"jobId"} );
-	$self->{"surface"}  = HegMethods->GetPcbSurface( $self->{"jobId"} );
-	$self->{"zlaceni"}  = CamGoldArea->GoldFingersExist( $self->{"inCAM"}, $self->{"jobId"}, "o+1", undef, ".gold_plating" );
+
+	$self->{"isSemiHybrid"} = 0;
+	$self->{"isHybrid"} = JobHelper->GetIsHybridMat( $self->{"jobId"}, $self->{"matKind"}, [], \$self->{"isSemiHybrid"} );
+
+	$self->{"surface"} = HegMethods->GetPcbSurface( $self->{"jobId"} );
+	$self->{"zlaceni"} = CamGoldArea->GoldFingersExist( $self->{"inCAM"}, $self->{"jobId"}, "o+1", undef, ".gold_plating" );
 
 	# Filter classes by panel type + PCB type
 	$self->{"customerPnlClasses"}   = [];
@@ -98,12 +102,11 @@ sub __AdjustBorderSpacingName {
 	foreach my $border (@borders) {
 
 		my $str = "";
-		$str .=   sprintf( "%.1f", $border->GetBorderLeft() )."+";
-		$str .=   sprintf( "%.1f", $border->GetBorderRight() )."+";
-		$str .=   sprintf( "%.1f", $border->GetBorderTop() )."+";
-		$str .=   sprintf( "%.1f", $border->GetBorderBot() )." ";
-		$str .= "(".$border->GetName().")";
-  
+		$str .= sprintf( "%.1f", $border->GetBorderLeft() ) . "+";
+		$str .= sprintf( "%.1f", $border->GetBorderRight() ) . "+";
+		$str .= sprintf( "%.1f", $border->GetBorderTop() ) . "+";
+		$str .= sprintf( "%.1f", $border->GetBorderBot() ) . " ";
+		$str .= "(" . $border->GetName() . ")";
 
 		$border->SetName($str);
 	}
@@ -111,10 +114,10 @@ sub __AdjustBorderSpacingName {
 	foreach my $spacing (@spacings) {
 
 		my $str = "";
-		$str .= "X" . sprintf( "%.1f", $spacing->GetSpaceX() )."/";
-		$str .= "Y" . sprintf( "%.1f", $spacing->GetSpaceY() )." ";
-		$str .= "(".$spacing->GetName().")";
-		
+		$str .= "X" . sprintf( "%.1f", $spacing->GetSpaceX() ) . "/";
+		$str .= "Y" . sprintf( "%.1f", $spacing->GetSpaceY() ) . " ";
+		$str .= "(" . $spacing->GetName() . ")";
+
 		$spacing->SetName($str);
 	}
 
@@ -230,7 +233,7 @@ sub __AdjustProductionClasses {
 	my $className = join( "_", ( $matType, $numType ) );
 
 	# 1) Filter classes
-	@classes = grep { $_->GetName() =~ /^$className$/i } @{ $self->{"classes"} };
+	@classes = grep { $_->GetName() =~ /^$className$/i } @classes;
 
 	# 2) Filter border + spacings in each class size
 
@@ -337,12 +340,27 @@ sub __GetPCBMaterialType {
 
 	}
 	else {
+		if ( $self->{"isSemiHybrid"} ) {
 
-		if ( $self->{"matKind"} =~ /^HYBRID$/ ) {
+			# Exception 1 -  if multilayer + coverlay, return hybrid
+			if ( $self->{"layerCnt"} > 2 ) {
+
+				$type = Enums->PCBMaterialType_HYBRID;
+			}
+
+			# Exception 2 -  if doublesided layer + coverlay, return flex
+			if ( $self->{"layerCnt"} <= 2 ) {
+
+				$type = Enums->PCBMaterialType_FLEX;
+			}
+
+		}
+		elsif ( $self->{"isHybrid"} ) {
 
 			$type = Enums->PCBMaterialType_HYBRID;
 
 		}
+
 		elsif ( $self->{"isFlex"} ) {
 
 			$type = Enums->PCBMaterialType_FLEX;

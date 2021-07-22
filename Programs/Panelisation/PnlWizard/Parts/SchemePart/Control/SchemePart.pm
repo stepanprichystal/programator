@@ -12,6 +12,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min first];
 
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
@@ -100,13 +101,60 @@ sub OnOtherPartCreatorSelChangedHndl {
 
 # Handler which catch change of selected creatores settings in other parts
 sub OnOtherPartCreatorSettChangedHndl {
-	my $self       = shift;
-	my $partId     = shift;
-	my $creatorKey = shift;
+	my $self        = shift;
+	my $partId      = shift;
+	my $creatorKey  = shift;
+	my $creatorSett = shift;
 
 	my $currCreatorKey = $self->{"model"}->GetSelectedCreator();
 
 	if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+		# Try to set scheme by pabel border
+		if ( $partId eq Enums->Part_PNLSIZE ) {
+
+			if (
+				   $creatorKey eq PnlCreEnums->SizePnlCreator_USER
+				|| $creatorKey eq PnlCreEnums->SizePnlCreator_HEG
+				|| $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX
+				|| $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER
+				|| $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG
+
+			  )
+			{
+
+				my $TB = $creatorSett->GetBorderTop();
+				my $BB = $creatorSett->GetBorderBot();
+				my $LB = $creatorSett->GetBorderLeft();
+				my $RB = $creatorSett->GetBorderRight();
+
+				my $maxBorder = int(max( $TB, $BB, $LB, $RB ));
+
+				my @schemas = ();
+				my $model   = $self->{"model"}->GetCreatorModelByKey( $self->{"model"}->GetSelectedCreator() );
+
+				if ( $model->GetSchemeType() eq "standard" ) {
+
+					@schemas = @{ $model->GetStdSchemeList() };
+				}
+				elsif ( $model->GetSchemeType() eq "special" ) {
+
+					@schemas = @{ $model->GetSpecSchemeList() };
+
+				}
+
+				# Filter if there is some schema with specific border
+				my $scheme = first { $_ =~ /$maxBorder/ } @schemas;
+
+				if ( defined $scheme ) {
+
+					my $frm = $self->{"form"}->GetCreatorFrm( $self->{"model"}->GetSelectedCreator() );
+					$frm->SetScheme($scheme);
+				}
+
+			}
+
+		}
 
 		if ( $partId eq Enums->Part_PNLSTEPS && $self->GetPreview() ) {
 
