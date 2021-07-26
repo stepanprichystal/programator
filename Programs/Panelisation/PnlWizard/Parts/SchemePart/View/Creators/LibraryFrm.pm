@@ -22,6 +22,7 @@ use aliased 'Helpers::JobHelper';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,7 +42,7 @@ sub new {
 	# PROPERTIES
 
 	$self->{"pnlType"} = $pnlType;
-	$self->{"innerSigL"} = [ CamJob->GetSignalLayerNames( $inCAM, $jobId, 1, 0 ) ];
+	$self->{"sigLayers"} = [ CamJob->GetSignalLayerNames( $inCAM, $jobId ) ];
 
 	$self->__SetLayout();
 
@@ -75,15 +76,15 @@ sub __SetLayout {
 		$schemeLayout = $self->__SetLayoutSchemeProducPnl();
 	}
 
-	my $innerLayerLayout = $self->__SetLayoutSpecialSett();
+	my $specLayerFillLayout = $self->__SetLayoutSpecialSett();
 
 	# DEFINE EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szBoxes->Add( $schemeLayout,     1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szBoxes->Add( $innerLayerLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szMain->Add( $szBoxes, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szBoxes->Add( $schemeLayout,        1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szBoxes->Add( $specLayerFillLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $szBoxes, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->AddStretchSpacer(1);
 
 	$self->SetSizer($szMain);
@@ -202,20 +203,16 @@ sub __SetLayoutSpecialSett {
 
 	# 1) Inner layer special fill
 
-	if ( scalar( @{ $self->{"innerSigL"} } ) ) {
+	# DEFINE CONTROLS
+	 
+	my @layersInfo = ();
 
-		# DEFINE CONTROLS
-
-		my $innLayerTxt = Wx::StaticText->new( $statBox, -1, "Special panel fill", &Wx::wxDefaultPosition );
-
-		my @layersInfo = ();
+	if ( scalar( @{ $self->{"sigLayers"} } ) > 2 ) {
 		my $stackup = Stackup->new( $inCAM, $jobId );
+		foreach my $layer ( @{ $self->{"sigLayers"} } ) {
 
-		foreach my $layer ( @{ $self->{"innerSigL"} } ) {
-
-			my $cuLayer = $stackup->GetCuLayer($layer);
-
-			my %lPars = JobHelper->ParseSignalLayerName($layer);
+			my $cuLayer  = $stackup->GetCuLayer($layer);
+			my %lPars    = JobHelper->ParseSignalLayerName($layer);
 			my $IProduct = $stackup->GetProductByLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
 
 			my %lInf = ();
@@ -227,25 +224,32 @@ sub __SetLayoutSpecialSett {
 			push( @layersInfo, \%lInf );
 
 		}
-
-		my $layerList = LayerSpecFillList->new( $statBox, \@layersInfo );
-
-		$szStatBox->Add( $innLayerTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-		$szStatBox->Add( $layerList,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-		# EVENTS
-		$layerList->{"specialFillChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-
-		# CONTROL REFERENCES
-
-		$self->{"innerLayerList"} = $layerList;
-
-	}else{
-		
-		 
-		
-	$szStatBox->AddStretchSpacer(1);
 	}
+	else {
+
+		my $cu = HegMethods->GetOuterCuThick($jobId);
+		foreach my $layer ( @{ $self->{"sigLayers"} } ) {
+
+			my %lInf = ();
+			$lInf{"name"}    = $layer;
+			$lInf{"cuThick"} = $cu;
+			$lInf{"cuUsage"} = "- %";
+			push( @layersInfo, \%lInf );
+		}
+
+	}
+
+	my $layerList = LayerSpecFillList->new( $statBox, \@layersInfo );
+
+	 
+	$szStatBox->Add( $layerList,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	# EVENTS
+	$layerList->{"specialFillChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+
+	# CONTROL REFERENCES
+
+	$self->{"specLayerFillList"} = $layerList;
 
 	return $szStatBox;
 }
@@ -403,22 +407,22 @@ sub GetScheme {
 
 }
 
-sub SetInnerLayerSpecFill {
+sub SetSignalLayerSpecFill {
 	my $self     = shift;
 	my $specFill = shift;    # hah layer name + spec fill
 
-	if ( scalar( @{ $self->{"innerSigL"} } ) ) {
-		$self->{"innerLayerList"}->SetLayersSpecFill($specFill);
+	if ( scalar( @{ $self->{"sigLayers"} } ) ) {
+		$self->{"specLayerFillList"}->SetLayersSpecFill($specFill);
 
 	}
 
 }
 
-sub GetInnerLayerSpecFill {
+sub GetSignalLayerSpecFill {
 	my $self = shift;
 
-	if ( scalar( @{ $self->{"innerSigL"} } ) ) {
-		return $self->{"innerLayerList"}->GetLayersSpecFill();
+	if ( scalar( @{ $self->{"sigLayers"} } ) ) {
+		return $self->{"specLayerFillList"}->GetLayersSpecFill();
 	}
 
 }

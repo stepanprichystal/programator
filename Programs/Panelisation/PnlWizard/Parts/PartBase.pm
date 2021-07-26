@@ -82,15 +82,10 @@ sub GetModel {
 sub RefreshGUI {
 	my $self = shift;
 
-	$self->{"frmHandlersOff"} = 1;
 	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
 	$self->{"form"}->SetSelectedCreator( $self->{"model"}->GetSelectedCreator() );
 	$self->{"partWrapper"}->SetPreview( $self->{"model"}->GetPreview() );
 
-	$self->{"frmHandlersOff"} = 0;
-
-	# Enable/disable creators by similate click on creator item
-	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $self->{"model"}->GetSelectedCreator() );
 }
 
 # Asynchronously process selected creator for this part
@@ -177,21 +172,35 @@ sub ClearErrors {
 
 	$self->{"processErrMess"} = undef;
 	$self->{"partWrapper"}->SetErrIndicator(0);
-	
+
 }
 
-sub HideLoading{
+sub HideLoading {
 	my $self = shift;
-	
-	$self->{"partWrapper"}->ShowLoading(undef, 1);
-}
 
+	$self->{"partWrapper"}->ShowLoading( undef, 1 );
+}
 
 # Return class for asynchronous checking
 sub GetCheckClass {
 	my $self = shift;
 
 	return $self->{"checkClass"};
+
+}
+
+sub SetFrmHandlersOff {
+	my $self        = shift;
+	my $handlersOff = shift;
+
+	$self->{"frmHandlersOff"} = $handlersOff;
+
+}
+
+sub GetFrmHandlersOff {
+	my $self = shift;
+
+	return $self->{"frmHandlersOff"};
 
 }
 
@@ -276,9 +285,11 @@ sub __OnCreatorInitedHndl {
 
 	$self->{"model"}->GetCreatorModelByKey($creatorKey)->ImportCreatorSettings($JSONSett);
 
-	$self->{"frmHandlersOff"} = 1;
+	my $off = $self->GetFrmHandlersOff();
+
+	$self->SetFrmHandlersOff(1) if ( !$off );
 	$self->{"form"}->SetCreators( $self->{"model"}->GetCreators() );
-	$self->{"frmHandlersOff"} = 0;
+	$self->SetFrmHandlersOff(0) if ( !$off );
 
 	$self->{"isPartFullyInited"} = 1;
 
@@ -367,7 +378,7 @@ sub __OnCreatorSettingsChangedHndl {
 	my $self       = shift;
 	my $creatorKey = shift;
 
-	return 0 if ( $self->{"frmHandlersOff"} );
+	return 0 if ( $self->GetFrmHandlersOff() );
 
 	# Do async process if previeww set
 
@@ -389,7 +400,7 @@ sub __OnCreatorSelectionChangedHndl {
 	my $self       = shift;
 	my $creatorKey = shift;
 
-	return 0 if ( $self->{"frmHandlersOff"} );
+	return 0 if ( $self->GetFrmHandlersOff() );
 
 	# Reise imidiatelly after creator changed
 	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );
@@ -418,7 +429,7 @@ sub __OnCreatorInitRequestHndl {
 	my $creatorKey = shift;
 	my @params     = shift;
 
-	return 0 if ( $self->{"frmHandlersOff"} );
+	return 0 if ( $self->GetFrmHandlersOff() );
 
 	# Built parametres for init creator
 	my $creatorInitPatarams = [ $self->{"model"}->GetCreatorModelByKey($creatorKey)->GetStep() ];

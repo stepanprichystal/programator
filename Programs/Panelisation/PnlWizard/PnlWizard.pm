@@ -266,10 +266,10 @@ sub __OnCreateClickHndl {
 
 	$self->{"popupChecker"}->ClearCheckClasses();
 
-	foreach my $checkClass ( $self->{"partContainer"}->GetPartsCheckClass() ) {
+	foreach my $checkClass ( $self->{"partContainer"}->GetPartsCheckClass( $self->{"pnlType"} ) ) {
 
 		$self->{"popupChecker"}->AddCheckClass( $checkClass->{"checkClassId"},    $checkClass->{"checkClassPackage"},
-												$checkClass->{"checkClassTitle"}, $checkClass->{"checkClassData"} );
+												$checkClass->{"checkClassTitle"}, $checkClass->{"checkClassConstrData"}, $checkClass->{"checkClassCheckData"} );
 
 	}
 
@@ -387,25 +387,9 @@ sub __OnLoadLastClickHndl {
 	# Set parts
 
 	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"}, $restoredModel );
-	$self->{"partContainer"}->RefreshGUI();
+	$self->{"partContainer"}->RefreshGUI(1);
 
-	# Check if there is active preview (go fromlast part)
-	# If so asynchrounos creator processing will be called
-	if ( $self->{"partContainer"}->GetPreview() ) {
-
-		my @parts = $self->{"partContainer"}->GetParts();
-
-		# If so Process parts
-		for ( my $i = scalar(@parts) - 1 ; $i >= 0 ; $i-- ) {
-
-			my $partModel = $restoredModel->GetPartModelById( $parts[$i]->GetPartId() );
-
-			if ( $partModel->GetPreview() ) {
-				$self->{"partContainer"}->SetPreviewOnAllPart( $parts[$i]->GetPartId() );
-				last;
-			}
-		}
-	}
+	$self->{"partContainer"}->SetPreviewOffAllPart();    # Do not load preview
 
 }
 

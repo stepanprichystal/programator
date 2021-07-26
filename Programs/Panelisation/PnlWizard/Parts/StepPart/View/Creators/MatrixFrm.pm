@@ -14,6 +14,7 @@ use Wx;
 
 #local library
 use Widgets::Style;
+use aliased 'Enums::EnumsGeneral';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Packages::Events::Event';
@@ -65,7 +66,7 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	my $pcbStepTxt = Wx::StaticText->new( $self, -1, "PCB step:", &Wx::wxDefaultPosition, [ 10, 23 ] );
-	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition,  [ 10, 23 ], [""], &Wx::wxCB_READONLY );
+	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ], [""], &Wx::wxCB_READONLY );
 
 	my $stepProfileTxt = Wx::StaticText->new( $self, -1, "Profile:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
@@ -144,11 +145,12 @@ sub __SetLayoutMultipl {
 	$szStatBox->AddStretchSpacer(6);
 	$szStatBox->Add( $multiYTxt,    20, &Wx::wxEXPAND );
 	$szStatBox->Add( $multiYValTxt, 23, &Wx::wxEXPAND );
-	 
 
 	# save control references
 	$self->{"multiXValTxt"} = $multiXValTxt;
 	$self->{"multiYValTxt"} = $multiYValTxt;
+
+	$self->{"statBoxMultipl"} = $statBox;
 
 	return $szStatBox;
 }
@@ -204,6 +206,8 @@ sub __SetLayoutSpaces {
 	$self->{"spaceValXTxt"} = $spaceValXTxt;
 	$self->{"spaceValYTxt"} = $spaceValYTxt;
 
+	$self->{"statBoxSpaces"} = $statBox;
+
 	return $szStatBox;
 }
 
@@ -232,13 +236,14 @@ sub __SetLayoutTransformation {
 
 	$szRow1->Add( $rotationTxt, 50, &Wx::wxEXPAND );
 	$szRow1->Add( $rotationCb,  50, &Wx::wxEXPAND );
-	
-	$szStatBox->Add( $szRow1,  0, &Wx::wxEXPAND );
+
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
 	$szStatBox->AddStretchSpacer(1);
 
 	# save control references
 
-	$self->{"rotationCb"} = $rotationCb;
+	$self->{"rotationCb"}            = $rotationCb;
+	$self->{"statBoxTransformation"} = $statBox;
 
 	return $szStatBox;
 }
@@ -260,11 +265,11 @@ sub __SetLayoutManualAdjust {
 
 	# DEFINE EVENTS
 
-	$pnlPicker->{"placementEvt"}->Add( sub      { $self->{"manualPlacementEvt"}->Do(@_) } );
-	$pnlPicker->{"clearPlacementEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	$pnlPicker->{"placementEvt"}->Add( sub      { $self->_EnableSettings(); $self->{"manualPlacementEvt"}->Do(@_) } );
+	$pnlPicker->{"clearPlacementEvt"}->Add( sub { $self->_EnableSettings(); $self->{"creatorSettingsChangedEvt"}->Do() } );
 
-	$szRow1->Add( $pnlPicker,  1, &Wx::wxEXPAND );
-	$szStatBox->Add( $szRow1,  25, &Wx::wxEXPAND );
+	$szRow1->Add( $pnlPicker, 1, &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow1, 25, &Wx::wxEXPAND );
 	$szStatBox->AddStretchSpacer(75);
 
 	# save control references
@@ -317,6 +322,25 @@ sub __OnQuickSpaceChanged {
 
 	}
 
+}
+
+sub _EnableSettings {
+	my $self = shift;
+
+	my $status = $self->{"pnlPicker"}->GetManualPlacementStatus();
+
+	if ( $status eq EnumsGeneral->ResultType_OK ) {
+
+		$self->{"statBoxMultipl"}->Disable();
+		$self->{"statBoxSpaces"}->Disable();
+		$self->{"statBoxTransformation"}->Disable();
+
+	}
+	else {
+		$self->{"statBoxMultipl"}->Enable();
+		$self->{"statBoxSpaces"}->Enable();
+		$self->{"statBoxTransformation"}->Enable();
+	}
 }
 
 sub DisplayCvrlpinLayer {
@@ -484,7 +508,6 @@ sub GetStepRotation {
 	return $self->{"rotationCb"}->GetValue();
 }
 
-
 sub SetManualPlacementJSON {
 	my $self = shift;
 	my $val  = shift;
@@ -505,6 +528,8 @@ sub SetManualPlacementStatus {
 	my $val  = shift;
 
 	$self->{"pnlPicker"}->SetManualPlacementStatus($val);
+
+	$self->_EnableSettings();
 }
 
 sub GetManualPlacementStatus {

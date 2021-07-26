@@ -6,7 +6,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlWizard::Parts::CpnPart::Control::CpnPartCheck;
-use base 'Packages::InCAMHelpers::AppLauncher::PopupChecker::CheckClassBase';
+use base 'Programs::Panelisation::PnlWizard::Parts::PartCheckBase';
 
 use Class::Interface;
 
@@ -17,44 +17,79 @@ use strict;
 use warnings;
 
 #local library
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class   = shift;
-	my $inCAM   = shift;
-	my $jobId   = shift;
-	my $self    = {};
+	my $class = shift;
+	my $self  = {};
 
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
 	# PROPERTIES
 
-	$self->{"inCAM"}   = $inCAM;
-	$self->{"jobId"}   = $jobId;
-	
-
 	return $self;
-
 }
 
 # Do check of creator settings and part settings
 sub Check {
-	my $self  = shift;
-	my $model = shift;
+	my $self      = shift;
+	my $pnlType   = shift;    # Panelisation type
+	my $partModel = shift;    # Part model
 
-	my $inCAM   = $self->{"inCAM"};
-	my $jobId   = $self->{"jobId"};
-	
-	$inCAM->COM("get_user_name");
+	if ( $pnlType eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 
-	for(my $i= 0; $i  < 2; $i++){
-		
-		print STDERR "check";
-		sleep(1);
+		$self->__CheckCustomerPanel($partModel);
+
 	}
-	# If manual step placement, checj if JSON i set !!!!!!
+	elsif ( $pnlType eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+
+		$self->__CheckProductionPanel($partModel);
+	}
+
+	$self->__CheckGeneral($partModel);
+
 }
+
+# Check only customer panel errors
+sub __CheckCustomerPanel {
+	my $self      = shift;
+	my $partModel = shift;                # Part model
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+}
+
+# Check only production panel errors
+sub __CheckProductionPanel {
+	my $self      = shift;
+	my $partModel = shift;                # Part model
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $creator      = $partModel->GetSelectedCreator();
+	my $creatorModel = $partModel->GetCreatorModelByKey($creator);
+
+}
+
+# Check all panels
+sub __CheckGeneral {
+	my $self      = shift;
+	my $partModel = shift;    # Part model
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my $creator      = $partModel->GetSelectedCreator();
+	my $creatorModel = $partModel->GetCreatorModelByKey($creator);
+	
+	
+
+}
+

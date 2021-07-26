@@ -31,7 +31,7 @@ sub new {
 	my $model   = shift;    # model for initial inittialization
 	my $pnlType = shift;
 
-	my $frmHeight = 170; # height of part, constant for all creators
+	my $frmHeight = 193; # height of part, constant for all creators
 	 
 	my $self = $class->SUPER::new( $parent, $frmHeight, $inCAM, $jobId, $model, $pnlType );
 
@@ -102,7 +102,7 @@ sub SetCreators {
 				$creatorFrm->SetSpecSchemeList( $model->GetSpecSchemeList() );
 				$creatorFrm->SetSchemeType( $model->GetSchemeType() );
 				$creatorFrm->SetScheme( $model->GetScheme() );
-				$creatorFrm->SetInnerLayerSpecFill( $model->GetInnerLayerSpecFill() );
+				$creatorFrm->SetSignalLayerSpecFill( $model->GetSignalLayerSpecFill() );
 
 			}
 
@@ -135,7 +135,7 @@ sub GetCreators {
 			$model->SetSpecSchemeList( $creatorFrm->GetSpecSchemeList() );
 			$model->SetSchemeType( $creatorFrm->GetSchemeType() );
 			$model->SetScheme( $creatorFrm->GetScheme() );
-			$model->SetInnerLayerSpecFill( $creatorFrm->GetInnerLayerSpecFill() );
+			$model->SetSignalLayerSpecFill( $creatorFrm->GetSignalLayerSpecFill() );
 
 		}
 

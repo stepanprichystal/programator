@@ -31,7 +31,7 @@ sub new {
 	my @layers = @{ shift(@_) };
 
 	# Specify column widths
-	my @widths = ( 40,           70,             70,         80 );
+	my @widths = ( 40,           70,             70,         115 );
 	my @titles = ( "Layer ", "Cu thickness", "Cu usage", "Special fill" );
 
 	my $columnCnt    = scalar(@widths);

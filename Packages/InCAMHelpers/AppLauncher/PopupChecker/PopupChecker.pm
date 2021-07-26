@@ -94,18 +94,21 @@ sub ClearCheckClasses {
 }
 
 sub AddCheckClass {
-	my $self              = shift;
-	my $checkClassId      = shift;
-	my $checkClassPackage = shift;    # package name, must implement ICheckClass
-	my $checkClassTitle   = shift;    # must be able to be serialiyed to json
-	my $checkClassData    = shift;    # must be able to be serialiyed to json
+	my $self                 = shift;
+	my $checkClassId         = shift;
+	my $checkClassPackage    = shift;    # package name, must implement ICheckClass
+	my $checkClassTitle      = shift;    # must be able to be serialiyed to json
+	my $checkClassConstrData = shift
+	  // [];    # Parameters for check class constructor method. Must be able to be serialiyed to json. Must be array reference
+	my $checkClassCheckData = shift // []; # Parameters for check class Check method. must be able to be serialiyed to json. . Must be array reference
 
 	my %classInfo = ();
 
-	$classInfo{"checkClassId"}      = $checkClassId;              # get full package name
-	$classInfo{"checkClassPackage"} = ref($checkClassPackage);    # get full package name
-	$classInfo{"checkClassTitle"}   = $checkClassTitle;
-	$classInfo{"checkClassData"}    = $checkClassData;
+	$classInfo{"checkClassId"}         = $checkClassId;              # get full package name
+	$classInfo{"checkClassPackage"}    = ref($checkClassPackage);    # get full package name
+	$classInfo{"checkClassTitle"}      = $checkClassTitle;
+	$classInfo{"checkClassConstrData"} = $checkClassConstrData;
+	$classInfo{"checkClassCheckData"}  = $checkClassCheckData;
 
 	push( @{ $self->{"checkClasses"} }, \%classInfo );
 
@@ -113,17 +116,14 @@ sub AddCheckClass {
 
 sub AsyncCheck {
 	my $self = shift;
-	 
 
 	# Reset old values
 
 	$self->{"checkErr"}  = [];
 	$self->{"checkWarn"} = [];
-	
-	
+
 	$self->{"form"}->SetWarnIndicator(0);
 	$self->{"form"}->SetErrIndicator(0);
-	
 
 	$self->{"form"}->SetGaugeProgress(0);
 
@@ -140,14 +140,9 @@ sub AsyncCheck {
 
 	$self->{"backgroundWorkerMngr"}->CheckClasses( $self->{"checkClasses"} );
 
-	 
-		$self->{"form"}->{"mainFrm"}->Show(1);
-	 
-	
-	
+	$self->{"form"}->{"mainFrm"}->Show(1);
 
 }
- 
 
 # ================================================================================
 # PRIVATE WORKER (child thread) METHODS
@@ -241,7 +236,7 @@ sub __SetHandlers {
 	$self->{"form"}->{"forceClickEvt"}->Add( sub  { $self->__OnForceClickHndl(@_) } );
 	$self->{"form"}->{'cancelClickEvt'}->Add( sub { $self->__OnCancelClickHndl(@_) } );
 	$self->{"form"}->{'stopClickEvt'}->Add( sub   { $self->__OnStopClickHndl(@_) } );
-	
+
 	#$self->{"form"}->{"mainFrm"}->{"onClose"}->Add( sub { $self->__OnCancelClickHndl(@_) } );
 
 }
@@ -252,7 +247,7 @@ sub __SetHandlers {
 
 sub __OnStopClickHndl {
 	my $self = shift;
-	$self->{"form"}->SetStatusText("Stoping check", 1);
+	$self->{"form"}->SetStatusText( "Stoping check", 1 );
 
 	$self->{"form"}->EnableStopBtn(0);
 	$self->{"form"}->EnableForceBtn(0);
@@ -277,7 +272,6 @@ sub __OnCancelClickHndl {
 	$self->{"checkResultEvt"}->Do(0);
 
 }
-
 
 # ================================================================================
 # Background worker handlers
@@ -370,22 +364,18 @@ sub __OnCheckStartHndl {
 sub __OnCheckFinishHndl {
 	my $self = shift;
 
-	
-
 	if (    scalar( @{ $self->{"checkWarn"} } ) == 0
 		 && scalar( @{ $self->{"checkErr"} } ) == 0 )
 	{
-		
- 		$self->{"form"}->{"mainFrm"}->Hide();
- 		$self->{"checkResultEvt"}->Do(1);
+
+		$self->{"form"}->{"mainFrm"}->Hide();
+		$self->{"checkResultEvt"}->Do(1);
 	}
- 
+
 	$self->{"form"}->SetStatusText("Done");
 	$self->{"form"}->EnableStopBtn(0);
 	$self->{"form"}->EnableCancelBtn(1);
 	$self->{"form"}->SetGaugeProgress(100);
-	
-	
 
 }
 
@@ -459,6 +449,8 @@ sub __DoEnableForceBtn {
 	my $self = shift;
 
 	my $enable = 1;
+
+
 
 	if ( scalar( @{ $self->{"checkWarn"} } ) && !$self->{"warnViewed"} ) {
 

@@ -123,10 +123,11 @@ sub __TaskBackgroundFunc {
 	# Init all check classes
 	foreach my $classInf (@checkClasses) {
 
-		my $checkClassId      = $classInf->{"checkClassId"};
-		my $checkClassPackage = $classInf->{"checkClassPackage"};
-		my $checkClassTitle   = $classInf->{"checkClassTitle"};
-		my $checkClassData    = $classInf->{"checkClassData"};
+		my $checkClassId              = $classInf->{"checkClassId"};
+		my $checkClassPackage         = $classInf->{"checkClassPackage"};
+		my $checkClassTitle           = $classInf->{"checkClassTitle"};
+		my $checkClassConstrData = $classInf->{"checkClassConstrData"};
+		my $checkClassCheckData       = $classInf->{"checkClassCheckData"};
 
 		# raise start event
 		my %infoStart = ();
@@ -135,13 +136,13 @@ sub __TaskBackgroundFunc {
 		$thrMessageInfoEvt->Do( $taskId, $jsonStorable->Encode( \%infoStart ) );
 
 		# Do checks
-		my $classObj = $checkClassPackage->new( $inCAM, $jobId, $checkClassData );
+		my $classObj = $checkClassPackage->new( $inCAM, $jobId, @{$checkClassConstrData} );
 
 		$classObj->{'onItemResult'}->Add( sub { __OnItemResultHndl( $taskId, $thrMessageInfoEvt, $checkClassId, @_ ) } );
 
 		eval {
 
-			$classObj->Check($checkClassData);
+			$classObj->Check( @{$checkClassCheckData} );
 
 		};
 		if ( my $e = $@ ) {
@@ -258,11 +259,10 @@ sub __OnTaskDieHndl {
 }
 
 sub __OnTaskAbortHndl {
-	my $self    = shift;
-	my $taskId  = shift;
+	my $self   = shift;
+	my $taskId = shift;
 
-
-	$self->{"checkAbortEvt"}->Do( $taskId );
+	$self->{"checkAbortEvt"}->Do($taskId);
 }
 
 sub __OnTaskMessageInfoHndl {

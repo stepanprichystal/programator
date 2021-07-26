@@ -159,10 +159,39 @@ sub InitPartModel {
 
 # Set values from model to all parts View
 sub RefreshGUI {
-	my $self = shift;
+	my $self      = shift;
+	my $eventsOff = shift;
+
+	if ($eventsOff) {
+		foreach my $part ( @{ $self->{"parts"} } ) {
+
+			$part->SetFrmHandlersOff(1);
+		}
+	}
+
+	# 1) Refresh creator form
 	foreach my $part ( @{ $self->{"parts"} } ) {
 
 		$part->RefreshGUI();
+	}
+
+	# 2) Enable disable crators by selected creator and select default creator
+	for ( my $i = 0 ; $i < scalar( @{ $self->{"parts"} } ) ; $i++ ) {
+
+		my $partPrev = $self->{"parts"}->[ $i - 1 ] if ( $i > 0 );
+
+		if ( defined $partPrev ) {
+			$self->{"parts"}->[$i]->EnableCreators( $partPrev->GetPartId(), $partPrev->GetModel(1)->GetSelectedCreator() )
+
+		}
+	}
+	
+	
+	if ($eventsOff) {
+		foreach my $part ( @{ $self->{"parts"} } ) {
+
+			$part->SetFrmHandlersOff(0);
+		}
 	}
 }
 
@@ -279,17 +308,29 @@ sub GetParts {
 # - part title
 # - part data
 sub GetPartsCheckClass {
-	my $self  = shift;
-	my @parts = ();
+	my $self    = shift;
+	my $pnlType = shift;
+	my @parts   = ();
+
+	# all selected creator models per pert Id for checking before crate panel
+	my %allCreatorModel = ();
+	foreach my $part ( @{ $self->{"parts"} } ) {
+
+		my $selCreator      = $part->GetModel(1)->GetSelectedCreator();
+		my $selCreatorModel = $part->GetModel(1)->GetCreatorModelByKey($selCreator);
+
+		$allCreatorModel{ $part->GetPartId() } = $selCreatorModel;
+	}
 
 	foreach my $part ( @{ $self->{"parts"} } ) {
 
 		my %inf = ();
 
-		$inf{"checkClassId"}      = $part->GetPartId();
-		$inf{"checkClassPackage"} = $part->GetCheckClass();
-		$inf{"checkClassTitle"}   = EnumsStyle->GetPartTitle( $part->GetPartId() );
-		$inf{"checkClassData"}    = $part->GetModel();
+		$inf{"checkClassId"}             = $part->GetPartId();
+		$inf{"checkClassPackage"}        = $part->GetCheckClass();
+		$inf{"checkClassTitle"}          = EnumsStyle->GetPartTitle( $part->GetPartId() );
+		$inf{"checkClasConstructorData"} = [ \%allCreatorModel ];
+		$inf{"checkClassCheckData"}      = [ $pnlType, $part->GetModel(), ];
 
 		push( @parts, \%inf );
 	}
@@ -318,8 +359,6 @@ sub HideLoading {
 	}
 
 }
-
-
 
 # Update step in parts/creators models if changed in main form
 sub UpdateStep {

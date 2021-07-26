@@ -42,13 +42,13 @@ sub new {
 	bless $self;
 
 	# Setting values
-	$self->{"settings"}->{"stdSchemeList"}      = [];
-	$self->{"settings"}->{"specSchemeList"}     = [];
-	$self->{"settings"}->{"schemeType"}         = undef;
-	$self->{"settings"}->{"scheme"}             = undef;    # standard/special
-	$self->{"settings"}->{"innerLayerSpecFill"} = {};
+	$self->{"settings"}->{"stdSchemeList"}       = [];
+	$self->{"settings"}->{"specSchemeList"}      = [];
+	$self->{"settings"}->{"schemeType"}          = undef;
+	$self->{"settings"}->{"scheme"}              = undef;    # standard/special
+	$self->{"settings"}->{"signalLayerSpecFill"} = {};
 
-	return $self;                                           #
+	return $self;                                            #
 }
 
 #-------------------------------------------------------------------------------------------#
@@ -132,12 +132,11 @@ sub _Init {
 		my $matKind      = HegMethods->GetMaterialKind($jobId);
 		my $isSemiHybrid = 0;
 		my $isHybrid     = JobHelper->GetIsHybridMat( $jobId, $matKind, [], \$isSemiHybrid );
-		my $isFlex = JobHelper->GetIsFlex($jobId);
+		my $isFlex       = JobHelper->GetIsFlex($jobId);
 
 		my $pcbLayerCntStr = $layerCnt > 2 ? "vv" : "2v";
 		my $pcbMatTypeStr = undef;
 
-		
 		if ($isSemiHybrid) {
 
 			# Exception 1 -  if multilayer + coverlay, return hybrid
@@ -145,13 +144,15 @@ sub _Init {
 
 				$pcbMatTypeStr = "hybrid";
 			}
+
 			# Exception 2 -  if doublesided layer + coverlay, return flex
 			if ( $layerCnt <= 2 ) {
 
 				$pcbMatTypeStr = "flex";
 			}
 
-		}elsif ($isHybrid) {
+		}
+		elsif ($isHybrid) {
 
 			$pcbMatTypeStr = "hybrid";
 
@@ -187,9 +188,30 @@ sub _Init {
 
 	# Set inner layer settings
 
-	if ( $layerCnt > 2 ) {
+	my %sigLayerFill = ();
+	my @outer        = CamJob->GetSignalLayerNames( $inCAM, $jobId, 0, 1 );
+	my @inner        = CamJob->GetSignalLayerNames( $inCAM, $jobId, 1, 0 );
 
-		my %innLayerFill = ();
+	# Outer layer
+
+	my @stiff = grep { $_->{"gROWlayer_type"} eq "stiffener" } CamJob->GetBoardBaseLayers( $inCAM, $jobId );
+	foreach my $layer (@outer) {
+
+		my $specAttr = EnumsCAM->AttSpecLayerFill_NONE;    # Default no special pattern
+
+		if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
+
+			if ( defined( first { $_->{"gROWname"} =~ /$layer/ } @stiff ) ) {
+
+				$specAttr = EnumsCAM->AttSpecLayerFill_EMPTY;
+			}
+		}
+
+		$sigLayerFill{$layer} = $specAttr;
+	}
+
+	# Inner layers
+	if ( scalar(@inner) ) {
 
 		# Temporary - if stackup do'nt exist set all layers to non special fill
 		unless ( JobHelper->StackupExist( $self->{"jobId"} ) ) {
@@ -197,7 +219,8 @@ sub _Init {
 			my @inLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId, 1 );
 
 			foreach my $in (@inLayers) {
-				$innLayerFill{$in} = EnumsCAM->AttSpecLayerFill_NONE;
+
+				$sigLayerFill{$in} = EnumsCAM->AttSpecLayerFill_NONE;
 			}
 
 		}
@@ -205,7 +228,8 @@ sub _Init {
 
 			my $stackup = Stackup->new( $inCAM, $jobId );
 
-			my @inner = grep { $_->GetType() eq StackEnums->MaterialType_COPPER && !$_->GetIsFoil() && $_->GetCopperName() =~ /^v\d+/ }
+			my @inner =
+			  grep { $_->GetType() eq StackEnums->MaterialType_COPPER && !$_->GetIsFoil() && $_->GetCopperName() =~ /^v\d+/ }
 			  $stackup->GetAllLayers();
 
 			foreach my $cuLayer (@inner) {
@@ -234,12 +258,12 @@ sub _Init {
 
 				}
 
-				$innLayerFill{ $cuLayer->GetCopperName() } = $specAttr;
+				$sigLayerFill{ $cuLayer->GetCopperName() } = $specAttr;
 			}
 		}
-
-		$self->SetInnerLayerSpecFill( \%innLayerFill );
 	}
+
+	$self->SetSignalLayerSpecFill( \%sigLayerFill );
 
 	return $result;
 
@@ -271,7 +295,7 @@ sub _Check {
 	if ( $layerCnt > 2 ) {
 
 		my @inLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId, 1 );
-		my %specFill = %{ $self->GetInnerLayerSpecFill() };
+		my %specFill = %{ $self->GetSignalLayerSpecFill() };
 
 		foreach my $layerName (@inLayers) {
 
@@ -299,14 +323,11 @@ sub _Process {
 	my $step  = $self->GetStep();
 
 	# 1) Set special inner layer
-	my @inLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId, 1 );
-	if ( scalar(@inLayers) ) {
-		my %specFill = %{ $self->GetInnerLayerSpecFill() };
+	my %specFill = %{ $self->GetSignalLayerSpecFill() };
 
-		foreach my $layerName ( keys %specFill ) {
+	foreach my $layerName ( keys %specFill ) {
 
-			CamAttributes->SetLayerAttribute( $inCAM, "spec_layer_fill", $specFill{$layerName}, $jobId, $step, $layerName );
-		}
+		CamAttributes->SetLayerAttribute( $inCAM, "spec_layer_fill", $specFill{$layerName}, $jobId, $step, $layerName );
 	}
 
 	# 2) Run schema
@@ -315,11 +336,11 @@ sub _Process {
 
 	my @sigLayers = CamJob->GetSignalLayerNames( $inCAM, $jobId );
 
-	my $stackupBase = undef;
+	my $stackup = undef;
 
 	if ( scalar(@sigLayers) > 2 ) {
 
-		$stackupBase = StackupBase->new($jobId);
+		$stackup = Stackup->new( $inCAM, $jobId );
 	}
 
 	foreach my $layer (@sigLayers) {
@@ -334,9 +355,9 @@ sub _Process {
 		}
 		elsif ( $layer =~ /^v\d+$/ ) {
 
-			my $core = $stackupBase->GetCoreByCuLayer($layer);
+			my $IProduct = $stackup->GetProductByLayer( $layer, 0, 0 );
 
-			if ( $layer eq $core->GetTopCopperLayer()->GetCopperName() ) {
+			if ( $layer eq $IProduct->GetTopCopperLayer() ) {
 				$side = "top";
 			}
 			else {
@@ -437,18 +458,18 @@ sub GetScheme {
 
 }
 
-sub SetInnerLayerSpecFill {
+sub SetSignalLayerSpecFill {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"innerLayerSpecFill"} = $val;
+	$self->{"settings"}->{"signalLayerSpecFill"} = $val;
 
 }
 
-sub GetInnerLayerSpecFill {
+sub GetSignalLayerSpecFill {
 	my $self = shift;
 
-	return $self->{"settings"}->{"innerLayerSpecFill"};
+	return $self->{"settings"}->{"signalLayerSpecFill"};
 
 }
 

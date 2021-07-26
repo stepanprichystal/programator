@@ -31,7 +31,7 @@ sub new {
 	$self->{"settings"}->{"specSchemeList"}     = [];
 	$self->{"settings"}->{"schemeType"}         = undef;
 	$self->{"settings"}->{"scheme"}             = undef;    # standard/special
-	$self->{"settings"}->{"innerLayerSpecFill"} = {};
+	$self->{"settings"}->{"signalLayerSpecFill"} = {};
 	 
 
 	return $self;
@@ -106,18 +106,18 @@ sub GetScheme {
 
 }
 
-sub SetInnerLayerSpecFill {
+sub SetSignalLayerSpecFill {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"innerLayerSpecFill"} = $val;
+	$self->{"settings"}->{"signalLayerSpecFill"} = $val;
 
 }
 
-sub GetInnerLayerSpecFill {
+sub GetSignalLayerSpecFill {
 	my $self = shift;
 
-	return $self->{"settings"}->{"innerLayerSpecFill"};
+	return $self->{"settings"}->{"signalLayerSpecFill"};
 
 }
 #-------------------------------------------------------------------------------------------#

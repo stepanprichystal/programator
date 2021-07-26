@@ -138,7 +138,7 @@ sub OnOtherPartCreatorSelChangedHndl {
 	my $partId     = shift;
 	my $creatorKey = shift;
 
-	$self->__EnableCreators( $partId, $creatorKey );
+	$self->EnableCreators( $partId, $creatorKey );
 
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
@@ -229,10 +229,10 @@ sub __SetActiveCreators {
 
 }
 
-sub __EnableCreators {
+sub EnableCreators {
 	my $self       = shift;
-	my $partId     = shift;
-	my $creatorKey = shift;
+	my $partId     = shift; # Previous part
+	my $creatorKey = shift; # Selected creator from previous part
 
 }
 

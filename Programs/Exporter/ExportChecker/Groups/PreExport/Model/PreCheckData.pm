@@ -361,7 +361,7 @@ sub __CheckGroupDataBasic {
 			my $stackKindStr = $defaultInfo->GetStackup()->GetStackupType();
 			$stackKindStr =~ s/[\s\t]//g;
 
-			$stackKindStr =~ s/.*DE104.*/FR4/ig;                                   #exception DE 104 and IS400 eq FR4
+			$stackKindStr =~ s/.*DE104.*/FR4/ig;    #exception DE 104 and IS400 eq FR4
 
 			if ( $stackKindStr =~ /.*IS400.*/i && $stackKindStr =~ /PYRALUX/i ) {
 				$stackKindStr = "FR4";
@@ -1189,26 +1189,42 @@ sub __CheckGroupDataExtend {
 	}
 
 	# 16) If customer has required scheme, check if scheme in mpanel is ok
-	my $usedScheme = undef;
-	unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
+	# check if exist mpanel and check schema
+	if ( $defaultInfo->StepExist("mpanel") ) {
 
-		my @custSchemas = $defaultInfo->GetCustomerNote()->RequiredSchemas();
-		my $custTxt = join("; ", @custSchemas);
+		my $usedScheme = CamAttributes->GetStepAttrByName( $inCAM, $jobId, "mpanel", "cust_panelization_scheme" );
+		die "Schema name is not defined in step: mpanel; attribute: cust_panelization_scheme"
+		  if ( !defined $usedScheme || $usedScheme eq "" );
 
-		$dataMngr->_AddWarningResult( "Customer schema",
-						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custTxt\", ale je vloženo schéma: \"$usedScheme\"." );
+		unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, $usedScheme, $defaultInfo->GetCustomerNote() ) ) {
+
+			my @custSchemas = $defaultInfo->GetCustomerNote()->RequiredSchemas();
+			my $custTxt = join( "; ", @custSchemas );
+
+			$dataMngr->_AddWarningResult( "Customer schema",
+							  "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custTxt\", ale je vloženo schéma: \"$usedScheme\"." );
+		}
 	}
 
 	# X) Check production panel schema
-	my $usedPnlScheme = undef;
-	unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme ) ) {
+	{
+		my $usedPnlScheme = CamAttributes->GetStepAttrByName( $inCAM, $jobId, "panel", ".pnl_scheme" );
+		die "Schema name is not defined in step: panel; attribute: pnl_schema" if ( !defined $usedPnlScheme || $usedPnlScheme eq "" );
+		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
 
-		$dataMngr->_AddErrorResult(
-									"Špatné schéma",
-									"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
-									  . " Vlož do panelu správné schéma"
-		);
+		my $pnlHeight = abs( $lim{"yMax"} - $lim{"yMin"} );
 
+		my $errMess = "";
+		unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, $usedPnlScheme, $pnlHeight, \$errMess ) ) {
+
+			$dataMngr->_AddErrorResult(
+										"Špatné schéma",
+										"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
+										  . " Vlož do panelu správné schéma.".($errMess ne "" ? "Detail chyby:\n$errMess" : "")
+										  
+			);
+
+		}
 	}
 
 	# 10) Check if dimension of panel are ok, depand on finish surface

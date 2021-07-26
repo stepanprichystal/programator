@@ -139,8 +139,9 @@ sub __Layout {
 	# save control references
 	$self->{"pcbStepCB"}        = $pcbStepCB;
 	$self->{"pcbStepProfileCB"} = $pcbStepProfileCB;
+	$self->{"pnlClassCB"}       = $pnlClassCB;
 
-	$self->{"pnlClassCB"} = $pnlClassCB;
+	 
 
 }
 
@@ -250,6 +251,8 @@ sub __SetLayoutPlacement {
 	$self->{"interlockCb"}       = $interlockCb;
 	$self->{"notebookPlacement"} = $notebook;
 
+	$self->{"placementStatBox"} = $statBox;
+
 	return $szStatBox;
 }
 
@@ -321,6 +324,8 @@ sub __SetLayoutSpacing {
 	$self->{"spacingTypeCb"}   = $spacingTypeCb;
 	$self->{"pnlClassSpaceCB"} = $pnlClassSpaceCB;
 
+	$self->{"spacingStatBox"} = $statBox;
+
 	return $szStatBox;
 }
 
@@ -355,8 +360,8 @@ sub __SetLayoutAmount {
 	my $amountMaxPage   = $notebook->AddPage( 2, 0 );
 	my $amountAutoPage  = $notebook->AddPage( 3, 0 );
 
-	my $exactValTxt = Wx::TextCtrl->new( $amountExactPage->GetParent(), -1, "", &Wx::wxDefaultPosition, [10, 23 ] );
-	my $maxValTxt   = Wx::TextCtrl->new( $amountMaxPage->GetParent(),   -1, "", &Wx::wxDefaultPosition, [10, 23 ] );
+	my $exactValTxt = Wx::TextCtrl->new( $amountExactPage->GetParent(), -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $maxValTxt   = Wx::TextCtrl->new( $amountMaxPage->GetParent(),   -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	$amountExactPage->AddContent($exactValTxt);
 	$amountMaxPage->AddContent($maxValTxt);
@@ -369,7 +374,6 @@ sub __SetLayoutAmount {
 	Wx::Event::EVT_RADIOBUTTON( $rbAmountExact, -1, sub { $notebook->ShowPage(1); $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_RADIOBUTTON( $rbAmountMax,   -1, sub { $notebook->ShowPage(2); $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_RADIOBUTTON( $rbAmountAuto,  -1, sub { $notebook->ShowPage(3); $self->{"creatorSettingsChangedEvt"}->Do() } );
-
 
 	Wx::Event::EVT_TEXT( $exactValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $maxValTxt,   -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -406,6 +410,9 @@ sub __SetLayoutAmount {
 
 	$self->{"customLayoutAmountParent"} = $statBox;
 	$self->{"customLayoutSz"}           = $szRow0;
+
+	$self->{"amountStatBox"} = $statBox;
+
 	return $szStatBox;
 }
 
@@ -455,8 +462,10 @@ sub __SetLayoutCreatePnl {
 	$notebook->ShowPage(1);
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_RADIOBUTTON( $rbPlacementAuto,   -1, sub { $notebook->ShowPage(1); $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_RADIOBUTTON( $rbPlacementManual, -1, sub { $notebook->ShowPage(2); $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_RADIOBUTTON( $rbPlacementAuto, -1,
+								sub { $self->_EnableSettings(), $notebook->ShowPage(1); $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_RADIOBUTTON( $rbPlacementManual, -1,
+								sub { $self->_EnableSettings(), $notebook->ShowPage(2); $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	#	Wx::Event::EVT_RADIOBUTTON( $rbPlacementAuto,  -1, sub {  } );
 	#	Wx::Event::EVT_RADIOBUTTON( $rbPlacementManual,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -608,6 +617,24 @@ sub DisplayCvrlpinLayer {
 
 		CamLayer->DisplayLayers( $self->{"inCAM"}, ["cvrlpins"], 0, 0 );
 	}
+}
+
+sub _EnableSettings {
+	my $self = shift;
+
+	if ( $self->{"rbPlacementAuto"}->GetValue() ) {
+
+		$self->{"placementStatBox"}->Enable();
+		$self->{"spacingStatBox"}->Enable();
+		$self->{"amountStatBox"}->Enable();
+
+	}
+	elsif ( $self->{"rbPlacementManual"}->GetValue() ) {
+		$self->{"placementStatBox"}->Disable();
+		$self->{"spacingStatBox"}->Disable();
+		$self->{"amountStatBox"}->Disable();
+	}
+
 }
 
 # =====================================================================
@@ -985,6 +1012,8 @@ sub SetActionType {
 
 		die "Wrong action type: $val";
 	}
+
+	$self->_EnableSettings();
 
 }
 

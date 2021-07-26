@@ -38,7 +38,7 @@ sub new {
 	my $jobId   = shift;
 	my $pnlType = shift;
 
-	my @dimension = ( 960, 860 );
+	my @dimension = ( 960, 880 );
 	my $flags     = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
 	my $title     = "Panelisation - $jobId";
 
@@ -360,7 +360,7 @@ sub __SetLayout {
 
 	my $btnLeave     = $self->AddButton( "Leave as it is", sub { $self->{"leaveClickEvt"}->Do() } );
 	my $btnShowInCAM = $self->AddButton( "Show in editor", sub { $self->{"showInCAMClickEvt"}->Do() } );
-	my $btnCreate    = $self->AddButton( "Check & Create",         sub { $self->{"createClickEvt"}->Do() } );
+	my $btnCreate    = $self->AddButton( "Check + Create",         sub { $self->{"createClickEvt"}->Do() } );
 
 	$btnLeave->Disable();
 	$btnShowInCAM->Disable();
