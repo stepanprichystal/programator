@@ -10,8 +10,8 @@ use constant {
 	Standard_295x355 => "standard_295x355",        # small 1V2V
 	Standard_295x460 => "standard_295x460",        # big 1V2V
 	Standard_297x508 => "standard_297x508",        # big 1V2V 2nd version
-	
-	Standard_305x458   => "standard_305x458",      # Rigid flex
+
+	Standard_305x458 => "standard_305x458",        # Rigid flex / flex
 
 	Standard_230x305 => "standard_230x305",        # small ALU
 	Standard_305x460 => "standard_305x460",        # big ALU
@@ -38,7 +38,7 @@ use constant {
 
 # Pcb types in terms of standard definitions
 use constant {
-	PcbType_FLEXI => "pcbType_FLEXI",    # flexi standards
+
 	PcbType_MULTI => "pcbType_MULTI",    # multilayer standards
 	PcbType_1V2V  => "PcbType_1V2V",     # noncpoppper + single + double
 
@@ -49,6 +49,7 @@ use constant {
 	PcbMat_SPEC   => "PcbMat_SPEC",      # other than below defined materials
 	PcbMat_STDLAM => "PcbMat_STDLAM",    # standard laminate
 	PcbMat_ALU    => "PcbMat_ALU",       # Alu material
+	PcbMat_FLEX  => "PcbMat_FLEX",     # flexi materials
 
 };
 

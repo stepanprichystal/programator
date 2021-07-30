@@ -32,7 +32,7 @@ sub Acquire {
 
 	my $result = 1;
 
-	if ( $jobId !~ /^D\d{6}$/i ) {
+	if ( $jobId !~ /^[DX]\d{6}$/i ) {
 		die "Jobid ($jobId) is invalid.";
 	}
 

@@ -1,17 +1,18 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description:  
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlWizard::Parts::PartCheckBase;
 use base 'Packages::InCAMHelpers::AppLauncher::PopupChecker::CheckClassBase';
 
 #3th party library
+use utf8;
 use strict;
 use warnings;
 
 #local library
-
+ 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -36,6 +37,7 @@ sub new {
 
 }
 
+ 
 sub _GetSelCreatorModelByPartId {
 	my $self   = shift;
 	my $partId = shift;
@@ -43,6 +45,5 @@ sub _GetSelCreatorModelByPartId {
 	return $self->{"allCreatorModel"}->{$partId};
 
 }
-
 
 return 1;

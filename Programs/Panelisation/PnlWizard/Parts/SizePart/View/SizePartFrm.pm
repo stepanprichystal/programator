@@ -7,6 +7,9 @@
 package Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm;
 use base qw(Programs::Panelisation::PnlWizard::Forms::CreactorSelectorFrm);
 
+use Class::Interface;
+&implements('Programs::Panelisation::PnlWizard::Parts::IPartForm');
+
 #3th party library
 use strict;
 use warnings;
@@ -29,14 +32,14 @@ use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::Creators:
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class  = shift;
-	my $parent = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
-	my $model  = shift;    # model for initial inittialization
+	my $class   = shift;
+	my $parent  = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $model   = shift;    # model for initial inittialization
 	my $pnlType = shift;
 
-	my $frmHeight = 240; # height of part, constant for all creators
+	my $frmHeight = 240;                                                                      # height of part, constant for all creators
 	my $self = $class->SUPER::new( $parent, $frmHeight, $inCAM, $jobId, $model, $pnlType );
 
 	bless($self);
@@ -68,9 +71,9 @@ sub OnGetCreatorLayout {
 	my $parent     = shift;
 
 	my $content = undef;
-	
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+
+	my $inCAM   = $self->{"inCAM"};
+	my $jobId   = $self->{"jobId"};
 	my $pnlType = $self->{"pnlType"};
 
 	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
@@ -118,20 +121,19 @@ sub SetCreators {
 		if ( defined $model ) {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
-			
-				$creatorFrm->SetStep( $model->GetStep() );
+
+			$creatorFrm->SetStep( $model->GetStep() );
 
 			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER || $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
 				# Base property
-				 
+
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
 				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
 				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
 				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
-				
 
 				if ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
@@ -144,7 +146,7 @@ sub SetCreators {
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
 				# Base property
-				 
+
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
@@ -155,17 +157,8 @@ sub SetCreators {
 			}
 			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER || $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
 
-				# Base property
-				 
-				$creatorFrm->SetWidth( $model->GetWidth() );
-				$creatorFrm->SetHeight( $model->GetHeight() );
-				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
-				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
-				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
-				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
-				 
-
-				# Specific for class
+				# Specific for class - set before base proerty, 
+				# because set value to combobox affect some textbox with base propertu
 				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
 				$creatorFrm->SetDefPnlClass( $model->GetDefPnlClass() );
 				$creatorFrm->SetDefPnlSize( $model->GetDefPnlSize() );
@@ -177,22 +170,31 @@ sub SetCreators {
 
 				}
 
-			}
-
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
-
 				# Base property
-			
+
 				$creatorFrm->SetWidth( $model->GetWidth() );
 				$creatorFrm->SetHeight( $model->GetHeight() );
 				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
 				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
 				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
 				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
-				 
+
+			}
+
+			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+
+				# Base property
+
+				$creatorFrm->SetWidth( $model->GetWidth() );
+				$creatorFrm->SetHeight( $model->GetHeight() );
+				$creatorFrm->SetBorderLeft( $model->GetBorderLeft() );
+				$creatorFrm->SetBorderRight( $model->GetBorderRight() );
+				$creatorFrm->SetBorderTop( $model->GetBorderTop() );
+				$creatorFrm->SetBorderBot( $model->GetBorderBot() );
 
 				# Specific for class
 				$creatorFrm->SetSrcJobId( $model->GetSrcJobId() );
+				$creatorFrm->SetSrcJobByOffer( $model->GetSrcJobByOffer() );
 				$creatorFrm->SetSrcJobListByName( $model->GetSrcJobListByName() );
 				$creatorFrm->SetSrcJobListByNote( $model->GetSrcJobListByNote() );
 				$creatorFrm->SetPanelJSON( $model->GetPanelJSON() );
@@ -219,7 +221,7 @@ sub GetCreators {
 		next if ( defined $creatorKey && $creatorKey ne $modelKey );
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
-		
+
 		$model->SetStep( $creatorFrm->GetStep() );
 
 		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER || $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
@@ -231,7 +233,6 @@ sub GetCreators {
 			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
 			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
-		 
 
 			# Sepcific class property
 			if ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
@@ -244,7 +245,7 @@ sub GetCreators {
 		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
 			# Base property
-		 
+
 			$model->SetWidth( $creatorFrm->GetWidth() );
 			$model->SetHeight( $creatorFrm->GetHeight() );
 			$model->SetBorderLeft( $creatorFrm->GetBorderLeft() );
@@ -262,7 +263,6 @@ sub GetCreators {
 			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
 			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
-			 
 
 			# Specific for class
 			$model->SetPnlClasses( $creatorFrm->GetPnlClasses() );
@@ -285,10 +285,10 @@ sub GetCreators {
 			$model->SetBorderRight( $creatorFrm->GetBorderRight() );
 			$model->SetBorderTop( $creatorFrm->GetBorderTop() );
 			$model->SetBorderBot( $creatorFrm->GetBorderBot() );
-			 
 
 			# Specific for class
 			$model->SetSrcJobId( $creatorFrm->GetSrcJobId() );
+			$model->SetSrcJobByOffer( $creatorFrm->GetSrcJobByOffer() );
 			$model->SetSrcJobListByName( $creatorFrm->GetSrcJobListByName() );
 			$model->SetSrcJobListByNote( $creatorFrm->GetSrcJobListByNote() );
 			$model->SetPanelJSON( $creatorFrm->GetPanelJSON() );

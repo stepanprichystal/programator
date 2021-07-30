@@ -3,7 +3,7 @@
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 
-package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetStepRow;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetNestedStepRow;
 use base qw(Widgets::Forms::CustomControlList::ControlListRow);
 
 #3th party library

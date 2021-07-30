@@ -162,6 +162,7 @@ sub UpdateStep {
 	my $self = shift;
 	my $step = shift;
 
+	$self->GetModel(0)->SetStep($step);
 	$self->{"form"}->UpdateStep($step);
 
 }
@@ -311,7 +312,9 @@ sub __OnCreatorProcessedHndl {
 	my $creatorKey = shift;
 	my $result     = shift;
 	my $errMess    = shift;
+	my $resultData = shift;
 	my $callReason = shift;
+	
 
 	return 0 if ( $partId ne $self->{"partId"} );    # Catch only event from for this specific part
 
@@ -330,7 +333,7 @@ sub __OnCreatorProcessedHndl {
 
 	# add error to wraper
 	$self->{"partWrapper"}->SetErrIndicator( ( defined $self->{"processErrMess"} ? 1 : 0 ) );
-	$self->{"asyncCreatorProcessedEvt"}->Do( $creatorKey, $result, $errMess );
+	$self->{"asyncCreatorProcessedEvt"}->Do( $creatorKey, $result, $errMess, $resultData );
 
 	if ( defined $callReason && $callReason eq "settingsChanged" ) {
 		my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);

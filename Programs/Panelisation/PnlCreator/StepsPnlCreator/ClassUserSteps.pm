@@ -20,6 +20,8 @@ use Try::Tiny;
 use aliased 'Enums::EnumsGeneral';
 
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
+use aliased 'CamHelpers::CamStepRepeat';
+
 #use aliased 'Packages::CAM::PanelClass::Enums' => "PnlClassEnums";
 #use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlClassParser';
 #use aliased 'CamHelpers::CamHelper';
@@ -63,13 +65,9 @@ sub Init {
 
 	# Set default settings
 	$self->SUPER::_Init( $inCAM, $stepName );
-	
 
-	
 	# Set amount settings
 	$self->SetAmountType( Enums->StepAmount_AUTO );
-	
-	
 
 	return $result;
 
@@ -96,25 +94,33 @@ sub Check {
 
 # Return 1 if succes 0 if fail
 sub Process {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $errMess = shift;    # reference to err message
-
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $errMess    = shift;         # reference to err message
+	my $resultData = shift // {};
 	my $result = 1;
 
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->GetStep();
 
-	$result = $self->SUPER::_Process( $inCAM, $errMess );
+	$result = $self->SUPER::_Process( $inCAM, $errMess, $resultData );
+
+	# Store result data (total step cnt)
+	my $total = 0;
+	my @repeats = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $self->GetStep() );
+	foreach my $sr (@repeats) {
+
+		$total += $sr->{"totalCnt"};
+	}
+
+	$resultData->{"totalStepCnt"} = $total if ($result);
+
 	return $result;
 }
 
 #-------------------------------------------------------------------------------------------#
 # Get/Set method for adjusting settings after Init/ImportSetting
 #-------------------------------------------------------------------------------------------#
-
-
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

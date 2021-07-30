@@ -128,16 +128,16 @@ sub OnOtherPartCreatorSettChangedHndl {
 				my $LB = $creatorSett->GetBorderLeft();
 				my $RB = $creatorSett->GetBorderRight();
 
-				my $maxBorder = int(max( $TB, $BB, $LB, $RB ));
+				my $maxBorder = int( max( $TB, $BB, $LB, $RB ) );
 
 				my @schemas = ();
 				my $model   = $self->{"model"}->GetCreatorModelByKey( $self->{"model"}->GetSelectedCreator() );
 
-				if ( $model->GetSchemeType() eq "standard" ) {
+				if ( defined $model->GetSchemeType() && $model->GetSchemeType() eq "standard" ) {
 
 					@schemas = @{ $model->GetStdSchemeList() };
 				}
-				elsif ( $model->GetSchemeType() eq "special" ) {
+				elsif ( defined $model->GetSchemeType() && $model->GetSchemeType() eq "special" ) {
 
 					@schemas = @{ $model->GetSpecSchemeList() };
 
@@ -162,6 +162,35 @@ sub OnOtherPartCreatorSettChangedHndl {
 		}
 	}
 	elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+
+		# Try to set scheme by panel height
+		if ( $partId eq Enums->Part_PNLSIZE ) {
+
+			if (
+				   $creatorKey eq PnlCreEnums->SizePnlCreator_USER
+				|| $creatorKey eq PnlCreEnums->SizePnlCreator_HEG
+				|| $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER
+				|| $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG
+
+			  )
+			{
+
+				my $pnlHeight = int($creatorSett->GetHeight()); # remove all behind float for easier regexp
+
+				my $model = $self->{"model"}->GetCreatorModelByKey( $self->{"model"}->GetSelectedCreator() );
+
+				my @schemas = @{ $model->GetStdSchemeList() };
+
+				# Filter if there is some schema with specific border
+				my $scheme = first { $_ =~ /$pnlHeight/ } @schemas;
+
+				if ( defined $scheme ) {
+
+					my $frm = $self->{"form"}->GetCreatorFrm( $self->{"model"}->GetSelectedCreator() );
+					$frm->SetScheme($scheme);
+				}
+			}
+		}
 
 		if ( $partId eq Enums->Part_PNLSTEPS && $self->GetPreview() ) {
 
@@ -216,8 +245,8 @@ sub __SetActiveCreators {
 
 sub EnableCreators {
 	my $self       = shift;
-	my $partId     = shift; # Previous part
-	my $creatorKey = shift; # Selected creator from previous part
+	my $partId     = shift;    # Previous part
+	my $creatorKey = shift;    # Selected creator from previous part
 
 }
 

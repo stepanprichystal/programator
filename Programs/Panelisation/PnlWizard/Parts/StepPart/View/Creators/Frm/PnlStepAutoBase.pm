@@ -141,8 +141,6 @@ sub __Layout {
 	$self->{"pcbStepProfileCB"} = $pcbStepProfileCB;
 	$self->{"pnlClassCB"}       = $pnlClassCB;
 
-	 
-
 }
 
 # Set layout for Quick set box
@@ -568,16 +566,21 @@ sub __OnPnlClassChanged {
 	$self->{"pnlClassSpaceCB"}->Freeze();
 
 	$self->{"pnlClassSpaceCB"}->Clear();
-	foreach my $classSpace ( $class->GetAllClassSpacings() ) {
+
+	my @spacings = $class->GetAllClassSpacings();
+
+	@spacings = sort { $a->GetSpaceX() <=> $b->GetSpaceX() } @spacings;
+
+	foreach my $classSpace (@spacings) {
 
 		$self->{"pnlClassSpaceCB"}->Append( $classSpace->GetName() );
 	}
 
 	$self->{"pnlClassSpaceCB"}->Thaw();
 
-	if ( scalar( $class->GetAllClassSpacings() ) ) {
+	if ( scalar(@spacings) ) {
 
-		my $spaceName = ( $class->GetAllClassSpacings() )[0]->GetName();
+		my $spaceName = $spacings[0]->GetName();
 		$self->{"pnlClassSpaceCB"}->SetValue($spaceName);
 		$self->__OnPnlClassSpacingChanged($spaceName);
 	}
@@ -885,7 +888,7 @@ sub SetSpaceY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spaceYValTxt"}->SetValue( sprintf( "%.1f", $val ) );
+	$self->{"spaceYValTxt"}->SetValue( sprintf( "%.1f", $val ) ) if ( defined $val && $val ne "" );
 }
 
 sub GetSpaceY {
@@ -998,16 +1001,16 @@ sub SetActionType {
 	my $self = shift;
 	my $val  = shift;
 
-	if ( $self->{"rbPlacementAuto"}->GetValue() ) {
-
-		$val = PnlCreEnums->StepPlacementMode_AUTO;
+	if ( $val eq PnlCreEnums->StepPlacementMode_AUTO ) {
+ 
+ 		$self->{"rbPlacementAuto"}->SetValue(1);
 		$self->{"notebookCreatePnl"}->ShowPage(1);
 	}
-	elsif ( $self->{"rbPlacementManual"}->GetValue() ) {
-		$val = PnlCreEnums->StepPlacementMode_MANUAL;
+	elsif ( $val eq PnlCreEnums->StepPlacementMode_MANUAL ) {
+	 
+	 	$self->{"rbPlacementManual"}->SetValue(1);
 		$self->{"notebookCreatePnl"}->ShowPage(2);
 	}
-
 	else {
 
 		die "Wrong action type: $val";

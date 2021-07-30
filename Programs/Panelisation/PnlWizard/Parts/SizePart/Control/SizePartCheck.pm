@@ -25,6 +25,9 @@ use aliased 'Packages::CAMJob::Stackup::StackupCode';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Other::CustomerNote';
 use aliased 'CamHelpers::CamJob';
+use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
+use aliased 'Packages::ProductionPanel::StandardPanel::Enums' => 'StdPnlEnums';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -47,7 +50,7 @@ sub Check {
 	my $self      = shift;
 	my $pnlType   = shift;    # Panelisation type
 	my $partModel = shift;    # Part model
-
+ 
 	if ( $pnlType eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 
 		$self->__CheckCustomerPanel($partModel);
@@ -126,4 +129,56 @@ sub __CheckProductionPanel {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
+	my $creator      = $partModel->GetSelectedCreator();
+	my $creatorModel = $partModel->GetCreatorModelByKey($creator);
+
+	# X) Check if production panel has strandradr dimension
+	{
+
+		my $w  = $creatorModel->GetWidth();
+		my $h  = $creatorModel->GetHeight();
+		my $bL = $creatorModel->GetBorderLeft();
+		my $bR = $creatorModel->GetBorderRight();
+		my $bT = $creatorModel->GetBorderTop();
+		my $bB = $creatorModel->GetBorderBot();
+
+		my $profLim = { "xMin" => 0, "xMax" => $w, "yMin" => 0, "yMax" => $h };
+		my $areaLim = { "xMin" => $bL, "xMax" => $w - $bR, "yMin" => $bB, "yMax" => $h - $bT };
+
+		my $stdPnl = StandardBase->new( $inCAM, $jobId, undef, undef, 0, $profLim, $areaLim );
+
+		my @candidates     = ();
+		my $isStdCandidate = $stdPnl->IsStandardCandidate( \@candidates );
+
+		if ( !$isStdCandidate
+			 || ( $isStdCandidate && $stdPnl->GetStandardType() eq StdPnlEnums->Type_NONSTANDARD ) )
+		{
+			my $txt = "Výrobní panel nemá standardní rozměr. Možné varianty standardního panelu pro tuto DPS:\n";
+			foreach my $s (@candidates) {
+
+				$txt .= "Název standardu: " . $s->Name() . "\n";
+				$txt .= "- typ desky: " . $s->PcbType() . "\n";
+				$txt .= "- materiál: " . $s->PcbMat() . "\n";
+				$txt .= "- rozměr: " . $s->W() . "x" . $s->H() . "mm\n";
+				$txt .= "- okolí: " . $s->BorderL() . "+" . $s->BorderR() . "+" . $s->BorderT() . "+" . $s->BorderB() . "mm\n\n";
+
+			}
+			my $pcbType = JobHelper->GetPcbType($jobId);
+
+			if (    $pcbType eq EnumsGeneral->PcbType_NOCOPPER
+				 || $pcbType eq EnumsGeneral->PcbType_1V
+				 || $pcbType eq EnumsGeneral->PcbType_2V )
+			{
+				$self->_AddWarning( "Nestandardní rozměr", $txt );
+			}
+			else {
+
+				$self->_AddError( "Nestandardní rozměr", $txt );
+			}
+
+		}
+
+	}
 }
+
+1;

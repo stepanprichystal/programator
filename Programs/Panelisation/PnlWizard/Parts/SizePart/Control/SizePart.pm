@@ -16,6 +16,7 @@ use warnings;
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::SizePartModel'   => 'PartModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm'      => 'PartFrm';
@@ -211,7 +212,10 @@ sub __SetActiveCreators {
 			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_MATRIX && !$self->{"isCustomerSet"} );
 			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_CLASSUSER );
 			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_CLASSHEG );
-			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_PREVIEW && !$self->{"isCustomerSet"} );
+			push( @activeCreators, $c )
+			  if (    $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_PREVIEW
+				   && !$self->{"isCustomerSet"}
+				   && !JobHelper->GetJobIsOffer( $self->{"jobId"} ) );
 
 		}
 
@@ -231,8 +235,8 @@ sub __SetActiveCreators {
 
 sub EnableCreators {
 	my $self       = shift;
-	my $partId     = shift; # Previous part
-	my $creatorKey = shift; # Selected creator from previous part
+	my $partId     = shift;    # Previous part
+	my $creatorKey = shift;    # Selected creator from previous part
 
 }
 

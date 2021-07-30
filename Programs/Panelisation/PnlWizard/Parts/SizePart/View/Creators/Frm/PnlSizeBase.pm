@@ -75,8 +75,6 @@ sub __Layout {
 	$szMainWrapper->Add( $szCustom,     0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szMainWrapper->Add( $sizeStatBox,  0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szMainWrapper->Add( $frameStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	
-	 
 
 	$szMain->Add( $szMainWrapper, 50, &Wx::wxEXPAND, 0 );
 
@@ -98,7 +96,6 @@ sub __SetLayoutSize {
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Dimensions' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
-	
 
 	# Load data, for filling form by values
 
@@ -150,8 +147,6 @@ sub __SetLayoutFrame {
 	#define staticboxes
 	my $statBox = Wx::StaticBox->new( $parent, -1, 'Borders' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
-	
-	
 
 	# Load data, for filling form by values
 
@@ -171,7 +166,7 @@ sub __SetLayoutFrame {
 	my $topValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	my $botTxt = Wx::StaticText->new( $statBox, -1, "Bot:", &Wx::wxDefaultPosition, [ 10, 23 ] );
-	my $botValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [10, 23 ] );
+	my $botValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $leftValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -223,7 +218,7 @@ sub _SetLayoutCBMain {
 
 	# DEFINE CONTROLS
 	my $mainCbTxt = Wx::StaticText->new( $self, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
-	my $mainCB = Wx::ComboBox->new( $self, -1, $choices->[0], &Wx::wxDefaultPosition, [ 10, 23 ], $choices, &Wx::wxCB_READONLY );
+	my $mainCB = Wx::ComboBox->new( $self, -1, ( defined $choices->[0] ? $choices->[0] : "" ), &Wx::wxDefaultPosition, [ 10, 23 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBMainChangedEvt"}->Do( $mainCB->GetValue() ) } );
@@ -271,7 +266,7 @@ sub _SetLayoutCBSize {
 	# DEFINE CONTROLS
 	my $mainCbTxt = Wx::StaticText->new( $self->{"customLyoutSizeParent"}, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
 	my $mainCB =
-	  Wx::ComboBox->new( $self->{"customLyoutSizeParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ 10, 23 ], $choices, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $self->{"customLyoutSizeParent"}, -1,( defined $choices->[0] ? $choices->[0] : "" ), &Wx::wxDefaultPosition, [ 10, 23 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"}->Do( $mainCB->GetValue() ) } );
@@ -294,8 +289,10 @@ sub _SetLayoutCBBorder {
 
 	# DEFINE CONTROLS
 	my $mainCbTxt = Wx::StaticText->new( $self->{"customCBBorderParent"}, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
-	my $mainCB =
-	  Wx::ComboBox->new( $self->{"customCBBorderParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ 10, 23 ], $choices, &Wx::wxCB_READONLY );
+	my $mainCB = Wx::ComboBox->new( $self->{"customCBBorderParent"},
+									-1, ( defined $choices->[0] ? $choices->[0] : "" ),
+									&Wx::wxDefaultPosition, [ 10, 23 ],
+									$choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBBorderChangedEvt"}->Do( $mainCB->GetValue() ) } );

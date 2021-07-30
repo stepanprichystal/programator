@@ -94,10 +94,10 @@ sub AsyncInitPnlCreator {
 
 # Raise "pnlCreatorProcesedEvt" event, which will contain result succes/failed
 sub AsyncProcessPnlCreator {
-	my $self        = shift;
-	my $partId      = shift;
-	my $creatorKey  = shift;
-	my $JSONSett    = shift;    # hash of model properties
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
+	my $JSONSett   = shift;    # hash of model properties
 	my $callReason = shift;    # optional text info - reason of calling  AsyncProcessPnlCreator
 
 	my $taskId     = $creatorKey . "_" . TaskType_PROCESSCREATOR;
@@ -144,7 +144,7 @@ sub __TaskBackgroundFunc {
 	my $inCAM             = shift;
 	my $thrPogressInfoEvt = shift;
 	my $thrMessageInfoEvt = shift;
-	
+
 	# Turn disp of in order quicker processing
 	$inCAM->SetDisplay(0);
 
@@ -182,16 +182,17 @@ sub __TaskBackgroundFunc {
 	elsif ( $taskType eq TaskType_PROCESSCREATOR ) {
 
 		my $creatorJSONSett = shift @{$taskParams};
-		my $callReason     = shift @{$taskParams};
+		my $callReason      = shift @{$taskParams};
 
 		$creator->ImportSettings($creatorJSONSett);
 
-		my $errMess = "";
-		my $result  = 0;
+		my $errMess    = "";
+		my $resultData = {};
+		my $result     = 0;
 
 		if ( $creator->Check( $inCAM, \$errMess ) ) {
 
-			$result = $creator->Process( $inCAM, \$errMess );
+			$result = $creator->Process( $inCAM, \$errMess, $resultData );
 
 			# Zoom
 			$inCAM->COM('zoom_home');
@@ -203,11 +204,13 @@ sub __TaskBackgroundFunc {
 
 		# Create JSON message
 		my %res = ();
-		$res{"taskType"}    = $taskType;
-		$res{"partId"}      = $partId;
-		$res{"creatorKey"}  = $creatorKey;
-		$res{"result"}      = $result;
-		$res{"errMess"}     = $errMess;
+		$res{"taskType"}   = $taskType;
+		$res{"partId"}     = $partId;
+		$res{"creatorKey"} = $creatorKey;
+		$res{"result"}     = $result;
+		$res{"errMess"}    = $errMess;
+		$res{"resultData"} = $resultData;
+
 		$res{"callReason"} = $callReason;
 
 		my $JSONMess = $jsonStorable->Encode( \%res );
@@ -215,8 +218,8 @@ sub __TaskBackgroundFunc {
 		$thrMessageInfoEvt->Do( $taskId, $JSONMess );
 
 	}
-	
-	# Turn back disp on 
+
+	# Turn back disp on
 	$inCAM->SetDisplay(1);
 
 }
@@ -322,11 +325,12 @@ sub __OnTaskMessageInfoHndl {
 	}
 	elsif ( $taskType eq TaskType_PROCESSCREATOR ) {
 
-		my $result      = $message{"result"};
-		my $errMess     = $message{"errMess"};
+		my $result     = $message{"result"};
+		my $errMess    = $message{"errMess"};
+		my $resultData = $message{"resultData"};
 		my $callReason = $message{"callReason"};
 
-		$self->{"pnlCreatorProcesedEvt"}->Do( $partId, $creatorKey, $result, $errMess, $callReason )
+		$self->{"pnlCreatorProcesedEvt"}->Do( $partId, $creatorKey, $result, $errMess, $resultData, $callReason )
 
 	}
 

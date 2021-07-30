@@ -51,7 +51,7 @@ sub __SetLayout {
 	# DEFINE SIZERS
 	my $layout = $self->{"commLayout"};
 
-	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 
 
@@ -65,7 +65,8 @@ sub __SetLayout {
 
 	# DEFINE LAYOUT
 
-	$szMain->Add( $creatorNameTxt, 0, &Wx::wxALL | &Wx::wxALIGN_CENTER_VERTICAL, 6);
+	$szMain->Add( $creatorNameTxt, 1, &Wx::wxALL | &Wx::wxALIGN_CENTER_VERTICAL, 6);
+	$szMain->Add(163,0,0); # keep width
 	 
 
 	 

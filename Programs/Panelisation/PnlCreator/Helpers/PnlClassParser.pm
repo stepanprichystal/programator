@@ -56,6 +56,8 @@ sub new {
 
 	$self->SUPER::Parse();
 
+	$self->__FilterBorderSpacing();
+
 	$self->__AdjustCustomerClasses();
 	$self->__AdjustProductionClasses();
 
@@ -85,6 +87,40 @@ sub GetProductionPnlClasses {
 	push( @classes, $self->__GetEmptyClass() ) if ($addEmptyClass);
 
 	return @classes;
+
+}
+
+# Remove borders class which actually represent spacing
+sub __FilterBorderSpacing {
+	my $self = shift;
+
+	my @classes = @{ $self->{"classes"} };
+
+	foreach my $class (@classes) {
+
+		foreach my $size ( $class->GetSizes() ) {
+
+			# Borders
+			my @realBorders = ();
+			my @borders     = $size->GetBorders();
+			foreach my $b (@borders) {
+
+				push( @realBorders, $b ) if ( $b->GetName() =~ /^border_/ );
+			}
+
+			$size->SetBorders( \@realBorders );
+
+			# Spacing
+			my @realSpacing = ();
+			my @spacings    = $size->GetSpacings();
+			foreach my $s (@spacings) {
+
+				push( @realSpacing, $s ) if ( $s->GetName() =~ /^spacing/ );
+			}
+
+			$size->SetSpacings( \@realSpacing );
+		}
+	}
 
 }
 
@@ -158,61 +194,30 @@ sub __AdjustCustomerClasses {
 	my $className = join( "_", ( "mpanel", $matType, $numType ) );
 
 	# 1) Filter classes
-	@classes = grep { $_->GetName() =~ /^$className/i } @{ $self->{"classes"} };
-
-	#	# 2) Filter border + spacings in each class size
-	#	my @spacings = $self->__GetCustomerPnlSpacings();
-	#
-	#	foreach my $class (@classes) {
-	#
-	#		foreach my $size ( $class->GetSizes() ) {
-	#
-	#			my @parsedSize = split( "_", $size->GetName() );
-	#
-	#			my @allBorders = $size->GetBorders();
-	#
-	#			my @filtredBorders = ();
-	#
-	#			while ( scalar(@filtredBorders) == 0 && scalar(@parsedSize) > 0) {
-	#
-	#				my $name = join( "_", @parsedSize );
-	#
-	#				my @b = grep { $_->GetName() =~ /^$name/i } @allBorders;
-	#				push( @filtredBorders, @b ) if ( scalar(@b) );
-	#
-	#				pop(@parsedSize);
-	#
-	#			}
-	#
-	#			$size->SetBorders( \@filtredBorders );
-	#			$size->SetSpacings( [@spacings] );
-	#		}
-	#	}
-
-	# 3) Do check of naming convention
+	@classes = grep { $_->GetName() =~ /^class_$className/i } @{ $self->{"classes"} };
 
 	# 1) Pnl class
 	foreach my $class (@classes) {
 
-		die "Pnl class name: " . $class->GetName() . " has invlaid format" if ( $class->GetName() !~ /^mpanel_\w+_[2v]v$/ );
+		die "Pnl class name: " . $class->GetName() . " has invlaid format" if ( $class->GetName() !~ /^class_mpanel_\w+_[2v]v$/ );
 
 		# 2) Pnl size
 		foreach my $size ( $class->GetSizes() ) {
 
-			die "Pnl size class name: " . $size->GetName() . " has invlaid format" if ( $size->GetName() !~ /^mpanel_\w+_[2v]v_\w+_\d+x\d+$/ );
+			die "Pnl size class name: " . $size->GetName() . " has invlaid format" if ( $size->GetName() !~ /^size_mpanel_\w+_[2v]v_\w+_\d+x\d+$/ );
 
 			# 3) Pnl border + spacing
 			foreach my $borderName ( map { $_->GetName() } $size->GetBorders() ) {
 
-				if ( $borderName !~ /^mpanel_b\d+_s\d+/i ) {
-					die "Pnl borderclass name: ${borderName} has invlaid format ( /mpanel_b\\d+_s\\d+/)";
+				if ( $borderName !~ /^border_mpanel_l\d+_r\d+_t\d+_b\d+/i ) {
+					die "Pnl borderclass name: ${borderName} has invlaid format ( /border_mpanel_b\\d+_s\\d+/)";
 				}
 			}
 
 			foreach my $spacingName ( map { $_->GetName() } $size->GetSpacings() ) {
 
-				if ( $spacingName !~ /^mpanel_b\d+_s\d+/i ) {
-					die "Pnl spacingclass name: ${$spacingName} has invlaid format ( /mpanel_b\\d+_s\\d+/)";
+				if ( $spacingName !~ /^spacing_mpanel_X\d+(\.\d+)?_Y\d+(\.\d+)?/i ) {
+					die "Pnl spacingclass name: ${spacingName} has invlaid format ( /spacing_mpanel_b\\d+_s\\d+/)";
 				}
 
 			}
@@ -233,7 +238,7 @@ sub __AdjustProductionClasses {
 	my $className = join( "_", ( $matType, $numType ) );
 
 	# 1) Filter classes
-	@classes = grep { $_->GetName() =~ /^$className$/i } @classes;
+	@classes = grep { $_->GetName() =~ /^class_$className$/i } @classes;
 
 	# 2) Filter border + spacings in each class size
 
@@ -243,7 +248,7 @@ sub __AdjustProductionClasses {
 
 		foreach my $size ( $class->GetSizes() ) {
 
-			my $class = first { $_->GetName() =~ /^$className/i } @{ $self->{"classes"} };
+			my $class = first { $_->GetName() =~ /^class_$className/i } @{ $self->{"classes"} };
 			die "Class:  $className was not found " unless ( defined $class );
 
 			# add special type to name if exist
@@ -256,34 +261,47 @@ sub __AdjustProductionClasses {
 
 			# Borders
 			my @parsedSze = split( "_", $size->GetName() );
+			shift(@parsedSze);    # Remove prefix "size"
 			push( @parsedSze, $spec ) if ( defined $spec );
-			while ( scalar(@parsedSze) > 0 ) {
+			while ( scalar(@parsedSze) >= 0 ) {
 
 				my $name = join( "_", @parsedSze );
 
-				my @b = grep { $_->GetName() =~ /^$name$/i } @allBorders;
+				my @b = grep { $_->GetName() =~ /^border_$name$/i } @allBorders;
 				if ( scalar(@b) ) {
 					push( @filtredBorders, @b );
 					last;
 				}
 
-				pop @parsedSze;
+				if ( scalar(@parsedSze) == 0 ) {
+					last;
+				}
+				else {
+					pop @parsedSze;
+				}
 			}
 
 			# spacings
 			@parsedSze = split( "_", $size->GetName() );
+			shift(@parsedSze);    # Remove prefix "size"
 			push( @parsedSze, $spec ) if ( defined $spec );
-			while ( scalar(@parsedSze) > 0 ) {
+			while ( scalar(@parsedSze) >= 0 ) {
 
 				my $name = join( "_", @parsedSze );
 
-				my @b = grep { $_->GetName() =~ /^$name$/i } @allSpacings;
+				my @b = grep { $_->GetName() =~ /^spacing_$name/i } @allSpacings;
 				if ( scalar(@b) ) {
 					push( @filtredSpacings, @b );
 					last;
 				}
 
-				pop @parsedSze;
+				if ( scalar(@parsedSze) == 0 ) {
+					last;
+				}
+				else {
+					pop @parsedSze;
+				}
+
 			}
 
 			$size->SetBorders(  [@filtredBorders] );
@@ -296,28 +314,31 @@ sub __AdjustProductionClasses {
 	# 1) Pnl class
 	foreach my $class (@classes) {
 
-		die "Pnl class name: " . $class->GetName() . " has invlaid format" if ( $class->GetName() !~ /^\w+_[2v]v$/ );
+		die "Pnl class name: " . $class->GetName() . " has invlaid format" if ( $class->GetName() !~ /^class_\w+_[2v]v$/ );
 
 		# 2) Pnl size
 		foreach my $size ( $class->GetSizes() ) {
 
-			die "Pnl size class name: " . $size->GetName() . " has invlaid format" if ( $size->GetName() !~ /^\w+_[2v]v_\d+x\d+$/ );
+			die "Pnl size class name: " . $size->GetName() . " has invlaid format" if ( $size->GetName() !~ /^size_\w+_[2v]v_\d+x\d+$/ );
 
 			my $className = $class->GetName();
 			my $sizeName  = $size->GetName();
 
 			# 3) Pnl border + spacing
+			my $classTmp = $className;
+			$classTmp =~ s/class_//;
 			foreach my $borderName ( map { $_->GetName() } $size->GetBorders() ) {
 
-				if ( $borderName !~ /$className/i ) {
-					die "Pnl borderclass name: ${borderName} has invlaid format (name should start with: /${className})";
+				if ( $borderName !~ /border_$classTmp/i ) {
+					die "Pnl borderclass name: ${borderName} has invlaid format (name should start with: /border_${classTmp}/)";
 				}
 			}
 
 			foreach my $spacingName ( map { $_->GetName() } $size->GetSpacings() ) {
 
-				if ( $spacingName !~ /$className/i ) {
-					die "Pnl spacing class name: ${spacingName} has invlaid format (name should start with: /${className})";
+				if ( $spacingName !~ /spacing_$classTmp/i && $spacingName !~ /spacing_X\d+(\.\d+)?_Y\d+(\.\d+)?/i ) {
+					die
+'Pnl spacing class name: ${spacingName} has invlaid format (name should start with: /spacing_${classTmp}/ or /spacing_X\d+(\.\d+)?_Y\d+(\.\d+)?/i)';
 				}
 
 			}
@@ -504,7 +525,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d304342";
+	my $jobId = "d324772";
 	my $parser = PnlClassParser->new( $inCAM, $jobId );
 	$parser->Parse();
 

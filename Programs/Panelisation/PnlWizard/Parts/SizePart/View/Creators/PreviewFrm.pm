@@ -106,7 +106,12 @@ sub __SetLayoutJobList {
 	my $jobSrcValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	my $foundJobsTxt     = Wx::StaticText->new( $statBox, -1, "Found jobs by:", &Wx::wxDefaultPosition, [ 10, 23 ] );
-	my $jobListByNoteTxt = Wx::StaticText->new( $statBox, -1, "HEG tpv note:",  &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $jobSrcByOfferTxt = Wx::StaticText->new( $statBox, -1, "HEG PCB offer:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $jobSrcByOfferBox = Wx::ListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [ 10, 23 ], [], &Wx::wxLB_SINGLE | &Wx::wxLB_NEEDED_SB );
+	my $ISJobByOfferIndicator = ResultIndicator->new( $statBox, 20 );
+	$ISJobByOfferIndicator->SetStatus( EnumsGeneral->ResultType_NA );
+
+	my $jobListByNoteTxt = Wx::StaticText->new( $statBox, -1, "HEG tpv note:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 	my $jobListByNoteBox = Wx::ListBox->new( $statBox, -1, &Wx::wxDefaultPosition, [ 10, 23 ], [], &Wx::wxLB_SINGLE | &Wx::wxLB_NEEDED_SB );
 	my $ISJobByNoteIndicator = ResultIndicator->new( $statBox, 20 );
 	$ISJobByNoteIndicator->SetStatus( EnumsGeneral->ResultType_NA );
@@ -120,11 +125,13 @@ sub __SetLayoutJobList {
 	Wx::Event::EVT_TEXT( $jobSrcValTxt, -1, sub { $self->__OnJobSrcChangedHndl() } );
 
 	#Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_LISTBOX( $self, $jobSrcByOfferBox, sub { $self->__OnListBoxClick($jobSrcByOfferBox) } );
 	Wx::Event::EVT_LISTBOX( $self, $jobListByNoteBox, sub { $self->__OnListBoxClick($jobListByNoteBox) } );
 	Wx::Event::EVT_LISTBOX( $self, $jobListByNameBox, sub { $self->__OnListBoxClick($jobListByNameBox) } );
 
-	Wx::Event::EVT_LISTBOX_DCLICK( $self, $jobListByNoteBox, sub { $self->__OnListBoxDClick($jobListByNoteBox) } );
+	Wx::Event::EVT_LISTBOX_DCLICK( $self, $jobSrcByOfferBox, sub { $self->__OnListBoxDClick($jobSrcByOfferBox) } );
 	Wx::Event::EVT_LISTBOX_DCLICK( $self, $jobListByNameBox, sub { $self->__OnListBoxDClick($jobListByNameBox) } );
+	Wx::Event::EVT_LISTBOX_DCLICK( $self, $jobListByNoteBox, sub { $self->__OnListBoxDClick($jobListByNoteBox) } );
 
 	# BUILD STRUCTURE OF LAYOUT
 
@@ -134,13 +141,17 @@ sub __SetLayoutJobList {
 
 	$szRow1->Add( $foundJobsTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow2->Add( $jobListByNoteTxt,     30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $jobListByNoteBox,     60, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $ISJobByNoteIndicator, 10,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $jobSrcByOfferTxt,      30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $jobSrcByOfferBox,      60, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $ISJobByOfferIndicator, 10, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow3->Add( $jobListByNameTxt,     30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow3->Add( $jobListByNameBox,     60, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow3->Add( $ISJobByNameIndicator, 10,  &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow3->Add( $jobListByNoteTxt,     30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow3->Add( $jobListByNoteBox,     60, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow3->Add( $ISJobByNoteIndicator, 10, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	$szRow4->Add( $jobListByNameTxt,     30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow4->Add( $jobListByNameBox,     60, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow4->Add( $ISJobByNameIndicator, 10, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND );
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
@@ -149,14 +160,21 @@ sub __SetLayoutJobList {
 	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND );
 	$szStatBox->AddSpacer(2);
-	$szStatBox->Add( $szRow3, 1, &Wx::wxEXPAND );
+	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND );
+	$szStatBox->AddSpacer(2);
+	$szStatBox->Add( $szRow4, 1, &Wx::wxEXPAND );
 	$szStatBox->AddSpacer(2);
 
 	# save control references
 
-	$self->{"jobSrcValTxt"}         = $jobSrcValTxt;
+	$self->{"jobSrcValTxt"} = $jobSrcValTxt;
+
+	$self->{"jobSrcByOfferBox"}      = $jobSrcByOfferBox;
+	$self->{"ISJobByOfferIndicator"} = $ISJobByOfferIndicator;
+
 	$self->{"jobListByNoteBox"}     = $jobListByNoteBox;
 	$self->{"ISJobByNoteIndicator"} = $ISJobByNoteIndicator;
+
 	$self->{"jobListByNameBox"}     = $jobListByNameBox;
 	$self->{"ISJobByNameIndicator"} = $ISJobByNameIndicator;
 
@@ -194,7 +212,7 @@ sub __OnJobSrcChangedHndl {
 
 	my $srcJob = $self->{"jobSrcValTxt"}->GetValue();
 
-	if ( defined $srcJob && $srcJob =~ /^\w\d{5,6}$/i ) {
+	if ( defined $srcJob && $srcJob =~ /^\w\d{6}$/i ) {
 
 		$self->{"creatorInitRequestEvt"}->Do($srcJob);
 	}
@@ -216,6 +234,38 @@ sub GetSrcJobId {
 	my $self = shift;
 
 	return $self->{"jobSrcValTxt"}->GetValue();
+}
+
+sub SetSrcJobByOffer {
+	my $self = shift;
+	my $val  = shift;
+
+	if ( defined $val && $val ne "" ) {
+
+		$self->{"jobSrcByOfferBox"}->Freeze();
+
+		$self->{"jobSrcByOfferBox"}->Clear();
+
+		my $jobInfo = { "jobId" => $val };
+
+		$self->{"jobSrcByOfferBox"}->Append( $val, $jobInfo );
+
+		$self->{"jobSrcByOfferBox"}->Thaw();
+
+		$self->{"ISJobByOfferIndicator"}->SetStatus( EnumsGeneral->ResultType_OK );
+	}
+	else {
+
+		$self->{"ISJobByOfferIndicator"}->SetStatus( EnumsGeneral->ResultType_FAIL );
+	}
+}
+
+sub GetSrcJobByOffer {
+	my $self = shift;
+
+	my @items = $self->{"jobSrcByOfferBox"}->GetStrings();
+
+	return $items[0];
 }
 
 sub SetSrcJobListByNote {
@@ -256,10 +306,10 @@ sub SetSrcJobListByNote {
 sub GetSrcJobListByNote {
 	my $self = shift;
 
-	my $items = $self->{"jobListByNoteBox"}->GetStrings();
+	my @items = $self->{"jobListByNoteBox"}->GetStrings();
 	my @list  = ();
 
-	for ( my $i = 0 ; $i < scalar($items) ; $i++ ) {
+	for ( my $i = 0 ; $i < scalar(@items) ; $i++ ) {
 
 		my $d = $self->{"jobListByNoteBox"}->GetClientData($i);
 

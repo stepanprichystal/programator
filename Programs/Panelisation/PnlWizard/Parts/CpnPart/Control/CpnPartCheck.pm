@@ -40,7 +40,7 @@ sub Check {
 	my $self      = shift;
 	my $pnlType   = shift;    # Panelisation type
 	my $partModel = shift;    # Part model
-
+ 
 	if ( $pnlType eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 
 		$self->__CheckCustomerPanel($partModel);
@@ -58,7 +58,7 @@ sub Check {
 # Check only customer panel errors
 sub __CheckCustomerPanel {
 	my $self      = shift;
-	my $partModel = shift;                # Part model
+	my $partModel = shift;    # Part model
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -68,7 +68,7 @@ sub __CheckCustomerPanel {
 # Check only production panel errors
 sub __CheckProductionPanel {
 	my $self      = shift;
-	my $partModel = shift;                # Part model
+	my $partModel = shift;    # Part model
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -88,8 +88,6 @@ sub __CheckGeneral {
 
 	my $creator      = $partModel->GetSelectedCreator();
 	my $creatorModel = $partModel->GetCreatorModelByKey($creator);
-	
-	
 
 }
 

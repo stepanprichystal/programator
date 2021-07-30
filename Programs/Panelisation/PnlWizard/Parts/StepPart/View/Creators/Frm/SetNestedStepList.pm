@@ -2,7 +2,7 @@
 # Description: Simple list, based on ControlList, which display inner layer spec fill
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetStepList;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetNestedStepList;
 use base qw(Widgets::Forms::CustomControlList::ControlList);
 
 #3th party library
@@ -16,7 +16,7 @@ use List::Util qw[max];
 #local library
 
 use Widgets::Style;
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetStepRow';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetNestedStepRow';
 use aliased 'Widgets::Forms::CustomControlList::Enums';
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::Events::Event';
@@ -100,7 +100,7 @@ sub __SetLayout {
 
 	foreach my $stepName ( @{ $self->{"steps"} } ) {
 
-		my $row = SetStepRow->new( $self, $stepName );
+		my $row = SetNestedStepRow->new( $self, $stepName );
 		$self->AddRow($row);
 
 		$row->{"stepCountChangedEvt"}->Add( sub { $self->{"stepCountChangedEvt"}->Do() } );

@@ -157,7 +157,7 @@ sub _Init {
 			$pcbMatTypeStr = "hybrid";
 
 		}
-		elsif ( $self->{"isFlex"} ) {
+		elsif ( $isFlex ) {
 
 			$pcbMatTypeStr = "flex";
 
@@ -176,7 +176,7 @@ sub _Init {
 		$schemeType = "standard";
 
 		# Set default scheme
-
+		
 		$scheme = $stdSchemes[0];
 
 	}

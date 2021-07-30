@@ -35,6 +35,7 @@ sub new {
 	$self->{"settings"}->{"borderTop"}        = undef;
 	$self->{"settings"}->{"borderBot"}        = undef;
 	$self->{"settings"}->{"srcJobId"}         = undef;
+	$self->{"settings"}->{"srcJobByOffer"}    = undef;
 	$self->{"settings"}->{"srcJobListByName"} = [];
 	$self->{"settings"}->{"srcJobListByNote"} = [];
 	$self->{"settings"}->{"panelJSON"}      = undef;
@@ -138,6 +139,19 @@ sub GetSrcJobId {
 	my $self = shift;
 
 	return $self->{"settings"}->{"srcJobId"};
+}
+
+sub SetSrcJobByOffer {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"srcJobByOffer"} = $val;
+}
+
+sub GetSrcJobByOffer {
+	my $self = shift;
+
+	return $self->{"settings"}->{"srcJobByOffer"};
 }
 
 sub SetSrcJobListByName {

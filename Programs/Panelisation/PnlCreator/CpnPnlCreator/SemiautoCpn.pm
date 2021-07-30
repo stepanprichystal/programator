@@ -238,7 +238,7 @@ sub Process {
 		if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
 
 			my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
-			$pnlToJSON->CreatePnlByJSON( $self->GetManualPlacementJSON(), 0, 0, 1 );
+			$pnlToJSON->CreatePnlByJSON( $self->GetManualPlacementJSON(), 0, 1, 1 );
 
 		}
 		elsif ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_NA ) {

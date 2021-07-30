@@ -37,7 +37,8 @@ sub new{
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"path"} = shift // EnumsPaths->InCAM_server . "\\site_data\\library\\panel\\";
+	#$self->{"path"} = shift // EnumsPaths->InCAM_server . "\\site_data\\library\\panel\\";
+	$self->{"path"} =  "\\\\incam\\incam_server\\users\\stepan\\library\\panel\\";
 
 	# Properties
 	$self->{"parsed"}   = 0;       # 1 if panel class files are parsed

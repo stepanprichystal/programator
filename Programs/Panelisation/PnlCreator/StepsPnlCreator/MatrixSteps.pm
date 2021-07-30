@@ -26,6 +26,8 @@ use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::StepProfile';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
+use aliased 'Helpers::JobHelper';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -95,6 +97,65 @@ sub Init {
 	if ( CamHelper->LayerExists( $inCAM, $jobId, "cvrlpins" ) && $self->GetPCBStep() ne "mpanel" ) {
 
 		$self->SetPCBStepProfile( Enums->PCBStepProfile_CVRLPINS );
+	}
+
+	# Set default spacing
+	if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
+
+		# load pcb info
+		my $matKind      = HegMethods->GetMaterialKind($jobId);
+		my $isSemiHybrid = 0;
+		my $isHybrid     = JobHelper->GetIsHybridMat( $jobId, $matKind, [], \$isSemiHybrid );
+		my $isFlex       = JobHelper->GetIsFlex($jobId);
+		my $pcbType      = JobHelper->GetPcbType($jobId);
+
+		my $defSpacing = undef;
+
+		# Set placement settings
+
+		if ( CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
+
+			# space 0
+
+			$defSpacing = 0;
+
+		}
+		elsif (    $pcbType eq EnumsGeneral->PcbType_1VFLEX
+				|| $pcbType eq EnumsGeneral->PcbType_2VFLEX
+				|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI
+				|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO )
+		{
+
+			# space 10 (at least 2,5 because of 1flut rout)
+
+			$defSpacing = 10;
+		}
+		elsif (
+
+			$isSemiHybrid || $isHybrid
+		  )
+		{
+			# space 2.5 (at least 2,5 because of 1flut rout)
+
+			$defSpacing = 2.5;
+
+		}
+		elsif (
+			   $pcbType eq EnumsGeneral->PcbType_NOCOPPER
+			|| $pcbType eq EnumsGeneral->PcbType_1V
+			|| $pcbType eq EnumsGeneral->PcbType_2V
+			|| $pcbType eq EnumsGeneral->PcbType_MULTI
+
+		  )
+		{
+			$defSpacing = 2;
+		}
+
+		if ( defined $defSpacing ) {
+
+			$self->SetStepSpaceX($defSpacing);
+			$self->SetStepSpaceY($defSpacing);
+		}
 	}
 
 	# Load Pnl class
@@ -204,6 +265,7 @@ sub Process {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $errMess = shift;    # reference to err message
+		my $resultData = shift // {};
 
 	my $result = 1;
 
@@ -321,6 +383,18 @@ sub Process {
 							$stepPitchRot{$rotation}->{"x"},
 							$stepPitchRot{$rotation}->{"y"} );
 	}
+	
+	# Store result data (total step cnt)
+	my $total = 0;
+	my @repeats = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $self->GetStep() );
+	foreach my $sr (@repeats) {
+
+		$total += $sr->{"totalCnt"};
+	}
+
+	$resultData->{"totalStepCnt"} = $total if ($result);
+	
+	
 	return $result;
 }
 

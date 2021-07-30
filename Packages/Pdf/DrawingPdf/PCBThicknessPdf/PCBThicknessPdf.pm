@@ -137,7 +137,7 @@ sub CreatePdf {
 	# Get all stiffener depths and its ref layers
 	my @matRestValues   = ();
 	my @routDepthValues = ();
-	my @editSteps       = CamStep->GetJobEditSteps( $inCAM, $jobId );
+	my @editSteps       = 	map {$_->{"stepName"}} CamStepRepeatPnl->GetUniqueNestedStepAndRepeat( $inCAM, $jobId );
 
 	foreach my $NCLayer (@NCLayer) {
 
@@ -658,7 +658,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId = "d322953";
+	my $jobId = "d327014";
 	my $map = PCBThicknessPdf->new( $inCAM, $jobId );
 	$map->CreatePdf();
 

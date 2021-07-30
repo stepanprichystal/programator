@@ -1,6 +1,7 @@
 #-------------------------------------------------------------------------------------------#
 # Description:  Contain helper functions for recogniying standard panel and
 # operation with standard panels
+# Work with existing panel or with passed dimension only
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Packages::ProductionPanel::StandardPanel::StandardBase;
@@ -11,6 +12,7 @@ use warnings;
 
 #local library
 use aliased 'Packages::ProductionPanel::StandardPanel::Enums';
+use aliased 'Helpers::JobHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamHelper';
@@ -25,39 +27,62 @@ use aliased 'Packages::Polygon::Features::Features::Features';
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $self = shift;
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift // "panel";
+	my $accuracy  = shift // 0.2;                          # accoracy during dimension comparing, default +-200µ
+	my $stepExist = shift // 1;                            # If step doesnt exist, profile limits + active area limits has to be past
+	my %profLim   = %{ shift(@_) } unless ($stepExist);    # Step profile limits if step doesnt exist yet
+	my %areaLim   = %{ shift(@_) } unless ($stepExist);    # Step active area limits if step doesnt exist yet
+
 	$self = {};
 	bless $self;
 
-	$self->{"inCAM"}    = shift;
-	$self->{"jobId"}    = shift;
-	$self->{"step"}     = shift // "panel";
-	$self->{"accuracy"} = shift // 0.2;       # accoracy during dimension comparing, default +-200µ
+	# PROPERTIES
 
-	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"accuracy"} = $accuracy;                       # accoracy during dimension comparing, default +-200µ
 
-	# Determine panel limits
-	my %profLim = CamJob->GetProfileLimits2( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
-	my %areaLim = CamStep->GetActiveAreaLim( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"} );
+	# COMPUTED PROPERTIES
+
+	if ($stepExist) {
+
+		# Determine panel limits from existing panel
+		die "Step: $step doesn't exist" if ( !CamHelper->StepExists( $inCAM, $jobId, $step ) );
+		%profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+		%areaLim = CamStep->GetActiveAreaLim( $inCAM, $jobId, $step );
+	}
+	else {
+
+		# Determine panel limits from existing panel
+		die "Profile limits are not defined"     if ( scalar( keys %profLim ) == 0 );
+		die "Active area limits are not defined" if ( scalar( keys %areaLim ) == 0 );
+
+	}
 
 	$self->{"profLim"} = \%profLim;
 	$self->{"w"}       = abs( $profLim{"xMax"} - $profLim{"xMin"} );
 	$self->{"h"}       = abs( $profLim{"yMax"} - $profLim{"yMin"} );
 
-	$self->{"areaLim"} = \%areaLim;
-	$self->{"wArea"}   = abs( $areaLim{"xMax"} - $areaLim{"xMin"} );
-	$self->{"hArea"}   = abs( $areaLim{"yMax"} - $areaLim{"yMin"} );
+	$self->{"areaLim"}  = \%areaLim;
+	$self->{"wArea"}    = abs( $areaLim{"xMax"} - $areaLim{"xMin"} );
+	$self->{"hArea"}    = abs( $areaLim{"yMax"} - $areaLim{"yMin"} );
+	$self->{"layerCnt"} = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 
-	if ( $self->{"layerCnt"} > 2 ) {
-		$self->{"wFr"} = undef;
-		$self->{"hFr"} = undef;
-		if ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "fr" ) ) {
-			my $route = Features->new();
-			$route->Parse( $self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, "fr" );
-			my %frLim = PolygonFeatures->GetLimByRectangle( [ $route->GetFeatures() ] );
+	$self->{"wFr"} = undef;
+	$self->{"hFr"} = undef;
 
-			$self->{"wFr"} = abs( $frLim{"xMax"} - $frLim{"xMin"} );
-			$self->{"hFr"} = abs( $frLim{"yMax"} - $frLim{"yMin"} );
+	if ($stepExist) {
+		if ( $self->{"layerCnt"} > 2 ) {
+
+			if ( CamHelper->LayerExists( $inCAM, $jobId, "fr" ) ) {
+				my $route = Features->new();
+				$route->Parse( $inCAM, $jobId, $step, "fr" );
+				my %frLim = PolygonFeatures->GetLimByRectangle( [ $route->GetFeatures() ] );
+
+				$self->{"wFr"} = abs( $frLim{"xMax"} - $frLim{"xMin"} );
+				$self->{"hFr"} = abs( $frLim{"yMax"} - $frLim{"yMin"} );
+			}
 		}
 	}
 
@@ -72,12 +97,21 @@ sub new {
 	}
 
 	# Determine pcb material
-	my $mat = HegMethods->GetMaterialKind( $self->{"jobId"} );
+	my $mat    = HegMethods->GetMaterialKind($jobId);
+	my $isFlex = JobHelper->GetIsFlex($jobId);
 	$self->{"pcbMat"} = undef;
 
 	if ( $mat =~ /AL|CU/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_ALU;
+	}
+	elsif ($isFlex) {
+
+		$self->{"pcbMat"} = Enums->PcbMat_FLEX;
+	}
+	elsif ( $mat =~ /HYBRID|RO/i ) {
+
+		$self->{"pcbMat"} = Enums->PcbMat_SPEC;
 	}
 	else {
 
@@ -220,12 +254,15 @@ sub HArea {
 sub WFr {
 	my $self = shift;
 
+	die "Fr limits are not defined" if ( !defiend $self->{"wFr"} );
+
 	return $self->{"wFr"};
 }
 
 sub HFr {
 	my $self = shift;
 
+	die "Fr limits are not defined" if ( !defiend $self->{"hFr"} );
 	return $self->{"hFr"};
 }
 

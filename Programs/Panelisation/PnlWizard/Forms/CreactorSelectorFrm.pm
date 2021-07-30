@@ -68,9 +68,9 @@ sub _SetLayout {
 	# DEFINE EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $creatorListLayout, 20, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	$szMain->Add( $creatorListLayout, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
 	#$szMain->AddSpacer(0);
-	$szMain->Add( $creatorViewLayout, 80, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $creatorViewLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
 

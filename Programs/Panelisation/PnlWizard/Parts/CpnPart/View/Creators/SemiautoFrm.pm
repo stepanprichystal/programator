@@ -177,6 +177,7 @@ sub __SetLayoutCpns {
 	$self->{"impCpn"}   = $impCpn;
 	$self->{"IPC3Cpn"}  = $IPC3Cpn;
 	$self->{"zAxisCpn"} = $zAxisCpn;
+	$self->{"layoutCpnBox"} = $statBox;
 
 	return $szStatBox;
 }
@@ -216,8 +217,8 @@ sub __SetLayoutPlacement {
 	$notebook->ShowPage(1);
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_RADIOBUTTON( $rbPlacementAuto,   -1, sub { $notebook->ShowPage(1); $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_RADIOBUTTON( $rbPlacementManual, -1, sub { $notebook->ShowPage(2); $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_RADIOBUTTON( $rbPlacementAuto,   -1, sub {$self->_EnableSettings(); $notebook->ShowPage(1); $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_RADIOBUTTON( $rbPlacementManual, -1, sub {$self->_EnableSettings(); $notebook->ShowPage(2); $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	$pnlPicker->{"placementEvt"}->Add( sub      { $self->{"manualPlacementEvt"}->Do(@_) } );
 	$pnlPicker->{"clearPlacementEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -228,7 +229,7 @@ sub __SetLayoutPlacement {
 	$szColLeft->Add( $rbPlacementManual, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $szColLeft,         1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szStatBox->Add( $notebook,          1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( 1,50,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 ); # expander 40px heigh of panel picker
+	$szStatBox->Add( 1, 50, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );    # expander 40px heigh of panel picker
 
 	# CONTROL REFERENCES
 	$self->{"notebookPlacement"} = $notebook;
@@ -237,6 +238,23 @@ sub __SetLayoutPlacement {
 	$self->{"rbPlacementManual"} = $rbPlacementManual;
 
 	return $szStatBox;
+}
+
+
+sub _EnableSettings {
+	my $self = shift;
+
+	if ( $self->{"rbPlacementAuto"}->GetValue() ) {
+
+		$self->{"layoutCpnBox"}->Enable();
+		 
+
+	}
+	elsif ( $self->{"rbPlacementManual"}->GetValue() ) {
+		$self->{"layoutCpnBox"}->Disable();
+		 
+	}
+
 }
 
 # =====================================================================
@@ -250,7 +268,6 @@ sub SetImpCpnRequired {
 	my $val  = shift;
 
 	$self->{"impCpnRequired"} = $val;
-
 
 }
 
@@ -366,19 +383,20 @@ sub SetPlacementType {
 	my $self = shift;
 	my $val  = shift;
 
-	if ( $self->{"rbPlacementAuto"}->GetValue() ) {
-
-		$val = PnlCreEnums->StepPlacementMode_AUTO;
+	if ( $val eq PnlCreEnums->CpnPlacementMode_AUTO ) {
+		$self->{"rbPlacementAuto"}->SetValue(1);
 		$self->{"notebookPlacement"}->ShowPage(1);
 	}
-	elsif ( $self->{"rbPlacementManual"}->GetValue() ) {
-		$val = PnlCreEnums->StepPlacementMode_MANUAL;
+	elsif ( $val eq PnlCreEnums->CpnPlacementMode_MANUAL ) {
+		$self->{"rbPlacementManual"}->SetValue(1);
 		$self->{"notebookPlacement"}->ShowPage(2);
 	}
 	else {
 
 		die "Wrong action type: $val";
 	}
+	
+	$self->_EnableSettings();
 
 }
 

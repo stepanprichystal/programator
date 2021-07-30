@@ -139,7 +139,7 @@ sub __OnManualPlacementHndl {
 
 		if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
 
-			my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 0, 1, 0 );
+			my $JSON = $pnlToJSON->ParsePnlToJSON( 0, 1, 1, 0 );
 
 			if ( defined $JSON ) {
 

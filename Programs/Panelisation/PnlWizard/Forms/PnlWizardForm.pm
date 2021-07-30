@@ -10,12 +10,14 @@ use strict;
 use warnings;
 use Wx;
 use Win32::GuiTest qw(FindWindowLike GetWindowText   SendKeys SetFocus SendRawKey :VK SendMessage);
+use List::Util qw(first);
 
 #local library
 #use aliased 'Packages::Tests::Test';
 #use aliased 'Widgets::Forms::MyWxFrame';
 use aliased 'Packages::Events::Event';
 use aliased 'Packages::Other::AppConf';
+
 #use aliased 'Managers::MessageMngr::MessageMngr';
 #use aliased 'Programs::Comments::CommWizard::Forms::CommListViewFrm::CommListViewFrm';
 #use aliased 'Programs::Comments::CommWizard::Forms::CommViewFrm::CommViewFrm';
@@ -26,6 +28,10 @@ use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'CamHelpers::CamJob';
+
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -35,22 +41,25 @@ sub new {
 
 	my $class   = shift;
 	my $parent  = shift;
+	my $inCAM   = shift;
 	my $jobId   = shift;
 	my $pnlType = shift;
 
 	my @dimension = ( 960, 880 );
 	my $flags     = &Wx::wxSYSTEM_MENU | &Wx::wxCAPTION | &Wx::wxMINIMIZE_BOX | &Wx::wxMAXIMIZE_BOX | &Wx::wxCLOSE_BOX | &Wx::wxRESIZE_BORDER;
-	my $title     = "Panelisation - $jobId";
+	my $title     = "Panel builder - $jobId";
 
 	my $self = $class->SUPER::new( $parent, $title, \@dimension, $flags );
 
 	bless($self);
 
 	# Properties
+	$self->{"inCAM"}           = $inCAM;
 	$self->{"jobId"}           = $jobId;
 	$self->{"title"}           = $title;
 	$self->{"pnlType"}         = $pnlType;
 	$self->{"loadLastEnabled"} = 0;
+	$self->{"windowsDocked"}   = 0;
 
 	$self->__SetLayout();
 
@@ -61,8 +70,6 @@ sub new {
 	$self->{"cancelClickEvt"}    = Event->new();
 	$self->{"showInCAMClickEvt"} = Event->new();
 
-	$self->{"showSigLClickEvt"}    = Event->new();
-	$self->{"showNCLClickEvt"}     = Event->new();
 	$self->{"loadLastClickEvt"}    = Event->new();
 	$self->{"loadDefaultClickEvt"} = Event->new();
 
@@ -338,6 +345,17 @@ sub SetFlatten {
 	$self->{"flattenChb"}->SetValue($value);
 }
 
+sub Destroy {
+	my $self = shift;
+
+	if ( $self->{"windowsDocked"} ) {
+		$self->__OnDockWindows();
+
+	}
+
+	$self->{"mainFrm"}->Destroy();
+}
+
 sub __SetLayout {
 	my $self = shift;
 
@@ -347,11 +365,16 @@ sub __SetLayout {
 	my $szMain       = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $headerLayout = $self->__SetLayoutHeader( $self->{"mainFrm"} );
 	my $partLayout   = $self->__SetLayoutParts( $self->{"mainFrm"} );
-	
-	 
+
+	my $gauge = Wx::Gauge->new( $self->{"mainFrm"}, -1, 100, [ -1, -1 ], [ -10, 12 ], &Wx::wxGA_HORIZONTAL );
+	$gauge->SetValue(100);
+	$gauge->Pulse();
+	$gauge->Hide();
 
 	$szMain->Add( $headerLayout, 0, &Wx::wxEXPAND );
-	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND );
+	$szMain->Add( 3, 3, 0, &Wx::wxEXPAND );
+	$szMain->Add( $gauge,        0, &Wx::wxEXPAND );
+	$szMain->Add( 2, 2, 0, &Wx::wxEXPAND );
 	$szMain->Add( $partLayout, 1, &Wx::wxEXPAND );
 
 	$self->AddContent($szMain);
@@ -360,7 +383,7 @@ sub __SetLayout {
 
 	my $btnLeave     = $self->AddButton( "Leave as it is", sub { $self->{"leaveClickEvt"}->Do() } );
 	my $btnShowInCAM = $self->AddButton( "Show in editor", sub { $self->{"showInCAMClickEvt"}->Do() } );
-	my $btnCreate    = $self->AddButton( "Check + Create",         sub { $self->{"createClickEvt"}->Do() } );
+	my $btnCreate    = $self->AddButton( "Check + Create", sub { $self->{"createClickEvt"}->Do() } );
 
 	$btnLeave->Disable();
 	$btnShowInCAM->Disable();
@@ -373,9 +396,11 @@ sub __SetLayout {
 	# KEEP REFERENCES
 	$self->{"btnCancel"} = $btnCancel;
 
-	$self->{"btnLeave"}     = $btnLeave;
-	$self->{"btnShowInCAM"} = $btnShowInCAM;
-	$self->{"btnCreate"}    = $btnCreate;
+	$self->{"btnLeave"}       = $btnLeave;
+	$self->{"btnShowInCAM"}   = $btnShowInCAM;
+	$self->{"btnCreate"}      = $btnCreate;
+	$self->{"mainProgessbar"} = $gauge;
+	$self->{"szMain"}         = $szMain;
 
 }
 
@@ -407,16 +432,15 @@ sub __SetLayoutHeader {
 	my $pnlSett = Wx::Panel->new( $pnlMain, -1 );
 	my $pnlSepar = Wx::Panel->new( $pnlSett, -1, &Wx::wxDefaultPosition, [ 2, -1 ] );
 
-	$pnlMain->SetBackgroundColour( AppConf->GetColor("clrMainHeaderBackground"));
+	$pnlMain->SetBackgroundColour( AppConf->GetColor("clrMainHeaderBackground") );
 	$pnlSett->SetBackgroundColour( AppConf->GetColor("clrMainHeaderSettBackground") );
-	$pnlSepar->SetBackgroundColour( AppConf->GetColor("clrMainHeaderSeparator"));
+	$pnlSepar->SetBackgroundColour( AppConf->GetColor("clrMainHeaderSeparator") );
 
 	# DEFINE CONTROLS
 	my $title = AppConf->GetValue("panelTypeTitle");
- 
 
 	my $titleTxt = Wx::StaticText->new( $pnlMain, -1, $title, &Wx::wxDefaultPosition, [ 238, -1 ] );
-	$titleTxt->SetForegroundColour(  AppConf->GetColor("clrTitleText") );
+	$titleTxt->SetForegroundColour( AppConf->GetColor("clrTitleText") );
 	my $f = Wx::Font->new( 14, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 	$titleTxt->SetFont($f);
 
@@ -438,8 +462,8 @@ sub __SetLayoutHeader {
 	my $showSigLBtn = Wx::Button->new( $pnlSett, -1, "Show SIG layers", &Wx::wxDefaultPosition, [ 100, 24 ] );
 	my $showNCLBtn  = Wx::Button->new( $pnlSett, -1, "Show NC layers",  &Wx::wxDefaultPosition, [ 100, 24 ] );
 
-	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [140, 24 ] );
-	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [140, 24 ] );
+	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [ 140, 24 ] );
+	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [ 140, 24 ] );
 
 	# BUILD LAYOUT STRUCTURE
 
@@ -449,7 +473,6 @@ sub __SetLayoutHeader {
 	$szSettCol1Row2->Add( $flattenTxt, 0, &Wx::wxALL, 0 );
 	$szSettCol1Row2->Add( $flattenChb, 0, &Wx::wxALL, 0 );
 
-	 
 	$szSettCol1->Add( $szSettCol1Row1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szSettCol1->Add( $szSettCol1Row2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
@@ -463,10 +486,10 @@ sub __SetLayoutHeader {
 	$szSettCol4->Add( $loadLastBtn,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMainSett->Add( 10, 10, 0, );
-	$szMainSett->Add( $szSettCol1, 0, &Wx::wxALL,                 2 );
-	$szMainSett->Add( $pnlSepar,   0, &Wx::wxEXPAND | &Wx::wxLEFT| &Wx::wxRIGHT, 4 );
-	$szMainSett->Add( $szSettCol2, 0, &Wx::wxALL,                 2 );
-	$szMainSett->Add( $szSettCol3, 0, &Wx::wxALL,                 2);
+	$szMainSett->Add( $szSettCol1, 0, &Wx::wxALL,                                 2 );
+	$szMainSett->Add( $pnlSepar,   0, &Wx::wxEXPAND | &Wx::wxLEFT | &Wx::wxRIGHT, 4 );
+	$szMainSett->Add( $szSettCol2, 0, &Wx::wxALL,                                 2 );
+	$szMainSett->Add( $szSettCol3, 0, &Wx::wxALL,                                 2 );
 	$szMainSett->AddStretchSpacer(1);
 	$szMainSett->Add( $szSettCol4, 0, &Wx::wxALL, 2 );
 
@@ -482,9 +505,9 @@ sub __SetLayoutHeader {
 
 	Wx::Event::EVT_CHECKBOX( $previewChb, -1, sub { $self->{"previewChangedEvt"}->Do( ( $self->{"previewChb"}->IsChecked() ? 1 : 0 ) ) } );
 	Wx::Event::EVT_TEXT( $stepValTxt, -1, sub { $self->{"stepChangedEvt"}->Do( $stepValTxt->GetValue() ) } );
-	Wx::Event::EVT_BUTTON( $showSigLBtn,    -1, sub { $self->{"showSigLClickEvt"}->Do() } );
-	Wx::Event::EVT_BUTTON( $showNCLBtn,     -1, sub { $self->{"showNCLClickEvt"}->Do() } );
-	Wx::Event::EVT_BUTTON( $loadLastBtn,    -1, sub { $self->{"loadLastClickEvt"}->Do() } );
+	Wx::Event::EVT_BUTTON( $showSigLBtn, -1, sub { $self->__OnShowLayers( 1, 0 ) } );
+	Wx::Event::EVT_BUTTON( $showNCLBtn,  -1, sub { $self->__OnShowLayers( 0, 1 ) } );
+	Wx::Event::EVT_BUTTON( $loadLastBtn, -1, sub { $self->{"loadLastClickEvt"}->Do() } );
 	Wx::Event::EVT_BUTTON( $loadDefaultBtn, -1, sub { $self->{"loadDefaultClickEvt"}->Do() } );
 	Wx::Event::EVT_BUTTON( $dockWindowsBtn, -1, sub { $self->__OnDockWindows(@_) } );
 
@@ -500,6 +523,9 @@ sub __SetLayoutHeader {
 
 	$self->{"loadLastBtn"}    = $loadLastBtn;
 	$self->{"loadDefaultBtn"} = $loadDefaultBtn;
+	$self->{"dockWindowsBtn"} = $dockWindowsBtn;
+	$self->{"showSigLBtn"}    = $showSigLBtn;
+	$self->{"showNCLBtn"}     = $showNCLBtn;
 
 	$self->{"stepValTxt"} = $stepValTxt;
 
@@ -694,6 +720,23 @@ sub __SetLayoutParts {
 #
 #}
 
+sub ShowProgressBar {
+	my $self = shift;
+	my $show = shift;
+
+	if ($show) {
+		$self->{"mainProgessbar"}->Show();
+
+	}
+	else {
+
+		$self->{"mainProgessbar"}->Hide();
+
+	}
+
+	$self->{"szMain"}->Layout();
+}
+
 sub __OnDockWindows {
 	my $self = shift;
 
@@ -705,9 +748,31 @@ sub __OnDockWindows {
 	my $pnlWizard      = GetWindowByTitle( $jobId, qr/^$title/i );
 	my $pnlWizardInCAM = GetWindowByTitle( $jobId, qr/InCAM.*PID.*${jobId}/i );
 
-	if ( defined $pnlWizard && defined $pnlWizardInCAM ) {
+	if ( !defined $pnlWizard || !defined $pnlWizardInCAM ) {
 
-		SendMessage( $pnlWizard, 0x0112, 0xF030, 0 );    # Maximize window
+		my $messMngr = $self->_GetMessageMngr();
+		my @mess1    = ("Error during docking windows");
+		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
+	}
+
+	if ( $self->{"windowsDocked"} ) {
+
+		# UNDOCK window
+
+		SendMessage( $pnlWizard, 0x0112, 0xF120, 0 );    # Restore
+
+		SendMessage( $pnlWizardInCAM, 0x0112, 0xF120, 0 );    # Restore
+
+		# UNDOCK window
+		$self->{"windowsDocked"} = 0;
+		$self->{"dockWindowsBtn"}->SetLabel("Dock Window");
+		$self->{"inCAM"}->COM( "show_component", "component" => "Layers_List", "show" => "yes" );
+
+	}
+	else {
+		# DOCK window
+		$self->{"mainFrm"}->Freeze();
+		SendMessage( $pnlWizard, 0x0112, 0xF030, 0 );         # Maximize window
 
 		#  Dock to left half of screen
 		SetFocus($pnlWizard);
@@ -723,15 +788,15 @@ sub __OnDockWindows {
 		SendKeys("{RIGHT}");
 		SendRawKey( VK_LWIN, KEYEVENTF_KEYUP );
 
-#		$self->{"previewChb"}->SetValue(1);                   # Activate preview if docking window
-#		$self->{"previewChangedEvt"}->Do(1);
+		#		$self->{"previewChb"}->SetValue(1);                   # Activate preview if docking window
+		#		$self->{"previewChangedEvt"}->Do(1);
 
-	}
-	else {
+		$self->{"windowsDocked"} = 1;
+		$self->{"dockWindowsBtn"}->SetLabel("Undock Window");
+		$self->{"inCAM"}->COM( "show_component", "component" => "Layers_List", "show" => "no" );
+		$self->{"inCAM"}->COM("zoom_home");
+		$self->{"mainFrm"}->Thaw();
 
-		my $messMngr = $self->_GetMessageMngr();
-		my @mess1    = ("Error during docking windows");
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 	}
 
 	sub GetWindowByTitle {
@@ -754,6 +819,69 @@ sub __OnDockWindows {
 	}
 
 	return 0;
+
+}
+
+sub __OnShowLayers {
+	my $self    = shift;
+	my $showSig = shift;
+	my $showNC  = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	my @dispAllLayers = CamMatrix->GetDisplayedLayers( $inCAM, $jobId );
+	my @allLayers = map { $_->{"gROWname"} } CamJob->GetBoardLayers( $inCAM, $jobId );
+
+	my @layers2Disp = ();
+	if ($showSig) {
+
+		@layers2Disp = grep { $_ =~ /^[cs]$/ } @allLayers;
+	}
+
+	if ($showNC) {
+
+		@layers2Disp = grep { $_ =~ /^f$/ || $_ =~ /^score$/ } @allLayers;
+	}
+
+	my @dispLayers    = ();
+	my @notDispLayers = ();
+
+	foreach my $l (@layers2Disp) {
+
+		my $disp = ( defined first { $_ eq $l } @dispAllLayers ) ? 1 : 0;
+
+		push( @dispLayers,    $l ) if ($disp);
+		push( @notDispLayers, $l ) if ( !$disp );
+	}
+
+	my $btnText = "";
+	my $btn     = undef;
+	if ($showSig) {
+		$btnText = "SIG layers";
+		$btn     = $self->{"showSigLBtn"};
+	}
+	if ($showNC) {
+		$btnText = "NC layers";
+		$btn     = $self->{"showNCLBtn"};
+	}
+
+	if ( scalar(@dispLayers) > scalar(@notDispLayers) ) {
+
+		# Deactivate all
+		CamLayer->DisplayLayers( $inCAM, \@layers2Disp, 0, 0 );
+
+		$btn->SetLabel( "Show " . $btnText );
+
+	}
+	else {
+
+		# Activate all
+		CamLayer->DisplayLayers( $inCAM, \@layers2Disp, 1, 0 );
+		$inCAM->COM( "display_sr", "display" => "yes" );
+		$btn->SetLabel( "Hide " . $btnText );
+
+	}
 
 }
 

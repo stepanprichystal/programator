@@ -91,8 +91,5 @@ while ( scalar(@sig) > 2 && !JobHelper->StackupExist($jobId) ) {
 	}
 }
 
-my $form = RunPnlWizard->new( $jobId, PnlCreEnums->PnlType_CUSTOMERPNL );
-
-print STDERR "KONEC";
-sleep(5);
+my $form = RunPnlWizard->new( $jobId, PnlCreEnums->PnlType_PRODUCTIONPNL );
 

@@ -123,6 +123,14 @@ sub __SetLayout {
 	$gauge->Pulse();
 	$gauge->Hide();
 
+	my $previewInfoNum1Txt = Wx::StaticText->new( $pnlHeader, -1, "", &Wx::wxDefaultPosition );
+	$previewInfoNum1Txt->SetForegroundColour( AppConf->GetColor("clrWrapperPreview") );
+	$previewInfoNum1Txt->Hide();
+
+	my $previewInfoNum2Txt = Wx::StaticText->new( $pnlHeader, -1, "", &Wx::wxDefaultPosition );
+	$previewInfoNum2Txt->SetForegroundColour( AppConf->GetColor("clrWrapperPreview") );
+	$previewInfoNum2Txt->Hide();
+
 	my $previewChb = Wx::CheckBox->new( $pnlHeader, -1, "Preview", &Wx::wxDefaultPosition );
 	$previewChb->SetForegroundColour( AppConf->GetColor("clrWrapperPreview") );
 
@@ -139,8 +147,10 @@ sub __SetLayout {
 
 	$szHeader->Add( 1, 1, 1, &Wx::wxEXPAND );                                               # expander
 
-	$szHeader->Add( $errInd, 0, &Wx::wxALL, 0 );
-	$szHeader->Add( $previewChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 10 );
+	$szHeader->Add( $errInd,             0, &Wx::wxALL,                 0 );
+	$szHeader->Add( $previewInfoNum1Txt, 0, &Wx::wxTOP | &Wx::wxLEFT,   10 );
+	$szHeader->Add( $previewInfoNum2Txt, 0, &Wx::wxTOP | &Wx::wxLEFT,   10 );
+	$szHeader->Add( $previewChb,         0, &Wx::wxEXPAND | &Wx::wxALL, 10 );
 
 	$pnlHeader->SetSizer($szHeader);
 	$pnlBody->SetSizer($szBody);
@@ -149,15 +159,19 @@ sub __SetLayout {
 
 	# SET EVENTS
 
-	Wx::Event::EVT_CHECKBOX( $previewChb, -1, sub { $self->{"previewChangedEvt"}->Do( ( $self->{"previewChb"}->IsChecked() ? 1 : 0 ) ) } );
+	Wx::Event::EVT_CHECKBOX( $previewChb, -1,
+							 sub { $self->__HidePreviewText(); $self->{"previewChangedEvt"}->Do( ( $self->{"previewChb"}->IsChecked() ? 1 : 0 ) ) } );
 
 	# SET REFERENCES
 
-	$self->{"pnlBody"}    = $pnlBody;
-	$self->{"szBody"}     = $szBody;
-	$self->{"previewChb"} = $previewChb;
-	$self->{"errInd"}     = $errInd;
-	$self->{"gauge"}      = $gauge;
+	$self->{"pnlBody"}            = $pnlBody;
+	$self->{"szBody"}             = $szBody;
+	$self->{"szHeader"}           = $szHeader;
+	$self->{"previewChb"}         = $previewChb;
+	$self->{"errInd"}             = $errInd;
+	$self->{"gauge"}              = $gauge;
+	$self->{"previewInfoNum1Txt"} = $previewInfoNum1Txt;
+	$self->{"previewInfoNum2Txt"} = $previewInfoNum2Txt;
 
 	#$self->__RecursiveHandler($pnlHeader);
 
@@ -188,6 +202,7 @@ sub SetPreview {
 	my $value = shift;
 
 	$self->{"previewChb"}->SetValue($value);
+
 }
 
 sub GetPreview {
@@ -230,6 +245,60 @@ sub ShowLoading {
 	else {
 		$self->{"gauge"}->Hide();
 	}
+}
+
+sub SetPreviewInfoTextRow1 {
+	my $self  = shift;
+	my $value = shift;
+
+	if ( defined $value ) {
+
+		$self->{"previewInfoNum1Txt"}->SetLabel($value);
+		$self->{"previewInfoNum1Txt"}->Show();
+		$self->{"szHeader"}->Layout();
+	}
+	else {
+
+		$self->{"previewInfoNum1Txt"}->SetLabel("");
+		$self->{"previewInfoNum1Txt"}->Hide();
+		$self->{"szHeader"}->Layout();
+	}
+
+}
+
+sub SetPreviewInfoTextRow2 {
+	my $self  = shift;
+	my $value = shift;
+
+	if ( defined $value ) {
+
+		$self->{"previewInfoNum2Txt"}->SetLabel($value);
+		$self->{"previewInfoNum2Txt"}->Show();
+		$self->{"szHeader"}->Layout();
+	}
+	else {
+
+		$self->{"previewInfoNum2Txt"}->SetLabel("");
+		$self->{"previewInfoNum2Txt"}->Hide();
+		$self->{"szHeader"}->Layout();
+	}
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Private  methods
+#-------------------------------------------------------------------------------------------#
+
+sub __HidePreviewText {
+	my $self = shift;
+
+	if ( !$self->{"previewChb"}->IsChecked() ) {
+
+		$self->{"previewInfoNum1Txt"}->Hide();
+		$self->{"previewInfoNum2Txt"}->Hide();
+		$self->{"szHeader"}->Layout();
+	}
+
 }
 
 1;

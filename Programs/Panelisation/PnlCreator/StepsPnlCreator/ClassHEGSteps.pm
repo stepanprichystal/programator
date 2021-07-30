@@ -27,7 +27,8 @@ use aliased 'Connectors::HeliosConnector::HegMethods';
 #use aliased 'CamHelpers::CamHelper';
 #use aliased 'CamHelpers::CamJob';
 #use aliased 'CamHelpers::CamStep';
-#use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStepRepeat';
+
 #use aliased 'Packages::CAMJob::Panelization::AutoPart';
 #use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
 
@@ -91,12 +92,12 @@ sub Init {
 	}    # Load panel size from HEG
 	elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
 
-		my $multiplIS = $dim->{"nasobnost"};
-		my $multiplPnlIS =  $dim->{"nasobnost_panelu"};
-		if(defined $multiplPnlIS && $multiplPnlIS > 0){
-			
+		my $multiplIS    = $dim->{"nasobnost"};
+		my $multiplPnlIS = $dim->{"nasobnost_panelu"};
+		if ( defined $multiplPnlIS && $multiplPnlIS > 0 ) {
+
 			$multiplIS /= $multiplPnlIS;
-			
+
 		}
 
 		if ( defined $multiplIS && $multiplIS > 0 ) {
@@ -138,16 +139,28 @@ sub Check {
 
 # Return 1 if succes 0 if fail
 sub Process {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $errMess = shift;    # reference to err message
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $errMess    = shift;         # reference to err message
+	my $resultData = shift // {};
 
 	my $result = 1;
 
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->GetStep();
 
-	$result = $self->SUPER::_Process( $inCAM, $errMess );
+	$result = $self->SUPER::_Process( $inCAM, $errMess, $resultData );
+
+	# Store result data (total step cnt)
+	my $total = 0;
+	my @repeats = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $self->GetStep() );
+	foreach my $sr (@repeats) {
+
+		$total += $sr->{"totalCnt"};
+	}
+
+	$resultData->{"totalStepCnt"} = $total if ($result);
+
 	return $result;
 }
 

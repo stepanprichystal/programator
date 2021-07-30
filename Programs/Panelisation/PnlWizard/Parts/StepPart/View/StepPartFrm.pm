@@ -7,6 +7,9 @@
 package Programs::Panelisation::PnlWizard::Parts::StepPart::View::StepPartFrm;
 use base qw(Programs::Panelisation::PnlWizard::Forms::CreactorSelectorFrm);
 
+use Class::Interface;
+&implements('Programs::Panelisation::PnlWizard::Parts::IPartForm');
+
 #3th party library
 use strict;
 use warnings;

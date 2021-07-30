@@ -59,6 +59,7 @@ sub Init {
 	my $self     = shift;
 	my $inCAM    = shift;
 	my $stepName = shift;
+	
 
 	$self->SetStep($stepName);
 
@@ -172,6 +173,7 @@ sub Process {
 	my $self    = shift;
 	my $inCAM   = shift;
 	my $errMess = shift;    # reference to err message
+		my $resultData = shift // {};
 
 	my $result = 1;
 
@@ -229,6 +231,18 @@ sub Process {
 
 	CamJob->SetJobAttribute( $inCAM, 'cust_set_multipl', $self->GetSetMultiplicity(), $jobId );
 	CamJob->SetJobAttribute( $inCAM, 'customer_set', 'yes', $jobId );
+
+
+	# Store result data (total step cnt)
+	my $total = 0;
+	my @repeats = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $self->GetStep() );
+	foreach my $sr (@repeats) {
+
+		$total += $sr->{"totalCnt"};
+	}
+
+	$resultData->{"totalStepCnt"} = $total if ($result);
+
 
 	return $result;
 }

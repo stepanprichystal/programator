@@ -22,6 +22,7 @@ use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::Control::Sche
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -86,7 +87,11 @@ sub Init {
 		}
 	}
 
-	push( @parts, SchemePart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
+	if ( !JobHelper->GetJobIsOffer($jobId) ) {
+
+		push( @parts, SchemePart->new( $inCAM, $jobId, $pnlType, $self->{"backgroundTaskMngr"} ) );
+
+	}
 
 	foreach my $part (@parts) {
 
@@ -185,8 +190,7 @@ sub RefreshGUI {
 
 		}
 	}
-	
-	
+
 	if ($eventsOff) {
 		foreach my $part ( @{ $self->{"parts"} } ) {
 

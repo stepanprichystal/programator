@@ -58,7 +58,7 @@ sub Check {
 	my $self      = shift;
 	my $pnlType   = shift;    # Panelisation type
 	my $partModel = shift;    # Part model
-
+ 
 	if ( $pnlType eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 
 		$self->__CheckCustomerPanel($partModel);
@@ -97,8 +97,23 @@ sub __CheckCustomerPanel {
 			my @custSchemas = $custNote->RequiredSchemas();
 			my $custTxt = join( "; ", @custSchemas );
 
-			$self->_AddError( "Customer schema",
+			$self->_AddError( "Zákaznické schéma",
 							  "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custTxt\", ale je vybrané schéma: \"$scheme\"." );
+		}
+	}
+
+	# More customer schemas
+	{
+		my $custInfo    = HegMethods->GetCustomerInfo($jobId);
+		my $custNote    = CustomerNote->new( $custInfo->{"reference_subjektu"} );
+		my @custSchemas = $custNote->RequiredSchemas();
+
+		if ( scalar(@custSchemas) ) {
+
+			my $schTxt = join( "; ", @custSchemas );
+			$self->_AddWarning( "Zákaznické schéma",
+								"Zákazník má uloženo více vlastních schémat (${schTxt}). Je vybrané scháma ($scheme) to správné?." )
+			  ;
 		}
 	}
 
@@ -146,11 +161,7 @@ sub __CheckProductionPanel {
 		unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, $scheme, undef, \$errMess ) ) {
 			my $extarInfo = "";
 
-			$self->_AddError(
-							  "Špatné schéma",
-							  "Je vybrané špatné schéma: $scheme (attribut: .pnl_scheme v atributech stepu)"
-								. ( $errMess ne "" ? "Detail chyby:\n$errMess" : "" )
-			);
+			$self->_AddError( "Špatné schéma", "Je vybrané špatné schéma: $scheme" . ( $errMess ne "" ? "Detail chyby:\n$errMess" : "" ) );
 
 		}
 
@@ -180,9 +191,9 @@ sub __CheckGeneral {
 		  grep { $_->GetType() eq StackEnums->MaterialType_COPPER && !$_->GetIsFoil() && $_->GetCopperName() =~ /^v\d+/ } $stackup->GetAllLayers();
 
 		foreach my $cuLayer (@inner) {
- 
- 			my $cuLayerName = $cuLayer->GetCopperName();
-			my $specFill = $specLayerFill->{$cuLayerName};
+
+			my $cuLayerName = $cuLayer->GetCopperName();
+			my $specFill    = $specLayerFill->{$cuLayerName};
 
 			my $core     = $stackup->GetCoreByCuLayer( $cuLayer->GetCopperName() );
 			my %lPars    = JobHelper->ParseSignalLayerName( $cuLayer->GetCopperName() );
@@ -190,8 +201,11 @@ sub __CheckGeneral {
 
 			if ( $cuLayer->GetUssage() == 0 && $specFill ne EnumsCAM->AttSpecLayerFill_EMPTY ) {
 
-				$self->_AddError( "Špatná výplň okolí",
-					  "Pokud vnitřní vrstva ($cuLayerName) má 0% využití, musí být typ vylití nastaven na: " . EnumsCAM->AttSpecLayerFill_EMPTY );
+				$self->_AddError(
+								  "Špatná výplň okolí",
+								  "Pokud vnitřní vrstva ($cuLayerName) má 0% využití, musí být typ vylití nastaven na: "
+									. EnumsCAM->AttSpecLayerFill_EMPTY
+				);
 
 			}
 			elsif ( $cuLayer->GetUssage() < 0.05 && $specFill ne EnumsCAM->AttSpecLayerFill_EMPTY ) {
@@ -229,9 +243,9 @@ sub __CheckGeneral {
 					&& $specFill ne EnumsCAM->AttSpecLayerFill_CIRCLE80PCT )
 			{
 				$self->_AddError(
-							  "Špatná výplň okolí",
-							  "Pokud vnitřní vrstva ($cuLayerName) včetně nakovení má Cu vyšší než 70µm, musí být typ vylití nastaveno na: "
-								. EnumsCAM->AttSpecLayerFill_CIRCLE80PCT
+						  "Špatná výplň okolí",
+						  "Pokud vnitřní vrstva ($cuLayerName) včetně nakovení má Cu vyšší než 70µm, musí být typ vylití nastaveno na: "
+							. EnumsCAM->AttSpecLayerFill_CIRCLE80PCT
 				);
 			}
 

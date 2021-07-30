@@ -26,6 +26,9 @@ use aliased 'Packages::CAMJob::Panelization::AutoPart';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::StepProfile';
+use aliased 'Helpers::JobHelper';
+use aliased 'Connectors::HeliosConnector::HegMethods';
+
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -123,7 +126,7 @@ sub _Init {
 	}
 
 	$self->SetPCBStepProfile( Enums->PCBStepProfile_STANDARD );
-	
+
 	if ( CamHelper->LayerExists( $inCAM, $self->{"jobId"}, "cvrlpins" ) && $self->GetPCBStep() ne "mpanel" ) {
 
 		$self->SetPCBStepProfile( Enums->PCBStepProfile_CVRLPINS );
@@ -154,6 +157,13 @@ sub _Init {
 	$defClass = $classes[0];
 	if ( defined $defClass ) {
 
+		# load pcb info
+		my $matKind      = HegMethods->GetMaterialKind($jobId);
+		my $isSemiHybrid = 0;
+		my $isHybrid     = JobHelper->GetIsHybridMat( $jobId, $matKind, [], \$isSemiHybrid );
+		my $isFlex       = JobHelper->GetIsFlex($jobId);
+		my $pcbType      = JobHelper->GetPcbType($jobId);
+
 		$self->{"settings"}->{"defPnlClass"} = $defClass->GetName();
 
 		# Set placement settings
@@ -165,8 +175,82 @@ sub _Init {
 
 		# Set space settings
 		$self->SetAlignType( $defClass->GetSpacingAlign() );
+
 		my @spacings = $classes[0]->GetAllClassSpacings();
-		$defSpacing = $spacings[0];
+
+		if ( $self->GetPnlType() eq Enums->PnlType_CUSTOMERPNL ) {
+
+			if ( CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
+
+				# space 0
+
+				$defSpacing = ( grep { $_->GetSpaceX() == 0 && $_->GetSpaceY() == 0 } @spacings )[0];
+
+			}
+			elsif (    $pcbType eq EnumsGeneral->PcbType_1VFLEX
+					|| $pcbType eq EnumsGeneral->PcbType_2VFLEX
+					|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXI
+					|| $pcbType eq EnumsGeneral->PcbType_RIGIDFLEXO )
+			{
+
+				# space 10 (at least 2,5 because of 1flut rout)
+
+				$defSpacing = ( grep { $_->GetSpaceX() == 10 && $_->GetSpaceY() == 10 } @spacings )[0];
+			}
+			elsif (
+
+				$isSemiHybrid || $isHybrid
+			  )
+			{
+				# space 2.5 (at least 2,5 because of 1flut rout)
+
+				$defSpacing = ( grep { $_->GetSpaceX() == 2.5 && $_->GetSpaceY() == 2.5 } @spacings )[0];
+
+			}
+			elsif (
+				   $pcbType eq EnumsGeneral->PcbType_NOCOPPER
+				|| $pcbType eq EnumsGeneral->PcbType_1V
+				|| $pcbType eq EnumsGeneral->PcbType_2V
+				|| $pcbType eq EnumsGeneral->PcbType_MULTI
+
+			  )
+			{
+				$defSpacing = ( grep { $_->GetSpaceX() == 2 && $_->GetSpaceY() == 2 } @spacings )[0];
+			}
+
+		}
+		elsif ( $self->GetPnlType() eq Enums->PnlType_PRODUCTIONPNL ) {
+
+			if ( $self->GetPCBStep() ne "mpanel" ) {
+
+				my $pcbThick = CamJob->GetFinalPcbThick( $inCAM, $jobId, 1 );
+
+				use constant MINTHICK1 => 1100;    # Use 10 mm space if less than 1100
+				use constant MINTHICK2 => 600;     # Use 15 mm space if less than 600
+				if ( $pcbThick <= MINTHICK2 ) {
+
+					# space 15
+					$defSpacing = ( grep { $_->GetSpaceX() == 15 && $_->GetSpaceY() == 15 } @spacings )[0];
+
+				}
+				elsif ( $pcbThick <= MINTHICK1 ) {
+
+					# space 10
+					$defSpacing = ( grep { $_->GetSpaceX() == 10 && $_->GetSpaceY() == 10 } @spacings )[0];
+
+				}else{
+					
+					
+					# space 4.5
+					$defSpacing = ( grep { $_->GetSpaceX() == 4.5 && $_->GetSpaceY() == 4.5 } @spacings )[0];
+				}
+
+			}
+		}
+
+		# Take first as default
+
+		$defSpacing = $spacings[0] unless ( defined $defSpacing );
 
 		if ( defined $defSpacing ) {
 
@@ -332,9 +416,10 @@ sub _Check {
 
 # Return 1 if succes 0 if fail
 sub _Process {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $errMess = shift;    # reference to err message
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $errMess    = shift;         # reference to err message
+	my $resultData = shift // {};
 
 	my $result = 1;
 
@@ -452,10 +537,10 @@ sub _Process {
 				$self->GetInterlockType(),
 				0, 0, 0
 			);
-			
-			if ( $self->GetPCBStepProfile() eq Enums->PCBStepProfile_CVRLPINS ){
-				
-				StepProfile->ReplaceCvrlpinSteps($inCAM, $self->{"jobId"}, $self->GetStep());
+
+			if ( $self->GetPCBStepProfile() eq Enums->PCBStepProfile_CVRLPINS ) {
+
+				StepProfile->ReplaceCvrlpinSteps( $inCAM, $self->{"jobId"}, $self->GetStep() );
 			}
 
 		}
@@ -500,6 +585,9 @@ sub _Process {
 
 		}
 
+		# Store result data (total step cnt)
+		$resultData->{"utilization"} = $autoRes{"utilization"} if($result);
+
 	}
 	elsif ( $self->GetActionType() eq Enums->StepPlacementMode_MANUAL ) {
 
@@ -508,8 +596,8 @@ sub _Process {
 
 			my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
 			$pnlToJSON->CreatePnlByJSON( $self->GetManualPlacementJSON(), 1, 1, 0 );
-			
-			StepProfile->ReplaceCvrlpinSteps($inCAM, $self->{"jobId"}, $self->GetStep());
+
+			StepProfile->ReplaceCvrlpinSteps( $inCAM, $self->{"jobId"}, $self->GetStep() );
 
 		}
 		elsif ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_NA ) {
@@ -527,8 +615,6 @@ sub _Process {
 
 			my $pcbStep = $self->GetPCBStep();
 			$pcbStep .= "_cvrlpins" if ( $self->GetPCBStepProfile() eq Enums->PCBStepProfile_CVRLPINS );
-			
-
 
 			$autoPart->AutoPartPanelise(
 

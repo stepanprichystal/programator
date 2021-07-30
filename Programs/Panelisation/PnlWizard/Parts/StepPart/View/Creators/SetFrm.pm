@@ -16,7 +16,7 @@ use Wx;
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetStepList';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::SetNestedStepList';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper' => "PnlCreHelper";
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::Frm::ManualPlacement';
 
@@ -82,7 +82,7 @@ sub __SetLayoutSetSettings {
 
 	# DEFINE CONTROLS
 	my @editSteps = PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
-	my $stepList = SetStepList->new( $statBox, \@editSteps );
+	my $stepList = SetNestedStepList->new( $statBox, \@editSteps );
 	my $setMultiplicityTxt = Wx::StaticText->new($statBox, -1, "Set multiplicity:", [ -1, -1 ], [ 10, 23] );
 	my $setMultiplicityValTxt = Wx::TextCtrl->new($statBox, -1, "", [ -1, -1 ], [ 10, 23] );
 	my $pnlPicker = ManualPlacement->new( $statBox, $self->{"jobId"}, $self->GetStep(), "Adjust panel", "Adjust panel settings.", 1, "Clear" );
@@ -154,13 +154,7 @@ sub GetSetMultiplicity {
 
 }
 
-sub SetManualPlacementJSON {
-	my $self = shift;
-	my $val  = shift;
-
-	$self->{"settings"}->{"manualPlacementJSON"} = $val;
-
-}
+ 
 
 sub SetManualPlacementJSON {
 	my $self = shift;

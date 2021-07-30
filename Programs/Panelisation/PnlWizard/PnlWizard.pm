@@ -76,9 +76,7 @@ sub new {
 
 	$self->{"jobId"} = shift;
 
-	$self->{"serverPort"} = shift;
-
-	$self->{"pnlType"} = undef;
+	$self->{"pnlType"} = shift;
 
 	$self->{"inCAM"} = undef;
 
@@ -108,22 +106,19 @@ sub new {
 	# Name of steps with adjusted profile bz cvrlpin layer (created before start and destroyed after close app)
 	$self->{"cvrlpinSteps"} = [];
 
+	$main::configPath = GeneralHelper->Root() . "\\Programs\\Panelisation\\PnlWizard\\Config\\Config_" . $self->{"pnlType"} . ".txt";
+
 	return $self;
 }
 
 sub Init {
 	my $self     = shift;
 	my $launcher = shift;
-	my $pnlType  = shift;    # contain InCAM library conencted to server
-	                         # 1) Get background worker and InCAM library from launcher
-
-	$main::configPath = GeneralHelper->Root() . "\\Programs\\Panelisation\\PnlWizard\\Config\\Config_" . $pnlType . ".txt";
-
+	# contain InCAM library conencted to server
+	
 	$self->{"launcher"} = $launcher;
-
-	$self->{"pnlType"} = $pnlType;
-
-	$self->{"form"} = PnlWizardForm->new( -1, $self->{"jobId"}, $self->{"pnlType"} );
+ 
+	$self->{"form"} = PnlWizardForm->new( -1, $launcher->GetInCAM(), $self->{"jobId"}, $self->{"pnlType"} );
 
 	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"pnlType"} );
 
@@ -136,8 +131,7 @@ sub Init {
 	$self->{"inCAM"} = $launcher->GetInCAM();
 
 	$self->{"inCAM"}->SupressToolkitException();
-
-	#$self->{"inCAM"}->SetDisplay(0);
+ 
 
 	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"backgroundTaskMngr"} );
 
@@ -212,7 +206,10 @@ sub Init {
 	$self->__InCAMEditorPreviewMode(1);
 
 	print STDERR "Init model async START\n";
-	$self->{"partContainer"}->AsyncInitSelCreatorModel();
+	
+	# Call async init for first part. I cause setting changed evnets.
+	# It allows to change settings in next part based on this event
+	$self->{"partContainer"}->AsyncInitSelCreatorModel(   ($self->{"partContainer"}->GetParts())[0]->GetPartId());
 	print STDERR "Init model async END\n";
 
 	#
@@ -268,8 +265,11 @@ sub __OnCreateClickHndl {
 
 	foreach my $checkClass ( $self->{"partContainer"}->GetPartsCheckClass( $self->{"pnlType"} ) ) {
 
-		$self->{"popupChecker"}->AddCheckClass( $checkClass->{"checkClassId"},    $checkClass->{"checkClassPackage"},
-												$checkClass->{"checkClassTitle"}, $checkClass->{"checkClassConstrData"}, $checkClass->{"checkClassCheckData"} );
+		$self->{"popupChecker"}->AddCheckClass(
+												$checkClass->{"checkClassId"},    $checkClass->{"checkClassPackage"},
+												$checkClass->{"checkClassTitle"}, $checkClass->{"checkClassConstrData"},
+												$checkClass->{"checkClassCheckData"}
+		);
 
 	}
 
@@ -287,20 +287,24 @@ sub __OnCancelClickHndl {
 	$self->__StoreModelToDisc();
 
 	# Restore backuped step
-	if ( defined $self->{"pnlStepBackup"} ) {
+	if ( defined $self->{"pnlStepBackup"} && CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} ) ) {
 
 		my $oriName = $self->{"pnlStepBackup"};
 		$oriName =~ s/_backup//i;
 
-		if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} ) ) {
-
-			if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $oriName ) ) {
-				CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $oriName );
-			}
-
-			CamStep->RenameStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"}, $oriName );
+		if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $oriName ) ) {
+			CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $oriName );
 		}
 
+		CamStep->RenameStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"}, $oriName );
+
+	}
+	else {
+
+		if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() ) ) {
+
+			CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+		}
 	}
 
 	# Remove cvrlpisn step
@@ -316,7 +320,7 @@ sub __OnCancelClickHndl {
 
 	}
 
-	$self->{"form"}->{"mainFrm"}->Destroy();
+	$self->{"form"}->Destroy();
 
 	#}
 
@@ -350,7 +354,7 @@ sub __OnLeaveClickHndl {
 
 	}
 
-	$self->{"form"}->{"mainFrm"}->Destroy();
+	$self->{"form"}->Destroy();
 
 }
 
@@ -365,6 +369,7 @@ sub __OnShowInCAMClickHndl {
 	$self->{"form"}->{"mainFrm"}->Hide();
 	$self->{"inCAM"}->PAUSE("Check panel (do not modify panel, it will have no affect!)");
 	$self->{"form"}->{"mainFrm"}->Show();
+	$self->{"inCAM"}->COM("zoom_home");
 
 }
 
@@ -410,61 +415,13 @@ sub __OnLoadDefaultClickHndl {
 
 }
 
-sub __OnShowLayersClickHndl {
-	my $self    = shift;
-	my $showSig = shift;
-	my $showNC  = shift;
-
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
-
-	my @dispAllLayers = CamMatrix->GetDisplayedLayers( $inCAM, $jobId );
-	my @allLayers = map { $_->{"gROWname"} } CamJob->GetBoardLayers( $inCAM, $jobId );
-
-	my @layers2Disp = ();
-	if ($showSig) {
-
-		@layers2Disp = grep { $_ =~ /^[cs]$/ } @allLayers;
-	}
-
-	if ($showNC) {
-
-		@layers2Disp = grep { $_ =~ /^f$/ || $_ =~ /^score$/ } @allLayers;
-	}
-
-	my @dispLayers    = ();
-	my @notDispLayers = ();
-
-	foreach my $l (@layers2Disp) {
-
-		my $disp = ( defined first { $_ eq $l } @dispAllLayers ) ? 1 : 0;
-
-		push( @dispLayers,    $l ) if ($disp);
-		push( @notDispLayers, $l ) if ( !$disp );
-	}
-
-	if ( scalar(@dispLayers) > scalar(@notDispLayers) ) {
-
-		# Deactivate all
-		CamLayer->DisplayLayers( $inCAM, \@layers2Disp, 0, 0 );
-
-	}
-	else {
-
-		# Activate all
-		CamLayer->DisplayLayers( $inCAM, \@layers2Disp, 1, 0 );
-		$inCAM->COM( "display_sr", "display" => "yes" );
-
-	}
-
-}
-
 sub __OnCheckResultHndl {
 	my $self   = shift;
 	my $result = shift;
 
 	if ($result) {
 
+		$self->{"form"}->ShowProgressBar(1);
 		$self->{"partContainer"}->AsyncCreatePanel();
 	}
 	else {
@@ -480,7 +437,7 @@ sub __OnAsyncPanelCreatedHndl {
 	my $errMess = shift;
 
 	$self->{"form"}->SetFinalProcessLayout( 0, $self->{"partContainer"}->GetPreview() );
-
+	$self->{"form"}->ShowProgressBar(0);
 	if ($result) {
 
 		# Do flatten if requested
@@ -511,7 +468,7 @@ sub __OnAsyncPanelCreatedHndl {
 
 		}
 
-		$self->{"form"}->{"mainFrm"}->Destroy();
+		$self->{"form"}->Destroy();
 
 	}
 	else {
@@ -668,9 +625,9 @@ sub __SetHandlers {
 	$self->{"form"}->{"showInCAMClickEvt"}->Add( sub { $self->__OnShowInCAMClickHndl(@_) } );
 	$self->{"form"}->{"createClickEvt"}->Add( sub    { $self->__OnCreateClickHndl(@_) } );
 
-	$self->{"form"}->{"showSigLClickEvt"}->Add( sub { $self->__OnShowLayersClickHndl( 1, 0 ) } );
-	$self->{"form"}->{"showNCLClickEvt"}->Add( sub  { $self->__OnShowLayersClickHndl( 0, 1 ) } );
-	$self->{"form"}->{"loadLastClickEvt"}->Add( sub { $self->__OnLoadLastClickHndl(@_) } );
+	#$self->{"form"}->{"showSigLClickEvt"}->Add( sub { $self->__OnShowLayersClickHndl( 1, 0 ) } );
+	#$self->{"form"}->{"showNCLClickEvt"}->Add( sub  { $self->__OnShowLayersClickHndl( 0, 1 ) } );
+	$self->{"form"}->{"loadLastClickEvt"}->Add( sub    { $self->__OnLoadLastClickHndl(@_) } );
 	$self->{"form"}->{"loadDefaultClickEvt"}->Add( sub { $self->__OnLoadDefaultClickHndl(@_) } );
 
 	$self->{"form"}->{"previewChangedEvt"}->Add( sub { $self->__OnFormPreviewChangedlHndl(@_) } );
@@ -769,6 +726,8 @@ sub __InitModel {
 	# Pre init creator models
 	my %parts = %{ $self->{"model"}->GetParts() };
 	foreach my $partId ( keys %parts ) {
+
+		$parts{$partId}->SetStep($step);
 
 		my @creators = @{ $parts{$partId}->GetCreators() };
 

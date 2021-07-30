@@ -683,7 +683,7 @@ sub __CheckGroupDataBasic {
 		my @steps = ();
 
 		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName ) ) {
-			my @SR = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepName );
+			my @SR = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
 
 			CamStepRepeat->RemoveCouponSteps( \@SR );
 			push( @steps, map { $_->{"stepName"} } @SR );
@@ -694,6 +694,9 @@ sub __CheckGroupDataBasic {
 		}
 
 		foreach my $step (@steps) {
+
+			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"}, 0 );
+			next if ( $hist{"total"} == 0 );
 
 			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $step, $l->{"gROWname"} );
 
@@ -1218,10 +1221,11 @@ sub __CheckGroupDataExtend {
 		unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, $usedPnlScheme, $pnlHeight, \$errMess ) ) {
 
 			$dataMngr->_AddErrorResult(
-										"Špatné schéma",
-										"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
-										  . " Vlož do panelu správné schéma.".($errMess ne "" ? "Detail chyby:\n$errMess" : "")
-										  
+				"Špatné schéma",
+				"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
+				  . " Vlož do panelu správné schéma."
+				  . ( $errMess ne "" ? "Detail chyby:\n$errMess" : "" )
+
 			);
 
 		}
@@ -1381,6 +1385,49 @@ sub __CheckGroupDataExtend {
 			);
 		}
 
+	}
+
+	# X) Check if there is always frame pattern fill in Cu when 1-2v flex and customer panel
+	{
+		if ( $defaultInfo->GetIsFlex() && $defaultInfo->GetLayerCnt() <= 2 ) {
+
+			my %dim = JobDim->GetDimension( $inCAM, $jobId );
+
+			if ( $dim{"nasobnost_panelu"} > 0 ) {
+
+				my @sr = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+
+				# Get panel step (not always mpanel, it can be also o+1 as customer panel)
+				foreach my $sigL ( $defaultInfo->GetSignalLayers() ) {
+
+					my $sigName = $sigL->{"gROWname"};
+
+					# If esist soldermask and not stiffener, check pattern fill in frame
+					my $stiff = first { $_->{"gROWlayer_type"} eq "stiffener"  && $_->{"gROWname"} =~ /$sigName/ } $defaultInfo->GetBoardBaseLayers();
+					my $mask  = first { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} =~ /$sigName/ } $defaultInfo->GetBoardBaseLayers();
+
+					if ( defined $mask && !defined $stiff ) {
+
+						foreach my $s (@sr) {
+
+							my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $s->{"stepName"}, $sigName, 0 );
+							if ( !defined $attHist{".pattern_fill"} ) {
+
+								$dataMngr->_AddErrorResult(
+															"Výplň okolí ze strany $sigL",
+															"Pokud DPS neobsahuje stiffner a zároveň obsahuje flex masku, "
+															  . "je nutné, aby okolí panelu bylo vyplněno Cu (šrafováním atd) a to i v případě panelu zákazníka, "
+															  . "jinak je při sítotisku v okolí nanesená tlustá vrstva masky"
+															  . " Chybějící výplň je rozpoznána podle nedohledaného atributu: \".patern_fill\" ."
+								);
+							}
+						}
+					}
+
+				}
+
+			}
+		}
 	}
 
 }

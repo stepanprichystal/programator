@@ -23,7 +23,7 @@ sub new {
 	my $class  = shift;
 	my $parent = shift;
 	my $itemId = shift;
-	my $style  = shift;
+	my $style  = shift // 0;
 
 	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ], $style );
 

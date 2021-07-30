@@ -396,7 +396,7 @@ sub __AddJobLayerSett {
 		my $clr = $mask{ ( $layerName =~ /c/ ? "top" : "bot" ) };
 
 		if ( $clr =~ /Z/i ) {
-			$energy = 90;    # green #POZOR dle MH jiz nikdy nemenit hodnotu 250!
+			$energy = 200;    # green #POZOR dle MH jiz nikdy nemenit hodnotu 250!
 		}
 		elsif ( $clr =~ /B/i ) {
 			$energy = 240;    # black

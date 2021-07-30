@@ -322,6 +322,8 @@ sub GetSpecSchemeList {
 sub SetSchemeType {
 	my $self = shift;
 	my $type = shift;    # standard/special
+	
+	return 0 if ( !defined $type || $type eq "" );
 
 	if ( $self->{"pnlType"} eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 
@@ -365,6 +367,8 @@ sub GetSchemeType {
 sub SetScheme {
 	my $self   = shift;
 	my $scheme = shift;
+
+	return 0 if ( !defined $scheme || $scheme eq "" );
 
 	if ( $self->{"pnlType"} eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 

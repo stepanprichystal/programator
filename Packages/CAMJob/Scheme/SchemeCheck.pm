@@ -64,7 +64,7 @@ sub ProducPanelSchemeOk {
 
 	my $result = 1;
 
-	my ( $schType, $schLCnt, $schHeight ) = $schema =~ m/(\w+)_(\w+)(_\d+)?/i;
+	my ( $schType, $schLCnt, $schHeight ) = $schema =~ m/(rigid|flex|hybrid)_(vv|2v)_?(\d+)?/i;
 
 	my $layerCnt     = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 	my $matKind      = HegMethods->GetMaterialKind($jobId);

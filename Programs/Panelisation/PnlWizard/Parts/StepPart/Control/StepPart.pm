@@ -45,11 +45,14 @@ sub new {
 
 	# PROPERTIES
 
-	my @editSteps =  PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
+	my @editSteps = PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"isCustomerSet"} = scalar(@editSteps) > 1 ? 1 : 0;
 
 	$self->{"model"}      = PartModel->new();         # Data model for view
 	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
+
+	# handle events
+	$self->{"asyncCreatorProcessedEvt"}->Add( sub { $self->__UpdatePartStepInfo(@_) } );
 
 	$self->__SetActiveCreators();
 
@@ -146,15 +149,37 @@ sub __OnManualPlacementHndl {
 			}
 		}
 
-		
 		$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
-				CamHelper->SetStep( $inCAM, $step );
- 
-
+		CamHelper->SetStep( $inCAM, $step );
 
 		# Hide form
 		$self->{"showPnlWizardFrmEvt"}->Do(0);
-		$inCAM->PAUSE($pauseText);
+
+		while (1) {
+
+			$inCAM->PAUSE($pauseText);
+
+			my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
+
+			if ( scalar(@steps) == 0 ) {
+
+				my $messMngr = $self->{"partWrapper"}->GetMessMngr();
+				my @mess     = ();
+				push( @mess, "There is no nested step in panel. Do you want continue?\n" );
+
+				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "No, I will correct panel", "Yes, it is OK" ] );
+
+				if ( $messMngr->Result() == 1 ) {
+					last;
+				}
+			}
+			else {
+
+				last;
+			}
+
+		}
+
 		$self->{"showPnlWizardFrmEvt"}->Do(1);
 
 		# Show form
@@ -311,8 +336,8 @@ sub __SetActiveCreators {
 
 sub EnableCreators {
 	my $self       = shift;
-	my $partId     = shift; # Previous part
-	my $creatorKey = shift; # Selected creator from previous part
+	my $partId     = shift;    # Previous part
+	my $creatorKey = shift;    # Selected creator from previous part
 
 	# Disable specific creators depand on preview part (size creator)
 	if ( $partId eq Enums->Part_PNLSIZE ) {
@@ -417,6 +442,54 @@ sub EnableCreators {
 		$self->{"form"}->EnableCreators( \@enableCreators );
 
 	}
+}
+
+sub __UpdatePartStepInfo {
+	my $self       = shift;
+	my $creatorKey = shift;
+	my $result     = shift;
+	my $errMess    = shift;
+	my $resultData = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	if ( $self->GetPreview() ) {
+
+		my $total       = "NA";
+		my $utilisation = undef;
+		if ($result) {
+
+			# Total step cnt - mandatory
+			if ( !defined $resultData->{"totalStepCnt"} || $resultData->{"totalStepCnt"} eq "" ) {
+				die "Result data from CreatorProcess event has not defined key: totalStepCnt";
+			}
+			else {
+				$total = $resultData->{"totalStepCnt"};
+			}
+
+			$self->{"partWrapper"}->SetPreviewInfoTextRow1("Step cnt: $total");
+
+			# Panelise utilisation - optional
+			if ( defined $resultData->{"utilization"} && $resultData->{"utilization"} ne "" ) {
+				$utilisation = "Util.: " . int( $resultData->{"utilization"} ) . "%";
+			}
+
+			$self->{"partWrapper"}->SetPreviewInfoTextRow2($utilisation);
+
+		}
+		else {
+			$self->{"partWrapper"}->SetPreviewInfoTextRow1(undef);
+			$self->{"partWrapper"}->SetPreviewInfoTextRow2(undef);
+		}
+
+	}
+	else {
+
+		$self->{"partWrapper"}->SetPreviewInfoTextRow1(undef);
+		$self->{"partWrapper"}->SetPreviewInfoTextRow2(undef);
+	}
+
 }
 
 #-------------------------------------------------------------------------------------------#

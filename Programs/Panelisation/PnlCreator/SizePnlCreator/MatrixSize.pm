@@ -69,6 +69,7 @@ sub Init {
 	# Set defualt active area 100mm
 	# If active area would have dimension 0x0mm, InCAM is unable to return active area limits
 	# Thats why 100mm
+	
  
 
 	return $result;
