@@ -40,6 +40,7 @@ use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
 use aliased 'Packages::ProductionPanel::StandardPanel::Enums' => 'StdPnlEnums';
 use aliased 'Packages::ProductionPanel::PanelDimension';
+use aliased 'Packages::CAMJob::Stackup::StackupCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -1403,8 +1404,8 @@ sub __CheckGroupDataExtend {
 					my $sigName = $sigL->{"gROWname"};
 
 					# If esist soldermask and not stiffener, check pattern fill in frame
-					my $stiff = first { $_->{"gROWlayer_type"} eq "stiffener"  && $_->{"gROWname"} =~ /$sigName/ } $defaultInfo->GetBoardBaseLayers();
-					my $mask  = first { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} =~ /$sigName/ } $defaultInfo->GetBoardBaseLayers();
+					my $stiff = first { $_->{"gROWlayer_type"} eq "stiffener" && $_->{"gROWname"} =~ /$sigName/ } $defaultInfo->GetBoardBaseLayers();
+					my $mask = first { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} =~ /$sigName/ } $defaultInfo->GetBoardBaseLayers();
 
 					if ( defined $mask && !defined $stiff ) {
 
@@ -1414,17 +1415,46 @@ sub __CheckGroupDataExtend {
 							if ( !defined $attHist{".pattern_fill"} ) {
 
 								$dataMngr->_AddErrorResult(
-															"Výplň okolí ze strany $sigL",
-															"Pokud DPS neobsahuje stiffner a zároveň obsahuje flex masku, "
-															  . "je nutné, aby okolí panelu bylo vyplněno Cu (šrafováním atd) a to i v případě panelu zákazníka, "
-															  . "jinak je při sítotisku v okolí nanesená tlustá vrstva masky"
-															  . " Chybějící výplň je rozpoznána podle nedohledaného atributu: \".patern_fill\" ."
+									 "Výplň okolí ze strany $sigL",
+									 "Pokud DPS neobsahuje stiffner a zároveň obsahuje flex masku, "
+									   . "je nutné, aby okolí panelu bylo vyplněno Cu (šrafováním atd) a to i v případě panelu zákazníka, "
+									   . "jinak je při sítotisku v okolí nanesená tlustá vrstva masky"
+									   . " Chybějící výplň je rozpoznána podle nedohledaného atributu: \".patern_fill\" ."
 								);
 							}
 						}
 					}
 
 				}
+
+			}
+		}
+	}
+
+	# X) Check stackup usage if match with real usage
+	{
+		if ( $defaultInfo->GetLayerCnt() > 2 ) {
+
+			my @innerCuUsage = ();
+			unless ( StackupCheck->CuUsageCheck( $inCAM, $jobId, \@innerCuUsage ) ) {
+
+				my @errUsage = grep { $_->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_INCREASE || $_->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_DECREASE } @innerCuUsage;
+
+				my $txt = "";
+
+				foreach my $l (@errUsage) {
+
+					$txt .=
+					    "\nVrstva: "
+					  . $l->{"layer"}
+					  . ", Reálné využití: "
+					  . sprintf( "%4s%%", int( $l->{"realUsage"} ) )
+					  . " vs Skutečné využití:"
+					  . sprintf( "%4s%%", int( $l->{"stackupUsage"} ) );
+				}
+
+				$dataMngr->_AddInformationResult( "Vužití Cu ve složení",
+								   "Využití Cu ve složení () není v toleranci: " .Packages::CAMJob::Stackup::StackupCheck::USAGETOL. "% s reálným využitím u následujících vrstev:\n$txt" );
 
 			}
 		}

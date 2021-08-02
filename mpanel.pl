@@ -63,7 +63,7 @@ while ( scalar(@sig) > 2 && !JobHelper->StackupExist($jobId) ) {
 
 		if ( $area{"percentage"} > 0 ) {
 
-			push( @innerCuUsage, $area{"percentage"} );
+			push( @innerCuUsage, sprintf( "%.0f", $area{"percentage"} ));
 			push( @innerCuUsageFormat, $l . " = " . sprintf( "%2.0f", ( $area{"percentage"} ) ) . "%" );
 
 		}
@@ -77,7 +77,7 @@ while ( scalar(@sig) > 2 && !JobHelper->StackupExist($jobId) ) {
 	push( @mess1, "Konstrukcni trida = $constClass" );
 	push( @mess1, "Konstrukcni trida vnitrni = $constClassInn" );
 	push( @mess1, "Vrstva venkovni medi = ${outerThick}µm" );
-	push( @mess1, "Vyuziti medi = " . join( "; ", @innerCuUsage ) );
+	push( @mess1, "Vyuziti medi = " . join( "/ ", @innerCuUsage ) );
 	push( @mess1, "Tloustka DPS = ${pcbThick}µm" );
 
 	my @btn = ( "Pokracovat - slozeni jsem vytvoril", "Vytvorit standardni slozeni" );
@@ -87,6 +87,11 @@ while ( scalar(@sig) > 2 && !JobHelper->StackupExist($jobId) ) {
 	my $btnNumber = $messMngr->Result();    # vraci poradove cislo zmacknuteho tlacitka (pocitano od 0, zleva)
 
 	if ( $btnNumber == 1 ) {
+		
+		if(!defined $constClass || $constClass eq "" || $constClass == 0){
+			die "Konstrukcni trida neni vyplnena v atributech jobu";
+		}
+		
 		StackupDefault->CreateStackup( $inCAM, $jobId, scalar(@sig), \@innerCuUsage, $outerThick, $constClass );
 	}
 }

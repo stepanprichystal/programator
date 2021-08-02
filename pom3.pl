@@ -6,5 +6,4 @@ use warnings;
 
 use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-use Wx;
-print &Wx::wxCB_READONLY
+print sprintf( "%.0f", 12.3);

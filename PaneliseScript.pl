@@ -32,7 +32,7 @@ use aliased 'Packages::Input::HelperInput';
 use aliased 'Packages::GuideSubs::Netlist::NetlistControl';
 use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
 use aliased 'Packages::CAMJob::Dim::JobDim';
-
+use aliased 'Packages::GuideSubs::Stackup::DoCuUsageChange';
 
 use aliased 'CamHelpers::CamHelper';
 
@@ -1072,13 +1072,24 @@ sub _Panelize {
 #			} 
 #			
 			
+			# Here is made stackup for pcb
+			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+						unless (_CheckExistStackup($jobName) == 1) {
+									_MakeStackup($jobName);
+						}else{
+								my @errorList =	("Slozeni je jiz vytvoreno, NEGENERUJI");
+
+								my $messMngr = MessageMngr->new($pcbId);
+								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
+						}
+			} 	
 			
 			
 			
 
 			# Here is generate of imp.coupon
 			my $impExist = HegMethods->GetImpedancExist($jobName);
-			my $impCouponText = '';
+			#my $impCouponText = '';
 			
 			if($impExist){
 					if (_GUIimpedance($jobName, EnumsGeneral->Coupon_IMPEDANCE)){
@@ -1086,7 +1097,7 @@ sub _Panelize {
 								
 								_RunCheckListCoupon($jobName, EnumsGeneral->Coupon_IMPEDANCE);
 					}
-					 $impCouponText = 'Pozor pridej impedancni kupon';
+					# $impCouponText = 'Pozor pridej impedancni kupon';
 			}
 			
 			# Add IPC3 coupon
@@ -1162,7 +1173,10 @@ use Win32::Process;
 			
 			
 			
-			
+				
+ 
+
+	my $res = DoCuUsageChange->RepairCuUsage( $inCAM, $jobName );
 			
 
 			
@@ -1349,18 +1363,18 @@ use Win32::Process;
 			# move original data to archive
 			_ArchivaceData($jobName);
 			
-			# Here is made stackup for pcb
-			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
-						unless (_CheckExistStackup($jobName) == 1) {
-									_MakeStackup($jobName);
-						}else{
-								my @errorList =	("Slozeni je jiz vytvoreno, NEGENERUJI");
-
-								my $messMngr = MessageMngr->new($pcbId);
-								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
-						}
-			} 	
-			
+#			# Here is made stackup for pcb
+#			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+#						unless (_CheckExistStackup($jobName) == 1) {
+#									_MakeStackup($jobName);
+#						}else{
+#								my @errorList =	("Slozeni je jiz vytvoreno, NEGENERUJI");
+#
+#								my $messMngr = MessageMngr->new($pcbId);
+#								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
+#						}
+#			} 	
+#			
 			
 			# Set attributes conserning panel of customer
 				if ($panelSet eq 'custPanel') {

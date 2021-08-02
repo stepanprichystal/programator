@@ -138,10 +138,10 @@ sub __AdjustBorderSpacingName {
 	foreach my $border (@borders) {
 
 		my $str = "";
-		$str .= sprintf( "%.1f", $border->GetBorderLeft() ) . "+";
-		$str .= sprintf( "%.1f", $border->GetBorderRight() ) . "+";
-		$str .= sprintf( "%.1f", $border->GetBorderTop() ) . "+";
-		$str .= sprintf( "%.1f", $border->GetBorderBot() ) . " ";
+		$str .= sprintf( "%.0f", $border->GetBorderLeft() ) . "+";
+		$str .= sprintf( "%.0f", $border->GetBorderRight() ) . "+";
+		$str .= sprintf( "%.0f", $border->GetBorderTop() ) . "+";
+		$str .= sprintf( "%.0f", $border->GetBorderBot() ) . " ";
 		$str .= "(" . $border->GetName() . ")";
 
 		$border->SetName($str);
