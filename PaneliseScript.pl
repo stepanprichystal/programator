@@ -32,7 +32,7 @@ use aliased 'Packages::Input::HelperInput';
 use aliased 'Packages::GuideSubs::Netlist::NetlistControl';
 use aliased 'Packages::CAMJob::ViaFilling::PlugLayer';
 use aliased 'Packages::CAMJob::Dim::JobDim';
-
+use aliased 'Packages::GuideSubs::Stackup::DoCuUsageChange';
 
 use aliased 'CamHelpers::CamHelper';
 
@@ -90,6 +90,9 @@ use aliased 'Packages::CAMJob::Microsection::CouponIPC3Main';
 use aliased 'Packages::GuideSubs::Coupons::DoZaxisCoupon';
 use aliased 'Packages::CAM::UniDTM::UniDTM';
 use aliased 'Packages::Polygon::Features::Features::Features';
+
+			use aliased 'Programs::Panelisation::PnlWizard::RunPnlWizard::RunPnlWizard';
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 
 
 unless ($ENV{JOB}) {
@@ -323,13 +326,13 @@ sub _GUIpanelizace {
 		if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
 				$middleFrame3 = $mainFrame->Frame(-width=>100, -height=>70)->pack(-side=>'top',-fill=>'both',-expand => "True");
 				 				my @innerList = _GetInnerLayers($jobName);
-									$middleFrame3->Label(-text=>"Inner Layer Name")->grid(-column=>0,-row=>1,-sticky=>"news",-columnspan=>3);
+									#$middleFrame3->Label(-text=>"Inner Layer Name")->grid(-column=>0,-row=>1,-sticky=>"news",-columnspan=>3);
 								my $rowCount = 2;
-										foreach my $innerLayer (@innerList) {
-    													$middleFrame3->Label(-text=>"$innerLayer : ")->grid(-column=>0,-row=>"$rowCount",-sticky=>"news",-columnspan=>1);
-    													${$innerLayer._button} = $middleFrame3->Button(-text=>"top",-command=>[\&change_side,"$innerLayer"])->grid(-column=>1,-row=>"$rowCount",-sticky=>"news",-columnspan=>5);
-    											$rowCount ++;
-										}
+#										foreach my $innerLayer (@innerList) {
+#    													$middleFrame3->Label(-text=>"$innerLayer : ")->grid(-column=>0,-row=>"$rowCount",-sticky=>"news",-columnspan=>1);
+#    													${$innerLayer._button} = $middleFrame3->Button(-text=>"top",-command=>[\&change_side,"$innerLayer"])->grid(-column=>1,-row=>"$rowCount",-sticky=>"news",-columnspan=>5);
+#    											$rowCount ++;
+#										}
 		}
 				
 				
@@ -957,6 +960,18 @@ sub _Panelize {
 			_CheckKTxCU($copperThickness, $constClass);
 			
 			
+
+
+			
+			
+
+		 
+			
+			
+			
+			
+			
+			
 	
 			$inCAM->COM('delete_unused_sym',job=>"$jobName");
 			
@@ -972,42 +987,42 @@ sub _Panelize {
 					}
 			
 			
-			if (CamHelper->StepExists($inCAM, $jobName, 'mpanel') == 1) {
-					$stepName = 'mpanel';
-			}else{
-					$stepName = 'o+1';
-			}
-			
-			$inCAM->COM ('set_subsystem',name=>'Panel-Design');
-			$inCAM->INFO(	entity_type=>'step',
-							entity_path=>"$jobName/" . EnumsProducPanel->PANEL_NAME,
-							data_type=>'exists');
-    					if ($inCAM->{doinfo}{gEXISTS} eq "no") {
-								$inCAM->COM ('create_entity',
-													job=>"$jobName",
-													name=> EnumsProducPanel->PANEL_NAME,
-													db=> EnumsGeneral->DB_PRODUCTION,
-													is_fw=>'no',
-													type=>'step',
-													fw_type=>'form'
-													);
-						}else{
-								$inCAM->COM ('delete_entity',
-													job=>"$jobName",
-													type=>'step',
-													name=>EnumsProducPanel->PANEL_NAME
-													);
-								$inCAM->COM ('create_entity',
-													job=>"$jobName",
-													name=>EnumsProducPanel->PANEL_NAME,
-													db=> EnumsGeneral->DB_PRODUCTION,
-													is_fw=>'no',
-													type=>'step',
-													fw_type=>'form'
-													);
-			}
-			$inCAM->COM ('set_step',
-								name=>EnumsProducPanel->PANEL_NAME);
+#			if (CamHelper->StepExists($inCAM, $jobName, 'mpanel') == 1) {
+#					$stepName = 'mpanel';
+#			}else{
+#					$stepName = 'o+1';
+#			}
+#			
+#			$inCAM->COM ('set_subsystem',name=>'Panel-Design');
+#			$inCAM->INFO(	entity_type=>'step',
+#							entity_path=>"$jobName/" . EnumsProducPanel->PANEL_NAME,
+#							data_type=>'exists');
+#    					if ($inCAM->{doinfo}{gEXISTS} eq "no") {
+#								$inCAM->COM ('create_entity',
+#													job=>"$jobName",
+#													name=> EnumsProducPanel->PANEL_NAME,
+#													db=> EnumsGeneral->DB_PRODUCTION,
+#													is_fw=>'no',
+#													type=>'step',
+#													fw_type=>'form'
+#													);
+#						}else{
+#								$inCAM->COM ('delete_entity',
+#													job=>"$jobName",
+#													type=>'step',
+#													name=>EnumsProducPanel->PANEL_NAME
+#													);
+#								$inCAM->COM ('create_entity',
+#													job=>"$jobName",
+#													name=>EnumsProducPanel->PANEL_NAME,
+#													db=> EnumsGeneral->DB_PRODUCTION,
+#													is_fw=>'no',
+#													type=>'step',
+#													fw_type=>'form'
+#													);
+#			}
+#			$inCAM->COM ('set_step',
+#								name=>EnumsProducPanel->PANEL_NAME);
 #			$inCAM->COM ('open_group',
 #								job=>"$jobName",
 #								step=>EnumsProducPanel->PANEL_NAME,
@@ -1040,10 +1055,41 @@ sub _Panelize {
  					CamJob->SetJobAttribute($inCAM, 'pcb_class_inner', $constClass_inner, $jobName);
  			}
 			
+			
+			
+#			
+#				
+#						# Here is made stackup for pcb
+#			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+#						unless (_CheckExistStackup($jobName) == 1) {
+#									_MakeStackup($jobName);
+#						}else{
+#								my @errorList =	("Slozeni je jiz vytvoreno, NEGENERUJI");
+#
+#								my $messMngr = MessageMngr->new($pcbId);
+#								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
+#						}
+#			} 
+#			
+			
+			# Here is made stackup for pcb
+			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+						unless (_CheckExistStackup($jobName) == 1) {
+									_MakeStackup($jobName);
+						}else{
+								my @errorList =	("Slozeni je jiz vytvoreno, NEGENERUJI");
+
+								my $messMngr = MessageMngr->new($pcbId);
+								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
+						}
+			} 	
+			
+			
+			
 
 			# Here is generate of imp.coupon
 			my $impExist = HegMethods->GetImpedancExist($jobName);
-			my $impCouponText = '';
+			#my $impCouponText = '';
 			
 			if($impExist){
 					if (_GUIimpedance($jobName, EnumsGeneral->Coupon_IMPEDANCE)){
@@ -1051,10 +1097,86 @@ sub _Panelize {
 								
 								_RunCheckListCoupon($jobName, EnumsGeneral->Coupon_IMPEDANCE);
 					}
-					 $impCouponText = 'Pozor pridej impedancni kupon';
+					# $impCouponText = 'Pozor pridej impedancni kupon';
 			}
 			
 			# Add IPC3 coupon
+			
+			
+		 
+			my $resZaxis = DoZaxisCoupon->GenerateZaxisCoupons($inCAM, $jobName );
+			
+			
+			 while(1){
+			 	
+			 	  $messMngr = MessageMngr->new($jobName);
+			 	  
+			 	  
+#			 	  my @mess = ();
+#			 	  push(@mess, "Nyni se script zastavi a musis spustit novou panelizaci.");
+#			 	   push(@mess, " - PaneliseScript.pl porad pobezi a po vztvoreni panelu v nove panelizaci v nem pokracuj");
+#	 
+#				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
+#	 
+				$inCAM->SetDisplay(1);
+				#$inCAM->PAUSE ('Spust novou panelizaci a pak jakmile budes mit vytvoreny panel, pokracuj');
+				
+# Pokud se script nespusti pomoci Process:Create ale pres incam script_run, 
+#tak jakmile se u vnoreneho scriptu spusti Pause, incam vzhodnoti ye script skoncil a pokracuje v hlavnim (tomot scriptu)				
+use Win32::Process;
+	use Config;
+	my $processObj;
+	my $perl = $Config{perlpath};
+
+	my @cmd = ("perl");
+	push( @cmd, 'y:\server\site_data\Scripts\Programs\Panelisation\PnlWizard\RunPnlWizard\RunWizardApp_tmp.pl' );
+	 
+
+	my $cmdStr = join( " ", @cmd );
+	my $newConsole = 0;
+	Win32::Process::Create( $processObj, $perl, $cmdStr, 0, ( $newConsole ? CREATE_NO_WINDOW : THREAD_PRIORITY_NORMAL ), "." )
+	  || die "$!\n";
+
+	$processObj->Wait(INFINITE);
+	
+	
+				#$inCAM->COM('script_run',name=>'C:\Perl\site\lib\TpvScripts\Scripts\Programs\Panelisation\PnlWizard\RunPnlWizard\RunWizardApp_tmp.pl',dirmode=>'global',params=> $jobName." ". PnlCreEnums->PnlType_PRODUCTIONPNL );
+					my $pnlExist = CamHelper->StepExists( $inCAM, $jobName, 'panel');
+					my $stepsExist = 1;
+					
+				    if($pnlExist)	{
+				    	my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobName, "panel" );
+
+						$stepsExist = 0 if ( scalar(@steps) == 0 );
+				    }
+					 
+	 
+				
+				if(!$pnlExist || !$stepsExist){				
+				 my @mess2 = ();
+			 	  push(@mess2, "Panel se pravdìpodobnì nepodaøilo vytvoøit správnì (chybí step panel nebo neobsahuje žádné vnoøené stepy)");
+			 	    push(@mess2, "Dokonèit pøesto panelizaci?");
+			 	 
+	 
+				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess2, ["Ano, dokoncit panelizaci", "Ne, spustim panelizator znova", ] );
+				if($messMngr->Result() == 0){
+					last;
+				} 
+			 	
+			 }else{
+			 	last;
+			 }
+			
+			
+			
+			 }
+			
+			
+			
+				
+ 
+
+	my $res = DoCuUsageChange->RepairCuUsage( $inCAM, $jobName );
 			
 
 			
@@ -1109,68 +1231,70 @@ sub _Panelize {
 												
 												
         	}else{
-        		if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
-						$schema = '4v-407';
-				}else{
-						$schema = '1a2v';
-				}
-						$inCAM->COM ('autopan_place_pcbs',job=>"$jobName",panel=>EnumsProducPanel->PANEL_NAME,pcb=>"$stepName",scheme=>"$schema",mode=>'preview',apply_pattern=>'no',apply_flip=>'no');
-						$inCAM->COM ('show_component',component=>'Action_Area',show=>'no');
-			
-			
-				my @attrHeg = HegMethods->GetAllByPcbId("$jobName");
-				my $pozadavekKusy = $pole[0]->{'pocet'};
-				
-				
-				
-				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy . _GetOptimalSpace("$jobName") . '     ' . $impCouponText);
+#        		if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+#						$schema = '4v-407';
+#				}else{
+#						$schema = '1a2v';
+#				}
+#						$inCAM->COM ('autopan_place_pcbs',job=>"$jobName",panel=>EnumsProducPanel->PANEL_NAME,pcb=>"$stepName",scheme=>"$schema",mode=>'preview',apply_pattern=>'no',apply_flip=>'no');
+#						$inCAM->COM ('show_component',component=>'Action_Area',show=>'no');
+#			
+#			
+#				my @attrHeg = HegMethods->GetAllByPcbId("$jobName");
+#				my $pozadavekKusy = $pole[0]->{'pocet'};
+#				
+#				
+#				
+#				$inCAM->PAUSE ('Vytvor panel + pouzij schema ' . ' Pozadovany pocet kusu = ' . $pozadavekKusy . _GetOptimalSpace("$jobName") . '     ' . $impCouponText);
 			}
 			
 			# Check if there were put impedance step in the panel
-			if($impExist){
-					
-					unless( _ExistStepInPanel($jobName, EnumsGeneral->Coupon_IMPEDANCE )) {
-						$inCAM->PAUSE ('Neexistuje v panelu step s nazvem coupon_impedance, musis zacit panelizaci znovu.');	
-						exit;
-					}
+#			if($impExist){
+#					
+#					unless( _ExistStepInPanel($jobName, EnumsGeneral->Coupon_IMPEDANCE )) {
+#						$inCAM->PAUSE ('Neexistuje v panelu step s nazvem coupon_impedance, musis zacit panelizaci znovu.');	
+#						exit;
+#					}
+#
+#			}
+#			
 
-			}
-			
+ 
 			
 			my $pcbInf = HegMethods->GetBasePcbInfo($jobName);
-			 
-			if ( defined $pcbInf->{"ipc_class_3"} && $pcbInf->{"ipc_class_3"} ne "" ) {
-				
-		 		$inCAM->SetDisplay(0);
-				my $cpn = CouponIPC3Main->new( $inCAM, $jobName );
-				$cpn->CreateCoupon();
-				$inCAM->SetDisplay(1);
-				CamHelper->SetStep($inCAM, 'panel');
-		 		
-		 		my $messMngr = MessageMngr->new($jobName);
-				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ['Pozor, DPS je v IPC 3, vloz 3 kupony na volne misto do panelu.'] ); 
- 
-			 	$inCAM->PAUSE("Vloz 3x IPC3 coupon. Step: coupon_IPC3main");
-			}
+#			 
+#			if ( defined $pcbInf->{"ipc_class_3"} && $pcbInf->{"ipc_class_3"} ne "" ) {
+#				
+#		 		$inCAM->SetDisplay(0);
+#				my $cpn = CouponIPC3Main->new( $inCAM, $jobName );
+#				$cpn->CreateCoupon();
+#				$inCAM->SetDisplay(1);
+#				CamHelper->SetStep($inCAM, 'panel');
+#		 		
+#		 		my $messMngr = MessageMngr->new($jobName);
+#				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ['Pozor, DPS je v IPC 3, vloz 3 kupony na volne misto do panelu.'] ); 
+# 
+#			 	$inCAM->PAUSE("Vloz 3x IPC3 coupon. Step: coupon_IPC3main");
+#			}
 			
 			
 			# zaxis coupon
-			my $resZaxis = DoZaxisCoupon->GenerateZaxisCoupons($inCAM, $jobName );
 			
-			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
-					my ($xPanelSize,$yPanelSize) = _GetSizeOfPcb($jobName, 'panel');
-					
-							# Tolerance 2mm
-							if (abs($yPanelSize - 407) < 2) {
-									$schema = '4v-407';
-							}elsif (abs($yPanelSize - 485) < 2) {
-									$schema = '4v-485';
-							}elsif (abs($yPanelSize - 538) < 2 ) {
-									$schema = '4v-538';
-							}else{
-								die "Schema was not found for panel size: $yPanelSize";
-							}
-			}
+			
+#			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+#					my ($xPanelSize,$yPanelSize) = _GetSizeOfPcb($jobName, 'panel');
+#					
+#							# Tolerance 2mm
+#							if (abs($yPanelSize - 407) < 2) {
+#									$schema = '4v-407';
+#							}elsif (abs($yPanelSize - 485) < 2) {
+#									$schema = '4v-485';
+#							}elsif (abs($yPanelSize - 538) < 2 ) {
+#									$schema = '4v-538';
+#							}else{
+#								die "Schema was not found for panel size: $yPanelSize";
+#							}
+#			}
 			
 			# Set some attribute for PCB
 			_SetAttrUser($jobName);
@@ -1184,7 +1308,7 @@ sub _Panelize {
 			_SetAttrGoldHolder("$jobName");
 			
 			# Here run scheme 
-			$inCAM->COM ('autopan_run_scheme',job=>"$jobName",panel=>EnumsProducPanel->PANEL_NAME,pcb=>"$stepName",scheme=>"$schema");
+			#$inCAM->COM ('autopan_run_scheme',job=>"$jobName",panel=>EnumsProducPanel->PANEL_NAME,pcb=>"$stepName",scheme=>"$schema");
 			
 			
 			# Set attributes in Helios
@@ -1239,18 +1363,18 @@ sub _Panelize {
 			# move original data to archive
 			_ArchivaceData($jobName);
 			
-			# Here is made stackup for pcb
-			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
-						unless (_CheckExistStackup($jobName) == 1) {
-									_MakeStackup($jobName);
-						}else{
-								my @errorList =	("Slozeni je jiz vytvoreno, NEGENERUJI");
-
-								my $messMngr = MessageMngr->new($pcbId);
-								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
-						}
-			} 	
-			
+#			# Here is made stackup for pcb
+#			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+#						unless (_CheckExistStackup($jobName) == 1) {
+#									_MakeStackup($jobName);
+#						}else{
+#								my @errorList =	("Slozeni je jiz vytvoreno, NEGENERUJI");
+#
+#								my $messMngr = MessageMngr->new($pcbId);
+#								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
+#						}
+#			} 	
+#			
 			
 			# Set attributes conserning panel of customer
 				if ($panelSet eq 'custPanel') {
@@ -1290,9 +1414,9 @@ sub _Panelize {
 			
 			
 			# Finish message
-			my @mess = ( "PANELIZACE - HOTOVO");
-			my $messMngr = MessageMngr->new($jobName);
-			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess ); 
+#			my @mess = ( "PANELIZACE - HOTOVO");
+#			my $messMngr = MessageMngr->new($jobName);
+#			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@mess ); 
 			
 			
 			# Remove older version EL test files
@@ -1438,40 +1562,40 @@ sub _SetAttrCdrOuter {
 
 sub _SetAttrInner {
 		my $idPcb = shift;
-		my $runMerge = shift;
-		my @innerList = _GetInnerLayers($idPcb);
-		my $panelStepName = 'panel';
-		my $currentSide;
-		
-		#if ($runMerge eq 'csv') {
-		my $i = 2;
-	    foreach my $innerLayer (@innerList) {
-				            my $cdrMirror;
-				            
-				            if ($runMerge eq 'csv') {
-				            			if (0 == $i % 2) {
-    						  	 				$currentSide = 'top';
-							  	 		} else {
-							  	 		    	$currentSide = 'bot';
-							  	 		}
-				            }else{
-
-							  	 		$currentSide = ${$innerLayer._button}->cget(-text);
-				            }
-				            
-				            
-				        $inCAM->COM('set_attribute',type=>'layer',job=>"$idPcb",name1=>"$panelStepName",name2=>"$innerLayer",name3=>'',attribute=>"layer_side",value=>"$currentSide",units=>'inch');
-				            if ($currentSide eq "top") {
-				                    $cdrMirror = "no";
-				            } else {
-				                    $cdrMirror = "yes";
-            				}
-
-        				$inCAM->COM('set_attribute',type=>'layer',job=>"$idPcb",name1=>"$panelStepName",name2=>"$innerLayer",name3=>'',attribute=>".cdr_mirror",value=>"$cdrMirror",units=>'inch');
-        	
-        $i++;
-    }
-	
+#		my $runMerge = shift;
+#		my @innerList = _GetInnerLayers($idPcb);
+#		my $panelStepName = 'panel';
+#		my $currentSide;
+#		
+#		#if ($runMerge eq 'csv') {
+#		my $i = 2;
+#	    foreach my $innerLayer (@innerList) {
+#				            my $cdrMirror;
+#				            
+#				            if ($runMerge eq 'csv') {
+#				            			if (0 == $i % 2) {
+#    						  	 				$currentSide = 'top';
+#							  	 		} else {
+#							  	 		    	$currentSide = 'bot';
+#							  	 		}
+#				            }else{
+#
+#							  	 		$currentSide = ${$innerLayer._button}->cget(-text);
+#				            }
+#				            
+#				            
+#				        $inCAM->COM('set_attribute',type=>'layer',job=>"$idPcb",name1=>"$panelStepName",name2=>"$innerLayer",name3=>'',attribute=>"layer_side",value=>"$currentSide",units=>'inch');
+#				            if ($currentSide eq "top") {
+#				                    $cdrMirror = "no";
+#				            } else {
+#				                    $cdrMirror = "yes";
+#            				}
+#
+#        				$inCAM->COM('set_attribute',type=>'layer',job=>"$idPcb",name1=>"$panelStepName",name2=>"$innerLayer",name3=>'',attribute=>".cdr_mirror",value=>"$cdrMirror",units=>'inch');
+#        	
+#        $i++;
+#    }
+#	
 }
 
 sub _SetAttrUser {
@@ -1921,10 +2045,10 @@ sub _MakeStackup {
 
  					if ( $num % 2 == 0 ) {
 
- 						%area = CamCopperArea->GetCuArea( $newThicknessCopper, $pcbThick, $inCAM, $jobId, "panel", $l->{"gROWname"}, undef );
+ 						%area = CamCopperArea->GetCuArea( $newThicknessCopper, $pcbThick, $inCAM, $jobId, "o+1", $l->{"gROWname"}, undef );
  					}
  					else {
- 						%area = CamCopperArea->GetCuArea( $newThicknessCopper, $pcbThick, $inCAM, $jobId, "panel", undef, $l->{"gROWname"} );
+ 						%area = CamCopperArea->GetCuArea( $newThicknessCopper, $pcbThick, $inCAM, $jobId, "o+1", undef, $l->{"gROWname"} );
  					}
 
  					if ($area{"percentage"} > 0) {

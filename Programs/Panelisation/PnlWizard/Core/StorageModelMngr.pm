@@ -75,7 +75,7 @@ sub GetModelDate {
 	my $dt = $self->SUPER::GetSerializedDataDate();
 
 	my $str = "";
-	$str .= $dt->hour() . ":" . $dt->minute() if ($time);
+	$str .= sprintf("%02d",$dt->hour())   . ":" . sprintf("%02d",$dt->minute()) if ($time);
 	$str .= ( $time ? " " : "" ) .  $dt->day_abbr() if ($date);
 
 	return $str;

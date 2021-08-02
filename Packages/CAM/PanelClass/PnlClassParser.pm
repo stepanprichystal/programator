@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use XML::LibXML qw(:threads_shared);
 use List::Util qw(first);
+use Storable qw(dclone);
 
 #local library
 use aliased 'Connectors::HeliosConnector::HegMethods';
@@ -36,7 +37,8 @@ sub new{
 	$self->{"inCAM"} = shift;
 	$self->{"jobId"} = shift;
 
-	$self->{"path"} = shift // EnumsPaths->InCAM_server . "\\site_data\\library\\panel\\";
+	#$self->{"path"} = shift // EnumsPaths->InCAM_server . "\\site_data\\library\\panel\\";
+	$self->{"path"} =  "\\\\incam\\incam_server\\users\\stepan\\library\\panel\\";
 
 	# Properties
 	$self->{"parsed"}   = 0;       # 1 if panel class files are parsed
@@ -146,7 +148,7 @@ sub Parse {
 
 			my $obj = first { $_->GetName() eq $nodeInner->{"name"} } @border;
 			die "Border: " . $nodeInner->{"name"} . " is not defined" unless ( defined $obj );
-			push( @bord, $obj );
+			push( @bord, dclone($obj ));
 		}
 
 		# parse spacing
@@ -155,7 +157,7 @@ sub Parse {
 
 			my $obj = first { $_->GetName() eq $nodeInner->{"name"} } @space;
 			die "Space: " . $nodeInner->{"name"} . " is not defined" unless ( defined $obj );
-			push( @spac, $obj );
+			push( @spac, dclone($obj) );
 		}
 
 		# all border and spacing in class are matched in all sizes
@@ -168,7 +170,7 @@ sub Parse {
 			$obj->SetBorders( \@bord );
 			$obj->SetSpacings( \@spac );
 
-			push( @sz, $obj );
+			push( @sz,  dclone($obj) );
 		}
 
 		$class->SetSizes( \@sz );

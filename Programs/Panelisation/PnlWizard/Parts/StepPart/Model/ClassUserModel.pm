@@ -2,7 +2,7 @@
 # Description: Creator model
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::StepPart::Model::AutoUserModel;
+package Programs::Panelisation::PnlWizard::Parts::StepPart::Model::ClassUserModel;
 use base('Programs::Panelisation::PnlWizard::Core::WizardModelBase');
 
 use Class::Interface;
@@ -27,13 +27,14 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"modelKey"} = PnlCreEnums->StepPnlCreator_AUTOUSER;
+	$self->{"modelKey"} = PnlCreEnums->StepPnlCreator_CLASSUSER;
 
 	$self->{"settings"}->{"pnlClasses"}            = [];
 	$self->{"settings"}->{"defPnlClass"}           = undef;
 	$self->{"settings"}->{"defPnlSpacing"}         = undef;
 	$self->{"settings"}->{"pcbStepsList"}          = [];
 	$self->{"settings"}->{"pcbStep"}               = undef;
+	$self->{"settings"}->{"pcbStepProfile"}        = PnlCreEnums->PCBStepProfile_STANDARD;
 	$self->{"settings"}->{"placementType"}         = PnlClassEnums->PnlClassTransform_ROTATION;
 	$self->{"settings"}->{"rotationType"}          = undef;
 	$self->{"settings"}->{"patternType"}           = undef;
@@ -133,6 +134,21 @@ sub GetPCBStep {
 	my $self = shift;
 
 	return $self->{"settings"}->{"pcbStep"};
+
+}
+
+sub SetPCBStepProfile {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"pcbStepProfile"} = $val;
+
+}
+
+sub GetPCBStepProfile {
+	my $self = shift;
+
+	return $self->{"settings"}->{"pcbStepProfile"};
 
 }
 

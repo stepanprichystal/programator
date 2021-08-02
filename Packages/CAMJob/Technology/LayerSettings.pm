@@ -427,7 +427,9 @@ sub GetDefaultEtchType {
 	# Default type of plating is Etching only
 	my $etchType = EnumsGeneral->Etching_ONLY;
 
-	if ( $self->{"layerCnt"} == 2 ) {
+	if ( $self->{"layerCnt"} == 2 && $self->{"pcbType"} ne EnumsGeneral->PcbType_1VFLEX ) {
+
+		# Flex has always two copper even if it is Single sided
 
 		my @platedNC = grep { $_->{"plated"} && !$_->{"technical"} } $self->__GetNCLayers();
 
@@ -435,7 +437,7 @@ sub GetDefaultEtchType {
 
 			my @viaFill = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill } @platedNC;
 
-			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || scalar(@viaFill)  ) {
+			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || scalar(@viaFill) ) {
 				$etchType = EnumsGeneral->Etching_PATTERN;
 			}
 			else {
@@ -478,7 +480,7 @@ sub GetDefaultEtchType {
 
 			if ( $self->{"surface"} !~ /g/i ) {
 
-				if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} ||  $self->__GetPcbClass() == 9 ) {
+				if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->__GetPcbClass() == 9 ) {
 					$etchType = EnumsGeneral->Etching_PATTERN;
 				}
 			}
@@ -550,22 +552,22 @@ sub __GetBaseCuThick {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-#	Packages::CAMJob::Technology::LayerSettings
-	
-		use aliased 'Packages::CAMJob::Technology::LayerSettings';
-		use aliased 'Packages::InCAM::InCAM';
-	
-		my $inCAM = InCAM->new();
-	
-		my $jobId     = "d320380";
-		my $stepName  = "o+1";
-		my $layerName = "c";
-	
-		my $d = LayerSettings->new($jobId);
-		$d->Init($inCAM);
-		my $tech = $d->GetDefSignalLSett("c");
-	
-		print $tech;
+	#	Packages::CAMJob::Technology::LayerSettings
+
+	use aliased 'Packages::CAMJob::Technology::LayerSettings';
+	use aliased 'Packages::InCAM::InCAM';
+
+	my $inCAM = InCAM->new();
+
+	my $jobId     = "d320380";
+	my $stepName  = "o+1";
+	my $layerName = "c";
+
+	my $d = LayerSettings->new($jobId);
+	$d->Init($inCAM);
+	my $tech = $d->GetDefSignalLSett("c");
+
+	print $tech;
 
 }
 

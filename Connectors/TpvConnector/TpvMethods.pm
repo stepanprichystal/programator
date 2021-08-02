@@ -42,7 +42,7 @@ sub GetCustomerInfo {
 					IF(t1.ExportPdfControl = '', null , t1.ExportPdfControl) as ExportPdfControl,
 					IF(t1.ExportDataControl = '', null , t1.ExportDataControl) as ExportDataControl,
 					IF(t1.ScoreCoreThick = '', null , t1.ScoreCoreThick) as ScoreCoreThick,
-					IF(t1.RequiredSchema = '', null , t1.RequiredSchema) as RequiredSchema,
+					IF(t1.RequiredSchemas = '', null , t1.RequiredSchemas) as RequiredSchemas,
 					IF(t1.PlatedHolesType = '', null , t1.PlatedHolesType) as PlatedHolesType,
 					IF(t1.MinCustPnlDim1 = '', null , t1.MinCustPnlDim1) as MinCustPnlDim1,
 					IF(t1.MinCustPnlDim2 = '', null , t1.MinCustPnlDim2) as MinCustPnlDim2,

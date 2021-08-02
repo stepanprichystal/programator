@@ -50,7 +50,7 @@ sub __SetLayout {
 	# DEFINE CONTROLS
 
 	# Init combobox class size
-	$self->{"pnlQuickBorderCB"} = $self->_SetLayoutCBBorder( "Quick choice", [ "0mm", "5mm", "7mm", "10mm" ] );
+	$self->{"pnlQuickBorderCB"} = $self->_SetLayoutCBBorder( "Predefined:", [ "0mm", "5mm", "7mm", "10mm" ], 24, 76,0 );
 
 	$self->{"CBBorderChangedEvt"}->Add( sub { $self->__OnQuickBorderChanged(@_) } );
 

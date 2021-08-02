@@ -50,47 +50,70 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# Add empty item
 
 	# DEFINE CONTROLS
-	my $jobSrcTxt = Wx::StaticText->new( $self, -1, "Source job", &Wx::wxDefaultPosition, [ -1, 25 ] );
-	my $jobSrcValTxt = Wx::TextCtrl->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, 25 ],  &Wx::wxTE_READONLY );
-
- 
-
-	my $pnlPickerTxt = Wx::StaticText->new( $self, -1, "Manual adjustment", &Wx::wxDefaultPosition, [ -1, 25 ] );
-	my $pnlPicker = ManualPlacement->new( $self,
-										  $self->{"jobId"}, $self->GetStep(), "Adjust panel",
-										  "Adjust panel settings.",
-										  1, "Clear" );
-	
-
-	 
+	my $layoutSteps = $self->__SetLayoutSteps($self);
 
 	# DEFINE EVENTS
 
-	$pnlPicker->{"placementEvt"}->Add( sub      { $self->{"manualPlacementEvt"}->Do(@_) } );
-	$pnlPicker->{"clearPlacementEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $jobSrcTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1->Add( $jobSrcValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	$szRow2->Add( $pnlPickerTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow2->Add( $pnlPicker,    1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $layoutSteps, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->AddStretchSpacer(1);
 
 	$szMain->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
 	$self->SetSizer($szMain);
 
 	# SAVE REFERENCES
 
-	$self->{"pnlPicker"} = $pnlPicker;
+}
+
+# Set layout for Quick set box
+sub __SetLayoutSteps {
+	my $self   = shift;
+	my $parent = shift;
+
+	#define staticboxes
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Step settings' );
+	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
+
+	# Load data, for filling form by values
+
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);    # row for custom control, which are added by inherit class
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
+	# DEFINE CONTROLS
+	my $jobSrcTxt = Wx::StaticText->new( $statBox, -1, "Source job:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $jobSrcValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] , &Wx::wxTE_READONLY );
+
+	my $pnlPickerTxt = Wx::StaticText->new( $statBox, -1, "Panel adjust:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $pnlPicker = ManualPlacement->new( $statBox, $self->{"jobId"}, $self->GetStep(), "Adjust", "Adjust panel settings.", 1, "Clear" );
+
+	# DEFINE EVENTS
+	$pnlPicker->{"placementEvt"}->Add( sub      { $self->{"manualPlacementEvt"}->Do(@_) } );
+	$pnlPicker->{"clearPlacementEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+
+	# BUILD STRUCTURE OF LAYOUT
+	$szRow1->Add( $jobSrcTxt,    30, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1->Add( $jobSrcValTxt, 70, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+
+	$szRow2->Add( $pnlPickerTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( $pnlPicker,    70, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow2->Add( 1,40,    0, &Wx::wxEXPAND | &Wx::wxALL, 1 ); # expander 40px heigh of panel picker
+	
+
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->AddSpacer(5);
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->AddStretchSpacer(1);
+
+	# save control references
+	$self->{"pnlPicker"}    = $pnlPicker;
 	$self->{"jobSrcValTxt"} = $jobSrcValTxt;
-	
-	
+
+	return $szStatBox;
 }
 
 # =====================================================================
@@ -101,7 +124,7 @@ sub SetSrcJobId {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"jobSrcValTxt"}->SetValue($val) if ( defined $val );
+	$self->{"jobSrcValTxt"}->SetValue($val) if ( defined $val && $val ne "" );
 }
 
 sub GetSrcJobId {

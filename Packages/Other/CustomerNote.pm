@@ -140,14 +140,23 @@ sub ScoreCoreThick {
 
 }
 
-sub RequiredSchema {
+sub RequiredSchemas {
 	my $self = shift;
 
 	if ( !$self->Exist() ) {
-		return undef;
+		return ();
 	}
 
-	return $self->{"notes"}->{"RequiredSchema"};
+	my @schemas = ();
+
+	my $schTxt = $self->{"notes"}->{"RequiredSchemas"};
+	if ( defined $schTxt ) {
+
+		$schTxt =~ s/\s//i;
+		@schemas = split( ";", $schTxt );
+	}
+
+	return @schemas;
 }
 
 # type of plated holes vrtane/vysledne/undef
@@ -181,9 +190,8 @@ sub MinCustPanelDim {
 
 	my $a = $self->{"notes"}->{"MinCustPnlDim1"};
 	my $b = $self->{"notes"}->{"MinCustPnlDim2"} // $a;
-	
-	 
-	return ($a, $b); 
+
+	return ( $a, $b );
 }
 
 # Minimal dimensions of customer panel
@@ -197,9 +205,8 @@ sub MaxCustPanelDim {
 
 	my $a = $self->{"notes"}->{"MaxCustPnlDim1"};
 	my $b = $self->{"notes"}->{"MaxCustPnlDim2"} // $a;
-	
-	 
-	return ($a, $b); 
+
+	return ( $a, $b );
 }
 
 # Indicate if customer require datacode on PCB
@@ -214,7 +221,6 @@ sub InsertDataCode {
 	return $self->{"notes"}->{"InsertDataCode"};
 
 }
-
 
 # Indicate if customer require ULLogo on PCB
 sub InsertULLogo {
@@ -242,7 +248,6 @@ sub GlobalEQEmail {
 
 }
 
-
 # Return if customer doesn't mine/ doesn't want
 # move small npth holes to pth layer
 sub SmallNpth2Pth {
@@ -255,11 +260,6 @@ sub SmallNpth2Pth {
 	return $self->{"notes"}->{"SmallNpth2Pth"};
 
 }
-
-
-
- 
-
 
 # ======== Stencil notes ============
 
@@ -352,7 +352,6 @@ sub SizeY {
 
 	return $self->{"notes"}->{"SizeY"};
 }
-
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

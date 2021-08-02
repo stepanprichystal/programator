@@ -30,8 +30,9 @@ sub new {
 	my $class = shift;
 	my $self  = {};
 
-	my $inCAM = shift;
-	my $jobId = shift;    # pcb id
+	my $inCAM   = shift;
+	my $jobId   = shift;         # pcb id
+	my $noCache = shift // 0; # Do not read stackup from cache
 
 	my $cache = Cache::MemoryCache->new();
 
@@ -39,7 +40,7 @@ sub new {
 	my $stackup = $cache->get($key);     #check cache
 
 	#if doesnt exist in cache, do normal initialization
-	if ( !defined $stackup ) {
+	if ( $noCache || !defined $stackup ) {
 
 		$self = $class->SUPER::new( $jobId, @_ );
 		bless $self;
@@ -75,8 +76,6 @@ sub new {
 		$self = $stackup;
 		bless $self;
 	}
-
- 
 
 	return $self;
 }
@@ -264,15 +263,14 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-
 	my $jobId = "d321505";
 
 	my $stackup = Stackup->new( $inCAM, $jobId );
 
-	print "Final thickness: ".$stackup->GetFinalThick();
- 
- 	StackupTester->PrintStackupTree($stackup);
- 	
+	print "Final thickness: " . $stackup->GetFinalThick();
+
+	StackupTester->PrintStackupTree($stackup);
+
 	die;
 
 }

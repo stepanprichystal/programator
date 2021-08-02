@@ -102,6 +102,7 @@ sub GetAllByPcbId {
 				 d.lak_typ,
 				 d.stiffener,
 				 d.ipc_class_3,
+				 dn.reference_subjektu dn_reference_subjektu,
 				 dn.kus_x n_kus_x,
 				 dn.kus_y n_kus_y,
 				 dn.panel_x n_mpanel_x,

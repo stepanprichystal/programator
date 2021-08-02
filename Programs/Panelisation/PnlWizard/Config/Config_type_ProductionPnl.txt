@@ -1,0 +1,27 @@
+# colors of main form
+
+clrMainFrmBackground =  240, 240, 240 
+clrMainHeaderBackground =  122, 166, 74  
+clrMainHeaderSettBackground =  233, 233, 233  
+clrMainHeaderSeparator =  200, 200, 200  
+
+clrTitleText =  255, 255, 255  
+
+clrCreatorListBackground =  225,225,225
+clrCreatorListSelect =  176, 213, 162  
+clrCreatorListUnSelect =  223, 243, 207  
+clrCreatorListDisable =   233, 233, 233  
+
+clrCreatorViewBackground =  255, 255,255
+ 
+clrWrapperBackground =   233, 233, 233  
+clrWrapperHeaderBackground =   60, 74, 32   
+clrWrapperBodyBackground =   255, 255, 255  
+clrWrapperTitle = 194, 202, 193
+clrWrapperPreview = 187, 187, 196
+
+# Name of app in title
+panelTypeTitle = Production panel
+
+
+ 

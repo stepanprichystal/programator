@@ -442,7 +442,7 @@ sub __CreateFakeOuterCoreLayers {
 
 				foreach my $c (@cross) {
 
-					CamSymbol->AddPad( $inCAM, "in_315", { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
+					CamSymbol->AddPad( $inCAM, $c->{"symbol"}, { "x" => $c->{"x1"}, "y" => $c->{"y1"} }, 0, "positive" );
 				}
 			}
 

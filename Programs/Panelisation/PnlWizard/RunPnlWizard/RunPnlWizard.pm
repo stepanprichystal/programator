@@ -3,7 +3,7 @@
 # Description: 
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Comments::CommWizard::RunWizard::RunCommWizard;
+package Programs::Panelisation::PnlWizard::RunPnlWizard::RunPnlWizard;
 
 #3th party library
 #use strict;
@@ -19,33 +19,37 @@ use aliased 'Enums::EnumsGeneral';
 
 
 
+
 sub new {
 	my $self = shift;
 	$self = {};
 	bless($self);
 
 	# 1) Check job
-	$self->{"jobid"}       = shift;
+	$self->{"jobId"}       = shift;
+	$self->{"pnlType"} = shift;
 	$self->{"serverExist"} = shift // 0;
 	$self->{"serverPort"}  = shift;
 	$self->{"waitOnAppExist"} = shift //0;
 
-	unless ( $self->__IsJobOpen( $self->{"jobid"} ) ) {
+	unless ( $self->__IsJobOpen( $self->{"jobId"} ) ) {
 
 		return 0;
 	}
 
 	# 3) Launch app
 
-	my $appName = 'Programs::Comments::CommWizard::CommWizard';    # has to implement IAppLauncher
-
-	my $addDefaultComment = 1;
-	my @params = ($self->{"jobid"}, $addDefaultComment );
+	my $appName = 'Programs::Panelisation::PnlWizard::PnlWizard';    # has to implement IAppLauncher
+ 
+	 
+	my @params = ($self->{"jobId"}, $self->{"pnlType"} );
 	my $launcher = AppLauncher->new( $appName, @params);
+	
+	$launcher->SetWaitingFrm( "Panel builder - ".$self->{"jobId"}, "Loading panel builder ...", Enums->WaitFrm_CLOSEAUTO );
  
 	if ( $self->{"serverExist"} ) {
 
-		$launcher->RunFromApp( $self->{"jobid"}, $self->{"serverPort"}, $self->{"waitOnAppExist"} );
+		$launcher->RunFromApp( $self->{"jobId"}, $self->{"serverPort"}, $self->{"waitOnAppExist"} );
 
 	}
 	else {
@@ -59,7 +63,7 @@ sub __IsJobOpen {
 
 	unless ($jobId) {
 
-		my $messMngr = MessageMngr->new("Exporter checker mini");
+		my $messMngr = MessageMngr->new("Panel builder wizard");
 		my @mess1    = ("You have to run sript in open job.");
 		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 

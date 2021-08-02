@@ -238,6 +238,21 @@ sub GetAffectedLayers {
 	return @layers;
 }
 
+# Return array of displayed layers
+sub GetDisplayedLayers {
+	my $self  = shift;
+	my $inCAM = shift;
+	my $jobId = shift;
+
+	$inCAM->COM("get_disp_layers");
+
+	my @layers = split( " ", $inCAM->GetReply() );
+
+	$_ =~ s/\s//g foreach (@layers);
+
+	return @layers;
+}
+
 # Return current work layer
 sub GetWorkLayer {
 	my $self  = shift;

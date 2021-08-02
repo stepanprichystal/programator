@@ -40,6 +40,7 @@ use aliased 'Packages::CAMJob::PCBConnector::GoldFingersCheck';
 use aliased 'Packages::ProductionPanel::StandardPanel::StandardBase';
 use aliased 'Packages::ProductionPanel::StandardPanel::Enums' => 'StdPnlEnums';
 use aliased 'Packages::ProductionPanel::PanelDimension';
+use aliased 'Packages::CAMJob::Stackup::StackupCheck';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -361,7 +362,7 @@ sub __CheckGroupDataBasic {
 			my $stackKindStr = $defaultInfo->GetStackup()->GetStackupType();
 			$stackKindStr =~ s/[\s\t]//g;
 
-			$stackKindStr =~ s/.*DE104.*/FR4/ig;                                   #exception DE 104 and IS400 eq FR4
+			$stackKindStr =~ s/.*DE104.*/FR4/ig;    #exception DE 104 and IS400 eq FR4
 
 			if ( $stackKindStr =~ /.*IS400.*/i && $stackKindStr =~ /PYRALUX/i ) {
 				$stackKindStr = "FR4";
@@ -683,7 +684,7 @@ sub __CheckGroupDataBasic {
 		my @steps = ();
 
 		if ( CamStepRepeat->ExistStepAndRepeats( $inCAM, $jobId, $stepName ) ) {
-			my @SR = CamStepRepeat->GetUniqueDeepestSR( $inCAM, $jobId, $stepName );
+			my @SR = CamStepRepeat->GetUniqueNestedStepAndRepeat( $inCAM, $jobId, $stepName );
 
 			CamStepRepeat->RemoveCouponSteps( \@SR );
 			push( @steps, map { $_->{"stepName"} } @SR );
@@ -694,6 +695,9 @@ sub __CheckGroupDataBasic {
 		}
 
 		foreach my $step (@steps) {
+
+			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $step, $l->{"gROWname"}, 0 );
+			next if ( $hist{"total"} == 0 );
 
 			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $step, $l->{"gROWname"} );
 
@@ -1189,25 +1193,43 @@ sub __CheckGroupDataExtend {
 	}
 
 	# 16) If customer has required scheme, check if scheme in mpanel is ok
-	my $usedScheme = undef;
-	unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, \$usedScheme, $defaultInfo->GetCustomerNote() ) ) {
+	# check if exist mpanel and check schema
+	if ( $defaultInfo->StepExist("mpanel") ) {
 
-		my $custSchema = $defaultInfo->GetCustomerNote()->RequiredSchema();
+		my $usedScheme = CamAttributes->GetStepAttrByName( $inCAM, $jobId, "mpanel", "cust_panelization_scheme" );
+		die "Schema name is not defined in step: mpanel; attribute: cust_panelization_scheme"
+		  if ( !defined $usedScheme || $usedScheme eq "" );
 
-		$dataMngr->_AddWarningResult( "Customer schema",
-						   "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custSchema\", ale je vloženo schéma: \"$usedScheme\"." );
+		unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, $usedScheme, $defaultInfo->GetCustomerNote() ) ) {
+
+			my @custSchemas = $defaultInfo->GetCustomerNote()->RequiredSchemas();
+			my $custTxt = join( "; ", @custSchemas );
+
+			$dataMngr->_AddWarningResult( "Customer schema",
+							  "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custTxt\", ale je vloženo schéma: \"$usedScheme\"." );
+		}
 	}
 
 	# X) Check production panel schema
-	my $usedPnlScheme = undef;
-	unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, \$usedPnlScheme ) ) {
+	{
+		my $usedPnlScheme = CamAttributes->GetStepAttrByName( $inCAM, $jobId, "panel", ".pnl_scheme" );
+		die "Schema name is not defined in step: panel; attribute: pnl_schema" if ( !defined $usedPnlScheme || $usedPnlScheme eq "" );
+		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
 
-		$dataMngr->_AddErrorResult(
-									"Špatné schéma",
-									"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
-									  . " Vlož do panelu správné schéma"
-		);
+		my $pnlHeight = abs( $lim{"yMax"} - $lim{"yMin"} );
 
+		my $errMess = "";
+		unless ( SchemeCheck->ProducPanelSchemeOk( $inCAM, $jobId, $usedPnlScheme, $pnlHeight, \$errMess ) ) {
+
+			$dataMngr->_AddErrorResult(
+				"Špatné schéma",
+				"Ve stepu panel vložené špatné schéma: $usedPnlScheme (attribut: .pnl_scheme v atributech stepu)"
+				  . " Vlož do panelu správné schéma."
+				  . ( $errMess ne "" ? "Detail chyby:\n$errMess" : "" )
+
+			);
+
+		}
 	}
 
 	# 10) Check if dimension of panel are ok, depand on finish surface
@@ -1364,6 +1386,78 @@ sub __CheckGroupDataExtend {
 			);
 		}
 
+	}
+
+	# X) Check if there is always frame pattern fill in Cu when 1-2v flex and customer panel
+	{
+		if ( $defaultInfo->GetIsFlex() && $defaultInfo->GetLayerCnt() <= 2 ) {
+
+			my %dim = JobDim->GetDimension( $inCAM, $jobId );
+
+			if ( $dim{"nasobnost_panelu"} > 0 ) {
+
+				my @sr = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+
+				# Get panel step (not always mpanel, it can be also o+1 as customer panel)
+				foreach my $sigL ( $defaultInfo->GetSignalLayers() ) {
+
+					my $sigName = $sigL->{"gROWname"};
+
+					# If esist soldermask and not stiffener, check pattern fill in frame
+					my $stiff = first { $_->{"gROWlayer_type"} eq "stiffener" && $_->{"gROWname"} =~ /$sigName/ } $defaultInfo->GetBoardBaseLayers();
+					my $mask = first { $_->{"gROWlayer_type"} eq "solder_mask" && $_->{"gROWname"} =~ /$sigName/ } $defaultInfo->GetBoardBaseLayers();
+
+					if ( defined $mask && !defined $stiff ) {
+
+						foreach my $s (@sr) {
+
+							my %attHist = CamHistogram->GetAttHistogram( $inCAM, $jobId, $s->{"stepName"}, $sigName, 0 );
+							if ( !defined $attHist{".pattern_fill"} ) {
+
+								$dataMngr->_AddErrorResult(
+									 "Výplň okolí ze strany $sigL",
+									 "Pokud DPS neobsahuje stiffner a zároveň obsahuje flex masku, "
+									   . "je nutné, aby okolí panelu bylo vyplněno Cu (šrafováním atd) a to i v případě panelu zákazníka, "
+									   . "jinak je při sítotisku v okolí nanesená tlustá vrstva masky"
+									   . " Chybějící výplň je rozpoznána podle nedohledaného atributu: \".patern_fill\" ."
+								);
+							}
+						}
+					}
+
+				}
+
+			}
+		}
+	}
+
+	# X) Check stackup usage if match with real usage
+	{
+		if ( $defaultInfo->GetLayerCnt() > 2 ) {
+
+			my @innerCuUsage = ();
+			unless ( StackupCheck->CuUsageCheck( $inCAM, $jobId, \@innerCuUsage ) ) {
+
+				my @errUsage = grep { $_->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_INCREASE || $_->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_DECREASE } @innerCuUsage;
+
+				my $txt = "";
+
+				foreach my $l (@errUsage) {
+
+					$txt .=
+					    "\nVrstva: "
+					  . $l->{"layer"}
+					  . ", Reálné využití: "
+					  . sprintf( "%4s%%", int( $l->{"realUsage"} ) )
+					  . " vs Skutečné využití:"
+					  . sprintf( "%4s%%", int( $l->{"stackupUsage"} ) );
+				}
+
+				$dataMngr->_AddInformationResult( "Vužití Cu ve složení",
+								   "Využití Cu ve složení () není v toleranci: " .Packages::CAMJob::Stackup::StackupCheck::USAGETOL. "% s reálným využitím u následujících vrstev:\n$txt" );
+
+			}
+		}
 	}
 
 }

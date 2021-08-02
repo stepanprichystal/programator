@@ -22,12 +22,15 @@ use warnings;
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamHelper';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Model::StepPartModel'   => 'PartModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::StepPartFrm'      => 'PartFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::Control::StepPartCheck' => 'PartCheckClass';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper'                        => "CreatorHelper";
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper' => "PnlCreHelper";
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -42,8 +45,16 @@ sub new {
 
 	# PROPERTIES
 
+	my @editSteps = PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"isCustomerSet"} = scalar(@editSteps) > 1 ? 1 : 0;
+
 	$self->{"model"}      = PartModel->new();         # Data model for view
 	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
+
+	# handle events
+	$self->{"asyncCreatorProcessedEvt"}->Add( sub { $self->__UpdatePartStepInfo(@_) } );
+
+	$self->__SetActiveCreators();
 
 	return $self;
 }
@@ -87,6 +98,7 @@ sub InitPartModel {
 
 		# Init default
 		# Init default
+
 		my $defCreator = @{ $self->{"model"}->GetCreators() }[0];
 		$self->{"model"}->SetSelectedCreator( $defCreator->GetModelKey() );
 	}
@@ -128,9 +140,8 @@ sub __OnManualPlacementHndl {
 		my $step = $creatorModel->GetStep();
 
 		# Remove steps
-		if (    $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
-			 || $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG
-			 || $creatorKey eq PnlCreEnums->StepPnlCreator_SET )
+		if (    $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
+			 || $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG )
 		{
 
 			foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
@@ -138,9 +149,37 @@ sub __OnManualPlacementHndl {
 			}
 		}
 
+		$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
+		CamHelper->SetStep( $inCAM, $step );
+
 		# Hide form
 		$self->{"showPnlWizardFrmEvt"}->Do(0);
-		$inCAM->PAUSE($pauseText);
+
+		while (1) {
+
+			$inCAM->PAUSE($pauseText);
+
+			my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
+
+			if ( scalar(@steps) == 0 ) {
+
+				my $messMngr = $self->{"partWrapper"}->GetMessMngr();
+				my @mess     = ();
+				push( @mess, "There is no nested step in panel. Do you want continue?\n" );
+
+				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "No, I will correct panel", "Yes, it is OK" ] );
+
+				if ( $messMngr->Result() == 1 ) {
+					last;
+				}
+			}
+			else {
+
+				last;
+			}
+
+		}
+
 		$self->{"showPnlWizardFrmEvt"}->Do(1);
 
 		# Show form
@@ -151,7 +190,7 @@ sub __OnManualPlacementHndl {
 
 		if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
 
-			my $JSON = $pnlToJSON->ParsePnlToJSON();
+			my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 1, 0, 0 );
 
 			if ( defined $JSON ) {
 
@@ -201,22 +240,13 @@ sub __OnManualPlacementHndl {
 }
 
 # Handler which catch change of creatores in other parts
-# Creator settings changed riase in following situations:
-
+# Reise imidiatelly after slection change, do not wait on asznchrounous task
 sub OnOtherPartCreatorSelChangedHndl {
-	my $self            = shift;
-	my $partId          = shift;
-	my $creatorKey      = shift;
-	my $creatorSettings = shift;    # creator model
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
 
-	#	# process creator if Part size was changed
-	#	if ( $partId eq Enums->Part_PNLSIZE ) {
-	#
-	#		if ( $self->GetPreview() ) {
-	#			$self->AsyncProcessSelCreatorModel();
-	#		}
-	#
-	#	}
+	$self->EnableCreators( $partId, $creatorKey );
 
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
@@ -259,6 +289,206 @@ sub OnOtherPartCreatorSettChangedHndl {
 	}
 
 	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Private method
+#-------------------------------------------------------------------------------------------#
+
+# Disable creators which are not needed for specific panelisation type
+sub __SetActiveCreators {
+	my $self = shift;
+
+	my @currCreators   = @{ $self->GetModel(1)->GetCreators() };
+	my @activeCreators = ();
+
+	if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+		foreach my $c (@currCreators) {
+
+			if ( !$self->{"isCustomerSet"} ) {
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_MATRIX );
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_PREVIEW );
+			}
+			else {
+				# Activate if there is more than one "edit step";
+				push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_SET );
+			}
+
+		}
+
+	}
+	elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+		foreach my $c (@currCreators) {
+
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSUSER );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->StepPnlCreator_CLASSHEG );
+
+		}
+	}
+
+	$self->GetModel(1)->SetCreators( \@activeCreators );
+
+}
+
+sub EnableCreators {
+	my $self       = shift;
+	my $partId     = shift;    # Previous part
+	my $creatorKey = shift;    # Selected creator from previous part
+
+	# Disable specific creators depand on preview part (size creator)
+	if ( $partId eq Enums->Part_PNLSIZE ) {
+
+		my @enableCreators  = ();
+		my $selectedCreator = undef;
+
+		if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+			if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
+
+				if ( $self->{"isCustomerSet"} ) {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_SET;
+				}
+				else {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+				}
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
+
+				if ( $self->{"isCustomerSet"} ) {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_SET;
+				}
+				else {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+				}
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_MATRIX );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_MATRIX;
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
+
+				if ( $self->{"isCustomerSet"} ) {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_SET;
+				}
+				else {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+				}
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_SET );
+
+				if ( $self->{"isCustomerSet"} ) {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_SET;
+				}
+				else {
+					$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+				}
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_PREVIEW );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_PREVIEW;
+			}
+
+		}
+		elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+
+			if ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSUSER;
+
+			}
+			elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
+
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSUSER );
+				push( @enableCreators, PnlCreEnums->StepPnlCreator_CLASSHEG );
+
+				$selectedCreator = PnlCreEnums->StepPnlCreator_CLASSHEG;
+			}
+		}
+
+		# Select creator
+		$self->{"form"}->SetSelectedCreator($selectedCreator);
+
+		# Enable/diasble step cretors
+		$self->{"form"}->EnableCreators( \@enableCreators );
+
+	}
+}
+
+sub __UpdatePartStepInfo {
+	my $self       = shift;
+	my $creatorKey = shift;
+	my $result     = shift;
+	my $errMess    = shift;
+	my $resultData = shift;
+
+	my $inCAM = $self->{"inCAM"};
+	my $jobId = $self->{"jobId"};
+
+	if ( $self->GetPreview() ) {
+
+		my $total       = "NA";
+		my $utilisation = undef;
+		if ($result) {
+
+			# Total step cnt - mandatory
+			if ( !defined $resultData->{"totalStepCnt"} || $resultData->{"totalStepCnt"} eq "" ) {
+				die "Result data from CreatorProcess event has not defined key: totalStepCnt";
+			}
+			else {
+				$total = $resultData->{"totalStepCnt"};
+			}
+
+			$self->{"partWrapper"}->SetPreviewInfoTextRow1("Step cnt: $total");
+
+			# Panelise utilisation - optional
+			if ( defined $resultData->{"utilization"} && $resultData->{"utilization"} ne "" ) {
+				$utilisation = "Util.: " . int( $resultData->{"utilization"} ) . "%";
+			}
+
+			$self->{"partWrapper"}->SetPreviewInfoTextRow2($utilisation);
+
+		}
+		else {
+			$self->{"partWrapper"}->SetPreviewInfoTextRow1(undef);
+			$self->{"partWrapper"}->SetPreviewInfoTextRow2(undef);
+		}
+
+	}
+	else {
+
+		$self->{"partWrapper"}->SetPreviewInfoTextRow1(undef);
+		$self->{"partWrapper"}->SetPreviewInfoTextRow2(undef);
+	}
 
 }
 

@@ -49,11 +49,11 @@ sub new {
 	my $self  = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"step"}  = undef;
+	 
 	$self->{"parts"} = {};
 
 	# Defaul values
-	#$self->{"pcbType"}         = undef;
+	$self->{"settings"}->{"flatten"} = 0;
 
 	return $self;
 }
@@ -79,6 +79,20 @@ sub SetPartModelById {
 	my $model  = shift;
 
 	$self->{"parts"}->{$partId} = $model;
+
+}
+
+sub SetFlatten {
+	my $self = shift;
+
+	$self->{"flatten"} = shift;
+
+}
+
+sub GetFlatten {
+	my $self = shift;
+
+	return $self->{"flatten"};
 
 }
 

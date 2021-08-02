@@ -20,6 +20,8 @@ BEGIN {
 use Widgets::Style;
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Events::Event';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
@@ -65,19 +67,26 @@ sub __Layout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
-	my $szRow1  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow2  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szRow3  = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szClmn1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szClmn2 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szRow1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow3 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szRow4 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
 
-	my $pcbStepTxt = Wx::StaticText->new( $self, -1, "PCB step:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
+	my $pcbStepTxt = Wx::StaticText->new( $self, -1, "PCB step:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $pcbStepCB = Wx::ComboBox->new( $self, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ], [""], &Wx::wxCB_READONLY );
 
-	my $pnlClassTxt = Wx::StaticText->new( $self, -1, "Class:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $pnlClassCB = Wx::ComboBox->new( $self, -1, "123", &Wx::wxDefaultPosition, [ -1, -1 ], [ "123", "123", "123" ], &Wx::wxCB_READONLY );
+	my $pnlClassTxt = Wx::StaticText->new( $self, -1, "Panel class:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $pnlClassCB = Wx::ComboBox->new( $self, -1, "123", &Wx::wxDefaultPosition, [ 10, 23 ], [ "123", "123", "123" ], &Wx::wxCB_READONLY );
+
+	my $stepProfileTxt = Wx::StaticText->new( $self, -1, "Profile:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+
+	my @profile = ("Standard");
+
+	push( @profile, "Coverlay pins" ) if ( CamHelper->LayerExists( $self->{"inCAM"}, $self->{"jobId"}, "cvrlpins" ) );
+
+	my $pcbStepProfileCB = Wx::ComboBox->new( $self, -1, $profile[0], &Wx::wxDefaultPosition, [ 10, 23 ], \@profile, &Wx::wxCB_READONLY );
 
 	my $placementStatBox = $self->__SetLayoutPlacement($self);
 	my $spacingStatBox   = $self->__SetLayoutSpacing($self);
@@ -88,7 +97,8 @@ sub __Layout {
 
 	# SET EVENTS
 
-	Wx::Event::EVT_TEXT( $pcbStepCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $pcbStepCB,        -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $pcbStepProfileCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $pnlClassCB, -1, sub { $self->__OnPnlClassChanged( $pnlClassCB->GetValue(), $self->{"creatorSettingsChangedEvt"}->Do() ) } );
 
 	#Wx::Event::EVT_TEXT( $pnlClassCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -99,30 +109,37 @@ sub __Layout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szClmn1->Add( $placementStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szClmn1->Add( $spacingStatBox,   1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow1->Add( $pnlClassTxt, 15, &Wx::wxEXPAND );
+	$szRow1->Add( $pnlClassCB,  35, &Wx::wxEXPAND );
+	$szRow1->AddStretchSpacer(2);
 
-	$szClmn2->Add( $amountStatBox,    1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szClmn2->Add( $createPnlStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow1->Add( $pcbStepTxt, 10, &Wx::wxEXPAND );
+	$szRow1->Add( $pcbStepCB,  14, &Wx::wxEXPAND );
+	$szRow1->AddStretchSpacer(2);
 
-	$szRow1->Add( $pcbStepTxt, 1, &Wx::wxEXPAND );
-	$szRow1->Add( $pcbStepCB,  1, &Wx::wxEXPAND );
+	$szRow1->Add( $stepProfileTxt,   10, &Wx::wxEXPAND );
+	$szRow1->Add( $pcbStepProfileCB, 14, &Wx::wxEXPAND );
 
-	$szRow2->Add( $pnlClassTxt, 1, &Wx::wxEXPAND );
-	$szRow2->Add( $pnlClassCB,  1, &Wx::wxEXPAND );
+	$szRow3->Add( $placementStatBox, 50, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow3->Add( $amountStatBox,    50, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
-	$szRow3->Add( $szClmn1, 1, &Wx::wxEXPAND );
-	$szRow3->Add( $szClmn2, 1, &Wx::wxEXPAND );
+	$szRow4->Add( $spacingStatBox,   50, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szRow4->Add( $createPnlStatBox, 50, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND );
+	$szMain->AddSpacer(5);
 	$szMain->Add( $szRow2, 0, &Wx::wxEXPAND );
-	$szMain->Add( $szRow3, 1, &Wx::wxEXPAND );
+	$szMain->AddSpacer(2);
+	$szMain->Add( $szRow3, 0, &Wx::wxEXPAND );
+	$szMain->AddSpacer(2);
+	$szMain->Add( $szRow4, 1, &Wx::wxEXPAND );
 
 	$self->SetSizer($szMain);
 
 	# save control references
-	$self->{"pcbStepCB"}  = $pcbStepCB;
-	$self->{"pnlClassCB"} = $pnlClassCB;
+	$self->{"pcbStepCB"}        = $pcbStepCB;
+	$self->{"pcbStepProfileCB"} = $pcbStepProfileCB;
+	$self->{"pnlClassCB"}       = $pnlClassCB;
 
 }
 
@@ -147,8 +164,8 @@ sub __SetLayoutPlacement {
 
 	# Row 1
 
-	my $rbPlacementRot = Wx::RadioButton->new( $statBox, -1, "Rotation", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
-	my $rbPlacementPatt = Wx::RadioButton->new( $statBox, -1, "Pattern", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+	my $rbPlacementRot = Wx::RadioButton->new( $statBox, -1, "Rotation", &Wx::wxDefaultPosition, [ 10, 23 ], &Wx::wxRB_GROUP );
+	my $rbPlacementPatt = Wx::RadioButton->new( $statBox, -1, "Pattern", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	my $notebook = CustomNotebook->new( $statBox, -1 );
 	my $placementRotPage  = $notebook->AddPage( 1, 0 );
@@ -159,7 +176,7 @@ sub __SetLayoutPlacement {
 					PnlClassEnums->PnlClassRotation_UNIFORM, PnlClassEnums->PnlClassRotation_ANY
 	);
 	my $rotTypeCb =
-	  Wx::ComboBox->new( $placementRotPage->GetParent(), -1, $rotType[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@rotType, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $placementRotPage->GetParent(), -1, $rotType[0], &Wx::wxDefaultPosition, [ 10, 23 ], \@rotType, &Wx::wxCB_READONLY );
 	#
 	#	my $pnlRotPage = Wx::Panel->new($placementRotPage->GetParent());
 	#	my $szRotPage = Wx::BoxSizer->new(&Wx::wxVERTICAL);
@@ -185,7 +202,7 @@ sub __SetLayoutPlacement {
 
 	#my $pattTypeCb = Wx::BitmapComboBox->new( $placementPattPage->GetParent(), -1, $pattType[0], &Wx::wxDefaultPosition, [ 50, 25 ],  \@pattType, );
 	my $pattTypeCb =
-	  Wx::ComboBox->new( $placementPattPage->GetParent(), -1, $pattType[0], &Wx::wxDefaultPosition, [ -1, -1 ], \@pattType, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $placementPattPage->GetParent(), -1, $pattType[0], &Wx::wxDefaultPosition, [ 10, 23 ], \@pattType, &Wx::wxCB_READONLY );
 
 	$placementRotPage->AddContent($rotTypeCb);
 
@@ -195,17 +212,17 @@ sub __SetLayoutPlacement {
 
 	# Row 2
 
-	my $interlockTxt = Wx::StaticText->new( $statBox, -1, "Interlock:", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $interlockTxt = Wx::StaticText->new( $statBox, -1, "Interlock:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 	my @interlockType = ( PnlClassEnums->PnlClassInterlock_NONE, PnlClassEnums->PnlClassInterlock_SIMPLE, PnlClassEnums->PnlClassInterlock_SLIDING );
 	my $interlockCb =
-	  Wx::ComboBox->new( $statBox, -1, $interlockType[0], &Wx::wxDefaultPosition, [ 50, 25 ], \@interlockType, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $statBox, -1, $interlockType[0], &Wx::wxDefaultPosition, [ 10, 23 ], \@interlockType, &Wx::wxCB_READONLY );
 
 	# SET EVENTS
 	Wx::Event::EVT_RADIOBUTTON( $rbPlacementRot,  -1, sub { $notebook->ShowPage(1); $self->{"creatorSettingsChangedEvt"}->Do(); } );
 	Wx::Event::EVT_RADIOBUTTON( $rbPlacementPatt, -1, sub { $notebook->ShowPage(2); $self->{"creatorSettingsChangedEvt"}->Do(); } );
 
-	#Wx::Event::EVT_TEXT( $rotTypeCb,   -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	#Wx::Event::EVT_TEXT( $pattTypeCb,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $rotTypeCb,   -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $pattTypeCb,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $interlockCb, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
@@ -214,13 +231,14 @@ sub __SetLayoutPlacement {
 
 	$szRow1Col2->Add( $notebook, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow1->Add( $szRow1Col1, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow1->Add( $szRow1Col2, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $szRow1Col1, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $szRow1Col2, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow2->Add( $interlockTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $interlockCb,  1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $interlockTxt, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $interlockCb,  50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 
 	# save control references
@@ -230,6 +248,8 @@ sub __SetLayoutPlacement {
 	$self->{"rbPlacementPatt"}   = $rbPlacementPatt;
 	$self->{"interlockCb"}       = $interlockCb;
 	$self->{"notebookPlacement"} = $notebook;
+
+	$self->{"placementStatBox"} = $statBox;
 
 	return $szStatBox;
 }
@@ -252,43 +272,47 @@ sub __SetLayoutSpacing {
 
 	# DEFINE CONTROLS
 
-	my $pnlClassSpaceTxt = Wx::StaticText->new( $statBox, -1, "Predefined space:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $pnlClassSpaceCB = Wx::ComboBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ -1, -1 ], [""], &Wx::wxCB_READONLY );
+	my $pnlClassSpaceTxt = Wx::StaticText->new( $statBox, -1, "Class space:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $pnlClassSpaceCB = Wx::ComboBox->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ], [""], &Wx::wxCB_READONLY );
 
-	my $spaceXTxt = Wx::StaticText->new( $statBox, -1, "Space X:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $spaceXValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $spaceXTxt = Wx::StaticText->new( $statBox, -1, "Space X:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $spaceXValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
-	my $spaceYTxt = Wx::StaticText->new( $statBox, -1, "Space Y", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $spaceYValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $spaceYTxt = Wx::StaticText->new( $statBox, -1, "Space Y:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $spaceYValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
-	my $spacingTypeTxt = Wx::StaticText->new( $statBox, -1, "Space align", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $spacingTypeTxt = Wx::StaticText->new( $statBox, -1, "Space align:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 	my @spacingType = ( PnlClassEnums->PnlClassSpacingAlign_KEEP_IN_CENTER, PnlClassEnums->PnlClassSpacingAlign_SPACE_EVENLY );
 	my $spacingTypeCb =
-	  Wx::ComboBox->new( $statBox, -1, $spacingType[0], &Wx::wxDefaultPosition, [ 50, 25 ], \@spacingType, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $statBox, -1, $spacingType[0], &Wx::wxDefaultPosition, [ 10, 23 ], \@spacingType, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $pnlClassSpaceCB, -1, sub { $self->__OnPnlClassSpacingChanged( $pnlClassSpaceCB->GetValue() ) } );
-	Wx::Event::EVT_TEXT( $pnlClassSpaceCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $spaceXValTxt,    -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $spaceYValTxt,    -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_TEXT( $spacingTypeCb,   -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+
+	#Wx::Event::EVT_TEXT( $pnlClassSpaceCB, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $spaceXValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $spaceYValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_TEXT( $spacingTypeCb, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow0->Add( $pnlClassSpaceTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow0->Add( $pnlClassSpaceCB,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow0->Add( $pnlClassSpaceTxt, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow0->Add( $pnlClassSpaceCB,  50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow1->Add( $spaceXTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow1->Add( $spaceXValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $spaceXTxt,    50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $spaceXValTxt, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow2->Add( $spaceYTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $spaceYValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $spaceYTxt,    50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $spaceYValTxt, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow3->Add( $spacingTypeTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow3->Add( $spacingTypeCb,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow3->Add( $spacingTypeTxt, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow3->Add( $spacingTypeCb,  50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# save control references
@@ -297,6 +321,8 @@ sub __SetLayoutSpacing {
 	$self->{"spaceYValTxt"}    = $spaceYValTxt;
 	$self->{"spacingTypeCb"}   = $spacingTypeCb;
 	$self->{"pnlClassSpaceCB"} = $pnlClassSpaceCB;
+
+	$self->{"spacingStatBox"} = $statBox;
 
 	return $szStatBox;
 }
@@ -332,8 +358,8 @@ sub __SetLayoutAmount {
 	my $amountMaxPage   = $notebook->AddPage( 2, 0 );
 	my $amountAutoPage  = $notebook->AddPage( 3, 0 );
 
-	my $exactValTxt = Wx::TextCtrl->new( $amountExactPage->GetParent(), -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $maxValTxt   = Wx::TextCtrl->new( $amountMaxPage->GetParent(),   -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $exactValTxt = Wx::TextCtrl->new( $amountExactPage->GetParent(), -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $maxValTxt   = Wx::TextCtrl->new( $amountMaxPage->GetParent(),   -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	$amountExactPage->AddContent($exactValTxt);
 	$amountMaxPage->AddContent($maxValTxt);
@@ -347,10 +373,6 @@ sub __SetLayoutAmount {
 	Wx::Event::EVT_RADIOBUTTON( $rbAmountMax,   -1, sub { $notebook->ShowPage(2); $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_RADIOBUTTON( $rbAmountAuto,  -1, sub { $notebook->ShowPage(3); $self->{"creatorSettingsChangedEvt"}->Do() } );
 
-	#
-	#	Wx::Event::EVT_RADIOBUTTON( $rbAmountExact, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	#	Wx::Event::EVT_RADIOBUTTON( $rbAmountMax,   -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
-	#	Wx::Event::EVT_RADIOBUTTON( $rbAmountAuto,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $exactValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $maxValTxt,   -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
@@ -360,16 +382,17 @@ sub __SetLayoutAmount {
 	#	Wx::Event::EVT_TEXT( $botValTxt,   -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1Col1->Add( $rbAmountExact, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1Col1->Add( $rbAmountMax,   0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szRow1Col1->Add( $rbAmountAuto,  0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1Col1->Add( $rbAmountExact, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1Col1->Add( $rbAmountMax,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szRow1Col1->Add( $rbAmountAuto,  1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szRow1Col2->Add( $notebook, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szRow1->Add( $szRow1Col1, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow1->Add( $szRow1Col2, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $szRow1Col1, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $szRow1Col2, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 
 	#$szStatBox->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
@@ -385,6 +408,9 @@ sub __SetLayoutAmount {
 
 	$self->{"customLayoutAmountParent"} = $statBox;
 	$self->{"customLayoutSz"}           = $szRow0;
+
+	$self->{"amountStatBox"} = $statBox;
+
 	return $szStatBox;
 }
 
@@ -410,8 +436,8 @@ sub __SetLayoutCreatePnl {
 
 	# Row 1
 
-	my $rbPlacementAuto = Wx::RadioButton->new( $statBox, -1, "Auto Best", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
-	my $rbPlacementManual = Wx::RadioButton->new( $statBox, -1, "Manual pick", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
+	my $rbPlacementAuto = Wx::RadioButton->new( $statBox, -1, "Best solution", &Wx::wxDefaultPosition, &Wx::wxDefaultSize, &Wx::wxRB_GROUP );
+	my $rbPlacementManual = Wx::RadioButton->new( $statBox, -1, "Manual selection", &Wx::wxDefaultPosition, &Wx::wxDefaultSize );
 
 	my $notebook = CustomNotebook->new( $statBox, -1 );
 	my $placementAutoPage   = $notebook->AddPage( 1, 0 );
@@ -420,7 +446,7 @@ sub __SetLayoutCreatePnl {
 	my $szManual = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	my $pnlPicker = ManualPlacement->new( $placementManualPage->GetParent(),
-										   $self->{"jobId"}, $self->GetStep(), "Pick panel",
+										  $self->{"jobId"}, $self->GetStep(), "Select panel",
 										  "Accept best panel (+ adjust if needed) and press Continue.",
 										  1, "Clear" );
 
@@ -428,14 +454,16 @@ sub __SetLayoutCreatePnl {
 
 	$placementManualPage->AddContent($szManual);
 
-	my $minUtilTxt = Wx::StaticText->new( $statBox, -1, "Min utilization [%]:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $minUtilValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $minUtilTxt = Wx::StaticText->new( $statBox, -1, "Min utilization[%]:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $minUtilValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	$notebook->ShowPage(1);
 
 	# DEFINE EVENTS
-	Wx::Event::EVT_RADIOBUTTON( $rbPlacementAuto,   -1, sub { $notebook->ShowPage(1); $self->{"creatorSettingsChangedEvt"}->Do() } );
-	Wx::Event::EVT_RADIOBUTTON( $rbPlacementManual, -1, sub { $notebook->ShowPage(2); $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_RADIOBUTTON( $rbPlacementAuto, -1,
+								sub { $self->_EnableSettings(), $notebook->ShowPage(1); $self->{"creatorSettingsChangedEvt"}->Do() } );
+	Wx::Event::EVT_RADIOBUTTON( $rbPlacementManual, -1,
+								sub { $self->_EnableSettings(), $notebook->ShowPage(2); $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	#	Wx::Event::EVT_RADIOBUTTON( $rbPlacementAuto,  -1, sub {  } );
 	#	Wx::Event::EVT_RADIOBUTTON( $rbPlacementManual,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -453,15 +481,16 @@ sub __SetLayoutCreatePnl {
 	$szRow1->Add( $minUtilTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow1->Add( $minUtilValTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow2->Add( $szRow2Col1, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $szRow2Col2, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $szRow2Col1, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $szRow2Col2, 50, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szRow2Col1->Add( $rbPlacementAuto,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 	$szRow2Col1->Add( $rbPlacementManual, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$szRow2Col2->Add( $notebook, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
-	$szStatBox->Add( $szRow1, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
 
 	#$szStatBox->Add( $szRow2, 1, &Wx::wxEXPAND | &Wx::wxLEFT, 0 );
@@ -482,7 +511,7 @@ sub _SetLayoutISMultipl {
 	my $title = shift;    #
 
 	# DEFINE CONTROLS
-	my $isTxt = Wx::StaticText->new( $self->{"customLayoutAmountParent"}, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
+	my $isTxt = Wx::StaticText->new( $self->{"customLayoutAmountParent"}, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	my $isIndicator = ResultIndicator->new( $self->{"customLayoutAmountParent"}, 20 );
 
@@ -499,26 +528,59 @@ sub _SetLayoutISMultipl {
 	return $isIndicator;
 }
 
+sub _EnableLayoutAmount {
+	my $self   = shift;
+	my $enable = shift;
+
+	if ($enable) {
+
+		$self->{"rbAmountExact"}->Enable();
+		$self->{"rbAmountMax"}->Enable();
+		$self->{"rbAmountAuto"}->Enable();
+		$self->{"notebookAmount"}->Enable();
+		$self->{"exactValTxt"}->Enable();
+		$self->{"maxValTxt"}->Enable();
+
+	}
+	else {
+
+		$self->{"rbAmountExact"}->Disable();
+		$self->{"rbAmountMax"}->Disable();
+		$self->{"rbAmountAuto"}->Disable();
+		$self->{"notebookAmount"}->Disable();
+		$self->{"exactValTxt"}->Disable();
+		$self->{"maxValTxt"}->Disable();
+	}
+
+}
+
 sub __OnPnlClassChanged {
 	my $self      = shift;
 	my $className = shift;
+
+	return 0 unless ( scalar( @{ $self->{"classes"} } ) );
 
 	my $class = first { $_->GetName() eq $className } @{ $self->{"classes"} };
 
 	# Set cb classes size
 	$self->{"pnlClassSpaceCB"}->Freeze();
-	
+
 	$self->{"pnlClassSpaceCB"}->Clear();
-	foreach my $classSpace ( $class->GetAllClassSpacings() ) {
+
+	my @spacings = $class->GetAllClassSpacings();
+
+	@spacings = sort { $a->GetSpaceX() <=> $b->GetSpaceX() } @spacings;
+
+	foreach my $classSpace (@spacings) {
 
 		$self->{"pnlClassSpaceCB"}->Append( $classSpace->GetName() );
 	}
 
 	$self->{"pnlClassSpaceCB"}->Thaw();
 
-	if ( scalar( $class->GetAllClassSpacings() ) ) {
+	if ( scalar(@spacings) ) {
 
-		my $spaceName = ( $class->GetAllClassSpacings() )[0]->GetName();
+		my $spaceName = $spacings[0]->GetName();
 		$self->{"pnlClassSpaceCB"}->SetValue($spaceName);
 		$self->__OnPnlClassSpacingChanged($spaceName);
 	}
@@ -529,6 +591,8 @@ sub __OnPnlClassSpacingChanged {
 	my $self           = shift;
 	my $classSpaceName = shift;
 
+	return 0 unless ( scalar( @{ $self->{"classes"} } ) );
+
 	my $class      = first { $_->GetName() eq $self->{"pnlClassCB"}->GetValue() } @{ $self->{"classes"} };
 	my $classSpace = first { $_->GetName() eq $classSpaceName } $class->GetAllClassSpacings();
 
@@ -537,6 +601,41 @@ sub __OnPnlClassSpacingChanged {
 		$self->SetSpaceX( $classSpace->GetSpaceX() );
 		$self->SetSpaceY( $classSpace->GetSpaceY() );
 
+	}
+
+}
+
+sub DisplayCvrlpinLayer {
+	my $self = shift;
+
+	my $type = $self->GetPCBStepProfile();
+
+	if ( $type eq PnlCreEnums->PCBStepProfile_CVRLPINS ) {
+
+		CamLayer->DisplayLayers( $self->{"inCAM"}, ["cvrlpins"], 1, 0 );
+		$self->{"inCAM"}->COM( "display_sr", "display" => "yes" );
+
+	}
+	else {
+
+		CamLayer->DisplayLayers( $self->{"inCAM"}, ["cvrlpins"], 0, 0 );
+	}
+}
+
+sub _EnableSettings {
+	my $self = shift;
+
+	if ( $self->{"rbPlacementAuto"}->GetValue() ) {
+
+		$self->{"placementStatBox"}->Enable();
+		$self->{"spacingStatBox"}->Enable();
+		$self->{"amountStatBox"}->Enable();
+
+	}
+	elsif ( $self->{"rbPlacementManual"}->GetValue() ) {
+		$self->{"placementStatBox"}->Disable();
+		$self->{"spacingStatBox"}->Disable();
+		$self->{"amountStatBox"}->Disable();
 	}
 
 }
@@ -575,9 +674,9 @@ sub SetDefPnlClass {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassCB"}->SetValue($val) if ( defined $val );
+	$self->{"pnlClassCB"}->SetValue($val) if ( defined $val && $val ne "" );
 
-	$self->__OnPnlClassChanged($val) if ( defined $val );
+	$self->__OnPnlClassChanged($val) if ( defined $val && $val ne "" );
 }
 
 sub GetDefPnlClass {
@@ -590,9 +689,9 @@ sub SetDefPnlSpacing {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassSpaceCB"}->SetValue($val) if ( defined $val );
+	$self->{"pnlClassSpaceCB"}->SetValue($val) if ( defined $val && $val ne "" );
 
-	$self->__OnPnlClassSpacingChanged($val) if ( defined $val );
+	$self->__OnPnlClassSpacingChanged($val) if ( defined $val && $val ne "" );
 }
 
 sub GetDefPnlSpacing {
@@ -632,7 +731,7 @@ sub SetPCBStep {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pcbStepCB"}->SetValue($val) if ( defined $val );
+	$self->{"pcbStepCB"}->SetValue($val) if ( defined $val && $val ne "" );
 
 }
 
@@ -640,6 +739,47 @@ sub GetPCBStep {
 	my $self = shift;
 
 	return $self->{"pcbStepCB"}->GetValue();
+
+}
+
+sub SetPCBStepProfile {
+	my $self = shift;
+	my $val  = shift;
+
+	if ( defined $val && $val ne "" ) {
+		my $cbValue = undef;
+
+		if ( $val eq PnlCreEnums->PCBStepProfile_STANDARD ) {
+
+			$self->{"pcbStepProfileCB"}->SetValue("Standard");
+
+		}
+		elsif ( $val eq PnlCreEnums->PCBStepProfile_CVRLPINS ) {
+
+			$self->{"pcbStepProfileCB"}->SetValue("Coverlay pins");
+
+		}
+
+	}
+
+}
+
+sub GetPCBStepProfile {
+	my $self = shift;
+
+	my $val = undef;
+
+	if ( $self->{"pcbStepProfileCB"}->GetValue() eq "Standard" ) {
+
+		$val = PnlCreEnums->PCBStepProfile_STANDARD;
+
+	}
+	elsif ( $self->{"pcbStepProfileCB"}->GetValue() eq "Coverlay pins" ) {
+		$val = PnlCreEnums->PCBStepProfile_CVRLPINS;
+
+	}
+
+	return $val;
 
 }
 
@@ -692,7 +832,7 @@ sub SetRotationType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"rotTypeCb"}->SetValue($val) if ( defined $val );
+	$self->{"rotTypeCb"}->SetValue($val) if ( defined $val && $val ne "" );
 }
 
 sub GetRotationType {
@@ -705,7 +845,7 @@ sub SetPatternType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pattTypeCb"}->SetValue($val) if ( defined $val );
+	$self->{"pattTypeCb"}->SetValue($val) if ( defined $val && $val ne "" );
 }
 
 sub GetPatternType {
@@ -718,7 +858,7 @@ sub SetInterlockType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"interlockCb"}->SetValue($val) if ( defined $val );
+	$self->{"interlockCb"}->SetValue($val) if ( defined $val && $val ne "" );
 }
 
 sub GetInterlockType {
@@ -733,7 +873,7 @@ sub SetSpaceX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spaceXValTxt"}->SetValue($val)
+	$self->{"spaceXValTxt"}->SetValue( sprintf( "%.1f", $val ) )
 
 }
 
@@ -748,7 +888,7 @@ sub SetSpaceY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spaceYValTxt"}->SetValue($val);
+	$self->{"spaceYValTxt"}->SetValue( sprintf( "%.1f", $val ) ) if ( defined $val && $val ne "" );
 }
 
 sub GetSpaceY {
@@ -761,7 +901,7 @@ sub SetAlignType {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"spacingTypeCb"}->SetValue($val) if ( defined $val );
+	$self->{"spacingTypeCb"}->SetValue($val) if ( defined $val && $val ne "" );
 
 }
 
@@ -861,20 +1001,22 @@ sub SetActionType {
 	my $self = shift;
 	my $val  = shift;
 
-	if ( $self->{"rbPlacementAuto"}->GetValue() ) {
-
-		$val = PnlCreEnums->StepPlacementMode_AUTO;
+	if ( $val eq PnlCreEnums->StepPlacementMode_AUTO ) {
+ 
+ 		$self->{"rbPlacementAuto"}->SetValue(1);
 		$self->{"notebookCreatePnl"}->ShowPage(1);
 	}
-	elsif ( $self->{"rbPlacementManual"}->GetValue() ) {
-		$val = PnlCreEnums->StepPlacementMode_MANUAL;
+	elsif ( $val eq PnlCreEnums->StepPlacementMode_MANUAL ) {
+	 
+	 	$self->{"rbPlacementManual"}->SetValue(1);
 		$self->{"notebookCreatePnl"}->ShowPage(2);
 	}
-
 	else {
 
 		die "Wrong action type: $val";
 	}
+
+	$self->_EnableSettings();
 
 }
 

@@ -1,9 +1,9 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Interface, which must implement each UnitForm
+# Description: Interface, which must implement each PartForm
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::IUnitForm;
+package Programs::Panelisation::PnlWizard::Parts::IPartForm;
 
 #3th party library
 use strict;
@@ -22,10 +22,19 @@ use Class::Interface;
 
 # Methods
 
-sub DisableControls;
-
-
  
+# Return proper creator view form
+sub OnGetCreatorLayout;
+ 
+# override base class method
+sub SetCreators;
+ 
+# override base class method
+sub GetCreators;
+
+sub SetSelectedCreator;
+ 
+sub GetSelectedCreator;
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

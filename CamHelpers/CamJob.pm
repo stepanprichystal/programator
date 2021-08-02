@@ -12,7 +12,7 @@ package CamHelpers::CamJob;
 
 use strict;
 use warnings;
-use List::Util qw[max min];
+use List::Util qw[max min first];
 
 #loading of locale modules
 
@@ -684,13 +684,14 @@ sub CopyJob {
 	);
 }
 
-# Return final thick of pcb including plating 
+# Return final thick of pcb including plating
 # Units [µm]
 # Note: Stiffener thickness is not  included!!
 sub GetFinalPcbThick {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $inclStiff = shift // 0;    # include stiffener
 
 	my $thick;
 
@@ -704,9 +705,52 @@ sub GetFinalPcbThick {
 
 		$thick = HegMethods->GetPcbMaterialThick($jobId);
 		$thick = $thick * 1000;
-	 
+
 	}
- 
+
+	if ($inclStiff) {
+
+		my @stiff = grep { $_->{"gROWlayer_type"} eq "stiffener" } $self->GetBoardBaseLayers( $inCAM, $jobId );
+
+		foreach my $stiffL (@stiff) {
+
+			my $side = ( $stiffL->{"gROWname"} =~ /c/ ) ? "top" : "bot";
+
+			my $mInf = HegMethods->GetPcbStiffenerMat( $jobId, $side );
+			my $mAdhInf = HegMethods->GetPcbStiffenerAdhMat( $jobId, $side );
+			my @nAdh = split( /\s/, $mAdhInf->{"nazev_subjektu"} );
+
+			my $t = $mInf->{"vyska"};
+			$t =~ s/,/\./;
+			$t *= 1000000;
+
+			my $tAdh = $mAdhInf->{"vyska"};
+			$tAdh =~ s/,/\./;
+			$tAdh *= 1000000;
+
+			$t += $tAdh;
+
+			# If not core, copper thickness are included in material height
+			if ( $mInf->{"dps_type"} !~ /core/i ) {
+
+				if ( $mInf->{"nazev_subjektu"} =~ m/(\d+\/\d+)/ ) {
+					my @cu = split( "/", $1 );
+					$t -= $cu[0] if ( defined $cu[0] );
+					$t -= $cu[1] if ( defined $cu[1] );
+				}
+			}
+
+			die "Stiffener adhesive material thick was not found at material:" . $mInf->{"nazev_subjektu"}
+			  if ( !defined $mInf->{"vyska"} || $mInf->{"vyska"} eq "" || $mInf->{"vyska"} == 0 );
+
+			die "Stiffener thickness was not found at material:" . $mInf->{"nazev_subjektu"}
+			  if ( !defined $mAdhInf->{"vyska"} || $mAdhInf->{"vyska"} eq "" || $mAdhInf->{"vyska"} == 0 );
+
+			$thick += $t
+
+		}
+	}
+
 	return $thick;
 }
 

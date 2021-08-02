@@ -16,7 +16,7 @@ use warnings;
 #local library
 use aliased 'Packages::Events::Event';
 use aliased 'Enums::EnumsGeneral';
-use aliased 'Programs::Comments::Enums';
+use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 use Widgets::Style;
 
 
@@ -51,19 +51,22 @@ sub __SetLayout {
 	# DEFINE SIZERS
 	my $layout = $self->{"commLayout"};
 
-	my $szMain = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 
 
 	# DEFINE CONTROLS
 	 
-	my $creatorNameTxt = Wx::StaticText->new( $self, -1, $creatorModel->GetModelKey(), &Wx::wxDefaultPosition );
+	my $tit =  EnumsStyle->GetCreatorTitle($creatorModel->GetModelKey());
+	 
+	my $creatorNameTxt = Wx::StaticText->new( $self, -1, $tit, &Wx::wxDefaultPosition, [-1, -1] );
  
 	#$self->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
 
 	# DEFINE LAYOUT
 
-	$szMain->Add( $creatorNameTxt, 4, &Wx::wxALL | &Wx::wxALIGN_CENTER_VERTICAL, 2);
+	$szMain->Add( $creatorNameTxt, 1, &Wx::wxALL | &Wx::wxALIGN_CENTER_VERTICAL, 6);
+	$szMain->Add(163,0,0); # keep width
 	 
 
 	 
@@ -84,31 +87,7 @@ sub __SetLayout {
 # ==============================================
 # PUBLIC FUNCTION
 # ==============================================
-sub SetCommentLayout {
-	my $self       = shift;
-	my $commLayout = shift;
-
-	$self->{"commStoredTxt"}->SetLabel( !$commLayout->GetStoredOnDisc()?"*": "" );
-	$self->{"commIdValTxt"}->SetLabel( $self->GetPosition() +1 );
-
-	$self->{"commTypeValTxt"}->SetLabel( Enums->GetTypeTitle( $commLayout->GetType() ) );
-
-	# first 15 char without new lines
-	my $note = $commLayout->GetText();
-	
-	if($note eq ""){
-		
-		$note = "-"
-	}else{
-		$note =~ s/\n/ /ig;
-		$note =  substr($note, 0, 20)." ...";
-	}
-	
-	$self->{"commTextValTxt"}->SetLabel($note);
-	$self->{"commFilesValTxt"}->SetLabel( scalar( $commLayout->GetAllFiles() ) );
-	$self->{"commSuggValTxt"}->SetLabel( scalar( $commLayout->GetAllSuggestions() ) );
-
-}
+ 
 
 # ==============================================
 # HELPER FUNCTION

@@ -18,6 +18,7 @@ use warnings;
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlCreator::Enums';
 use aliased 'Programs::Panelisation::PnlCreator::Helpers::PnlToJSON';
+use aliased 'CamHelpers::CamStepRepeat';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -79,18 +80,6 @@ sub Check {
 		$result = 0;
 		$$errMess .= "Source job, which panel should be coppied from is not defined.\n";
 	}
-	else {
-
-		# Check if JSON exist
-		my $JSON = $self->GetPanelJSON();
-
-		if ( !defined $JSON || $JSON eq "" ) {
-
-			$result = 0;
-			$$errMess .= "Source job panel SR was not properly parsed.\n";
-		}
-
-	}
 
 	if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
 
@@ -109,20 +98,33 @@ sub Check {
 
 # Return 1 if succes 0 if fail
 sub Process {
-	my $self    = shift;
-	my $inCAM   = shift;
-	my $errMess = shift;    # reference to err message
+	my $self       = shift;
+	my $inCAM      = shift;
+	my $errMess    = shift;         # reference to err message
+	my $resultData = shift // {};
 
 	my $result = 1;
-
-	$self->_CreateStep($inCAM);
 
 	# Process specific
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->GetStep();
 
-	my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
-	$pnlToJSON->CreatePnlByJSON( $self->GetPanelJSON(), 0, 1 );
+	if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
+
+		my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
+		$pnlToJSON->CreatePnlByJSON( $self->GetManualPlacementJSON(), 0, 1, 0 );
+
+	}
+
+	# Store result data (total step cnt)
+	my $total = 0;
+	my @repeats = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $self->GetStep() );
+	foreach my $sr (@repeats) {
+
+		$total += $sr->{"totalCnt"};
+	}
+
+	$resultData->{"totalStepCnt"} = $total if ($result);
 
 	return $result;
 }

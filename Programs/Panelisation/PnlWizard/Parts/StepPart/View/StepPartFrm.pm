@@ -7,6 +7,9 @@
 package Programs::Panelisation::PnlWizard::Parts::StepPart::View::StepPartFrm;
 use base qw(Programs::Panelisation::PnlWizard::Forms::CreactorSelectorFrm);
 
+use Class::Interface;
+&implements('Programs::Panelisation::PnlWizard::Parts::IPartForm');
+
 #3th party library
 use strict;
 use warnings;
@@ -17,8 +20,8 @@ use List::Util qw(first);
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutoHegFrm';
-use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::AutoUserFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::ClassHEGFrm';
+use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::ClassUserFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::MatrixFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::SetFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators::PreviewFrm';
@@ -28,13 +31,15 @@ use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators:
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class  = shift;
-	my $parent = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
-	my $model  = shift;    # model for initial inittialization
+	my $class   = shift;
+	my $parent  = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $model   = shift;    # model for initial inittialization
+	my $pnlType = shift;
 
-	my $self = $class->SUPER::new( $parent, $inCAM, $jobId, $model );
+	my $frmHeight = 280;                                                                      # height of part, constant for all creators
+	my $self = $class->SUPER::new( $parent, $frmHeight, $inCAM, $jobId, $model, $pnlType );
 
 	bless($self);
 
@@ -65,39 +70,58 @@ sub OnGetCreatorLayout {
 	my $creatorKey = shift;
 	my $parent     = shift;
 
-	my $inCAM = $self->{"inCAM"};
-	my $jobId = $self->{"jobId"};
+	my $inCAM   = $self->{"inCAM"};
+	my $jobId   = $self->{"jobId"};
+	my $pnlType = $self->{"pnlType"};
 
 	my $content = undef;
 
-	if ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+	if ( $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
 
-		$content = AutoHegFrm->new( $parent, $inCAM, $jobId );
+		$content = ClassHEGFrm->new( $parent, $inCAM, $jobId );
 
 		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
-	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_AUTOUSER ) {
+	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER ) {
 
-		$content = AutoUserFrm->new( $parent, $inCAM, $jobId );
+		$content = ClassUserFrm->new( $parent, $inCAM, $jobId );
 
 		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX ) {
 
 		$content = MatrixFrm->new( $parent, $inCAM, $jobId );
+
+		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_SET ) {
 
 		$content = SetFrm->new( $parent, $inCAM, $jobId );
+
+		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
 	elsif ( $creatorKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
 
 		$content = PreviewFrm->new( $parent, $inCAM, $jobId );
-		
-			$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
+
+		$content->{"manualPlacementEvt"}->Add( sub { $self->{"manualPlacementEvt"}->Do(@_) } );
 	}
 
 	return $content;
+}
+
+sub OnCreatorProcessedHndl {
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
+
+	if (    $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG
+		 || $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
+		 || $creatorKey eq PnlCreEnums->StepPnlCreator_MATRIX )
+	{
+
+		$self->GetCreatorFrm($creatorKey)->DisplayCvrlpinLayer();
+	}
 }
 
 # =====================================================================
@@ -117,13 +141,15 @@ sub SetCreators {
 		if ( defined $model ) {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+			$creatorFrm->SetStep( $model->GetStep() );
 
-			if (    $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
-				 || $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG )
+			if (    $modelKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
+				 || $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG )
 			{
 
 				$creatorFrm->SetPCBStepsList( $model->GetPCBStepsList() );
 				$creatorFrm->SetPCBStep( $model->GetPCBStep() );
+				$creatorFrm->SetPCBStepProfile( $model->GetPCBStepProfile() );
 				$creatorFrm->SetPnlClasses( $model->GetPnlClasses() );
 				$creatorFrm->SetDefPnlClass( $model->GetDefPnlClass() );
 				$creatorFrm->SetDefPnlSpacing( $model->GetDefPnlSpacing() );
@@ -143,7 +169,7 @@ sub SetCreators {
 				$creatorFrm->SetMinUtilization( $model->GetMinUtilization() );
 				$creatorFrm->SetExactQuantity( $model->GetExactQuantity() );
 
-				if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+				if ( $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
 
 					$creatorFrm->SetISMultiplFilled( $model->GetISMultiplFilled() );
 				}
@@ -153,17 +179,27 @@ sub SetCreators {
 
 				$creatorFrm->SetPCBStepsList( $model->GetPCBStepsList() );
 				$creatorFrm->SetPCBStep( $model->GetPCBStep() );
+				$creatorFrm->SetPCBStepProfile( $model->GetPCBStepProfile() );
 				$creatorFrm->SetStepMultiplX( $model->GetStepMultiplX() );
 				$creatorFrm->SetStepMultiplY( $model->GetStepMultiplY() );
 				$creatorFrm->SetStepSpaceX( $model->GetStepSpaceX() );
 				$creatorFrm->SetStepSpaceY( $model->GetStepSpaceY() );
 				$creatorFrm->SetStepRotation( $model->GetStepRotation() );
+				$creatorFrm->SetManualPlacementJSON( $model->GetManualPlacementJSON() );
+				$creatorFrm->SetManualPlacementStatus( $model->GetManualPlacementStatus() );
+
+			}
+			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
+
+				$creatorFrm->SetStepList( $model->GetStepList() );
+				$creatorFrm->SetSetMultiplicity( $model->GetSetMultiplicity() );
+				$creatorFrm->SetManualPlacementJSON( $model->GetManualPlacementJSON() );
+				$creatorFrm->SetManualPlacementStatus( $model->GetManualPlacementStatus() );
 
 			}
 			elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
 
 				$creatorFrm->SetSrcJobId( $model->GetSrcJobId() );
-				$creatorFrm->SetPanelJSON( $model->GetPanelJSON() );
 				$creatorFrm->SetManualPlacementJSON( $model->GetManualPlacementJSON() );
 				$creatorFrm->SetManualPlacementStatus( $model->GetManualPlacementStatus() );
 
@@ -187,8 +223,10 @@ sub GetCreators {
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-		if (    $modelKey eq PnlCreEnums->StepPnlCreator_AUTOUSER
-			 || $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG )
+		$model->SetStep( $creatorFrm->GetStep() );
+
+		if (    $modelKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
+			 || $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG )
 		{
 
 			$model->SetPnlClasses( $creatorFrm->GetPnlClasses() );
@@ -197,6 +235,7 @@ sub GetCreators {
 
 			$model->SetPCBStepsList( $creatorFrm->GetPCBStepsList() );
 			$model->SetPCBStep( $creatorFrm->GetPCBStep() );
+			$model->SetPCBStepProfile( $creatorFrm->GetPCBStepProfile() );
 			$model->SetPlacementType( $creatorFrm->GetPlacementType() );
 			$model->SetRotationType( $creatorFrm->GetRotationType() );
 			$model->SetPatternType( $creatorFrm->GetPatternType() );
@@ -213,13 +252,13 @@ sub GetCreators {
 			$model->SetMinUtilization( $creatorFrm->GetMinUtilization() );
 			$model->SetExactQuantity( $creatorFrm->GetExactQuantity() );
 
-			if ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+			if ( $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
 
 				$model->SetISMultiplFilled( $creatorFrm->GetISMultiplFilled() );
 			}
 
 		}
-		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_AUTOHEG ) {
+		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_CLASSHEG ) {
 
 			#			$model->SetWidth( $creatorFrm->GetWidth() );
 			#			$model->SetHeight( $creatorFrm->GetHeight() );
@@ -230,16 +269,23 @@ sub GetCreators {
 
 			$model->SetPCBStepsList( $creatorFrm->GetPCBStepsList() );
 			$model->SetPCBStep( $creatorFrm->GetPCBStep() );
+			$model->SetPCBStepProfile( $creatorFrm->GetPCBStepProfile() );
 			$model->SetStepMultiplX( $creatorFrm->GetStepMultiplX() );
 			$model->SetStepMultiplY( $creatorFrm->GetStepMultiplY() );
 			$model->SetStepSpaceX( $creatorFrm->GetStepSpaceX() );
 			$model->SetStepSpaceY( $creatorFrm->GetStepSpaceY() );
 			$model->SetStepRotation( $creatorFrm->GetStepRotation() );
+			$model->SetManualPlacementJSON( $creatorFrm->GetManualPlacementJSON() );
+			$model->SetManualPlacementStatus( $creatorFrm->GetManualPlacementStatus() );
 
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_SET ) {
-			die "not implemented";
-			
+
+			$model->SetStepList( $creatorFrm->GetStepList() );
+			$model->SetSetMultiplicity( $creatorFrm->GetSetMultiplicity() );
+			$model->SetManualPlacementJSON( $creatorFrm->GetManualPlacementJSON() );
+			$model->SetManualPlacementStatus( $creatorFrm->GetManualPlacementStatus() );
+
 		}
 		elsif ( $modelKey eq PnlCreEnums->StepPnlCreator_PREVIEW ) {
 

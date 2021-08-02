@@ -43,7 +43,7 @@ sub new {
 	$self->{"resultMngr"} = shift;
 	$self->{"errCnt"}     = 0;
 
-	unless ( $self->{"showCnt"} ) {
+	unless ( defined $self->{"showCnt"} ) {
 		$self->{"showCnt"} = 1;
 	}
 
@@ -128,6 +128,10 @@ sub __SetLayout {
 
 	my $cntValTxt = Wx::StaticText->new( $self, -1, "0" );
 	$cntValTxt->SetFont($Widgets::Style::fontLbl);
+	
+	if(! $self->{"showCnt"}){
+		$cntValTxt->Hide();
+	}
 	my $btmError = Wx::Bitmap->new( $self->{"pathDisable"}, &Wx::wxBITMAP_TYPE_PNG );
 	my $statBtmError = Wx::StaticBitmap->new( $self, -1, $btmError );
 

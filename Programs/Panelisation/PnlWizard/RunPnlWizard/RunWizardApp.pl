@@ -10,10 +10,19 @@ use PackagesLib;
 
 #use lib qw( C:\Perl\site\lib\TpvScripts\Scripts );
 
-use aliased 'Programs::Comments::CommWizard::RunWizard::RunCommWizard';
-use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
+use aliased 'Programs::Panelisation::PnlWizard::RunPnlWizard::RunPnlWizard';
+use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+ 
+
+
+my $pnlType = shift;
 
 my $jobId = $ENV{"JOB"};
 
-my $form = RunCommWizard->new($jobId);
+#my $pnlType = PnlCreEnums->PnlType_CUSTOMERPNL;
+my $pnlType =  PnlCreEnums->PnlType_PRODUCTIONPNL;
+
+die "Panel type is not defined" unless(defined $pnlType);
+
+my $form = RunPnlWizard->new($jobId, $pnlType);
 $form->LaunchViaAppLauncher();

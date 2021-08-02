@@ -19,6 +19,7 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::ErrorIndicator::ErrorIndicator';
 use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
+use aliased 'Packages::Other::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -27,7 +28,7 @@ use aliased 'Programs::Panelisation::PnlWizard::EnumsStyle';
 sub new {
 	my ( $class, $parent, $partType, $title, $messMngr ) = @_;
 
-	my $self = $class->SUPER::new($parent);
+	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, -1 ] );
 
 	bless($self);
 
@@ -54,7 +55,7 @@ sub Init {
 	my $self     = shift;
 	my $partBody = shift;
 
-	$self->{"szBody"}->Add( $partBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$self->{"szBody"}->Add( $partBody, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	#	$self->{"groupHeight"} = $groupBody->{"groupHeight"};
 	#
@@ -74,21 +75,20 @@ sub SetErrIndicator {
 
 }
 
-
 sub SetFinalProcessLayout {
 	my $self = shift;
 	my $val  = shift;    # start/end
 
-	 if($val){
-	 	
-	 	$self->{"previewChb"}->Disable();
-	 	$self->{"pnlBody"}->Disable();
-	 }else{
-	 	
-	 	
-	 	$self->{"previewChb"}->Enable();
-	 	$self->{"pnlBody"}->Enable();
-	 }
+	if ($val) {
+
+		$self->{"previewChb"}->Disable();
+		$self->{"pnlBody"}->Disable();
+	}
+	else {
+
+		$self->{"previewChb"}->Enable();
+		$self->{"pnlBody"}->Enable();
+	}
 
 }
 
@@ -103,43 +103,54 @@ sub __SetLayout {
 	my $pnlHeader = Wx::Panel->new( $self, -1 );
 	my $pnlBody   = Wx::Panel->new( $self, -1 );
 
-	$self->SetBackgroundColour( EnumsStyle->BACKGCLR_LIGHTGRAY );
-	$pnlHeader->SetBackgroundColour( EnumsStyle->BACKGCLR_LEFTPNLBLUE );
-	$pnlBody->SetBackgroundColour( Wx::Colour->new( 255, 255, 255 ) );
+	$self->SetBackgroundColour( AppConf->GetColor("clrWrapperBackground") );
+	$pnlHeader->SetBackgroundColour( AppConf->GetColor("clrWrapperHeaderBackground") );
+	$pnlBody->SetBackgroundColour( AppConf->GetColor("clrWrapperBodyBackground") );
 
 	# DEFINE CONTROLS
 	Wx::InitAllImageHandlers();
 
 	#my $iconPath     = GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . $self->{"partType"} . ".png";
-	my $iconPath     = GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . "table" . ".png";
+	my $iconPath     = GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . $self->{"partType"} . ".png";
 	my $iconBtmp     = Wx::Bitmap->new( $iconPath, &Wx::wxBITMAP_TYPE_PNG );
 	my $iconStatBtmp = Wx::StaticBitmap->new( $pnlHeader, -1, $iconBtmp );
 	my $titleTxt     = Wx::StaticText->new( $pnlHeader, -1, $self->{"title"}, &Wx::wxDefaultPosition );
 	my $f            = Wx::Font->new( 10, &Wx::wxFONTFAMILY_DEFAULT, &Wx::wxFONTSTYLE_NORMAL, &Wx::wxFONTWEIGHT_BOLD );
 	$titleTxt->SetFont($f);
-	$titleTxt->SetForegroundColour( EnumsStyle->TXTCLR_LEFTPNL );
-	my $gauge = Wx::Gauge->new( $pnlHeader, -1, 100, &Wx::wxDefaultPosition, [ 80, 5 ], &Wx::wxGA_HORIZONTAL );
+	$titleTxt->SetForegroundColour( AppConf->GetColor("clrWrapperTitle") );
+	my $gauge = Wx::Gauge->new( $pnlHeader, -1, 100, &Wx::wxDefaultPosition, [ 10, 8 ], &Wx::wxGA_HORIZONTAL );
 	$gauge->SetValue(100);
 	$gauge->Pulse();
 	$gauge->Hide();
 
-	my $previewChb = Wx::CheckBox->new( $pnlHeader, -1, "Preview", &Wx::wxDefaultPosition );
-	$previewChb->SetForegroundColour( Wx::Colour->new( 187, 187, 196 ) );
+	my $previewInfoNum1Txt = Wx::StaticText->new( $pnlHeader, -1, "", &Wx::wxDefaultPosition );
+	$previewInfoNum1Txt->SetForegroundColour( AppConf->GetColor("clrWrapperPreview") );
+	$previewInfoNum1Txt->Hide();
 
-	my $errInd = ErrorIndicator->new( $pnlHeader, EnumsGeneral->MessageType_ERROR, 15, undef, $self->{"jobId"} );
+	my $previewInfoNum2Txt = Wx::StaticText->new( $pnlHeader, -1, "", &Wx::wxDefaultPosition );
+	$previewInfoNum2Txt->SetForegroundColour( AppConf->GetColor("clrWrapperPreview") );
+	$previewInfoNum2Txt->Hide();
+
+	my $previewChb = Wx::CheckBox->new( $pnlHeader, -1, "Preview", &Wx::wxDefaultPosition );
+	$previewChb->SetForegroundColour( AppConf->GetColor("clrWrapperPreview") );
+
+	my $errInd = ErrorIndicator->new( $pnlHeader, EnumsGeneral->MessageType_ERROR, 20, 0, $self->{"jobId"} );
 	$errInd->{"onClick"}->Add( sub { $self->{"errIndClickEvent"}->Do( EnumsGeneral->MessageType_ERROR ) } );
 
 	$szMain->Add( $pnlHeader, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szMain->Add( $pnlBody,   1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szHeader->Add( 80,            0, 0,                                &Wx::wxEXPAND );    # expander
-	$szHeader->Add( $iconStatBtmp, 0, &Wx::wxEXPAND | &Wx::wxALL,       2 );
+	$szHeader->Add( $iconStatBtmp, 0, &Wx::wxEXPAND | &Wx::wxALL,       6 );
 	$szHeader->Add( $titleTxt,     0, &Wx::wxALIGN_CENTER | &Wx::wxALL, 2 );
-	$szHeader->Add( $gauge,        0, &Wx::wxEXPAND | &Wx::wxALL,       2 );
+	$szHeader->Add( $gauge,        0, &Wx::wxEXPAND | &Wx::wxALL,       4 );
 
-	$szHeader->Add( 1,           1, 1,                          &Wx::wxEXPAND );            # expander
-	$szHeader->Add( $previewChb, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szHeader->Add( $errInd,     0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szHeader->Add( 1, 1, 1, &Wx::wxEXPAND );                                               # expander
+
+	$szHeader->Add( $errInd,             0, &Wx::wxALL,                 0 );
+	$szHeader->Add( $previewInfoNum1Txt, 0, &Wx::wxTOP | &Wx::wxLEFT,   10 );
+	$szHeader->Add( $previewInfoNum2Txt, 0, &Wx::wxTOP | &Wx::wxLEFT,   10 );
+	$szHeader->Add( $previewChb,         0, &Wx::wxEXPAND | &Wx::wxALL, 10 );
 
 	$pnlHeader->SetSizer($szHeader);
 	$pnlBody->SetSizer($szBody);
@@ -148,15 +159,19 @@ sub __SetLayout {
 
 	# SET EVENTS
 
-	Wx::Event::EVT_CHECKBOX( $previewChb, -1, sub { $self->{"previewChangedEvt"}->Do( ( $self->{"previewChb"}->IsChecked() ? 1 : 0 ) ) } );
+	Wx::Event::EVT_CHECKBOX( $previewChb, -1,
+							 sub { $self->__HidePreviewText(); $self->{"previewChangedEvt"}->Do( ( $self->{"previewChb"}->IsChecked() ? 1 : 0 ) ) } );
 
 	# SET REFERENCES
 
-	$self->{"pnlBody"}    = $pnlBody;
-	$self->{"szBody"}     = $szBody;
-	$self->{"previewChb"} = $previewChb;
-	$self->{"errInd"}     = $errInd;
-	$self->{"gauge"}      = $gauge;
+	$self->{"pnlBody"}            = $pnlBody;
+	$self->{"szBody"}             = $szBody;
+	$self->{"szHeader"}           = $szHeader;
+	$self->{"previewChb"}         = $previewChb;
+	$self->{"errInd"}             = $errInd;
+	$self->{"gauge"}              = $gauge;
+	$self->{"previewInfoNum1Txt"} = $previewInfoNum1Txt;
+	$self->{"previewInfoNum2Txt"} = $previewInfoNum2Txt;
 
 	#$self->__RecursiveHandler($pnlHeader);
 
@@ -187,12 +202,12 @@ sub SetPreview {
 	my $value = shift;
 
 	$self->{"previewChb"}->SetValue($value);
+
 }
 
 sub GetPreview {
 	my $self = shift;
-	
-	
+
 	if ( $self->{"previewChb"}->IsChecked() ) {
 
 		return 1;
@@ -201,19 +216,26 @@ sub GetPreview {
 
 		return 0;
 	}
-	 
+
 }
 
 sub ShowLoading {
 	my $self  = shift;
 	my $value = shift;
+	my $reset = shift // 0;
 
-	if ($value) {
-		$self->{"loadingIndicator"}++;
-
+	if ($reset) {
+		$self->{"loadingIndicator"} = 0;
 	}
 	else {
-		$self->{"loadingIndicator"}--;
+
+		if ($value) {
+			$self->{"loadingIndicator"}++;
+
+		}
+		else {
+			$self->{"loadingIndicator"}--;
+		}
 	}
 
 	if ( $self->{"loadingIndicator"} > 0 ) {
@@ -223,6 +245,60 @@ sub ShowLoading {
 	else {
 		$self->{"gauge"}->Hide();
 	}
+}
+
+sub SetPreviewInfoTextRow1 {
+	my $self  = shift;
+	my $value = shift;
+
+	if ( defined $value ) {
+
+		$self->{"previewInfoNum1Txt"}->SetLabel($value);
+		$self->{"previewInfoNum1Txt"}->Show();
+		$self->{"szHeader"}->Layout();
+	}
+	else {
+
+		$self->{"previewInfoNum1Txt"}->SetLabel("");
+		$self->{"previewInfoNum1Txt"}->Hide();
+		$self->{"szHeader"}->Layout();
+	}
+
+}
+
+sub SetPreviewInfoTextRow2 {
+	my $self  = shift;
+	my $value = shift;
+
+	if ( defined $value ) {
+
+		$self->{"previewInfoNum2Txt"}->SetLabel($value);
+		$self->{"previewInfoNum2Txt"}->Show();
+		$self->{"szHeader"}->Layout();
+	}
+	else {
+
+		$self->{"previewInfoNum2Txt"}->SetLabel("");
+		$self->{"previewInfoNum2Txt"}->Hide();
+		$self->{"szHeader"}->Layout();
+	}
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Private  methods
+#-------------------------------------------------------------------------------------------#
+
+sub __HidePreviewText {
+	my $self = shift;
+
+	if ( !$self->{"previewChb"}->IsChecked() ) {
+
+		$self->{"previewInfoNum1Txt"}->Hide();
+		$self->{"previewInfoNum2Txt"}->Hide();
+		$self->{"szHeader"}->Layout();
+	}
+
 }
 
 1;

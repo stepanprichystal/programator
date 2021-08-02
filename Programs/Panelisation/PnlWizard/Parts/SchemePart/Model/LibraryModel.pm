@@ -3,7 +3,7 @@
 # Description: Creator model
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Panelisation::PnlWizard::Parts::SizePart::Model::HEGModel;
+package Programs::Panelisation::PnlWizard::Parts::SchemePart::Model::LibraryModel;
 use base('Programs::Panelisation::PnlWizard::Core::WizardModelBase');
 
 use Class::Interface;
@@ -25,10 +25,13 @@ sub new {
 	$self = $class->SUPER::new(@_);
 	bless $self;
 
-	$self->{"modelKey"}    = PnlCreEnums->SizePnlCreator_HEG;
+	$self->{"modelKey"}    = PnlCreEnums->SchemePnlCreator_LIBRARY;
 	 
-	$self->{"settings"}->{"w"} = undef;
-	$self->{"settings"}->{"h"} = undef;
+	$self->{"settings"}->{"stdSchemeList"}      = [];
+	$self->{"settings"}->{"specSchemeList"}     = [];
+	$self->{"settings"}->{"schemeType"}         = undef;
+	$self->{"settings"}->{"scheme"}             = undef;    # standard/special
+	$self->{"settings"}->{"signalLayerSpecFill"} = {};
 	 
 
 	return $self;
@@ -41,33 +44,82 @@ sub GetModelKey {
 
 }
 
-sub SetWidth {
-	my $self = shift;
 
-	$self->{"settings"}->{"w"} = shift;
+
+sub SetStdSchemeList {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"stdSchemeList"} = $val;
 
 }
 
-sub GetWidth {
+sub GetStdSchemeList {
 	my $self = shift;
 
-	return $self->{"settings"}->{"w"};
+	return $self->{"settings"}->{"stdSchemeList"};
 
 }
 
-sub SetHeight {
+sub SetSpecSchemeList {
 	my $self = shift;
+	my $val  = shift;
 
-	$self->{"settings"}->{"h"} = shift;
+	$self->{"settings"}->{"specSchemeList"} = $val;
 
 }
 
-sub GetHeight {
+sub GetSpecSchemeList {
 	my $self = shift;
 
-	return $self->{"settings"}->{"h"};
+	return $self->{"settings"}->{"specSchemeList"};
+
 }
 
+sub SetSchemeType {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"schemeType"} = $val;
+
+}
+
+sub GetSchemeType {
+	my $self = shift;
+
+	return $self->{"settings"}->{"schemeType"};
+
+}
+
+sub SetScheme {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"scheme"} = $val;
+
+}
+
+sub GetScheme {
+	my $self = shift;
+
+	return $self->{"settings"}->{"scheme"};
+
+}
+
+sub SetSignalLayerSpecFill {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"signalLayerSpecFill"} = $val;
+
+}
+
+sub GetSignalLayerSpecFill {
+	my $self = shift;
+
+	return $self->{"settings"}->{"signalLayerSpecFill"};
+
+}
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

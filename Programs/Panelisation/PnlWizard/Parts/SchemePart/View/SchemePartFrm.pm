@@ -7,6 +7,9 @@
 package Programs::Panelisation::PnlWizard::Parts::SchemePart::View::SchemePartFrm;
 use base qw(Programs::Panelisation::PnlWizard::Forms::CreactorSelectorFrm);
 
+use Class::Interface;
+&implements('Programs::Panelisation::PnlWizard::Parts::IPartForm');
+
 #3th party library
 use strict;
 use warnings;
@@ -19,19 +22,21 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SchemePart::View::Creators::LibraryFrm';
 
-
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class  = shift;
-	my $parent = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
-	my $model  = shift;    # model for initial inittialization
+	my $class   = shift;
+	my $parent  = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $model   = shift;    # model for initial inittialization
+	my $pnlType = shift;
 
-	my $self = $class->SUPER::new( $parent, $inCAM, $jobId, $model );
+	my $frmHeight = 193; # height of part, constant for all creators
+	 
+	my $self = $class->SUPER::new( $parent, $frmHeight, $inCAM, $jobId, $model, $pnlType );
 
 	bless($self);
 
@@ -63,29 +68,13 @@ sub OnGetCreatorLayout {
 
 	my $content = undef;
 
-	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
+	my $inCAM   = $self->{"inCAM"};
+	my $jobId   = $self->{"jobId"};
+	my $pnlType = $self->{"pnlType"};
 
-		$content = UserFrm->new($parent);
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
+	if ( $creatorKey eq PnlCreEnums->SchemePnlCreator_LIBRARY ) {
 
-		$content = HegFrm->new($parent);
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
-
-		$content = MatrixFrm->new($parent);
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
-
-		$content = ClassUserFrm->new($parent);
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-
-		$content = ClassHegFrm->new($parent);
-	}
-	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
-
-		$content = PreviewFrm->new($parent);
+		$content = LibraryFrm->new( $parent, $inCAM, $jobId, $pnlType );
 	}
 
 	return $content;
@@ -108,33 +97,15 @@ sub SetCreators {
 		if ( defined $model ) {
 
 			my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
+			$creatorFrm->SetStep( $model->GetStep() );
 
-			print STDERR $model->GetWidth() . "\n";
+			if ( $modelKey eq PnlCreEnums->SchemePnlCreator_LIBRARY ) {
 
-			if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
-
-				$creatorFrm->SetWidth( $model->GetWidth() );
-				$creatorFrm->SetHeight( $model->GetHeight() );
-				$creatorFrm->SetStep( $model->GetStep() );
-
-			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
-
-				$creatorFrm->SetWidth( $model->GetWidth() );
-				$creatorFrm->SetHeight( $model->GetHeight() );
-				$creatorFrm->SetStep( $model->GetStep() );
-
-			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
-
-			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
-
-			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-
-			}
-			elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+				$creatorFrm->SetStdSchemeList( $model->GetStdSchemeList() );
+				$creatorFrm->SetSpecSchemeList( $model->GetSpecSchemeList() );
+				$creatorFrm->SetSchemeType( $model->GetSchemeType() );
+				$creatorFrm->SetScheme( $model->GetScheme() );
+				$creatorFrm->SetSignalLayerSpecFill( $model->GetSignalLayerSpecFill() );
 
 			}
 
@@ -159,30 +130,15 @@ sub GetCreators {
 
 		my $creatorFrm = $self->{"notebook"}->GetPage($modelKey)->GetPageContent();
 
-		if ( $modelKey eq PnlCreEnums->SizePnlCreator_USER ) {
+		$model->SetStep( $creatorFrm->GetStep() );
 
-			$model->SetWidth( $creatorFrm->GetWidth() );
-			$model->SetHeight( $creatorFrm->GetHeight() );
-			$model->SetStep( $creatorFrm->GetStep() );
+		if ( $modelKey eq PnlCreEnums->SchemePnlCreator_LIBRARY ) {
 
-		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_HEG ) {
-
-			$model->SetWidth( $creatorFrm->GetWidth() );
-			$model->SetHeight( $creatorFrm->GetHeight() );
-			$model->SetStep( $creatorFrm->GetStep() );
-
-		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
-
-		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
-
-		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
-
-		}
-		elsif ( $modelKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
+			$model->SetStdSchemeList( $creatorFrm->GetStdSchemeList() );
+			$model->SetSpecSchemeList( $creatorFrm->GetSpecSchemeList() );
+			$model->SetSchemeType( $creatorFrm->GetSchemeType() );
+			$model->SetScheme( $creatorFrm->GetScheme() );
+			$model->SetSignalLayerSpecFill( $creatorFrm->GetSignalLayerSpecFill() );
 
 		}
 

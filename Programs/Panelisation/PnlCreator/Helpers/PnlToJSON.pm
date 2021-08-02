@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------------------#
-# Description: Parse information from InCAM global Library Panel classes
+# Description:
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
 package Programs::Panelisation::PnlCreator::Helpers::PnlToJSON;
@@ -17,6 +17,7 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStepRepeat';
+use aliased 'Helpers::JobHelper';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'Packages::ObjectStorable::JsonStorable::JsonStorable';
 use aliased 'Packages::Polygon::Features::Features::Features';
@@ -87,6 +88,7 @@ sub ParsePnlToJSON {
 	my $self      = shift;
 	my $dim       = shift // 1;    # parse dimension
 	my $sr        = shift // 1;    # parse steps
+	my $srCpn     = shift // 0;    # parse coupon steps
 	my $notStdDim = shift // 0;    # assume, profile is not rectangle (4 lines)
 
 	my $inCAM = $self->{"inCAM"};
@@ -99,6 +101,7 @@ sub ParsePnlToJSON {
 	$sett{"areaLim"}   = undef;
 	$sett{"profZero"}  = undef;
 	$sett{"sr"}        = undef;
+	$sett{"srCpn"}     = undef;
 
 	if ($dim) {
 
@@ -131,9 +134,32 @@ sub ParsePnlToJSON {
 	if ($sr) {
 
 		# Step placement
-
+		my @coupons = JobHelper->GetCouponStepNames();
 		my @steps = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $step );
+
+		for ( my $i = scalar(@steps) - 1 ; $i >= 0 ; $i-- ) {
+
+			my $isCpn = scalar( grep { $steps[$i]->{"stepName"} =~ /^$_/ } @coupons ) ? 1 : 0;
+			splice @steps, $i, 1 if ($isCpn);
+		}
+
 		$sett{"sr"} = \@steps;
+
+	}
+
+	if ($srCpn) {
+
+		# Step placement
+		my @coupons = JobHelper->GetCouponStepNames();
+		my @steps = CamStepRepeat->GetStepAndRepeat( $inCAM, $jobId, $step );
+
+		for ( my $i = scalar(@steps) - 1 ; $i >= 0 ; $i-- ) {
+
+			my $isCpn = scalar( grep { $steps[$i]->{"stepName"} =~ /^$_/ } @coupons ) ? 1 : 0;
+			splice @steps, $i, 1 unless ($isCpn);
+		}
+
+		$sett{"srCpn"} = \@steps;
 
 	}
 
@@ -143,10 +169,11 @@ sub ParsePnlToJSON {
 }
 
 sub CreatePnlByJSON {
-	my $self = shift;
-	my $JSON = shift;
-	my $dim  = shift // 1;    # create profile by dimension
-	my $sr   = shift // 1;    # crete steps  by st
+	my $self  = shift;
+	my $JSON  = shift;
+	my $dim   = shift // 1;    # create profile by dimension
+	my $sr    = shift // 1;    # crete steps
+	my $srCpn = shift // 0;    # crete coupon steps
 
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -222,11 +249,37 @@ sub CreatePnlByJSON {
 		# Set step if "dim" is not creted, because if panel is created, step is set
 		CamHelper->SetStep( $inCAM, $step ) unless ($dim);
 
+		my @coupons = JobHelper->GetCouponStepNames();
+
 		foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
-			CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} );
+
+			my $isCpn = scalar( grep { $s->{"stepName"} =~ /^$_/ } @coupons ) ? 1 : 0;
+
+			CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} ) if ( !$isCpn );
 		}
 
 		foreach my $sr ( @{ $sett{"sr"} } ) {
+
+			$SRStep->AddSRStep( $sr->{"stepName"}, $sr->{"gSRxa"}, $sr->{"gSRya"}, $sr->{"gSRangle"},
+								$sr->{"gSRnx"},    $sr->{"gSRny"}, $sr->{"gSRdx"}, $sr->{"gSRdy"} );
+		}
+
+	}
+	if ($srCpn) {
+
+		# Set step if "dim" is not creted, because if panel is created, step is set
+		CamHelper->SetStep( $inCAM, $step ) unless ($dim);
+
+		my @coupons = JobHelper->GetCouponStepNames();
+
+		foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
+
+			my $isCpn = scalar( grep { $s->{"stepName"} =~ /^$_/ } @coupons ) ? 1 : 0;
+
+			CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} ) if ($isCpn);
+		}
+
+		foreach my $sr ( @{ $sett{"srCpn"} } ) {
 
 			$SRStep->AddSRStep( $sr->{"stepName"}, $sr->{"gSRxa"}, $sr->{"gSRya"}, $sr->{"gSRangle"},
 								$sr->{"gSRnx"},    $sr->{"gSRny"}, $sr->{"gSRdx"}, $sr->{"gSRdy"} );

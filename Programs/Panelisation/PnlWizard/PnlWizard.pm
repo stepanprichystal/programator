@@ -14,6 +14,7 @@ use threads::shared;
 use Wx;
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 
@@ -24,7 +25,10 @@ use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Core::BackgroundTaskMngr';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'CamHelpers::CamStep';
+use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamMatrix';
+use aliased 'CamHelpers::CamLayer';
 
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportCheckerForm';
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::Forms::ExportPopupForm';
@@ -37,8 +41,8 @@ use aliased 'CamHelpers::CamHelper';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::GroupTable::GroupTables';
 #use aliased 'Packages::InCAM::InCAM';
-#
-#use aliased 'Connectors::HeliosConnector::HegMethods';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::StepProfile';
+use aliased 'Connectors::HeliosConnector::HegMethods';
 #
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::StorageMngr';
 #use aliased 'Programs::Exporter::ExportChecker::ExportChecker::ExportPopup';
@@ -49,7 +53,8 @@ use aliased 'CamHelpers::CamHelper';
 #use aliased 'Managers::AsyncJobMngr::Enums'                          => 'EnumsJobMngr';
 #use aliased 'Programs::Exporter::ExportUtility::DataTransfer::Enums' => 'EnumsTransfer';
 #
-#use aliased 'Helpers::GeneralHelper';
+use aliased 'Helpers::GeneralHelper';
+
 #use aliased 'Helpers::JobHelper';
 #use aliased 'Widgets::Forms::LoadingForm';
 #use aliased 'CamHelpers::CamHelper';
@@ -59,14 +64,6 @@ use aliased 'Enums::EnumsGeneral';
 use aliased 'Programs::Panelisation::PnlWizard::Core::WizardModel';
 
 #use aliased 'Packages::Export::PreExport::FakeLayers';
-
-#-------------------------------------------------------------------------------------------#
-#  Package methods
-#-------------------------------------------------------------------------------------------#
-#my $CHECKER_START_EVT : shared;
-#my $CHECKER_END_EVT : shared;
-#my $CHECKER_FINISH_EVT : shared;
-#my $THREAD_FORCEEXIT_EVT : shared;
 
 # ================================================================================
 # PUBLIC METHOD
@@ -79,9 +76,7 @@ sub new {
 
 	$self->{"jobId"} = shift;
 
-	$self->{"serverPort"} = shift;
-
-	$self->{"pnlType"} = undef;
+	$self->{"pnlType"} = shift;
 
 	$self->{"inCAM"} = undef;
 
@@ -108,20 +103,22 @@ sub new {
 	# Old panel name (backuped step right before run Panelisation. Will be restored if cancel panelisation)
 	$self->{"pnlStepBackup"} = undef;
 
+	# Name of steps with adjusted profile bz cvrlpin layer (created before start and destroyed after close app)
+	$self->{"cvrlpinSteps"} = [];
+
+	$main::configPath = GeneralHelper->Root() . "\\Programs\\Panelisation\\PnlWizard\\Config\\Config_" . $self->{"pnlType"} . ".txt";
+
 	return $self;
 }
 
 sub Init {
 	my $self     = shift;
 	my $launcher = shift;
-	my $pnlType  = shift;    # contain InCAM library conencted to server
-	                         # 1) Get background worker and InCAM library from launcher
-
+	# contain InCAM library conencted to server
+	
 	$self->{"launcher"} = $launcher;
-
-	$self->{"pnlType"} = $pnlType;
-
-	$self->{"form"} = PnlWizardForm->new( -1, $self->{"jobId"}, $self->{"pnlType"} );
+ 
+	$self->{"form"} = PnlWizardForm->new( -1, $launcher->GetInCAM(), $self->{"jobId"}, $self->{"pnlType"} );
 
 	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"pnlType"} );
 
@@ -134,8 +131,7 @@ sub Init {
 	$self->{"inCAM"} = $launcher->GetInCAM();
 
 	$self->{"inCAM"}->SupressToolkitException();
-
-	#$self->{"inCAM"}->SetDisplay(0);
+ 
 
 	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"backgroundTaskMngr"} );
 
@@ -185,19 +181,16 @@ sub Init {
 
 	$self->__InitModel();
 
-	# Backup old panel (restore if cancel panelisation)
+	$self->__BackupPanelStep();
 
-	if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() ) ) {
-		$self->{"pnlStepBackup"} = $self->{"model"}->GetStep() . "_backup";
-		CamStep->CopyStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep(), $self->{"jobId"}, $self->{"pnlStepBackup"} );
-		CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
-	}
-
-	$self->__RefreshGUI();
+	my @cvrlpinSteps = StepProfile->PrepareCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"cvrlpinSteps"} = \@cvrlpinSteps;
 
 	print STDERR "Init model START\n";
 	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"} );
 	print STDERR "Init model END\n";
+
+	$self->__RefreshGUI();
 	#
 
 	print STDERR "Refresh START\n";
@@ -213,7 +206,10 @@ sub Init {
 	$self->__InCAMEditorPreviewMode(1);
 
 	print STDERR "Init model async START\n";
-	$self->{"partContainer"}->AsyncInitSelCreatorModel();
+	
+	# Call async init for first part. I cause setting changed evnets.
+	# It allows to change settings in next part based on this event
+	$self->{"partContainer"}->AsyncInitSelCreatorModel(   ($self->{"partContainer"}->GetParts())[0]->GetPartId());
 	print STDERR "Init model async END\n";
 
 	#
@@ -263,14 +259,17 @@ sub __OnCreateClickHndl {
 
 	$self->{"partContainer"}->ClearErrors();
 
-	$self->{"form"}->SetFinalProcessLayout(1);
+	$self->{"form"}->SetFinalProcessLayout( 1, $self->{"partContainer"}->GetPreview() );
 
 	$self->{"popupChecker"}->ClearCheckClasses();
 
-	foreach my $checkClass ( $self->{"partContainer"}->GetPartsCheckClass() ) {
+	foreach my $checkClass ( $self->{"partContainer"}->GetPartsCheckClass( $self->{"pnlType"} ) ) {
 
-		$self->{"popupChecker"}->AddCheckClass( $checkClass->{"checkClassId"},    $checkClass->{"checkClassPackage"},
-												$checkClass->{"checkClassTitle"}, $checkClass->{"checkClassData"} );
+		$self->{"popupChecker"}->AddCheckClass(
+												$checkClass->{"checkClassId"},    $checkClass->{"checkClassPackage"},
+												$checkClass->{"checkClassTitle"}, $checkClass->{"checkClassConstrData"},
+												$checkClass->{"checkClassCheckData"}
+		);
 
 	}
 
@@ -288,19 +287,28 @@ sub __OnCancelClickHndl {
 	$self->__StoreModelToDisc();
 
 	# Restore backuped step
-	if ( defined $self->{"pnlStepBackup"} ) {
+	if ( defined $self->{"pnlStepBackup"} && CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} ) ) {
 
 		my $oriName = $self->{"pnlStepBackup"};
 		$oriName =~ s/_backup//i;
 
 		if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $oriName ) ) {
-
 			CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $oriName );
-
-			CamStep->RenameStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"}, $oriName );
 		}
 
+		CamStep->RenameStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"}, $oriName );
+
 	}
+	else {
+
+		if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() ) ) {
+
+			CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+		}
+	}
+
+	# Remove cvrlpisn step
+	StepProfile->RemoveCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cvrlpinSteps"} );
 
 	#CamStep->CopyStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep(), $self->{"jobId"}, $self->{"pnlStepBackup"} );
 
@@ -312,9 +320,41 @@ sub __OnCancelClickHndl {
 
 	}
 
-	$self->{"form"}->{"mainFrm"}->Destroy();
+	$self->{"form"}->Destroy();
 
 	#}
+
+}
+
+sub __OnLeaveClickHndl {
+	my $self = shift;
+
+	# Check if all parts are already inited (due to asynchrounous initialization)
+	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {
+		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
+	}
+
+	# Remove backup panel step
+	if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} ) ) {
+
+		CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} );
+	}
+
+	# Replace cvrlpin steps if exist
+	StepProfile->ReplaceCvrlpinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+
+	# Remove cvrlpisn step
+	StepProfile->RemoveCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cvrlpinSteps"} );
+
+	$self->__StoreModelToDisc();
+
+	if ( $self->{"inCAM"}->IsConnected() ) {
+
+		$self->{"inCAM"}->CloseServer();
+
+	}
+
+	$self->{"form"}->Destroy();
 
 }
 
@@ -326,9 +366,10 @@ sub __OnShowInCAMClickHndl {
 		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
 	}
 
-	$self->__StoreModelToDisc();
-
-	$self->{"partContainer"}->AsyncCreatePanel();
+	$self->{"form"}->{"mainFrm"}->Hide();
+	$self->{"inCAM"}->PAUSE("Check panel (do not modify panel, it will have no affect!)");
+	$self->{"form"}->{"mainFrm"}->Show();
+	$self->{"inCAM"}->COM("zoom_home");
 
 }
 
@@ -346,12 +387,14 @@ sub __OnLoadLastClickHndl {
 	$self->{"model"} = $restoredModel;    # update model
 
 	# Set main form
-	$self->__RefreshGUI($restoredModel);
+	$self->__RefreshGUI();
 
 	# Set parts
 
 	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"}, $restoredModel );
-	$self->{"partContainer"}->RefreshGUI();
+	$self->{"partContainer"}->RefreshGUI(1);
+
+	$self->{"partContainer"}->SetPreviewOffAllPart();    # Do not load preview
 
 }
 
@@ -378,10 +421,12 @@ sub __OnCheckResultHndl {
 
 	if ($result) {
 
+		$self->{"form"}->ShowProgressBar(1);
 		$self->{"partContainer"}->AsyncCreatePanel();
 	}
 	else {
-		$self->{"form"}->SetFinalProcessLayout(0);
+		$self->{"form"}->SetFinalProcessLayout( 0, $self->{"partContainer"}->GetPreview() );
+
 	}
 
 }
@@ -391,9 +436,30 @@ sub __OnAsyncPanelCreatedHndl {
 	my $result  = shift;
 	my $errMess = shift;
 
-	$self->{"form"}->SetFinalProcessLayout(0);
-
+	$self->{"form"}->SetFinalProcessLayout( 0, $self->{"partContainer"}->GetPreview() );
+	$self->{"form"}->ShowProgressBar(0);
 	if ($result) {
+
+		# Do flatten if requested
+		if ( $self->{"model"}->GetFlatten() ) {
+
+			my @layerFilter = map { $_->{"gROWname"} } CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
+			CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"},
+										$self->{"model"}->GetStep(),
+										$self->{"model"}->GetStep() . "_flatten",
+										1, \@layerFilter );
+			CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+
+		}
+
+		# Remove backup step
+		if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} ) ) {
+
+			CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} );
+		}
+
+		# Remove cvrlpisn step
+		StepProfile->RemoveCvrlPinSteps( $self->{"inCAM"}, $self->{"jobId"}, $self->{"cvrlpinSteps"} );
 
 		$self->__InCAMEditorPreviewMode(0);
 		if ( $self->{"inCAM"}->IsConnected() ) {
@@ -402,7 +468,7 @@ sub __OnAsyncPanelCreatedHndl {
 
 		}
 
-		$self->{"form"}->{"mainFrm"}->Destroy();
+		$self->{"form"}->Destroy();
 
 	}
 	else {
@@ -427,7 +493,7 @@ sub __OnShowPnlWizardFrmHndl {
 	my $show = shift;
 
 	if ($show) {
-		
+
 		$self->{"form"}->{"mainFrm"}->Show();
 	}
 	else {
@@ -454,6 +520,15 @@ sub __OnFormPreviewChangedlHndl {
 
 		$self->{"partContainer"}->SetPreviewOffAllPart();
 	}
+
+	$self->{"form"}->SetPreviewChangedLayout( $self->{"partContainer"}->GetPreview() );
+}
+
+sub __OnPartPreviewChangedlHndl {
+	my $self = shift;
+
+	# Disable/Enable Show in InCAM btn
+	$self->{"form"}->SetPreviewChangedLayout( $self->{"partContainer"}->GetPreview() );
 
 }
 
@@ -487,12 +562,12 @@ sub __OnInCAMIsBusyHndl {
 
 	if ($isBusy) {
 
-		$self->{"form"}->SetInCAMBusyLayout(1);
+		$self->{"form"}->SetInCAMBusyLayout( 1, $self->{"partContainer"}->GetPreview() );
 
 	}
 	else {
 
-		$self->{"form"}->SetInCAMBusyLayout(0);
+		$self->{"form"}->SetInCAMBusyLayout( 0, $self->{"partContainer"}->GetPreview() );
 	}
 
 	print STDERR "InCAM is busy: $isBusy in  PnlWizard\n";
@@ -505,12 +580,12 @@ sub __OnBackgroundTaskCntChangedHndl {
 
 	if ($taskCount) {
 
-		$self->{"form"}->SetAsyncTaskRunningLayout(1);
+		$self->{"form"}->SetAsyncTaskRunningLayout( 1, $self->{"partContainer"}->GetPreview() );
 
 	}
 	else {
 
-		$self->{"form"}->SetAsyncTaskRunningLayout(0);
+		$self->{"form"}->SetAsyncTaskRunningLayout( 0, $self->{"partContainer"}->GetPreview() );
 	}
 
 }
@@ -532,7 +607,9 @@ sub __OnBackgroundTaskDieHndl {
 	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess1 );
 
 	$self->{"partContainer"}->ClearErrors();
-	$self->{"form"}->SetAsyncTaskRunningLayout(0);
+	$self->{"partContainer"}->HideLoading();
+
+	$self->{"form"}->SetAsyncTaskRunningLayout( 0, $self->{"partContainer"}->GetPreview() );
 
 }
 
@@ -543,12 +620,13 @@ sub __SetHandlers {
 	$self->{"popupChecker"}->{"checkResultEvt"}->Add( sub { $self->__OnCheckResultHndl(@_) } );
 
 	# Form handlers
-
-	$self->{"form"}->{"createClickEvt"}->Add( sub { $self->__OnCreateClickHndl(@_) } );
-	$self->{"form"}->{"cancelClickEvt"}->Add( sub { $self->__OnCancelClickHndl(@_) } );
-
+	$self->{"form"}->{"cancelClickEvt"}->Add( sub    { $self->__OnCancelClickHndl(@_) } );
+	$self->{"form"}->{"leaveClickEvt"}->Add( sub     { $self->__OnLeaveClickHndl(@_) } );
 	$self->{"form"}->{"showInCAMClickEvt"}->Add( sub { $self->__OnShowInCAMClickHndl(@_) } );
+	$self->{"form"}->{"createClickEvt"}->Add( sub    { $self->__OnCreateClickHndl(@_) } );
 
+	#$self->{"form"}->{"showSigLClickEvt"}->Add( sub { $self->__OnShowLayersClickHndl( 1, 0 ) } );
+	#$self->{"form"}->{"showNCLClickEvt"}->Add( sub  { $self->__OnShowLayersClickHndl( 0, 1 ) } );
 	$self->{"form"}->{"loadLastClickEvt"}->Add( sub    { $self->__OnLoadLastClickHndl(@_) } );
 	$self->{"form"}->{"loadDefaultClickEvt"}->Add( sub { $self->__OnLoadDefaultClickHndl(@_) } );
 
@@ -557,6 +635,7 @@ sub __SetHandlers {
 
 	$self->{"partContainer"}->{"asyncPanelCreatedEvt"}->Add( sub { $self->__OnAsyncPanelCreatedHndl(@_) } );
 	$self->{"partContainer"}->{"showPnlWizardFrmEvt"}->Add( sub  { $self->__OnShowPnlWizardFrmHndl(@_) } );
+	$self->{"partContainer"}->{"previewChangedEvt"}->Add( sub    { $self->__OnPartPreviewChangedlHndl(@_) } );
 
 	#$self->{"partContainer"}->{"previewChangedEvt"}->Add( sub    { $self->__OnPartPreviewChangedlHndl(@_) } );
 
@@ -604,6 +683,7 @@ sub __UpdateModel {
 
 	$self->{"model"}->SetStep( $self->{"form"}->GetStep() );
 	$self->{"model"}->SetPreview( $self->{"form"}->GetPreview() );
+	$self->{"model"}->SetFlatten( $self->{"form"}->GetFlatten() );
 
 }
 
@@ -626,18 +706,28 @@ sub __InitModel {
 
 	$self->{"model"}->SetStep($step);
 
+	$self->{"model"}->SetFlatten( HegMethods->GetPcbIsPool( $self->{"jobId"} ) );
+
 	# Set preview
 	$self->{"model"}->SetPreview(0);
 
 	# Set part models
 	foreach my $partModelInf ( @{ $self->{"partContainer"}->GetModel(1) } ) {
 
-		$self->{"model"}->SetPartModelById( $partModelInf->[0], $partModelInf->[1] );
+		my $modelKey = $partModelInf->[0];
+		my $model    = $partModelInf->[1];
+
+		$model->SetPreview(0);
+
+		$self->{"model"}->SetPartModelById( $modelKey, $model );
+
 	}
 
 	# Pre init creator models
 	my %parts = %{ $self->{"model"}->GetParts() };
 	foreach my $partId ( keys %parts ) {
+
+		$parts{$partId}->SetStep($step);
 
 		my @creators = @{ $parts{$partId}->GetCreators() };
 
@@ -655,6 +745,7 @@ sub __RefreshGUI {
 
 	$self->{"form"}->SetStep( $self->{"model"}->GetStep() );
 	$self->{"form"}->SetPreview( $self->{"model"}->GetPreview() );
+	$self->{"form"}->SetFlatten( $self->{"model"}->GetFlatten() );
 
 }
 
@@ -664,6 +755,18 @@ sub __InCAMEditorPreviewMode {
 
 	$self->{"inCAM"}->COM( "show_component", "component" => "Action_Area", "show" => ( $preview ? "no" : "yes" ) );
 	$self->{"inCAM"}->COM( "show_component", "component" => "Layers_List", "show" => ( $preview ? "no" : "yes" ) );
+}
+
+sub __BackupPanelStep {
+	my $self = shift;
+
+	# Backup old panel (restore if cancel panelisation)
+	$self->{"pnlStepBackup"} = $self->{"model"}->GetStep() . "_backup";
+	if ( CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() ) ) {
+
+		CamStep->CopyStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep(), $self->{"jobId"}, $self->{"pnlStepBackup"} );
+		CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+	}
 }
 
 #

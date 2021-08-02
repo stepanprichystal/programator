@@ -19,19 +19,22 @@ use aliased 'Packages::Events::Event';
 use aliased 'Programs::Panelisation::PnlWizard::Forms::CreatorListFrm';
 use aliased 'Widgets::Forms::CustomNotebook::CustomNotebook';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
+use aliased 'Packages::Other::AppConf';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 
 sub new {
-	my $class  = shift;
-	my $parent = shift;
-	my $inCAM  = shift;
-	my $jobId  = shift;
-	my $model  = shift;    # model forfrist form inittialization
+	my $class     = shift;
+	my $parent    = shift;
+	my $frmHeight = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $model     = shift;    # model forfrist form inittialization
+	my $pnlType   = shift;
 
-	my $self = $class->SUPER::new($parent);
+	my $self = $class->SUPER::new( $parent, -1, [ -1, -1 ], [ -1, $frmHeight ] );
 
 	bless($self);
 
@@ -40,13 +43,13 @@ sub new {
 	$self->{"inCAM"}         = $inCAM;
 	$self->{"jobId"}         = $jobId;
 	$self->{"creatorModels"} = $model->GetCreators();
+	$self->{"pnlType"}       = $pnlType;
 
 	# DEFINE EVENTS
 
 	$self->{"creatorSelectionChangedEvt"} = Event->new();
 	$self->{"creatorSettingsChangedEvt"}  = Event->new();
-	$self->{"creatorInitRequestEvt"}  = Event->new();
-	
+	$self->{"creatorInitRequestEvt"}      = Event->new();
 
 	return $self;
 }
@@ -65,8 +68,8 @@ sub _SetLayout {
 	# DEFINE EVENTS
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szMain->Add( $creatorListLayout, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szMain->Add( 5, 5, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szMain->Add( $creatorListLayout, 0, &Wx::wxEXPAND | &Wx::wxALL, 4 );
+	#$szMain->AddSpacer(0);
 	$szMain->Add( $creatorViewLayout, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	$self->SetSizer($szMain);
@@ -86,9 +89,9 @@ sub __SetLayoutCreatorList {
 
 	$creatorList->SetCreatorsLayout($creators);
 
-	my $listCrl = Wx::Colour->new( 230, 230, 230 );
-	$self->SetBackgroundColour($listCrl);
-	$creatorList->SetBackgroundColour($listCrl);
+	 
+	$self->SetBackgroundColour( AppConf->GetColor("clrCreatorListBackground"));
+	$creatorList->SetBackgroundColour( AppConf->GetColor("clrCreatorListBackground"));
 
 	# DEFINE EVENTS
 
@@ -106,14 +109,14 @@ sub __SetLayoutCreatorView {
 	my $self   = shift;
 	my $parent = shift;
 
-	my $stepBackg = Wx::Colour->new( 215, 215, 215 );
+	 
 
 	#define staticboxes
 
 	#my $btnDefault = Wx::Button->new( $statBox, -1, "Default settings", &Wx::wxDefaultPosition, [ 110, 22 ] );
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $pnlMain = Wx::Panel->new( $parent, -1 );
-	$pnlMain->SetBackgroundColour($stepBackg);
+	$pnlMain->SetBackgroundColour(AppConf->GetColor("clrCreatorViewBackground"));
 
 	my $notebook = CustomNotebook->new( $pnlMain, -1 );
 
@@ -123,7 +126,7 @@ sub __SetLayoutCreatorView {
 
 		my $page = $notebook->AddPage( $creator->GetModelKey(), 1 );
 
-		$page->GetParent()->SetBackgroundColour($stepBackg);
+		$page->GetParent()->SetBackgroundColour(AppConf->GetColor("clrCreatorViewBackground"));
 
 		# Get Frm by calling inherit class method
 		my $content = undef;
@@ -135,7 +138,6 @@ sub __SetLayoutCreatorView {
 
 		$content->{"creatorSettingsChangedEvt"}->Add( sub { $self->{"creatorSettingsChangedEvt"}->Do( $content->GetCreatorKey(), @_ ) } );
 		$content->{"creatorInitRequestEvt"}->Add( sub { $self->{"creatorInitRequestEvt"}->Do( $content->GetCreatorKey(), @_ ) } );
-		
 
 		$page->AddContent( $content, 0 );
 
@@ -217,75 +219,20 @@ sub __OncreatorSelectionChangedEvt {
 
 	$self->{"notebook"}->ShowPage($creatorKey);
 
-	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey)
+	$self->{"creatorSelectionChangedEvt"}->Do($creatorKey);
 
 }
 
-# CREATOR - user defined
+sub EnableCreators {
+	my $self        = shift;
+	my $creatorKeys = shift;
+	
+	
+	
 
-# CREATOR - heg info
-
-#sub SetComm {
-#	my $self       = shift;
-#	my $commId     = shift;
-#	my $commLayout = shift;
-#
-#	$self->{"commList"}->SetCommentLayout( $commId, $commLayout );
-#
-#}
-#
-#sub SetCommList {
-#	my $self           = shift;
-#	my $commListLayout = shift;
-#
-#	$self->{"setCommList"} = 1;    #
-#
-#	$self->{"commList"}->SetCommentsLayout($commListLayout);
-#
-#	if ( scalar( @{$commListLayout} ) ) {
-#
-#		$self->{"btnRemove"}->Enable();
-#
-#	}
-#	else {
-#		$self->{"btnRemove"}->Disable();
-#
-#	}
-#
-#	if ( scalar( @{$commListLayout} ) > 1 ) {
-#		$self->{"btnMoveUp"}->Enable();
-#		$self->{"btnMoveDown"}->Enable();
-#	}
-#	else {
-#		$self->{"btnMoveUp"}->Disable();
-#		$self->{"btnMoveDown"}->Disable();
-#	}
-#
-#	$self->{"setCommList"} = 0;    #
-#
-#}
-#
-#sub SetCommSelected {
-#	my $self   = shift;
-#	my $commId = shift;
-#
-#	$self->{"commList"}->SetSelectedItem($commId);
-#
-#}
-#
-#sub GetSelectedComm {
-#	my $self = shift;
-#
-#	my $comm = $self->{"commList"}->GetSelectedItem();
-#
-#	if ( defined $comm ) {
-#		return $comm->GetPosition();
-#	}
-#	else {
-#		return undef;
-#	}
-#
-#}
+	$self->{"creatorList"}->EnableCreators($creatorKeys);
+}
+ 
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

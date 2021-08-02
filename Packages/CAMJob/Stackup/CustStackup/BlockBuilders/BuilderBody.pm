@@ -446,7 +446,7 @@ sub __BuildStackupLayers {
 				#}
 
 				# Do distinguish between Noflow Prepreg 1 which insluding coverlay and others prepregs
-				if ( $l->GetIsNoFlow() && $l->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 && $l->GetIsCoverlayIncl() ) {
+				if ( $l->GetIsNoFlow() && $l->GetNoFlowType() eq StackEnums->NoFlowPrepreg_P1 ) {
 
 					# find copper layer which is coverlaysticked to
 					# Add coverlay + adhesive
@@ -454,9 +454,17 @@ sub __BuildStackupLayers {
 
 					if ( $i - 1 >= 0 && $layers[ $i - 1 ]->GetType() eq StackEnums->MaterialType_COPPER ) {
 						$cuLayerSide = $stackup->GetSideByCuLayer( $layers[ $i - 1 ]->GetCopperName() );
+					
+					}elsif ( $i - 2 >= 0 && $layers[ $i - 2 ]->GetType() eq StackEnums->MaterialType_COPPER ) {
+						# When there is coverlay between cu and prepreg
+						$cuLayerSide = $stackup->GetSideByCuLayer( $layers[ $i - 2 ]->GetCopperName() );
 					}
 					elsif ( $i + 1 < scalar(@layers) && $layers[ $i + 1 ]->GetType() eq StackEnums->MaterialType_COPPER ) {
 						$cuLayerSide = $stackup->GetSideByCuLayer( $layers[ $i + 1 ]->GetCopperName() );
+					}
+					elsif ( $i + 2 < scalar(@layers) && $layers[ $i + 2 ]->GetType() eq StackEnums->MaterialType_COPPER ) {
+						# When there is coverlay between cu and prepreg
+						$cuLayerSide = $stackup->GetSideByCuLayer( $layers[ $i + 2 ]->GetCopperName() );
 					}
 					else {
 						die "No coverlay copper layer was found";
@@ -472,23 +480,25 @@ sub __BuildStackupLayers {
 											 $text, $l->GetThick(), 1, StackEnums->NoFlowPrepreg_P1,
 											 0, $prpgTxtTitleStyle, dclone($txtStandardStyle) );
 
-					my $cvrlInInfo = $stckpMngr->GetCvrlInfo( $l->GetCoverlay() );
+					if ( $l->GetIsCoverlayIncl() ) {
+						my $cvrlInInfo = $stckpMngr->GetCvrlInfo( $l->GetCoverlay() );
 
-					# coverlay adhesive incl
+						# coverlay adhesive incl
 
-					$self->__DrawMatCoverlayAdhOuter(
-													  $cuLayerSide eq "top" ? $rowCvrlAdh : $rowCvrl, $cvrlInInfo->{"adhesiveText"},
-													  $cvrlInInfo->{"adhesiveThick"}, $cvrlInInfo->{"selective"},
-													  dclone($txtTitleStyle),         dclone($txtStandardStyle)
-					);
+						$self->__DrawMatCoverlayAdhOuter(
+														  $cuLayerSide eq "top" ? $rowCvrlAdh : $rowCvrl, $cvrlInInfo->{"adhesiveText"},
+														  $cvrlInInfo->{"adhesiveThick"}, $cvrlInInfo->{"selective"},
+														  dclone($txtTitleStyle),         dclone($txtStandardStyle)
+						);
 
-					# Coverlay included in noflow prepreg
+						# Coverlay included in noflow prepreg
 
-					$self->__DrawMatCoverlayOuter( $cuLayerSide eq "top" ? $rowCvrl : $rowCvrlAdh,
-												   $cvrlInInfo->{"cvrlText"},
-												   $cvrlInInfo->{"cvrlThick"},
-												   $cvrlInInfo->{"selective"},
-												   dclone($txtTitleStyle), dclone($txtStandardStyle) );
+						$self->__DrawMatCoverlayOuter( $cuLayerSide eq "top" ? $rowCvrl : $rowCvrlAdh,
+													   $cvrlInInfo->{"cvrlText"},
+													   $cvrlInInfo->{"cvrlThick"},
+													   $cvrlInInfo->{"selective"},
+													   dclone($txtTitleStyle), dclone($txtStandardStyle) );
+					}
 				}
 				else {
 
@@ -498,6 +508,7 @@ sub __BuildStackupLayers {
 				}
 
 			}
+
 			elsif ( $l->GetType() eq StackEnums->MaterialType_CORE ) {
 
 				my $rowHeight = undef;
@@ -519,6 +530,53 @@ sub __BuildStackupLayers {
 
 			}
 
+		}
+
+		# Draw inner coverlay which are not laminated together with prepreg
+		for ( my $i = 0 ; $i < scalar(@layers) ; $i++ ) {
+
+			my $l = $layers[$i];
+			if ( $l->GetType() eq StackEnums->MaterialType_COVERLAY ) {
+
+				# find copper layer which is coverlaysticked to
+				# Add coverlay + adhesive
+				my $cuLayerSide = undef;
+
+				if ( $i - 1 >= 0 && $layers[ $i - 1 ]->GetType() eq StackEnums->MaterialType_COPPER ) {
+					$cuLayerSide = $stackup->GetSideByCuLayer( $layers[ $i - 1 ]->GetCopperName() );
+				}
+				elsif ( $i + 1 < scalar(@layers) && $layers[ $i + 1 ]->GetType() eq StackEnums->MaterialType_COPPER ) {
+					$cuLayerSide = $stackup->GetSideByCuLayer( $layers[ $i + 1 ]->GetCopperName() );
+				}
+				else {
+					die "No coverlay copper layer was found";
+				}
+
+				my $keyCvrl = "prepreg_cvrl_" . ( ( $cuLayerSide eq "top" ) ? $i - 1 : $i + 1 );
+				my $keyAdh  = "prepreg_cvrl_adh_" . ( ( $cuLayerSide eq "top" ) ? $i - 1 : $i + 1 );
+
+				my $rowCvrl    = $tblMain->GetRowByKey($keyCvrl);
+				my $rowCvrlAdh = $tblMain->GetRowByKey($keyAdh);
+
+				my $cvrlInInfo = $stckpMngr->GetCvrlInfo($l);
+
+				# coverlay adhesive incl
+
+				$self->__DrawMatCoverlayAdhOuter( $cuLayerSide eq "top" ? $rowCvrlAdh : $rowCvrl,
+												  $cvrlInInfo->{"adhesiveText"},
+												  $cvrlInInfo->{"adhesiveThick"},
+												  $cvrlInInfo->{"selective"},
+												  dclone($txtTitleStyle), dclone($txtStandardStyle) );
+
+				# Coverlay included in noflow prepreg
+
+				$self->__DrawMatCoverlayOuter( $cuLayerSide eq "top" ? $rowCvrl : $rowCvrlAdh,
+											   $cvrlInInfo->{"cvrlText"},
+											   $cvrlInInfo->{"cvrlThick"},
+											   $cvrlInInfo->{"selective"},
+											   dclone($txtTitleStyle), dclone($txtStandardStyle) );
+
+			}
 		}
 
 	}
@@ -564,8 +622,7 @@ sub __BuildStackupLayers {
 								$maskFlexBotInfo->{"thick"},
 								dclone($txtTitleStyle), dclone($txtStandardStyle) );
 	}
-	
-	
+
 	# LAYER: BOT tape directly on flex
 	my $tapeBotInfo = {};
 	if ( $stckpMngr->GetExistTape( "bot", $tapeBotInfo ) ) {
@@ -624,8 +681,6 @@ sub __BuildStackupLayers {
 									   dclone($txtTitleStyle),                   dclone($txtStandardStyle)
 		);
 	}
-
-
 
 }
 

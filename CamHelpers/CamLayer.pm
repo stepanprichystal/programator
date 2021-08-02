@@ -267,14 +267,20 @@ sub DisplayFromOtherStep {
 
 # Hide all layers and all layers are not affected
 sub DisplayLayers {
-	my $self   = shift;
-	my $inCAM  = shift;
-	my $layers = shift;
+	my $self        = shift;
+	my $inCAM       = shift;
+	my $layers      = shift;
+	my $display     = shift // 1;
+	my $clearLayers = shift // 1;
 
-	$inCAM->COM('clear_layers');
+	my $disp = $display ? "yes" : "no";
+
+	$inCAM->COM('clear_layers') if ($clearLayers);
 
 	foreach my $l ( @{$layers} ) {
-		$inCAM->COM( 'display_layer', "name" => "$l", "display" => "yes" );
+
+		$inCAM->COM( 'display_layer', "name" => "$l", "display" => $disp );
+
 	}
 }
 

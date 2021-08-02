@@ -16,10 +16,13 @@ use warnings;
 #local library
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'CamHelpers::CamJob';
+use aliased 'Helpers::JobHelper';
 use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Model::SizePartModel'   => 'PartModel';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::View::SizePartFrm'      => 'PartFrm';
 use aliased 'Programs::Panelisation::PnlWizard::Parts::SizePart::Control::SizePartCheck' => 'PartCheckClass';
+use aliased 'Programs::Panelisation::PnlCreator::Helpers::Helper'                        => "PnlCreHelper";
+use aliased 'Connectors::HeliosConnector::HegMethods';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -36,6 +39,12 @@ sub new {
 
 	$self->{"model"}      = PartModel->new();         # Data model for view
 	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
+
+	my @editSteps = PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
+	$self->{"isCustomerSet"} = scalar(@editSteps) > 1 ? 1 : 0;
+	$self->{"ISDimInfo"} = HegMethods->GetInfoDimensions( $self->{"jobId"} );
+
+	$self->__SetActiveCreators();
 
 	return $self;
 }
@@ -76,17 +85,61 @@ sub InitPartModel {
 	else {
 
 		# Init default
-		my $defCreator = @{ $self->{"model"}->GetCreators() }[0];
-		$self->{"model"}->SetSelectedCreator( $defCreator->GetModelKey() );
+
+		my $defCreator = @{ $self->{"model"}->GetCreators() }[0]->GetModelKey();
+
+		if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+			# Select creator
+
+			# If HEG is set, select HEG creators
+			if (    defined $self->{"ISDimInfo"}->{"panel_x"}
+				 && defined $self->{"ISDimInfo"}->{"panel_x"} > 0
+				 && defined $self->{"ISDimInfo"}->{"panel_y"}
+				 && defined $self->{"ISDimInfo"}->{"panel_y"} > 0
+				 && defined $self->{"ISDimInfo"}->{"nasobnost_panelu"}
+				 && defined $self->{"ISDimInfo"}->{"nasobnost_panelu"} > 0 )
+			{
+
+				if ( $self->{"isCustomerSet"} ) {
+					$defCreator = PnlCreEnums->SizePnlCreator_HEG;
+				}
+				else {
+					$defCreator = PnlCreEnums->SizePnlCreator_CLASSHEG;
+				}
+			}
+
+		}
+		elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+
+			# Select creator
+
+			# If HEG is set, select HEG creators
+			if (    defined $self->{"ISDimInfo"}->{"rozmer_x"}
+				 && defined $self->{"ISDimInfo"}->{"rozmer_x"} > 0
+				 && defined $self->{"ISDimInfo"}->{"rozmer_y"}
+				 && defined $self->{"ISDimInfo"}->{"rozmer_y"} > 0
+				 && defined $self->{"ISDimInfo"}->{"nasobnost"}
+				 && defined $self->{"ISDimInfo"}->{"nasobnost"} > 0 )
+			{
+
+				$defCreator = PnlCreEnums->SizePnlCreator_CLASSHEG;
+			}
+
+		}
+
+		$self->{"model"}->SetSelectedCreator($defCreator);
 	}
 }
 
 # Handler which catch change of creatores in other parts
+# Reise imidiatelly after slection change, do not wait on asznchrounous task
 sub OnOtherPartCreatorSelChangedHndl {
-	my $self            = shift;
-	my $partId          = shift;
-	my $creatorKey      = shift;
-	my $creatorSettings = shift;    # creator model
+	my $self       = shift;
+	my $partId     = shift;
+	my $creatorKey = shift;
+
+	$self->EnableCreators( $partId, $creatorKey );
 
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
@@ -123,12 +176,12 @@ sub OnOtherPartCreatorSettChangedHndl {
 			if ( $areaW > 0 && $areaH > 0 ) {
 
 				# Update creator form
-				my $creatorFrm = $self->{"form"}->GetCreatorFrm(PnlCreEnums->SizePnlCreator_MATRIX);
-				
-				$creatorFrm->UpdateActiveArea($areaW, $areaH);
-				
+				my $creatorFrm = $self->{"form"}->GetCreatorFrm( PnlCreEnums->SizePnlCreator_MATRIX );
+
+				$creatorFrm->UpdateActiveArea( $areaW, $areaH );
+
 				$creatorFrm->ActiveAreaChanged();
-				 
+
 			}
 
 		}
@@ -136,6 +189,54 @@ sub OnOtherPartCreatorSettChangedHndl {
 	}
 
 	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
+
+}
+
+#-------------------------------------------------------------------------------------------#
+#  Private method
+#-------------------------------------------------------------------------------------------#
+
+# Disable creators which are not needed for specific panelisation type
+sub __SetActiveCreators {
+	my $self = shift;
+
+	my @currCreators   = @{ $self->GetModel(1)->GetCreators() };
+	my @activeCreators = ();
+
+	if ( $self->_GetPnlType() eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+		foreach my $c (@currCreators) {
+
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_USER );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_HEG );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_MATRIX && !$self->{"isCustomerSet"} );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_CLASSUSER );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_CLASSHEG );
+			push( @activeCreators, $c )
+			  if (    $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_PREVIEW
+				   && !$self->{"isCustomerSet"}
+				   && !JobHelper->GetJobIsOffer( $self->{"jobId"} ) );
+
+		}
+
+	}
+	elsif ( $self->_GetPnlType() eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+		foreach my $c (@currCreators) {
+
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_CLASSUSER );
+			push( @activeCreators, $c ) if ( $c->GetModelKey() eq PnlCreEnums->SizePnlCreator_CLASSHEG );
+
+		}
+	}
+
+	$self->GetModel(1)->SetCreators( \@activeCreators );
+
+}
+
+sub EnableCreators {
+	my $self       = shift;
+	my $partId     = shift;    # Previous part
+	my $creatorKey = shift;    # Selected creator from previous part
 
 }
 

@@ -45,6 +45,7 @@ sub new {
 	#EVENTS
 	$self->{"itemUnselectColor"}  = undef;
 	$self->{"itemSelectColor"}    = undef;
+	$self->{"itemDisabledColor"}  = undef;
 	$self->{"onSelectItemChange"} = Event->new();
 
 	return $self;
@@ -148,6 +149,14 @@ sub SetItemSelectColor {
 	$self->{"itemSelectColor"} = $color;
 }
 
+# Set color of disabled item
+sub SetItemDisabledColor {
+	my $self  = shift;
+	my $color = shift;
+
+	$self->{"itemDisabledColor"} = $color;
+}
+
 sub GetSelectedItem {
 	my $self  = shift;
 	my $value = shift;
@@ -168,6 +177,27 @@ sub SetSelectedItem {
 			last;
 		}
 
+	}
+}
+
+sub SetDisabledItem {
+	my $self   = shift;
+	my $itemId = shift;
+	my $disabled = shift;
+
+	foreach my $item ( @{ $self->{"jobItems"} } ) {
+
+		if ( $item->{"itemId"} eq $itemId ) {
+
+			# Set color
+			if ( defined $self->{"itemDisabledColor"} ) {
+				$item->SetBackgroundColour( $self->{"itemSelectColor"} );
+				$item->Refresh();
+			}
+			
+			$item->SetDisabled($disabled);
+			last;
+		}
 	}
 }
 

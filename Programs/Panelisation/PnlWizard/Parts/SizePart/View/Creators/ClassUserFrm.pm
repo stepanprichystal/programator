@@ -51,17 +51,17 @@ sub __SetLayout {
 	# SAVE REFERENCES
 
 	# Init combobox class
-	$self->{"pnlClassCB"} = $self->_SetLayoutCBMain( "Class", [] );
+	$self->{"pnlClassCB"} = $self->_SetLayoutCBMain( "Panel class:", [], 25, 75, 0 );
 
 	$self->{"CBMainChangedEvt"}->Add( sub { $self->__OnPnlClassChanged(@_) } );
 
 	# Init combobox class size
-	$self->{"pnlClassSizeCB"} = $self->_SetLayoutCBSize( "Class size", [] );
+	$self->{"pnlClassSizeCB"} = $self->_SetLayoutCBSize( "Class size:", [], 24, 76, 0 );
 
 	$self->{"CBSizeChangedEvt"}->Add( sub { $self->__OnPnlClassSizeChanged(@_) } );
 
 	# Init combobox class border
-	$self->{"pnlClassBorderCB"} = $self->_SetLayoutCBBorder( "Class border", [] );
+	$self->{"pnlClassBorderCB"} = $self->_SetLayoutCBBorder( "Class border:", [], 24, 76, 0 );
 
 	$self->{"CBBorderChangedEvt"}->Add( sub { $self->__OnPnlClassBorderChanged(@_) } );
 
@@ -83,7 +83,7 @@ sub __OnPnlClassChanged {
 	if ( scalar( $class->GetSizes() ) ) {
 
 		my $sizeName = ( $class->GetSizes() )[0]->GetName();
-		$self->{"pnlClassSizeCB"}->SetValue( $sizeName );
+		$self->{"pnlClassSizeCB"}->SetValue($sizeName);
 		$self->__OnPnlClassSizeChanged($sizeName);
 	}
 
@@ -105,15 +105,17 @@ sub __OnPnlClassSizeChanged {
 
 		# Set cb classes border
 		$self->{"pnlClassBorderCB"}->Clear();
-		foreach my $classBorder ( $classSize->GetBorders() ) {
+		my @borders = sort { $b->GetBorderLeft() <=> $a->GetBorderLeft() } $classSize->GetBorders();
+
+		foreach my $classBorder (@borders) {
 
 			$self->{"pnlClassBorderCB"}->Append( $classBorder->GetName() );
 		}
 
-		if ( scalar( $classSize->GetBorders() ) ) {
+		if ( scalar(@borders) ) {
 
-			my $borderName = ( $classSize->GetBorders() )[0]->GetName();
-			$self->{"pnlClassBorderCB"}->SetValue( $borderName );
+			my $borderName = $borders[0]->GetName();
+			$self->{"pnlClassBorderCB"}->SetValue($borderName);
 			$self->__OnPnlClassBorderChanged($borderName);
 
 		}
@@ -169,9 +171,9 @@ sub SetDefPnlClass {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassCB"}->SetValue($val) if ( defined $val );;
+	$self->{"pnlClassCB"}->SetValue($val) if ( defined $val && $val ne "" );
 
-	$self->__OnPnlClassChanged($val) if ( defined $val );
+	$self->__OnPnlClassChanged($val) if ( defined $val && $val ne "" );
 }
 
 sub GetDefPnlClass {
@@ -184,9 +186,9 @@ sub SetDefPnlSize {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassSizeCB"}->SetValue($val) if ( defined $val );;
+	$self->{"pnlClassSizeCB"}->SetValue($val) if ( defined $val && $val ne "" );
 
-	$self->__OnPnlClassSizeChanged($val) if ( defined $val );
+	$self->__OnPnlClassSizeChanged($val) if ( defined $val && $val ne "" );
 }
 
 sub GetDefPnlSize {
@@ -199,9 +201,9 @@ sub SetDefPnlBorder {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"pnlClassBorderCB"}->SetValue($val) if ( defined $val );;
+	$self->{"pnlClassBorderCB"}->SetValue($val) if ( defined $val && $val ne "" );
 
-	$self->__OnPnlClassBorderChanged($val) if ( defined $val );
+	$self->__OnPnlClassBorderChanged($val) if ( defined $val && $val ne "" );
 }
 
 sub GetDefPnlBorder {

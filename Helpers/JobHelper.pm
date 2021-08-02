@@ -189,9 +189,25 @@ sub GetNetlistStepNames {
 sub GetCouponStepNames {
 	my $self = shift;
 
-	my @s = ( EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_DRILL, EnumsGeneral->Coupon_IPC3MAIN, EnumsGeneral->Coupon_IPC3DRILL, EnumsGeneral->Coupon_ZAXIS );
-	 
+	my @s = (
+			  EnumsGeneral->Coupon_IMPEDANCE, EnumsGeneral->Coupon_DRILL, EnumsGeneral->Coupon_IPC3MAIN, EnumsGeneral->Coupon_IPC3DRILL,
+			  EnumsGeneral->Coupon_ZAXIS
+	);
+
 	return @s;
+}
+
+# Return if given step is coupon step
+sub GetStepIsCoupon {
+	my $self     = shift;
+	my $stepName = shift;
+
+	my @couponSteps = $self->GetCouponStepNames();
+
+	my $impCpnBaseName = EnumsGeneral->Coupon_IMPEDANCE;
+	my $cpnStep = scalar( grep { $stepName =~ /^$_/i } @couponSteps ) ? 1 : 0;
+
+	return $cpnStep;
 }
 
 sub GetJobOutput {
@@ -409,8 +425,8 @@ sub GetIsHybridMat {
 
 	}
 	elsif ( !$self->GetIsFlex($jobId) ) {
-		
-		# whole flexible PCB do not consider as hybrid even 
+
+		# whole flexible PCB do not consider as hybrid even
 		# if there is more tzpes of material (PYRALUX, THINFLEX,..)
 
 		push( @{$matKinds}, $matKind );

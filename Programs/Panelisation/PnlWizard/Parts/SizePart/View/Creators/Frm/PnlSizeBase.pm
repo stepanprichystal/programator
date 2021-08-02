@@ -53,8 +53,9 @@ sub __Layout {
 
 	#define panels
 
-	my $szMain   = Wx::BoxSizer->new(&Wx::wxVERTICAL);
-	my $szCustom = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szMain        = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szMainWrapper = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szCustom      = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
 	# DEFINE CONTROLS
 
@@ -71,9 +72,13 @@ sub __Layout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	$szMain->Add( $szCustom,     0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szMain->Add( $sizeStatBox,  0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szMain->Add( $frameStatBox, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMainWrapper->Add( $szCustom,     0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMainWrapper->Add( $sizeStatBox,  0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMainWrapper->Add( $frameStatBox, 1, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+
+	$szMain->Add( $szMainWrapper, 50, &Wx::wxEXPAND, 0 );
+
+	$szMain->AddStretchSpacer(50);
 
 	$self->SetSizer($szMain);
 
@@ -89,7 +94,7 @@ sub __SetLayoutSize {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Dimension' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Dimensions' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	# Load data, for filling form by values
@@ -100,27 +105,28 @@ sub __SetLayoutSize {
 
 	# DEFINE CONTROLS
 
-	my $widthTxt = Wx::StaticText->new( $statBox, -1, "Width:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $widthValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $widthTxt = Wx::StaticText->new( $statBox, -1, "Width:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $widthValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
-	my $heightTxt = Wx::StaticText->new( $statBox, -1, "Height:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $heightValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $heightTxt = Wx::StaticText->new( $statBox, -1, "Height:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $heightValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $widthValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow2->Add( $widthTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $widthValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $widthTxt,    23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $widthValTxt, 23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow2->Add( 10, 10, 0 );
+	$szRow2->AddStretchSpacer(6);
 
-	$szRow2->Add( $heightTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $heightValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $heightTxt,    23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $heightValTxt, 23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND );
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND );
 
 	# save control references
@@ -139,7 +145,7 @@ sub __SetLayoutFrame {
 	my $parent = shift;
 
 	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'Border' );
+	my $statBox = Wx::StaticBox->new( $parent, -1, 'Borders' );
 	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
 
 	# Load data, for filling form by values
@@ -150,17 +156,17 @@ sub __SetLayoutFrame {
 
 	# DEFINE CONTROLS
 
-	my $leftTxt = Wx::StaticText->new( $statBox, -1, "Left:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $leftValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $leftTxt = Wx::StaticText->new( $statBox, -1, "Left:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $leftValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
-	my $rightTxt = Wx::StaticText->new( $statBox, -1, "Right:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $rightValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $rightTxt = Wx::StaticText->new( $statBox, -1, "Right:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $rightValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
-	my $topTxt = Wx::StaticText->new( $statBox, -1, "Top:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $topValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $topTxt = Wx::StaticText->new( $statBox, -1, "Top:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $topValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
-	my $botTxt = Wx::StaticText->new( $statBox, -1, "Bot:", &Wx::wxDefaultPosition, [ 70, 25 ] );
-	my $botValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 70, 25 ] );
+	my $botTxt = Wx::StaticText->new( $statBox, -1, "Bot:", &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $botValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $leftValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
@@ -169,24 +175,26 @@ sub __SetLayoutFrame {
 	Wx::Event::EVT_TEXT( $botValTxt,   -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
 	# BUILD STRUCTURE OF LAYOUT
-	$szRow1->Add( $leftTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow1->Add( $leftValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $leftTxt,    23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $leftValTxt, 23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow1->Add( 10, 10, 0 );
+	$szRow1->AddStretchSpacer(6);
 
-	$szRow1->Add( $topTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow1->Add( $topValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $topTxt,    23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow1->Add( $topValTxt, 23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow2->Add( $rightTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $rightValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $rightTxt,    23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $rightValTxt, 23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow2->Add( 10, 10, 0 );
+	$szRow2->AddStretchSpacer(6);
 
-	$szRow2->Add( $botTxt,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szRow2->Add( $botValTxt, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $botTxt,    23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->Add( $botValTxt, 23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->AddSpacer(2);
 	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	# save control references
@@ -201,30 +209,36 @@ sub __SetLayoutFrame {
 }
 
 sub _SetLayoutCBMain {
-	my $self    = shift;
-	my $title   = shift;
-	my $choices = shift;
+	my $self           = shift;
+	my $title          = shift;
+	my $choices        = shift;
+	my $titWidth       = shift;
+	my $controlWidth   = shift;
+	my $stretcherWidth = shift // 50;
 
 	# DEFINE CONTROLS
-	my $mainCbTxt = Wx::StaticText->new( $self, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
-	my $mainCB = Wx::ComboBox->new( $self, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
+	my $mainCbTxt = Wx::StaticText->new( $self, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $mainCB = Wx::ComboBox->new( $self, -1, ( defined $choices->[0] ? $choices->[0] : "" ), &Wx::wxDefaultPosition, [ 10, 23 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBMainChangedEvt"}->Do( $mainCB->GetValue() ) } );
 
 	# DEFINE LAYOUT
-	$self->{"szCustomCBMain"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$self->{"szCustomCBMain"}->Add( $mainCB,    30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-
+	$self->{"szCustomCBMain"}->Add( $mainCbTxt, $titWidth,     &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"szCustomCBMain"}->Add( $mainCB,    $controlWidth, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"szCustomCBMain"}->AddStretchSpacer($stretcherWidth);
 	return $mainCB;
 }
 
 sub _SetLayoutISSize {
-	my $self  = shift;
-	my $title = shift;    #
+	my $self           = shift;
+	my $title          = shift;         #
+	my $titWidth       = shift;
+	my $controlWidth   = shift;
+	my $stretcherWidth = shift // 50;
 
 	# DEFINE CONTROLS
-	my $isTxt = Wx::StaticText->new( $self->{"customLyoutSizeParent"}, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
+	my $isTxt = Wx::StaticText->new( $self->{"customLyoutSizeParent"}, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	my $isIndicator = ResultIndicator->new( $self->{"customLyoutSizeParent"}, 20 );
 
@@ -234,49 +248,59 @@ sub _SetLayoutISSize {
 	#Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"}->Do( $mainCB->GetValue() ) } );
 
 	# DEFINE LAYOUT
-	$self->{"customISValueSz"}->Add( $isTxt,       30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$self->{"customISValueSz"}->Add( $isIndicator, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customISValueSz"}->Add( $isTxt,       $titWidth,     &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customISValueSz"}->Add( $isIndicator, $controlWidth, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customISValueSz"}->AddStretchSpacer($stretcherWidth);
 
 	return $isIndicator;
 }
 
 sub _SetLayoutCBSize {
-	my $self    = shift;
-	my $title   = shift;
-	my $choices = shift;
+	my $self           = shift;
+	my $title          = shift;
+	my $choices        = shift;
+	my $titWidth       = shift;
+	my $controlWidth   = shift;
+	my $stretcherWidth = shift // 50;
 
 	# DEFINE CONTROLS
-	my $mainCbTxt = Wx::StaticText->new( $self->{"customLyoutSizeParent"}, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
+	my $mainCbTxt = Wx::StaticText->new( $self->{"customLyoutSizeParent"}, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
 	my $mainCB =
-	  Wx::ComboBox->new( $self->{"customLyoutSizeParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
+	  Wx::ComboBox->new( $self->{"customLyoutSizeParent"}, -1,( defined $choices->[0] ? $choices->[0] : "" ), &Wx::wxDefaultPosition, [ 10, 23 ], $choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"}->Do( $mainCB->GetValue() ) } );
 
 	# DEFINE LAYOUT
-	$self->{"customCBSizeSz"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$self->{"customCBSizeSz"}->Add( $mainCB,    30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customCBSizeSz"}->Add( $mainCbTxt, $titWidth,     &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customCBSizeSz"}->Add( $mainCB,    $controlWidth, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customCBSizeSz"}->AddStretchSpacer($stretcherWidth);
 
 	return $mainCB;
 }
 
 sub _SetLayoutCBBorder {
-	my $self    = shift;
-	my $title   = shift;
-	my $choices = shift;
+	my $self           = shift;
+	my $title          = shift;
+	my $choices        = shift;
+	my $titWidth       = shift;
+	my $controlWidth   = shift;
+	my $stretcherWidth = shift // 50;
 
 	# DEFINE CONTROLS
-	my $mainCbTxt = Wx::StaticText->new( $self->{"customCBBorderParent"}, -1, $title, &Wx::wxDefaultPosition, [ -1, 25 ] );
-	my $mainCB =
-	  Wx::ComboBox->new( $self->{"customCBBorderParent"}, -1, $choices->[0], &Wx::wxDefaultPosition, [ -1, 25 ], $choices, &Wx::wxCB_READONLY );
+	my $mainCbTxt = Wx::StaticText->new( $self->{"customCBBorderParent"}, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
+	my $mainCB = Wx::ComboBox->new( $self->{"customCBBorderParent"},
+									-1, ( defined $choices->[0] ? $choices->[0] : "" ),
+									&Wx::wxDefaultPosition, [ 10, 23 ],
+									$choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBBorderChangedEvt"}->Do( $mainCB->GetValue() ) } );
 
 	# DEFINE LAYOUT
-	$self->{"customCBBorderSz"}->Add( $mainCbTxt, 30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$self->{"customCBBorderSz"}->Add( $mainCB,    30, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-
+	$self->{"customCBBorderSz"}->Add( $mainCbTxt, $titWidth,     &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customCBBorderSz"}->Add( $mainCB,    $controlWidth, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$self->{"customCBBorderSz"}->AddStretchSpacer($stretcherWidth);
 	return $mainCB;
 }
 

@@ -183,14 +183,35 @@ sub GetStandards {
 		)
 	);
 	
-	# ======== Standard RigidFlex  ========
+	# ======== Standard Flex  ========
+
+	push(
+		@l,
+		Standard->new(
+			"name"    => Enums->Standard_305x458,
+			"pcbType" => Enums->PcbType_1V2V,
+			"pcbMat"  => Enums->PcbMat_FLEX,
+
+			# Properties
+			"active" => 1,
+			"w"      => 305,
+			"h"      => 458,
+			"bl"     => 18,
+			"br"     => 18,
+			"bt"     => 18,
+			"bb"     => 18,
+			
+		)
+	);
+
+		# ======== Standard RigidFlex  ========
 
 	push(
 		@l,
 		Standard->new(
 			"name"    => Enums->Standard_305x458,
 			"pcbType" => Enums->PcbType_MULTI,
-			"pcbMat"  => Enums->PcbMat_STDLAM,
+			"pcbMat"  => Enums->PcbMat_FLEX,
 
 			# Properties
 			"active" => 1,
@@ -204,6 +225,52 @@ sub GetStandards {
 			# used prepreg size
 			"pW" => 305,
 			"pH" => 458
+		)
+	);
+	
+	# ======== Standard Hybrid/special materials  ========
+
+	push(
+		@l,
+		Standard->new(
+			"name"    => Enums->Standard_305x458,
+			"pcbType" => Enums->PcbType_MULTI,
+			"pcbMat"  => Enums->PcbMat_SPEC,
+
+			# Properties
+			"active" => 1,
+			"w"      => 305,
+			"h"      => 458,
+			"bl"     => 21,
+			"br"     => 21,
+			"bt"     => 36.5,
+			"bb"     => 36.5,
+			
+			# used prepreg size
+			"pW" => 305,
+			"pH" => 458
+		)
+	);
+	
+	# ======== Standard special materials  ========
+
+	push(
+		@l,
+		Standard->new(
+			"name"    => Enums->Standard_305x458,
+			"pcbType" => Enums->PcbType_1V2V,
+			"pcbMat"  => Enums->PcbMat_SPEC,
+
+			# Properties
+			# Properties
+			"active" => 1,
+			"w"      => 305,
+			"h"      => 458,
+			"bl"     => 18,
+			"br"     => 18,
+			"bt"     => 18,
+			"bb"     => 18,
+ 
 		)
 	);
 

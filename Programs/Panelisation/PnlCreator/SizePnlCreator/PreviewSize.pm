@@ -41,6 +41,7 @@ sub new {
 
 	# Setting values necessary for procesing panelisation
 	$self->{"settings"}->{"srcJobId"}         = undef;
+	$self->{"settings"}->{"srcJobByOffer"}    = undef;
 	$self->{"settings"}->{"srcJobListByName"} = [];
 	$self->{"settings"}->{"srcJobListByNote"} = [];
 	$self->{"settings"}->{"panelJSON"}        = undef;
@@ -67,6 +68,13 @@ sub Init {
 
 	# Try to get list of former orders
 	my $jobId = $self->{"jobId"};
+
+	# Check PCB offer
+	my $info = ( HegMethods->GetAllByPcbId($jobId) )[0];
+	if ( defined $info->{"dn_reference_subjektu"} && $info->{"dn_reference_subjektu"} =~ /^\w\d{6}/i ) {
+		
+			$self->SetSrcJobByOffer( $info->{"dn_reference_subjektu"} );
+	}
 
 	# Check TPV note if there is reference job id
 
@@ -168,7 +176,7 @@ sub Init {
 
 	# Get dimension and borders if source job is known
 	if ( defined $srcJobId && $srcJobId =~ /^\w\d{6}$/i ) {
-		
+
 		$self->SetSrcJobId($srcJobId);
 
 		$srcJobId = lc($srcJobId);
@@ -182,6 +190,9 @@ sub Init {
 			# open job
 			CamHelper->OpenJob( $inCAM, $srcJobId, 1 );
 			CamJob->CheckOutJob( $inCAM, $srcJobId );
+
+			my $errCopyStep    = 0;
+			my $errCopyStepTxt = "";
 
 			if ( CamHelper->StepExists( $inCAM, $srcJobId, $stepName ) ) {
 
@@ -213,23 +224,24 @@ sub Init {
 
 				if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
 
-					my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 1, 1 );
+					my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 1, 1, 1 );
 					$self->SetPanelJSON($JSON);
 
+				}
+				else {
+
+					$errCopyStep    = 1;
+					$errCopyStepTxt = "Unable parse step: $stepName from source job: ${srcJobId}. Error during parsing step.";
+					 
+					$result = 0;
 				}
 
 			}
 			else {
-
-				my $err = "Source job error";
-
-				$self->SetWidth($err);
-				$self->SetHeight($err);
-
-				$self->SetBorderLeft($err);
-				$self->SetBorderRight($err);
-				$self->SetBorderTop($err);
-				$self->SetBorderBot($err);
+				$errCopyStep    = 1;
+				$errCopyStepTxt = "Unable parse step: $stepName from source job: ${srcJobId}. Job doesn't contain this step.";
+				 
+				$result = 0;
 			}
 
 			# Close job
@@ -237,9 +249,17 @@ sub Init {
 			CamJob->CloseJob( $inCAM, $srcJobId );
 			CamJob->CheckInJob( $inCAM, $jobId, 0 );    # Reopen jon
 
+			if ($errCopyStep) {
+
+				die $errCopyStepTxt;
+			}
+
+		}
+		else {
+			die "Unable parse step: $stepName from source job: ${srcJobId}. Job doesn't exist in InCAM database.";
+			$result = 0;
 		}
 	}
-	 
 
 	return $result;
 }
@@ -254,15 +274,19 @@ sub Check {
 
 	my $result = 1;
 
-	$result = $self->_Check( $inCAM, $errMess );
-
 	# Check if source job exist
-	my $srcJobExist = $self->GetSrcJobId();
+	my $srcJob = $self->GetSrcJobId();
 
-	if ( !defined $srcJobExist || $srcJobExist eq "" ) {
+	if ( !defined $srcJob || $srcJob eq "" ) {
 
 		$result = 0;
 		$$errMess .= "Source job, which panel should be coppied from is not defined.\n";
+	}
+	elsif ( !CamJob->JobExist( $inCAM, $srcJob ) ) {
+
+		$result = 0;
+		$$errMess .= "Source job: $srcJob, doesn't exist in InCAM database.\n";
+
 	}
 	else {
 
@@ -290,16 +314,13 @@ sub Process {
 	my $result = 1;
 
 	# Process base class
-	$result = $self->_Process( $inCAM, $errMess );
 
 	# Process specific
 	my $jobId = $self->{"jobId"};
 	my $step  = $self->GetStep();
-	
- 
 
 	my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
-	$pnlToJSON->CreatePnlByJSON( $self->GetPanelJSON(), 1, 0 );
+	$pnlToJSON->CreatePnlByJSON( $self->GetPanelJSON(), 1, 1 );
 
 	return $result;
 }
@@ -319,6 +340,19 @@ sub GetSrcJobId {
 	my $self = shift;
 
 	return $self->{"settings"}->{"srcJobId"};
+}
+
+sub SetSrcJobByOffer {
+	my $self = shift;
+	my $val  = shift;
+
+	$self->{"settings"}->{"srcJobByOffer"} = $val;
+}
+
+sub GetSrcJobByOffer {
+	my $self = shift;
+
+	return $self->{"settings"}->{"srcJobByOffer"};
 }
 
 sub SetSrcJobListByName {
