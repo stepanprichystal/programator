@@ -1,11 +1,1 @@
-<ml name="6vv_is400" ename="6-layer ML" dname="6-Lagen Multilayer" soll="1,500" pt="hyd" sicName="6-layer ML">
-<element pos="1" type="Copper" id="4" p="100" />
-<element qId="6" id="6" type="Prepreg" />
-<element qId="6" id="6" type="Prepreg" />
-<element pos="4" type="Copper" id="5" p="40" />
-<element pos="5" type="Core" id="9" qId="6" />
-<element pos="6" type="Copper" id="5" p="40" />
-<element qId="6" id="6" type="Prepreg" />
-<element qId="6" id="6" type="Prepreg" />
-<element qId="6" id="6" type="Prepreg" />
-<element p="40" id="5" type="Copper" /><element qId="6" id="9" type="Core" /><element p="40" id="5" type="Copper" /><element qId="6" id="6" type="Prepreg" /><element qId="6" id="6" type="Prepreg" /><element pos="9" type="Copper" id="4" p="100" /></ml>
+<ml name="6vv_type1" ename="6-layer ML" dname="6-Lagen Multilayer" fname="multicouches 6 couches" iname="6-fogli multistrato" rname="6-layer ML" soll="1,540" pt="hyd" sicName="6-layer ML" dbVersion="9" path="Y:\server\site_data\scripts\Resources\DefaultStackups_is400\6vv_type2.xml"><element pos="1" type="Copper" id="4" p="100" /><element pos="2" type="Prepreg" id="6" qId="6" /><element pos="3" type="Prepreg" id="12" qId="6" /><element pos="4" type="Copper" id="5" p="40" /><element qId="6" id="7" type="Core" /><element pos="6" type="Copper" id="5" p="40" /><element pos="7" type="Prepreg" id="6" qId="6" /><element pos="8" qId="6" id="12" type="Prepreg" /><element pos="9" type="Prepreg" id="6" qId="6" /><element pos="10" type="Copper" id="5" p="40" /><element qId="6" id="7" type="Core" /><element pos="6" type="Copper" id="5" p="40" /><element pos="7" type="Prepreg" id="12" qId="6" /><element pos="8" type="Prepreg" id="6" qId="6" /><element pos="9" type="Copper" id="4" p="100" /></ml>
