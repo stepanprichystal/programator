@@ -259,6 +259,7 @@ sub EnableCreators {
 	my $self       = shift;
 	my $partId     = shift;
 	my $creatorKey = shift;
+	my $setDefault = shift // 1; # set default creator
 
 }
 

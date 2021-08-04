@@ -1197,16 +1197,17 @@ sub __CheckGroupDataExtend {
 	if ( $defaultInfo->StepExist("mpanel") ) {
 
 		my $usedScheme = CamAttributes->GetStepAttrByName( $inCAM, $jobId, "mpanel", "cust_panelization_scheme" );
-		die "Schema name is not defined in step: mpanel; attribute: cust_panelization_scheme"
-		  if ( !defined $usedScheme || $usedScheme eq "" );
+		
+		if ( defined $usedScheme && $usedScheme ne "" ) {
 
-		unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, $usedScheme, $defaultInfo->GetCustomerNote() ) ) {
+			unless ( SchemeCheck->CustPanelSchemeOk( $inCAM, $jobId, $usedScheme, $defaultInfo->GetCustomerNote() ) ) {
 
-			my @custSchemas = $defaultInfo->GetCustomerNote()->RequiredSchemas();
-			my $custTxt = join( "; ", @custSchemas );
+				my @custSchemas = $defaultInfo->GetCustomerNote()->RequiredSchemas();
+				my $custTxt = join( "; ", @custSchemas );
 
-			$dataMngr->_AddWarningResult( "Customer schema",
+				$dataMngr->_AddWarningResult( "Customer schema",
 							  "Zákazník požaduje ve stepu: \"mpanel\" vlastní schéma: \"$custTxt\", ale je vloženo schéma: \"$usedScheme\"." );
+			}
 		}
 	}
 
@@ -1415,7 +1416,7 @@ sub __CheckGroupDataExtend {
 							if ( !defined $attHist{".pattern_fill"} ) {
 
 								$dataMngr->_AddErrorResult(
-									 "Výplň okolí ze strany $sigL",
+									 "Výplň okolí ze strany $sigName",
 									 "Pokud DPS neobsahuje stiffner a zároveň obsahuje flex masku, "
 									   . "je nutné, aby okolí panelu bylo vyplněno Cu (šrafováním atd) a to i v případě panelu zákazníka, "
 									   . "jinak je při sítotisku v okolí nanesená tlustá vrstva masky"
@@ -1438,7 +1439,9 @@ sub __CheckGroupDataExtend {
 			my @innerCuUsage = ();
 			unless ( StackupCheck->CuUsageCheck( $inCAM, $jobId, \@innerCuUsage ) ) {
 
-				my @errUsage = grep { $_->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_INCREASE || $_->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_DECREASE } @innerCuUsage;
+				my @errUsage = grep {
+					   $_->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_DECREASE
+				} @innerCuUsage;
 
 				my $txt = "";
 
@@ -1453,8 +1456,12 @@ sub __CheckGroupDataExtend {
 					  . sprintf( "%4s%%", int( $l->{"stackupUsage"} ) );
 				}
 
-				$dataMngr->_AddInformationResult( "Vužití Cu ve složení",
-								   "Využití Cu ve složení () není v toleranci: " .Packages::CAMJob::Stackup::StackupCheck::USAGETOL. "% s reálným využitím u následujících vrstev:\n$txt" );
+				$dataMngr->_AddWarningResult(
+												  "Vužití Cu ve složení",
+												  "Využití Cu ve složení není v toleranci: "
+													. Packages::CAMJob::Stackup::StackupCheck::USAGETOL
+													. "% (je menší) s reálným využitím u následujících vrstev:\n$txt. Zkontroluj množství pryskyřice popř. oprav složení"
+				);
 
 			}
 		}

@@ -126,7 +126,7 @@ sub RepairCuUsage {
 				$rowTxt .= "<g>OK</g> => bez motivu";
 			}
 			elsif ( $status eq Packages::CAMJob::Stackup::StackupCheck::USAGE_INCREASE ) {
-				$rowTxt .= "<r>FAIL</r> => automarická";
+				$rowTxt .= "<r>FAIL</r> => automatická";
 			}
 			elsif ( $status eq Packages::CAMJob::Stackup::StackupCheck::USAGE_DECREASE ) {
 				$rowTxt .= "<r>FAIL</r> => ruční + kontrola";
@@ -167,7 +167,12 @@ sub RepairCuUsage {
 
 		if ( scalar(@autoCorrection) ) {
 
-			my @btn = [ "Ingnorovat a pokračovat", "Automaticky opravit složení", "Upravil jsem ručně, zkontroluj" ];
+			my @btn = [
+						"Ingnorovat a pokračovat",
+						"Upravím vylití vnitřních vrstev",
+						"Automaticky opravit složení",
+						"Upravil jsem ručně, zkontroluj"
+			];
 			push( @mess, "\n\nZvol jednu z možností" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, @btn );
 
@@ -177,12 +182,17 @@ sub RepairCuUsage {
 			}
 			elsif ( $messMngr->Result() == 1 ) {
 
+				$result = 0;
+				last;
+			}
+			elsif ( $messMngr->Result() == 2 ) {
+
 				# automatic
 				my @forCorrect = grep { $_->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_INCREASE } @innerCuUsage;
 				$self->__AutoCorrection( $inCAM, $jobId, $stackup, \@forCorrect );
 
 			}
-			elsif ( $messMngr->Result() == 2 ) {
+			elsif ( $messMngr->Result() == 3 ) {
 
 				# manual
 				next;
@@ -192,15 +202,21 @@ sub RepairCuUsage {
 		}
 		elsif ( !scalar(@autoCorrection) && scalar(@manCorrection) ) {
 
-			my @btn = [ "Ingnorovat a pokračovat", "Upravil jsem ručně, zkontroluj" ];
+			my @btn = [ "Ingnorovat a pokračovat", "Upravím vylití vnitřních vrstev", "Upravil jsem ručně, zkontroluj" ];
 			push( @mess, "\n\nZvol jednu z možností" );
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, @btn );
 
 			if ( $messMngr->Result() == 0 ) {
 
 				last;
+
 			}
 			elsif ( $messMngr->Result() == 1 ) {
+
+				$result = 0;
+				last;
+			}
+			elsif ( $messMngr->Result() == 2 ) {
 
 				# manual
 				next;
@@ -210,9 +226,19 @@ sub RepairCuUsage {
 
 			# No autocorrection no manual correction
 
-			my @btn = ["Pokračovat"];
+			my @btn = [ "Upravím vylití vnitřních vrstev", "Pokračovat" ];
 			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, @btn );
-			last;
+
+			if ( $messMngr->Result() == 0 ) {
+
+				$result = 0;
+				last;
+
+			}
+			elsif ( $messMngr->Result() == 1 ) {
+
+				last;
+			}
 		}
 
 	}

@@ -101,7 +101,7 @@ sub new {
 	my $isFlex = JobHelper->GetIsFlex($jobId);
 	$self->{"pcbMat"} = undef;
 
-	if ( $mat =~ /AL|CU/i ) {
+	if ( $mat =~ /^AL|^CU/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_ALU;
 	}
@@ -109,7 +109,7 @@ sub new {
 
 		$self->{"pcbMat"} = Enums->PcbMat_FLEX;
 	}
-	elsif ( $mat =~ /HYBRID|RO/i ) {
+	elsif ( $mat =~ /^HYBRID|^RO/i ) {
 
 		$self->{"pcbMat"} = Enums->PcbMat_SPEC;
 	}

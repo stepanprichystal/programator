@@ -237,6 +237,7 @@ sub EnableCreators {
 	my $self       = shift;
 	my $partId     = shift;    # Previous part
 	my $creatorKey = shift;    # Selected creator from previous part
+	my $setDefault = shift // 1; # set default creator
 
 }
 

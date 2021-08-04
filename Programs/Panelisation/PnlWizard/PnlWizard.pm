@@ -207,8 +207,6 @@ sub Init {
 
 	print STDERR "Init model async START\n";
 
- 
-
 	#
 	#$self->{"partContainer"}->RefreshWrapper();
 
@@ -280,8 +278,6 @@ sub __OnCancelClickHndl {
 	if ( $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() != 0 ) {
 		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
 	}
-
-	 
 
 	# Restore backuped step
 	if ( defined $self->{"pnlStepBackup"} && CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} ) ) {
@@ -383,11 +379,8 @@ sub __OnLoadLastClickHndl {
 	my $restoredModel = $self->{"storageModelMngr"}->LoadModel();
 	$self->{"model"} = $restoredModel;    # update model
 
-	 
 	# Set main form
 	$self->__RefreshGUI();
-
-	
 
 	# Set parts
 
@@ -411,7 +404,7 @@ sub __OnLoadDefaultClickHndl {
 
 	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"} );    # Load generally model
 	$self->{"partContainer"}->RefreshGUI();
-	$self->{"partContainer"}->SetPreviewOffAllPart();    # Do not load preview
+	$self->{"partContainer"}->SetPreviewOffAllPart();               # Do not load preview
 	$self->{"partContainer"}->AsyncInitSelCreatorModel();           # Load asynchronously selected model
 
 }
@@ -707,7 +700,10 @@ sub __InitModel {
 
 	$self->{"model"}->SetStep($step);
 
-	$self->{"model"}->SetFlatten( HegMethods->GetPcbIsPool( $self->{"jobId"} ) );
+	if ( $self->{"pnlType"} eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+		
+		$self->{"model"}->SetFlatten( HegMethods->GetPcbIsPool( $self->{"jobId"} ) );
+	}
 
 	# Set preview
 	$self->{"model"}->SetPreview(0);

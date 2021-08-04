@@ -48,6 +48,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamDrilling';
 
+
 use aliased 'CamHelpers::CamStep';
 use aliased 'CamHelpers::CamFilter';
 
@@ -1108,6 +1109,9 @@ sub _Panelize {
 			my $resZaxis = DoZaxisCoupon->GenerateZaxisCoupons($inCAM, $jobName );
 			
 			
+					# Here is set attribut in job Gold_fingers
+			_SetAttrGoldHolder("$jobName");
+			
 			 while(1){
 			 	
 			 	  $messMngr = MessageMngr->new($jobName);
@@ -1121,7 +1125,9 @@ sub _Panelize {
 #	 
 				$inCAM->SetDisplay(1);
 				#$inCAM->PAUSE ('Spust novou panelizaci a pak jakmile budes mit vytvoreny panel, pokracuj');
-				
+			
+			
+			while(1){	
 # Pokud se script nespusti pomoci Process:Create ale pres incam script_run, 
 #tak jakmile se u vnoreneho scriptu spusti Pause, incam vzhodnoti ye script skoncil a pokracuje v hlavnim (tomot scriptu)				
 use Win32::Process;
@@ -1130,7 +1136,7 @@ use Win32::Process;
 	my $perl = $Config{perlpath};
 
 	my @cmd = ("perl");
-	push( @cmd, 'y:\server\site_data\Scripts\Programs\Panelisation\PnlWizard\RunPnlWizard\RunWizardApp_tmp.pl' );
+	push( @cmd, 'y:\server\site_data\Scripts\Programs\Panelisation\PnlWizard\RunPnlWizard\RunWizardApp_tmp.pl '. $jobName );
 	 
 
 	my $cmdStr = join( " ", @cmd );
@@ -1172,12 +1178,19 @@ use Win32::Process;
 			
 			 }
 			
+			if( CamJob->GetSignalLayerCnt($inCAM, $jobName) > 2){
+					my $res = DoCuUsageChange->RepairCuUsage( $inCAM, $jobName );
 			
-			
-				
+					if($res){
+						last;
+					}
+			}else{
+						last;
+			}
+	  }
  
 
-	my $res = DoCuUsageChange->RepairCuUsage( $inCAM, $jobName );
+	
 			
 
 			
@@ -1305,8 +1318,8 @@ use Win32::Process;
 			set_plot_parameters($jobName);
 			
 			
-			# Here is set attribut in job Gold_fingers
-			_SetAttrGoldHolder("$jobName");
+#			# Here is set attribut in job Gold_fingers
+#			_SetAttrGoldHolder("$jobName");
 			
 			# Here run scheme 
 			#$inCAM->COM ('autopan_run_scheme',job=>"$jobName",panel=>EnumsProducPanel->PANEL_NAME,pcb=>"$stepName",scheme=>"$schema");
@@ -2128,10 +2141,10 @@ sub _CheckExistStackup {
 sub _SetAttrGoldHolder {
 		my $jobId = shift;
 	
-				my %result = CamGoldArea->GetGoldFingerArea(18, 1.50, $inCAM, $jobId, 'panel');	# If exist attr .gold_plating
+				my $gold =  CamGoldArea->GoldFingersExist( $inCAM, $jobId, "o+1");
 				my $surface = HegMethods->GetPcbSurface($jobId);									# If exist surface 'plosne galvanicke zlaceni'
 
-				if ($result{"exist"} == 1 or $surface eq 'G') {
+				if ($gold == 1 or $surface eq 'G') {
 						CamJob->SetJobAttribute($inCAM, 'goldholder', 'yes', $jobId);
 				}else{
 						CamJob->SetJobAttribute($inCAM, 'goldholder', 'no', $jobId);

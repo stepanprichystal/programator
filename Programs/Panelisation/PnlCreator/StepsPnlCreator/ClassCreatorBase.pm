@@ -402,15 +402,9 @@ sub _Check {
 		}
 		elsif ( $self->GetActionType() eq Enums->StepPlacementMode_MANUAL ) {
 
-			if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_NA ) {
+			if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_NA || $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_FAIL ) {
 
 				# OK, Auto part placement will return panel resutls
-
-			}
-			elsif ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_FAIL ) {
-
-				$result = 0;
-				$$errMess .= "Manual panel step palcement is not set";
 
 			}
 			elsif ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
@@ -616,7 +610,7 @@ sub _Process {
 			StepProfile->ReplaceCvrlpinSteps( $inCAM, $self->{"jobId"}, $self->GetStep() );
 
 		}
-		elsif ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_NA ) {
+		elsif ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_NA  ||  $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_FAIL ) {
 
 			$self->__ClearSteps($inCAM);
 

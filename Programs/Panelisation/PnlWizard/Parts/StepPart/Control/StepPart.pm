@@ -415,6 +415,7 @@ sub EnableCreators {
 	my $self       = shift;
 	my $partId     = shift;    # Previous part
 	my $creatorKey = shift;    # Selected creator from previous part
+	my $setDefault = shift // 1; # set default creator
 
 	# Disable specific creators depand on preview part (size creator)
 	if ( $partId eq Enums->Part_PNLSIZE ) {
@@ -513,7 +514,7 @@ sub EnableCreators {
 		}
 
 		# Select creator
-		$self->{"form"}->SetSelectedCreator($selectedCreator);
+		$self->{"form"}->SetSelectedCreator($selectedCreator) if($setDefault);
 
 		# Enable/diasble step cretors
 		$self->{"form"}->EnableCreators( \@enableCreators );

@@ -189,7 +189,8 @@ sub RefreshGUI {
 		my $partPrev = $self->{"parts"}->[ $i - 1 ] if ( $i > 0 );
 
 		if ( defined $partPrev ) {
-			$self->{"parts"}->[$i]->EnableCreators( $partPrev->GetPartId(), $partPrev->GetModel(1)->GetSelectedCreator() )
+			$self->{"parts"}->[$i]
+			  ->EnableCreators( $partPrev->GetPartId(), $partPrev->GetModel(1)->GetSelectedCreator(), $eventsOff ? 0 : 1 )
 
 		}
 	}
