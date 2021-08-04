@@ -23,6 +23,7 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'Packages::Reorder::Enums';
+use aliased 'Helpers::JobHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Public method
@@ -38,7 +39,7 @@ sub new {
 
 # Delete and add new schema
 sub Run {
-	my $self = shift;
+	my $self    = shift;
 	my $errMess = shift;
 	my $infMess = shift;
 
@@ -65,6 +66,7 @@ sub Run {
 		# 2) Delete old schema + all from panel board layer (if autopan_delete, it doesnt delete non schema features)
 
 		my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+		my $isFlex = JobHelper->GetIsFlex($jobId);
 
 		my @steps = CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
 
@@ -87,26 +89,39 @@ sub Run {
 
 		if ( $layerCnt <= 2 ) {
 
-			$schema = "1a2v";
+			if ($isFlex) {
+				$schema = "flex_2v";
+			}
+			else {
+				$schema = "rigid_2v";
+			}
+
 		}
 		else {
 
-			my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
-
-			my $pnlH = abs( $lim{"yMax"} - $lim{"yMin"} );
-
-			use constant tol => 2;
-			if ( abs( $pnlH - 407 ) < tol ) {
-				$schema = '4v-407';
-			}
-			elsif ( abs( $pnlH - 485 ) < tol ) {
-				$schema = '4v-485';
-			}
-			elsif ( abs( $pnlH - 538 ) < tol ) {
-				$schema = '4v-538';
+			if ($isFlex) {
+				
+				$schema = 'hybrid_vv_458';
 			}
 			else {
-				die "Schema was not found for panel height: $pnlH mm.";
+
+				my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
+
+				my $pnlH = abs( $lim{"yMax"} - $lim{"yMin"} );
+
+				use constant tol => 2;
+				if ( abs( $pnlH - 407 ) < tol ) {
+					$schema = 'rigid_vv_407';
+				}
+				elsif ( abs( $pnlH - 485 ) < tol ) {
+					$schema = 'rigid_vv_485';
+				}
+				elsif ( abs( $pnlH - 538 ) < tol ) {
+					$schema = 'rigid_vv_538';
+				}
+				else {
+					die "Schema was not found for panel height: $pnlH mm.";
+				}
 			}
 		}
 		$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => "panel", "pcb" => $steps[0]->{"stepName"}, "scheme" => $schema );

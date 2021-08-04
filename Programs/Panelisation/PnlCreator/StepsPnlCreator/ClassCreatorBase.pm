@@ -238,18 +238,30 @@ sub _Init {
 					# space 10
 					$defSpacing = ( grep { $_->GetSpaceX() == 10 && $_->GetSpaceY() == 10 } @spacings )[0];
 
-				}else{
-					
-					
+				}
+				else {
+
 					# space 4.5
 					$defSpacing = ( grep { $_->GetSpaceX() == 4.5 && $_->GetSpaceY() == 4.5 } @spacings )[0];
 				}
 
-			}else{
-				
-				# space 4.5
-					$defSpacing = ( grep { $_->GetSpaceX() == 4.5 && $_->GetSpaceY() == 4.5 } @spacings )[0];
 			}
+			else {
+
+				# space 4.5
+				$defSpacing = ( grep { $_->GetSpaceX() == 4.5 && $_->GetSpaceY() == 4.5 } @spacings )[0];
+			}
+
+			# Check if default spacing is smaller than 6.5 if score
+
+			if ( defined $defSpacing 
+			&& ( $defSpacing->GetSpaceX() < 6.5 || $defSpacing->GetSpaceY() < 6.5 ) 
+			&& CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
+				
+				# space 6.5
+				$defSpacing = ( grep { $_->GetSpaceX() == 6.5 && $_->GetSpaceY() == 6.5 } @spacings )[0];
+			}
+
 		}
 
 		# Take first as default
@@ -590,7 +602,7 @@ sub _Process {
 		}
 
 		# Store result data (total step cnt)
-		$resultData->{"utilization"} = $autoRes{"utilization"} if($result);
+		$resultData->{"utilization"} = $autoRes{"utilization"} if ($result);
 
 	}
 	elsif ( $self->GetActionType() eq Enums->StepPlacementMode_MANUAL ) {

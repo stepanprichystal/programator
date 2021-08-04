@@ -115,19 +115,19 @@ sub AddPanelSchema {
 
 	if ( $layerCnt <= 2 ) {
 
-		$schema = "1a2v";
+		$schema = "rigid_2v";
 	}
 	else {
 
 		if ( $self->{"panelType"} eq EnumsProducPanel->SIZE_MULTILAYER_SMALL ) {
-			$schema = '4v-407';
+			$schema = 'rigid_vv_407';
 		}
 		elsif ( $self->{"panelType"} eq EnumsProducPanel->SIZE_MULTILAYER_BIG ) {
-			$schema = '4v-485';
+			$schema = 'rigid_vv_485';
 
 		}
 		elsif ( $self->{"panelType"} eq EnumsProducPanel->SIZE_MULTILAYER_538 ) {
-			$schema = '4v-538';
+			$schema = 'rigid_vv_538';
 		}
 	}
 

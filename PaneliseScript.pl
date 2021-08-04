@@ -1384,12 +1384,12 @@ use Win32::Process;
 						CamJob->SetJobAttribute($inCAM, 'customer_panel', 'no', $jobName);
 				}
 				
-			# Set attributes conserning sada on panel
-				if ($panelSet eq 'sadaPanel') {
-						_SetSadaCustomer($jobName);
-				}else{
-						CamJob->SetJobAttribute($inCAM, 'customer_set', 'no', $jobName);
-				}
+#			# Set attributes conserning sada on panel
+#				if ($panelSet eq 'sadaPanel') {
+#						_SetSadaCustomer($jobName);
+#				}else{
+#						CamJob->SetJobAttribute($inCAM, 'customer_set', 'no', $jobName);
+#				}
 			
 			# Check if panel is ready for production
 			CheckPanel->RunCheckOfPanel($inCAM, $jobName);
