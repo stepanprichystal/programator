@@ -291,7 +291,6 @@ sub AddNCLayerType {
 
 		}
 
-
 		# Non plated NC layers
 		elsif ( $l->{"gROWname"} =~ /^d[0-9]*$/ || $l->{"gROWname"} =~ /^fsch_d$/ ) {
 
@@ -300,7 +299,7 @@ sub AddNCLayerType {
 			$l->{"technical"} = 0;
 
 		}
-		elsif ( $l->{"gROWname"} =~ /^ds[0-9]*$/ || $l->{"gROWname"} =~ /^fsch_ds$/) {
+		elsif ( $l->{"gROWname"} =~ /^ds[0-9]*$/ || $l->{"gROWname"} =~ /^fsch_ds$/ ) {
 
 			$l->{"type"}      = EnumsGeneral->LAYERTYPE_nplt_nDrillBot;
 			$l->{"plated"}    = 0;
@@ -623,7 +622,7 @@ sub AddLayerStartStop {
 				  entity_type     => 'matrix',
 				  entity_path     => "$jobId/matrix",
 				  data_type       => 'ROW',
-				  parameters      => "drl_end+drl_start+name+drl_dir+layer_type"
+				  parameters      => "drl_end+drl_start+name+drl_dir+layer_type+context"
 	);
 
 	my @arr = ( 1, 2 );
@@ -660,10 +659,11 @@ sub AddLayerStartStop {
 	my $sigLayerIdx = 1;
 	for ( my $i = 0 ; $i < scalar( @{ $inCAM->{doinfo}{gROWname} } ) ; $i++ ) {
 
-		my $lName = $inCAM->{doinfo}{gROWname}->[$i];
-		my $lType = $inCAM->{doinfo}{gROWlayer_type}->[$i];
+		my $lName   = $inCAM->{doinfo}{gROWname}->[$i];
+		my $lType   = $inCAM->{doinfo}{gROWlayer_type}->[$i];
+		my $context = $inCAM->{doinfo}{gROWcontext}->[$i];
 
-		if ( ( $lType eq "signal" || $lType eq "power_ground" || $lType eq "mixed" ) && $lName =~ /(^v\d+$)|^[cs]$/ ) {
+		if ( ( $lType eq "signal" || $lType eq "power_ground" || $lType eq "mixed" ) && $lName =~ /(^v\d+$)|^[cs]$/ && $context eq "board" ) {
 
 			push( @sigLayerMatrixOrder, $i + 1 );
 			$sigLayerOrder{$lName} = $sigLayerIdx;
@@ -961,7 +961,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	#my $layerName = "fstiffs";
 
-	my %res = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, "v", 1, 1 ,1);
+	my %res = CamDrilling->GetNCLayerInfo( $inCAM, $jobId, "v", 1, 1, 1 );
 
 	die;
 
