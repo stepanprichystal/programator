@@ -217,7 +217,7 @@ sub __GetFreePort {
 
 		my %porthash = (
 						 "tcp" => {
-									2010 => {
+									$curPort => {
 											  name => 'export'
 									}
 						 }

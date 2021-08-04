@@ -45,7 +45,7 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 
-	$self->_EnableLayoutSize(0);
+	$self->_EnableLayoutSize(1);
 
 	# DEFINE EVENTS
 

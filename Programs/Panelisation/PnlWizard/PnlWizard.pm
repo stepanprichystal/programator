@@ -114,10 +114,11 @@ sub new {
 sub Init {
 	my $self     = shift;
 	my $launcher = shift;
+
 	# contain InCAM library conencted to server
-	
+
 	$self->{"launcher"} = $launcher;
- 
+
 	$self->{"form"} = PnlWizardForm->new( -1, $launcher->GetInCAM(), $self->{"jobId"}, $self->{"pnlType"} );
 
 	$self->{"storageModelMngr"} = StorageModelMngr->new( $self->{"jobId"}, $self->{"pnlType"} );
@@ -131,7 +132,6 @@ sub Init {
 	$self->{"inCAM"} = $launcher->GetInCAM();
 
 	$self->{"inCAM"}->SupressToolkitException();
- 
 
 	$self->{"partContainer"} = PartContainer->new( $self->{"jobId"}, $self->{"backgroundTaskMngr"} );
 
@@ -206,11 +206,8 @@ sub Init {
 	$self->__InCAMEditorPreviewMode(1);
 
 	print STDERR "Init model async START\n";
-	
-	# Call async init for first part. I cause setting changed evnets.
-	# It allows to change settings in next part based on this event
-	$self->{"partContainer"}->AsyncInitSelCreatorModel(   ($self->{"partContainer"}->GetParts())[0]->GetPartId());
-	print STDERR "Init model async END\n";
+
+ 
 
 	#
 	#$self->{"partContainer"}->RefreshWrapper();
@@ -284,7 +281,7 @@ sub __OnCancelClickHndl {
 		die "Some background task are running ( " . $self->{"backgroundTaskMngr"}->GetCurrentTasksCnt() . ")";
 	}
 
-	$self->__StoreModelToDisc();
+	 
 
 	# Restore backuped step
 	if ( defined $self->{"pnlStepBackup"} && CamHelper->StepExists( $self->{"inCAM"}, $self->{"jobId"}, $self->{"pnlStepBackup"} ) ) {
@@ -386,8 +383,11 @@ sub __OnLoadLastClickHndl {
 	my $restoredModel = $self->{"storageModelMngr"}->LoadModel();
 	$self->{"model"} = $restoredModel;    # update model
 
+	 
 	# Set main form
 	$self->__RefreshGUI();
+
+	
 
 	# Set parts
 
@@ -411,6 +411,7 @@ sub __OnLoadDefaultClickHndl {
 
 	$self->{"partContainer"}->InitPartModel( $self->{"inCAM"} );    # Load generally model
 	$self->{"partContainer"}->RefreshGUI();
+	$self->{"partContainer"}->SetPreviewOffAllPart();    # Do not load preview
 	$self->{"partContainer"}->AsyncInitSelCreatorModel();           # Load asynchronously selected model
 
 }

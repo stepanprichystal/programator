@@ -154,7 +154,6 @@ sub __SetLayoutJobList {
 	$szRow4->Add( $ISJobByNameIndicator, 10, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szStatBox->Add( $szRow0, 0, &Wx::wxEXPAND );
-	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
 	$szStatBox->AddSpacer(5);
 	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND );
 	$szStatBox->AddSpacer(2);

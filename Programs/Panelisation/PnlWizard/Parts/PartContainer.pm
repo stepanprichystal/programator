@@ -11,6 +11,7 @@ use Class::Interface;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw(first);
 
 #local library
 use aliased 'CamHelpers::CamStep';
@@ -49,6 +50,8 @@ sub new {
 	$self->{"previewOnAllPartsProcessing"} = 0;     # Helper indicator if preview all parts is running
 	$self->{"finalCreatePanelProcessing"}  = 0;     # Helper indicator if final panel create
 	$self->{"partsInProcessing"}           = [];    # helper array wjhere are parts to processing
+	$self->{"partsInitedAfterLaunch"}      = [];    # all parts wchich was inited after app start
+	$self->{"allPartsInitedAfterLaunch"}   = 0;
 
 	return $self;
 }
@@ -97,7 +100,7 @@ sub Init {
 
 		$part->{"previewChangedEvt"}->Add( sub        { $self->__OnPreviewChangedHndl(@_) } );
 		$part->{"asyncCreatorProcessedEvt"}->Add( sub { $self->__OnAsyncCreatorProcessedHndl(@_) } );
-		$part->{"asyncCreatorInitedEvt"}->Add( sub    { $self->__OnAsyncCreatorInitedHndl(@_) } );
+		$part->{"asyncCreatorInitedEvt"}->Add( sub    { $self->__FirstInitCompleted( $part->GetPartId() ); $self->__OnAsyncCreatorInitedHndl(@_) } );
 		$part->{"showPnlWizardFrmEvt"}->Add( sub      { $self->{"showPnlWizardFrmEvt"}->Do(@_) } );
 
 	}
@@ -481,6 +484,8 @@ sub __OnAsyncCreatorInitedHndl {
 	my $result     = shift;
 	my $errMess    = shift;
 
+	print STDERR "\nCreator Inited: $creatorKey\n\n";
+
 }
 
 # Handler for final process all parts
@@ -536,6 +541,39 @@ sub __OnAsyncProcessSelCreatorModelHndl {
 	}
 
 	return 1;
+
+}
+
+# After first init of all creators, setting change event is raised
+# default part settings of other creators can rely on on preview parts
+sub __FirstInitCompleted {
+	my $self   = shift;
+	my $partId = shift;
+
+	return 0 if ( $self->{"allPartsInitedAfterLaunch"} );
+
+	my $partExist = first { $_ eq $partId } @{ $self->{"partsInitedAfterLaunch"} };
+
+	if ( !defined $partExist ) {
+
+		push( @{ $self->{"partsInitedAfterLaunch"} }, $partId );
+	}
+
+	if ( scalar( @{ $self->{"partsInitedAfterLaunch"} } ) eq scalar( @{ $self->{"parts"} } ) ) {
+
+		$self->{"allPartsInitedAfterLaunch"} = 1;
+
+		# Reise Setttings changed event on each part, because default part settings can rely on on preview parts
+
+		foreach my $part ( @{ $self->{"parts"} } ) {
+
+			my $creator     = $part->GetModel(0)->GetSelectedCreator();
+			my $creatorSett = $part->GetModel(0)->GetCreatorModelByKey($creator);
+
+			$part->{"creatorSettingsChangedEvt"}->Do( $part->GetPartId(), $creator, $creatorSett );
+
+		}
+	}
 
 }
 

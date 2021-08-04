@@ -108,6 +108,8 @@ sub __OnManualPlacementHndl {
 	my $self      = shift;
 	my $pauseText = shift;
 
+	my $result = 0; # succes / failure od manual step placement
+
 	# Check if preview mode is active
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
@@ -125,39 +127,20 @@ sub __OnManualPlacementHndl {
 	# Do check of selected creator
 	my $creatorKey   = $self->{"form"}->GetSelectedCreator();
 	my $creatorModel = $self->{"form"}->GetCreators($creatorKey)->[0];
-	$creatorModel->SetManualPlacementJSON(undef);
-	$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_NA );
 
-	my $creator = CreatorHelper->GetPnlCreatorByKey( $self->{"jobId"}, $self->{"pnlType"}, $creatorKey );
-
-	$creator->ImportSettings( $creatorModel->ExportCreatorSettings() );
-
-	my $errMess = "";
-	my $result  = 0;    # succes / failure od manual step placement
-
-	if ( $creator->Check( $inCAM, \$errMess ) ) {
+	# If panel is laready adjusted, only show InCAM
+	if ( $creatorModel->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
 
 		my $step = $creatorModel->GetStep();
-
-		# Remove steps
-		if (    $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
-			 || $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG )
-		{
-
-			foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
-				CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} );
-			}
-		}
 
 		$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
 		CamHelper->SetStep( $inCAM, $step );
 
 		# Hide form
 		$self->{"showPnlWizardFrmEvt"}->Do(0);
-
 		while (1) {
 
-			$inCAM->PAUSE($pauseText);
+			$inCAM->PAUSE("Edit panel and continue.");
 
 			my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
 
@@ -179,8 +162,6 @@ sub __OnManualPlacementHndl {
 			}
 
 		}
-
-		$self->{"showPnlWizardFrmEvt"}->Do(1);
 
 		# Show form
 
@@ -213,16 +194,112 @@ sub __OnManualPlacementHndl {
 
 		}
 
+		$self->{"showPnlWizardFrmEvt"}->Do(1);
+
 	}
 	else {
 
-		my $messMngr = $self->{"partWrapper"}->GetMessMngr();
-		my @mess     = ();
-		push( @mess, "Check before manual panel pick/adjus failed. Detail:\n\n" );
-		push( @mess, $errMess );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+		$creatorModel->SetManualPlacementJSON(undef);
+		$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_NA );
 
+		my $creator = CreatorHelper->GetPnlCreatorByKey( $self->{"jobId"}, $self->{"pnlType"}, $creatorKey );
+
+		$creator->ImportSettings( $creatorModel->ExportCreatorSettings() );
+
+		my $errMess = "";
+		
+
+		if ( $creator->Check( $inCAM, \$errMess ) ) {
+
+			my $step = $creatorModel->GetStep();
+
+			# Remove steps
+			if (    $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSUSER
+				 || $creatorKey eq PnlCreEnums->StepPnlCreator_CLASSHEG )
+			{
+
+				foreach my $s ( CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step ) ) {
+					CamStepRepeat->DeleteStepAndRepeat( $inCAM, $jobId, $step, $s->{"stepName"} );
+				}
+			}
+
+			$inCAM->COM( "set_subsystem", "name" => "Panel-Design" );
+			CamHelper->SetStep( $inCAM, $step );
+
+			# Hide form
+			$self->{"showPnlWizardFrmEvt"}->Do(0);
+
+			while (1) {
+
+				$inCAM->PAUSE($pauseText);
+
+				my @steps = CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, $step );
+
+				if ( scalar(@steps) == 0 ) {
+
+					my $messMngr = $self->{"partWrapper"}->GetMessMngr();
+					my @mess     = ();
+					push( @mess, "There is no nested step in panel. Do you want continue?\n" );
+
+					$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess, [ "No, I will correct panel", "Yes, it is OK" ] );
+
+					if ( $messMngr->Result() == 1 ) {
+						last;
+					}
+				}
+				else {
+
+					last;
+				}
+
+			}
+
+			$self->{"showPnlWizardFrmEvt"}->Do(1);
+
+			# Show form
+
+			my $pnlToJSON = PnlToJSON->new( $inCAM, $jobId, $step );
+
+			my $errMessJSON = "";
+
+			if ( $pnlToJSON->CheckBeforeParse( \$errMessJSON ) ) {
+
+				my $JSON = $pnlToJSON->ParsePnlToJSON( 1, 1, 0, 0 );
+
+				if ( defined $JSON ) {
+
+					$creatorModel->SetManualPlacementJSON($JSON);
+					$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_OK );
+
+					$result = 1;
+				}
+
+			}
+			else {
+
+				$self->{"showPnlWizardFrmEvt"}->Do(1);
+
+				my $messMngr = $self->{"partWrapper"}->GetMessMngr();
+				my @mess     = ();
+				push( @mess, "Manual step placement failed. Detail:\n\n" );
+				push( @mess, $errMessJSON );
+				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+
+			}
+
+		}
+		else {
+
+			my $messMngr = $self->{"partWrapper"}->GetMessMngr();
+			my @mess     = ();
+			push( @mess, "Check before manual panel pick/adjus failed. Detail:\n\n" );
+			push( @mess, $errMess );
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
+
+		}
 	}
+
+	$creatorModel->SetManualPlacementStatus( EnumsGeneral->ResultType_FAIL ) unless ($result);
 
 	# Update form
 	$self->{"frmHandlersOff"} = 1;

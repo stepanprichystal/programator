@@ -24,6 +24,7 @@ use aliased 'Packages::CAMJob::Stackup::StackupCheck';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'CamHelpers::CamJob';
+
 #use aliased 'CamHelpers::CamMatrix';
 #use aliased 'CamHelpers::CamHelper';
 #use aliased 'CamHelpers::CamLayer';
@@ -65,8 +66,8 @@ sub RepairCuUsage {
 
 		my @innerCuUsage = ();
 		StackupCheck->CuUsageCheck( $inCAM, $jobId, \@innerCuUsage );
-		
-		die "No inner layers in list" if(scalar(@innerCuUsage) == 0);
+
+		die "No inner layers in list" if ( scalar(@innerCuUsage) == 0 );
 
 		my @mess = (@messHead);
 
@@ -159,7 +160,7 @@ sub RepairCuUsage {
 		my @autoCorrection = ();
 		my @manCorrection  = ();
 		foreach my $l (@innerCuUsage) {
-		 
+
 			push( @autoCorrection, $l ) if ( $l->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_INCREASE );
 			push( @manCorrection,  $l ) if ( $l->{"status"} eq Packages::CAMJob::Stackup::StackupCheck::USAGE_DECREASE );
 		}
@@ -204,17 +205,16 @@ sub RepairCuUsage {
 				# manual
 				next;
 			}
-
-			else {
-
-				# No autocorrection no manual correction
-
-				my @btn = ["Pokračovat"];
-				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, @btn );
-				last;
-			}
-
 		}
+		else {
+
+			# No autocorrection no manual correction
+
+			my @btn = ["Pokračovat"];
+			$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess, @btn );
+			last;
+		}
+
 	}
 
 	return $result;

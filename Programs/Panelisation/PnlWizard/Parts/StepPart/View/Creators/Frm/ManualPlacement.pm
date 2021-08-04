@@ -149,19 +149,19 @@ sub __BtnRefresh {
 
 	if ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_NA ) {
 
-		$self->{"actionBtn"}->Enable();
+		#$self->{"actionBtn"}->Enable();
 		$self->{"clearBtn"}->Disable();
 
 	}
 	elsif ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_OK ) {
 
-		$self->{"actionBtn"}->Disable();
+		#$self->{"actionBtn"}->Disable();
 		$self->{"clearBtn"}->Enable();
 
 	}
 	elsif ( $self->GetManualPlacementStatus() eq EnumsGeneral->ResultType_FAIL ) {
 
-		$self->{"actionBtn"}->Enable();
+		#$self->{"actionBtn"}->Enable();
 		$self->{"clearBtn"}->Disable();
 
 	}

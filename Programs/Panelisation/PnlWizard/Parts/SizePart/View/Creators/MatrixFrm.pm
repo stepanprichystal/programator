@@ -74,7 +74,7 @@ sub __SetLayout {
 	# BUILD STRUCTURE OF LAYOUT
 	# SAVE REFERENCES
 
-	$self->_EnableLayoutSize(0);
+	$self->_EnableLayoutSize(1);
 
 }
 

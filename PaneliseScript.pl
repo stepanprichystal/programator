@@ -9,6 +9,7 @@ use Tk::LabFrame;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use File::Path qw( rmtree );
 use List::MoreUtils qw(uniq);
+use Win32::Clipboard;
 
 #use LoadLibrary;
 #use GenesisHelper;
@@ -1057,22 +1058,9 @@ sub _Panelize {
 			
 			
 			
-#			
-#				
-#						# Here is made stackup for pcb
-#			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
-#						unless (_CheckExistStackup($jobName) == 1) {
-#									_MakeStackup($jobName);
-#						}else{
-#								my @errorList =	("Slozeni je jiz vytvoreno, NEGENERUJI");
-#
-#								my $messMngr = MessageMngr->new($pcbId);
-#								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
-#						}
-#			} 
-#			
 			
-			# Here is made stackup for pcb
+				
+						# Here is made stackup for pcb
 			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
 						unless (_CheckExistStackup($jobName) == 1) {
 									_MakeStackup($jobName);
@@ -1082,7 +1070,20 @@ sub _Panelize {
 								my $messMngr = MessageMngr->new($pcbId);
 								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
 						}
-			} 	
+			} 
+			
+			
+#			# Here is made stackup for pcb
+#			if (HegMethods->GetTypeOfPcb($jobName) eq 'Vicevrstvy') {
+#						unless (_CheckExistStackup($jobName) == 1) {
+#									_MakeStackup($jobName);
+#						}else{
+#								my @errorList =	("Slozeni je jiz vytvoreno, NEGENERUJI");
+#
+#								my $messMngr = MessageMngr->new($pcbId);
+#								$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, \@errorList ); 
+#						}
+#			} 	
 			
 			
 			
@@ -2070,11 +2071,16 @@ sub _MakeStackup {
   				if (HegMethods->GetPcbIsPool($jobId) == 1) {
   										StackupDefault->CreateStackup($inCAM, $jobId, $countOfLayer, \@innerCuUsage, $newThicknessCopper, $constClass);
   				}else{
+  					
+  							my $CLIP = Win32::Clipboard();
+  							my $name = $jobId . ".xml";
+							$CLIP->Set($name  );
+  					
+  					
   							my $thickOfPcb = sprintf "%.2f",(HegMethods->GetPcbMaterialThick($jobId) );
   							$thickOfPcb =~ s/\./,/g;
   							
-							my @mess1 = ("Pocet vrstev = $countOfLayer, Vrstva medi = $newThicknessCopper, Konstrukcni trida = $constClass, Vyuziti medi = @innerCuUsage \n\U$jobId\E_\U$countOfLayer\Evv_" . $thickOfPcb . "_$customerName
-  								");
+							my @mess1 = ("Pocet vrstev = $countOfLayer, Vrstva medi = $newThicknessCopper, Konstrukcni trida = $constClass, Vyuziti medi = @innerCuUsage, Nazev = $name");
 							my @btn = ("Pokracovat - slozeni jsem vytvoril", "Vytvorit standardni slozeni"); # "ok" = tl. cislo 1, "table tools" = tl.cislo 2
 						
 							my $messMngr = MessageMngr->new("$jobId");

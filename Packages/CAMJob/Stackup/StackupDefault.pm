@@ -137,37 +137,47 @@ sub CreateStackup {
 
 }
 
+
 # Generate standard stackup file name
 sub GetStackupName {
 	my $self    = shift;
 	my $stackup = shift;
 	my $pcbId   = shift;
 
-	my $lCount   = $stackup->GetCuLayerCnt();
-	my $pcbThick = $stackup->GetFinalThick();
-
-	$pcbThick = sprintf( "%4.3f", ( $pcbThick / 1000 ) );
-	$pcbThick =~ s/\./\,/g;
-
-	my %customerInfo = %{ HegMethods->GetCustomerInfo($pcbId) };
-
-	my $customer = $customerInfo{"customer"};
-
-	if ($customer) {
-		$customer =~ s/\s//g;
-		$customer = substr( $customer, 0, 8 );
-	}
-	else {
-		$customer = "";
-	}
-
-	if ( $customer =~ /safiral/i )    #exception for safiral
-	{
-		$customer = "";
-	}
-
-	return $pcbId . "_" . $lCount . "vv" . "_" . $pcbThick . "_" . $customer;
+	return $pcbId;
 }
+
+## Generate standard stackup file name
+#sub GetStackupName {
+#	my $self    = shift;
+#	my $stackup = shift;
+#	my $pcbId   = shift;
+#
+#	my $lCount   = $stackup->GetCuLayerCnt();
+#	my $pcbThick = $stackup->GetFinalThick();
+#
+#	$pcbThick = sprintf( "%4.3f", ( $pcbThick / 1000 ) );
+#	$pcbThick =~ s/\./\,/g;
+#
+#	my %customerInfo = %{ HegMethods->GetCustomerInfo($pcbId) };
+#
+#	my $customer = $customerInfo{"customer"};
+#
+#	if ($customer) {
+#		$customer =~ s/\s//g;
+#		$customer = substr( $customer, 0, 8 );
+#	}
+#	else {
+#		$customer = "";
+#	}
+#
+#	if ( $customer =~ /safiral/i )    #exception for safiral
+#	{
+#		$customer = "";
+#	}
+#
+#	return $pcbId . "_" . $lCount . "vv" . "_" . $pcbThick . "_" . $customer;
+#}
 
 #Load xml stackup for pcb
 sub _LoadStandardStackup {

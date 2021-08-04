@@ -42,6 +42,7 @@ sub new {
 	$self->{"settings"}->{"borderRight"} = 0;
 	$self->{"settings"}->{"borderTop"}   = 0;
 	$self->{"settings"}->{"borderBot"}   = 0;
+
 	#$self->{"settings"}->{"activeAreaW"} = 0;
 	#$self->{"settings"}->{"activeAreaH"} = 0;
 
@@ -65,12 +66,15 @@ sub Init {
 	my $result = 1;
 
 	$self->SetStep($stepName);
-	
+
 	# Set defualt active area 100mm
 	# If active area would have dimension 0x0mm, InCAM is unable to return active area limits
 	# Thats why 100mm
-	
- 
+
+	$self->SetBorderLeft(10);
+	$self->SetBorderRight(10);
+	$self->SetBorderTop(10);
+	$self->SetBorderBot(10);
 
 	return $result;
 
@@ -86,38 +90,37 @@ sub Check {
 
 	my $result = 1;
 
-	 
-	my $bL    = $self->GetBorderLeft();
-	my $bR    = $self->GetBorderRight();
-	my $bT    = $self->GetBorderTop();
-	my $bB    = $self->GetBorderBot();
-#
-#	if ( !defined $areaH || $areaH eq "" || !looks_like_number($areaH) ) {
-#
-#		$result = 0;
-#		$$errMess .= "Panel active area height is not defined.\n";
-#	}
-#	else {
-#
-#		if ( $areaH < MINAREA ) {
-#
-#			$result = 0;
-#			$$errMess .= "Panel active area (${areaH}mm) height has to be larget than:" . MINAREA;
-#		}
-#
-#	}
-#
-#	if ( !defined $areaW || $areaW eq "" || !looks_like_number($areaW) ) {
-#
-#		$result = 0;
-#		$$errMess .= "Panel active area width is not defined.\n";
-#
-#		if ( $areaW < MINAREA ) {
-#
-#			$result = 0;
-#			$$errMess .= "Panel active area (${areaW}mm) height has to be larget than:" . MINAREA;
-#		}
-#	}
+	my $bL = $self->GetBorderLeft();
+	my $bR = $self->GetBorderRight();
+	my $bT = $self->GetBorderTop();
+	my $bB = $self->GetBorderBot();
+	#
+	#	if ( !defined $areaH || $areaH eq "" || !looks_like_number($areaH) ) {
+	#
+	#		$result = 0;
+	#		$$errMess .= "Panel active area height is not defined.\n";
+	#	}
+	#	else {
+	#
+	#		if ( $areaH < MINAREA ) {
+	#
+	#			$result = 0;
+	#			$$errMess .= "Panel active area (${areaH}mm) height has to be larget than:" . MINAREA;
+	#		}
+	#
+	#	}
+	#
+	#	if ( !defined $areaW || $areaW eq "" || !looks_like_number($areaW) ) {
+	#
+	#		$result = 0;
+	#		$$errMess .= "Panel active area width is not defined.\n";
+	#
+	#		if ( $areaW < MINAREA ) {
+	#
+	#			$result = 0;
+	#			$$errMess .= "Panel active area (${areaW}mm) height has to be larget than:" . MINAREA;
+	#		}
+	#	}
 
 	if (    !defined $bL
 		 || !defined $bR
@@ -160,10 +163,10 @@ sub Process {
 
 	#my $areaH = $self->GetActiveAreaH();
 	#my $areaW = $self->GetActiveAreaW();
-	my $bL    = $self->GetBorderLeft();
-	my $bR    = $self->GetBorderRight();
-	my $bT    = $self->GetBorderTop();
-	my $bB    = $self->GetBorderBot();
+	my $bL = $self->GetBorderLeft();
+	my $bR = $self->GetBorderRight();
+	my $bT = $self->GetBorderTop();
+	my $bB = $self->GetBorderBot();
 
 	$self->_CreateStep($inCAM);
 
@@ -201,9 +204,9 @@ sub Process {
 	# Check if there are SR
 
 	unless ( scalar(@sr) ) {
-		
+
 		# Unless exist SR, it means, set default active area
-		
+
 		my $w = MINAREA + $bL + $bR;
 		my $h = MINAREA + $bT + $bB;
 
@@ -211,7 +214,7 @@ sub Process {
 
 	}
 	else {
-		
+
 		# if exist SR,  use existing active area
 
 		my $w = $oriAreaW + $bL + $bR;

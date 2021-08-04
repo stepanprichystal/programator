@@ -53,7 +53,7 @@ sub StackupExist {
 
 	my $inStack = ( -e EnumsPaths->Jobs_COUPONS . "$jobId.xml" );
 
-	my $multicall = ( FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId . "_" ) );
+	my $multicall = ( FileHelper->GetFileNameByPattern( EnumsPaths->Jobs_STACKUPS, $jobId ) );
 
 	if ( $inStack || $multicall ) {
 

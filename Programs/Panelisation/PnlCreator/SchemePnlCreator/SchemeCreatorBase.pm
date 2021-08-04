@@ -101,8 +101,13 @@ sub _Init {
 		}
 
 		# Get special scheme for customers
-		my @spec = grep { $_ =~ /^mpanel/ } @allScheme;
-		push( @specSchemes, @spec ) if ( scalar(@spec) );
+		@specSchemes = grep { $_ =~ /^mpanel/ } @allScheme;
+		
+		# In some cases customer wants scheme of another producer
+		my @allCust = grep {  $_ =~ /^cust_/ } @allScheme;
+		push( @specSchemes,  @allCust) if(@allCust);
+		
+		#push( @specSchemes, @spec ) if ( scalar(@spec) );
 
 		# Set default type
 		if ( scalar(@stdSchemes) > 0 ) {
@@ -157,7 +162,7 @@ sub _Init {
 			$pcbMatTypeStr = "hybrid";
 
 		}
-		elsif ( $isFlex ) {
+		elsif ($isFlex) {
 
 			$pcbMatTypeStr = "flex";
 
@@ -176,7 +181,7 @@ sub _Init {
 		$schemeType = "standard";
 
 		# Set default scheme
-		
+
 		$scheme = $stdSchemes[0];
 
 	}

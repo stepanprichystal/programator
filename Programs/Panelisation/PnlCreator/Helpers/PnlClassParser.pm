@@ -172,8 +172,38 @@ sub AddCustomSizeToClass {
 	$size->SetHeight($height);
 
 	if ($addAllBorderSpacing) {
-		$size->SetBorders(  [ uniq( map { $_->GetBorders() } $class->GetSizes() ) ] );
-		$size->SetSpacings( [ uniq( map { $_->GetSpacings() } $class->GetSizes() ) ] );
+
+		my @uniqBorders = ();
+		foreach my $b ( map { $_->GetBorders() } $class->GetSizes() ) {
+
+			my $bFound = first {
+				     $_->GetBorderLeft() == $b->GetBorderLeft()
+				  && $_->GetBorderRight() == $b->GetBorderRight()
+				  && $_->GetBorderTop() == $b->GetBorderTop()
+				  && $_->GetBorderBot() == $b->GetBorderBot()
+			}
+			@uniqBorders;
+
+			push( @uniqBorders, $b ) unless ($bFound);
+		}
+
+		$size->SetBorders( \@uniqBorders );
+
+		my @uniqSpaces = ();
+		foreach my $s ( map { $_->GetSpacings() } $class->GetSizes() ) {
+
+			my $sFound = first {
+				$_->GetSpaceX() == $s->GetSpaceX()
+				  && $_->GetSpaceY() == $s->GetSpaceY()
+
+			}
+			@uniqSpaces;
+
+			push( @uniqSpaces, $s ) unless ($sFound);
+		}
+
+		$size->SetSpacings( \@uniqSpaces );
+ 
 	}
 
 	$class->AddSize($size);

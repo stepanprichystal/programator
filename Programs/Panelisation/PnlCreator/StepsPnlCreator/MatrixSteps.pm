@@ -112,6 +112,12 @@ sub Init {
 		my $defSpacing = undef;
 
 		# Set placement settings
+		
+		
+		$self->SetStepMultiplX(1);
+		$self->SetStepMultiplY(1);
+		
+		
 
 		if ( CamHelper->LayerExists( $inCAM, $jobId, "score" ) ) {
 
@@ -451,7 +457,7 @@ sub SetStepMultiplX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"stepMultiX"};
+	$self->{"settings"}->{"stepMultiX"} = $val;
 }
 
 sub GetStepMultiplX {
@@ -464,7 +470,7 @@ sub SetStepMultiplY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"stepMultiY"};
+	$self->{"settings"}->{"stepMultiY"}= $val;
 }
 
 sub GetStepMultiplY {
@@ -477,7 +483,7 @@ sub SetStepSpaceX {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"stepSpaceX"};
+	$self->{"settings"}->{"stepSpaceX"} = $val;
 }
 
 sub GetStepSpaceX {
@@ -490,7 +496,7 @@ sub SetStepSpaceY {
 	my $self = shift;
 	my $val  = shift;
 
-	$self->{"settings"}->{"stepSpaceY"};
+	$self->{"settings"}->{"stepSpaceY"}= $val;
 }
 
 sub GetStepSpaceY {
@@ -502,7 +508,7 @@ sub GetStepSpaceY {
 sub SetStepRotation {
 	my $self = shift;
 	my $val  = shift;
-	$self->{"settings"}->{"stepRotation"};
+	$self->{"settings"}->{"stepRotation"}= $val;
 }
 
 sub GetStepRotation {

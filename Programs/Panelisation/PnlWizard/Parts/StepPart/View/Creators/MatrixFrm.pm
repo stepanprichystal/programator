@@ -26,7 +26,8 @@ use aliased 'Programs::Panelisation::PnlWizard::Parts::StepPart::View::Creators:
 #-------------------------------------------------------------------------------------------#
 use constant SPACE0x0   => "0 x 0mm";
 use constant SPACE2x2   => "2 x 2mm";
-use constant SPACE45x45 => "4,5 x 4,5mm";
+use constant SPACE2_5x2_5   => "2,5 x 2,5mm";
+use constant SPACE4_5x4_5 => "4,5 x 4,5mm";
 use constant SPACE10x10 => "10 x 10mm";
 
 sub new {
@@ -172,7 +173,7 @@ sub __SetLayoutSpaces {
 
 	# DEFINE CONTROLS
 	my $choicesTxt = Wx::StaticText->new( $statBox, -1, "Quick choice:", &Wx::wxDefaultPosition, [ 10, 23 ] );
-	my @choices = ( SPACE0x0, SPACE2x2, SPACE45x45, SPACE10x10 );
+	my @choices = ( SPACE0x0, SPACE2x2, SPACE4_5x4_5, SPACE10x10 );
 	my $quickSpaceCb =
 	  Wx::ComboBox->new( $statBox, -1, $choices[1], &Wx::wxDefaultPosition, [ 10, 23 ], \@choices, &Wx::wxCB_READONLY );
 
@@ -198,9 +199,9 @@ sub __SetLayoutSpaces {
 	$szRow3->Add( $spaceYTxt,    1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow3->Add( $spaceValYTxt, 1, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szStatBox->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow2, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
+	$szStatBox->Add( $szRow3, 0, &Wx::wxEXPAND | &Wx::wxALL, 1 );
 
 	# save control references
 	$self->{"spaceValXTxt"} = $spaceValXTxt;
@@ -308,8 +309,13 @@ sub __OnQuickSpaceChanged {
 		$self->{"spaceValXTxt"}->SetValue(2);
 		$self->{"spaceValYTxt"}->SetValue(2);
 
+	}	elsif ( $quickSpaceType eq SPACE2_5x2_5 ) {
+
+		$self->{"spaceValXTxt"}->SetValue(2.5);
+		$self->{"spaceValYTxt"}->SetValue(2.5);
+
 	}
-	elsif ( $quickSpaceType eq SPACE45x45 ) {
+	elsif ( $quickSpaceType eq SPACE4_5x4_5 ) {
 
 		$self->{"spaceValXTxt"}->SetValue(4.5);
 		$self->{"spaceValYTxt"}->SetValue(4.5);

@@ -245,6 +245,10 @@ sub _Init {
 					$defSpacing = ( grep { $_->GetSpaceX() == 4.5 && $_->GetSpaceY() == 4.5 } @spacings )[0];
 				}
 
+			}else{
+				
+				# space 4.5
+					$defSpacing = ( grep { $_->GetSpaceX() == 4.5 && $_->GetSpaceY() == 4.5 } @spacings )[0];
 			}
 		}
 
