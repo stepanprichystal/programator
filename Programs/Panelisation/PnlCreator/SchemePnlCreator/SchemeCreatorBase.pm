@@ -394,6 +394,7 @@ sub _Process {
 		}
 	}
 
+	$inCAM->COM( 'autopan_delete',"job"=>$jobId,"panel"=>$step,"mode"=>"fill");
 	$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => $step, "pcb" => $nestedStep, "scheme" => $self->GetScheme() );
 
 	return $result;

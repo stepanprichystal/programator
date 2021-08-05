@@ -1273,38 +1273,7 @@ sub __CheckGroupDataExtend {
 		}
 	}
 
-	# X) If HAL PB and physical size of panel is larger than 460
-	my $maxHALPB = 460;    # max panel height for PB HAL
 
-	if ( $surface =~ /A/i && $layerCnt <= 2 ) {
-
-		if ( abs( $profLim{"yMax"} - $profLim{"yMin"} ) > $maxHALPB
-			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
-		{
-
-			$dataMngr->_AddErrorResult(
-										"Panel dimension",
-										"Nelze použít panel s výškou: "
-										  . abs( $profLim{"yMax"} - $profLim{"yMin"} )
-										  . "mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
-			);
-		}
-	}
-	elsif ( $surface =~ /A/i && $layerCnt > 2 ) {
-
-		my $pnl = StandardBase->new( $inCAM, $jobId );
-		if (    $pnl->GetStandardType() ne StdPnlEnums->Type_NONSTANDARD
-			 && $pnl->HFr() > $maxHALPB
-			 && ( !defined $cutPnl || $cutPnl =~ /^no$/i ) )
-		{
-			$dataMngr->_AddErrorResult(
-										"Panel dimension",
-										"Nelze použít panel s výškou (po ofrézování rámečku): "
-										  . $pnl->HFr()
-										  . " mm protože surface je olovnatý HAL. Panelizuj na panel s výškou max: $maxHALPB mm"
-			);
-		}
-	}
 
 	# If panel will be cut during production, check if there is proper set active area
 	if ( $cutPnl !~ /^no$/i ) {

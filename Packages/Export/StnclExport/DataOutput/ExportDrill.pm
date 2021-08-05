@@ -15,7 +15,8 @@ use aliased 'Helpers::GeneralHelper';
 use aliased 'Packages::ItemResult::ItemResult';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Export::NCExport::ExportMngr';
-
+use aliased 'Packages::Export::NCExport::Enums' => "ExportNCEnums";
+ 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
@@ -31,10 +32,9 @@ sub new {
 	$self->{"jobId"} = shift;
 	 
 	$self->{"step"} = "panel"; # step which stnecil data are exported from
-	$self->{"ncExport"} = ExportMngr->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"step"});
+	$self->{"ncExport"} = ExportMngr->new($self->{"inCAM"}, $self->{"jobId"}, $self->{"step"}, ExportNCEnums->ExportMode_ALL, 1);
 	$self->{"ncExport"}->{"onItemResult"}->Add( sub { $self->__OnExportResult(@_) } );
-	 
- 
+  
 
 	return $self;
 }
