@@ -117,7 +117,7 @@ sub __SetLayoutCpns {
 	my $IPC3Cpn = CpnSettFrm->new( $statBox, "IPC3" );
 
 	$IPC3Cpn->_AddPlacementType( PnlCreEnums->IPC3CpnType_1,
-								 "6 ks", GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . PnlCreEnums->ImpCpnType_1 . ".png" );
+								 "6 ks", GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . PnlCreEnums->IPC3CpnType_1 . ".png" );
 	$IPC3Cpn->_AddPlacementType( PnlCreEnums->IPC3CpnType_2,
 								 "6 ks",
 								 GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/" . PnlCreEnums->IPC3CpnType_2 . ".png" );
