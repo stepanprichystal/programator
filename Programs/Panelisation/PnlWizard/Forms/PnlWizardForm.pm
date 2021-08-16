@@ -29,9 +29,11 @@ use aliased 'Programs::Panelisation::PnlWizard::Enums';
 use aliased 'Packages::InCAMHelpers::AppLauncher::Helper';
 use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'CamHelpers::CamJob';
-
+use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamLayer';
+use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
+use aliased 'Enums::EnumsGeneral';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -258,12 +260,12 @@ sub EnableLoadLastBtn {
 
 	if ($enable) {
 		$self->{"loadLastBtn"}->Enable();
-		$self->{"loadLastBtn"}->SetLabel( "Last settings (" . $date . ")" );
+		$self->{"loadLastBtn"}->SetLabel( "Last sett (" . $date . ")" );
 
 	}
 	else {
 		$self->{"loadLastBtn"}->Disable();
-		$self->{"loadLastBtn"}->SetLabel("Last settings");
+		$self->{"loadLastBtn"}->SetLabel("Last sett");
 
 	}
 
@@ -373,7 +375,7 @@ sub __SetLayout {
 
 	$szMain->Add( $headerLayout, 0, &Wx::wxEXPAND );
 	$szMain->Add( 3, 3, 0, &Wx::wxEXPAND );
-	$szMain->Add( $gauge,        0, &Wx::wxEXPAND );
+	$szMain->Add( $gauge, 0, &Wx::wxEXPAND );
 	$szMain->Add( 2, 2, 0, &Wx::wxEXPAND );
 	$szMain->Add( $partLayout, 1, &Wx::wxEXPAND );
 
@@ -419,9 +421,12 @@ sub __SetLayoutHeader {
 	my $szSettCol2     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szSettCol3     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szSettCol4     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szSettCol5     = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 	my $szSettCol1Row1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 	my $szSettCol1Row2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	my $szSettCol2Row1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szSettCol2Row1 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szSettCol2Row2 = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+	my $szSettCol3Row1 = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
 	my $szQuickBtn = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
 
@@ -447,6 +452,23 @@ sub __SetLayoutHeader {
 	my $stepTxt = Wx::StaticText->new( $pnlSett, -1, "Step name:", &Wx::wxDefaultPosition, [ 70, 24 ] );
 	my $stepValTxt = Wx::TextCtrl->new( $pnlSett, -1, "mpanel", &Wx::wxDefaultPosition );
 
+	my $orderNum = HegMethods->GetPcbOrderNumber( $self->{"jobId"} );
+	my $info     = HegMethods->GetInfoAfterStartProduce( $self->{"jobId"} . "-" . $orderNum );
+
+	my $amountTxt    = Wx::StaticText->new( $pnlSett, -1, "Total quantity:",           &Wx::wxDefaultPosition, [ 100, 24 ] );
+	my $amountTxtVal = Wx::StaticText->new( $pnlSett, -1, $info->{"kusy_pozadavek"}, &Wx::wxDefaultPosition, [ 50,  24 ] );
+
+	#my $cutomerInfoTxt = Wx::StaticText->new( $pnlSett, -1, "Info customer:", &Wx::wxDefaultPosition, [ 100, 24 ] );
+	my $cutomerInfoTxt = Wx::HyperlinkCtrl->new( $pnlSett, -1, "Customer info:", "", &Wx::wxDefaultPosition, [ 100, 25 ] );
+	$cutomerInfoTxt->Disable();
+	my $custNoteHL = ResultIndicator->new( $pnlSett, 15 );
+	my $note = HegMethods->GetTpvCustomerNote( $self->{"jobId"} );
+	$note =~ s/\s//g;
+	if ( defined $note && $note ne "" ) {
+		$custNoteHL->SetStatus( EnumsGeneral->ResultType_OK );
+		$cutomerInfoTxt->Enable();
+	}
+
 	my $flattenTxt = Wx::StaticText->new( $pnlSett, -1, "Flatten:", &Wx::wxDefaultPosition, [ 70, 24 ] );
 	my $flattenChb = Wx::CheckBox->new( $pnlSett, -1, "", &Wx::wxDefaultPosition, [ 70, 24 ] );
 	if ( $self->{"pnlType"} ne PnlCreEnums->PnlType_CUSTOMERPNL ) {
@@ -462,8 +484,8 @@ sub __SetLayoutHeader {
 	my $showSigLBtn = Wx::Button->new( $pnlSett, -1, "Show SIG layers", &Wx::wxDefaultPosition, [ 100, 24 ] );
 	my $showNCLBtn  = Wx::Button->new( $pnlSett, -1, "Show NC layers",  &Wx::wxDefaultPosition, [ 100, 24 ] );
 
-	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last settings",    &Wx::wxDefaultPosition, [ 140, 24 ] );
-	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default settings", &Wx::wxDefaultPosition, [ 140, 24 ] );
+	my $loadLastBtn    = Wx::Button->new( $pnlSett, -1, "Last sett",    &Wx::wxDefaultPosition, [ 140, 24 ] );
+	my $loadDefaultBtn = Wx::Button->new( $pnlSett, -1, "Default sett", &Wx::wxDefaultPosition, [ 140, 24 ] );
 
 	# BUILD LAYOUT STRUCTURE
 
@@ -473,25 +495,36 @@ sub __SetLayoutHeader {
 	$szSettCol1Row2->Add( $flattenTxt, 0, &Wx::wxALL, 0 );
 	$szSettCol1Row2->Add( $flattenChb, 0, &Wx::wxALL, 0 );
 
+	$szSettCol2Row1->Add( $amountTxt,    0, &Wx::wxALL, 0 );
+	$szSettCol2Row1->Add( $amountTxtVal, 0, &Wx::wxALL, 0 );
+
+	$szSettCol2Row2->Add( $cutomerInfoTxt, 0, &Wx::wxALL, 0 );
+	$szSettCol2Row2->Add( $custNoteHL,     0, &Wx::wxALL, 0 );
+
 	$szSettCol1->Add( $szSettCol1Row1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szSettCol1->Add( $szSettCol1Row2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szSettCol2->Add( $dockWindowsBtn, 0, &Wx::wxALL, 0 );
-	$szSettCol2->Add( $previewChb,     0, &Wx::wxALL, 0 );
+	$szSettCol2->Add( $szSettCol2Row1, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol2->Add( $szSettCol2Row2, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szSettCol3->Add( $showSigLBtn, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szSettCol3->Add( $showNCLBtn,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol3->Add( $dockWindowsBtn, 0, &Wx::wxALL, 0 );
+	$szSettCol3->Add( $previewChb,     0, &Wx::wxALL, 0 );
 
-	$szSettCol4->Add( $loadDefaultBtn, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
-	$szSettCol4->Add( $loadLastBtn,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol4->Add( $showSigLBtn, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol4->Add( $showNCLBtn,  0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+
+	$szSettCol5->Add( $loadDefaultBtn, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szSettCol5->Add( $loadLastBtn,    0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
 	$szMainSett->Add( 10, 10, 0, );
 	$szMainSett->Add( $szSettCol1, 0, &Wx::wxALL,                                 2 );
 	$szMainSett->Add( $pnlSepar,   0, &Wx::wxEXPAND | &Wx::wxLEFT | &Wx::wxRIGHT, 4 );
-	$szMainSett->Add( $szSettCol2, 0, &Wx::wxALL,                                 2 );
-	$szMainSett->Add( $szSettCol3, 0, &Wx::wxALL,                                 2 );
+	$szMainSett->Add( $szSettCol2, 0, &Wx::wxALL,                                  2 );
 	$szMainSett->AddStretchSpacer(1);
+	$szMainSett->Add( $szSettCol3, 0, &Wx::wxALL, 2 );
 	$szMainSett->Add( $szSettCol4, 0, &Wx::wxALL, 2 );
+
+	$szMainSett->Add( $szSettCol5, 0, &Wx::wxALL, 2 );
 
 	$pnlMain->SetSizer($szMain);
 	$pnlSett->SetSizer($szMainSett);
@@ -503,6 +536,8 @@ sub __SetLayoutHeader {
 
 	# REGISTER EVENTS
 
+	#Wx::Event::EVT_LEFT_DOWN( $cutomerInfoTxt,   sub { $self->__OnShowCustomerNoteHndl() } );
+	Wx::Event::EVT_HYPERLINK( $cutomerInfoTxt, -1, sub { $self->__OnShowCustomerNoteHndl() } );
 	Wx::Event::EVT_CHECKBOX( $previewChb, -1, sub { $self->{"previewChangedEvt"}->Do( ( $self->{"previewChb"}->IsChecked() ? 1 : 0 ) ) } );
 	Wx::Event::EVT_TEXT( $stepValTxt, -1, sub { $self->{"stepChangedEvt"}->Do( $stepValTxt->GetValue() ) } );
 	Wx::Event::EVT_BUTTON( $showSigLBtn, -1, sub { $self->__OnShowLayers( 1, 0 ) } );
@@ -883,6 +918,25 @@ sub __OnShowLayers {
 
 	}
 
+}
+
+sub __OnShowCustomerNoteHndl {
+	my $self = shift;
+
+	my $messMngr = $self->_GetMessageMngr();
+	my @mess = ();
+	push(@mess, "************************************************");
+	push(@mess, " <b>Customer notes</b>");
+	push(@mess, "************************************************");
+	push(@mess, "Check if there are some special panelisation requirments:");
+	push(@mess, "\n\n");
+	
+	my $note = HegMethods->GetTpvCustomerNote( $self->{"jobId"} );
+	push(@mess, $note);
+	
+	$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
+
+	 
 }
 
 #

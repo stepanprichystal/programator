@@ -27,6 +27,8 @@ use aliased 'Packages::Stackup::StackupBase::StackupBase';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamHelper';
+use aliased 'CamHelpers::CamLayer';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -102,11 +104,11 @@ sub _Init {
 
 		# Get special scheme for customers
 		@specSchemes = grep { $_ =~ /^mpanel/ } @allScheme;
-		
+
 		# In some cases customer wants scheme of another producer
-		my @allCust = grep {  $_ =~ /^cust_/ } @allScheme;
-		push( @specSchemes,  @allCust) if(@allCust);
-		
+		my @allCust = grep { $_ =~ /^cust_/ } @allScheme;
+		push( @specSchemes, @allCust ) if (@allCust);
+
 		#push( @specSchemes, @spec ) if ( scalar(@spec) );
 
 		# Set default type
@@ -394,7 +396,16 @@ sub _Process {
 		}
 	}
 
-	$inCAM->COM( 'autopan_delete',"job"=>$jobId,"panel"=>$step,"mode"=>"fill");
+	# Delete old schema if exist  + all from panel board layer (if autopan_delete, it doesnt delete non schema features)
+	CamHelper->SetStep( $inCAM, $step );
+	CamLayer->ClearLayers($inCAM);
+	my @layers = map { $_->{"gROWname"} } CamJob->GetBoardLayers( $inCAM, $jobId );
+
+	CamLayer->AffectLayers( $inCAM, \@layers );
+	$inCAM->COM('sel_delete');
+	CamLayer->ClearLayers($inCAM);
+
+	# Insert schema
 	$inCAM->COM( 'autopan_run_scheme', "job" => $jobId, "panel" => $step, "pcb" => $nestedStep, "scheme" => $self->GetScheme() );
 
 	return $result;

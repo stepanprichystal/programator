@@ -126,7 +126,7 @@ sub __TaskBackgroundFunc {
 		my $checkClassId              = $classInf->{"checkClassId"};
 		my $checkClassPackage         = $classInf->{"checkClassPackage"};
 		my $checkClassTitle           = $classInf->{"checkClassTitle"};
-		my $checkClassConstrData = $classInf->{"checkClassConstrData"};
+		my $checkClassConstrData = $classInf->{"checkClasConstructorData"};
 		my $checkClassCheckData       = $classInf->{"checkClassCheckData"};
 
 		# raise start event

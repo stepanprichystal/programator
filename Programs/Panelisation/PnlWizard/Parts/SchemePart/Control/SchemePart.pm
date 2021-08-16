@@ -36,7 +36,8 @@ sub new {
 	# PROPERTIES
 
 	$self->{"model"}      = PartModel->new();         # Data model for view
-	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
+	$self->{"checkClassName"} = ref(PartCheckClass->new());
+	
 
 	$self->__SetActiveCreators();
 

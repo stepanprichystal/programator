@@ -514,13 +514,12 @@ sub _Process {
 
 	# Raise error if nested steps are greater thjan active area
 	# Raise error alwas if there is no solution of panelisation (nested step == 0)
+	$inCAM->COM( "show_component", "component" => "Result_Viewer", "show" => "no" );
 
 	my $autoPart = AutoPart->new( $inCAM, $jobId, $step );
 
 	if ( $self->GetActionType() eq Enums->StepPlacementMode_AUTO ) {
-
-		$inCAM->COM( "show_component", "component" => "Result_Viewer", "show" => "no" );
-
+ 
 		my %autoRes = ();
 		try {
 
@@ -646,8 +645,9 @@ sub _Process {
 										0, 0, 0
 			);
 
-			$inCAM->COM( "top_tab", "tab" => "AutoPartPlaceResults" );
 		}
+		
+		$inCAM->COM( "top_tab", "tab" => "AutoPartPlaceResults" );
 	}
 
 	return $result;

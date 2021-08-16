@@ -49,7 +49,8 @@ sub new {
 	$self->{"isCustomerSet"} = scalar(@editSteps) > 1 ? 1 : 0;
 
 	$self->{"model"}      = PartModel->new();         # Data model for view
-	$self->{"checkClass"} = PartCheckClass->new();    # Checking model before panelisation
+	$self->{"checkClassName"} = ref(PartCheckClass->new());
+	
 
 	# handle events
 	$self->{"asyncCreatorProcessedEvt"}->Add( sub { $self->__UpdatePartStepInfo(@_) } );

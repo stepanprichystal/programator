@@ -22,6 +22,7 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 use aliased 'Helpers::JobHelper';
 use aliased 'Connectors::HeliosConnector::HegMethods';
 use aliased 'CamHelpers::CamJob';
+use aliased 'CamHelpers::CamStep';
 use aliased 'Packages::Stackup::Stackup::Stackup';
 use aliased 'Packages::Stackup::Enums' => 'StackEnums';
 use aliased 'Packages::Stackup::StackupBase::StackupBase';
@@ -30,6 +31,7 @@ use aliased 'CamHelpers::CamStepRepeat';
 use aliased 'Packages::CAMJob::Scheme::SchemeCheck';
 use aliased 'Packages::Other::CustomerNote';
 use aliased 'Enums::EnumsCAM';
+use aliased 'Programs::Panelisation::PnlWizard::Enums';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -56,15 +58,15 @@ sub new {
 # Do check of creator settings and part settings
 sub Check {
 	my $self      = shift;
-	my $pnlType   = shift;    # Panelisation type
+	my $PnlType   = shift;    # Panelisation type
 	my $partModel = shift;    # Part model
- 
-	if ( $pnlType eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
+
+	if ( $PnlType eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
 
 		$self->__CheckCustomerPanel($partModel);
 
 	}
-	elsif ( $pnlType eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
+	elsif ( $PnlType eq PnlCreEnums->PnlType_PRODUCTIONPNL ) {
 
 		$self->__CheckProductionPanel($partModel);
 	}
@@ -112,8 +114,7 @@ sub __CheckCustomerPanel {
 
 			my $schTxt = join( "; ", @custSchemas );
 			$self->_AddWarning( "Zákaznické schéma",
-								"Zákazník má uloženo více vlastních schémat (${schTxt}). Je vybrané scháma ($scheme) to správné?." )
-			  ;
+								"Zákazník má uloženo více vlastních schémat (${schTxt}). Je vybrané scháma ($scheme) to správné?." );
 		}
 	}
 
@@ -136,6 +137,33 @@ sub __CheckCustomerPanel {
 			);
 
 		}
+	}
+
+	# X) Check if schema match with frame width (only if scheme name contain number which indicate frame border width)
+	{
+		my $scheme = $creatorModel->GetScheme();    # All model should have GetScheme Method
+#		if ( $scheme =~ m/_(\d+)/ ) {
+
+#			my $schFrameW = $1;
+# 
+# 			my $sizeCreatorModel = $self->_GetSelCreatorModelByPartId(Enums->Part_PNLSIZE);
+# 
+#			my $BL = $sizeCreatorModel->GetBorderLeft();
+#			my $BR = $sizeCreatorModel->GetBorderRight();
+#			my $BT = $sizeCreatorModel->GetBorderTop();
+#			my $BB = $sizeCreatorModel->GetBorderBot();
+#
+#			if ( $schFrameW != $BL && $schFrameW != $BR && $schFrameW != $BT && $schFrameW != $BB ) {
+#
+#				$self->_AddWarning(
+#									"Schéma",
+#									"Je schéma: ${scheme} správné? "
+#									  . "Obsahuje v názvu: ${schFrameW} což indikuje šířku okolí panelu, která však nebyla v panelu dohledána"
+#				);
+#			}
+#
+#		}
+
 	}
 
 }
@@ -166,6 +194,7 @@ sub __CheckProductionPanel {
 		}
 
 	}
+
 }
 
 # Check all panels
@@ -178,6 +207,18 @@ sub __CheckGeneral {
 
 	my $creator      = $partModel->GetSelectedCreator();
 	my $creatorModel = $partModel->GetCreatorModelByKey($creator);
+
+	# X) Check if schema is not empty
+	my $scheme = $creatorModel->GetScheme();    # All model should have GetScheme Method
+
+	if ( !defined $scheme || $scheme eq "" ) {
+
+		$self->_AddError(
+						  "Chbějící schéma",
+						  "Není vybrané žádné scháma. "
+							. "Pokud je potřeba panel bez schématu, aktivuj volbu \"Preview\" všude kromě schématu pro vytvoření panelu a pak tl. \"Leave as it is\""
+		);
+	}
 
 	# X) Check proper pattern fill at inenr layers
 	my $specLayerFill = $creatorModel->GetSignalLayerSpecFill();

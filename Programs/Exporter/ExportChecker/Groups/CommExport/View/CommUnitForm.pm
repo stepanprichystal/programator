@@ -198,7 +198,7 @@ sub __SetLayoutEmail {
 	# DEFINE CONTROLS
 
 	my $exportEmailChb = Wx::CheckBox->new( $statBox, -1, "Export", &Wx::wxDefaultPosition, [ -1, -1 ] );
-	my $mailPreviewHL = my $btnSync = Wx::HyperlinkCtrl->new( $statBox, -1, "Final mail preview", "", &Wx::wxDefaultPosition, [ 100, 25 ] );
+	my $mailPreviewHL =  Wx::HyperlinkCtrl->new( $statBox, -1, "Final mail preview", "", &Wx::wxDefaultPosition, [ 100, 25 ] );
 
 	my $emailActionTxt = Wx::StaticText->new( $statBox, -1, "Email action", &Wx::wxDefaultPosition, [ -1, -1 ] );
 

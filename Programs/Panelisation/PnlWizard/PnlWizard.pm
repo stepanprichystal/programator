@@ -262,7 +262,7 @@ sub __OnCreateClickHndl {
 
 		$self->{"popupChecker"}->AddCheckClass(
 												$checkClass->{"checkClassId"},    $checkClass->{"checkClassPackage"},
-												$checkClass->{"checkClassTitle"}, $checkClass->{"checkClassConstrData"},
+												$checkClass->{"checkClassTitle"}, $checkClass->{"checkClasConstructorData"},
 												$checkClass->{"checkClassCheckData"}
 		);
 
@@ -437,12 +437,25 @@ sub __OnAsyncPanelCreatedHndl {
 		# Do flatten if requested
 		if ( $self->{"model"}->GetFlatten() ) {
 
-			my @layerFilter = map { $_->{"gROWname"} } CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
-			CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"},
-										$self->{"model"}->GetStep(),
-										$self->{"model"}->GetStep() . "_flatten",
-										1, \@layerFilter );
-			CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+			if ( HegMethods->GetPcbIsPool( $self->{"jobId"} ) ) {
+
+				# Temporary - tuhle funkcionalitu pak odstranit z panelizace a presunout do GUIDu
+				$self->{"inCAM"}->COM(
+							 'script_run',
+							 name    => "y:/server/site_data/scripts/flatten_pool.pl",
+							 dirmode => 'global',
+							 params  => $self->{"jobId"} . " " . $self->{"model"}->GetStep()
+				);
+
+			}
+			else {
+				my @layerFilter = map { $_->{"gROWname"} } CamJob->GetBoardLayers( $self->{"inCAM"}, $self->{"jobId"} );
+				CamStep->CreateFlattenStep( $self->{"inCAM"}, $self->{"jobId"},
+											$self->{"model"}->GetStep(),
+											$self->{"model"}->GetStep() . "_flatten",
+											1, \@layerFilter );
+				CamStep->DeleteStep( $self->{"inCAM"}, $self->{"jobId"}, $self->{"model"}->GetStep() );
+			}
 
 		}
 
@@ -701,7 +714,7 @@ sub __InitModel {
 	$self->{"model"}->SetStep($step);
 
 	if ( $self->{"pnlType"} eq PnlCreEnums->PnlType_CUSTOMERPNL ) {
-		
+
 		$self->{"model"}->SetFlatten( HegMethods->GetPcbIsPool( $self->{"jobId"} ) );
 	}
 

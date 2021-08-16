@@ -96,7 +96,7 @@ sub ClearCheckClasses {
 sub AddCheckClass {
 	my $self                 = shift;
 	my $checkClassId         = shift;
-	my $checkClassPackage    = shift;    # package name, must implement ICheckClass
+	my $checkClassPackageName    = shift;    # package name, must implement ICheckClass
 	my $checkClassTitle      = shift;    # must be able to be serialiyed to json
 	my $checkClassConstrData = shift
 	  // [];    # Parameters for check class constructor method. Must be able to be serialiyed to json. Must be array reference
@@ -104,11 +104,11 @@ sub AddCheckClass {
 
 	my %classInfo = ();
 
-	$classInfo{"checkClassId"}         = $checkClassId;              # get full package name
-	$classInfo{"checkClassPackage"}    = ref($checkClassPackage);    # get full package name
-	$classInfo{"checkClassTitle"}      = $checkClassTitle;
-	$classInfo{"checkClassConstrData"} = $checkClassConstrData;
-	$classInfo{"checkClassCheckData"}  = $checkClassCheckData;
+	$classInfo{"checkClassId"}             = $checkClassId;              # get full package name
+	$classInfo{"checkClassPackage"}        = $checkClassPackageName;    # get full package name
+	$classInfo{"checkClassTitle"}          = $checkClassTitle;
+	$classInfo{"checkClasConstructorData"} = $checkClassConstrData;
+	$classInfo{"checkClassCheckData"}      = $checkClassCheckData;
 
 	push( @{ $self->{"checkClasses"} }, \%classInfo );
 
@@ -449,8 +449,6 @@ sub __DoEnableForceBtn {
 	my $self = shift;
 
 	my $enable = 1;
-
-
 
 	if ( scalar( @{ $self->{"checkWarn"} } ) && !$self->{"warnViewed"} ) {
 

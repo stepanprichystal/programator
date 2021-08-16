@@ -32,7 +32,7 @@ sub new {
 	# PROPERTIES
 
 	$self->{"model"}      = undef;            # data model for specific part. Set by subclass
-	$self->{"checkClass"} = undef;            # Checking model before panelisation. Set by subclass
+	$self->{"checkClassName"} = undef;        # Checking model before panelisation. Set by subclass
 
 	$self->{"form"}        = undef;           # View form for part
 	$self->{"partWrapper"} = undef;           # Wrapper form reference where form is incluced in
@@ -182,11 +182,11 @@ sub HideLoading {
 	$self->{"partWrapper"}->ShowLoading( undef, 1 );
 }
 
-# Return class for asynchronous checking
+# Return nane of class for asynchronous checking
 sub GetCheckClass {
 	my $self = shift;
 
-	return $self->{"checkClass"};
+	return $self->{"checkClassName"};
 
 }
 

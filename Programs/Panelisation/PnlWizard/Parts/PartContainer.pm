@@ -337,7 +337,7 @@ sub GetPartsCheckClass {
 		$inf{"checkClassId"}             = $part->GetPartId();
 		$inf{"checkClassPackage"}        = $part->GetCheckClass();
 		$inf{"checkClassTitle"}          = EnumsStyle->GetPartTitle( $part->GetPartId() );
-		$inf{"checkClasConstructorData"} = [ \%allCreatorModel ];
+		#$inf{"checkClasConstructorData"} = [ \%allCreatorModel ];
 		$inf{"checkClassCheckData"}      = [ $pnlType, $part->GetModel(), ];
 
 		push( @parts, \%inf );
