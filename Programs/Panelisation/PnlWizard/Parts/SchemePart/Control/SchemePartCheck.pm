@@ -110,7 +110,7 @@ sub __CheckCustomerPanel {
 		my $custNote    = CustomerNote->new( $custInfo->{"reference_subjektu"} );
 		my @custSchemas = $custNote->RequiredSchemas();
 
-		if ( scalar(@custSchemas) ) {
+		if ( scalar(@custSchemas) > 1 ) {
 
 			my $schTxt = join( "; ", @custSchemas );
 			$self->_AddWarning( "Zákaznické schéma",

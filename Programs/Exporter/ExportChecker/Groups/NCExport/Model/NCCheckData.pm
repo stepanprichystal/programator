@@ -916,6 +916,182 @@ sub OnCheckGroupData {
 		}
 	}
 
+	# X) Check if plated holes are not covered bz stiffener
+
+	my @platedThrough =
+	  grep { $_->{"plated"} && !$_->{"technical"} && $_->{"NCThroughSig"} && $_->{"NCSigStart"} eq "c" && $_->{"NCSigEnd"} eq "s" }
+	  $defaultInfo->GetNCLayers();
+
+	if (
+		scalar(@platedThrough) > 0
+		&& (    $defaultInfo->LayerExist( "stiffc", 1 )
+			 || $defaultInfo->LayerExist( "stiffs", 1 ) )
+
+	  )
+	{
+
+		my @childs = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+
+		foreach my $step (@childs) {
+
+			my %profLim = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+
+			my @stiffLayers = grep { $_->{"gROWcontext"} eq "board" && $_->{"gROWlayer_type"} eq "stiffener" } $defaultInfo->GetBoardBaseLayers();
+
+			foreach my $stiffL (@stiffLayers) {
+
+				my $side = ( $stiffL->{"gROWname"} =~ m/([cs])/ )[0];
+
+				# 1) Create full surface by profile
+				my $lName = CamLayer->FilledProfileLim( $inCAM, $jobId, $step, 1000, \%profLim );
+				CamLayer->ClipAreaByProf( $inCAM, $lName, 0, 0, 1 );
+
+				my $lNeg = GeneralHelper->GetGUID();
+				CamMatrix->CreateLayer( $inCAM, $jobId, $lNeg, "document", "positive", 0 );
+
+				# 2) Main stiff layer - copy negatively to surface
+				my @stiffRoutL =
+				  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId,
+												   [ EnumsGeneral->LAYERTYPE_nplt_stiffcMill, EnumsGeneral->LAYERTYPE_nplt_stiffsMill, ] );
+				CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutL );
+				@stiffRoutL = grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutL;
+
+				foreach my $stiffRoutL (@stiffRoutL) {
+					my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
+					$inCAM->COM(
+								 "merge_layers",
+								 "source_layer" => $lTmp,
+								 "dest_layer"   => $lNeg,
+								 "invert"       => "yes"
+					);
+					CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+				}
+
+				CamLayer->Contourize( $inCAM, $lNeg, "x_or_y", "203200" );  # 203200 = max size of emptz space in InCAM which can be filled by surface
+				$inCAM->COM(
+							 "merge_layers",
+							 "source_layer" => $lNeg,
+							 "dest_layer"   => $lName,
+							 "invert"       => "no"
+				);
+
+				CamMatrix->DeleteLayer( $inCAM, $jobId, $lNeg );
+
+				# 3) Helper stiff layer, which help to define stiffener shape - copy negatively to surface
+				my $lNegHelp = GeneralHelper->GetGUID();
+				CamMatrix->CreateLayer( $inCAM, $jobId, $lNegHelp, "document", "positive", 0 );
+				my @stiffRoutLHelper = CamDrilling->GetNCLayersByTypes(
+																		$inCAM, $jobId,
+																		[
+																		   EnumsGeneral->LAYERTYPE_nplt_stiffcAdhMill,
+																		   EnumsGeneral->LAYERTYPE_nplt_stiffsAdhMill
+																		]
+				);
+				CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLHelper );
+				@stiffRoutLHelper =
+				  grep { $_->{"gROWdrl_start"} eq $stiffL->{"gROWname"} && $_->{"gROWdrl_end"} eq $stiffL->{"gROWname"} } @stiffRoutLHelper;
+
+				my $tapeL = ( grep { $_->{"gROWlayer_type"} eq "psa" && $_->{"gROWname"} =~ /$side/ } @layers )[0];
+
+				if ( defined $tapeL ) {
+
+					my @stiffRoutLTape =
+					  CamDrilling->GetNCLayersByTypes( $inCAM, $jobId,
+													   [ EnumsGeneral->LAYERTYPE_nplt_tapecMill, EnumsGeneral->LAYERTYPE_nplt_tapesMill ] );
+					CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffRoutLTape );
+
+					@stiffRoutLTape =
+					  grep { $_->{"gROWdrl_start"} eq $tapeL->{"gROWname"} && $_->{"gROWdrl_end"} eq $tapeL->{"gROWname"} } @stiffRoutLTape;
+					push( @stiffRoutLHelper, @stiffRoutLTape ) if ( scalar(@stiffRoutLTape) );
+
+					my @tapeBrRoutL = CamDrilling->GetNCLayersByTypes( $inCAM, $jobId, [ EnumsGeneral->LAYERTYPE_nplt_tapebrMill ] );
+					push( @stiffRoutLHelper, @tapeBrRoutL ) if ( scalar(@tapeBrRoutL) );
+				}
+
+				# add also main stiffener layer (wee need to close shape for next contourize)
+				push( @stiffRoutLHelper, @stiffRoutL );
+
+				foreach my $stiffRoutL (@stiffRoutLHelper) {
+					my $lTmp = CamLayer->RoutCompensation( $inCAM, $stiffRoutL->{"gROWname"}, "document" );
+					$inCAM->COM(
+								 "merge_layers",
+								 "source_layer" => $lTmp,
+								 "dest_layer"   => $lNegHelp,
+								 "invert"       => "yes"
+					);
+					CamMatrix->DeleteLayer( $inCAM, $jobId, $lTmp );
+				}
+
+				CamLayer->Contourize( $inCAM, $lNegHelp, "x_or_y", "203200" )
+				  ;    # 203200 = max size of emptz space in InCAM which can be filled by surface
+				 # change helper rout size to minimum, otherwise stiffener shape is wrong                                                                  # Resize helper routs by 2mm (get rif of compensation in order real image)
+				CamLayer->WorkLayer( $inCAM, $lNegHelp );
+				CamLayer->ResizeFeatures( $inCAM, -2000 );
+				$inCAM->COM(
+							 "merge_layers",
+							 "source_layer" => $lNegHelp,
+							 "dest_layer"   => $lName,
+							 "invert"       => "no"
+				);
+				CamMatrix->DeleteLayer( $inCAM, $jobId, $lNegHelp );
+				CamLayer->Contourize( $inCAM, $lName, "x_or_y", "0" );
+
+				# Selec all plated holes which are covered bz stiffener
+				# Do check if all through hole are uncovered
+
+				# Routs
+				my $fRout =
+				  FeatureFilter->new( $inCAM, $jobId, undef, [ map { $_->{"gROWname"} } @platedThrough ] );
+
+				$fRout->SetRefLayer($lName);
+				$fRout->SetReferenceMode( FiltrEnums->RefMode_TOUCH );
+				$fRout->AddIncludeAtt(".rout_plated");    # routs
+				$fRout->AddIncludeAtt( ".drill", "plated" );    # drills
+				$fRout->SetIncludeAttrCond( FiltrEnums->Logic_OR );
+
+				my $checkL = "drills_covered_by_stiff";
+				CamMatrix->DeleteLayer( $inCAM, $jobId, $checkL );
+
+				if ( $fRout->Select() ) {
+
+					CamLayer->CopySelOtherLayer( $inCAM, [$checkL] );
+
+					my $strLayer = join( "; ", map { $_->{"gROWname"} } @platedThrough );
+					$dataMngr->_AddWarningResult(
+											  "Prokovené otvory přikryté stiffenerm",
+											  " Ve stepu: ${step} jsou prokovené otvory (v některé z vrstev: ${strLayer}) přikryté stiffenerem. "
+												. "Zkontroluj a prober se zákazníkem, jestli nemá být ve stiffeneru otvor v místě prokoveného otvoru, zákazník to často zapomene uvést. "
+												. "Týká se většinou otvorů, kam se umisťujě součástka. "
+												."Pokud ano, otvor ve stiffeneru se zvětšuje cca o 0,5mm pokud zákazník neuvede jinak."
+												. "\nDané otvory jsou zkopírovány do vsrtvy: ${checkL} pro kontrolu. "
+												
+					);
+
+				}
+
+		   #				# Drill
+		   #				my $fDrill =
+		   #				  FeatureFilter->new( $inCAM, $jobId, undef, [ map { $_->{"gROWname"} } grep { $_->{"gROWlayer_type"} eq "drill" } @platedThrough ] );
+		   #
+		   #				$fDrill->SetRefLayer($lName);
+		   #				$fDrill->SetReferenceMode( FiltrEnums->RefMode_TOUCH );
+		   #				$fDrill->AddIncludeAtt( ".drill", "plated" );    # not via only plated
+		   #				$fDrill->AddIncludeAtt( ".bit",   "plated" );    # onlz bigger than 800 (assume plated hole < 800 is not for assembly)
+		   #				$fDrill->SetIncludeAttrCond( FiltrEnums->Logic_AND );
+		   #
+		   #				  if ( $fDrill->Select() ) {
+		   #
+		   #					$dataMngr->_AddWarningResult( "Prokovené otvory přikryté stiffenerm", " " );
+		   #
+		   #				}
+
+				CamMatrix->DeleteLayer( $inCAM, $jobId, $lName );
+
+			}
+
+		}
+	}
+
 	# X) Check if npth rout contain PilotHoles, important for flex (one flut tour tools must be pre-drilled)
 	if ( $defaultInfo->GetIsFlex() ) {
 
@@ -1340,18 +1516,29 @@ sub OnCheckGroupData {
 my ( $package, $filename, $line ) = caller;
 if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-	#	use aliased 'Packages::Export::NCExport::NCExportGroup';
-	#
-	#	my $jobId    = " F13608 ";
-	#	my $stepName = " panel ";
-	#
-	#	my $inCAM = InCAM->new();
-	#
-	#	my $ncgroup = NCExportGroup->new( $inCAM, $jobId );
-	#
-	#	$ncgroup->Run();
+	use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCCheckData';
+	use aliased 'Programs::Exporter::ExportChecker::ExportChecker::DefaultInfo::DefaultInfo';
+	use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
+	use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::Model::NCPrepareData';
+	use aliased 'Packages::InCAM::InCAM';
 
-	#print $test; pressfit
+	my $jobId    = "d327536";
+	my $stepName = "panel";
+
+	my $inCAM = InCAM->new();
+
+	my $checkData = NCCheckData->new( $inCAM, $jobId );
+	my $NCPrepare = NCPrepareData->new();
+	my $dataMngr  = GroupDataMngr->new( $jobId, $NCPrepare, $checkData, undef );
+	$dataMngr->{"inCAM"} = $inCAM;
+
+	my $d = DefaultInfo->new($jobId);
+	$d->Init($inCAM);
+	$dataMngr->SetDefaultInfo($d);
+
+	$dataMngr->PrepareGroupData();
+
+	$dataMngr->CheckGroupData()
 
 }
 

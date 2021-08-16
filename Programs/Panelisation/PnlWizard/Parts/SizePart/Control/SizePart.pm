@@ -60,10 +60,11 @@ sub InitForm {
 	my $self        = shift;
 	my $partWrapper = shift;
 	my $inCAM       = shift;
+		my $pnlType     = shift;
 
 	my $parent = $partWrapper->GetParentForPart();
 
-	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"model"} );
+	$self->{"form"} = PartFrm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"model"}, $pnlType);
 
 	$self->SUPER::_InitForm($partWrapper);
 

@@ -78,27 +78,27 @@ sub OnGetCreatorLayout {
 
 	if ( $creatorKey eq PnlCreEnums->SizePnlCreator_USER ) {
 
-		$content = UserFrm->new($parent);
+		$content = UserFrm->new($parent, $inCAM, $jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_HEG ) {
 
-		$content = HEGFrm->new($parent);
+		$content = HEGFrm->new($parent, $inCAM, $jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_MATRIX ) {
 
-		$content = MatrixFrm->new($parent);
+		$content = MatrixFrm->new($parent, $inCAM, $jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSUSER ) {
 
-		$content = ClassUserFrm->new($parent);
+		$content = ClassUserFrm->new($parent, $inCAM, $jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_CLASSHEG ) {
 
-		$content = ClassHEGFrm->new($parent);
+		$content = ClassHEGFrm->new($parent, $inCAM, $jobId, $pnlType);
 	}
 	elsif ( $creatorKey eq PnlCreEnums->SizePnlCreator_PREVIEW ) {
 
-		$content = PreviewFrm->new($parent);
+		$content = PreviewFrm->new($parent, $inCAM, $jobId, $pnlType);
 	}
 
 	return $content;

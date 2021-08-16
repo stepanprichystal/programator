@@ -26,11 +26,15 @@ use aliased 'Enums::EnumsGeneral';
 sub new {
 	my $class  = shift;
 	my $parent = shift;
-	my $jobId  = shift;
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $pnlType = shift;
 
-	my $self = $class->SUPER::new( PnlCreEnums->SizePnlCreator_CLASSHEG, $parent, $jobId );
+	my $self = $class->SUPER::new( PnlCreEnums->SizePnlCreator_CLASSHEG,  $parent, $inCAM, $jobId );
 
 	bless($self);
+	
+	$self->{"pnlType"} = $pnlType;
 
 	$self->__SetLayout();
 
@@ -42,10 +46,13 @@ sub new {
 # Do specific layout settings for creator
 sub __SetLayout {
 	my $self = shift;
+	
+	my $pnlType = $self->{"pnlType"};
 
 	# DEFINE CONTROLS
 
 	$self->_EnableLayoutSize(1);
+	$self->_ShowSwapSize(1) if ( $pnlType eq PnlCreEnums->PnlType_CUSTOMERPNL );
 
 	# DEFINE EVENTS
 

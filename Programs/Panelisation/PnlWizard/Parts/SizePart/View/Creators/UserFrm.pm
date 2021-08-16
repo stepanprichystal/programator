@@ -23,11 +23,15 @@ use aliased 'Programs::Panelisation::PnlCreator::Enums' => "PnlCreEnums";
 sub new {
 	my $class  = shift;
 	my $parent = shift;
-	my $jobId  = shift;
-
-	my $self = $class->SUPER::new( PnlCreEnums->SizePnlCreator_USER, $parent, $jobId );
+	my $inCAM   = shift;
+	my $jobId   = shift;
+	my $pnlType = shift;
+	
+	my $self = $class->SUPER::new( PnlCreEnums->SizePnlCreator_USER, $parent, $inCAM, $jobId );
 
 	bless($self);
+
+	$self->{"pnlType"} = $pnlType;
 
 	$self->__SetLayout();
 
@@ -40,8 +44,11 @@ sub new {
 sub __SetLayout {
 	my $self = shift;
  
+	my $pnlType = $self->{"pnlType"};
 
 	# DEFINE CONTROLS
+	
+	$self->_ShowSwapSize(1) if ( $pnlType eq PnlCreEnums->PnlType_CUSTOMERPNL );
  
 	# DEFINE EVENTS
  

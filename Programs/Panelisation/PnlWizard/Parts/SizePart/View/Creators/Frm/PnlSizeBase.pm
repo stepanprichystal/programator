@@ -16,6 +16,7 @@ use aliased 'Enums::EnumsGeneral';
 use Widgets::Style;
 use aliased 'Packages::Events::Event';
 use aliased 'Widgets::Forms::ResultIndicator::ResultIndicator';
+use aliased 'Helpers::GeneralHelper';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -108,10 +109,17 @@ sub __SetLayoutSize {
 	my $widthTxt = Wx::StaticText->new( $statBox, -1, "Width:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 	my $widthValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
+	Wx::InitAllImageHandlers();
+	my $swapPath     = GeneralHelper->Root() . "/Programs/Panelisation/PnlWizard/Resources/swapIcon.png";
+	my $swapBtmp     = Wx::Bitmap->new( $swapPath, &Wx::wxBITMAP_TYPE_PNG );
+	my $swapStatBtmp = Wx::StaticBitmap->new( $statBox, -1, $swapBtmp );
+	$swapStatBtmp->Hide();
+
 	my $heightTxt = Wx::StaticText->new( $statBox, -1, "Height:", &Wx::wxDefaultPosition, [ 10, 23 ] );
 	my $heightValTxt = Wx::TextCtrl->new( $statBox, -1, "", &Wx::wxDefaultPosition, [ 10, 23 ] );
 
 	# DEFINE EVENTS
+	Wx::Event::EVT_LEFT_UP( $swapStatBtmp, sub { $self->__SwapSizeClickHndl() } );
 	Wx::Event::EVT_TEXT( $widthValTxt,  -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 	Wx::Event::EVT_TEXT( $heightValTxt, -1, sub { $self->{"creatorSettingsChangedEvt"}->Do() } );
 
@@ -119,7 +127,9 @@ sub __SetLayoutSize {
 	$szRow2->Add( $widthTxt,    23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( $widthValTxt, 23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 
-	$szRow2->AddStretchSpacer(6);
+	$szRow2->AddStretchSpacer(1);
+	$szRow2->Add( $swapStatBtmp, 0, &Wx::wxEXPAND | &Wx::wxALL, 0 );
+	$szRow2->AddStretchSpacer(1);
 
 	$szRow2->Add( $heightTxt,    23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
 	$szRow2->Add( $heightValTxt, 23, &Wx::wxEXPAND | &Wx::wxALL, 0 );
@@ -135,6 +145,7 @@ sub __SetLayoutSize {
 	$self->{"customISValueSz"}       = $szRow0;
 	$self->{"customCBSizeSz"}        = $szRow1;
 	$self->{"customLyoutSizeParent"} = $statBox;
+	$self->{"swapStatBtmp"}          = $swapStatBtmp;
 
 	return $szStatBox;
 }
@@ -218,7 +229,8 @@ sub _SetLayoutCBMain {
 
 	# DEFINE CONTROLS
 	my $mainCbTxt = Wx::StaticText->new( $self, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
-	my $mainCB = Wx::ComboBox->new( $self, -1, ( defined $choices->[0] ? $choices->[0] : "" ), &Wx::wxDefaultPosition, [ 10, 23 ], $choices, &Wx::wxCB_READONLY );
+	my $mainCB = Wx::ComboBox->new( $self, -1, ( defined $choices->[0] ? $choices->[0] : "" ), &Wx::wxDefaultPosition, [ 10, 23 ], $choices,
+									&Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBMainChangedEvt"}->Do( $mainCB->GetValue() ) } );
@@ -265,8 +277,10 @@ sub _SetLayoutCBSize {
 
 	# DEFINE CONTROLS
 	my $mainCbTxt = Wx::StaticText->new( $self->{"customLyoutSizeParent"}, -1, $title, &Wx::wxDefaultPosition, [ 10, 23 ] );
-	my $mainCB =
-	  Wx::ComboBox->new( $self->{"customLyoutSizeParent"}, -1,( defined $choices->[0] ? $choices->[0] : "" ), &Wx::wxDefaultPosition, [ 10, 23 ], $choices, &Wx::wxCB_READONLY );
+	my $mainCB = Wx::ComboBox->new( $self->{"customLyoutSizeParent"},
+									-1, ( defined $choices->[0] ? $choices->[0] : "" ),
+									&Wx::wxDefaultPosition, [ 10, 23 ],
+									$choices, &Wx::wxCB_READONLY );
 
 	# DEFINE EVENTS
 	Wx::Event::EVT_TEXT( $mainCB, -1, sub { $self->{"CBSizeChangedEvt"}->Do( $mainCB->GetValue() ) } );
@@ -341,6 +355,23 @@ sub _EnableLayoutBorder {
 
 }
 
+sub _ShowSwapSize {
+	my $self = shift;
+	my $show = shift;
+
+	if ($show) {
+
+		$self->{"swapStatBtmp"}->Show();
+
+	}
+	else {
+
+		$self->{"swapStatBtmp"}->Hide();
+
+	}
+
+}
+
 sub _GetPnlWidthControl {
 	my $self = shift;
 
@@ -381,6 +412,15 @@ sub _GetMainSizer {
 	my $self = shift;
 
 	return $self->{"szMain"};
+}
+
+sub __SwapSizeClickHndl {
+	my $self = shift;
+
+	my $w = $self->GetWidth();
+	my $h = $self->GetHeight();
+	$self->SetWidth($h);
+	$self->SetHeight($w);
 }
 
 # =====================================================================

@@ -1112,6 +1112,17 @@ sub _Panelize {
 					# Here is set attribut in job Gold_fingers
 			_SetAttrGoldHolder("$jobName");
 			
+			
+						my $pcbInf = HegMethods->GetBasePcbInfo($jobName);
+#			 
+			if ( defined $pcbInf->{"ipc_class_3"} && $pcbInf->{"ipc_class_3"} ne "" ) {
+				
+				 
+				my $cpn = CouponIPC3Main->new( $inCAM, $jobName );
+				$cpn->CreateCoupon();
+				 
+			}
+			
 			 while(1){
 			 	
 			 	  $messMngr = MessageMngr->new($jobName);
@@ -1275,20 +1286,15 @@ use Win32::Process;
 
  
 			
-			my $pcbInf = HegMethods->GetBasePcbInfo($jobName);
-#			 
+#			my $pcbInf = HegMethods->GetBasePcbInfo($jobName);
+##			 
 #			if ( defined $pcbInf->{"ipc_class_3"} && $pcbInf->{"ipc_class_3"} ne "" ) {
 #				
-#		 		$inCAM->SetDisplay(0);
+#				print STDERR "IPC3";
+#		 	 	sleep(10);
 #				my $cpn = CouponIPC3Main->new( $inCAM, $jobName );
 #				$cpn->CreateCoupon();
-#				$inCAM->SetDisplay(1);
-#				CamHelper->SetStep($inCAM, 'panel');
-#		 		
-#		 		my $messMngr = MessageMngr->new($jobName);
-#				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_WARNING, ['Pozor, DPS je v IPC 3, vloz 3 kupony na volne misto do panelu.'] ); 
-# 
-#			 	$inCAM->PAUSE("Vloz 3x IPC3 coupon. Step: coupon_IPC3main");
+#				 
 #			}
 			
 			

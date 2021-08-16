@@ -37,7 +37,6 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'Enums::EnumsDrill';
 use aliased 'CamHelpers::CamJob';
@@ -94,6 +93,14 @@ sub new {
 	$self->{"jobId"} = shift;
 	$self->{"step"}  = shift // EnumsGeneral->Coupon_IPC3MAIN;
 
+	# PROPERTIES
+
+	$self->{"stackup"} = undef;
+	
+	if ( CamJob->GetSignalLayerCnt( $self->{"inCAM"}, $self->{"jobId"} ) > 2 ) {
+		$self->{"stackup"} = Stackup->new( $self->{"inCAM"}, $self->{"jobIdSource"} );
+	}
+
 	# Init holes types and compute holes positions
 	$self->{"holes"}    = [ $self->GetHoles(1) ];
 	$self->{"holesPos"} = [ $self->__GetLayoutHoles() ];
@@ -108,7 +115,7 @@ sub CreateCoupon {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	my @uniqueSR = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+	my @uniqueSR =  CamStep->GetJobEditSteps( $inCAM, $jobId );
 
 	return 0 unless ( scalar(@uniqueSR) );
 
@@ -140,7 +147,7 @@ sub GetStep {
 #           - "NCSigStartOrder"
 #           - etc....
 sub GetHoles {
-	my $self       = shift;
+	my $self = shift;
 	my $addDefHole = shift // 1;    # add 1mm plt thorugh hole if not exists in PCB
 
 	my $inCAM = $self->{"inCAM"};
@@ -158,7 +165,7 @@ sub GetHoles {
 
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@layers );
 
-	my @uniqueSR = map { $_->{"stepName"} } CamStepRepeatPnl->GetUniqueStepAndRepeat( $inCAM, $jobId );
+	my @uniqueSR =  CamStep->GetJobEditSteps( $inCAM, $jobId );
 
 	my @holes = ();
 
@@ -455,10 +462,12 @@ sub __DrawCoupon {
 		elsif ( $l->{"gROWname"} =~ m/^v(\d+)$/ ) {
 			$txt = $1;
 
-			#			my %lPars = JobHelper->ParseSignalLayerName( $l->{"gROWname"} );
-			#			$mirror = $self->{"stackup"}->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
-			my %attr = CamAttributes->GetLayerAttr( $inCAM, $jobId, "panel", $l->{"gROWname"} );
-			$mirror = $attr{"layer_side"} =~ /bot/i ? 1 : 0;
+			# Stackup should exist in this time
+			my %lPars = JobHelper->ParseSignalLayerName( $l->{"gROWname"} );
+			$mirror = $self->{"stackup"}->GetSideByCuLayer( $lPars{"sourceName"}, $lPars{"outerCore"}, $lPars{"plugging"} );
+
+			#			my %attr = CamAttributes->GetLayerAttr( $inCAM, $jobId, "panel", $l->{"gROWname"} );
+			#			$mirror = $attr{"layer_side"} =~ /bot/i ? 1 : 0;
 		}
 
 		# 1) Draw track text
@@ -563,7 +572,7 @@ sub __DrawCoupon {
 		my $drawDrillPads = SymbolDrawing->new( $inCAM, $jobId, Point->new( 0, 0 ) );
 		CamLayer->WorkLayer( $inCAM, $holeInf->{"layer"}->{"gROWname"} );
 
-		my $defDTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, "panel", $holeInf->{"layer"}->{"gROWname"}, 1 );
+		my $defDTMType = CamDTM->GetDTMDefaultType( $inCAM, $jobId, "o+1", $holeInf->{"layer"}->{"gROWname"}, 1 );
 
 		foreach my $toolInf ( @{ $holeInf->{"tools"} } ) {
 
