@@ -437,7 +437,12 @@ sub GetDefaultEtchType {
 
 			my @viaFill = grep { $_->{"type"} eq EnumsGeneral->LAYERTYPE_plt_nFillDrill } @platedNC;
 
-			if ( $self->{"platedRoutExceed"} || $self->{"rsExist"} || $self->{"pcbIsFlex"} || scalar(@viaFill) ) {
+			if (    $self->{"platedRoutExceed"}
+				 || $self->{"rsExist"}
+				 || $self->{"pcbIsFlex"}
+				 || scalar(@viaFill)
+				 || $self->__GetPcbClass() > 8 )
+			{
 				$etchType = EnumsGeneral->Etching_PATTERN;
 			}
 			else {

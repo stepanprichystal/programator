@@ -35,7 +35,7 @@ sub GetCompensation {
 	# Another temporary solutin for 9 class
 	if ( $constrClass == 9 ) {
 
-		if ( $isPlated && $cuThickness == 5 && $etchType eq EnumsGeneral->Etching_PATTERN ) {
+		if ( $isPlated && $cuThickness <= 18 && $etchType eq EnumsGeneral->Etching_PATTERN ) {
 			return 15;
 		}
 
