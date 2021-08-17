@@ -120,12 +120,11 @@ while ( scalar(@sig) > 2 && !JobHelper->StackupExist($jobId) ) {
 			$constClass = CamJob->GetJobPcbClass( $inCAM, $jobId );
 			$constClassInn = CamJob->GetJobPcbClassInner( $inCAM, $jobId ) if ( scalar(@sig) > 2 );
 		}
+
+		StackupDefault->CreateStackup( $inCAM, $jobId, scalar(@sig), \@innerCuUsage, $outerThick, $constClass );
 	}
 
-	StackupDefault->CreateStackup( $inCAM, $jobId, scalar(@sig), \@innerCuUsage, $outerThick, $constClass );
 }
 
 my $form = RunPnlWizard->new( $jobId, PnlCreEnums->PnlType_CUSTOMERPNL );
-
- 
 
