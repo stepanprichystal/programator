@@ -12,6 +12,7 @@ use strict;
 use warnings;
 use List::Util qw[max min first];
 use Try::Tiny;
+use Scalar::Util qw(looks_like_number);
 
 #local library
 use aliased 'Enums::EnumsGeneral';
@@ -354,7 +355,7 @@ sub _Check {
 			# Space X
 			my $spaceX = $self->GetSpaceX();
 
-			if ( !defined $spaceX || $spaceX eq "" || $spaceX < 0 ) {
+			if ( !defined $spaceX || $spaceX eq "" || !looks_like_number($spaceX) ) {
 				$result = 0;
 				$$errMess .= "Wrong value of Space X: $spaceX";
 			}
@@ -362,7 +363,7 @@ sub _Check {
 			# Space Y
 			my $spaceY = $self->GetSpaceY();
 
-			if ( !defined $spaceY || $spaceY eq "" || $spaceY < 0 ) {
+			if ( !defined $spaceY || $spaceY eq "" || !looks_like_number($spaceY) ) {
 				$result = 0;
 				$$errMess .= "Wrong value of Space Y: $spaceY";
 			}
