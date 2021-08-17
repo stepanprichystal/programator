@@ -16,7 +16,6 @@ use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamMatrix';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamStepRepeat';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums';
 use aliased 'Packages::Stackup::StackupOperation';
 use aliased 'Packages::Polygon::Features::Features::Features';
 use aliased 'CamHelpers::CamLayer';

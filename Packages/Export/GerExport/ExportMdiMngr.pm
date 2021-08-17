@@ -13,8 +13,6 @@ use warnings;
 #local library
 use aliased 'Helpers::GeneralHelper';
 use aliased 'Enums::EnumsPaths';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::Enums';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::ExportFiles';
 use aliased 'Packages::Gerbers::Mditt::ExportFiles::ExportFiles' => "ExportFilesTT";
 use aliased 'CamHelpers::CamJob';
 
@@ -42,19 +40,6 @@ sub Run {
 	my $inCAM = $self->{"inCAM"};
 	my $jobId = $self->{"jobId"};
 
-	{
-		my $export = ExportFiles->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );
-		$export->{"onItemResult"}->Add( sub { $self->__OnExportLayer(@_) } );
-
-		my %types = (
-					  Enums->Type_SIGNAL => $self->{"mdiInfo"}->{"exportSignal"},
-					  Enums->Type_MASK   => $self->{"mdiInfo"}->{"exportMask"},
-					  Enums->Type_PLUG   => $self->{"mdiInfo"}->{"exportPlugs"},
-					  Enums->Type_GOLD   => $self->{"mdiInfo"}->{"exportGold"}
-		);
-
-		$export->Run( \%types );
-	}
 
 	{
 		my $export = ExportFilesTT->new( $self->{"inCAM"}, $self->{"jobId"}, "panel" );

@@ -24,42 +24,291 @@ use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Helpers::JobHelper';
+use aliased 'Enums::EnumsGeneral';
+
+use constant MAXPNLH => 700;    # maximal height of panel, for exposing pnl "Vertical" (not rotated)
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
 # Return layer types which should be exported by default
-sub GetDefaultLayerTypes {
-	my $self  = shift;
+sub GetDefaultLayerCouples {
+	my $self = shift;
+
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	my %mdiInfo = ();
+	my @exportLayers = ();
 
-	my @layers = CamJob->GetAllLayers( $inCAM, $jobId );
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+	my $stackup = undef;
+	if ( $layerCnt > 2 ) {
 
-	my $signal = scalar( grep { $_->{"gROWname"} eq "c" } @layers );
-
-	if ( HegMethods->GetTypeOfPcb($jobId) eq "Neplatovany" ) {
-		$signal = 0;
+		$stackup = Stackup->new( $inCAM, $jobId );
 	}
 
-	$mdiInfo{ Enums->Type_SIGNAL } = $signal;
+	my @all = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
-	if ( scalar( grep { $_->{"gROWname"} =~ /m[cs]/ } @layers ) )    # && CamJob->GetJobPcbClass( $inCAM, $jobId ) >= 8
+	# Signal layers
 	{
-		$mdiInfo{ Enums->Type_MASK } = 1;
+
+		if ( $layerCnt <= 2 ) {
+
+			my @couple = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^[cs]$/ } @all;
+
+			push( @exportLayers, \@couple );
+
+		}
+		else {
+
+			my @products = $self->{"stackup"}->GetAllProducts();
+
+			foreach my $p (@products) {
+
+				# Skip if producti is parent input product,
+				# - which doesn not contain any pressing
+				# - or doesn't contain Cu foil as outer layers (Cu foil must be not "empty")
+				if ( $p->GetProductType() eq StackEnums->Product_INPUT && $p->GetIsParent() ) {
+
+					my $matLTop = $p->GetProductOuterMatLayer("first")->GetData();
+					my $matLBot = $p->GetProductOuterMatLayer("last")->GetData();
+
+					if (
+						 scalar( $p->GetLayers() ) == 1
+						 || !(
+							      $matLTop->GetType() eq StackEnums->MaterialType_COPPER
+							   && $matLBot->GetType() eq StackEnums->MaterialType_COPPER
+							   && !$p->GetTopEmptyFoil()
+							   && !$p->GetBotEmptyFoil()
+						 )
+					  )
+					{
+						next;
+					}
+				}
+
+				my $topLName = JobHelper->BuildSignalLayerName( $p->GetTopCopperLayer(), $p->GetOuterCoreTop(), 0 );
+				my $botLName = JobHelper->BuildSignalLayerName( $p->GetBotCopperLayer(), $p->GetOuterCoreBot(), 0 );
+
+				my $topL = first { $_->{"gROWname"} =~ /^$topLName$/ } @all;
+				my $botL = first { $_->{"gROWname"} =~ /^$botLName$/ } @all;
+
+				push( @exportLayers, [ $topL->{"gROWname"}, $botL->{"gROWname"} ] );
+			}
+		}
+	}
+
+	# Solder mask layers
+	{
+
+		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?$/ } @all;    # number 2 is second soldermask
+
+		my @suffixes = ( "", "2" );                               #mask name suffix
+
+		foreach my $suff (@suffixes) {
+
+			my @l = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^m[cs]$suff$/ } @l;
+
+			if ( scalar(@l) ) {
+
+				push( @exportLayers, \@l );
+			}
+		}
+	}
+
+	# Plugging layers
+	{
+
+		if ( $layerCnt <= 2 ) {
+
+			my @couple = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @all;
+
+			push( @exportLayers, \@couple )  if ( scalar(@couple) );
+
+		}
+		else {
+
+			my @products = $self->{"stackup"}->GetAllProducts();
+
+			foreach my $p (@products) {
+
+				if ( $p->GetPlugging() ) {
+
+					my $topLName = JobHelper->BuildSignalLayerName( $p->GetTopCopperLayer(), 0, $p->GetPlugging() );
+					my $botLName = JobHelper->BuildSignalLayerName( $p->GetBotCopperLayer(), 0, $p->GetPlugging() );
+
+					my $topL = first { $_->{"gROWname"} =~ /^$topLName$/ } @all;
+					my $botL = first { $_->{"gROWname"} =~ /^$botLName$/ } @all;
+
+					push( @exportLayers, [ $topL->{"gROWname"}, $botL->{"gROWname"} ] );
+				}
+			}
+
+		}
+	}
+
+	# Gold layers
+	{
+
+		my @l = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^gold[cs]$/ } @all;
+
+		push( @exportLayers, \@l ) if ( scalar(@l) );
+	}
+
+	# Check if all couples has 1-2 layers
+
+	foreach my $couple (@exportLayers) {
+
+		my $lCnt = scalar( @{$couple} );
+
+		die "Wrong number of layers (min 1 max 2)" if ( $lCnt < 1 || $lCnt > 2 );
+
+		my @undef = grep { !defined $_ } @{$couple};
+
+		die "Layer is not defined " if ( scalar(@undef) );
+
+	}
+
+	return @exportLayers;
+}
+
+# Return  default settings for specific layer type
+# Hash contains:
+# - rotationCCW: 0/90 (vertical orientation/horizontal orientation)
+# - fiducialType: Fiducials_CUSQUERE/Fiducials_OLECHOLE
+sub GetDefaultLayerSett {
+	my $self      = shift;
+	my $inCAM     = shift;
+	my $jobId     = shift;
+	my $step      = shift;
+	my $layerName = shift;
+
+	my %sett = ( "rotationCCW" => undef, "fiducialType" => undef );
+
+	my $pcbType  = JobHelper->GetPcbType( $jobId);
+	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
+	my $stackup  = undef;
+	if ( $layerCnt > 2 ) {
+
+		$stackup = Stackup->new( $inCAM, $jobId );
+	}
+
+	# 1) Set Rotatin
+	my $rotationCW = 0;
+	my %profLim    = CamJob->GetProfileLimits2( $inCAM, $jobId, $step );
+	my $pnlH       = $profLim{"yMax"} - $profLim{"yMin"};
+
+	if ( $pnlH > MAXPNLH ) {
+		$sett{"rotationCCW"} = 90;
 	}
 	else {
-		$mdiInfo{ Enums->Type_MASK } = 0;
+		$sett{"rotationCCW"} = 0;
 	}
 
-	$mdiInfo{ Enums->Type_PLUG } =
-	  scalar( grep { $_->{"gROWname"} =~ /plg[cs]/ } @layers ) ? 1 : 0;
-	$mdiInfo{ Enums->Type_GOLD } =
-	  scalar( grep { $_->{"gROWname"} =~ /gold[cs]/ } @layers ) ? 1 : 0;
+	# 2) Set fiducials
 
-	return %mdiInfo;
+	if ( $layerName =~ /^(outer)?[csv]\d?$/ ) {
+
+		# SIGNAL LAYERS
+
+		if ( $layerCnt <= 2 ) {
+
+			# 2v
+			$sett{"fiducialType"} = Enums->Fiducials_OLECHOLE2V;
+
+		}
+		else {
+
+			# vv
+
+			if ( $layerName =~ /^outer/ ) {
+
+				$sett{"fiducialType"} = Enums->Fiducials_OLECHOLEINNERVV;
+			}
+			else {
+
+				if ( $layerName =~ /^[cs]/ ) {
+
+					$sett{"fiducialType"} = Enums->Fiducials_OLECHOLEOUTERVV;
+				}
+				elsif ( $layerName =~ /^v\d+/ ) {
+
+					my %lPars = JobHelper->ParseSignalLayerName($layerName);
+
+					if ( $stackup->GetSequentialLam() && $stackup->GetCuLayer( $lPars{"sourceName"} )->GetIsFoil() ) {
+
+						$sett{"fiducialType"} = Enums->Fiducials_OLECHOLEINNERVVSL;
+					}
+					else {
+
+						$sett{"fiducialType"} = Enums->Fiducials_OLECHOLEINNERVV;
+					}
+
+				}
+			}
+
+			# vv
+		}
+	}
+	elsif ( $layerName =~ /^m[cs]\d?$/ ) {
+
+		# SOLDER MASK
+
+		if ( $layerCnt <= 2 ) {
+
+			# 2v
+
+			if (    ( $layerName =~ /^mc\d?$/ && CamHelper->LayerExists( $inCAM, $jobId, "c" ) && $pcbType ne EnumsGeneral->PcbType_NOCOPPER )
+				 || ( $layerName =~ /^ms\d?$/ && CamHelper->LayerExists( $inCAM, $jobId, "s" ) ) )
+			{
+				$sett{"fiducialType"} = Enums->Fiducials_CUSQUERE;
+			}
+			else {
+
+				$sett{"fiducialType"} = Enums->Fiducials_OLECHOLE2V;
+			}
+		}
+		else {
+
+			# vv
+
+			$sett{"fiducialType"} = Enums->Fiducials_CUSQUERE;
+		}
+
+	}
+	elsif ( $layerName =~ /^plg[csv]\d?$/ ) {
+
+		# PLUG LAYERS
+
+		if ( $layerCnt <= 2 ) {
+
+			# 2v
+
+			$sett{"fiducialType"} = Enums->Fiducials_OLECHOLE2V;
+		}
+		else {
+
+			# vv
+
+			my %lPars = JobHelper->ParseSignalLayerName($layerName);
+
+			if ( $stackup->GetSequentialLam() && $stackup->GetCuLayer( $lPars{"sourceName"} )->GetIsFoil() ) {
+
+				$sett{"fiducialType"} = Enums->Fiducials_OLECHOLEINNERVVSL;
+			}
+			else {
+
+				$sett{"fiducialType"} = Enums->Fiducials_OLECHOLEINNERVV;
+			}
+
+		}
+
+	}
+
+	die "Rotation is not defined"      if ( !defined $sett{"rotationCCW"} );
+	die "Fiducial type is not defined" if ( !defined $sett{"fiducialType"} );
+
+	return %sett;
 }
 
 # Convert layer type outer<layer name> to filename exported fotr MDI
@@ -95,10 +344,9 @@ sub ConverInnerName2AfterPressFileName {
 	my $self  = shift;
 	my $lName = shift;
 
-	die "Layer name: $lName is in wrong format" unless($lName =~ /^v\d+$/);
+	die "Layer name: $lName is in wrong format" unless ( $lName =~ /^v\d+$/ );
 
-
-	return $lName."_po_lisovani";
+	return $lName . "_po_lisovani";
 
 }
 

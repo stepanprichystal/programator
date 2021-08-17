@@ -27,11 +27,10 @@ use aliased 'CamHelpers::CamDrilling';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamJob';
 use aliased 'Packages::Gerbers::Mditt::ExportFiles::Helper';
-
+use aliased 'Packages::Gerbers::Mditt::ExportFiles::Enums';
 #-------------------------------------------------------------------------------------------#
 #  Package methods
 #-------------------------------------------------------------------------------------------#
-use constant MAXPNLH => 700;    # maximal height of panel, for exposing pnl "Vertical" (not rotated)
 
 sub new {
 	my $self = shift;
@@ -96,6 +95,7 @@ sub Create {
 sub AddPrimarySide {
 	my $self       = shift;
 	my $layerName  = shift;
+	my $layerSett  = shift;
 	my $fiducDCode = shift;
 	my $outputName = shift;
 
@@ -200,18 +200,19 @@ sub AddPrimarySide {
 	$elScalePreset->setAttribute( "y", $stretchYVal );
 
 	# 3)  specific tings per layer
-	$self->__AddJobLayerSett( $layerName, $fiducDCode, $outputName );
+	$self->__AddJobLayerSett( $layerName, $layerSett, $fiducDCode, $outputName );
 }
 
 # Set specific settings for layer side
 sub AddSecondarySide {
 	my $self       = shift;
 	my $layerName  = shift;
+	my $layerSett  = shift;
 	my $fiducDCode = shift;
 	my $outputName = shift;
 
 	#  specific tings per layer
-	$self->__AddJobLayerSett( $layerName, $fiducDCode, $outputName );
+	$self->__AddJobLayerSett( $layerName, $layerSett, $fiducDCode, $outputName );
 
 }
 
@@ -292,6 +293,7 @@ sub Export {
 sub __AddJobLayerSett {
 	my $self       = shift;
 	my $layerName  = shift;
+	my $layerSett  = shift;
 	my $fiducDCode = shift;
 	my $outputName = shift;
 
@@ -336,10 +338,13 @@ sub __AddJobLayerSett {
 	# Set Rotatin
 	my $rotationCW = 0;
 
+	die "User rotation (" . $layerSett->{"rotationCCW"} . ") can be only 0;90 degree"
+	  if ( $layerSett->{"rotationCCW"} != 0 && $layerSett->{"rotationCCW"} != 90 );
+
 	my $pnlH = ( $self->{"jobConfigXML"}->findnodes('/jobconfig/job/process_parameters/part_size') )[0]->getAttribute("y");
 
 	if ($mirrorY) {
-		if ( $pnlH > MAXPNLH ) {
+		if ( $layerSett->{"rotationCCW"} == 90 ) {
 			$rotationCW = 270;
 		}
 		else {
@@ -347,7 +352,7 @@ sub __AddJobLayerSett {
 		}
 	}
 	else {
-		if ( $pnlH > MAXPNLH ) {
+		if ( $layerSett->{"rotationCCW"} == 90 ) {
 			$rotationCW = 270;
 		}
 		else {
@@ -378,7 +383,7 @@ sub __AddJobLayerSett {
 
 	if ( $layerName =~ /^(plg)?(outer)?[csv]\d*$/ ) {
 
-		$energy = 27;                            # Default energy for resist = 25
+		$energy = 27;    # Default energy for resist = 25
 
 	}
 	elsif ( $layerName =~ /^m[cs]2?$/ ) {
@@ -436,14 +441,20 @@ sub __AddJobLayerSett {
 
 	# Set image object
 	my $elImageObject = undef;
-	if (    ( $layerName =~ /^mc\d?$/ && CamHelper->LayerExists( $inCAM, $jobId, "c" ) && $self->{"pcbType"} ne EnumsGeneral->PcbType_NOCOPPER )
-		 || ( $layerName =~ /^ms\d?$/ && CamHelper->LayerExists( $inCAM, $jobId, "s" ) ) )
-	{
+	if ( $layerSett->{"fiducialType"} eq Enums->Fiducials_CUSQUERE ) {
 		$elImageObject = $self->__AddFiducSquare($layerName);
+	}
+	elsif (    $layerSett->{"fiducialType"} eq Enums->Fiducials_OLECHOLE2V
+			|| $layerSett->{"fiducialType"} eq Enums->Fiducials_OLECHOLEINNERVV
+			|| $layerSett->{"fiducialType"} eq Enums->Fiducials_OLECHOLEINNERVVSL
+			|| $layerSett->{"fiducialType"} eq Enums->Fiducials_OLECHOLEOUTERVV )
+	{
+
+		$elImageObject = $self->__AddFiducCircle($layerName);
 	}
 	else {
 
-		$elImageObject = $self->__AddFiducCircle($layerName);
+		die "Image fiducail object was not defined for fiducial type:" . $layerSett->{"fiducialType"};
 	}
 
 	# Add image object template to job layer template

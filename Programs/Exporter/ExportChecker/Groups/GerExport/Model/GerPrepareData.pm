@@ -18,7 +18,6 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper' => 'MdiHelper';
 
 use aliased 'Packages::Gerbers::Jetprint::Helper';
 
@@ -231,13 +230,13 @@ sub __GetMDIInfo {
 	my $inCAM = shift;
 	my $jobId = shift;
 
-	my %mdiTypes = MdiHelper->GetDefaultLayerTypes( $inCAM, $jobId );
+#	my %mdiTypes = MdiHelper->GetDefaultLayerTypes( $inCAM, $jobId );
 
 	my %mdi = ();
-	$mdi{"exportSignal"} = $mdiTypes{"typeSignal"};
-	$mdi{"exportMask"}   = $mdiTypes{"typeMask"};
-	$mdi{"exportPlugs"}  = $mdiTypes{"typePlug"};
-	$mdi{"exportGold"}   = $mdiTypes{"typeGold"};
+#	$mdi{"exportSignal"} = $mdiTypes{"typeSignal"};
+#	$mdi{"exportMask"}   = $mdiTypes{"typeMask"};
+#	$mdi{"exportPlugs"}  = $mdiTypes{"typePlug"};
+#	$mdi{"exportGold"}   = $mdiTypes{"typeGold"};
 
 	return %mdi;
 }
