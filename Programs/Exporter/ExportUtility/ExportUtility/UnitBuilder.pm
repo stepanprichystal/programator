@@ -26,12 +26,16 @@ use aliased 'Programs::Exporter::ExportUtility::Groups::PlotExport::PlotWorkUnit
 use aliased 'Programs::Exporter::ExportUtility::Groups::PreExport::PreWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::ScoExport::ScoWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::GerExport::GerWorkUnit';
+use aliased 'Programs::Exporter::ExportUtility::Groups::MDIExport::MDIWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::PdfExport::PdfWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::OutExport::OutWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::StnclExport::StnclWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::ImpExport::ImpWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::CommExport::CommWorkUnit';
 use aliased 'Programs::Exporter::ExportUtility::Groups::OfferExport::OfferWorkUnit';
+
+
+
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
 
 #-------------------------------------------------------------------------------------------#
@@ -134,6 +138,11 @@ sub __GetUnitClass {
 	elsif ( $unitId eq UnitEnums->UnitId_GER ) {
 
 		$unit = GerWorkUnit->new($unitId);
+
+	}
+	elsif ( $unitId eq UnitEnums->UnitId_MDI ) {
+
+		$unit = MDIWorkUnit->new($unitId);
 
 	}
 	elsif ( $unitId eq UnitEnums->UnitId_PDF ) {

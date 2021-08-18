@@ -20,6 +20,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnit
 use aliased 'Programs::Exporter::ExportChecker::Groups::NCExport::View::NCUnitForm';
 use aliased 'CamHelpers::CamStep';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::View::PlotUnitForm';
+use aliased 'Programs::Exporter::ExportChecker::Groups::MDIExport::View::MDIUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PreExport::View::PreUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::View::CommUnitForm';
 use aliased 'Programs::Exporter::ExportChecker::Groups::OfferExport::View::OfferUnitForm';
@@ -126,9 +127,10 @@ sub _TestedForm {
 	$d->Init( $self->{"inCAM"} );
 
 	#use aliased 'Programs::Exporter::ExportChecker::Groups::CommExport::Presenter::CommUnit';
-	use aliased 'Programs::Exporter::ExportChecker::Groups::OfferExport::Presenter::OfferUnit';
+	#use aliased 'Programs::Exporter::ExportChecker::Groups::OfferExport::Presenter::OfferUnit';
+	use aliased 'Programs::Exporter::ExportChecker::Groups::MDIExport::Presenter::MDIUnit';
 
-	my $preUnit = OfferUnit->new( $self->{"jobId"} );
+	my $preUnit = MDIUnit->new( $self->{"jobId"} );
 
 	$preUnit->SetDefaultInfo($d);
 	$preUnit->InitDataMngr( $self->{"inCAM"} );
@@ -180,7 +182,7 @@ my ( $package, $filename, $line ) = caller;
 
 #if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
-my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "x66981" );
+my $test = Programs::Exporter::ExportChecker::Groups::FormTesterTmp->new( -1, "d328262" );
 
 $test->MainLoop();
 

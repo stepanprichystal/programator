@@ -71,7 +71,7 @@ sub __SetLayout {
 
 	# DEFINE CONTROLS
 	my $gerbers  = $self->__SetLayoutGerbers($self);
-	my $mdi      = $self->__SetLayoutMDI($self);
+
 	my $jetPrint = $self->__SetLayoutJetprint($self);
 	my $paste    = $self->__SetLayoutPaste($self);
 
@@ -82,7 +82,7 @@ sub __SetLayout {
 	$szColInner->Add( $jetPrint, 1, &Wx::wxEXPAND );
 	$szColInner->Add( $gerbers, 0, &Wx::wxEXPAND | &Wx::wxTOP, 2 );
 
-	$szRow1->Add( $mdi, 50, &Wx::wxEXPAND );
+	 
 	$szRow1->Add( $szColInner, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 
 	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND );
@@ -121,39 +121,6 @@ sub __SetLayoutGerbers {
 	return $szStatBox;
 }
 
-# Set layout for MDI
-sub __SetLayoutMDI {
-	my $self   = shift;
-	my $parent = shift;
-
-	#define staticboxes
-	my $statBox = Wx::StaticBox->new( $parent, -1, 'MDI data' );
-	my $szStatBox = Wx::StaticBoxSizer->new( $statBox, &Wx::wxVERTICAL );
-
-	# DEFINE CONTROLS
-
-	my $signalChb = Wx::CheckBox->new( $statBox, -1, "Signal layers", &Wx::wxDefaultPosition );
-	my $maskChb   = Wx::CheckBox->new( $statBox, -1, "Mask layers",   &Wx::wxDefaultPosition );
-	my $plugChb   = Wx::CheckBox->new( $statBox, -1, "Plug layers",   &Wx::wxDefaultPosition );
-	my $goldChb   = Wx::CheckBox->new( $statBox, -1, "Gold layers",   &Wx::wxDefaultPosition );
-
-	# SET EVENTS
-
-	# BUILD STRUCTURE OF LAYOUT
-
-	$szStatBox->Add( $signalChb, 1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $maskChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $plugChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-	$szStatBox->Add( $goldChb,   1, &Wx::wxEXPAND | &Wx::wxALL, 1 );
-
-	# Set References
-	$self->{"signalChb"} = $signalChb;
-	$self->{"maskChb"}   = $maskChb;
-	$self->{"plugChb"}   = $plugChb;
-	$self->{"goldChb"}   = $goldChb;
-
-	return $szStatBox;
-}
 
 # Set layout for Jetprint
 sub __SetLayoutJetprint {
@@ -339,25 +306,11 @@ sub OnPREGroupLayerSettChanged {
 
 sub DisableControls {
 	my $self = shift;
+	
+my $defaultInfo = $self->{"defaultInfo"};
 
-	# MDI gerbers
+	
 
-	my $defaultInfo = $self->{"defaultInfo"};
-	if ( !$defaultInfo->LayerExist("c") || $defaultInfo->GetPcbType() eq EnumsGeneral->PcbType_NOCOPPER ) {
-		$self->{"signalChb"}->Disable();
-	}
-
-	if ( !$defaultInfo->LayerExist("mc") && !$defaultInfo->LayerExist("ms") ) {
-		$self->{"maskChb"}->Disable();
-	}
-
-	unless ( $defaultInfo->LayerExist("plgc") && $defaultInfo->LayerExist("plgs") ) {
-		$self->{"plugChb"}->Disable();
-	}
-
-	unless ( $defaultInfo->LayerExist("goldc") && $defaultInfo->LayerExist("golds") ) {
-		$self->{"goldChb"}->Disable();
-	}
 
 	# JETPRINT Gerbers
 
@@ -492,54 +445,8 @@ sub GetLayers {
 	return $self->{"layers"};
 }
 
-# Mdi data =================================================================
 
-sub SetMdiInfo {
-	my $self = shift;
-	my $info = shift;
 
-	$self->{"signalChb"}->SetValue( $info->{"exportSignal"} );
-	$self->{"maskChb"}->SetValue( $info->{"exportMask"} );
-	$self->{"plugChb"}->SetValue( $info->{"exportPlugs"} );
-	$self->{"goldChb"}->SetValue( $info->{"exportGold"} );
-
-}
-
-sub GetMdiInfo {
-	my $self = shift;
-
-	my %info = ();
-
-	if ( $self->{"signalChb"}->IsChecked() ) {
-		$info{"exportSignal"} = 1;
-	}
-	else {
-		$info{"exportSignal"} = 0;
-	}
-
-	if ( $self->{"maskChb"}->IsChecked() ) {
-		$info{"exportMask"} = 1;
-	}
-	else {
-		$info{"exportMask"} = 0;
-	}
-
-	if ( $self->{"plugChb"}->IsChecked() ) {
-		$info{"exportPlugs"} = 1;
-	}
-	else {
-		$info{"exportPlugs"} = 0;
-	}
-
-	if ( $self->{"goldChb"}->IsChecked() ) {
-		$info{"exportGold"} = 1;
-	}
-	else {
-		$info{"exportGold"} = 0;
-	}
-
-	return \%info;
-}
 
 # Export jetprint gerbers =========================================================
 

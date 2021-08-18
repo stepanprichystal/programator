@@ -4,7 +4,7 @@
 # between ExportChecker and ExportUtility
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::GerData;
+package Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::MDIData;
  
 #3th party library
 use strict;
@@ -29,61 +29,32 @@ sub new {
 }
  
  
-# paste info
-sub SetPasteInfo {
+# Layer couples
+sub SetLayerCouples {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"pasteInfo"} = $value;
+	$self->{"data"}->{"layerCouples"} = $value;
 }
 
-sub GetPasteInfo {
+sub GetLayerCouples {
 	my $self  = shift;
 	my $value = shift;
-	return $self->{"data"}->{"pasteInfo"};
+	return $self->{"data"}->{"layerCouples"};
 }
- 
-# mdi info, hash with info if mask, signal, plug layers are exported
- 
- 
-# export layers
-sub SetExportLayers {
-	my $self  = shift;
-	$self->{"data"}->{"exportLayers"} = shift;
-} 
 
-
-sub GetExportLayers {
+# Settings of each layer
+sub SetLayersSettings {
 	my $self  = shift;
 	my $value = shift;
-	return $self->{"data"}->{"exportLayers"};
-} 
- 
-# layers to test 
-sub SetLayers {
-	my $self  = shift;
-	$self->{"data"}->{"layers"} = shift;
+	$self->{"data"}->{"layersSettings"} = $value;
 }
 
-sub GetLayers {
-	my $self  = shift;
-	return $self->{"data"}->{"layers"};
-} 
- 
-
-# Jetprint info
- 
-sub SetJetprintInfo {
+sub GetLayersSettings {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"jetprintInfo"} = $value;
+	return $self->{"data"}->{"layersSettings"};
 }
-
-sub GetJetprintInfo {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"jetprintInfo"};
-}
- 
+  
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..
 #-------------------------------------------------------------------------------------------#

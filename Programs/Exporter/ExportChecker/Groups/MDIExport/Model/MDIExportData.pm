@@ -4,7 +4,7 @@
 # - Export data, (from prepared group data), which will consume exporter utility. Handler: OnExportGroupData
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerExportData;
+package Programs::Exporter::ExportChecker::Groups::MDIExport::Model::MDIExportData;
 
 #3th party library
 use strict;
@@ -12,24 +12,8 @@ use warnings;
 use File::Copy;
 
 #local library
-#use aliased 'CamHelpers::CamJob';
-#use aliased 'CamHelpers::CamHelper';
-#use aliased 'CamHelpers::CamLayer';
-#use aliased 'CamHelpers::CamAttributes';
-#
-#
-#use aliased 'CamHelpers::CamDrilling';
-#use aliased 'Enums::EnumsPaths';
-#use aliased 'Enums::EnumsGeneral';
-#use aliased 'Helpers::JobHelper';
-#use aliased 'Packages::InCAM::InCAM';
-#use aliased 'Enums::EnumsMachines';
-#use aliased 'Helpers::GeneralHelper';
-#use aliased 'Packages::Events::Event';
-#use aliased 'Connectors::HeliosConnector::HegMethods';
-#use aliased 'Managers::MessageMngr::MessageMngr';
 
-use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::GerData';
+use aliased 'Programs::Exporter::ExportUtility::DataTransfer::UnitsDataContracts::MDIData';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -56,14 +40,13 @@ sub OnExportGroupData {
 
 	my $stepName = "panel";
 
-	my $exportData = GerData->new();
+	my $exportData = MDIData->new();
 
-	$exportData->SetExportLayers( $groupData->GetExportLayers() );
-	$exportData->SetLayers( $groupData->GetLayers() );
-	$exportData->SetPasteInfo( $groupData->GetPasteInfo() );
-	$exportData->SetJetprintInfo( $groupData->GetJetprintInfo() ); 
-
+	$exportData->SetLayerCouples( $groupData->GetLayerCouples() );
+	$exportData->SetLayersSettings( $groupData->GetLayersSettings() );
+ 
 	return $exportData;
+
 }
 
 #-------------------------------------------------------------------------------------------#

@@ -3,10 +3,8 @@
 # Description: Cover merging, spliting and checking before exporting NC files
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerGroupData;
+package Programs::Exporter::ExportChecker::Groups::MDIExport::Model::MDIGroupData;
 
-#use Class::Interface;
-#&implements('Programs::Exporter::ExportChecker::Groups::IGroupData');
 
 
 #3th party library
@@ -30,65 +28,38 @@ sub new {
 	return $self;    # Return the reference to the hash.
 }
 
-
-# paste info, hash with info
-
 sub GetData {
 	my $self = shift;
 	return %{ $self->{"data"} };
 }
 
-sub SetPasteInfo {
-	my $self  = shift;
-	my $value = shift;
-	$self->{"data"}->{"pasteInfo"} = $value;
-}
-
-sub GetPasteInfo {
-	my $self  = shift;
-	my $value = shift;
-	return $self->{"data"}->{"pasteInfo"};
-}
  
- 
-# export layers
-sub SetExportLayers {
-	my $self  = shift;
-	$self->{"data"}->{"exportLayers"} = shift;
-} 
-
-
-sub GetExportLayers {
+# Layer couples
+sub SetLayerCouples {
 	my $self  = shift;
 	my $value = shift;
-	return $self->{"data"}->{"exportLayers"};
-}
- 
-# layers to export 
-sub SetLayers {
-	my $self  = shift;
-	$self->{"data"}->{"layers"} = shift;
+	$self->{"data"}->{"layerCouples"} = $value;
 }
 
-sub GetLayers {
-	my $self  = shift;
-	return $self->{"data"}->{"layers"};
-} 
-
-
-# Jetprint info
- 
-sub SetJetprintInfo {
+sub GetLayerCouples {
 	my $self  = shift;
 	my $value = shift;
-	$self->{"data"}->{"jetprintInfo"} = $value;
+	return $self->{"data"}->{"layerCouples"};
 }
 
-sub GetJetprintInfo {
+# Settings of each layer
+sub SetLayersSettings {
 	my $self  = shift;
 	my $value = shift;
-	return $self->{"data"}->{"jetprintInfo"};
+	$self->{"data"}->{"layersSettings"} = $value;
 }
+
+sub GetLayersSettings {
+	my $self  = shift;
+	my $value = shift;
+	return $self->{"data"}->{"layersSettings"};
+}
+  
 
 #-------------------------------------------------------------------------------------------#
 #  Place for testing..

@@ -20,9 +20,7 @@ use aliased 'Packages::Export::PreExport::LayerInvert';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
-use aliased 'Packages::Export::GerExport::ExportGerMngr';
 use aliased 'Packages::Export::GerExport::ExportPasteMngr';
-use aliased 'Packages::Export::GerExport::ExportMdiMngr';
 use aliased 'Packages::Export::GerExport::ExportJetprintMngr';
 use aliased 'Packages::Export::PreExport::FakeLayers';
 
@@ -42,7 +40,6 @@ sub new {
 	$self->{"exportLayers"} = shift;
 	$self->{"layers"}       = shift;
 	$self->{"paste"}        = shift;
-	$self->{"mdiInfo"}      = shift;
 	$self->{"jetprintInfo"} = shift;
 
 	$self->{"gerberMngr"} = ExportGerMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"exportLayers"}, $self->{"layers"} );
@@ -50,9 +47,6 @@ sub new {
 
 	$self->{"pasteMngr"} = ExportPasteMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"paste"} );
 	$self->{"pasteMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
-
-	$self->{"mdiMngr"} = ExportMdiMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"mdiInfo"} );
-	$self->{"mdiMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
 
 	$self->{"jetprintMngr"} = ExportJetprintMngr->new( $self->{"inCAM"}, $self->{"jobId"}, $self->{"jetprintInfo"} );
 	$self->{"jetprintMngr"}->{"onItemResult"}->Add( sub { $self->_OnItemResult(@_) } );
@@ -74,7 +68,6 @@ sub Run {
 
 	$self->{"gerberMngr"}->Run();
 	$self->{"pasteMngr"}->Run();
-	$self->{"mdiMngr"}->Run();
 	$self->{"jetprintMngr"}->Run();
 
 	#  Remove fake layers after export
@@ -90,10 +83,6 @@ sub __DeleteOldFiles {
 
 	my @file2del = ();
 
-	# delete MDI files;
-
-	my @f1 = FileHelper->GetFilesNameByPattern( EnumsPaths->Jobs_MDI, $jobId );
-	push( @file2del, @f1 );
 
 	# delete Jet print files;
 
@@ -114,7 +103,6 @@ sub TaskItemsCount {
 
 	$totalCnt += $self->{"exportLayers"}      ? 1 : 0;    #gerbers
 	$totalCnt += $self->{"paste"}->{"export"} ? 1 : 0;    # paste
-	$totalCnt += $self->{"mdiMngr"}->GetExportLayerCnt();         # paste
 	$totalCnt += $self->{"jetprintMngr"}->GetExportLayerCnt();    # paste
 
 	return $totalCnt;

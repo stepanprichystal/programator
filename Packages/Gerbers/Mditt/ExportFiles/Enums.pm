@@ -10,11 +10,11 @@ use constant {
 };
 
 use constant {
-	Fiducials_CUSQUERE          => "fiduc_CuSquere",                 # camera focus on copper squere
-	Fiducials_OLECHOLE2V        => "Fiducials_OLECHOLE2V",           # camera focus on 3.0mm hole (OLEC) at 2vv pcb
-	Fiducials_OLECHOLEINNERVV   => "Fiducials_OLECHOLEINNERVV",      # camera focus on 3.0mm hole (OLEC) at core
-	Fiducials_OLECHOLEINNERVVSL => "Fiducials_OLECHOLEINNERVVSL",    # camera focus on 3.0mm hole (OLEC) at core
-	Fiducials_OLECHOLEOUTERVV => "Fiducials_OLECHOLEOUTERVV",    # camera focus on 3.0mm hole (OLEC) at final pcb after routing frame
+			   Fiducials_CUSQUERE          => "CuSquere",             # camera focus on copper squere
+			   Fiducials_OLECHOLE2V        => "OlecHole2V",           # camera focus on 3.0mm hole (OLEC) at 2vv pcb
+			   Fiducials_OLECHOLEINNERVV   => "OlecHoleInnerVV",      # camera focus on 3.0mm hole (OLEC) at core
+			   Fiducials_OLECHOLEINNERVVSL => "OlecHoleInnerVVSL",    # camera focus on 3.0mm hole (OLEC) at core
+			   Fiducials_OLECHOLEOUTERVV   => "OlecHoleOuterVV",      # camera focus on 3.0mm hole (OLEC) at final pcb after routing frame
 };
 
 1;

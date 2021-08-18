@@ -8,6 +8,7 @@ package Packages::Gerbers::Mditt::ExportFiles::Helper;
 #3th party library
 use strict;
 use warnings;
+use List::Util qw[max min first];
 
 #local library
 use aliased 'Helpers::GeneralHelper';
@@ -25,6 +26,9 @@ use aliased 'CamHelpers::CamSymbol';
 use aliased 'CamHelpers::CamSymbolSurf';
 use aliased 'Helpers::JobHelper';
 use aliased 'Enums::EnumsGeneral';
+use aliased 'Packages::Stackup::Stackup::Stackup';
+use aliased 'Packages::Stackup::Enums' => 'StackEnums';
+
 
 use constant MAXPNLH => 700;    # maximal height of panel, for exposing pnl "Vertical" (not rotated)
 
@@ -33,10 +37,16 @@ use constant MAXPNLH => 700;    # maximal height of panel, for exposing pnl "Ver
 #-------------------------------------------------------------------------------------------#
 # Return layer types which should be exported by default
 sub GetDefaultLayerCouples {
-	my $self = shift;
+	my $self        = shift;
+	
 
 	my $inCAM = shift;
 	my $jobId = shift;
+	
+	my $signalLayer = shift // 1;
+	my $maskLayer   = shift // 1;
+	my $plugLayer   = shift // 1;
+	my $goldLayer   = shift // 1;
 
 	my @exportLayers = ();
 
@@ -50,7 +60,7 @@ sub GetDefaultLayerCouples {
 	my @all = CamJob->GetBoardBaseLayers( $inCAM, $jobId );
 
 	# Signal layers
-	{
+	if ($signalLayer) {
 
 		if ( $layerCnt <= 2 ) {
 
@@ -61,7 +71,7 @@ sub GetDefaultLayerCouples {
 		}
 		else {
 
-			my @products = $self->{"stackup"}->GetAllProducts();
+			my @products = $stackup->GetAllProducts();
 
 			foreach my $p (@products) {
 
@@ -99,7 +109,7 @@ sub GetDefaultLayerCouples {
 	}
 
 	# Solder mask layers
-	{
+	if ($maskLayer) {
 
 		my @l = grep { $_->{"gROWname"} =~ /^m[cs]2?$/ } @all;    # number 2 is second soldermask
 
@@ -117,18 +127,18 @@ sub GetDefaultLayerCouples {
 	}
 
 	# Plugging layers
-	{
+	if ($plugLayer) {
 
 		if ( $layerCnt <= 2 ) {
 
 			my @couple = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^plg[cs]$/ } @all;
 
-			push( @exportLayers, \@couple )  if ( scalar(@couple) );
+			push( @exportLayers, \@couple ) if ( scalar(@couple) );
 
 		}
 		else {
 
-			my @products = $self->{"stackup"}->GetAllProducts();
+			my @products = $stackup->GetAllProducts();
 
 			foreach my $p (@products) {
 
@@ -148,6 +158,7 @@ sub GetDefaultLayerCouples {
 	}
 
 	# Gold layers
+	if ($goldLayer)
 	{
 
 		my @l = map { $_->{"gROWname"} } grep { $_->{"gROWname"} =~ /^gold[cs]$/ } @all;
@@ -185,7 +196,7 @@ sub GetDefaultLayerSett {
 
 	my %sett = ( "rotationCCW" => undef, "fiducialType" => undef );
 
-	my $pcbType  = JobHelper->GetPcbType( $jobId);
+	my $pcbType  = JobHelper->GetPcbType($jobId);
 	my $layerCnt = CamJob->GetSignalLayerCnt( $inCAM, $jobId );
 	my $stackup  = undef;
 	if ( $layerCnt > 2 ) {
@@ -301,6 +312,24 @@ sub GetDefaultLayerSett {
 				$sett{"fiducialType"} = Enums->Fiducials_OLECHOLEINNERVV;
 			}
 
+		}
+
+	}elsif ( $layerName =~ /^gold[cs]\d?$/ ) {
+
+		# GOLD LAYER
+
+		if ( $layerCnt <= 2 ) {
+
+			# 2v
+ 
+				$sett{"fiducialType"} = Enums->Fiducials_OLECHOLE2V;
+			 
+		}
+		else {
+
+			# vv
+
+			$sett{"fiducialType"} = Enums->Fiducials_OLECHOLEOUTERVV;
 		}
 
 	}
