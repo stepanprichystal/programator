@@ -111,17 +111,93 @@ sub __SetLayout {
 	my $topLayerRotChb = Wx::ComboBox->new( $self, -1, $rotOptions[0], &Wx::wxDefaultPosition, [ 32, 22 ], \@rotOptions, &Wx::wxCB_READONLY );
 	my $botLayerRotChb = Wx::ComboBox->new( $self, -1, $rotOptions[0], &Wx::wxDefaultPosition, [ 32, 22 ], \@rotOptions, &Wx::wxCB_READONLY );
 
-	my @fiducOptions = ( MDITTEnums->Fiducials_CUSQUERE );
+	my @fiducOptions = ();
 
-	if ( $layerCnt <= 2 ) {
+	my $layerName = defined $self->GetTopLayer() ? $self->GetTopLayer() : $self->GetBotLayer();
 
-		push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLE2V );
+	if ( $layerName =~ /^(outer)?[csv]\d?$/ ) {
+
+		# SIGNAL LAYERS
+		if ( $layerCnt <= 2 ) {
+			push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLE2V );
+		}
+		else {
+
+			if ( $layerName =~ /^outer?[cs]$/ || $layerName =~ /^v\d$/ ) {
+
+				push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEINNERVV );
+				push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEINNERVVSL );
+
+			}
+
+			if ( $layerName =~ /^[cs]$/ ) {
+
+				push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEOUTERVV );
+			}
+
+		}
 	}
-	else {
+	elsif ( $layerName =~ /^m[cs]\d?$/ ) {
 
-		push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEINNERVV );
-		push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEINNERVVSL );
-		push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEOUTERVV );
+		# SOLDER MASK
+		if ( $layerCnt <= 2 ) {
+
+			# 2v
+
+			push( @fiducOptions, MDITTEnums->Fiducials_CUSQUERE );
+			push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLE2V );
+
+		}
+		else {
+
+			# vv
+
+			push( @fiducOptions, MDITTEnums->Fiducials_CUSQUERE );
+			push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEOUTERVV );
+
+		}
+
+	}
+	elsif ( $layerName =~ /^plg[csv]\d?$/ ) {
+
+		# PLUG LAYERS
+		if ( $layerCnt <= 2 ) {
+
+			# 2v
+
+			push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLE2V );
+
+		}
+		else {
+
+			# vv
+
+			push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEINNERVVSL );
+			push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEINNERVV );
+
+		}
+
+	}
+	elsif ( $layerName =~ /^gold[cs]\d?$/ ) {
+
+		# GOLD LAYER
+
+		if ( $layerCnt <= 2 ) {
+
+			# 2v
+
+			push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLE2V );
+			push( @fiducOptions, MDITTEnums->Fiducials_CUSQUERE );
+
+		}
+		else {
+
+			# vv
+			push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEOUTERVV );
+			push( @fiducOptions, MDITTEnums->Fiducials_CUSQUERE );
+
+		}
+
 	}
 
 	my $topLayerFiducChb = Wx::ComboBox->new( $self, -1, $fiducOptions[0], &Wx::wxDefaultPosition, [ 10, 22 ], \@fiducOptions, &Wx::wxCB_READONLY );
