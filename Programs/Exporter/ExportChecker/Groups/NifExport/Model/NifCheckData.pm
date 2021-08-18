@@ -789,8 +789,8 @@ sub OnCheckGroupData {
 				$dataMngr->_AddWarningResult(
 											  "Maximální velikost mpanelu",
 											  "Zákazník požaduje maximální velikost panelu pro osazování: "
-												. $minA . "mm x "
-												. $minB
+												. $maxA . "mm x "
+												. $maxB
 												. "mm. Mpanel má aktuálně: "
 												. $w . "mm x "
 												. $h

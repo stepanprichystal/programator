@@ -108,8 +108,8 @@ sub __CheckCustomerPanel {
 				$self->_AddWarning(
 									"Maximální velikost mpanelu",
 									"Zákazník požaduje maximální velikost panelu pro osazování: "
-									  . $minA . "mm x "
-									  . $minB
+									  . $maxA . "mm x "
+									  . $maxB
 									  . "mm. Panel má aktuálně: "
 									  . $w . "mm x "
 									  . $h
