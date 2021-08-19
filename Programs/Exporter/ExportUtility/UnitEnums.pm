@@ -9,6 +9,7 @@ use constant {
 	UnitId_PLOT  => "plot",
 	UnitId_PRE   => "pre",
 	UnitId_GER   => "ger",
+	UnitId_MDI   => "mdi",
 	UnitId_PDF   => "pdf",
 	UnitId_SCO   => "score",
 	UnitId_OUT   => "out",
@@ -62,6 +63,11 @@ sub GetTitle {
 	elsif ( $code eq UnitId_GER ) {
 
 		$title = "Gerbers";
+
+	}
+	elsif ( $code eq UnitId_MDI ) {
+
+		$title = "MDI files";
 
 	}
 	elsif ( $code eq UnitId_SCO ) {

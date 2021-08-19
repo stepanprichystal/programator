@@ -220,12 +220,21 @@ sub GetItem {
 	}
 }
 
+sub GetAllItems {
+	my $self   = shift;
+	 
+	return @{ $self->{"jobItems"} };
+}
+
 sub GetItemsCnt {
 	my $self = shift;
 
 	return @{ $self->{"jobItems"} };
 
 }
+
+ 
+
 
 #-------------------------------------------------------------------------------------------#
 #  Private methods

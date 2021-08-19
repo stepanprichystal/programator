@@ -2,15 +2,14 @@
 # Description: This class contains code, which provides export of specific group
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportUtility::Groups::GerExport::GerWorkUnit;
+package Programs::Exporter::ExportUtility::Groups::MDIExport::MDIWorkUnit;
 use base('Managers::AbstractQueue::AbstractQueue::JobWorkerUnit');
 #3th party library
 use strict;
 use warnings;
 
-# local library
-use aliased "Packages::Export::GerExport::GerMngr";
-
+use aliased 'Packages::Events::Event';
+use aliased 'Packages::Export::MDIExport::MDIMngr';
 
 #-------------------------------------------------------------------------------------------#
 #  NC export, all layers, all machines..
@@ -32,6 +31,9 @@ sub new {
 
 	return $self;
 }
+ 
+
+
 
 sub Init {
 	my $self       = shift;
@@ -43,15 +45,10 @@ sub Init {
 	$self->{"inCAM"}      = $inCAM;
 	$self->{"jobId"}      = $jobId;
  
+	my $layerCouples = $taskData->GetLayerCouples();
+	my $layerSettings = $taskData->GetLayersSettings();
 	
- 
-	my $exportLayers =  $taskData->GetExportLayers();
-	my $layers =  $taskData->GetLayers();
-	my $pasteInfo =  $taskData->GetPasteInfo();
-	my $jetprintInfo =  $taskData->GetJetprintInfo();
-	
- 
-	my $mngr  = GerMngr->new( $inCAM, $jobId, $exportLayers, $layers, $pasteInfo, $jetprintInfo);
+	my $mngr = MDIMngr->new($inCAM, $jobId, $layerCouples, $layerSettings);
 	
 	$mngr->{"onItemResult"}->Add( sub { $self->_OnItemResultHandler(@_) } );
 	

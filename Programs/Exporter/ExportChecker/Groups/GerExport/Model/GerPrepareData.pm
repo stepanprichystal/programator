@@ -18,7 +18,6 @@ use aliased 'Programs::Exporter::ExportChecker::Enums';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsGeneral';
 use aliased 'Connectors::HeliosConnector::HegMethods';
-use aliased 'Packages::Gerbers::Mdi::ExportFiles::Helper' => 'MdiHelper';
 
 use aliased 'Packages::Gerbers::Jetprint::Helper';
 
@@ -72,9 +71,7 @@ sub OnPrepareGroupData {
 		$groupData->SetExportLayers(0);
 	}
 
-	# 2) Prepare MDI settings
-	my %mdiInfo = $self->__GetMDIInfo( $inCAM, $jobId );
-	$groupData->SetMdiInfo( \%mdiInfo );
+ 
 
 	# 3) Prepare paste settings
 	my %pasteInfo = $self->__GetPasteInfo( $inCAM, $jobId, $defaultInfo );
@@ -225,22 +222,7 @@ sub __GetPasteInfo {
 	return %pasteInfo;
 
 }
-
-sub __GetMDIInfo {
-	my $self  = shift;
-	my $inCAM = shift;
-	my $jobId = shift;
-
-	my %mdiTypes = MdiHelper->GetDefaultLayerTypes( $inCAM, $jobId );
-
-	my %mdi = ();
-	$mdi{"exportSignal"} = $mdiTypes{"typeSignal"};
-	$mdi{"exportMask"}   = $mdiTypes{"typeMask"};
-	$mdi{"exportPlugs"}  = $mdiTypes{"typePlug"};
-	$mdi{"exportGold"}   = $mdiTypes{"typeGold"};
-
-	return %mdi;
-}
+ 
 
 #sub __GetMDIInfo {
 #	my $self        = shift;

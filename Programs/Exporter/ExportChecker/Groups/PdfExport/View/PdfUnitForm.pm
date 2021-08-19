@@ -220,8 +220,8 @@ sub __SetLayoutDrawings {
 	my $exportPressfitChb   = Wx::CheckBox->new( $statBox, -1, "Pressfit (Plt)",    &Wx::wxDefaultPosition );
 	my $exportTolMeasureChb = Wx::CheckBox->new( $statBox, -1, "Tolerance (NPlt)",  &Wx::wxDefaultPosition );
 	my $exportNCChb         = Wx::CheckBox->new( $statBox, -1, "NC countersing",    &Wx::wxDefaultPosition );
-	my $exportDrillIPC3Chb  = Wx::CheckBox->new( $statBox, -1, "Customer IPC3 cpn", &Wx::wxDefaultPosition );
-	my $exportCustIPC3Chb   = Wx::CheckBox->new( $statBox, -1, "Internal IPC3 cpn", &Wx::wxDefaultPosition );
+	my $exportDrillIPC3Chb  = Wx::CheckBox->new( $statBox, -1, "Cust. IPC3 cpn", &Wx::wxDefaultPosition );
+	my $exportCustIPC3Chb   = Wx::CheckBox->new( $statBox, -1, "Drill. IPC3 cpn", &Wx::wxDefaultPosition );
 	my $exportPCBThickChb = Wx::CheckBox->new( $statBox, -1, "PCB thickness.",  &Wx::wxDefaultPosition );
 
 	# SET EVENTS

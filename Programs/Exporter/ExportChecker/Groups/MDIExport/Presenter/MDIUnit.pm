@@ -8,11 +8,11 @@
 # 3) View - only display data, which are passed from model by presenter class
 # Author:SPR
 #-------------------------------------------------------------------------------------------#
-package Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::GerUnit;
+package Programs::Exporter::ExportChecker::Groups::MDIExport::Presenter::MDIUnit;
 use base 'Programs::Exporter::ExportChecker::Groups::UnitBase';
 
 #use Class::Interface;
-#&implements('Programs::Exporter::ExportChecker::ExportChecker::Unit::IUnit');
+#&MDIlements('Programs::Exporter::ExportChecker::ExportChecker::Unit::IUnit');
 
 #3th party library
 use strict;
@@ -22,12 +22,11 @@ use warnings;
 #use aliased 'Programs::Exporter::ExportChecker::Groups::NifExport::View::NifUnitForm';
 
 use aliased 'Programs::Exporter::ExportChecker::Groups::GroupDataMngr';
-use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerCheckData';
-use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerPrepareData';
-use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Model::GerExportData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::MDIExport::Model::MDICheckData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::MDIExport::Model::MDIPrepareData';
+use aliased 'Programs::Exporter::ExportChecker::Groups::MDIExport::Model::MDIExportData';
 use aliased 'Programs::Exporter::ExportUtility::UnitEnums';
-use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::View::GerUnitForm';
-use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::View::GerUnitFormEvt';
+use aliased 'Programs::Exporter::ExportChecker::Groups::MDIExport::View::MDIUnitForm';
 
 #-------------------------------------------------------------------------------------------#
 #  Package methods
@@ -41,11 +40,11 @@ sub new {
 	bless $self;
 
 	#uique key within all units
-	$self->{"unitId"} = UnitEnums->UnitId_GER;
+	$self->{"unitId"} = UnitEnums->UnitId_MDI;
 
-	my $checkData   = GerCheckData->new();
-	my $prepareData = GerPrepareData->new();
-	my $exportData  = GerExportData->new();
+	my $checkData   = MDICheckData->new();
+	my $prepareData = MDIPrepareData->new();
+	my $exportData  = MDIExportData->new();
 
 	$self->{"dataMngr"} = GroupDataMngr->new( $self->{"jobId"}, $prepareData, $checkData, $exportData );
 
@@ -70,10 +69,7 @@ sub InitForm {
 	$self->{"groupWrapper"} = $groupWrapper;
 
 	my $parent = $groupWrapper->GetParentForGroup();
-	$self->{"form"} = GerUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo() );
-
-	# init base class with event class
-	$self->{"eventClass"} = GerUnitFormEvt->new( $self->{"form"} );
+	$self->{"form"} = MDIUnitForm->new( $parent, $inCAM, $self->{"jobId"}, $self->{"dataMngr"}->GetDefaultInfo() );
 
 	$self->_SetHandlers();
 
@@ -85,11 +81,8 @@ sub RefreshGUI {
 	my $groupData = $self->{"dataMngr"}->GetGroupData();
 
 	#refresh group form
-	$self->{"form"}->SetPasteInfo( $groupData->GetPasteInfo() );
-	$self->{"form"}->SetExportLayers( $groupData->GetExportLayers() );
-	$self->{"form"}->SetLayers( $groupData->GetLayers() );
-	$self->{"form"}->SetJetprintInfo( $groupData->GetJetprintInfo() );
- 
+	$self->{"form"}->SetLayerCouples( $groupData->GetLayerCouples() );
+	$self->{"form"}->SetLayersSettings( $groupData->GetLayersSettings() );
 
 }
 
@@ -105,14 +98,10 @@ sub UpdateGroupData {
 	if ($frm) {
 		my $groupData = $self->{"dataMngr"}->GetGroupData();
 
-		$groupData->SetPasteInfo( $frm->GetPasteInfo() );
-		$groupData->SetExportLayers( $frm->GetExportLayers() );
-		$groupData->SetLayers( $frm->GetLayers() );
-		$groupData->SetJetprintInfo( $frm->GetJetprintInfo() );
- 
-
+		$groupData->SetLayerCouples( $frm->GetLayerCouples() );
+		$groupData->SetLayersSettings( $frm->GetLayersSettings() );
 	}
- 
+
 }
 
 #-------------------------------------------------------------------------------------------#

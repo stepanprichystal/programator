@@ -25,6 +25,7 @@ use aliased 'Programs::Exporter::ExportChecker::Groups::AOIExport::Presenter::AO
 use aliased 'Programs::Exporter::ExportChecker::Groups::ETExport::Presenter::ETUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PlotExport::Presenter::PlotUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::GerExport::Presenter::GerUnit';
+use aliased 'Programs::Exporter::ExportChecker::Groups::MDIExport::Presenter::MDIUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::ScoExport::Presenter::ScoUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::PdfExport::Presenter::PdfUnit';
 use aliased 'Programs::Exporter::ExportChecker::Groups::OutExport::Presenter::OutUnit';
@@ -101,6 +102,7 @@ sub GetUnitById {
 	elsif ( $unitId eq UnitEnums->UnitId_PLOT )  { $unit = PlotUnit->new($jobId); }
 	elsif ( $unitId eq UnitEnums->UnitId_PRE )   { $unit = PreUnit->new($jobId); }
 	elsif ( $unitId eq UnitEnums->UnitId_GER )   { $unit = GerUnit->new($jobId); }
+	elsif ( $unitId eq UnitEnums->UnitId_MDI )   { $unit = MDIUnit->new($jobId); }
 	elsif ( $unitId eq UnitEnums->UnitId_PDF )   { $unit = PdfUnit->new($jobId); }
 	elsif ( $unitId eq UnitEnums->UnitId_SCO )   { $unit = ScoUnit->new($jobId); }
 	elsif ( $unitId eq UnitEnums->UnitId_OUT )   { $unit = OutUnit->new($jobId); }

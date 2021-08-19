@@ -53,20 +53,22 @@ sub Build {
 
 	# Units
 	my $nifUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_NIF,  $self->{"jobId"} );
-	my $plotUnit1 = UnitHelper->GetUnitById( UnitEnums->UnitId_PLOT, $self->{"jobId"} );
-	my $ncUnit1   = UnitHelper->GetUnitById( UnitEnums->UnitId_NC,   $self->{"jobId"} );
+	my $mdiUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_MDI,  $self->{"jobId"} );
 	my $gerUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_GER,  $self->{"jobId"} );
+	my $ncUnit1   = UnitHelper->GetUnitById( UnitEnums->UnitId_NC,   $self->{"jobId"} );
 	my $scoUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_SCO,  $self->{"jobId"} );
 	my $pdfUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_PDF,  $self->{"jobId"} );
+	my $etUnit1  = UnitHelper->GetUnitById( UnitEnums->UnitId_ET,  $self->{"jobId"} );
 
 	my $row1Tab2 = $tableTab2->AddRow();
 	$row1Tab2->AddCell( $nifUnit1,  Enums->Width_50 );
-	$row1Tab2->AddCell( $plotUnit1, Enums->Width_50 );
+	$row1Tab2->AddCell( $gerUnit1, Enums->Width_25 );
+	$row1Tab2->AddCell( $mdiUnit1, Enums->Width_25 );
 
 	my $row2Tab2 = $tableTab2->AddRow();
 	$row2Tab2->AddCell( $ncUnit1,  Enums->Width_25 );
 	$row2Tab2->AddCell( $scoUnit1, Enums->Width_25 );
-	$row2Tab2->AddCell( $gerUnit1, Enums->Width_25 );
+	$row2Tab2->AddCell( $etUnit1, Enums->Width_25 );
 	$row2Tab2->AddCell( $pdfUnit1, Enums->Width_25 );
 
 	# Table 3
@@ -76,12 +78,17 @@ sub Build {
 	# Units
 
 	my $outUnit1 = UnitHelper->GetUnitById( UnitEnums->UnitId_OUT, $self->{"jobId"} );
+	my $plotUnit1 = UnitHelper->GetUnitById( UnitEnums->UnitId_PLOT, $self->{"jobId"} );
 	my $commUnit1 = UnitHelper->GetUnitById( UnitEnums->UnitId_COMM, $self->{"jobId"} );
 
 	my $row1Tab3 = $tableTab3->AddRow();
 	$row1Tab3->AddCell( $outUnit1, Enums->Width_25 );
-	$row1Tab3->AddCell( $commUnit1, Enums->Width_50 );
-
+	
+	my $row2Tab3 = $tableTab3->AddRow();
+	$row2Tab3->AddCell( $plotUnit1,  Enums->Width_50 );
+	$row2Tab3->AddCell( $commUnit1,  Enums->Width_50 );
+	
+	 
 	# Set which group is selected by default
 	$groupTables->SetDefaultSelected($tableTab2);
 
