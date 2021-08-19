@@ -10,7 +10,7 @@ use constant {
 };
 
 use constant {
-			   Fiducials_CUSQUERE          => "CuSquere",             # camera focus on copper squere
+			   Fiducials_CUSQUERE          => "CuSquare",             # camera focus on copper squere
 			   Fiducials_OLECHOLE2V        => "OlecHole2V",           # camera focus on 3.0mm hole (OLEC) at 2vv pcb
 			   Fiducials_OLECHOLEINNERVV   => "OlecHoleInnerVV",      # camera focus on 3.0mm hole (OLEC) at core
 			   Fiducials_OLECHOLEINNERVVSL => "OlecHoleInnerVVSL",    # camera focus on 3.0mm hole (OLEC) at core

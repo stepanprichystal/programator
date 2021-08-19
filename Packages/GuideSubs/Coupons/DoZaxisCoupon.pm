@@ -214,57 +214,10 @@ sub GenerateZaxisCoupons {
 
 	# Exit if no coupon specification
 	return 0 if ( scalar( $cpnZAxis->GetAllSpecifications() ) == 0 );
+	
+	my @cpnStep = $cpnZAxis->CreateCoupons();
 
-	while (1) {
-
-		# Generate coupons
-		my @cpnStep = $cpnZAxis->CreateCoupons();
-
-		# Let user to put coupon to panel
-		my %lim = CamJob->GetProfileLimits2( $inCAM, $jobId, "panel" );
-		my $sr = SRStep->new( $inCAM, $jobId, "panel" );
-
-		for ( my $i = 0 ; $i < scalar(@cpnStep) ; $i++ ) {
-
-			$sr->AddSRStep( $cpnStep[$i], $i * 20, $lim{"yMax"} + 10, 0, 1, 1, 1, 1 );
-		}
-
-		my @mess = (@messHead);
-		push( @mess,
-			      "1) Přesuň vygenerované stepy ideálně do aktivní oblasti přířezu, "
-				. "pokud to nejde, umísti je do technologického okolí" );
-		push( @mess,
-			      "2) Pokud je na přířezu volné místo, duplikuj kupóny a umísti je na panel "
-				. "ještě do další oblasti (ideálně jedna sada v horní polovině panelu, druhá ve spodní)" );
-		push( @mess, $errMess );
-		$messMngr->ShowModal( -1, EnumsGeneral->MessageType_INFORMATION, \@mess );
-
-		CamHelper->SetStep( $inCAM, "panel" );
-
-		$inCAM->PAUSE("Rozmisti kupony na panelu");
-
-		my @allSteps = map { $_->{"stepName"} } CamStepRepeat->GetUniqueStepAndRepeat( $inCAM, $jobId, "panel" );
-
-		my $cpnExist = 1;
-		foreach my $cpnStep (@cpnStep) {
-
-			my $exist = first { $_ eq $cpnStep } @allSteps;
-
-			unless ($exist) {
-				my @mess = (@messHead);
-				push( @mess, "Ve stepu panel není umístěn kupon step: \"" . $cpnStep . "\"" );
-				push( @mess, "Kupony budou nagenerovány znovu" );
-
-				$messMngr->ShowModal( -1, EnumsGeneral->MessageType_ERROR, \@mess );
-				$cpnExist = 0;
-				last;
-			}
-		}
-
-		last if ($cpnExist);
-
-	}
-
+	 
 	return $result;
 }
 

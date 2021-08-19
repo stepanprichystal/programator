@@ -88,7 +88,7 @@ sub InitPartModel {
 }
 
 # Handler which catch change of creatores in other parts
-# Reise imidiatelly after slection change, do not wait on asznchrounous task
+# Reise imidiatelly after slection change inf no preview mode, else wait on asynchrounous process
 sub OnOtherPartCreatorSelChangedHndl {
 	my $self       = shift;
 	my $partId     = shift;

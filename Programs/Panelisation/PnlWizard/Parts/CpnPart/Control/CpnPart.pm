@@ -38,9 +38,8 @@ sub new {
 
 	# PROPERTIES
 
-	$self->{"model"}      = PartModel->new();         # Data model for view
-	$self->{"checkClassName"} = ref(PartCheckClass->new());
-	
+	$self->{"model"}          = PartModel->new();               # Data model for view
+	$self->{"checkClassName"} = ref( PartCheckClass->new() );
 
 	$self->__SetActiveCreators();
 
@@ -190,13 +189,23 @@ sub __OnManualPlacementHndl {
 }
 
 # Handler which catch change of creatores in other parts
-# Reise imidiatelly after slection change, do not wait on asznchrounous task
+# Reise imidiatelly after slection change inf no preview mode, else wait on asynchrounous process
 sub OnOtherPartCreatorSelChangedHndl {
 	my $self       = shift;
 	my $partId     = shift;
 	my $creatorKey = shift;
 
 	$self->EnableCreators( $partId, $creatorKey );
+
+	if ( $partId eq Enums->Part_PNLSTEPS ) {
+
+		if ( $self->GetPreview() ) {
+
+			$self->AsyncProcessSelCreatorModel();
+
+		}
+
+	}
 
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
@@ -218,13 +227,11 @@ sub OnOtherPartCreatorSettChangedHndl {
 
 		if ( $self->GetPreview() ) {
 
-			
-				$self->AsyncProcessSelCreatorModel();
+			$self->AsyncProcessSelCreatorModel();
 
 		}
 
 	}
-
 
 	print STDERR "Setting changed part id: $partId, creator key: $creatorKey\n";
 
@@ -260,7 +267,7 @@ sub EnableCreators {
 	my $self       = shift;
 	my $partId     = shift;
 	my $creatorKey = shift;
-	my $setDefault = shift // 1; # set default creator
+	my $setDefault = shift // 1;    # set default creator
 
 }
 

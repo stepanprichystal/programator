@@ -32,7 +32,6 @@ use aliased 'CamHelpers::CamHelper';
 use aliased 'CamHelpers::CamLayer';
 use aliased 'CamHelpers::CamHistogram';
 use aliased 'Packages::CAMJob::Panelization::SRStep';
-use aliased 'CamHelpers::CamStepRepeatPnl';
 use aliased 'CamHelpers::CamAttributes';
 use aliased 'CamHelpers::CamJob';
 use aliased 'CamHelpers::CamMatrix';
@@ -125,14 +124,14 @@ sub CheckSpecifications {
 
 	#CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@stiffL );
 
-	my @childSteps = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+	my @childSteps = CamStep->GetJobEditSteps( $inCAM, $jobId ); 
 
 	foreach my $l (@depthLayers) {
 
 		# 1) Check if there is request for depth coupon
 		my $cpnRequired = 0;
 		foreach my $s (@childSteps) {
-			my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+			my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $l->{"gROWname"} );
 			if ( defined $pnlLAtt{"zaxis_rout_calibration_coupon"} && $pnlLAtt{"zaxis_rout_calibration_coupon"} !~ /none/i ) {
 				$cpnRequired = 1;
 				last;
@@ -144,7 +143,7 @@ sub CheckSpecifications {
 		# 2) Check if coupon depth type is equal through all steps in this layer
 		my @cpnTypes = ();
 		foreach my $s (@childSteps) {
-			my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+			my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $l->{"gROWname"} );
 			if ( defined $pnlLAtt{"zaxis_rout_calibration_coupon"} && $pnlLAtt{"zaxis_rout_calibration_coupon"} !~ /none/i ) {
 				push( @cpnTypes, $pnlLAtt{"zaxis_rout_calibration_coupon"} );
 			}
@@ -167,10 +166,10 @@ sub CheckSpecifications {
 
 		foreach my $s (@childSteps) {
 
-			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"}, 0 );
+			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s, $l->{"gROWname"}, 0 );
 			next if ( $hist{"total"} == 0 );
 
-			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $l->{"gROWname"} );
 			my $matRest = CPNTYPE_MATERIALRESTVAL;
 			if ( defined $att{"zaxis_rout_calibration_coupon"} && $att{"zaxis_rout_calibration_coupon"} =~ /$matRest/i ) {
 
@@ -186,7 +185,7 @@ sub CheckSpecifications {
 					    "Final PCB thickness (layer attribute: final_pcb_thickness) is not set for layer: "
 					  . $l->{"gROWname"}
 					  . ", step: "
-					  . $s->{"stepName"};
+					  . $s;
 					return $result;
 				}
 			}
@@ -209,7 +208,7 @@ sub CheckSpecifications {
 
 		foreach my $s (@childSteps) {
 
-			my $dtm = UniDTM->new( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"}, 0, 0, 0 );
+			my $dtm = UniDTM->new( $inCAM, $jobId, $s, $l->{"gROWname"}, 0, 0, 0 );
 
 			my @depth = map { $_->GetDepth() } grep { !$_->GetSpecial() && $_->GetDepth() } $dtm->GetUniqueTools();
 
@@ -261,14 +260,14 @@ sub GetAllSpecifications {
 	);
 
 	CamDrilling->AddLayerStartStop( $inCAM, $jobId, \@depthLayers );
-	my @childSteps = CamStepRepeatPnl->GetUniqueDeepestSR( $inCAM, $jobId );
+	my @childSteps = CamStep->GetJobEditSteps( $inCAM, $jobId ); 
 
 	foreach my $l (@depthLayers) {
 
 		# 1) Check if there is request for depth coupon
 		my $cpnRequired = 0;
 		foreach my $s (@childSteps) {
-			my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+			my %pnlLAtt = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $l->{"gROWname"} );
 			if ( defined $pnlLAtt{"zaxis_rout_calibration_coupon"} && $pnlLAtt{"zaxis_rout_calibration_coupon"} !~ /none/i ) {
 				$cpnRequired = 1;
 				last;
@@ -282,10 +281,10 @@ sub GetAllSpecifications {
 
 		foreach my $s (@childSteps) {
 
-			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"}, 0 );
+			my %hist = CamHistogram->GetFeatuesHistogram( $inCAM, $jobId, $s, $l->{"gROWname"}, 0 );
 			next if ( $hist{"total"} == 0 );
 
-			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"} );
+			my %att = CamAttributes->GetLayerAttr( $inCAM, $jobId, $s, $l->{"gROWname"} );
 
 			my $pcbThick = $att{"final_pcb_thickness"};
 
@@ -301,7 +300,7 @@ sub GetAllSpecifications {
 
 		foreach my $s (@childSteps) {
 
-			my $dtm = UniDTM->new( $inCAM, $jobId, $s->{"stepName"}, $l->{"gROWname"}, 0, 0, 0 );
+			my $dtm = UniDTM->new( $inCAM, $jobId, $s, $l->{"gROWname"}, 0, 0, 0 );
 
 			my @depth = map { $_->GetDepth() } grep { !$_->GetSpecial() && $_->GetDepth() } $dtm->GetUniqueTools();
 

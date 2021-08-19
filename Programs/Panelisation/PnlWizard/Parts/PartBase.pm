@@ -31,7 +31,7 @@ sub new {
 
 	# PROPERTIES
 
-	$self->{"model"}      = undef;            # data model for specific part. Set by subclass
+	$self->{"model"}          = undef;        # data model for specific part. Set by subclass
 	$self->{"checkClassName"} = undef;        # Checking model before panelisation. Set by subclass
 
 	$self->{"form"}        = undef;           # View form for part
@@ -314,7 +314,6 @@ sub __OnCreatorProcessedHndl {
 	my $errMess    = shift;
 	my $resultData = shift;
 	my $callReason = shift;
-	
 
 	return 0 if ( $partId ne $self->{"partId"} );    # Catch only event from for this specific part
 
@@ -338,6 +337,11 @@ sub __OnCreatorProcessedHndl {
 	if ( defined $callReason && $callReason eq "settingsChanged" ) {
 		my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
 		$self->{"creatorSettingsChangedEvt"}->Do( $partId, $creatorKey, $creatorModel );
+	}
+
+	if ( defined $callReason && $callReason eq "selectionChanged" ) {
+		my $creatorModel = $self->{"model"}->GetCreatorModelByKey($creatorKey);
+		$self->{"creatorSelectionChangedEvt"}->Do( $partId, $creatorKey );
 	}
 
 }
@@ -405,9 +409,6 @@ sub __OnCreatorSelectionChangedHndl {
 
 	return 0 if ( $self->GetFrmHandlersOff() );
 
-	# Reise imidiatelly after creator changed
-	$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );
-
 	# Change model
 	$self->{"model"}->SetSelectedCreator($creatorKey);
 
@@ -417,12 +418,20 @@ sub __OnCreatorSelectionChangedHndl {
 		# Process part after async init if preview
 		if ( $self->GetPreview() ) {
 
-			$self->AsyncProcessSelCreatorModel();
+			$self->AsyncProcessSelCreatorModel("selectionChanged");
+		}
+		else {
+			# Reise imidiatelly after creator changed
+			$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );
 		}
 
 	}
 	else {
+		# Reise imidiatelly after creator changed
+		$self->{"creatorSelectionChangedEvt"}->Do( $self->GetPartId(), $creatorKey );
+
 		$self->__AsyncInitCreatorModel($creatorKey);
+
 	}
 
 }

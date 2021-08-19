@@ -48,9 +48,8 @@ sub new {
 	my @editSteps = PnlCreHelper->GetEditSteps( $self->{"inCAM"}, $self->{"jobId"} );
 	$self->{"isCustomerSet"} = scalar(@editSteps) > 1 ? 1 : 0;
 
-	$self->{"model"}      = PartModel->new();         # Data model for view
-	$self->{"checkClassName"} = ref(PartCheckClass->new());
-	
+	$self->{"model"}          = PartModel->new();               # Data model for view
+	$self->{"checkClassName"} = ref( PartCheckClass->new() );
 
 	# handle events
 	$self->{"asyncCreatorProcessedEvt"}->Add( sub { $self->__UpdatePartStepInfo(@_) } );
@@ -109,7 +108,7 @@ sub __OnManualPlacementHndl {
 	my $self      = shift;
 	my $pauseText = shift;
 
-	my $result = 0; # succes / failure od manual step placement
+	my $result = 0;    # succes / failure od manual step placement
 
 	# Check if preview mode is active
 	my $inCAM = $self->{"inCAM"};
@@ -208,7 +207,6 @@ sub __OnManualPlacementHndl {
 		$creator->ImportSettings( $creatorModel->ExportCreatorSettings() );
 
 		my $errMess = "";
-		
 
 		if ( $creator->Check( $inCAM, \$errMess ) ) {
 
@@ -326,12 +324,25 @@ sub OnOtherPartCreatorSelChangedHndl {
 
 	$self->EnableCreators( $partId, $creatorKey );
 
+	if ( $partId eq Enums->Part_PNLSIZE ) {
+
+		if ( $self->GetPreview() ) {
+
+			if ( $creatorKey ne PnlCreEnums->SizePnlCreator_MATRIX ) {
+
+				$self->AsyncProcessSelCreatorModel();
+
+			}
+		}
+
+	}
+	
 	print STDERR "Selection changed part id: $partId, creator key: $creatorKey\n";
 
 }
 
 # Handler which catch change of selected creatores settings in other parts
-# Event is raised alwazs after AsyncCreatorProcess if specific part has active Preview
+# Reise imidiatelly after slection change inf no preview mode, else wait on asynchrounous process
 sub OnOtherPartCreatorSettChangedHndl {
 	my $self            = shift;
 	my $partId          = shift;
@@ -414,9 +425,9 @@ sub __SetActiveCreators {
 
 sub EnableCreators {
 	my $self       = shift;
-	my $partId     = shift;    # Previous part
-	my $creatorKey = shift;    # Selected creator from previous part
-	my $setDefault = shift // 1; # set default creator
+	my $partId     = shift;         # Previous part
+	my $creatorKey = shift;         # Selected creator from previous part
+	my $setDefault = shift // 1;    # set default creator
 
 	# Disable specific creators depand on preview part (size creator)
 	if ( $partId eq Enums->Part_PNLSIZE ) {
@@ -515,7 +526,7 @@ sub EnableCreators {
 		}
 
 		# Select creator
-		$self->{"form"}->SetSelectedCreator($selectedCreator) if($setDefault);
+		$self->{"form"}->SetSelectedCreator($selectedCreator) if ($setDefault);
 
 		# Enable/diasble step cretors
 		$self->{"form"}->EnableCreators( \@enableCreators );
