@@ -352,8 +352,8 @@ sub GetDefaultLayerSett {
 
 	}
 
-	die "Rotation is not defined"      if ( !defined $sett{"rotationCCW"} );
-	die "Fiducial type is not defined" if ( !defined $sett{"fiducialType"} );
+	die "Rotation is not defined for layer: $layerName"     if ( !defined $sett{"rotationCCW"} );
+	die "Fiducial type is not defined for layer: $layerName" if ( !defined $sett{"fiducialType"} );
 
 	return %sett;
 }

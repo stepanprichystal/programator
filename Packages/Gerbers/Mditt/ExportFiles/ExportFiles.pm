@@ -663,7 +663,7 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 
 	my $inCAM = InCAM->new();
 
-	my $jobId    = "d327834";
+	my $jobId    = "d322704";
 	my $stepName = "panel";
 
 	use aliased 'Packages::Export::PreExport::FakeLayers';
@@ -673,9 +673,9 @@ if ( $filename =~ /DEBUG_FILE.pl/ ) {
 	my $export = ExportFiles->new( $inCAM, $jobId, $stepName );
 
 	# Get couples
-		my $signalLayer =  0;
+		my $signalLayer =  1;
 	my $maskLayer   = 1;
-	my $plugLayer   = 0;
+	my $plugLayer   = 1;
 	my $goldLayer   =  1;
 	my @lCOuples = Helper->GetDefaultLayerCouples( $inCAM, $jobId, $signalLayer, $maskLayer, $plugLayer, $goldLayer );
 
