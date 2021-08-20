@@ -20,6 +20,7 @@ use aliased 'Packages::Export::PreExport::LayerInvert';
 use aliased 'CamHelpers::CamHelper';
 use aliased 'Enums::EnumsPaths';
 use aliased 'Helpers::FileHelper';
+use aliased 'Packages::Export::GerExport::ExportGerMngr';
 use aliased 'Packages::Export::GerExport::ExportPasteMngr';
 use aliased 'Packages::Export::GerExport::ExportJetprintMngr';
 use aliased 'Packages::Export::PreExport::FakeLayers';
