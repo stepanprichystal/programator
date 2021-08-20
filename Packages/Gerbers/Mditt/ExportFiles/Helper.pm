@@ -228,7 +228,7 @@ sub GetDefaultLayerSett {
 
 	# 2) Set fiducials
 
-	if ( $layerName =~ /^(outer)?[csv]\d?$/ ) {
+	if ($layerName =~ /^(outer)?[cs]$/ || $layerName =~ /^v\d+$/) {
 
 		# SIGNAL LAYERS
 
@@ -297,7 +297,7 @@ sub GetDefaultLayerSett {
 		}
 
 	}
-	elsif ( $layerName =~ /^plg[csv]\d?$/ ) {
+	elsif ( $layerName =~ /^plg[cs]$/  || $layerName =~ /^plgv\d+$/ ) {
 
 		# PLUG LAYERS
 
@@ -332,7 +332,7 @@ sub GetDefaultLayerSett {
 		}
 
 	}
-	elsif ( $layerName =~ /^gold[cs]\d?$/ ) {
+	elsif ( $layerName =~ /^gold[cs]$/ ) {
 
 		# GOLD LAYER
 

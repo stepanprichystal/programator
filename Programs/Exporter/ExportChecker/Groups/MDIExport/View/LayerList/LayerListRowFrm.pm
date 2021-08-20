@@ -115,7 +115,7 @@ sub __SetLayout {
 
 	my @fiducOptions = ();
 
-	if ( $layerName =~ /^(outer)?[csv]\d?$/ ) {
+	if ( $layerName =~ /^(outer)?[cs]$/ || $layerName =~ /^v\d+$/) {
 
 		# SIGNAL LAYERS
 		if ( $layerCnt <= 2 ) {
@@ -123,7 +123,7 @@ sub __SetLayout {
 		}
 		else {
 
-			if ( $layerName =~ /^outer?[cs]$/ || $layerName =~ /^v\d$/ ) {
+			if ( $layerName =~ /^outer[cs]$/ || $layerName =~ /^v\d+$/ ) {
 
 				push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEINNERVV );
 				push( @fiducOptions, MDITTEnums->Fiducials_OLECHOLEINNERVVSL );
@@ -158,7 +158,7 @@ sub __SetLayout {
 		}
 
 	}
-	elsif ( $layerName =~ /^plg[csv]\d?$/ ) {
+	elsif ( $layerName =~ /^plg[cs]$/  || $layerName =~ /^plgv\d+$/) {
 
 		# PLUG LAYERS
 		if ( $layerCnt <= 2 ) {
@@ -184,7 +184,7 @@ sub __SetLayout {
 		}
 
 	}
-	elsif ( $layerName =~ /^gold[cs]\d?$/ ) {
+	elsif ( $layerName =~ /^gold[cs]$/ ) {
 
 		# GOLD LAYER
 
