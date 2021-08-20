@@ -66,8 +66,8 @@ sub __SetLayout {
 
 	my $szMain = Wx::BoxSizer->new(&Wx::wxVERTICAL);
 
-	#my $szRow1     = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
-	#my $szColInner = Wx::BoxSizer->new(&Wx::wxVERTICAL);
+	my $szRow1     = Wx::BoxSizer->new(&Wx::wxHORIZONTAL);
+
 
 	# DEFINE CONTROLS
 	my $gerbers = $self->__SetLayoutGerbers($self);
@@ -78,12 +78,10 @@ sub __SetLayout {
 
 	# BUILD STRUCTURE OF LAYOUT
 
-	#$szColInner->Add( $jetPrint, 1, &Wx::wxEXPAND );
-	#$szColInner->Add( $gerbers, 0, &Wx::wxEXPAND | &Wx::wxTOP, 2 );
-	#$szRow1->Add( $szColInner, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szRow1->Add( $jetPrint, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
+	$szRow1->Add( $gerbers, 50, &Wx::wxEXPAND | &Wx::wxLEFT, 2 );
 
-	$szMain->Add( $jetPrint, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
-	$szMain->Add( $gerbers, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
+	$szMain->Add( $szRow1, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 	$szMain->Add( $paste, 0, &Wx::wxEXPAND | &Wx::wxALL, 2 );
 
 	$self->SetSizer($szMain);
